@@ -13,17 +13,17 @@ use crate::{
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
-    where
-        S: ScalarValue,
-        T: GraphQLType<S, Context = CtxT> + ?Sized,
+where
+    S: ScalarValue,
+    T: GraphQLType<S, Context = CtxT> + ?Sized,
 {
     fn name(info: &T::TypeInfo) -> Option<&str> {
         T::name(info)
     }
 
     fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
+    where
+        S: 'r,
     {
         T::meta(info, registry)
     }

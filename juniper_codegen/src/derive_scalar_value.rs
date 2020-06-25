@@ -125,9 +125,8 @@ fn impl_scalar_struct(
                 selection_set: Option<&'a [#crate_name::Selection<__S>]>,
                 executor: &'a #crate_name::Executor<Self::Context, __S>,
             ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<__S>> {
-                use #crate_name::GraphQLType;
                 use #crate_name::futures::future;
-                let v = self.resolve(info, selection_set, executor);
+                let v = #crate_name::GraphQLValue::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
@@ -164,7 +163,7 @@ fn impl_scalar_struct(
             type Context = ();
             type TypeInfo = ();
 
-            fn type_name(&self, info: &Self::TypeInfo) -> Option<&'static str> {
+            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
                 <Self as #crate_name::GraphQLType<S>>::name(info)
             }
 
@@ -174,7 +173,7 @@ fn impl_scalar_struct(
                 selection: Option<&[#crate_name::Selection<S>]>,
                 executor: &#crate_name::Executor<Self::Context, S>,
             ) -> #crate_name::ExecutionResult<S> {
-                #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
+                #crate_name::GraphQLValue::resolve(&self.0, info, selection, executor)
             }
         }
 

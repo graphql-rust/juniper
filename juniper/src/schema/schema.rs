@@ -1,7 +1,10 @@
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
-    types::{base::{Arguments, GraphQLType, GraphQLValue, TypeKind}, async_await::{GraphQLValueAsync, GraphQLTypeAsync}},
+    types::{
+        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
+    },
     value::{ScalarValue, Value},
 };
 

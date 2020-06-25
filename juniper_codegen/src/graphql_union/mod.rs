@@ -552,7 +552,7 @@ impl ToTokens for UnionDefinition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name(&self, info: &Self::TypeInfo) -> Option<&'static str> {
+                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
                     <Self as #crate_path::GraphQLType<#scalar>>::name(info)
                 }
 
@@ -632,7 +632,13 @@ impl ToTokens for UnionDefinition {
             }
         };
 
-        into.append_all(&[union_impl, output_type_impl, type_impl, value_impl, value_async_impl]);
+        into.append_all(&[
+            union_impl,
+            output_type_impl,
+            type_impl,
+            value_impl,
+            value_async_impl,
+        ]);
     }
 }
 

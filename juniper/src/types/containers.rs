@@ -2,22 +2,25 @@ use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
-    types::{async_await::GraphQLValueAsync, base::{GraphQLType, GraphQLValue}},
+    types::{
+        async_await::GraphQLValueAsync,
+        base::{GraphQLType, GraphQLValue},
+    },
     value::{ScalarValue, Value},
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Option<T>
-    where
-        S: ScalarValue,
-        T: GraphQLType<S, Context = CtxT>,
+where
+    S: ScalarValue,
+    T: GraphQLType<S, Context = CtxT>,
 {
     fn name(_: &T::TypeInfo) -> Option<&'static str> {
         None
     }
 
     fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
+    where
+        S: 'r,
     {
         registry.build_nullable_type::<T>(info).into_meta()
     }
@@ -103,7 +106,6 @@ where
     T: GraphQLType<S, Context = CtxT>,
     S: ScalarValue,
 {
-
     fn name(_: &T::TypeInfo) -> Option<&'static str> {
         None
     }

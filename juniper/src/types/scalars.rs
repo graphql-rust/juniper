@@ -1,12 +1,16 @@
+use std::{char, convert::From, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32};
+
 use serde::{Deserialize, Serialize};
-use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
-    types::{base::{GraphQLType, GraphQLValue}, async_await::GraphQLValueAsync},
+    types::{
+        async_await::GraphQLValueAsync,
+        base::{GraphQLType, GraphQLValue},
+    },
     value::{ParseScalarResult, ScalarValue, Value},
 };
 
@@ -215,7 +219,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name(&self, info: &()) -> Option<&'static str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         <Self as GraphQLType<S>>::name(info)
     }
 
@@ -334,7 +338,7 @@ where
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
 #[derive(Debug)]
-pub struct EmptyMutation<T: ?Sized = ()>(PhantomData<std::thread::JoinHandle<T>>);
+pub struct EmptyMutation<T: ?Sized = ()>(PhantomData<JoinHandle<Box<T>>>);
 
 // `EmptyMutation` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
 crate::sa::assert_impl_all!(EmptyMutation<Rc<String>>: Send, Sync);
@@ -370,7 +374,7 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name(&self, info: &()) -> Option<&'static str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         <Self as GraphQLType<S>>::name(info)
     }
 }
@@ -394,7 +398,7 @@ impl<T> Default for EmptyMutation<T> {
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
-pub struct EmptySubscription<T: ?Sized = ()>(PhantomData<std::thread::JoinHandle<T>>);
+pub struct EmptySubscription<T: ?Sized = ()>(PhantomData<JoinHandle<Box<T>>>);
 
 // `EmptySubscription` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
 crate::sa::assert_impl_all!(EmptySubscription<Rc<String>>: Send, Sync);
@@ -430,7 +434,7 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name(&self, info: &()) -> Option<&'static str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         <Self as GraphQLType<S>>::name(info)
     }
 }

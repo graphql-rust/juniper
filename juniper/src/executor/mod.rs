@@ -22,7 +22,11 @@ use crate::{
         },
         model::{RootNode, SchemaType, TypeType},
     },
-    types::{base::{GraphQLType, GraphQLValue}, name::Name, async_await::GraphQLValueAsync},
+    types::{
+        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        base::{GraphQLType, GraphQLValue},
+        name::Name,
+    },
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
     GraphQLError,
 };
@@ -754,9 +758,9 @@ pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue,
-    QueryT: GraphQLValue<S, Context = CtxT>,
-    MutationT: GraphQLValue<S, Context = CtxT>,
-    SubscriptionT: GraphQLValue<S, Context = CtxT>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
     if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
@@ -848,11 +852,11 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync,
-    QueryT: GraphQLValueAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLValueAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLValue<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
@@ -995,9 +999,9 @@ where
     'd: 'r,
     'op: 'd,
     S: ScalarValue + Send + Sync,
-    QueryT: GraphQLValueAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLValueAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,

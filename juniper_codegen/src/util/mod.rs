@@ -1026,7 +1026,7 @@ impl GraphQLTypeDefiniton {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name(&self, info: &Self::TypeInfo) -> Option<&'static str> {
+                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
                     <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
                 }
 
@@ -1269,7 +1269,7 @@ impl GraphQLTypeDefiniton {
                     type Context = #context;
                     type TypeInfo = ();
 
-                    fn type_name(&self, info: &Self::TypeInfo) -> Option<&'static str> {
+                    fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
                         <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
                     }
 
@@ -1499,7 +1499,7 @@ impl GraphQLTypeDefiniton {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name(&self, info: &()) -> Option<&'static str> {
+                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
                     <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
                 }
 
@@ -1751,7 +1751,7 @@ impl GraphQLTypeDefiniton {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name(&self, info: &()) -> Option<&'static str> {
+                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
                     <Self as  #juniper_crate_name::GraphQLType<#scalar>>::name(info)
                 }
             }

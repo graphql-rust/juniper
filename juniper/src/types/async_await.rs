@@ -2,7 +2,7 @@ use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
     parser::Spanning,
-    value::{Object, ScalarValue, Value, DefaultScalarValue},
+    value::{DefaultScalarValue, Object, ScalarValue, Value},
 };
 
 use crate::BoxFuture;
@@ -117,9 +117,22 @@ crate::sa::assert_obj_safe!(GraphQLValueAsync<Context = (), TypeInfo = ()>);
 ///
 /// It's automatically implemented for [`GraphQLValueAsync`] and [`GraphQLType`] implementors, so
 /// doesn't require manual or code-generated implementation.
-pub trait GraphQLTypeAsync<S = DefaultScalarValue>: GraphQLValueAsync<S> + GraphQLType<S> {}
+pub trait GraphQLTypeAsync<S = DefaultScalarValue>: GraphQLValueAsync<S> + GraphQLType<S>
+where
+    Self::Context: Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+{
+}
 
-impl<S, T> GraphQLTypeAsync<S> for T where T: GraphQLValueAsync<S> + GraphQLType<S> {}
+impl<S, T> GraphQLTypeAsync<S> for T
+where
+    T: GraphQLValueAsync<S> + GraphQLType<S>,
+    T::Context: Send + Sync,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+{
+}
 
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
@@ -175,7 +188,8 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            instance.type_name(info)
+            instance
+                .type_name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )

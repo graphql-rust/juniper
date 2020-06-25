@@ -417,7 +417,8 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            instance.type_name(info)
+            instance
+                .type_name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )

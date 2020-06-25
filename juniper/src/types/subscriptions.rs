@@ -2,7 +2,7 @@ use crate::{
     http::{GraphQLRequest, GraphQLResponse},
     parser::Spanning,
     types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, Executor, FieldError, GraphQLValue, Object, ScalarValue, Selection, Value,
+    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value,
     ValuesStream,
 };
 
@@ -68,7 +68,7 @@ pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<
 
  See trait methods for more detailed explanation on how this trait works.
 */
-pub trait GraphQLSubscriptionType<S>: GraphQLValue<S> + Send + Sync
+pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
@@ -218,7 +218,8 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            instance.type_name(info)
+            instance
+                .type_name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )
