@@ -233,7 +233,13 @@ fn get_doc_attr(attrs: &[Attribute]) -> Option<Vec<MetaNameValue>> {
 pub fn to_camel_case(s: &str) -> String {
     let mut dest = String::new();
 
-    for (i, part) in s.split('_').enumerate() {
+    // handle '_' to be more friendly with the
+    // _var convention for unused variables
+    let s_iter = if s.starts_with('_') { &s[1..] } else { s }
+        .split('_')
+        .enumerate();
+
+    for (i, part) in s_iter {
         if i > 0 && part.len() == 1 {
             dest.push_str(&part.to_uppercase());
         } else if i > 0 && part.len() > 1 {
@@ -1874,7 +1880,7 @@ mod test {
     #[test]
     fn test_to_camel_case() {
         assert_eq!(&to_camel_case("test")[..], "test");
-        assert_eq!(&to_camel_case("_test")[..], "Test");
+        assert_eq!(&to_camel_case("_test")[..], "test");
         assert_eq!(&to_camel_case("first_second")[..], "firstSecond");
         assert_eq!(&to_camel_case("first_")[..], "first");
         assert_eq!(&to_camel_case("a_b_c")[..], "aBC");
