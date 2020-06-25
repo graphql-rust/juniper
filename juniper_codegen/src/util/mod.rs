@@ -1291,7 +1291,7 @@ impl GraphQLTypeDefiniton {
         );
 
         let subscription_implementation = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLSubscriptionType<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics #juniper_crate_name::GraphQLSubscriptionValue<#scalar> for #ty #type_generics_tokens
             #where_clause
             {
                 #[allow(unused_variables)]
@@ -1326,7 +1326,7 @@ impl GraphQLTypeDefiniton {
                     match field_name {
                             #( #resolve_matches_async )*
                             _ => {
-                                panic!("Field {} not found on type {}", field_name, "GraphQLSubscriptionType");
+                                panic!("Field {} not found on type {}", field_name, "GraphQLSubscriptionValue");
                             }
                         }
                 }

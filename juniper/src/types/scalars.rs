@@ -10,6 +10,7 @@ use crate::{
     types::{
         async_await::GraphQLValueAsync,
         base::{GraphQLType, GraphQLValue},
+        subscriptions::GraphQLSubscriptionValue,
     },
     value::{ParseScalarResult, ScalarValue, Value},
 };
@@ -439,12 +440,11 @@ where
     }
 }
 
-impl<T, S> crate::GraphQLSubscriptionType<S> for EmptySubscription<T>
+impl<T, S> GraphQLSubscriptionValue<S> for EmptySubscription<T>
 where
     S: ScalarValue + Send + Sync + 'static,
     Self::TypeInfo: Send + Sync,
     Self::Context: Send + Sync,
-    T: Send + Sync,
 {
 }
 
