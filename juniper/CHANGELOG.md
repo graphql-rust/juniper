@@ -55,6 +55,10 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 ## Breaking Changes
 
+- `GraphQLType` trait was split into 2 traits: ([#685])
+    - object safe `GraphQLValue` trait containing resolving logic;
+    - static `GraphQLType` trait containing GraphQL type information.
+
 - `juniper::graphiql` has moved to `juniper::http::graphiql`
   - `juniper::http::graphiql::graphiql_source` now requies a second parameter for subscriptions
 
@@ -95,6 +99,7 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 - When using LookAheadMethods to access child selections, children are always found using their alias if it exists rather than their name (see [#662](https://github.com/graphql-rust/juniper/pull/662)). These methods are also deprecated in favour of the new `children` method.
 
 [#666]: https://github.com/graphql-rust/juniper/pull/666
+[#685]: https://github.com/graphql-rust/juniper/pull/685
 
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 
