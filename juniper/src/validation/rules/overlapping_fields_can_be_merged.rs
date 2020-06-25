@@ -1,3 +1,5 @@
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
+
 use crate::{
     ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type},
     parser::{SourcePosition, Spanning},
@@ -5,7 +7,6 @@ use crate::{
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
-use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
 
 #[derive(Debug)]
 struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
@@ -741,7 +742,7 @@ mod tests {
         executor::Registry,
         schema::meta::MetaType,
         types::{
-            base::GraphQLType,
+            base::{GraphQLType, GraphQLValue},
             scalars::{EmptyMutation, EmptySubscription, ID},
         },
     };
@@ -1380,9 +1381,6 @@ mod tests {
     where
         S: ScalarValue,
     {
-        type Context = ();
-        type TypeInfo = ();
-
         fn name(_: &()) -> Option<&'static str> {
             Some("SomeBox")
         }
@@ -1401,13 +1399,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for StringBox
+    impl<S> GraphQLValue<S> for SomeBox
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for StringBox
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("StringBox")
         }
@@ -1432,13 +1439,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for IntBox
+    impl<S> GraphQLValue<S> for StringBox
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for IntBox
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("IntBox")
         }
@@ -1463,13 +1479,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for NonNullStringBox1
+    impl<S> GraphQLValue<S> for IntBox
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for NonNullStringBox1
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox1")
         }
@@ -1484,13 +1509,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for NonNullStringBox1Impl
+    impl<S> GraphQLValue<S> for NonNullStringBox1
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for NonNullStringBox1Impl
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox1Impl")
         }
@@ -1515,13 +1549,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for NonNullStringBox2
+    impl<S> GraphQLValue<S> for NonNullStringBox1Impl
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for NonNullStringBox2
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox2")
         }
@@ -1536,13 +1579,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for NonNullStringBox2Impl
+    impl<S> GraphQLValue<S> for NonNullStringBox2
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for NonNullStringBox2Impl
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox2Impl")
         }
@@ -1567,13 +1619,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for Node
+    impl<S> GraphQLValue<S> for NonNullStringBox2Impl
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for Node
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("Node")
         }
@@ -1591,13 +1652,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for Edge
+    impl<S> GraphQLValue<S> for Node
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for Edge
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("Edge")
         }
@@ -1612,13 +1682,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for Connection
+    impl<S> GraphQLValue<S> for Edge
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for Connection
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("Connection")
         }
@@ -1633,13 +1712,22 @@ mod tests {
         }
     }
 
-    impl<S> GraphQLType<S> for QueryRoot
+    impl<S> GraphQLValue<S> for Connection
     where
         S: ScalarValue,
     {
         type Context = ();
         type TypeInfo = ();
 
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
+        }
+    }
+
+    impl<S> GraphQLType<S> for QueryRoot
+    where
+        S: ScalarValue,
+    {
         fn name(_: &()) -> Option<&'static str> {
             Some("QueryRoot")
         }
@@ -1658,6 +1746,18 @@ mod tests {
                 registry.field::<Option<Connection>>("connection", i),
             ];
             registry.build_object_type::<Self>(i, fields).into_meta()
+        }
+    }
+
+    impl<S> GraphQLValue<S> for QueryRoot
+    where
+        S: ScalarValue,
+    {
+        type Context = ();
+        type TypeInfo = ();
+
+        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+            <Self as GraphQLType>::name(info)
         }
     }
 

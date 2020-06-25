@@ -4,7 +4,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry, Variables},
     schema::{meta::MetaType, model::RootNode},
     types::{
-        base::{Arguments, GraphQLType},
+        base::{Arguments, GraphQLType, GraphQLValue},
         scalars::{EmptyMutation, EmptySubscription},
     },
     value::{ScalarValue, Value},
@@ -23,9 +23,6 @@ impl<S> GraphQLType<S> for Node
 where
     S: ScalarValue,
 {
-    type Context = ();
-    type TypeInfo = NodeTypeInfo;
-
     fn name(info: &Self::TypeInfo) -> Option<&str> {
         Some(&info.name)
     }
@@ -43,6 +40,18 @@ where
         registry
             .build_object_type::<Node>(info, &fields)
             .into_meta()
+    }
+}
+
+impl<S> GraphQLValue<S> for Node
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = NodeTypeInfo;
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType<S>>::name(info)
     }
 
     fn resolve_field(

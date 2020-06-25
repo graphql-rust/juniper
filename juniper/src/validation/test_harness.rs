@@ -8,7 +8,10 @@ use crate::{
         meta::{EnumValue, MetaType},
         model::{DirectiveLocation, DirectiveType, RootNode},
     },
-    types::{base::GraphQLType, scalars::ID},
+    types::{
+        base::{GraphQLType, GraphQLValue},
+        scalars::ID,
+    },
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
     value::ScalarValue,
 };
@@ -71,9 +74,6 @@ impl<S> GraphQLType<S> for Being
 where
     S: ScalarValue,
 {
-    type Context = ();
-    type TypeInfo = ();
-
     fn name(_: &()) -> Option<&'static str> {
         Some("Being")
     }
@@ -90,13 +90,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Pet
+impl<S> GraphQLValue<S> for Being
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for Pet
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("Pet")
     }
@@ -113,13 +122,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Canine
+impl<S> GraphQLValue<S> for Pet
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for Canine
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("Canine")
     }
@@ -136,13 +154,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for DogCommand
+impl<S> GraphQLValue<S> for Canine
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for DogCommand
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("DogCommand")
     }
@@ -164,6 +191,18 @@ where
     }
 }
 
+impl<S> GraphQLValue<S> for DogCommand
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
 impl<S> FromInputValue<S> for DogCommand
 where
     S: ScalarValue,
@@ -182,9 +221,6 @@ impl<S> GraphQLType<S> for Dog
 where
     S: ScalarValue,
 {
-    type Context = ();
-    type TypeInfo = ();
-
     fn name(_: &()) -> Option<&'static str> {
         Some("Dog")
     }
@@ -223,13 +259,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for FurColor
+impl<S> GraphQLValue<S> for Dog
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for FurColor
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("FurColor")
     }
@@ -252,6 +297,18 @@ where
     }
 }
 
+impl<S> GraphQLValue<S> for FurColor
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
 impl<S> FromInputValue<S> for FurColor
 where
     S: ScalarValue,
@@ -271,9 +328,6 @@ impl<S> GraphQLType<S> for Cat
 where
     S: ScalarValue,
 {
-    type Context = ();
-    type TypeInfo = ();
-
     fn name(_: &()) -> Option<&'static str> {
         Some("Cat")
     }
@@ -299,13 +353,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for CatOrDog
+impl<S> GraphQLValue<S> for Cat
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for CatOrDog
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("CatOrDog")
     }
@@ -320,13 +383,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Intelligent
+impl<S> GraphQLValue<S> for CatOrDog
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for Intelligent
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("Intelligent")
     }
@@ -341,13 +413,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Human
+impl<S> GraphQLValue<S> for Intelligent
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for Human
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("Human")
     }
@@ -374,13 +455,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Alien
+impl<S> GraphQLValue<S> for Human
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for Alien
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("Alien")
     }
@@ -407,13 +497,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for DogOrHuman
+impl<S> GraphQLValue<S> for Alien
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for DogOrHuman
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("DogOrHuman")
     }
@@ -428,13 +527,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for HumanOrAlien
+impl<S> GraphQLValue<S> for DogOrHuman
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for HumanOrAlien
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("HumanOrAlien")
     }
@@ -449,13 +557,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for ComplexInput
+impl<S> GraphQLValue<S> for HumanOrAlien
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for ComplexInput
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("ComplexInput")
     }
@@ -475,6 +592,18 @@ where
         registry
             .build_input_object_type::<Self>(i, fields)
             .into_meta()
+    }
+}
+
+impl<S> GraphQLValue<S> for ComplexInput
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
     }
 }
 
@@ -505,9 +634,6 @@ impl<S> GraphQLType<S> for ComplicatedArgs
 where
     S: ScalarValue,
 {
-    type Context = ();
-    type TypeInfo = ();
-
     fn name(_: &()) -> Option<&'static str> {
         Some("ComplicatedArgs")
     }
@@ -564,13 +690,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for QueryRoot
+impl<S> GraphQLValue<S> for ComplicatedArgs
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for QueryRoot
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&'static str> {
         Some("QueryRoot")
     }
@@ -597,13 +732,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for MutationRoot
+impl<S> GraphQLValue<S> for QueryRoot
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for MutationRoot
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&str> {
         Some("MutationRoot")
     }
@@ -627,13 +771,22 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for SubscriptionRoot
+impl<S> GraphQLValue<S> for MutationRoot
 where
     S: ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for SubscriptionRoot
+where
+    S: ScalarValue,
+{
     fn name(_: &()) -> Option<&str> {
         Some("SubscriptionRoot")
     }
@@ -645,6 +798,18 @@ where
         let fields = [];
 
         registry.build_object_type::<Self>(i, &fields).into_meta()
+    }
+}
+
+impl<S> GraphQLValue<S> for SubscriptionRoot
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
     }
 }
 
