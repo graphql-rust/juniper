@@ -3,13 +3,12 @@
 ## Features
 
 - Added async support. ([#2](https://github.com/graphql-rust/juniper/issues/2))
-    - `Schema::execute()` is now async. Synchronous execution can still be used via `Schema::execute_sync()`
+    - `Schema::execute()` is now async. Synchronous execution can still be used via `Schema::execute_sync()`.
     - Field resolvers may optionally be declared as `async` and return a future.
 
-- Added *experimental* support for  subscriptions. ( 
-  [#433](https://github.com/graphql-rust/juniper/pull/433))
+- Added *experimental* support for GraphQL subscriptions. ([#433](https://github.com/graphql-rust/juniper/pull/433))
 
-- Added support for generating the [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language) representation of your schema using `RootNode::as_schema_language()`. ([#676](https://github.com/graphql-rust/juniper/pull/676))
+- Added support for generating the [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language) representation of a schema using `RootNode::as_schema_language()`. ([#676](https://github.com/graphql-rust/juniper/pull/676))
   - This is controlled by the `schema-language` feature and is on by default. It may be turned off if you do not need this functionality to reduce dependencies and speed up compile times.
   - Note that this is for generating the GraphQL Schema Language representation from the Rust schema. For the opposite--generating a Rust schema from a GraphQL Schema Language file--see the [`juniper_from_schema`](https://github.com/davidpdrsn/juniper-from-schema) project. 
 
@@ -102,8 +101,8 @@
   - Add subscription endpoint to `playground_source()`.
   - Add subscription endpoint to `graphiql_source()`.
 
-- Specifying a scalar type via a string is no longer supported. ([#631](https://github.com/graphql-rust/juniper/pull/631)).
-  - For example, instead of `#[graphql(scalar = "DefaultScalarValue")]` use `#[graphql(scalar = DefaultScalarValue)]`. **Note the lack of quotes**.
+- Specifying a scalar type via a string is no longer supported. ([#631](https://github.com/graphql-rust/juniper/pull/631))
+  - For example, instead of `#[graphql(scalar = "DefaultScalarValue")]` use `#[graphql(scalar = DefaultScalarValue)]`. *Note the lack of quotes*.
 
 - Integration tests:
   - Renamed `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`.
