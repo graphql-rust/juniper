@@ -3,7 +3,7 @@
 ## Features
 
 - Added async support. ([#2](https://github.com/graphql-rust/juniper/issues/2))
-    - `Schema::execute()` is now async. Synchronous execution can still be used via `Schema::execute_sync()`.
+    - `execute()` is now async. Synchronous execution can still be used via `execute_sync()`.
     - Field resolvers may optionally be declared as `async` and return a future.
 
 - Added *experimental* support for GraphQL subscriptions. ([#433](https://github.com/graphql-rust/juniper/pull/433))
