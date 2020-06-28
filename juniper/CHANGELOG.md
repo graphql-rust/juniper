@@ -35,13 +35,13 @@
   
 ## Fixes
 
-- Massively improved the `#[graphql_union]` proc macro ([#666](https://github.com/graphql-rust/juniper/pull/666)):
+- Massively improved the `#[graphql_union]` proc macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
     - Applicable to traits.
     - Supports custom resolvers.
     - Supports generics.
     - Supports multiple `#[graphql_union]` attributes.
 
-- Massively improved the `#[derive(GraphQLUnion)]` macro ([#666](https://github.com/graphql-rust/juniper/pull/666)):
+- Massively improved the `#[derive(GraphQLUnion)]` macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
     - Applicable to enums and structs.
     - Supports custom resolvers.
     - Supports generics.
@@ -60,7 +60,7 @@
 - Added support for renaming arguments within a GraphQL object. ([#631](https://github.com/graphql-rust/juniper/pull/631))
   - Example:
   ```rust
-    #[graphql(arguments(argA(name = "test")))]`
+    #[graphql(arguments(argA(name = "test")))]
   ```
   
 - `SchemaType` is now public.
