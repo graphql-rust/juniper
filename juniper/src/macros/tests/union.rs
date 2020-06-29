@@ -18,7 +18,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    GraphQLUnionInternal,
+    GraphQLUnion,
 };
 
 struct Concrete;
@@ -30,13 +30,13 @@ impl Concrete {
     }
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(name = "ACustomNamedUnion", scalar = DefaultScalarValue)]
 enum CustomName {
     Concrete(Concrete),
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(on Concrete = WithLifetime::resolve, scalar = DefaultScalarValue)]
 enum WithLifetime<'a> {
     #[graphql(ignore)]
@@ -53,7 +53,7 @@ impl<'a> WithLifetime<'a> {
     }
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(on Concrete = WithGenerics::resolve, scalar = DefaultScalarValue)]
 enum WithGenerics<T> {
     #[graphql(ignore)]
@@ -70,7 +70,7 @@ impl<T> WithGenerics<T> {
     }
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(description = "A description", scalar = DefaultScalarValue)]
 enum DescriptionFirst {
     Concrete(Concrete),

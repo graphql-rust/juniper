@@ -25,8 +25,6 @@ use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
 use result::GraphQLScope;
 
-use self::util::Mode;
-
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
@@ -847,16 +845,7 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLUnion, attributes(graphql))]
 pub fn derive_union(input: TokenStream) -> TokenStream {
-    self::graphql_union::derive::expand(input.into(), Mode::Public)
-        .unwrap_or_abort()
-        .into()
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLUnionInternal, attributes(graphql))]
-#[doc(hidden)]
-pub fn derive_union_internal(input: TokenStream) -> TokenStream {
-    self::graphql_union::derive::expand(input.into(), Mode::Internal)
+    self::graphql_union::derive::expand(input.into())
         .unwrap_or_abort()
         .into()
 }
@@ -1146,16 +1135,7 @@ pub fn derive_union_internal(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_union(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_union::attr::expand(attr.into(), body.into(), Mode::Public)
-        .unwrap_or_abort()
-        .into()
-}
-
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_union_internal(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_union::attr::expand(attr.into(), body.into(), Mode::Internal)
+    self::graphql_union::attr::expand(attr.into(), body.into())
         .unwrap_or_abort()
         .into()
 }

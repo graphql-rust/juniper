@@ -93,6 +93,10 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #![doc(html_root_url = "https://docs.rs/juniper/0.14.2")]
 #![warn(missing_docs)]
 
+// Required for using `juniper_codegen` macros inside this crate to resolve absolute `::juniper`
+// path correctly, without errors.
+extern crate self as juniper;
+
 use std::fmt;
 
 #[doc(hidden)]
@@ -132,8 +136,7 @@ pub use juniper_codegen::{
 #[allow(unused_imports)]
 use juniper_codegen::{
     graphql_object_internal, graphql_scalar_internal, graphql_subscription_internal,
-    graphql_union_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
-    GraphQLScalarValueInternal, GraphQLUnionInternal,
+    GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
 };
 
 #[macro_use]

@@ -167,7 +167,7 @@ mod union {
         value::Value,
     };
 
-    #[crate::graphql_union_internal]
+    #[crate::graphql_union]
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> {
             None

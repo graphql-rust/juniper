@@ -10,16 +10,6 @@ pub enum Mode {
     Internal,
 }
 
-impl Mode {
-    pub fn crate_path(&self) -> syn::Path {
-        syn::parse_str::<syn::Path>(match self {
-            Self::Public => "::juniper",
-            Self::Internal => "crate",
-        })
-        .unwrap_or_else(|e| proc_macro_error::abort!(e))
-    }
-}
-
 // TODO: Remove once all macros are refactored with `Mode`.
 impl From<bool> for Mode {
     fn from(is_internal: bool) -> Self {

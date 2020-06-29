@@ -602,7 +602,7 @@ mod test {
         use crate as juniper;
         use crate::{
             EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
-            GraphQLUnionInternal as GraphQLUnion,
+            GraphQLUnion,
         };
 
         #[test]
