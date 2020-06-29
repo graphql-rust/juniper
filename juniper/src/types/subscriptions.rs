@@ -1,3 +1,5 @@
+use futures::{future, stream};
+
 use crate::{
     http::{GraphQLRequest, GraphQLResponse},
     parser::Spanning,
@@ -68,10 +70,10 @@ pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<
 
  See trait methods for more detailed explanation on how this trait works.
 */
-pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
+pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Sync
 where
-    Self::Context: Send + Sync,
-    Self::TypeInfo: Send + Sync,
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
     /// Resolve into `Value<ValuesStream>`
@@ -172,10 +174,10 @@ where
 /// Wrapper function around `resolve_selection_set_into_stream_recursive`.
 /// This wrapper is necessary because async fns can not be recursive.
 /// Panics if executor's current selection set is None.
-pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
+pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
+    executor: &'ref_e Executor<'ref_e, 'e, T::Context, S>,
 ) -> BoxFuture<'fut, Value<ValuesStream<'res, S>>>
 where
     'inf: 'res,
@@ -184,10 +186,10 @@ where
     'e: 'fut,
     'ref_e: 'fut,
     'res: 'fut,
-    T: GraphQLSubscriptionType<S, Context = CtxT> + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLSubscriptionType<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance, info, executor,
@@ -197,16 +199,16 @@ where
 /// Selection set default resolver logic.
 /// Returns `Value::Null` if cannot keep resolving. Otherwise pushes errors to
 /// `Executor`.
-async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T, CtxT, S>(
+async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
+    executor: &'ref_e Executor<'ref_e, 'e, T::Context, S>,
 ) -> Value<ValuesStream<'res, S>>
 where
-    T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLSubscriptionType<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
     'inf: 'res,
     'e: 'res,
 {
@@ -242,7 +244,7 @@ where
                         Value::scalar(instance.concrete_type_name(executor.context(), info));
                     object.add_field(
                         response_name,
-                        Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
+                        Value::Scalar(Box::pin(stream::once(future::ok(typename)))),
                     );
                     continue;
                 }
@@ -250,11 +252,11 @@ where
                 let meta_field = meta_type
                     .field_by_name(f.name.item)
                     .unwrap_or_else(|| {
-                        panic!(format!(
+                        panic!(
                             "Field {} not found on type {:?}",
                             f.name.item,
-                            meta_type.name()
-                        ))
+                            meta_type.name(),
+                        )
                     })
                     .clone();
 
@@ -338,6 +340,7 @@ where
                     Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
                 }
             }
+
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
                 start: ref start_pos,

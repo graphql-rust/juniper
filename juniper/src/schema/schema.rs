@@ -87,9 +87,9 @@ where
     QueryT::TypeInfo: Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync + 'a,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Sync,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync + 'a,
     S: ScalarValue + Send + Sync,
 {
     fn resolve_field_async<'b>(

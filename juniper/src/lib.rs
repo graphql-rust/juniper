@@ -281,9 +281,9 @@ where
     QueryT::TypeInfo: Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Sync,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
@@ -325,9 +325,9 @@ where
     QueryT::TypeInfo: Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     let document: crate::ast::Document<'a, S> =

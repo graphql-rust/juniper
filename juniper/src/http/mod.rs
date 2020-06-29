@@ -109,9 +109,9 @@ where
         QueryT::TypeInfo: Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT>,
         MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+        SubscriptionT: GraphQLType<S, Context = CtxT> + Sync,
+        SubscriptionT::TypeInfo: Sync,
+        CtxT: Sync,
         S: ScalarValue + Send + Sync,
     {
         let op = self.operation_name();
@@ -138,9 +138,9 @@ where
     QueryT::TypeInfo: Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     let op = req.operation_name();
@@ -293,17 +293,17 @@ where
         QueryT::TypeInfo: Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT>,
         MutationT::TypeInfo: Sync,
-        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+        SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+        SubscriptionT::TypeInfo: Sync,
+        CtxT: Sync,
         S: Send + Sync,
     {
-        match *self {
-            Self::Single(ref req) => {
+        match self {
+            Self::Single(req) => {
                 let resp = req.execute(root_node, context).await;
                 GraphQLBatchResponse::Single(resp)
             }
-            Self::Batch(ref reqs) => {
+            Self::Batch(reqs) => {
                 let resps = futures::future::join_all(
                     reqs.iter().map(|req| req.execute(root_node, context)),
                 )

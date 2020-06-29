@@ -7,7 +7,9 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
-    types::{async_await::GraphQLTypeAsync, base::GraphQLType},
+    types::{
+        async_await::GraphQLTypeAsync, base::GraphQLType, subscriptions::GraphQLSubscriptionType,
+    },
     value::{ParseScalarResult, ScalarValue, Value},
 };
 
@@ -417,13 +419,12 @@ where
     }
 }
 
-impl<T, S> crate::GraphQLSubscriptionType<S> for EmptySubscription<T>
+impl<T, S> GraphQLSubscriptionType<S> for EmptySubscription<T>
 where
+    Self: GraphQLType<S> + Sync,
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
     S: ScalarValue + Send + Sync + 'static,
-    Self: GraphQLType<S> + Send + Sync,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
-    T: Send + Sync,
 {
 }
 

@@ -7,6 +7,7 @@ use std::{
 };
 
 use fnv::FnvHashMap;
+use futures::Stream;
 
 use crate::{
     ast::{
@@ -22,7 +23,10 @@ use crate::{
         },
         model::{RootNode, SchemaType, TypeType},
     },
-    types::{async_await::GraphQLTypeAsync, base::GraphQLType, name::Name},
+    types::{
+        async_await::GraphQLTypeAsync, base::GraphQLType, name::Name,
+        subscriptions::GraphQLSubscriptionType,
+    },
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
     GraphQLError,
 };
@@ -219,9 +223,9 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
-/// Boxed `futures::Stream` yielding `Result<Value<S>, ExecutionError<S>>`
+/// Boxed `Stream` yielding `Result<Value<S>, ExecutionError<S>>`
 pub type ValuesStream<'a, S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn futures::Stream<Item = Result<Value<S>, ExecutionError<S>>> + Send + 'a>>;
+    std::pin::Pin<Box<dyn Stream<Item = Result<Value<S>, ExecutionError<S>>> + Send + 'a>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -369,9 +373,9 @@ where
         'i: 'res,
         'v: 'res,
         'a: 'res,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+        T: GraphQLSubscriptionType<S, Context = CtxT> + Sync,
+        T::TypeInfo: Sync,
+        CtxT: Sync,
         S: Send + Sync,
     {
         match self.subscribe(info, value).await {
@@ -393,9 +397,9 @@ where
     where
         't: 'res,
         'a: 'res,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+        T: GraphQLSubscriptionType<S, Context = CtxT>,
+        T::TypeInfo: Sync,
+        CtxT: Sync,
         S: Send + Sync,
     {
         value.resolve_into_stream(info, self).await
@@ -854,9 +858,9 @@ where
     QueryT::TypeInfo: Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Sync,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type == OperationType::Subscription {
@@ -1001,9 +1005,9 @@ where
     QueryT::TypeInfo: Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync + 'r,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync + 'r,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type != OperationType::Subscription {
