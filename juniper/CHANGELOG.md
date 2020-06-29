@@ -2,104 +2,118 @@
 
 ## Features
 
-- Added support for outputting the Rust schema in the [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language). ([#676](https://github.com/graphql-rust/juniper/pull/676))
+- Added async support. ([#2](https://github.com/graphql-rust/juniper/issues/2))
+    - `execute()` is now async. Synchronous execution can still be used via `execute_sync()`.
+    - Field resolvers may optionally be declared as `async` and return a future.
+
+- Added *experimental* support for GraphQL subscriptions. ([#433](https://github.com/graphql-rust/juniper/pull/433))
+
+- Added support for generating the [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language) representation of a schema using `RootNode::as_schema_language()`. ([#676](https://github.com/graphql-rust/juniper/pull/676))
   - This is controlled by the `schema-language` feature and is on by default. It may be turned off if you do not need this functionality to reduce dependencies and speed up compile times.
+  - Note that this is for generating the GraphQL Schema Language representation from the Rust schema. For the opposite--generating a Rust schema from a GraphQL Schema Language file--see the [`juniper_from_schema`](https://github.com/davidpdrsn/juniper-from-schema) project. 
 
-- Normalization for the subscriptions_endpoint_url in the `graphiql_source`.
-(See [#628](https://github.com/graphql-rust/juniper/pull/628) for more details)
-  
-- Support raw identifiers in field and argument names. (`#[object]` macro)
+- Most GraphQL spec violations are now caught at compile-time. ([#631](https://github.com/graphql-rust/juniper/pull/631))
+  - The enhanced error messages now include the reason and a link to the spec.
+    For example, if you try to declare a GraphQL object with no fields:
+    ```rust
+      error: GraphQL object expects at least one field
+     --> $DIR/impl_no_fields.rs:4:1
+      |
+    4 | impl Object {}
+      | ^^^^^^^^^^^^^^
+      |
+      = note: https://spec.graphql.org/June2018/#sec-Objects
+    ```
 
-- Most error types now implement `std::error::Error`:
+- [Raw identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html) are now supported in field and argument names.
+
+- Most error types now implement `std::error::Error`. ([#419](https://github.com/graphql-rust/juniper/pull/419))
   - `GraphQLError`
   - `LexerError`
   - `ParseError`
   - `RuleError`
   
-- Support subscriptions (see 
-  [#433](https://github.com/graphql-rust/juniper/pull/433) for more details)
+## Fixes
 
-See [#419](https://github.com/graphql-rust/juniper/pull/419).
-
-- `SchemaType` is now public
-  - This is helpful when using `context.getSchema()` inside of your field resolvers
-
-- Support subscriptions in GraphiQL
-
-See [#569](https://github.com/graphql-rust/juniper/pull/569).
-
-- GraphQLUnion derive support ("#[derive(GraphqQLUnion)]")
-  - implements GraphQLAsyncType
-
-See [#618](https://github.com/graphql-rust/juniper/pull/618).
-
-- Derive macro `GraphQLEnum` supports custom context (see [#621](https://github.com/graphql-rust/juniper/pull/621))
-
-- Reworked `#[derive(GraphQLUnion)]` macro ([#666]):
-    - Applicable to enums and structs.
-    - Supports custom resolvers.
-    - Supports generics.
-    - Supports multiple `#[graphql]` attributes.
-- New `#[graphql_union]` macro ([#666]):
+- Massively improved the `#[graphql_union]` proc macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
     - Applicable to traits.
     - Supports custom resolvers.
     - Supports generics.
     - Supports multiple `#[graphql_union]` attributes.
 
-- Better error messages for all proc macros (see
-  [#631](https://github.com/graphql-rust/juniper/pull/631)
+- Massively improved the `#[derive(GraphQLUnion)]` macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
+    - Applicable to enums and structs.
+    - Supports custom resolvers.
+    - Supports generics.
+    - Supports multiple `#[graphql]` attributes.
+    
+ - The `GraphQLEnum` derive now supports specifying a custom context. ([#621](https://github.com/graphql-rust/juniper/pull/621))
+   - Example:
+   ```rust
+   #[derive(juniper::GraphQLEnum)]
+   #[graphql(context = CustomContext)]
+   enum TestEnum {
+       A,
+   }
+   ```
 
-- Improved lookahead visibility for aliased fields (see [#662](https://github.com/graphql-rust/juniper/pull/662))
+- Added support for renaming arguments within a GraphQL object. ([#631](https://github.com/graphql-rust/juniper/pull/631))
+  - Example:
+  ```rust
+    #[graphql(arguments(argA(name = "test")))]
+  ```
+  
+- `SchemaType` is now public.
+  - This is helpful when using `context.getSchema()` inside of your field resolvers.
 
-- Bumped bson crate's version to 1.0.0 (see [#678](https://github.com/graphql-rust/juniper/pull/678))
+- Improved lookahead visibility for aliased fields. ([#662](https://github.com/graphql-rust/juniper/pull/662))
+
+- When enabled, the optional `bson` integration now requires `bson-1.0.0`. ([#678](https://github.com/graphql-rust/juniper/pull/678))
 
 ## Breaking Changes
 
-- `GraphQLType` trait was split into 2 traits: ([#685])
-    - object safe `GraphQLValue` trait containing resolving logic;
-    - static `GraphQLType` trait containing GraphQL type information.
+- `GraphQLType` trait was split into 2 traits: ([#685](https://github.com/graphql-rust/juniper/pull/685))
+  - object safe `GraphQLValue` trait containing resolving logic;
+  - static `GraphQLType` trait containing GraphQL type information.
 
-- `juniper::graphiql` has moved to `juniper::http::graphiql`
-  - `juniper::http::graphiql::graphiql_source` now requies a second parameter for subscriptions
+- `juniper::graphiql` has moved to `juniper::http::graphiql`.
+  - `juniper::http::graphiql::graphiql_source()` now requires a second parameter for subscriptions.
+  
+- Renamed the `object` proc macro to `graphql_object`.
+- Removed the `graphql_object!` macro. Use the `#[graphql_object]` proc macro instead.
 
-- remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
+- Renamed the `scalar` proc macro to `graphql_scalar`.
+- Removed the `graphql_scalar!` macro. Use the `#[graphql_scalar]` proc macro instead.
 
-- remove old `graphql_scalar!` macro, rename `scalar` proc macro to `graphql_scalar`
+- Removed the deprecated `ScalarValue` custom derive. Use `GraphQLScalarValue` instead.
 
-- Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
+- Removed the `graphql_union!` macro. Use the `#[graphql_union]` proc macro or custom resolvers for the `#[derive(GraphQLUnion)]` instead.
 
-- `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro and custom resolvers for the `#[derive(GraphQLUnion)]` macro.
-- The `#[derive(GraphQLUnion)]` macro doesn't generate `From` impls for enum variants anymore. Consider using the [`derive_more`](https//docs.rs/derive_more) crate directly ([#666]).
+- The `#[derive(GraphQLUnion)]` macro no longer generates `From` impls for enum variants. ([#666](https://github.com/graphql-rust/juniper/pull/666))
+  - Consider using the [`derive_more`](https//docs.rs/derive_more) crate directly.
 
-- `ScalarRefValue` trait removed. Trait was not required.
+- The `ScalarRefValue` trait has been removed as it was not required.
 
-- Changed return type of GraphQLType::resolve to `ExecutionResult`
-  This was done to unify the return type of all resolver methods
-  The previous `Value` return type was just an internal artifact of 
+- Prefixing variables or fields with an underscore now matches Rust's behavior. ([#684](https://github.com/graphql-rust/juniper/pull/684))
+
+- The return type of `GraphQLType::resolve()` has been changed to `ExecutionResult`.
+  - This was done to unify the return type of all resolver methods. The previous `Value` return type was just an internal artifact of 
   error handling.
   
 - Subscription-related: 
-  add subscription type to `RootNode`,
-  add subscription endpoint to `playground_source()`
+  - Add subscription type to `RootNode`.
+  - Add subscription endpoint to `playground_source()`.
+  - Add subscription endpoint to `graphiql_source()`.
 
-- Putting a scalar type into a string is not allowed anymore, e.g.
-  `#[graphql(scalar = "DefaultScalarValue")]`. Only
-  `#[derive(GraphQLInputObject)]` supported this syntax. The
-  refactoring of GraphQLInputObject allowed to drop the support
-  (see [#631](https://github.com/graphql-rust/juniper/pull/631)).
-
-- Support for renaming arguments within an GraphQL object
-  `#[graphql(arguments(argA(name = "test")))]`
-  (see [#631](https://github.com/graphql-rust/juniper/pull/631))
+- Specifying a scalar type via a string is no longer supported. ([#631](https://github.com/graphql-rust/juniper/pull/631))
+  - For example, instead of `#[graphql(scalar = "DefaultScalarValue")]` use `#[graphql(scalar = DefaultScalarValue)]`. *Note the lack of quotes*.
 
 - Integration tests:
-  Rename `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`
-  and add support for `application/graphql` POST request.
+  - Renamed `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`.
+  - Added support for `application/graphql` POST request.
 
-- When using LookAheadMethods to access child selections, children are always found using their alias if it exists rather than their name (see [#662](https://github.com/graphql-rust/juniper/pull/662)). These methods are also deprecated in favour of the new `children` method.
-
-[#666]: https://github.com/graphql-rust/juniper/pull/666
-[#685]: https://github.com/graphql-rust/juniper/pull/685
+- When using `LookAheadMethods` to access child selections, children are always found using their alias if it exists rather than their name. ([#662](https://github.com/graphql-rust/juniper/pull/662))
+  - These methods are also deprecated in favor of the new `LookAheadMethods::children()` method.
 
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 
