@@ -414,11 +414,6 @@ impl ToTokens for UnionDefinition {
             .as_ref()
             .map(|scl| quote! { #scl })
             .unwrap_or_else(|| quote! { __S });
-        let default_scalar = self
-            .scalar
-            .as_ref()
-            .map(|scl| quote! { #scl })
-            .unwrap_or_else(|| quote! { #crate_path::DefaultScalarValue });
 
         let description = self
             .description
@@ -495,13 +490,10 @@ impl ToTokens for UnionDefinition {
 
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let mut base_generics = self.generics.clone();
+        let mut ext_generics = self.generics.clone();
         if self.is_trait_object {
-            base_generics.params.push(parse_quote! { '__obj });
+            ext_generics.params.push(parse_quote! { '__obj });
         }
-        let (impl_generics, _, _) = base_generics.split_for_impl();
-
-        let mut ext_generics = base_generics.clone();
         if self.scalar.is_none() {
             ext_generics.params.push(parse_quote! { #scalar });
             ext_generics
@@ -631,13 +623,13 @@ impl ToTokens for UnionDefinition {
 
         let union_impl = quote! {
             #[automatically_derived]
-            impl#impl_generics #crate_path::marker::GraphQLUnion for #ty_full {
+            impl#ext_impl_generics #crate_path::marker::GraphQLUnion<#scalar> for #ty_full
+                #where_clause
+            {
                 fn mark() {
                     #all_variants_unique
 
-                    #( <#var_types as #crate_path::marker::GraphQLObjectType<
-                        #default_scalar,
-                    >>::mark(); )*
+                    #( <#var_types as #crate_path::marker::GraphQLObjectType<#scalar>>::mark(); )*
                 }
             }
         };

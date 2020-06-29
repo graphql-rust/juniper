@@ -325,25 +325,15 @@ where
     }
 }
 
-use rocket::futures::future::BoxFuture;
-
-impl<'r> Responder<'r> for GraphQLResponse {
-    fn respond_to<'a, 'x>(self, _req: &'r Request<'a>) -> BoxFuture<'x, response::Result<'r>>
-    where
-        'a: 'x,
-        'r: 'x,
-        Self: 'x,
-    {
+impl<'r, 'o: 'r> Responder<'r, 'o> for GraphQLResponse {
+    fn respond_to(self, _req: &'r Request<'_>) -> response::Result<'o> {
         let GraphQLResponse(status, body) = self;
 
-        Box::pin(async move {
-            Ok(Response::build()
-                .header(ContentType::new("application", "json"))
-                .status(status)
-                .sized_body(Cursor::new(body))
-                .await
-                .finalize())
-        })
+        Response::build()
+            .header(ContentType::new("application", "json"))
+            .status(status)
+            .sized_body(body.len(), Cursor::new(body))
+            .ok()
     }
 }
 
@@ -528,10 +518,10 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_rocket_integration() {
+    #[tokio::test]
+    async fn test_rocket_integration() {
         let rocket = make_rocket();
-        let client = Client::new(rocket).expect("valid rocket");
+        let client = Client::new(rocket).await.expect("valid rocket");
         let integration = TestRocketIntegration { client };
 
         http_tests::run_http_test_suite(&integration);
@@ -551,7 +541,7 @@ mod tests {
 
         let rocket = make_rocket_without_routes()
             .mount("/", routes![post_graphql_assert_operation_name_handler]);
-        let client = Client::new(rocket).expect("valid rocket");
+        let client = Client::new(rocket).await.expect("valid rocket");
 
         let resp = client
             .post("/")
@@ -583,14 +573,13 @@ mod tests {
             .expect("No content type header from handler")
             .to_string();
         let body = response
-            .body()
-            .expect("No body returned from GraphQL handler")
-            .into_string()
-            .await;
+            .body_string()
+            .await
+            .expect("No body returned from GraphQL handler");
 
         http_tests::TestResponse {
             status_code,
-            body,
+            body: Some(body),
             content_type,
         }
     }

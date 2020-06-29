@@ -25,7 +25,7 @@ use juniper::{
 /// - handles subscription start
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -40,7 +40,7 @@ where
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
     Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -187,8 +187,8 @@ where
                 ready_vec.push(None);
             }
 
-            let stream = futures::stream::poll_fn(
-                move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
+            let stream =
+                futures::stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'a, S>>> {
                     let mut obj_iterator = object.iter_mut();
 
                     // Due to having to modify `ready_vec` contents (by-move pattern)
@@ -246,8 +246,7 @@ where
                     } else {
                         Poll::Pending
                     }
-                },
-            );
+                });
 
             Box::pin(stream)
         }
