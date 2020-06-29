@@ -22,7 +22,7 @@ use crate::{
         },
         model::{RootNode, SchemaType, TypeType},
     },
-    types::{base::GraphQLType, name::Name},
+    types::{async_await::GraphQLTypeAsync, base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
     GraphQLError,
 };
@@ -422,9 +422,9 @@ where
     /// Resolve a single arbitrary value into an `ExecutionResult`
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+        T: GraphQLTypeAsync<S, Context = CtxT> + ?Sized,
+        T::TypeInfo: Sync,
+        CtxT: Sync,
         S: Send + Sync,
     {
         value
@@ -439,10 +439,10 @@ where
         value: &T,
     ) -> ExecutionResult<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = NewCtxT> + Send + Sync,
-        T::TypeInfo: Send + Sync,
+        T: GraphQLTypeAsync<S, Context = NewCtxT>,
+        T::TypeInfo: Sync,
+        NewCtxT: FromContext<CtxT> + Sync,
         S: Send + Sync,
-        NewCtxT: FromContext<CtxT> + Send + Sync,
     {
         let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
         e.resolve_async(info, value).await
@@ -469,9 +469,9 @@ where
     /// If the field fails to resolve, `null` will be returned.
     pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+        T: GraphQLTypeAsync<S, Context = CtxT> + ?Sized,
+        T::TypeInfo: Sync,
+        CtxT: Sync,
         S: Send + Sync,
     {
         self.resolve_async(info, value).await.unwrap_or_else(|e| {
@@ -850,14 +850,14 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync,
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
+    S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
@@ -997,14 +997,14 @@ where
     'r: 'exec_ref,
     'd: 'r,
     'op: 'd,
-    S: ScalarValue + Send + Sync,
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
     SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'r,
+    S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type != OperationType::Subscription {
         return Err(GraphQLError::NotSubscription);

@@ -277,14 +277,14 @@ pub async fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
+    S: ScalarValue + Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
 
@@ -321,14 +321,14 @@ pub async fn resolve_into_stream<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     context: &'a CtxT,
 ) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
+    S: ScalarValue + Send + Sync,
 {
     let document: crate::ast::Document<'a, S> =
         parse_document_source(document_source, &root_node.schema)?;

@@ -1,7 +1,10 @@
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
-    types::base::{Arguments, GraphQLType, TypeKind},
+    types::{
+        async_await::GraphQLTypeAsync,
+        base::{Arguments, GraphQLType, TypeKind},
+    },
     value::{ScalarValue, Value},
 };
 
@@ -77,17 +80,17 @@ where
     }
 }
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLTypeAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    S: ScalarValue + Send + Sync,
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
-    MutationT::TypeInfo: Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'a,
+    S: ScalarValue + Send + Sync,
 {
     fn resolve_field_async<'b>(
         &'b self,

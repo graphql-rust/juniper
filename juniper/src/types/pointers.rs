@@ -14,8 +14,8 @@ use crate::{
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where
-    S: ScalarValue,
     T: GraphQLType<S, Context = CtxT> + ?Sized,
+    S: ScalarValue,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -61,12 +61,12 @@ where
     }
 }
 
-impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Box<T>
+impl<S, T, CtxT> GraphQLTypeAsync<S> for Box<T>
 where
     T: GraphQLTypeAsync<S, Context = CtxT> + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
@@ -103,8 +103,8 @@ where
 
 impl<'e, S, T, CtxT> GraphQLType<S> for &'e T
 where
-    S: ScalarValue,
     T: GraphQLType<S, Context = CtxT> + ?Sized,
+    S: ScalarValue,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -152,10 +152,10 @@ where
 
 impl<'e, S, T> GraphQLTypeAsync<S> for &'e T
 where
-    S: ScalarValue + Send + Sync,
     T: GraphQLTypeAsync<S> + ?Sized,
-    T::TypeInfo: Send + Sync,
-    T::Context: Send + Sync,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
+    S: ScalarValue + Send + Sync,
 {
     fn resolve_field_async<'b>(
         &'b self,
@@ -238,10 +238,10 @@ where
 
 impl<'e, S, T> GraphQLTypeAsync<S> for Arc<T>
 where
+    T: GraphQLTypeAsync<S> + Send + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    T: GraphQLTypeAsync<S> + ?Sized,
-    <T as GraphQLType<S>>::TypeInfo: Send + Sync,
-    <T as GraphQLType<S>>::Context: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,

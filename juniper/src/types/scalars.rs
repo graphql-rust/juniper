@@ -1,12 +1,13 @@
-use serde::{Deserialize, Serialize};
 use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
+
+use serde::{Deserialize, Serialize};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
-    types::base::GraphQLType,
+    types::{async_await::GraphQLTypeAsync, base::GraphQLType},
     value::{ParseScalarResult, ScalarValue, Value},
 };
 
@@ -220,7 +221,7 @@ where
     }
 }
 
-impl<S> crate::GraphQLTypeAsync<S> for str
+impl<S> GraphQLTypeAsync<S> for str
 where
     S: ScalarValue + Send + Sync,
 {
@@ -360,13 +361,12 @@ where
     }
 }
 
-impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
+impl<S, T> GraphQLTypeAsync<S> for EmptyMutation<T>
 where
+    Self: GraphQLType<S> + Sync,
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
     S: ScalarValue + Send + Sync,
-    Self: GraphQLType<S> + Send + Sync,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
-    T: Send + Sync,
 {
 }
 

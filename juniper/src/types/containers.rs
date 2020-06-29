@@ -41,9 +41,9 @@ where
 impl<S, T, CtxT> GraphQLTypeAsync<S> for Option<T>
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
+    T::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
@@ -52,8 +52,8 @@ where
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = async move {
-            let value = match *self {
-                Some(ref obj) => executor.resolve_into_value_async(info, obj).await,
+            let value = match self {
+                Some(obj) => executor.resolve_into_value_async(info, obj).await,
                 None => Value::null(),
             };
             Ok(value)
@@ -120,9 +120,9 @@ where
 impl<S, T, CtxT> GraphQLTypeAsync<S> for Vec<T>
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
+    T::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
@@ -199,9 +199,9 @@ where
 impl<S, T, CtxT> GraphQLTypeAsync<S> for [T]
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
+    T::TypeInfo: Sync,
+    CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
@@ -259,11 +259,11 @@ async fn resolve_into_list_async<'a, 't, S, T, I>(
     items: I,
 ) -> ExecutionResult<S>
 where
-    S: ScalarValue + Send + Sync,
     I: Iterator<Item = &'t T> + ExactSizeIterator,
     T: GraphQLTypeAsync<S> + ?Sized + 't,
-    T::TypeInfo: Send + Sync,
-    T::Context: Send + Sync,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
+    S: ScalarValue + Send + Sync,
 {
     use futures::stream::{FuturesOrdered, StreamExt as _};
     use std::iter::FromIterator;
@@ -274,7 +274,7 @@ where
         .expect("Current type is not a list type")
         .is_non_null();
 
-    let iter = items.map(|item| async move { executor.resolve_into_value_async(info, item).await });
+    let iter = items.map(|it| async move { executor.resolve_into_value_async(info, it).await });
     let mut futures = FuturesOrdered::from_iter(iter);
 
     let mut values = Vec::with_capacity(futures.len());
