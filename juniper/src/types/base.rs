@@ -14,7 +14,7 @@ use crate::{
 /// The GraphQL specification defines a number of type kinds - the meta type\
 /// of a type.
 #[derive(Clone, Eq, PartialEq, Debug, GraphQLEnum)]
-#[graphql(name = "__TypeKind")]
+#[graphql(name = "__TypeKind", internal)]
 pub enum TypeKind {
     /// ## Scalar types
     ///

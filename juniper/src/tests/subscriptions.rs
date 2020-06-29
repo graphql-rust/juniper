@@ -4,7 +4,7 @@ use futures::{self, StreamExt as _};
 
 use crate::{
     http::GraphQLRequest, Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError,
-    Object, RootNode, Value,
+    GraphQLObject, Object, RootNode, Value,
 };
 
 #[derive(Debug, Clone)]
