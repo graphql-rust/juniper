@@ -1,15 +1,15 @@
 use indexmap::IndexMap;
 
 use crate::{
-    GraphQLEnum, GraphQLInputObject,
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
     schema::{
         meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta},
         model::SchemaType,
     },
     types::scalars::{EmptyMutation, EmptySubscription},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
+    GraphQLEnum, GraphQLInputObject,
 };
 
 #[derive(GraphQLEnum)]

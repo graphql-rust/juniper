@@ -17,7 +17,7 @@ use syn::{
     MetaNameValue, NestedMeta, Token,
 };
 
-pub use self::option_ext::OptionExt as _;
+pub use self::option_ext::OptionExt;
 
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.
@@ -1172,10 +1172,8 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        let resolve_matches_async = self.fields
-            .iter()
-            .filter(|field| field.is_async)
-            .map(|field| {
+        let resolve_matches_async = self.fields.iter().filter(|field| field.is_async).map(
+            |field| {
                 let name = &field.name;
                 let code = &field.resolver_code;
 
@@ -1218,8 +1216,8 @@ impl GraphQLTypeDefiniton {
                         })
                     }
                 )
-
-            });
+            },
+        );
 
         let graphql_implementation = quote!(
             impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #type_generics_tokens

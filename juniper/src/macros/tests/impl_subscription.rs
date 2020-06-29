@@ -62,7 +62,7 @@ struct Subscription {
     b: bool,
 }
 
-#[crate::graphql_subscription_internal(
+#[crate::graphql_subscription(
     scalar = crate::DefaultScalarValue,
     name = "Subscription",
     context = Context,

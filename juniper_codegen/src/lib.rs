@@ -448,21 +448,6 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
     TokenStream::from(impl_object::build_subscription(
         args,
         input,
-        false,
-        GraphQLScope::ImplObject,
-    ))
-}
-
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_object::build_subscription(
-        args,
-        input,
-        true,
         GraphQLScope::ImplObject,
     ))
 }

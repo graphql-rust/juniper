@@ -131,12 +131,6 @@ pub use juniper_codegen::{
     graphql_object, graphql_scalar, graphql_subscription, graphql_union, GraphQLEnum,
     GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
 };
-// Internal macros are not exported,
-// but declared at the root to make them easier to use.
-#[allow(unused_imports)]
-use juniper_codegen::{
-    graphql_subscription_internal,
-};
 
 #[macro_use]
 mod value;

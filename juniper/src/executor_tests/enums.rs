@@ -6,8 +6,8 @@ use crate::{
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object, Value},
-    GraphQLError::ValidationError,
     GraphQLEnum,
+    GraphQLError::ValidationError,
 };
 
 #[derive(GraphQLEnum, Debug)]

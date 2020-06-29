@@ -8,7 +8,8 @@ use crate::{
     },
     types::{base::GraphQLType, scalars::ID},
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
-    value::ScalarValue, GraphQLInputObject,
+    value::ScalarValue,
+    GraphQLInputObject,
 };
 
 struct Being;

@@ -7,10 +7,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
-pub fn impl_input_object(
-    ast: syn::DeriveInput,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
+pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
     let ast_span = ast.span();
     let fields = match ast.data {
         Data::Struct(data) => match data.fields {

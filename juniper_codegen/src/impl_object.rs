@@ -9,11 +9,7 @@ use quote::quote;
 use syn::{ext::IdentExt, spanned::Spanned};
 
 /// Generate code for the juniper::graphql_object macro.
-pub fn build_object(
-    args: TokenStream,
-    body: TokenStream,
-    error: GraphQLScope,
-) -> TokenStream {
+pub fn build_object(args: TokenStream, body: TokenStream, error: GraphQLScope) -> TokenStream {
     let definition = match create(args, body, error) {
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
@@ -25,18 +21,13 @@ pub fn build_object(
 pub fn build_subscription(
     args: TokenStream,
     body: TokenStream,
-    is_internal: bool,
     error: GraphQLScope,
 ) -> TokenStream {
-    let definition = match create(args, body, is_internal, error) {
+    let definition = match create(args, body, error) {
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
     };
-
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition
-        .into_subscription_tokens(juniper_crate_name)
-        .into()
+    definition.into_subscription_tokens().into()
 }
 
 fn create(

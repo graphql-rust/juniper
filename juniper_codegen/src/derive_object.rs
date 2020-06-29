@@ -6,10 +6,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
-pub fn build_derive_object(
-    ast: syn::DeriveInput,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
+pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
     let ast_span = ast.span();
     let struct_fields = match ast.data {
         Data::Struct(data) => match data.fields {

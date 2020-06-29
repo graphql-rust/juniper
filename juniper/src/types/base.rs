@@ -1,12 +1,12 @@
 use indexmap::IndexMap;
 
 use crate::{
-    GraphQLEnum,
     ast::{Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
+    GraphQLEnum,
 };
 
 /// GraphQL type kind

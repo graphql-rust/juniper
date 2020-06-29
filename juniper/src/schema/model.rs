@@ -5,12 +5,12 @@ use fnv::FnvHashMap;
 use graphql_parser::schema::Document;
 
 use crate::{
-    GraphQLEnum,
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
+    GraphQLEnum,
 };
 
 #[cfg(feature = "graphql-parser-integration")]

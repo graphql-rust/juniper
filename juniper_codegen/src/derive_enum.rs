@@ -7,10 +7,7 @@ use crate::{
     util::{self, span_container::SpanContainer},
 };
 
-pub fn impl_enum(
-    ast: syn::DeriveInput,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
+pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
     let ast_span = ast.span();
 
     if !ast.generics.params.is_empty() {
