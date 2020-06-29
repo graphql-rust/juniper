@@ -1,5 +1,3 @@
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
     ast::InputValue,
     executor::Variables,
@@ -9,6 +7,7 @@ use crate::{
     validation::RuleError,
     value::{DefaultScalarValue, Object, Value},
     GraphQLError::ValidationError,
+    GraphQLEnum,
 };
 
 #[derive(GraphQLEnum, Debug)]

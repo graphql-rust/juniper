@@ -1,10 +1,11 @@
 use indexmap::IndexMap;
 
 use juniper_codegen::{
-    GraphQLEnumInternal as GraphQLEnum, GraphQLInputObjectInternal as GraphQLInputObject,
+    GraphQLInputObjectInternal as GraphQLInputObject,
 };
 
 use crate::{
+    GraphQLEnum,
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue},

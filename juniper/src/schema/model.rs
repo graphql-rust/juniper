@@ -4,9 +4,8 @@ use fnv::FnvHashMap;
 #[cfg(feature = "graphql-parser-integration")]
 use graphql_parser::schema::Document;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
+    GraphQLEnum,
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
@@ -75,7 +74,7 @@ pub struct DirectiveType<'a, S> {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
-#[graphql(name = "__DirectiveLocation")]
+#[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
     Query,
     Mutation,

@@ -1,8 +1,7 @@
 use indexmap::IndexMap;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
+    GraphQLEnum,
     ast::{Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,

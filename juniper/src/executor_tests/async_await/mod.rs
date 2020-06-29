@@ -1,6 +1,6 @@
 use crate::{EmptyMutation, RootNode, Value};
 
-#[derive(crate::GraphQLEnumInternal)]
+#[derive(crate::GraphQLEnum)]
 enum UserKind {
     Admin,
     User,

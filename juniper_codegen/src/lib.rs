@@ -29,19 +29,7 @@ use result::GraphQLScope;
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, false, GraphQLScope::DeriveEnum);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLEnumInternal, attributes(graphql))]
-#[doc(hidden)]
-pub fn derive_enum_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, true, GraphQLScope::DeriveEnum);
+    let gen = derive_enum::impl_enum(ast, GraphQLScope::DeriveEnum);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),

@@ -1,10 +1,9 @@
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
     executor::Variables,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
+    GraphQLEnum,
 };
 
 /*
