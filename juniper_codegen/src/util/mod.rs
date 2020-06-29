@@ -467,6 +467,7 @@ enum FieldAttribute {
     Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
     Default(SpanContainer<Option<syn::Expr>>),
+    IsInternal,
 }
 
 impl parse::Parse for FieldAttribute {
@@ -541,6 +542,7 @@ impl parse::Parse for FieldAttribute {
 
                 Ok(FieldAttribute::Default(default_expr))
             }
+            "internal" => Ok(FieldAttribute::IsInternal),
             _ => Err(syn::Error::new(ident.span(), "unknown attribute")),
         }
     }
@@ -557,20 +559,16 @@ pub struct FieldAttributes {
     pub arguments: HashMap<String, FieldAttributeArgument>,
     /// Only relevant for object input objects.
     pub default: Option<SpanContainer<Option<syn::Expr>>>,
+    /// Indicator whether the generated code is intended to be used only inside the `juniper`
+    /// library.
+    pub is_internal: bool,
 }
 
 impl parse::Parse for FieldAttributes {
     fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
         let items = Punctuated::<FieldAttribute, Token![,]>::parse_terminated(&input)?;
 
-        let mut output = Self {
-            name: None,
-            description: None,
-            deprecation: None,
-            skip: None,
-            arguments: Default::default(),
-            default: None,
-        };
+        let mut output = Self::default();
 
         for item in items {
             match item {
@@ -591,6 +589,9 @@ impl parse::Parse for FieldAttributes {
                 }
                 FieldAttribute::Default(expr) => {
                     output.default = Some(expr);
+                }
+                FieldAttribute::IsInternal => {
+                    output.is_internal = true;
                 }
             }
         }

@@ -139,19 +139,7 @@ pub fn derive_object_internal(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_scalar_value::impl_scalar_value(&ast, false, GraphQLScope::DeriveScalar);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLScalarValueInternal)]
-#[doc(hidden)]
-pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_scalar_value::impl_scalar_value(&ast, true, GraphQLScope::DeriveScalar);
+    let gen = derive_scalar_value::impl_scalar_value(&ast, GraphQLScope::DeriveScalar);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -495,21 +483,7 @@ pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenSt
 pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
-    let gen = impl_scalar::build_scalar(args, input, false, GraphQLScope::ImplScalar);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-/// A proc macro for defining a GraphQL scalar.
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_scalar_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    let gen = impl_scalar::build_scalar(args, input, true, GraphQLScope::ImplScalar);
+    let gen = impl_scalar::build_scalar(args, input, GraphQLScope::ImplScalar);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),

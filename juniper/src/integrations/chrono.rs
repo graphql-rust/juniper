@@ -27,7 +27,7 @@ use crate::{
 #[doc(hidden)]
 pub static RFC3339_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.f%:z";
 
-#[crate::graphql_scalar_internal(name = "DateTimeFixedOffset", description = "DateTime")]
+#[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime")]
 impl<S> GraphQLScalar for DateTime<FixedOffset>
 where
     S: ScalarValue,
@@ -50,7 +50,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "DateTimeUtc", description = "DateTime")]
+#[crate::graphql_scalar(name = "DateTimeUtc", description = "DateTime")]
 impl<S> GraphQLScalar for DateTime<Utc>
 where
     S: ScalarValue,
@@ -78,7 +78,7 @@ where
 // inherent lack of precision required for the time zone resolution.
 // For serialization and deserialization uses, it is best to use
 // `NaiveDate` instead."
-#[crate::graphql_scalar_internal(description = "NaiveDate")]
+#[crate::graphql_scalar(description = "NaiveDate")]
 impl<S> GraphQLScalar for NaiveDate
 where
     S: ScalarValue,
@@ -102,7 +102,7 @@ where
 }
 
 #[cfg(feature = "scalar-naivetime")]
-#[crate::graphql_scalar_internal(description = "NaiveTime")]
+#[crate::graphql_scalar(description = "NaiveTime")]
 impl<S> GraphQLScalar for NaiveTime
 where
     S: ScalarValue,
@@ -127,7 +127,7 @@ where
 
 // JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
 // datetimes. Values will be truncated to microsecond resolution.
-#[crate::graphql_scalar_internal(description = "NaiveDateTime")]
+#[crate::graphql_scalar(description = "NaiveDateTime")]
 impl<S> GraphQLScalar for NaiveDateTime
 where
     S: ScalarValue,

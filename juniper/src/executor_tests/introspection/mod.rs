@@ -27,7 +27,7 @@ struct Interface;
 
 struct Root;
 
-#[crate::graphql_scalar_internal(name = "SampleScalar")]
+#[crate::graphql_scalar(name = "SampleScalar")]
 impl GraphQLScalar for Scalar {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)

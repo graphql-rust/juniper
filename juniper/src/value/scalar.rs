@@ -1,7 +1,11 @@
-use crate::parser::{ParseError, ScalarToken};
-use juniper_codegen::GraphQLScalarValueInternal as GraphQLScalarValue;
+use std::fmt;
+
 use serde::{de, ser::Serialize};
-use std::fmt::{self, Debug, Display};
+
+use crate::{
+    parser::{ParseError, ScalarToken},
+    GraphQLScalarValue,
+};
 
 /// The result of converting a string into a scalar value
 pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;
@@ -164,7 +168,15 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # fn main() {}
 /// ```
 pub trait ScalarValue:
-    Debug + Display + PartialEq + Clone + Serialize + From<String> + From<bool> + From<i32> + From<f64>
+    fmt::Debug
+    + fmt::Display
+    + PartialEq
+    + Clone
+    + Serialize
+    + From<String>
+    + From<bool>
+    + From<i32>
+    + From<f64>
 {
     /// Serde visitor used to deserialize this scalar value
     type Visitor: for<'de> de::Visitor<'de, Value = Self> + Default;

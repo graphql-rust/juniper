@@ -16,7 +16,7 @@ struct TestComplexScalar;
 
 struct TestType;
 
-#[crate::graphql_scalar_internal]
+#[crate::graphql_scalar]
 impl GraphQLScalar for TestComplexScalar {
     fn resolve(&self) -> Value {
         Value::scalar(String::from("SerializedValue"))
