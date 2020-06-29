@@ -20,6 +20,7 @@ mod impl_object;
 mod impl_scalar;
 
 mod graphql_union;
+mod graphql_interface;
 
 use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
@@ -544,6 +545,14 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
         true,
         GraphQLScope::ImplObject,
     ))
+}
+
+#[proc_macro_error]
+#[proc_macro_attribute]
+pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
+    self::graphql_interface::attr::expand(attr.into(), body.into(), Mode::Public)
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[derive(GraphQLUnion)]` macro for deriving a [GraphQL union][1] implementation for enums and

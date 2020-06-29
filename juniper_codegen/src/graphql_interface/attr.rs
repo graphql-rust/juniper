@@ -1,0 +1,1 @@
+//! Code generation for `#[graphql_interface]` macro.
