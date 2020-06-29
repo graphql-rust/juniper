@@ -1,5 +1,3 @@
-use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
-
 use crate::{
     ast::{FromInputValue, InputValue},
     executor::Registry,
@@ -10,7 +8,7 @@ use crate::{
     },
     types::{base::GraphQLType, scalars::ID},
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
-    value::ScalarValue,
+    value::ScalarValue, GraphQLInputObject,
 };
 
 struct Being;

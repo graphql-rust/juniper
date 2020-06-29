@@ -136,7 +136,6 @@ pub use juniper_codegen::{
 #[allow(unused_imports)]
 use juniper_codegen::{
     graphql_object_internal, graphql_subscription_internal,
-    GraphQLInputObjectInternal,
 };
 
 #[macro_use]

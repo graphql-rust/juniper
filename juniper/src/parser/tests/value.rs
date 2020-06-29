@@ -1,17 +1,10 @@
 use indexmap::IndexMap;
 
-use juniper_codegen::{
-    GraphQLInputObjectInternal as GraphQLInputObject,
-};
-
 use crate::{
-    GraphQLEnum,
+    GraphQLEnum, GraphQLInputObject,
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
-};
-
-use crate::{
     schema::{
         meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta},
         model::SchemaType,

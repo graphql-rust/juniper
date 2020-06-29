@@ -40,19 +40,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(ast, false, GraphQLScope::DeriveInputObject);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLInputObjectInternal, attributes(graphql))]
-#[doc(hidden)]
-pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(ast, true, GraphQLScope::DeriveInputObject);
+    let gen = derive_input_object::impl_input_object(ast, GraphQLScope::DeriveInputObject);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),

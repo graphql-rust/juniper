@@ -1,8 +1,7 @@
 #![deny(unused_variables)]
 
-use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
-
 use crate::{
+    GraphQLInputObject,
     ast::{FromInputValue, InputValue},
     executor::Variables,
     schema::model::RootNode,

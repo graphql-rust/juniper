@@ -1,5 +1,3 @@
-use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
-
 use crate::{
     ast::InputValue,
     executor::Variables,
@@ -9,6 +7,7 @@ use crate::{
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
     GraphQLError::ValidationError,
+    GraphQLInputObject,
 };
 
 #[derive(Debug)]
