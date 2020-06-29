@@ -252,10 +252,10 @@ pub fn build_scalar(
     let _async = quote!(
         impl#async_generic_type_decl #crate_name::GraphQLTypeAsync<#async_generic_type> for #impl_for_type
         where
+            Self: #crate_name::GraphQLType<#async_generic_type> + Sync,
+            Self::Context: Sync,
+            Self::TypeInfo: Sync,
             #async_generic_type: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<#async_generic_type> + Send + Sync,
-            Self::Context: Send + Sync,
-            Self::TypeInfo: Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,

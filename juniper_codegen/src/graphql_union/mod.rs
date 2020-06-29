@@ -505,9 +505,7 @@ impl ToTokens for UnionDefinition {
         let mut where_async = where_clause
             .cloned()
             .unwrap_or_else(|| parse_quote! { where });
-        where_async
-            .predicates
-            .push(parse_quote! { Self: Send + Sync });
+        where_async.predicates.push(parse_quote! { Self: Sync });
         if self.scalar.is_none() {
             where_async
                 .predicates

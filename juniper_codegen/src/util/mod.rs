@@ -944,7 +944,7 @@ impl GraphQLTypeDefiniton {
             where_async
                 .predicates
                 .push(parse_quote!( #scalar: Send + Sync ));
-            where_async.predicates.push(parse_quote!(Self: Send + Sync));
+            where_async.predicates.push(parse_quote!(Self: Sync));
 
             // FIXME: add where clause for interfaces.
 
@@ -1435,7 +1435,7 @@ impl GraphQLTypeDefiniton {
         where_async
             .predicates
             .push(parse_quote!( #scalar: Send + Sync ));
-        where_async.predicates.push(parse_quote!(Self: Send + Sync));
+        where_async.predicates.push(parse_quote!(Self: Sync));
 
         let _async = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty
@@ -1682,7 +1682,7 @@ impl GraphQLTypeDefiniton {
         where_async
             .predicates
             .push(parse_quote!( #scalar: Send + Sync ));
-        where_async.predicates.push(parse_quote!(Self: Send + Sync));
+        where_async.predicates.push(parse_quote!(Self: Sync));
 
         let async_type = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens

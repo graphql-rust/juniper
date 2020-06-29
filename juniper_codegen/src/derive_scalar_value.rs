@@ -115,10 +115,10 @@ fn impl_scalar_struct(
 
         impl <__S> #crate_name::GraphQLTypeAsync<__S> for #ident
         where
+            Self: #crate_name::GraphQLType<__S> + Sync,
+            Self::Context: Sync,
+            Self::TypeInfo: Sync,
             __S: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<__S> + Send + Sync,
-            Self::Context: Send + Sync,
-            Self::TypeInfo: Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,
