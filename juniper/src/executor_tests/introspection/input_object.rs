@@ -82,7 +82,7 @@ struct FieldWithDefaults {
     field_two: i32,
 }
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl Root {
     fn test_field(
         a1: DefaultName,

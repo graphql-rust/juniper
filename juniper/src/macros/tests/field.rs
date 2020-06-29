@@ -22,7 +22,7 @@ Syntax to validate:
 
 */
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     interfaces = [&Interface],
 )]
 impl Root {

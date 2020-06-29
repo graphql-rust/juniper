@@ -33,7 +33,7 @@ graphql_interface!(<'a> &'a dyn Character: Database as "Character" |&self| {
     }
 });
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
     interfaces = [&dyn Character],
@@ -68,7 +68,7 @@ impl<'a> &'a dyn Human {
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
     interfaces = [&dyn Character],
@@ -105,7 +105,7 @@ impl<'a> &'a dyn Droid {
 
 pub struct Query;
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
     // FIXME: make async work

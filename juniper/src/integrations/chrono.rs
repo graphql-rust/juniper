@@ -262,7 +262,7 @@ mod integration_test {
     async fn test_serialization() {
         struct Root;
 
-        #[crate::graphql_object_internal]
+        #[crate::graphql_object]
         #[cfg(feature = "scalar-naivetime")]
         impl Root {
             fn exampleNaiveDate() -> NaiveDate {
@@ -282,7 +282,7 @@ mod integration_test {
             }
         }
 
-        #[crate::graphql_object_internal]
+        #[crate::graphql_object]
         #[cfg(not(feature = "scalar-naivetime"))]
         impl Root {
             fn exampleNaiveDate() -> NaiveDate {

@@ -14,7 +14,7 @@ struct User {
     kind: UserKind,
 }
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl User {
     async fn id(&self) -> i32 {
         self.id
@@ -46,7 +46,7 @@ impl User {
 
 struct Query;
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl Query {
     fn field_sync(&self) -> &'static str {
         "field_sync"

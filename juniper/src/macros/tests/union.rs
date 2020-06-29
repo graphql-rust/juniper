@@ -14,7 +14,7 @@ use std::marker::PhantomData;
 
 use crate::{
     ast::InputValue,
-    graphql_object_internal,
+    graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
@@ -23,7 +23,7 @@ use crate::{
 
 struct Concrete;
 
-#[graphql_object_internal]
+#[graphql_object]
 impl Concrete {
     fn simple() -> i32 {
         123
@@ -79,7 +79,7 @@ enum DescriptionFirst {
 struct Root;
 
 // FIXME: make async work
-#[crate::graphql_object_internal(noasync)]
+#[crate::graphql_object(noasync)]
 impl<'a> Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)

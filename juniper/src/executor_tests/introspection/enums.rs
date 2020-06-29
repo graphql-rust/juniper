@@ -65,7 +65,7 @@ enum EnumDeprecation {
 
 struct Root;
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName::Foo

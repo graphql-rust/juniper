@@ -12,16 +12,13 @@ use syn::{ext::IdentExt, spanned::Spanned};
 pub fn build_object(
     args: TokenStream,
     body: TokenStream,
-    is_internal: bool,
     error: GraphQLScope,
 ) -> TokenStream {
-    let definition = match create(args, body, is_internal, error) {
+    let definition = match create(args, body, error) {
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
     };
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-
-    definition.into_tokens(juniper_crate_name).into()
+    definition.into_tokens().into()
 }
 
 /// Generate code for the juniper::graphql_subscription macro.
@@ -45,7 +42,6 @@ pub fn build_subscription(
 fn create(
     args: TokenStream,
     body: TokenStream,
-    is_internal: bool,
     error: GraphQLScope,
 ) -> syn::Result<util::GraphQLTypeDefiniton> {
     let body_span = body.span();
@@ -190,7 +186,7 @@ fn create(
         None => {}
     }
 
-    if name.starts_with("__") && !is_internal {
+    if !_impl.attrs.is_internal && name.starts_with("__") {
         error.no_double_underscore(if let Some(name) = _impl.attrs.name {
             name.span_ident()
         } else {
@@ -228,7 +224,6 @@ fn create(
         include_type_generics: false,
         generic_scalar: false,
         no_async: _impl.attrs.no_async.is_some(),
-        mode: is_internal.into(),
     };
 
     Ok(definition)

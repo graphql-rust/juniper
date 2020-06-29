@@ -18,7 +18,7 @@ enum Color {
 }
 struct TestType;
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl TestType {
     fn to_string(color: Color) -> String {
         format!("Color::{:?}", color)

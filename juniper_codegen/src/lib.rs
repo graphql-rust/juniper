@@ -51,18 +51,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, false, GraphQLScope::DeriveObject);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLObjectInternal, attributes(graphql))]
-pub fn derive_object_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, true, GraphQLScope::DeriveObject);
+    let gen = derive_object::build_derive_object(ast, GraphQLScope::DeriveObject);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -385,22 +374,6 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
     TokenStream::from(impl_object::build_object(
         args,
         input,
-        false,
-        GraphQLScope::ImplObject,
-    ))
-}
-
-/// A proc macro for defining a GraphQL object.
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_object::build_object(
-        args,
-        input,
-        true,
         GraphQLScope::ImplObject,
     ))
 }

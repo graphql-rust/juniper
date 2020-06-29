@@ -39,7 +39,7 @@ mod interface {
         }
     }
 
-    #[crate::graphql_object_internal(
+    #[crate::graphql_object(
         interfaces = [&dyn Pet]
     )]
     impl Dog {
@@ -65,7 +65,7 @@ mod interface {
         }
     }
 
-    #[crate::graphql_object_internal(
+    #[crate::graphql_object(
         interfaces = [&dyn Pet]
     )]
     impl Cat {
@@ -81,7 +81,7 @@ mod interface {
         pets: Vec<Box<dyn Pet>>,
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Schema {
         fn pets(&self) -> Vec<&dyn Pet> {
             self.pets.iter().map(|p| p.as_ref()).collect()
@@ -188,7 +188,7 @@ mod union {
         }
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Dog {
         fn name(&self) -> &str {
             &self.name
@@ -209,7 +209,7 @@ mod union {
         }
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Cat {
         fn name(&self) -> &str {
             &self.name
@@ -223,7 +223,7 @@ mod union {
         pets: Vec<Box<dyn Pet>>,
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Schema {
         fn pets(&self) -> Vec<&dyn Pet> {
             self.pets.iter().map(|p| p.as_ref()).collect()

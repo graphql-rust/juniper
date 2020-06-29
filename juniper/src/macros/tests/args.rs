@@ -29,7 +29,7 @@ struct Point {
     x: i32,
 }
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl Root {
     fn simple() -> i32 {
         0
