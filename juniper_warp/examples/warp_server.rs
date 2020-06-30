@@ -1,6 +1,6 @@
 #![deny(warnings)]
 
-extern crate log;
+use std::env;
 
 use juniper::{
     tests::{model::Database, schema::Query},
@@ -20,7 +20,7 @@ fn schema() -> Schema {
 
 #[tokio::main]
 async fn main() {
-    ::std::env::set_var("RUST_LOG", "warp_server");
+    env::set_var("RUST_LOG", "warp_server");
     env_logger::init();
 
     let log = warp::log("warp_server");
