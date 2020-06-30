@@ -101,11 +101,10 @@ fn impl_scalar_struct(
     };
 
     let _async = quote!(
-
-        impl <__S> ::juniper::GraphQLTypeAsync<__S> for #ident
+        impl <__S> ::juniper::GraphQLValueAsync<__S> for #ident
         where
             __S: ::juniper::ScalarValue + Send + Sync,
-            Self: ::juniper::GraphQLType<__S> + Send + Sync,
+            Self: Send + Sync,
             Self::Context: Send + Sync,
             Self::TypeInfo: Send + Sync,
         {
@@ -115,9 +114,8 @@ fn impl_scalar_struct(
                 selection_set: Option<&'a [::juniper::Selection<__S>]>,
                 executor: &'a ::juniper::Executor<Self::Context, __S>,
             ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<__S>> {
-                use ::juniper::GraphQLType;
                 use ::juniper::futures::future;
-                let v = self.resolve(info, selection_set, executor);
+                let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
@@ -130,10 +128,7 @@ fn impl_scalar_struct(
         where
             S: ::juniper::ScalarValue,
         {
-            type Context = ();
-            type TypeInfo = ();
-
-            fn name(_: &Self::TypeInfo) -> Option<&str> {
+            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
             }
 
@@ -148,6 +143,18 @@ fn impl_scalar_struct(
                     #description
                     .into_meta()
             }
+        }
+
+        impl<S> ::juniper::GraphQLValue<S> for #ident
+        where
+            S: ::juniper::ScalarValue,
+        {
+            type Context = ();
+            type TypeInfo = ();
+
+            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                <Self as ::juniper::GraphQLType<S>>::name(info)
+            }
 
             fn resolve(
                 &self,
@@ -155,7 +162,7 @@ fn impl_scalar_struct(
                 selection: Option<&[::juniper::Selection<S>]>,
                 executor: &::juniper::Executor<Self::Context, S>,
             ) -> ::juniper::ExecutionResult<S> {
-                ::juniper::GraphQLType::resolve(&self.0, info, selection, executor)
+                ::juniper::GraphQLValue::resolve(&self.0, info, selection, executor)
             }
         }
 
