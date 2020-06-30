@@ -5,7 +5,7 @@ use crate::{
     Value,
 };
 
-#[crate::graphql_scalar_internal(description = "Url")]
+#[crate::graphql_scalar(description = "Url")]
 impl<S> GraphQLScalar for Url
 where
     S: ScalarValue,

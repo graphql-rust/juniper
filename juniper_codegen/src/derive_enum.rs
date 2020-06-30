@@ -1,16 +1,13 @@
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::{ext::IdentExt, spanned::Spanned, Data, Fields};
+
 use crate::{
     result::{GraphQLScope, UnsupportedAttribute},
     util::{self, span_container::SpanContainer},
 };
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
-pub fn impl_enum(
-    ast: syn::DeriveInput,
-    is_internal: bool,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
+pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
     let ast_span = ast.span();
 
     if !ast.generics.params.is_empty() {
@@ -122,7 +119,7 @@ pub fn impl_enum(
         error.unsupported_attribute(scalar.span_ident(), UnsupportedAttribute::Scalar);
     }
 
-    if name.starts_with("__") && !is_internal {
+    if !attrs.is_internal && name.starts_with("__") {
         error.no_double_underscore(if let Some(name) = attrs.name {
             name.span_ident()
         } else {
@@ -145,9 +142,7 @@ pub fn impl_enum(
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
-        mode: is_internal.into(),
     };
 
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    Ok(definition.into_enum_tokens(juniper_crate_name))
+    Ok(definition.into_enum_tokens())
 }

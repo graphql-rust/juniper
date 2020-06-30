@@ -26,25 +26,11 @@ use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
 use result::GraphQLScope;
 
-use self::util::Mode;
-
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, false, GraphQLScope::DeriveEnum);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLEnumInternal, attributes(graphql))]
-#[doc(hidden)]
-pub fn derive_enum_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, true, GraphQLScope::DeriveEnum);
+    let gen = derive_enum::impl_enum(ast, GraphQLScope::DeriveEnum);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -55,19 +41,7 @@ pub fn derive_enum_internal(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(ast, false, GraphQLScope::DeriveInputObject);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLInputObjectInternal, attributes(graphql))]
-#[doc(hidden)]
-pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(ast, true, GraphQLScope::DeriveInputObject);
+    let gen = derive_input_object::impl_input_object(ast, GraphQLScope::DeriveInputObject);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -78,18 +52,7 @@ pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, false, GraphQLScope::DeriveObject);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLObjectInternal, attributes(graphql))]
-pub fn derive_object_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, true, GraphQLScope::DeriveObject);
+    let gen = derive_object::build_derive_object(ast, GraphQLScope::DeriveObject);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -142,19 +105,7 @@ pub fn derive_object_internal(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_scalar_value::impl_scalar_value(&ast, false, GraphQLScope::DeriveScalar);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLScalarValueInternal)]
-#[doc(hidden)]
-pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_scalar_value::impl_scalar_value(&ast, true, GraphQLScope::DeriveScalar);
+    let gen = derive_scalar_value::impl_scalar_value(&ast, GraphQLScope::DeriveScalar);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -424,22 +375,6 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
     TokenStream::from(impl_object::build_object(
         args,
         input,
-        false,
-        GraphQLScope::ImplObject,
-    ))
-}
-
-/// A proc macro for defining a GraphQL object.
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_object::build_object(
-        args,
-        input,
-        true,
         GraphQLScope::ImplObject,
     ))
 }
@@ -498,21 +433,7 @@ pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenSt
 pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
-    let gen = impl_scalar::build_scalar(args, input, false, GraphQLScope::ImplScalar);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-/// A proc macro for defining a GraphQL scalar.
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_scalar_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    let gen = impl_scalar::build_scalar(args, input, true, GraphQLScope::ImplScalar);
+    let gen = impl_scalar::build_scalar(args, input, GraphQLScope::ImplScalar);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -528,21 +449,6 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
     TokenStream::from(impl_object::build_subscription(
         args,
         input,
-        false,
-        GraphQLScope::ImplObject,
-    ))
-}
-
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_object::build_subscription(
-        args,
-        input,
-        true,
         GraphQLScope::ImplObject,
     ))
 }
@@ -550,7 +456,7 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_interface::attr::expand(attr.into(), body.into(), Mode::Public)
+    self::graphql_interface::attr::expand(attr.into(), body.into())
         .unwrap_or_abort()
         .into()
 }
@@ -856,16 +762,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLUnion, attributes(graphql))]
 pub fn derive_union(input: TokenStream) -> TokenStream {
-    self::graphql_union::derive::expand(input.into(), Mode::Public)
-        .unwrap_or_abort()
-        .into()
-}
-
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLUnionInternal, attributes(graphql))]
-#[doc(hidden)]
-pub fn derive_union_internal(input: TokenStream) -> TokenStream {
-    self::graphql_union::derive::expand(input.into(), Mode::Internal)
+    self::graphql_union::derive::expand(input.into())
         .unwrap_or_abort()
         .into()
 }
@@ -1155,16 +1052,7 @@ pub fn derive_union_internal(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_union(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_union::attr::expand(attr.into(), body.into(), Mode::Public)
-        .unwrap_or_abort()
-        .into()
-}
-
-#[proc_macro_error]
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn graphql_union_internal(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_union::attr::expand(attr.into(), body.into(), Mode::Internal)
+    self::graphql_union::attr::expand(attr.into(), body.into())
         .unwrap_or_abort()
         .into()
 }

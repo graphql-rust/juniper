@@ -111,25 +111,25 @@ use warp::{body, filters::BoxedFilter, header, http, query, Filter};
 ///     .and(warp::post())
 ///     .and(graphql_filter);
 /// ```
-pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
+pub fn make_graphql_filter<Query, Mutation, Subscription, CtxT, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
-    context_extractor: BoxedFilter<(Context,)>,
+    context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
     Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
     Subscription::TypeInfo: Send + Sync,
+    CtxT: Send + Sync + 'static,
+    S: ScalarValue + Send + Sync + 'static,
 {
     let schema = Arc::new(schema);
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
-    let handle_post_json_request = move |context: Context, req: GraphQLBatchRequest<S>| {
+    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest<S>| {
         let schema = post_json_schema.clone();
         async move {
             let resp = req.execute(&schema, &context).await;
@@ -150,7 +150,7 @@ where
         .and(body::json())
         .and_then(handle_post_json_request);
 
-    let handle_post_graphql_request = move |context: Context, body: Bytes| {
+    let handle_post_graphql_request = move |context: CtxT, body: Bytes| {
         let schema = post_graphql_schema.clone();
         async move {
             let query = str::from_utf8(body.as_ref()).map_err(|e| {
@@ -173,7 +173,7 @@ where
         .and(body::bytes())
         .and_then(handle_post_graphql_request);
 
-    let handle_get_request = move |context: Context, mut qry: HashMap<String, String>| {
+    let handle_get_request = move |context: CtxT, mut qry: HashMap<String, String>| {
         let schema = schema.clone();
         async move {
             let req = GraphQLRequest::new(
@@ -206,22 +206,22 @@ where
 }
 
 /// Make a synchronous filter for graphql endpoint.
-pub fn make_graphql_filter_sync<Query, Mutation, Subscription, Context, S>(
+pub fn make_graphql_filter_sync<Query, Mutation, Subscription, CtxT, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
-    context_extractor: BoxedFilter<(Context,)>,
+    context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
+    Query: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
-    Context: Send + Sync + 'static,
-    Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
     let schema = Arc::new(schema);
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
-    let handle_post_json_request = move |context: Context, req: GraphQLBatchRequest<S>| {
+    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest<S>| {
         let schema = post_json_schema.clone();
         async move {
             let res = task::spawn_blocking(move || {
@@ -243,7 +243,7 @@ where
         .and(body::json())
         .and_then(handle_post_json_request);
 
-    let handle_post_graphql_request = move |context: Context, body: Bytes| {
+    let handle_post_graphql_request = move |context: CtxT, body: Bytes| {
         let schema = post_graphql_schema.clone();
         async move {
             let res = task::spawn_blocking(move || {
@@ -270,7 +270,7 @@ where
         .and(body::bytes())
         .and_then(handle_post_graphql_request);
 
-    let handle_get_request = move |context: Context, mut qry: HashMap<String, String>| {
+    let handle_get_request = move |context: CtxT, mut qry: HashMap<String, String>| {
         let schema = schema.clone();
         async move {
             let res = task::spawn_blocking(move || {
@@ -430,21 +430,20 @@ pub mod subscriptions {
     ///  - execute subscription and return values from stream
     ///  - stop stream and close ws connection
     #[allow(dead_code)]
-    pub fn graphql_subscriptions<Query, Mutation, Subscription, Context, S>(
+    pub fn graphql_subscriptions<Query, Mutation, Subscription, CtxT, S>(
         websocket: warp::ws::WebSocket,
-        coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
-        context: Context,
+        coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, CtxT, S>>,
+        context: CtxT,
     ) -> impl Future<Output = Result<(), failure::Error>> + Send
     where
-        S: ScalarValue + Send + Sync + 'static,
-        Context: Clone + Send + Sync + 'static,
-        Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription:
-            juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
+        CtxT: Clone + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
     {
         let (sink_tx, sink_rx) = websocket.split();
         let (ws_tx, ws_rx) = mpsc::unbounded();

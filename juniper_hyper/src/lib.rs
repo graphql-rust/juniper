@@ -21,14 +21,14 @@ pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     Ok(match parse_req(req).await {
         Ok(req) => execute_request_sync(root_node, context, req).await,
@@ -42,14 +42,14 @@ pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     Ok(match parse_req(req).await {
         Ok(req) => execute_request(root_node, context, req).await,
@@ -158,14 +158,14 @@ async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     request: GraphQLBatchRequest<S>,
 ) -> Response<Body>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     let res = request.execute_sync(&*root_node, &context);
     let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
@@ -189,14 +189,14 @@ async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
     request: GraphQLBatchRequest<S>,
 ) -> Response<Body>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     let res = request.execute(&*root_node, &context).await;
     let body = Body::from(serde_json::to_string_pretty(&res).unwrap());

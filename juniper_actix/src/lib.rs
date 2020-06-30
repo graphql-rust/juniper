@@ -83,21 +83,21 @@ where
 }
 
 /// Actix Web GraphQL Handler for GET and POST requests
-pub async fn graphql_handler<Query, Mutation, Subscription, Context, S>(
+pub async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
     schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
-    context: &Context,
+    context: &CtxT,
     req: HttpRequest,
     payload: actix_web::web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-    Subscription::TypeInfo: Send + Sync,
+    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Query::TypeInfo: Sync,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Mutation::TypeInfo: Sync,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
+    Subscription::TypeInfo: Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     match *req.method() {
         Method::POST => post_graphql_handler(schema, context, req, payload).await,
@@ -108,20 +108,20 @@ where
     }
 }
 /// Actix GraphQL Handler for GET requests
-pub async fn get_graphql_handler<Query, Mutation, Subscription, Context, S>(
+pub async fn get_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
     schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
-    context: &Context,
+    context: &CtxT,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-    Subscription::TypeInfo: Send + Sync,
+    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Query::TypeInfo: Sync,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Mutation::TypeInfo: Sync,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
+    Subscription::TypeInfo: Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     let get_req = web::Query::<GetGraphQLRequest>::from_query(req.query_string())?;
     let req = GraphQLRequest::from(get_req.into_inner());
@@ -137,21 +137,21 @@ where
 }
 
 /// Actix GraphQL Handler for POST requests
-pub async fn post_graphql_handler<Query, Mutation, Subscription, Context, S>(
+pub async fn post_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
     schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
-    context: &Context,
+    context: &CtxT,
     req: HttpRequest,
     payload: actix_web::web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-    Subscription::TypeInfo: Send + Sync,
+    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Query::TypeInfo: Sync,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Mutation::TypeInfo: Sync,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
+    Subscription::TypeInfo: Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     let content_type_header = req
         .headers()

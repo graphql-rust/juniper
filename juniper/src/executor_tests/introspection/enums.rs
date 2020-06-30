@@ -1,10 +1,9 @@
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
     executor::Variables,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
+    GraphQLEnum,
 };
 
 /*
@@ -66,7 +65,7 @@ enum EnumDeprecation {
 
 struct Root;
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName::Foo

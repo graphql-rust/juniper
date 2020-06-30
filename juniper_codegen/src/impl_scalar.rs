@@ -176,7 +176,6 @@ impl syn::parse::Parse for ScalarCodegenInput {
 pub fn build_scalar(
     attributes: TokenStream,
     body: TokenStream,
-    is_internal: bool,
     error: GraphQLScope,
 ) -> syn::Result<TokenStream> {
     let body_span = body.span();
@@ -220,10 +219,6 @@ pub fn build_scalar(
         .name
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| impl_for_type.ident.to_string());
-    let crate_name = match is_internal {
-        true => quote!(crate),
-        _ => quote!(juniper),
-    };
     let description = match attrs.description {
         Some(val) => quote!(.description(#val)),
         None => quote!(),
@@ -245,27 +240,26 @@ pub fn build_scalar(
         _ => quote!(),
     };
     let generic_type_bound = match input.custom_data_type_is_struct {
-        true => quote!(where #generic_type: #crate_name::ScalarValue,),
+        true => quote!(where #generic_type: ::juniper::ScalarValue,),
         _ => quote!(),
     };
 
     let _async = quote!(
-        impl#async_generic_type_decl #crate_name::GraphQLTypeAsync<#async_generic_type> for #impl_for_type
+        impl#async_generic_type_decl ::juniper::GraphQLValueAsync<#async_generic_type> for #impl_for_type
         where
-            #async_generic_type: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<#async_generic_type> + Send + Sync,
-            Self::Context: Send + Sync,
-            Self::TypeInfo: Send + Sync,
+            Self: Sync,
+            Self::TypeInfo: Sync,
+            Self::Context: Sync,
+            #async_generic_type: ::juniper::ScalarValue + Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,
                 info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [#crate_name::Selection<#async_generic_type>]>,
-                executor: &'a #crate_name::Executor<Self::Context, #async_generic_type>,
-            ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<#async_generic_type>> {
-                use #crate_name::GraphQLType;
-                use #crate_name::futures::future;
-                let v = self.resolve(info, selection_set, executor);
+                selection_set: Option<&'a [::juniper::Selection<#async_generic_type>]>,
+                executor: &'a ::juniper::Executor<Self::Context, #async_generic_type>,
+            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#async_generic_type>> {
+                use ::juniper::futures::future;
+                let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
@@ -274,26 +268,23 @@ pub fn build_scalar(
     let content = quote!(
         #_async
 
-        impl#generic_type_decl #crate_name::marker::IsInputType<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::marker::IsInputType<#generic_type> for #impl_for_type
             #generic_type_bound { }
 
-        impl#generic_type_decl #crate_name::marker::IsOutputType<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::marker::IsOutputType<#generic_type> for #impl_for_type
             #generic_type_bound { }
 
-        impl#generic_type_decl #crate_name::GraphQLType<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::GraphQLType<#generic_type> for #impl_for_type
         #generic_type_bound
         {
-            type Context = ();
-            type TypeInfo = ();
-
-            fn name(_: &Self::TypeInfo) -> Option<&str> {
+            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
             }
 
             fn meta<'r>(
                 info: &Self::TypeInfo,
-                registry: &mut #crate_name::Registry<'r, #generic_type>,
-            ) -> #crate_name::meta::MetaType<'r, #generic_type>
+                registry: &mut ::juniper::Registry<'r, #generic_type>,
+            ) -> ::juniper::meta::MetaType<'r, #generic_type>
             where
                 #generic_type: 'r,
             {
@@ -301,39 +292,50 @@ pub fn build_scalar(
                     #description
                     .into_meta()
             }
+        }
+
+        impl#generic_type_decl ::juniper::GraphQLValue<#generic_type> for #impl_for_type
+        #generic_type_bound
+        {
+            type Context = ();
+            type TypeInfo = ();
+
+            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                <Self as ::juniper::GraphQLType<#generic_type>>::name(info)
+            }
 
             fn resolve(
                 &self,
                 info: &(),
-                selection: Option<&[#crate_name::Selection<#generic_type>]>,
-                executor: &#crate_name::Executor<Self::Context, #generic_type>,
-            ) -> #crate_name::ExecutionResult<#generic_type> {
+                selection: Option<&[::juniper::Selection<#generic_type>]>,
+                executor: &::juniper::Executor<Self::Context, #generic_type>,
+            ) -> ::juniper::ExecutionResult<#generic_type> {
                 Ok(#resolve_body)
             }
         }
 
-        impl#generic_type_decl #crate_name::ToInputValue<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::ToInputValue<#generic_type> for #impl_for_type
         #generic_type_bound
         {
-            fn to_input_value(&self) -> #crate_name::InputValue<#generic_type> {
+            fn to_input_value(&self) -> ::juniper::InputValue<#generic_type> {
                 let v = #resolve_body;
-                #crate_name::ToInputValue::to_input_value(&v)
+                ::juniper::ToInputValue::to_input_value(&v)
             }
         }
 
-        impl#generic_type_decl #crate_name::FromInputValue<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::FromInputValue<#generic_type> for #impl_for_type
         #generic_type_bound
         {
-            fn from_input_value(#from_input_value_arg: &#crate_name::InputValue<#generic_type>) -> #from_input_value_result {
+            fn from_input_value(#from_input_value_arg: &::juniper::InputValue<#generic_type>) -> #from_input_value_result {
                 #from_input_value_body
             }
         }
 
-        impl#generic_type_decl #crate_name::ParseScalarValue<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::ParseScalarValue<#generic_type> for #impl_for_type
         #generic_type_bound
             {
                 fn from_str<'a>(
-                    #from_str_arg: #crate_name::parser::ScalarToken<'a>,
+                    #from_str_arg: ::juniper::parser::ScalarToken<'a>,
                 ) -> #from_str_result {
                 #from_str_body
             }

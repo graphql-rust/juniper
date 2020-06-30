@@ -16,16 +16,6 @@ struct Human {
     home_planet: String,
 }
 #[automatically_derived]
-::juniper::inventory::submit! {
-    #![crate = juniper]
-    ::juniper::GraphQLInterfaceTypeImplementor {
-        interface_name: "Character",
-        object: ::juniper::GraphQLObjectTypeInfo {
-            name: "Human",
-            mark_fn: <Human as ::juniper::marker::GraphQLObjectType<::juniper::DefaultScalarValue>>::mark,
-        }
-    }
-}
 impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLType<__S> for Human {
     type Context = <Self as ::juniper::GraphQLType<__S>>::Context;
     type TypeInfo = <Self as ::juniper::GraphQLType<__S>>::TypeInfo;
@@ -63,16 +53,6 @@ struct Droid {
 struct Droid {
     id: String,
     primary_function: String,
-}
-::juniper::inventory::submit! {
-    #![crate = juniper]
-    ::juniper::GraphQLInterfaceTypeImplementor {
-        interface_name: "Character",
-        object: ::juniper::GraphQLObjectTypeInfo {
-            name: "Droid",
-            mark_fn: <Droid as ::juniper::marker::GraphQLObjectType<::juniper::DefaultScalarValue>>::mark,
-        }
-    }
 }
 #[automatically_derived]
 impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLType<__S> for Droid {

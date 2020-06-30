@@ -7,7 +7,7 @@ use crate::{
 
 struct TestType;
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl TestType {
     fn a() -> &str {
         "a"

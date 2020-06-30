@@ -1,4 +1,4 @@
-//! Code generation for `#[graphql_union]`/`#[graphql_union_internal]` macros.
+//! Code generation for `#[graphql_union]` macro.
 
 use std::{mem, ops::Deref as _};
 
@@ -8,7 +8,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, unparenthesize, Mode},
+    util::{path_eq_single, span_container::SpanContainer, unparenthesize},
 };
 
 use super::{
@@ -16,37 +16,20 @@ use super::{
     UnionVariantDefinition, UnionVariantMeta,
 };
 
-/// [`GraphQLScope`] of errors for `#[graphql_union]`/`#[graphql_union_internal]` macros.
+/// [`GraphQLScope`] of errors for `#[graphql_union]` macro.
 const ERR: GraphQLScope = GraphQLScope::UnionAttr;
 
-/// Returns the concrete name of the `proc_macro_attribute` for deriving `GraphQLUnion`
-/// implementation depending on the provided `mode`.
-fn attr_path(mode: Mode) -> &'static str {
-    match mode {
-        Mode::Public => "graphql_union",
-        Mode::Internal => "graphql_union_internal",
-    }
-}
-
-/// Expands `#[graphql_union]`/`#[graphql_union_internal]` macro into generated code.
-pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
-    let attr_path = attr_path(mode);
-
+/// Expands `#[graphql_union]` macro into generated code.
+pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
     let mut ast = syn::parse2::<syn::ItemTrait>(body).map_err(|_| {
         syn::Error::new(
             Span::call_site(),
-            format!(
-                "#[{}] attribute is applicable to trait definitions only",
-                attr_path,
-            ),
+            "#[graphql_union] attribute is applicable to trait definitions only",
         )
     })?;
 
     let mut trait_attrs = Vec::with_capacity(ast.attrs.len() + 1);
-    trait_attrs.push({
-        let attr_path = syn::Ident::new(attr_path, Span::call_site());
-        parse_quote! { #[#attr_path(#attr_args)] }
-    });
+    trait_attrs.push(parse_quote! { #[graphql_union(#attr_args)] });
     trait_attrs.extend_from_slice(&ast.attrs);
 
     // Remove repeated attributes from the definition, to omit duplicate expansion.
@@ -54,7 +37,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         .attrs
         .into_iter()
         .filter_map(|attr| {
-            if path_eq_single(&attr.path, attr_path) {
+            if path_eq_single(&attr.path, "graphql_union") {
                 None
             } else {
                 Some(attr)
@@ -62,7 +45,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         })
         .collect();
 
-    let meta = UnionMeta::from_attrs(attr_path, &trait_attrs)?;
+    let meta = UnionMeta::from_attrs("graphql_union", &trait_attrs)?;
 
     let trait_span = ast.span();
     let trait_ident = &ast.ident;
@@ -72,7 +55,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| trait_ident.unraw().to_string());
-    if matches!(mode, Mode::Public) && name.starts_with("__") {
+    if !meta.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             meta.name
                 .as_ref()
@@ -85,16 +68,14 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         .items
         .iter_mut()
         .filter_map(|i| match i {
-            syn::TraitItem::Method(m) => {
-                parse_variant_from_trait_method(m, trait_ident, &meta, mode)
-            }
+            syn::TraitItem::Method(m) => parse_variant_from_trait_method(m, trait_ident, &meta),
             _ => None,
         })
         .collect();
 
     proc_macro_error::abort_if_dirty();
 
-    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers, mode);
+    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers);
 
     if variants.is_empty() {
         ERR.emit_custom(trait_span, "expects at least one union variant");
@@ -124,7 +105,6 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         generics: ast.generics.clone(),
         variants,
         span: trait_span,
-        mode,
     };
 
     Ok(quote! {
@@ -144,16 +124,14 @@ fn parse_variant_from_trait_method(
     method: &mut syn::TraitItemMethod,
     trait_ident: &syn::Ident,
     trait_meta: &UnionMeta,
-    mode: Mode,
 ) -> Option<UnionVariantDefinition> {
-    let attr_path = attr_path(mode);
     let method_attrs = method.attrs.clone();
 
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
         .filter_map(|attr| {
-            if path_eq_single(&attr.path, attr_path) {
+            if path_eq_single(&attr.path, "graphql_union") {
                 None
             } else {
                 Some(attr)
@@ -161,22 +139,18 @@ fn parse_variant_from_trait_method(
         })
         .collect();
 
-    let meta = UnionVariantMeta::from_attrs(attr_path, &method_attrs)
+    let meta = UnionVariantMeta::from_attrs("graphql_union", &method_attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
 
     if let Some(rslvr) = meta.external_resolver {
         ERR.custom(
             rslvr.span_ident(),
-            format!(
-                "cannot use #[{}(with = ...)] attribute on a trait method",
-                attr_path,
-            ),
+            "cannot use #[graphql_union(with = ...)] attribute on a trait method",
         )
-        .note(format!(
-            "instead use #[{0}(ignore)] on the method with #[{0}(on ... = ...)] on the trait \
-             itself",
-            attr_path,
+        .note(String::from(
+            "instead use #[graphql_union(ignore)] on the method with \
+             #[graphql_union(on ... = ...)] on the trait itself",
         ))
         .emit()
     }
@@ -224,19 +198,16 @@ fn parse_variant_from_trait_method(
 
                 ),
             )
-            .note(format!(
-                "use `#[{}(ignore)]` attribute to ignore this trait method for union variants \
-                 resolution",
-                attr_path,
+            .note(String::from(
+                "use `#[graphql_union(ignore)]` attribute to ignore this trait method for union \
+                 variants resolution",
             ))
             .emit();
         }
 
         if method_context_ty.is_some() {
-            let crate_path = mode.crate_path();
-
             parse_quote! {
-                #trait_ident::#method_ident(self, #crate_path::FromContext::from(context))
+                #trait_ident::#method_ident(self, ::juniper::FromContext::from(context))
             }
         } else {
             parse_quote! {

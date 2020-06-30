@@ -119,13 +119,13 @@ where
         context: &CtxT,
     ) -> GraphQLResponse
     where
-        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+        QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+        QueryT::TypeInfo: Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+        MutationT::TypeInfo: Sync,
+        SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+        SubscriptionT::TypeInfo: Sync,
+        CtxT: Sync,
         S: Send + Sync,
     {
         let response = self.0.execute(root_node, context).await;
@@ -204,7 +204,7 @@ impl GraphQLResponse {
 
 impl<'f, S> FromForm<'f> for GraphQLRequest<S>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue,
 {
     type Error = String;
 
@@ -275,7 +275,7 @@ where
 
 impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue,
 {
     type Error = String;
 
@@ -290,7 +290,7 @@ const BODY_LIMIT: u64 = 1024 * 100;
 
 impl<S> FromDataSimple for GraphQLRequest<S>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue,
 {
     type Error = String;
 
