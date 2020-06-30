@@ -1,6 +1,6 @@
 //! This example demonstrates asynchronous subscriptions with warp and tokio 0.2
 
-use std::{pin::Pin, sync::Arc, time::Duration};
+use std::{env, pin::Pin, sync::Arc, time::Duration};
 
 use futures::{Future, FutureExt as _, Stream};
 use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
@@ -136,10 +136,10 @@ fn schema() -> Schema {
 
 #[tokio::main]
 async fn main() {
-    ::std::env::set_var("RUST_LOG", "warp_subscriptions");
+    env::set_var("RUST_LOG", "warp_subscriptions");
     env_logger::init();
 
-    let log = warp::log("warp_server");
+    let log = warp::log("warp_subscriptions");
 
     let homepage = warp::path::end().map(|| {
         Response::builder()
