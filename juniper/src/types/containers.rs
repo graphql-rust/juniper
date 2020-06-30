@@ -9,16 +9,16 @@ use crate::{
     value::{ScalarValue, Value},
 };
 
-impl<S, T, CtxT> GraphQLType<S> for Option<T>
+impl<S, T> GraphQLType<S> for Option<T>
 where
+    T: GraphQLType<S>,
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT>,
 {
-    fn name(_: &T::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
         None
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -26,23 +26,23 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLValue<S> for Option<T>
+impl<S, T> GraphQLValue<S> for Option<T>
 where
     S: ScalarValue,
-    T: GraphQLValue<S, Context = CtxT>,
+    T: GraphQLValue<S>,
 {
-    type Context = CtxT;
+    type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
         None
     }
 
     fn resolve(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         _: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         match *self {
             Some(ref obj) => executor.resolve(info, obj),
@@ -101,16 +101,16 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLType<S> for Vec<T>
+impl<S, T> GraphQLType<S> for Vec<T>
 where
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S>,
     S: ScalarValue,
 {
-    fn name(_: &T::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
         None
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -118,23 +118,23 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLValue<S> for Vec<T>
+impl<S, T> GraphQLValue<S> for Vec<T>
 where
-    T: GraphQLValue<S, Context = CtxT>,
+    T: GraphQLValue<S>,
     S: ScalarValue,
 {
-    type Context = CtxT;
+    type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
         None
     }
 
     fn resolve(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         _: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
     }
@@ -190,16 +190,16 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLType<S> for [T]
+impl<S, T> GraphQLType<S> for [T]
 where
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S>,
 {
-    fn name(_: &T::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
         None
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -207,23 +207,23 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLValue<S> for [T]
+impl<S, T> GraphQLValue<S> for [T]
 where
     S: ScalarValue,
-    T: GraphQLValue<S, Context = CtxT>,
+    T: GraphQLValue<S>,
 {
-    type Context = CtxT;
+    type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
         None
     }
 
     fn resolve(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         _: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
     }

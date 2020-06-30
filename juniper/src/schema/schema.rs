@@ -24,11 +24,11 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
-    fn name(info: &QueryT::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<&str> {
         QueryT::name(info)
     }
 
-    fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -47,16 +47,16 @@ where
     type Context = CtxT;
     type TypeInfo = QueryT::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i QueryT::TypeInfo) -> Option<&'i str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         QueryT::name(info)
     }
 
     fn resolve_field(
         &self,
-        info: &QueryT::TypeInfo,
+        info: &Self::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         match field {
             "__schema" => executor
