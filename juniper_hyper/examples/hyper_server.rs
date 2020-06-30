@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use hyper::{
     service::{make_service_fn, service_fn},
     Body, Method, Response, Server, StatusCode,
@@ -6,7 +8,6 @@ use juniper::{
     tests::{model::Database, schema::Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
