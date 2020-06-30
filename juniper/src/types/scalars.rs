@@ -6,7 +6,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
-    types::base::{GraphQLType, GraphQLTypeMeta},
+    types::base::GraphQLType,
     value::{ParseScalarResult, ScalarValue, Value},
 };
 
@@ -199,8 +199,15 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name(&self, _: &()) -> Option<&'static str> {
+    fn name(_: &()) -> Option<&str> {
         Some("String")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_scalar_type::<String>(&()).into_meta()
     }
 
     fn resolve(
@@ -210,22 +217,6 @@ where
         _: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         Ok(Value::scalar(String::from(self)))
-    }
-}
-
-impl<S> GraphQLTypeMeta<S> for str
-    where
-        S: ScalarValue,
-{
-    fn name(_: &()) -> Option<&str> {
-        Some("String")
-    }
-
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-    {
-        registry.build_scalar_type::<String>(&()).into_meta()
     }
 }
 
@@ -357,15 +348,6 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name(&self, _: &()) -> Option<&'static str> {
-        Some("_EmptyMutation")
-    }
-}
-
-impl<S, T> GraphQLTypeMeta<S> for EmptyMutation<T>
-where
-    S: ScalarValue,
-{
     fn name(_: &()) -> Option<&str> {
         Some("_EmptyMutation")
     }
@@ -423,15 +405,6 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name(&self, _: &()) -> Option<&'static str> {
-        Some("_EmptySubscription")
-    }
-}
-
-impl<S, T> GraphQLTypeMeta<S> for EmptySubscription<T>
-where
-    S: ScalarValue,
-{
     fn name(_: &()) -> Option<&str> {
         Some("_EmptySubscription")
     }

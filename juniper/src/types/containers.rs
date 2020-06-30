@@ -2,7 +2,7 @@ use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
-    types::{async_await::GraphQLTypeAsync, base::{GraphQLType, GraphQLTypeMeta}},
+    types::{async_await::GraphQLTypeAsync, base::GraphQLType},
     value::{ScalarValue, Value},
 };
 
@@ -14,8 +14,15 @@ where
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+    fn name(_: &T::TypeInfo) -> Option<&str> {
         None
+    }
+
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_nullable_type::<T>(info).into_meta()
     }
 
     fn resolve(
@@ -28,23 +35,6 @@ where
             Some(ref obj) => executor.resolve(info, obj),
             None => Ok(Value::null()),
         }
-    }
-}
-
-impl<S, T, CtxT> GraphQLTypeMeta<S> for Option<T>
-where
-    S: ScalarValue,
-    T: GraphQLTypeMeta<S, Context = CtxT>,
-{
-    fn name(_: &T::TypeInfo) -> Option<&str> {
-        None
-    }
-
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-    {
-        registry.build_nullable_type::<T>(info).into_meta()
     }
 }
 
@@ -106,8 +96,15 @@ where
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+    fn name(_: &T::TypeInfo) -> Option<&str> {
         None
+    }
+
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_list_type::<T>(info).into_meta()
     }
 
     fn resolve(
@@ -117,23 +114,6 @@ where
         executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
-    }
-}
-
-impl<S, T, CtxT> GraphQLTypeMeta<S> for Vec<T>
-    where
-        T: GraphQLTypeMeta<S, Context = CtxT>,
-        S: ScalarValue,
-{
-    fn name(_: &T::TypeInfo) -> Option<&str> {
-        None
-    }
-
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-    {
-        registry.build_list_type::<T>(info).into_meta()
     }
 }
 
@@ -195,8 +175,15 @@ where
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+    fn name(_: &T::TypeInfo) -> Option<&str> {
         None
+    }
+
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_list_type::<T>(info).into_meta()
     }
 
     fn resolve(
@@ -206,24 +193,6 @@ where
         executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
-    }
-}
-
-impl<S, T, CtxT> GraphQLTypeMeta<S> for [T]
-    where
-        S: ScalarValue,
-        T: GraphQLTypeMeta<S, Context = CtxT>,
-{
-
-    fn name(_: &T::TypeInfo) -> Option<&str> {
-        None
-    }
-
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-    {
-        registry.build_list_type::<T>(info).into_meta()
     }
 }
 

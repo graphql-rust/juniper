@@ -144,15 +144,6 @@ fn impl_scalar_struct(
             type Context = ();
             type TypeInfo = ();
 
-            fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
-                Some(#name)
-            }
-        }
-
-        impl<S> #crate_name::GraphQLTypeMeta<S> for #ident
-        where
-            S: #crate_name::ScalarValue,
-        {
             fn name(_: &Self::TypeInfo) -> Option<&str> {
                 Some(#name)
             }
@@ -167,6 +158,15 @@ fn impl_scalar_struct(
                 registry.build_scalar_type::<Self>(info)
                     #description
                     .into_meta()
+            }
+
+            fn resolve(
+                &self,
+                info: &(),
+                selection: Option<&[#crate_name::Selection<S>]>,
+                executor: &#crate_name::Executor<Self::Context, S>,
+            ) -> #crate_name::ExecutionResult<S> {
+                #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
             }
         }
 

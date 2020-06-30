@@ -107,7 +107,7 @@ pub struct Database {
 }
 
 use crate::{
-    executor::Registry, schema::meta::MetaType, types::base::{GraphQLType,GraphQLTypeMeta}, value::ScalarValue,
+    executor::Registry, schema::meta::MetaType, types::base::GraphQLType, value::ScalarValue,
 };
 
 impl<S> GraphQLType<S> for Database
@@ -117,15 +117,6 @@ where
     type Context = Self;
     type TypeInfo = ();
 
-    fn type_name(&self, _: &()) -> Option<&'static str> {
-        Some("_Database")
-    }
-}
-
-impl<S> GraphQLTypeMeta<S> for Database
-where
-    S: ScalarValue,
-{
     fn name(_: &()) -> Option<&str> {
         Some("_Database")
     }

@@ -1,5 +1,5 @@
 use fnv::FnvHashMap;
-use juniper::{DefaultScalarValue, FromInputValue, GraphQLTypeMeta, InputValue, ToInputValue};
+use juniper::{DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
 #[derive(juniper::GraphQLScalarValue, PartialEq, Eq, Debug)]
 #[graphql(transparent)]
@@ -32,7 +32,7 @@ impl User2 {
 #[test]
 fn test_scalar_value_simple() {
     assert_eq!(
-        <UserId as GraphQLTypeMeta<DefaultScalarValue>>::name(&()),
+        <UserId as GraphQLType<DefaultScalarValue>>::name(&()),
         Some("UserId")
     );
 
@@ -53,7 +53,7 @@ fn test_scalar_value_simple() {
 #[test]
 fn test_scalar_value_custom() {
     assert_eq!(
-        <CustomUserId as GraphQLTypeMeta<DefaultScalarValue>>::name(&()),
+        <CustomUserId as GraphQLType<DefaultScalarValue>>::name(&()),
         Some("MyUserId")
     );
 

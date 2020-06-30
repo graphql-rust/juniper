@@ -137,9 +137,48 @@ macro_rules! graphql_interface {
                 type Context = $ctx;
                 type TypeInfo = ();
 
-                fn type_name(&self, _ : &Self::TypeInfo) -> Option<&'static str> {
+                fn name(_ : &Self::TypeInfo) -> Option<&str> {
                     Some($($outname)*)
                 }
+
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                where
+                    $crate::__juniper_insert_generic!($($scalar)+): 'r
+                {
+                    // Ensure all child types are registered
+                    $(
+                        let _ = registry.get_type::<$resolver_src>(info);
+                    )*
+                    let fields = &[$(
+                        registry.field_convert::<$return_ty, _, Self::Context>(
+                            &$crate::to_camel_case(stringify!($fn_name)),
+                            info
+                        )
+                            $(.description($fn_description))*
+                            .push_docstring(&[$($docstring,)*])
+                            $(.deprecated($deprecated))*
+                            $(.argument(
+                                $crate::__juniper_create_arg!(
+                                    registry = registry,
+                                    info = info,
+                                    arg_ty = $arg_ty,
+                                    arg_name = $arg_name,
+                                    $(default = $arg_default,)*
+                                    $(description = $arg_description,)*
+                                    $(docstring = $arg_docstring,)*
+                                )
+                            ))*,
+                    )*];
+                    registry.build_interface_type::<$name>(
+                        info, fields
+                    )
+                        $(.description($desciption))*
+                        .into_meta()
+                }
+
 
                 #[allow(unused_variables)]
                 fn resolve_field(
@@ -190,7 +229,7 @@ macro_rules! graphql_interface {
                     $(
                         if ($resolver_expr as ::std::option::Option<$resolver_src>).is_some() {
                             return
-                                <$resolver_src as $crate::GraphQLTypeMeta<_>>::name(&()).unwrap().to_owned();
+                                <$resolver_src as $crate::GraphQLType<_>>::name(&()).unwrap().to_owned();
                         }
                     )*
 
@@ -207,58 +246,12 @@ macro_rules! graphql_interface {
                     $(let $resolver_ctx = &executor.context();)*
 
                     $(
-                        if type_name == (<$resolver_src as $crate::GraphQLTypeMeta<_>>::name(&())).unwrap() {
+                        if type_name == (<$resolver_src as $crate::GraphQLType<_>>::name(&())).unwrap() {
                             return executor.resolve(&(), &$resolver_expr);
                         }
                     )*
 
                      panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
-                }
-            }
-        );
-
-        $crate::__juniper_impl_trait!(
-            impl<$($scalar)* $(, $lifetimes)* > GraphQLTypeMeta for $name {
-                fn name(_ : &Self::TypeInfo) -> Option<&str> {
-                    Some($($outname)*)
-                }
-
-                fn meta<'r>(
-                    info: &Self::TypeInfo,
-                    registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
-                ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
-                where
-                    $crate::__juniper_insert_generic!($($scalar)+): 'r
-                {
-                    // Ensure all child types are registered
-                    $(
-                        let _ = registry.get_type::<$resolver_src>(info);
-                    )*
-                    let fields = &[$(
-                        registry.field_convert::<$return_ty, _, Self::Context>(
-                            &$crate::to_camel_case(stringify!($fn_name)),
-                            info
-                        )
-                            $(.description($fn_description))*
-                            .push_docstring(&[$($docstring,)*])
-                            $(.deprecated($deprecated))*
-                            $(.argument(
-                                $crate::__juniper_create_arg!(
-                                    registry = registry,
-                                    info = info,
-                                    arg_ty = $arg_ty,
-                                    arg_name = $arg_name,
-                                    $(default = $arg_default,)*
-                                    $(description = $arg_description,)*
-                                    $(docstring = $arg_docstring,)*
-                                )
-                            ))*,
-                    )*];
-                    registry.build_interface_type::<$name>(
-                        info, fields
-                    )
-                        $(.description($desciption))*
-                        .into_meta()
                 }
             }
         );

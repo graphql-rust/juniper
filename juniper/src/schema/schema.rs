@@ -1,7 +1,7 @@
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
-    types::base::{Arguments, GraphQLType, GraphQLTypeMeta, TypeKind},
+    types::base::{Arguments, GraphQLType, TypeKind},
     value::{ScalarValue, Value},
 };
 
@@ -24,8 +24,15 @@ where
     type Context = CtxT;
     type TypeInfo = QueryT::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i QueryT::TypeInfo) -> Option<&'i str> {
-        self.query_type.type_name(info)
+    fn name(info: &QueryT::TypeInfo) -> Option<&str> {
+        QueryT::name(info)
+    }
+
+    fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        QueryT::meta(info, registry)
     }
 
     fn resolve_field(
@@ -67,26 +74,6 @@ where
             // TODO: this panic seems useless, investigate why it is here.
             panic!("resolve() must be implemented by non-object output types");
         }
-    }
-}
-
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLTypeMeta<S>
-    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
-where
-    S: ScalarValue,
-    QueryT: GraphQLTypeMeta<S, Context = CtxT>,
-    MutationT: GraphQLTypeMeta<S, Context = CtxT>,
-    SubscriptionT: GraphQLTypeMeta<S, Context = CtxT>,
-{
-    fn name(info: &QueryT::TypeInfo) -> Option<&str> {
-        QueryT::name(info)
-    }
-
-    fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        QueryT::meta(info, registry)
     }
 }
 

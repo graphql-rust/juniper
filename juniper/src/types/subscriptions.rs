@@ -160,7 +160,7 @@ where
         'res: 'f,
     {
         Box::pin(async move {
-            if self.type_name(info) == Some(type_name) {
+            if Self::name(info) == Some(type_name) {
                 self.resolve_into_stream(info, executor).await
             } else {
                 panic!("resolve_into_type_stream must be implemented");
@@ -218,7 +218,7 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            instance.type_name(info)
+            T::name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )

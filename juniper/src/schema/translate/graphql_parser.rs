@@ -1,27 +1,25 @@
-use std::{boxed::Box, collections::BTreeMap};
+use std::boxed::Box;
+use std::collections::BTreeMap;
 
-use graphql_parser::{
-    query::{Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType},
-    schema::{
-        Definition, Document, EnumType as ExternalEnum, EnumValue as ExternalEnumValue,
-        Field as ExternalField, InputObjectType as ExternalInputObjectType,
-        InputValue as ExternalInputValue, InterfaceType as ExternalInterfaceType,
-        ObjectType as ExternalObjectType, ScalarType as ExternalScalarType, SchemaDefinition, Text,
-        TypeDefinition as ExternalTypeDefinition, UnionType as ExternalUnionType,
-        Value as ExternalValue,
-    },
-    Pos,
+use graphql_parser::query::{
+    Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType,
 };
+use graphql_parser::schema::{Definition, Document, SchemaDefinition, Text};
+use graphql_parser::schema::{
+    EnumType as ExternalEnum, EnumValue as ExternalEnumValue, Field as ExternalField,
+    InputObjectType as ExternalInputObjectType, InputValue as ExternalInputValue,
+    InterfaceType as ExternalInterfaceType, ObjectType as ExternalObjectType,
+    ScalarType as ExternalScalarType, TypeDefinition as ExternalTypeDefinition,
+    UnionType as ExternalUnionType, Value as ExternalValue,
+};
+use graphql_parser::Pos;
 
-use crate::{
-    ast::{InputValue, Type},
-    schema::{
-        meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
-        model::SchemaType,
-        translate::SchemaTranslator,
-    },
-    value::ScalarValue,
-};
+use crate::ast::{InputValue, Type};
+use crate::schema::meta::DeprecationStatus;
+use crate::schema::meta::{Argument, EnumValue, Field, MetaType};
+use crate::schema::model::SchemaType;
+use crate::schema::translate::SchemaTranslator;
+use crate::value::ScalarValue;
 
 pub struct GraphQLParserTranslator;
 

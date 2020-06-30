@@ -741,7 +741,7 @@ mod tests {
         executor::Registry,
         schema::meta::MetaType,
         types::{
-            base::{GraphQLType, GraphQLTypeMeta},
+            base::GraphQLType,
             scalars::{EmptyMutation, EmptySubscription, ID},
         },
     };
@@ -1383,15 +1383,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("SomeBox")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for SomeBox
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("SomeBox")
         }
@@ -1417,15 +1408,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("StringBox")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for StringBox
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("StringBox")
         }
@@ -1457,15 +1439,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("IntBox")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for IntBox
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("IntBox")
         }
@@ -1497,15 +1470,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("NonNullStringBox1")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for NonNullStringBox1
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox1")
         }
@@ -1527,15 +1491,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("NonNullStringBox1Impl")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for NonNullStringBox1Impl
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox1Impl")
         }
@@ -1567,15 +1522,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("NonNullStringBox2")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for NonNullStringBox2
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox2")
         }
@@ -1597,15 +1543,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("NonNullStringBox2Impl")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for NonNullStringBox2Impl
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("NonNullStringBox2Impl")
         }
@@ -1637,15 +1574,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("Node")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for Node
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("Node")
         }
@@ -1670,15 +1598,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("Edge")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for Edge
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("Edge")
         }
@@ -1700,15 +1619,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("Connection")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for Connection
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("Connection")
         }
@@ -1730,15 +1640,6 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name(&self, _: &()) -> Option<&'static str> {
-            Some("QueryRoot")
-        }
-    }
-
-    impl<S> GraphQLTypeMeta<S> for QueryRoot
-    where
-        S: ScalarValue,
-    {
         fn name(_: &()) -> Option<&'static str> {
             Some("QueryRoot")
         }

@@ -286,23 +286,6 @@ pub fn build_scalar(
             type Context = ();
             type TypeInfo = ();
 
-            fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
-                Some(#name)
-            }
-
-            fn resolve(
-                &self,
-                info: &(),
-                selection: Option<&[#crate_name::Selection<#generic_type>]>,
-                executor: &#crate_name::Executor<Self::Context, #generic_type>,
-            ) -> #crate_name::ExecutionResult<#generic_type> {
-                Ok(#resolve_body)
-            }
-        }
-
-        impl#generic_type_decl #crate_name::GraphQLTypeMeta<#generic_type> for #impl_for_type
-        #generic_type_bound
-        {
             fn name(_: &Self::TypeInfo) -> Option<&str> {
                 Some(#name)
             }
@@ -317,6 +300,15 @@ pub fn build_scalar(
                 registry.build_scalar_type::<Self>(info)
                     #description
                     .into_meta()
+            }
+
+            fn resolve(
+                &self,
+                info: &(),
+                selection: Option<&[#crate_name::Selection<#generic_type>]>,
+                executor: &#crate_name::Executor<Self::Context, #generic_type>,
+            ) -> #crate_name::ExecutionResult<#generic_type> {
+                Ok(#resolve_body)
             }
         }
 

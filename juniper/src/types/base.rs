@@ -124,95 +124,111 @@ where
 }
 
 /**
-* Primary trait used to expose Rust types in a GraphQL schema
-*
-* All of the convenience macros ultimately expand into an implementation of
-* this trait for the given type. The macros remove duplicated definitions of
-* fields and arguments, and add type checks on all resolve functions
-* automatically. This can all be done manually.
-*
-* `GraphQLType` provides _some_ convenience methods for you, in the form of
-* optional trait methods. The `name` and `meta` methods are mandatory, but
-* other than that, it depends on what type you're exposing:
-*
+Primary trait used to expose Rust types in a GraphQL schema
+
+All of the convenience macros ultimately expand into an implementation of
+this trait for the given type. The macros remove duplicated definitions of
+fields and arguments, and add type checks on all resolve functions
+automatically. This can all be done manually.
+
+`GraphQLType` provides _some_ convenience methods for you, in the form of
+optional trait methods. The `name` and `meta` methods are mandatory, but
+other than that, it depends on what type you're exposing:
+
 * Scalars, enums, lists and non null wrappers only require `resolve`,
 * Interfaces and objects require `resolve_field` _or_ `resolve` if you want
-*   to implement custom resolution logic (probably not),
+  to implement custom resolution logic (probably not),
 * Interfaces and unions require `resolve_into_type` and `concrete_type_name`.
 * Input objects do not require anything
-*
-* ## Example
-*
-* Manually deriving an object is straightforward but tedious. This is the
-* equivalent of the `User` object as shown in the example in the documentation
-* root:
-*
-* ```rust
-* use juniper::{GraphQLType, Registry, FieldResult, Context,
-*               Arguments, Executor, ExecutionResult,
-*               DefaultScalarValue};
-* use juniper::meta::MetaType;
-* # use std::collections::HashMap;
-*
-* #[derive(Debug)]
-* struct User { id: String, name: String, friend_ids: Vec<String>  }
-* #[derive(Debug)]
-* struct Database { users: HashMap<String, User> }
-*
-* impl Context for Database {}
-*
-* impl GraphQLType<DefaultScalarValue> for User
-* {
-*     type Context = Database;
-*     type TypeInfo = ();
-*
-*     fn type_name(&self, _: &()) -> Option<&'static str> {
-*         Some("User")
-*     }
-*
-*     fn resolve_field(
-*         &self,
-*         info: &(),
-*         field_name: &str,
-*         args: &Arguments,
-*         executor: &Executor<Database>
-*     )
-*         -> ExecutionResult
-*     {
-*         // Next, we need to match the queried field name. All arms of this
-*         // match statement return `ExecutionResult`, which makes it hard to
-*         // statically verify that the type you pass on to `executor.resolve*`
-*         // actually matches the one that you defined in `meta()` above.
-*         let database = executor.context();
-*         match field_name {
-*             // Because scalars are defined with another `Context` associated
-*             // type, you must use resolve_with_ctx here to make the executor
-*             // perform automatic type conversion of its argument.
-*             "id" => executor.resolve_with_ctx(info, &self.id),
-*             "name" => executor.resolve_with_ctx(info, &self.name),
-*
-*             // You pass a vector of User objects to `executor.resolve`, and it
-*             // will determine which fields of the sub-objects to actually
-*             // resolve based on the query. The executor instance keeps track
-*             // of its current position in the query.
-*             "friends" => executor.resolve(info,
-*                 &self.friend_ids.iter()
-*                     .filter_map(|id| database.users.get(id))
-*                     .collect::<Vec<_>>()
-*             ),
-*
-*             // We can only reach this panic in two cases; either a mismatch
-*             // between the defined schema in `meta()` above, or a validation
-*             // in this library failed because of a bug.
-*             //
-*             // In either of those two cases, the only reasonable way out is
-*             // to panic the thread.
-*             _ => panic!("Field {} not found on type User", field_name),
-*         }
-*     }
-* }
-* ```
-*
+
+## Example
+
+Manually deriving an object is straightforward but tedious. This is the
+equivalent of the `User` object as shown in the example in the documentation
+root:
+
+```rust
+use juniper::{GraphQLType, Registry, FieldResult, Context,
+              Arguments, Executor, ExecutionResult,
+              DefaultScalarValue};
+use juniper::meta::MetaType;
+# use std::collections::HashMap;
+
+#[derive(Debug)]
+struct User { id: String, name: String, friend_ids: Vec<String>  }
+#[derive(Debug)]
+struct Database { users: HashMap<String, User> }
+
+impl Context for Database {}
+
+impl GraphQLType<DefaultScalarValue> for User
+{
+    type Context = Database;
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&'static str> {
+        Some("User")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r>
+    where DefaultScalarValue: 'r,
+    {
+        // First, we need to define all fields and their types on this type.
+        //
+        // If we need arguments, want to implement interfaces, or want to add
+        // documentation strings, we can do it here.
+        let fields = &[
+            registry.field::<&String>("id", &()),
+            registry.field::<&String>("name", &()),
+            registry.field::<Vec<&User>>("friends", &()),
+        ];
+
+        registry.build_object_type::<User>(&(), fields).into_meta()
+    }
+
+    fn resolve_field(
+        &self,
+        info: &(),
+        field_name: &str,
+        args: &Arguments,
+        executor: &Executor<Database>
+    )
+        -> ExecutionResult
+    {
+        // Next, we need to match the queried field name. All arms of this
+        // match statement return `ExecutionResult`, which makes it hard to
+        // statically verify that the type you pass on to `executor.resolve*`
+        // actually matches the one that you defined in `meta()` above.
+        let database = executor.context();
+        match field_name {
+            // Because scalars are defined with another `Context` associated
+            // type, you must use resolve_with_ctx here to make the executor
+            // perform automatic type conversion of its argument.
+            "id" => executor.resolve_with_ctx(info, &self.id),
+            "name" => executor.resolve_with_ctx(info, &self.name),
+
+            // You pass a vector of User objects to `executor.resolve`, and it
+            // will determine which fields of the sub-objects to actually
+            // resolve based on the query. The executor instance keeps track
+            // of its current position in the query.
+            "friends" => executor.resolve(info,
+                &self.friend_ids.iter()
+                    .filter_map(|id| database.users.get(id))
+                    .collect::<Vec<_>>()
+            ),
+
+            // We can only reach this panic in two cases; either a mismatch
+            // between the defined schema in `meta()` above, or a validation
+            // in this library failed because of a bug.
+            //
+            // In either of those two cases, the only reasonable way out is
+            // to panic the thread.
+            _ => panic!("Field {} not found on type User", field_name),
+        }
+    }
+}
+```
+
 */
 pub trait GraphQLType<S = DefaultScalarValue>
 where
@@ -234,10 +250,15 @@ where
 
     /// The name of the GraphQL type to expose.
     ///
-    /// This function will be called multiple times during type resolution.
+    /// This function will be called multiple times during schema construction.
     /// It must _not_ perform any calculation and _always_ return the same
     /// value.
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str>;
+    fn name(info: &Self::TypeInfo) -> Option<&str>;
+
+    /// The meta type representing this GraphQL type.
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r;
 
     /// Resolve the value of a single field on this type.
     ///
@@ -272,7 +293,7 @@ where
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
-        if self.type_name(info).unwrap() == type_name {
+        if Self::name(info).unwrap() == type_name {
             self.resolve(info, selection_set, executor)
         } else {
             panic!("resolve_into_type must be implemented by unions and interfaces");
@@ -284,7 +305,7 @@ where
     /// The default implementation panics.
     #[allow(unused_variables)]
     fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
-        panic!("concrete_type_name must be implemented by objects, unions and interfaces");
+        panic!("concrete_type_name must be implemented by unions and interfaces");
     }
 
     /// Resolve the provided selection set against the current object.
@@ -320,34 +341,6 @@ where
     }
 }
 
-crate::sa::assert_obj_safe!(GraphQLType<Context = (), TypeInfo = ()>);
-
-/// TODO: blah-blah doc
-pub trait GraphQLTypeMeta<S: ScalarValue = DefaultScalarValue>: GraphQLType<S> {
-    /// The name of the GraphQL type to expose.
-    ///
-    /// This function will be called multiple times during schema construction.
-    /// It must _not_ perform any calculation and _always_ return the same
-    /// value.
-    fn name(info: &Self::TypeInfo) -> Option<&str>;
-
-    /// The meta type representing this GraphQL type.
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r;
-}
-
-/// TODO: blah-blah doc
-pub trait AsDynGraphQLType<S: ScalarValue = DefaultScalarValue> {
-    /// TODO: blah-blah doc
-    type Context;
-    /// TODO: blah-blah doc
-    type TypeInfo;
-
-    /// TODO: blah-blah doc
-    fn as_dyn_graphql_type(&self) -> &(dyn GraphQLType<S, Context = Self::Context, TypeInfo = Self::TypeInfo> + 'static + Send + Sync);
-}
-
 /// Resolver logic for queries'/mutations' selection set.
 /// Calls appropriate resolver method for each field or fragment found
 /// and then merges returned values into `result` or pushes errors to
@@ -368,7 +361,7 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            instance.type_name(info)
+            T::name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )

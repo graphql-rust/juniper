@@ -22,7 +22,7 @@ use crate::{
         },
         model::{RootNode, SchemaType, TypeType},
     },
-    types::{base::{GraphQLType, GraphQLTypeMeta}, name::Name},
+    types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
     GraphQLError,
 };
@@ -1101,7 +1101,7 @@ where
     /// construct its metadata and store it.
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
     where
-        T: GraphQLTypeMeta<S> + ?Sized,
+        T: GraphQLType<S> + ?Sized,
     {
         if let Some(name) = T::name(info) {
             let validated_name = name.parse::<Name>().unwrap();
@@ -1122,7 +1122,7 @@ where
     /// Create a field with the provided name
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
-        T: GraphQLTypeMeta<S> + ?Sized,
+        T: GraphQLType<S> + ?Sized,
     {
         Field {
             name: name.to_owned(),
@@ -1140,7 +1140,7 @@ where
         info: &I::TypeInfo,
     ) -> Field<'r, S>
     where
-        I: GraphQLTypeMeta<S>,
+        I: GraphQLType<S>,
     {
         Field {
             name: name.to_owned(),
@@ -1154,7 +1154,7 @@ where
     /// Create an argument with the provided name
     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
     where
-        T: GraphQLTypeMeta<S> + FromInputValue<S> + ?Sized,
+        T: GraphQLType<S> + FromInputValue<S> + ?Sized,
     {
         Argument::new(name, self.get_type::<T>(info))
     }
@@ -1170,7 +1170,7 @@ where
         info: &T::TypeInfo,
     ) -> Argument<'r, S>
     where
-        T: GraphQLTypeMeta<S> + ToInputValue<S> + FromInputValue<S> + ?Sized,
+        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S> + ?Sized,
     {
         Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
     }
@@ -1186,14 +1186,14 @@ where
     /// This expects the type to implement `FromInputValue`.
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLTypeMeta<S> + ParseScalarValue<S> + ?Sized + 'r,
+        T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + ?Sized + 'r,
     {
         let name = T::name(info).expect("Scalar types must be named. Implement name()");
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
     /// Create a list meta type
-    pub fn build_list_type<T: GraphQLTypeMeta<S> + ?Sized>(
+    pub fn build_list_type<T: GraphQLType<S> + ?Sized>(
         &mut self,
         info: &T::TypeInfo,
     ) -> ListMeta<'r> {
@@ -1202,7 +1202,7 @@ where
     }
 
     /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLTypeMeta<S> + ?Sized>(
+    pub fn build_nullable_type<T: GraphQLType<S> + ?Sized>(
         &mut self,
         info: &T::TypeInfo,
     ) -> NullableMeta<'r> {
@@ -1220,7 +1220,7 @@ where
         fields: &[Field<'r, S>],
     ) -> ObjectMeta<'r, S>
     where
-        T: GraphQLTypeMeta<S> + ?Sized,
+        T: GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
@@ -1236,7 +1236,7 @@ where
         values: &[EnumValue],
     ) -> EnumMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLTypeMeta<S> + ?Sized,
+        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Enum types must be named. Implement name()");
 
@@ -1251,7 +1251,7 @@ where
         fields: &[Field<'r, S>],
     ) -> InterfaceMeta<'r, S>
     where
-        T: GraphQLTypeMeta<S> + ?Sized,
+        T: GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
@@ -1263,7 +1263,7 @@ where
     /// Create a union meta type
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
-        T: GraphQLTypeMeta<S> + ?Sized,
+        T: GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
@@ -1277,7 +1277,7 @@ where
         args: &[Argument<'r, S>],
     ) -> InputObjectMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLTypeMeta<S> + ?Sized,
+        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 
