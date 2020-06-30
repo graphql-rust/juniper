@@ -1,18 +1,17 @@
 use std::{iter, iter::FromIterator as _, pin::Pin};
 
 use futures::{self, StreamExt as _};
-use juniper_codegen::GraphQLObjectInternal;
 
 use crate::{
     http::GraphQLRequest, Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError,
-    Object, RootNode, Value,
+    GraphQLObject, Object, RootNode, Value,
 };
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
 impl Context for MyContext {}
 
-#[derive(GraphQLObjectInternal)]
+#[derive(GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
 #[derive(Clone)]
 struct Human {
@@ -23,7 +22,7 @@ struct Human {
 
 struct MyQuery;
 
-#[crate::graphql_object_internal(context = MyContext)]
+#[crate::graphql_object(context = MyContext)]
 impl MyQuery {
     fn test(&self) -> i32 {
         0 // NOTICE: does not serve a purpose
@@ -43,7 +42,7 @@ type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
 struct MySubscription;
 
-#[crate::graphql_subscription_internal(context = MyContext)]
+#[crate::graphql_subscription(context = MyContext)]
 impl MySubscription {
     async fn async_human() -> HumanStream {
         Box::pin(futures::stream::once(async {

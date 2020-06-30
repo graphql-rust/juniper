@@ -9,7 +9,7 @@ mod field_execution {
     struct DataType;
     struct DeepDataType;
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl DataType {
         fn a() -> &str {
             "Apple"
@@ -39,7 +39,7 @@ mod field_execution {
         }
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl DeepDataType {
         fn a() -> &str {
             "Already Been Done"
@@ -170,7 +170,7 @@ mod merge_parallel_fragments {
 
     struct Type;
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Type {
         fn a() -> &str {
             "Apple"
@@ -261,7 +261,7 @@ mod merge_parallel_inline_fragments {
     struct Type;
     struct Other;
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Type {
         fn a() -> &str {
             "Apple"
@@ -280,7 +280,7 @@ mod merge_parallel_inline_fragments {
         }
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Other {
         fn a() -> &str {
             "Apple"
@@ -418,7 +418,7 @@ mod threads_context_correctly {
 
     impl Context for TestContext {}
 
-    #[crate::graphql_object_internal(
+    #[crate::graphql_object(
         Context = TestContext,
     )]
     impl Schema {
@@ -491,7 +491,7 @@ mod dynamic_context_switching {
 
     struct ItemRef;
 
-    #[crate::graphql_object_internal(Context = OuterContext)]
+    #[crate::graphql_object(Context = OuterContext)]
     impl Schema {
         fn item_opt(_context: &OuterContext, key: i32) -> Option<(&InnerContext, ItemRef)> {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
@@ -521,7 +521,7 @@ mod dynamic_context_switching {
         }
     }
 
-    #[crate::graphql_object_internal(Context = InnerContext)]
+    #[crate::graphql_object(Context = InnerContext)]
     impl ItemRef {
         fn value(context: &InnerContext) -> String {
             context.value.clone()
@@ -857,7 +857,7 @@ mod propagates_errors_to_nullable_fields {
         }
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Schema {
         fn inner() -> Inner {
             Inner
@@ -870,7 +870,7 @@ mod propagates_errors_to_nullable_fields {
         }
     }
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Inner {
         fn nullable_field() -> Option<Inner> {
             Some(Inner)
@@ -1166,7 +1166,7 @@ mod named_operations {
 
     struct Schema;
 
-    #[crate::graphql_object_internal]
+    #[crate::graphql_object]
     impl Schema {
         fn a(p: Option<String>) -> &str {
             let _ = p;

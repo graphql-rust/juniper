@@ -1,13 +1,12 @@
 use indexmap::IndexMap;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
+    GraphQLEnum,
 };
 
 /// GraphQL type kind
@@ -15,7 +14,7 @@ use crate::{
 /// The GraphQL specification defines a number of type kinds - the meta type\
 /// of a type.
 #[derive(Clone, Eq, PartialEq, Debug, GraphQLEnum)]
-#[graphql(name = "__TypeKind")]
+#[graphql(name = "__TypeKind", internal)]
 pub enum TypeKind {
     /// ## Scalar types
     ///

@@ -1,21 +1,15 @@
 use indexmap::IndexMap;
 
-use juniper_codegen::{
-    GraphQLEnumInternal as GraphQLEnum, GraphQLInputObjectInternal as GraphQLInputObject,
-};
-
 use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
-};
-
-use crate::{
     schema::{
         meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta},
         model::SchemaType,
     },
     types::scalars::{EmptyMutation, EmptySubscription},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
+    GraphQLEnum, GraphQLInputObject,
 };
 
 #[derive(GraphQLEnum)]
@@ -36,7 +30,7 @@ struct Foo {
 
 struct Query;
 
-#[crate::graphql_object_internal(Scalar = S)]
+#[crate::graphql_object(Scalar = S)]
 impl<'a, S> Query
 where
     S: crate::ScalarValue + 'a,

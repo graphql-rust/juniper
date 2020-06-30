@@ -125,10 +125,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Schema"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -167,10 +168,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Type"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -300,10 +302,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Field",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -339,10 +342,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__InputValue",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -368,9 +372,10 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__EnumValue",
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -395,10 +400,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Directive",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]

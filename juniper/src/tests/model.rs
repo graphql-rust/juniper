@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+use crate::GraphQLEnum;
 
 #[derive(GraphQLEnum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Episode {

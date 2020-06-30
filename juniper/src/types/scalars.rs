@@ -42,7 +42,7 @@ impl Deref for ID {
     }
 }
 
-#[crate::graphql_scalar_internal(name = "ID")]
+#[crate::graphql_scalar(name = "ID")]
 impl<S> GraphQLScalar for ID
 where
     S: ScalarValue,
@@ -69,7 +69,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "String")]
+#[crate::graphql_scalar(name = "String")]
 impl<S> GraphQLScalar for String
 where
     S: ScalarValue,
@@ -258,7 +258,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "Boolean")]
+#[crate::graphql_scalar(name = "Boolean")]
 impl<S> GraphQLScalar for bool
 where
     S: ScalarValue,
@@ -280,7 +280,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "Int")]
+#[crate::graphql_scalar(name = "Int")]
 impl<S> GraphQLScalar for i32
 where
     S: ScalarValue,
@@ -307,7 +307,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "Float")]
+#[crate::graphql_scalar(name = "Float")]
 impl<S> GraphQLScalar for f64
 where
     S: ScalarValue,
