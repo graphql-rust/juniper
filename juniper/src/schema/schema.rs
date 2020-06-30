@@ -16,13 +16,13 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
     fn name(info: &Self::TypeInfo) -> Option<&str> {
         QueryT::name(info)
@@ -36,15 +36,15 @@ where
     }
 }
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
+impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
-    type Context = CtxT;
+    type Context = QueryT::Context;
     type TypeInfo = QueryT::TypeInfo;
 
     fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
@@ -93,16 +93,16 @@ where
     }
 }
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
+impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::Context: Sync + 'a,
+    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Sync,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync + 'a,
     S: ScalarValue + Send + Sync,
 {
     fn resolve_field_async<'b>(

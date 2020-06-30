@@ -149,7 +149,7 @@ impl Subscription {
 
 #[tokio::test]
 async fn object_introspect() {
-    let res = util::run_info_query::<Query, Mutation, Subscription, Context>("Subscription").await;
+    let res = util::run_info_query::<Query, Mutation, Subscription>("Subscription").await;
     assert_eq!(
         res,
         crate::graphql_value!({

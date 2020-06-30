@@ -127,7 +127,7 @@ where
 
 impl<S, T> GraphQLTypeAsync<S> for T
 where
-    T: GraphQLValueAsync<S> + GraphQLType<S>,
+    T: GraphQLValueAsync<S> + GraphQLType<S> + ?Sized,
     T::Context: Sync,
     T::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,

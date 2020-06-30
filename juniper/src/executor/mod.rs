@@ -375,18 +375,15 @@ where
         'i: 'res,
         'v: 'res,
         'a: 'res,
-        T: GraphQLSubscriptionValue<S, Context = CtxT>,
+        T: GraphQLSubscriptionValue<S, Context = CtxT> + ?Sized,
         T::TypeInfo: Sync,
         CtxT: Sync,
         S: Send + Sync,
     {
-        match self.subscribe(info, value).await {
-            Ok(v) => v,
-            Err(e) => {
-                self.push_error(e);
-                Value::Null
-            }
-        }
+        self.subscribe(info, value).await.unwrap_or_else(|e| {
+            self.push_error(e);
+            Value::Null
+        })
     }
 
     /// Resolve a single arbitrary value into a stream of [`Value`]s.
@@ -445,7 +442,7 @@ where
         value: &T,
     ) -> ExecutionResult<S>
     where
-        T: GraphQLValueAsync<S, Context = NewCtxT>,
+        T: GraphQLValueAsync<S, Context = NewCtxT> + ?Sized,
         T::TypeInfo: Sync,
         NewCtxT: FromContext<CtxT> + Sync,
         S: Send + Sync,
@@ -751,18 +748,18 @@ impl<S> ExecutionError<S> {
 
 /// Create new `Executor` and start query/mutation execution.
 /// Returns `IsSubscription` error if subscription is passed.
-pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
+pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, S>(
     document: &'b Document<S>,
     operation: &'b Spanning<Operation<S>>,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
-    context: &CtxT,
+    context: &QueryT::Context,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
     if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
@@ -845,21 +842,21 @@ where
 
 /// Create new `Executor` and start asynchronous query execution.
 /// Returns `IsSubscription` error if subscription is passed.
-pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
+pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, S>(
     document: &'b Document<'a, S>,
     operation: &'b Spanning<Operation<'_, S>>,
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
-    context: &CtxT,
+    context: &QueryT::Context,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::Context: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Sync,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type == OperationType::Subscription {
@@ -987,26 +984,25 @@ pub async fn resolve_validated_subscription<
     QueryT,
     MutationT,
     SubscriptionT,
-    CtxT,
     S,
 >(
     document: &Document<'d, S>,
     operation: &Spanning<Operation<'op, S>>,
     root_node: &'r RootNode<'r, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
-    context: &'r CtxT,
+    context: &'r QueryT::Context,
 ) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError<'r>>
 where
     'r: 'exec_ref,
     'd: 'r,
     'op: 'd,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::Context: Sync + 'r,
+    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync + 'r,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type != OperationType::Subscription {

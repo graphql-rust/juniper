@@ -191,7 +191,7 @@ where
 
 impl<S, T> GraphQLSubscriptionType<S> for T
 where
-    T: GraphQLSubscriptionValue<S> + GraphQLType<S>,
+    T: GraphQLSubscriptionValue<S> + GraphQLType<S> + ?Sized,
     T::Context: Sync,
     T::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,

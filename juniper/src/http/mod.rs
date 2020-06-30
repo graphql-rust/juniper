@@ -75,16 +75,16 @@ where
     ///
     /// This is a simple wrapper around the `execute_sync` function exposed at the
     /// top level of this crate.
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &CtxT,
+        context: &QueryT::Context,
     ) -> GraphQLResponse<'a, S>
     where
         S: ScalarValue,
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
+        QueryT: GraphQLType<S>,
+        MutationT: GraphQLType<S, Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
     {
         GraphQLResponse(crate::execute_sync(
             &self.query,
@@ -99,19 +99,19 @@ where
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-        context: &'a CtxT,
+        context: &'a QueryT::Context,
     ) -> GraphQLResponse<'a, S>
     where
-        QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+        QueryT: GraphQLTypeAsync<S>,
         QueryT::TypeInfo: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+        QueryT::Context: Sync,
+        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
         MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLType<S, Context = CtxT> + Sync,
+        SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
         SubscriptionT::TypeInfo: Sync,
-        CtxT: Sync,
         S: ScalarValue + Send + Sync,
     {
         let op = self.operation_name();
@@ -125,22 +125,22 @@ where
 /// specified schema and context.
 /// This is a wrapper around the `resolve_into_stream` function exposed at the top
 /// level of this crate.
-pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
+pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, QueryT, MutationT, SubscriptionT, S>(
     req: &'req GraphQLRequest<S>,
     root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-    context: &'ctx CtxT,
+    context: &'ctx QueryT::Context,
 ) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     'req: 'a,
     'rn: 'a,
     'ctx: 'a,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::Context: Sync,
+    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     let op = req.operation_name();
@@ -257,15 +257,15 @@ where
     /// Execute a GraphQL batch request synchronously using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute_sync` function exposed in GraphQLRequest.
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &CtxT,
+        context: &QueryT::Context,
     ) -> GraphQLBatchResponse<'a, S>
     where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
+        QueryT: GraphQLType<S>,
+        MutationT: GraphQLType<S, Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
     {
         match *self {
             Self::Single(ref req) => {
@@ -283,19 +283,19 @@ where
     ///
     /// This is a simple wrapper around the `execute` function exposed in
     /// GraphQLRequest
-    pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-        context: &'a CtxT,
+        context: &'a QueryT::Context,
     ) -> GraphQLBatchResponse<'a, S>
     where
-        QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+        QueryT: GraphQLTypeAsync<S>,
         QueryT::TypeInfo: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+        QueryT::Context: Sync,
+        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
         MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+        SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
         SubscriptionT::TypeInfo: Sync,
-        CtxT: Sync,
         S: Send + Sync,
     {
         match self {
