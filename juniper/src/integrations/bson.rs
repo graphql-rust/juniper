@@ -7,7 +7,7 @@ use crate::{
     Value,
 };
 
-#[crate::graphql_scalar_internal(description = "ObjectId")]
+#[crate::graphql_scalar(description = "ObjectId")]
 impl<S> GraphQLScalar for ObjectId
 where
     S: ScalarValue,
@@ -30,7 +30,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(description = "UtcDateTime")]
+#[crate::graphql_scalar(description = "UtcDateTime")]
 impl<S> GraphQLScalar for UtcDateTime
 where
     S: ScalarValue,

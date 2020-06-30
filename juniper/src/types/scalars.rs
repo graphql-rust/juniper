@@ -1,4 +1,4 @@
-use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
+use std::{char, convert::From, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32};
 
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +8,9 @@ use crate::{
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::{
-        async_await::GraphQLTypeAsync, base::GraphQLType, subscriptions::GraphQLSubscriptionType,
+        async_await::GraphQLValueAsync,
+        base::{GraphQLType, GraphQLValue},
+        subscriptions::GraphQLSubscriptionValue,
     },
     value::{ParseScalarResult, ScalarValue, Value},
 };
@@ -40,7 +42,7 @@ impl Deref for ID {
     }
 }
 
-#[crate::graphql_scalar_internal(name = "ID")]
+#[crate::graphql_scalar(name = "ID")]
 impl<S> GraphQLScalar for ID
 where
     S: ScalarValue,
@@ -67,7 +69,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "String")]
+#[crate::graphql_scalar(name = "String")]
 impl<S> GraphQLScalar for String
 where
     S: ScalarValue,
@@ -199,10 +201,7 @@ impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,
 {
-    type Context = ();
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("String")
     }
 
@@ -211,6 +210,18 @@ where
         S: 'r,
     {
         registry.build_scalar_type::<String>(&()).into_meta()
+    }
+}
+
+impl<S> GraphQLValue<S> for str
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType<S>>::name(info)
     }
 
     fn resolve(
@@ -223,7 +234,7 @@ where
     }
 }
 
-impl<S> GraphQLTypeAsync<S> for str
+impl<S> GraphQLValueAsync<S> for str
 where
     S: ScalarValue + Send + Sync,
 {
@@ -247,7 +258,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "Boolean")]
+#[crate::graphql_scalar(name = "Boolean")]
 impl<S> GraphQLScalar for bool
 where
     S: ScalarValue,
@@ -269,7 +280,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "Int")]
+#[crate::graphql_scalar(name = "Int")]
 impl<S> GraphQLScalar for i32
 where
     S: ScalarValue,
@@ -296,7 +307,7 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(name = "Float")]
+#[crate::graphql_scalar(name = "Float")]
 impl<S> GraphQLScalar for f64
 where
     S: ScalarValue,
@@ -328,30 +339,24 @@ where
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
 #[derive(Debug)]
-pub struct EmptyMutation<T: ?Sized = ()> {
-    phantom: PhantomData<T>,
-}
+pub struct EmptyMutation<T: ?Sized = ()>(PhantomData<JoinHandle<Box<T>>>);
+
+// `EmptyMutation` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
+crate::sa::assert_impl_all!(EmptyMutation<Rc<String>>: Send, Sync);
 
 impl<T: ?Sized> EmptyMutation<T> {
     /// Construct a new empty mutation
-    pub fn new() -> EmptyMutation<T> {
-        EmptyMutation {
-            phantom: PhantomData,
-        }
+    #[inline]
+    pub fn new() -> Self {
+        Self(PhantomData)
     }
 }
-
-// This is safe because `T` is never used.
-unsafe impl<T: ?Sized> Send for EmptyMutation<T> {}
 
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
 {
-    type Context = T;
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("_EmptyMutation")
     }
 
@@ -363,9 +368,20 @@ where
     }
 }
 
-impl<S, T> GraphQLTypeAsync<S> for EmptyMutation<T>
+impl<S, T> GraphQLValue<S> for EmptyMutation<T>
 where
-    Self: GraphQLType<S> + Sync,
+    S: ScalarValue,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+}
+
+impl<S, T> GraphQLValueAsync<S> for EmptyMutation<T>
+where
     Self::TypeInfo: Sync,
     Self::Context: Sync,
     S: ScalarValue + Send + Sync,
@@ -373,10 +389,9 @@ where
 }
 
 impl<T> Default for EmptyMutation<T> {
+    #[inline]
     fn default() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
+        Self::new()
     }
 }
 
@@ -384,19 +399,16 @@ impl<T> Default for EmptyMutation<T> {
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
-pub struct EmptySubscription<T: ?Sized = ()> {
-    phantom: PhantomData<T>,
-}
+pub struct EmptySubscription<T: ?Sized = ()>(PhantomData<JoinHandle<Box<T>>>);
 
-// This is safe due to never using `T`.
-unsafe impl<T: ?Sized> Send for EmptySubscription<T> {}
+// `EmptySubscription` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
+crate::sa::assert_impl_all!(EmptySubscription<Rc<String>>: Send, Sync);
 
 impl<T: ?Sized> EmptySubscription<T> {
     /// Construct a new empty subscription
+    #[inline]
     pub fn new() -> Self {
-        EmptySubscription {
-            phantom: PhantomData,
-        }
+        Self(PhantomData)
     }
 }
 
@@ -404,10 +416,7 @@ impl<S, T> GraphQLType<S> for EmptySubscription<T>
 where
     S: ScalarValue,
 {
-    type Context = T;
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("_EmptySubscription")
     }
 
@@ -419,9 +428,20 @@ where
     }
 }
 
-impl<T, S> GraphQLSubscriptionType<S> for EmptySubscription<T>
+impl<S, T> GraphQLValue<S> for EmptySubscription<T>
 where
-    Self: GraphQLType<S> + Sync,
+    S: ScalarValue,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+}
+
+impl<T, S> GraphQLSubscriptionValue<S> for EmptySubscription<T>
+where
     Self::TypeInfo: Sync,
     Self::Context: Sync,
     S: ScalarValue + Send + Sync + 'static,
@@ -429,10 +449,9 @@ where
 }
 
 impl<T> Default for EmptySubscription<T> {
+    #[inline]
     fn default() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
+        Self::new()
     }
 }
 

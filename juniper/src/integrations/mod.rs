@@ -1,4 +1,5 @@
 //! Provides GraphQLType implementations for some external types
+
 #[doc(hidden)]
 pub mod serde;
 

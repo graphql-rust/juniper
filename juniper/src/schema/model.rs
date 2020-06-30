@@ -4,14 +4,13 @@ use fnv::FnvHashMap;
 #[cfg(feature = "graphql-parser-integration")]
 use graphql_parser::schema::Document;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
+    GraphQLEnum,
 };
 
 #[cfg(feature = "graphql-parser-integration")]
@@ -75,7 +74,7 @@ pub struct DirectiveType<'a, S> {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
-#[graphql(name = "__DirectiveLocation")]
+#[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
     Query,
     Mutation,
@@ -602,7 +601,7 @@ mod test {
         use crate as juniper;
         use crate::{
             EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
-            GraphQLUnionInternal as GraphQLUnion,
+            GraphQLUnion,
         };
 
         #[test]

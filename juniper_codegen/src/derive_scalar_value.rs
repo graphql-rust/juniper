@@ -64,16 +64,12 @@ impl TransparentAttributes {
     }
 }
 
-pub fn impl_scalar_value(
-    ast: &syn::DeriveInput,
-    is_internal: bool,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
+pub fn impl_scalar_value(ast: &syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
     let ident = &ast.ident;
 
     match ast.data {
-        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, is_internal, error),
-        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, is_internal, error),
+        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, error),
+        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, error),
         Data::Union(_) => Err(error.custom_error(ast.span(), "may not be applied to unions")),
     }
 }
@@ -81,7 +77,6 @@ pub fn impl_scalar_value(
 fn impl_scalar_struct(
     ast: &syn::DeriveInput,
     data: &syn::DataStruct,
-    is_internal: bool,
     error: GraphQLScope,
 ) -> syn::Result<TokenStream> {
     let field = match data.fields {
@@ -100,35 +95,27 @@ fn impl_scalar_struct(
     let inner_ty = &field.ty;
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
-    let crate_name = if is_internal {
-        quote!(crate)
-    } else {
-        quote!(juniper)
-    };
-
     let description = match attrs.description {
         Some(val) => quote!( .description( #val ) ),
         None => quote!(),
     };
 
     let _async = quote!(
-
-        impl <__S> #crate_name::GraphQLTypeAsync<__S> for #ident
+        impl<__S> ::juniper::GraphQLValueAsync<__S> for #ident
         where
-            Self: #crate_name::GraphQLType<__S> + Sync,
-            Self::Context: Sync,
+            Self: Sync,
             Self::TypeInfo: Sync,
-            __S: #crate_name::ScalarValue + Send + Sync,
+            Self::Context: Sync,
+            __S: ::juniper::ScalarValue + Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,
                 info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [#crate_name::Selection<__S>]>,
-                executor: &'a #crate_name::Executor<Self::Context, __S>,
-            ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<__S>> {
-                use #crate_name::GraphQLType;
-                use #crate_name::futures::future;
-                let v = self.resolve(info, selection_set, executor);
+                selection_set: Option<&'a [::juniper::Selection<__S>]>,
+                executor: &'a ::juniper::Executor<Self::Context, __S>,
+            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<__S>> {
+                use ::juniper::futures::future;
+                let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
@@ -137,21 +124,18 @@ fn impl_scalar_struct(
     let content = quote!(
         #_async
 
-        impl<S> #crate_name::GraphQLType<S> for #ident
+        impl<S> ::juniper::GraphQLType<S> for #ident
         where
-            S: #crate_name::ScalarValue,
+            S: ::juniper::ScalarValue,
         {
-            type Context = ();
-            type TypeInfo = ();
-
-            fn name(_: &Self::TypeInfo) -> Option<&str> {
+            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
             }
 
             fn meta<'r>(
                 info: &Self::TypeInfo,
-                registry: &mut #crate_name::Registry<'r, S>,
-            ) -> #crate_name::meta::MetaType<'r, S>
+                registry: &mut ::juniper::Registry<'r, S>,
+            ) -> ::juniper::meta::MetaType<'r, S>
             where
                 S: 'r,
             {
@@ -159,44 +143,56 @@ fn impl_scalar_struct(
                     #description
                     .into_meta()
             }
+        }
+
+        impl<S> ::juniper::GraphQLValue<S> for #ident
+        where
+            S: ::juniper::ScalarValue,
+        {
+            type Context = ();
+            type TypeInfo = ();
+
+            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                <Self as ::juniper::GraphQLType<S>>::name(info)
+            }
 
             fn resolve(
                 &self,
                 info: &(),
-                selection: Option<&[#crate_name::Selection<S>]>,
-                executor: &#crate_name::Executor<Self::Context, S>,
-            ) -> #crate_name::ExecutionResult<S> {
-                #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
+                selection: Option<&[::juniper::Selection<S>]>,
+                executor: &::juniper::Executor<Self::Context, S>,
+            ) -> ::juniper::ExecutionResult<S> {
+                ::juniper::GraphQLValue::resolve(&self.0, info, selection, executor)
             }
         }
 
-        impl<S> #crate_name::ToInputValue<S> for #ident
+        impl<S> ::juniper::ToInputValue<S> for #ident
         where
-            S: #crate_name::ScalarValue,
+            S: ::juniper::ScalarValue,
         {
-            fn to_input_value(&self) -> #crate_name::InputValue<S> {
-                #crate_name::ToInputValue::to_input_value(&self.0)
+            fn to_input_value(&self) -> ::juniper::InputValue<S> {
+                ::juniper::ToInputValue::to_input_value(&self.0)
             }
         }
 
-        impl<S> #crate_name::FromInputValue<S> for #ident
+        impl<S> ::juniper::FromInputValue<S> for #ident
         where
-            S: #crate_name::ScalarValue,
+            S: ::juniper::ScalarValue,
         {
-            fn from_input_value(v: &#crate_name::InputValue<S>) -> Option<#ident> {
-                let inner: #inner_ty = #crate_name::FromInputValue::from_input_value(v)?;
+            fn from_input_value(v: &::juniper::InputValue<S>) -> Option<#ident> {
+                let inner: #inner_ty = ::juniper::FromInputValue::from_input_value(v)?;
                 Some(#ident(inner))
             }
         }
 
-        impl<S> #crate_name::ParseScalarValue<S> for #ident
+        impl<S> ::juniper::ParseScalarValue<S> for #ident
         where
-            S: #crate_name::ScalarValue,
+            S: ::juniper::ScalarValue,
         {
             fn from_str<'a>(
-                value: #crate_name::parser::ScalarToken<'a>,
-            ) -> #crate_name::ParseScalarResult<'a, S> {
-                <#inner_ty as #crate_name::ParseScalarValue<S>>::from_str(value)
+                value: ::juniper::parser::ScalarToken<'a>,
+            ) -> ::juniper::ParseScalarResult<'a, S> {
+                <#inner_ty as ::juniper::ParseScalarValue<S>>::from_str(value)
             }
         }
     );
@@ -207,7 +203,6 @@ fn impl_scalar_struct(
 fn impl_scalar_enum(
     ident: &syn::Ident,
     data: &syn::DataEnum,
-    is_internal: bool,
     error: GraphQLScope,
 ) -> syn::Result<TokenStream> {
     let froms = data
@@ -216,7 +211,7 @@ fn impl_scalar_enum(
         .map(|v| derive_from_variant(v, ident, &error))
         .collect::<Result<Vec<_>, _>>()?;
 
-    let serialize = derive_serialize(data.variants.iter(), ident, is_internal);
+    let serialize = derive_serialize(data.variants.iter(), ident);
 
     let display = derive_display(data.variants.iter(), ident);
 
@@ -248,7 +243,7 @@ where
     }
 }
 
-fn derive_serialize<'a, I>(variants: I, ident: &Ident, is_internal: bool) -> TokenStream
+fn derive_serialize<'a, I>(variants: I, ident: &Ident) -> TokenStream
 where
     I: Iterator<Item = &'a Variant>,
 {
@@ -257,16 +252,10 @@ where
         quote!(#ident::#variant(ref v) => v.serialize(serializer),)
     });
 
-    let serde_path = if is_internal {
-        quote!(crate::serde)
-    } else {
-        quote!(juniper::serde)
-    };
-
     quote! {
-        impl #serde_path::Serialize for #ident {
-            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-            where S: #serde_path::Serializer
+        impl ::juniper::serde::Serialize for #ident {
+            fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+            where S: ::juniper::serde::Serializer
             {
                 match *self {
                     #(#arms)*
@@ -295,13 +284,13 @@ fn derive_from_variant(
     let variant = &variant.ident;
 
     Ok(quote! {
-        impl std::convert::From<#ty> for #ident {
+        impl ::std::convert::From<#ty> for #ident {
             fn from(t: #ty) -> Self {
                 #ident::#variant(t)
             }
         }
 
-        impl<'a> std::convert::From<&'a #ident> for std::option::Option<&'a #ty> {
+        impl<'a> ::std::convert::From<&'a #ident> for std::option::Option<&'a #ty> {
             fn from(t: &'a #ident) -> Self {
                 match *t {
                     #ident::#variant(ref t) => std::option::Option::Some(t),
@@ -310,7 +299,7 @@ fn derive_from_variant(
             }
         }
 
-        impl std::convert::From<#ident> for std::option::Option<#ty> {
+        impl ::std::convert::From<#ident> for std::option::Option<#ty> {
             fn from(t: #ident) -> Self {
                 match t {
                     #ident::#variant(t) => std::option::Option::Some(t),

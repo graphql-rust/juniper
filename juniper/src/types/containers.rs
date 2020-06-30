@@ -2,7 +2,10 @@ use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
-    types::{async_await::GraphQLTypeAsync, base::GraphQLType},
+    types::{
+        async_await::GraphQLValueAsync,
+        base::{GraphQLType, GraphQLValue},
+    },
     value::{ScalarValue, Value},
 };
 
@@ -11,10 +14,7 @@ where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
 {
-    type Context = CtxT;
-    type TypeInfo = T::TypeInfo;
-
-    fn name(_: &T::TypeInfo) -> Option<&str> {
+    fn name(_: &T::TypeInfo) -> Option<&'static str> {
         None
     }
 
@@ -23,6 +23,19 @@ where
         S: 'r,
     {
         registry.build_nullable_type::<T>(info).into_meta()
+    }
+}
+
+impl<S, T, CtxT> GraphQLValue<S> for Option<T>
+where
+    S: ScalarValue,
+    T: GraphQLValue<S, Context = CtxT>,
+{
+    type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
+
+    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+        None
     }
 
     fn resolve(
@@ -38,17 +51,17 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLTypeAsync<S> for Option<T>
+impl<S, T> GraphQLValueAsync<S> for Option<T>
 where
-    T: GraphQLTypeAsync<S, Context = CtxT>,
+    T: GraphQLValueAsync<S>,
     T::TypeInfo: Sync,
-    CtxT: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        _selection_set: Option<&'a [Selection<S>]>,
+        _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = async move {
@@ -93,10 +106,7 @@ where
     T: GraphQLType<S, Context = CtxT>,
     S: ScalarValue,
 {
-    type Context = CtxT;
-    type TypeInfo = T::TypeInfo;
-
-    fn name(_: &T::TypeInfo) -> Option<&str> {
+    fn name(_: &T::TypeInfo) -> Option<&'static str> {
         None
     }
 
@@ -105,6 +115,19 @@ where
         S: 'r,
     {
         registry.build_list_type::<T>(info).into_meta()
+    }
+}
+
+impl<S, T, CtxT> GraphQLValue<S> for Vec<T>
+where
+    T: GraphQLValue<S, Context = CtxT>,
+    S: ScalarValue,
+{
+    type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
+
+    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+        None
     }
 
     fn resolve(
@@ -117,17 +140,17 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLTypeAsync<S> for Vec<T>
+impl<S, T> GraphQLValueAsync<S> for Vec<T>
 where
-    T: GraphQLTypeAsync<S, Context = CtxT>,
+    T: GraphQLValueAsync<S>,
     T::TypeInfo: Sync,
-    CtxT: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        _selection_set: Option<&'a [Selection<S>]>,
+        _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
@@ -172,10 +195,7 @@ where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
 {
-    type Context = CtxT;
-    type TypeInfo = T::TypeInfo;
-
-    fn name(_: &T::TypeInfo) -> Option<&str> {
+    fn name(_: &T::TypeInfo) -> Option<&'static str> {
         None
     }
 
@@ -184,6 +204,19 @@ where
         S: 'r,
     {
         registry.build_list_type::<T>(info).into_meta()
+    }
+}
+
+impl<S, T, CtxT> GraphQLValue<S> for [T]
+where
+    S: ScalarValue,
+    T: GraphQLValue<S, Context = CtxT>,
+{
+    type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
+
+    fn type_name(&self, _: &T::TypeInfo) -> Option<&'static str> {
+        None
     }
 
     fn resolve(
@@ -196,17 +229,17 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLTypeAsync<S> for [T]
+impl<S, T> GraphQLValueAsync<S> for [T]
 where
-    T: GraphQLTypeAsync<S, Context = CtxT>,
+    T: GraphQLValueAsync<S>,
     T::TypeInfo: Sync,
-    CtxT: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        _selection_set: Option<&'a [Selection<S>]>,
+        _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
@@ -232,7 +265,7 @@ fn resolve_into_list<'t, S, T, I>(
 where
     S: ScalarValue,
     I: Iterator<Item = &'t T> + ExactSizeIterator,
-    T: GraphQLType<S> + ?Sized + 't,
+    T: GraphQLValue<S> + ?Sized + 't,
 {
     let stop_on_null = executor
         .current_type()
@@ -260,7 +293,7 @@ async fn resolve_into_list_async<'a, 't, S, T, I>(
 ) -> ExecutionResult<S>
 where
     I: Iterator<Item = &'t T> + ExactSizeIterator,
-    T: GraphQLTypeAsync<S> + ?Sized + 't,
+    T: GraphQLValueAsync<S> + ?Sized + 't,
     T::TypeInfo: Sync,
     T::Context: Sync,
     S: ScalarValue + Send + Sync,

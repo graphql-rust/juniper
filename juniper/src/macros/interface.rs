@@ -134,10 +134,7 @@ macro_rules! graphql_interface {
     ) => {
         $crate::__juniper_impl_trait!(
             impl<$($scalar)* $(, $lifetimes)* > GraphQLType for $name {
-                type Context = $ctx;
-                type TypeInfo = ();
-
-                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some($($outname)*)
                 }
 
@@ -178,7 +175,17 @@ macro_rules! graphql_interface {
                         $(.description($desciption))*
                         .into_meta()
                 }
+            }
+        );
 
+        $crate::__juniper_impl_trait!(
+            impl<$($scalar)* $(, $lifetimes)* > GraphQLValue for $name {
+                type Context = $ctx;
+                type TypeInfo = ();
+
+                fn type_name(&self, _ : &Self::TypeInfo) -> Option<&'static str> {
+                    Some($($outname)*)
+                }
 
                 #[allow(unused_variables)]
                 fn resolve_field(

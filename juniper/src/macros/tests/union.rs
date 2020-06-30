@@ -14,29 +14,29 @@ use std::marker::PhantomData;
 
 use crate::{
     ast::InputValue,
-    graphql_object_internal,
+    graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    GraphQLUnionInternal,
+    GraphQLUnion,
 };
 
 struct Concrete;
 
-#[graphql_object_internal]
+#[graphql_object]
 impl Concrete {
     fn simple() -> i32 {
         123
     }
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(name = "ACustomNamedUnion", scalar = DefaultScalarValue)]
 enum CustomName {
     Concrete(Concrete),
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(on Concrete = WithLifetime::resolve, scalar = DefaultScalarValue)]
 enum WithLifetime<'a> {
     #[graphql(ignore)]
@@ -53,7 +53,7 @@ impl<'a> WithLifetime<'a> {
     }
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(on Concrete = WithGenerics::resolve, scalar = DefaultScalarValue)]
 enum WithGenerics<T> {
     #[graphql(ignore)]
@@ -70,7 +70,7 @@ impl<T> WithGenerics<T> {
     }
 }
 
-#[derive(GraphQLUnionInternal)]
+#[derive(GraphQLUnion)]
 #[graphql(description = "A description", scalar = DefaultScalarValue)]
 enum DescriptionFirst {
     Concrete(Concrete),
@@ -79,7 +79,7 @@ enum DescriptionFirst {
 struct Root;
 
 // FIXME: make async work
-#[crate::graphql_object_internal(noasync)]
+#[crate::graphql_object(noasync)]
 impl<'a> Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)

@@ -72,6 +72,10 @@
 
 ## Breaking Changes
 
+- `GraphQLType` trait was split into 2 traits: ([#685](https://github.com/graphql-rust/juniper/pull/685))
+  - object safe `GraphQLValue` trait containing resolving logic;
+  - static `GraphQLType` trait containing GraphQL type information.
+
 - `juniper::graphiql` has moved to `juniper::http::graphiql`.
   - `juniper::http::graphiql::graphiql_source()` now requires a second parameter for subscriptions.
   

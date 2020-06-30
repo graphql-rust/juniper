@@ -2,8 +2,8 @@ use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
     types::{
-        async_await::GraphQLTypeAsync,
-        base::{Arguments, GraphQLType, TypeKind},
+        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
     },
     value::{ScalarValue, Value},
 };
@@ -24,9 +24,6 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
-    type Context = CtxT;
-    type TypeInfo = QueryT::TypeInfo;
-
     fn name(info: &QueryT::TypeInfo) -> Option<&str> {
         QueryT::name(info)
     }
@@ -36,6 +33,22 @@ where
         S: 'r,
     {
         QueryT::meta(info, registry)
+    }
+}
+
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
+{
+    type Context = CtxT;
+    type TypeInfo = QueryT::TypeInfo;
+
+    fn type_name<'i>(&self, info: &'i QueryT::TypeInfo) -> Option<&'i str> {
+        QueryT::name(info)
     }
 
     fn resolve_field(
@@ -80,7 +93,7 @@ where
     }
 }
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLTypeAsync<S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
@@ -112,10 +125,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Schema"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -154,10 +168,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Type"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -287,10 +302,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Field",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -326,10 +342,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__InputValue",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -355,9 +372,10 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__EnumValue",
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]
@@ -382,10 +400,11 @@ where
     }
 }
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     name = "__Directive",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    internal,
     // FIXME: make this redundant.
     noasync,
 )]

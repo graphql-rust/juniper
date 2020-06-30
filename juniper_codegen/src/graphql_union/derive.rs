@@ -1,4 +1,4 @@
-//! Code generation for `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]` macros.
+//! Code generation for `#[derive(GraphQLUnion)]` macro.
 
 use proc_macro2::TokenStream;
 use proc_macro_error::ResultExt as _;
@@ -7,7 +7,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{
     result::GraphQLScope,
-    util::{span_container::SpanContainer, unparenthesize, Mode},
+    util::{span_container::SpanContainer, unparenthesize},
 };
 
 use super::{
@@ -15,25 +15,23 @@ use super::{
     UnionVariantDefinition, UnionVariantMeta,
 };
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]`
-/// macros.
+/// [`GraphQLScope`] of errors for `#[derive(GraphQLUnion)]` macro.
 const ERR: GraphQLScope = GraphQLScope::UnionDerive;
 
-/// Expands `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]` macro into generated code.
-pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
+/// Expands `#[derive(GraphQLUnion)]` macro into generated code.
+pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input).unwrap_or_abort();
 
     match &ast.data {
-        Data::Enum(_) => expand_enum(ast, mode),
-        Data::Struct(_) => expand_struct(ast, mode),
+        Data::Enum(_) => expand_enum(ast),
+        Data::Struct(_) => expand_struct(ast),
         _ => Err(ERR.custom_error(ast.span(), "can only be derived for enums and structs")),
     }
     .map(ToTokens::into_token_stream)
 }
 
-/// Expands into generated code a `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]` macro
-/// placed on a Rust enum.
-fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition> {
+/// Expands into generated code a `#[derive(GraphQLUnion)]` macro placed on a Rust enum.
+fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
     let meta = UnionMeta::from_attrs("graphql", &ast.attrs)?;
 
     let enum_span = ast.span();
@@ -44,7 +42,7 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| enum_ident.unraw().to_string());
-    if matches!(mode, Mode::Public) && name.starts_with("__") {
+    if !meta.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             meta.name
                 .as_ref()
@@ -58,12 +56,12 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         _ => unreachable!(),
     }
     .into_iter()
-    .filter_map(|var| parse_variant_from_enum_variant(var, &enum_ident, &meta, mode))
+    .filter_map(|var| parse_variant_from_enum_variant(var, &enum_ident, &meta))
     .collect();
 
     proc_macro_error::abort_if_dirty();
 
-    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers, mode);
+    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers);
 
     if variants.is_empty() {
         ERR.emit_custom(enum_span, "expects at least one union variant");
@@ -88,7 +86,6 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         generics: ast.generics,
         variants,
         span: enum_span,
-        mode,
     })
 }
 
@@ -102,7 +99,6 @@ fn parse_variant_from_enum_variant(
     var: syn::Variant,
     enum_ident: &syn::Ident,
     enum_meta: &UnionMeta,
-    mode: Mode,
 ) -> Option<UnionVariantDefinition> {
     let meta = UnionVariantMeta::from_attrs("graphql", &var.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
@@ -148,11 +144,10 @@ fn parse_variant_from_enum_variant(
             );
         }
 
-        let crate_path = mode.crate_path();
         let resolver_fn = rslvr.into_inner();
 
         parse_quote! {
-            #resolver_fn(self, #crate_path::FromContext::from(context))
+            #resolver_fn(self, ::juniper::FromContext::from(context))
         }
     } else {
         parse_quote! {
@@ -174,9 +169,8 @@ fn parse_variant_from_enum_variant(
     })
 }
 
-/// Expands into generated code a `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]` macro
-/// placed on a Rust struct.
-fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition> {
+/// Expands into generated code a `#[derive(GraphQLUnion)]` macro placed on a Rust struct.
+fn expand_struct(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
     let meta = UnionMeta::from_attrs("graphql", &ast.attrs)?;
 
     let struct_span = ast.span();
@@ -187,7 +181,7 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
         .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| struct_ident.unraw().to_string());
-    if matches!(mode, Mode::Public) && name.starts_with("__") {
+    if !meta.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             meta.name
                 .as_ref()
@@ -197,7 +191,7 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
     }
 
     let mut variants = vec![];
-    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers, mode);
+    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers);
     if variants.is_empty() {
         ERR.emit_custom(struct_span, "expects at least one union variant");
     }
@@ -221,6 +215,5 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
         generics: ast.generics,
         variants,
         span: struct_span,
-        mode,
     })
 }

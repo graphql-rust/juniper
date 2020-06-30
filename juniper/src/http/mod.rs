@@ -259,13 +259,13 @@ where
     /// This is a simple wrapper around the `execute_sync` function exposed in GraphQLRequest.
     pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a crate::RootNode<QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
-        QueryT: crate::GraphQLType<S, Context = CtxT>,
-        MutationT: crate::GraphQLType<S, Context = CtxT>,
-        SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
+        QueryT: GraphQLType<S, Context = CtxT>,
+        MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         match *self {
             Self::Single(ref req) => {
@@ -285,7 +285,7 @@ where
     /// GraphQLRequest
     pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a crate::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where

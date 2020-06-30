@@ -1,12 +1,11 @@
 #![allow(unused)]
 
-use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
-
 use crate::{
     executor::Variables,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Value},
+    GraphQLInputObject,
 };
 
 struct Root;
@@ -30,7 +29,7 @@ struct Point {
     x: i32,
 }
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl Root {
     fn simple() -> i32 {
         0
