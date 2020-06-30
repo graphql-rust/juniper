@@ -101,12 +101,12 @@ fn impl_scalar_struct(
     };
 
     let _async = quote!(
-        impl <__S> ::juniper::GraphQLValueAsync<__S> for #ident
+        impl<__S> ::juniper::GraphQLValueAsync<__S> for #ident
         where
+            Self: Sync,
+            Self::TypeInfo: Sync,
+            Self::Context: Sync,
             __S: ::juniper::ScalarValue + Send + Sync,
-            Self: Send + Sync,
-            Self::Context: Send + Sync,
-            Self::TypeInfo: Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,

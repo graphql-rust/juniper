@@ -382,9 +382,9 @@ where
 
 impl<S, T> GraphQLValueAsync<S> for EmptyMutation<T>
 where
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
     S: ScalarValue + Send + Sync,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
 {
 }
 
@@ -442,9 +442,9 @@ where
 
 impl<T, S> GraphQLSubscriptionValue<S> for EmptySubscription<T>
 where
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
     S: ScalarValue + Send + Sync + 'static,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
 {
 }
 

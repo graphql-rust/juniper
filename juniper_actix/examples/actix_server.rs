@@ -1,6 +1,7 @@
 #![deny(warnings)]
 
-extern crate log;
+use std::env;
+
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
 use juniper::{
@@ -38,8 +39,9 @@ async fn graphql(
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    ::std::env::set_var("RUST_LOG", "actix_web=info");
+    env::set_var("RUST_LOG", "info");
     env_logger::init();
+
     let server = HttpServer::new(move || {
         App::new()
             .data(schema())

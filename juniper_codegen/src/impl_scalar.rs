@@ -247,10 +247,10 @@ pub fn build_scalar(
     let _async = quote!(
         impl#async_generic_type_decl ::juniper::GraphQLValueAsync<#async_generic_type> for #impl_for_type
         where
+            Self: Sync,
+            Self::TypeInfo: Sync,
+            Self::Context: Sync,
             #async_generic_type: ::juniper::ScalarValue + Send + Sync,
-            Self: Send + Sync,
-            Self::Context: Send + Sync,
-            Self::TypeInfo: Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,

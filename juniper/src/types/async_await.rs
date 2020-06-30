@@ -13,10 +13,10 @@ use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType, GraphQLVa
 ///
 /// Convenience macros related to asynchronous queries/mutations expand into an implementation of
 /// this trait and [`GraphQLValue`] for the given type.
-pub trait GraphQLValueAsync<S = DefaultScalarValue>: GraphQLValue<S> + Send + Sync
+pub trait GraphQLValueAsync<S = DefaultScalarValue>: GraphQLValue<S> + Sync
 where
-    Self::Context: Send + Sync,
-    Self::TypeInfo: Send + Sync,
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
     /// Resolves the value of a single field on this [`GraphQLValueAsync`].
@@ -119,34 +119,34 @@ crate::sa::assert_obj_safe!(GraphQLValueAsync<Context = (), TypeInfo = ()>);
 /// doesn't require manual or code-generated implementation.
 pub trait GraphQLTypeAsync<S = DefaultScalarValue>: GraphQLValueAsync<S> + GraphQLType<S>
 where
-    Self::Context: Send + Sync,
-    Self::TypeInfo: Send + Sync,
+    Self::Context: Sync,
+    Self::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
 }
 
 impl<S, T> GraphQLTypeAsync<S> for T
 where
-    T: GraphQLValueAsync<S> + GraphQLType<S>,
-    T::Context: Send + Sync,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLValueAsync<S> + GraphQLType<S> + ?Sized,
+    T::Context: Sync,
+    T::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
 }
 
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
-fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
+fn resolve_selection_set_into_async<'a, 'e, T, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'e [Selection<'e, S>],
-    executor: &'e Executor<'e, 'e, CtxT, S>,
+    executor: &'e Executor<'e, 'e, T::Context, S>,
 ) -> BoxFuture<'a, Value<S>>
 where
-    T: GraphQLValueAsync<S, Context = CtxT> + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLValueAsync<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
     'e: 'a,
 {
     Box::pin(resolve_selection_set_into_async_recursive(
@@ -167,23 +167,31 @@ enum AsyncValue<S> {
     Nested(Value<S>),
 }
 
-pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
+pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, 'a, CtxT, S>,
+    executor: &'a Executor<'a, 'a, T::Context, S>,
 ) -> Value<S>
 where
-    T: GraphQLValueAsync<S, Context = CtxT> + Send + Sync + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLValueAsync<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     use futures::stream::{FuturesOrdered, StreamExt as _};
 
+    #[derive(futures_enum::Future)]
+    enum AsyncValueFuture<A, B, C, D> {
+        Field(A),
+        FragmentSpread(B),
+        InlineFragment1(C),
+        InlineFragment2(D),
+    }
+
     let mut object = Object::with_capacity(selection_set.len());
 
-    let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncValue<S>>>::new();
+    let mut async_values = FuturesOrdered::<AsyncValueFuture<_, _, _, _>>::new();
 
     let meta_type = executor
         .schema()
@@ -246,7 +254,7 @@ where
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                let field_future = async move {
+                async_values.push(AsyncValueFuture::Field(async move {
                     // TODO: implement custom future type instead of
                     //       two-level boxing.
                     let res = instance
@@ -270,18 +278,16 @@ where
                         name: response_name,
                         value,
                     })
-                };
-                async_values.push(Box::pin(field_future));
+                }));
             }
+
             Selection::FragmentSpread(Spanning {
                 item: ref spread, ..
             }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
-
-                // TODO: prevent duplicate boxing.
-                let f = async move {
+                async_values.push(AsyncValueFuture::FragmentSpread(async move {
                     let fragment = &executor
                         .fragment_by_name(spread.name.item)
                         .expect("Fragment could not be found");
@@ -293,9 +299,9 @@ where
                     )
                     .await;
                     AsyncValue::Nested(value)
-                };
-                async_values.push(Box::pin(f));
+                }));
             }
+
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
                 start: ref start_pos,
@@ -322,20 +328,18 @@ where
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
-                            // TODO: prevent duplicate boxing.
-                            let f = async move {
+                            async_values.push(AsyncValueFuture::InlineFragment1(async move {
                                 AsyncValue::Field(AsyncField {
                                     name: k,
                                     value: Some(v),
                                 })
-                            };
-                            async_values.push(Box::pin(f));
+                            }));
                         }
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    let f = async move {
+                    async_values.push(AsyncValueFuture::InlineFragment2(async move {
                         let value = resolve_selection_set_into_async(
                             instance,
                             info,
@@ -344,8 +348,7 @@ where
                         )
                         .await;
                         AsyncValue::Nested(value)
-                    };
-                    async_values.push(Box::pin(f));
+                    }));
                 }
             }
         }

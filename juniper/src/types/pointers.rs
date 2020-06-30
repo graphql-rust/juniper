@@ -12,16 +12,16 @@ use crate::{
     BoxFuture,
 };
 
-impl<S, T, CtxT> GraphQLType<S> for Box<T>
+impl<S, T> GraphQLType<S> for Box<T>
 where
+    T: GraphQLType<S> + ?Sized,
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT> + ?Sized,
 {
-    fn name(info: &T::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<&str> {
         T::name(info)
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -29,54 +29,54 @@ where
     }
 }
 
-impl<S, T, CtxT> GraphQLValue<S> for Box<T>
+impl<S, T> GraphQLValue<S> for Box<T>
 where
+    T: GraphQLValue<S> + ?Sized,
     S: ScalarValue,
-    T: GraphQLValue<S, Context = CtxT> + ?Sized,
 {
-    type Context = CtxT;
+    type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i T::TypeInfo) -> Option<&'i str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         (**self).type_name(info)
     }
 
     fn resolve_into_type(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
     fn resolve_field(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
 
     fn resolve(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
 
-impl<S, T, CtxT> GraphQLValueAsync<S> for Box<T>
+impl<S, T> GraphQLValueAsync<S> for Box<T>
 where
-    T: GraphQLValueAsync<S, Context = CtxT> + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLValueAsync<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
@@ -111,16 +111,16 @@ where
     }
 }
 
-impl<'e, S, T, CtxT> GraphQLType<S> for &'e T
+impl<'e, S, T> GraphQLType<S> for &'e T
 where
+    T: GraphQLType<S> + ?Sized,
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT> + ?Sized,
 {
-    fn name(info: &T::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<&str> {
         T::name(info)
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -128,43 +128,43 @@ where
     }
 }
 
-impl<'e, S, T, CtxT> GraphQLValue<S> for &'e T
+impl<'e, S, T> GraphQLValue<S> for &'e T
 where
     S: ScalarValue,
-    T: GraphQLValue<S, Context = CtxT> + ?Sized,
+    T: GraphQLValue<S> + ?Sized,
 {
-    type Context = CtxT;
+    type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i T::TypeInfo) -> Option<&'i str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         (**self).type_name(info)
     }
 
     fn resolve_into_type(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
     fn resolve_field(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
 
     fn resolve(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
@@ -172,10 +172,10 @@ where
 
 impl<'e, S, T> GraphQLValueAsync<S> for &'e T
 where
-    S: ScalarValue + Send + Sync,
     T: GraphQLValueAsync<S> + ?Sized,
-    T::TypeInfo: Send + Sync,
-    T::Context: Send + Sync,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
+    S: ScalarValue + Send + Sync,
 {
     fn resolve_field_async<'b>(
         &'b self,
@@ -212,11 +212,11 @@ where
     S: ScalarValue,
     T: GraphQLType<S> + ?Sized,
 {
-    fn name(info: &T::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<&str> {
         T::name(info)
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -232,35 +232,35 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i T::TypeInfo) -> Option<&'i str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         (**self).type_name(info)
     }
 
     fn resolve_into_type(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<T::Context, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
     fn resolve_field(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<T::Context, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
 
     fn resolve(
         &self,
-        info: &T::TypeInfo,
+        info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<T::Context, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
@@ -268,10 +268,10 @@ where
 
 impl<'e, S, T> GraphQLValueAsync<S> for Arc<T>
 where
+    T: GraphQLValueAsync<S> + Send + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    T: GraphQLValueAsync<S> + ?Sized,
-    <T as GraphQLValue<S>>::TypeInfo: Send + Sync,
-    <T as GraphQLValue<S>>::Context: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,

@@ -401,16 +401,16 @@ where
 /// and then merges returned values into `result` or pushes errors to
 /// field's/fragment's sub executor.
 ///
-/// Returns false if any errors occured and true otherwise.
-pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
+/// Returns false if any errors occurred and true otherwise.
+pub(crate) fn resolve_selection_set_into<T, S>(
     instance: &T,
     info: &T::TypeInfo,
     selection_set: &[Selection<S>],
-    executor: &Executor<CtxT, S>,
+    executor: &Executor<T::Context, S>,
     result: &mut Object<S>,
 ) -> bool
 where
-    T: GraphQLValue<S, Context = CtxT> + ?Sized,
+    T: GraphQLValue<S> + ?Sized,
     S: ScalarValue,
 {
     let meta_type = executor

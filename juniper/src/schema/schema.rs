@@ -16,19 +16,19 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
-    fn name(info: &QueryT::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<&str> {
         QueryT::name(info)
     }
 
-    fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
     {
@@ -36,27 +36,27 @@ where
     }
 }
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
+impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
-    type Context = CtxT;
+    type Context = QueryT::Context;
     type TypeInfo = QueryT::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i QueryT::TypeInfo) -> Option<&'i str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
         QueryT::name(info)
     }
 
     fn resolve_field(
         &self,
-        info: &QueryT::TypeInfo,
+        info: &Self::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<CtxT, S>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         match field {
             "__schema" => executor
@@ -93,17 +93,17 @@ where
     }
 }
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
+impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
+    QueryT: GraphQLTypeAsync<S>,
+    QueryT::TypeInfo: Sync,
+    QueryT::Context: Sync + 'a,
+    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
+    MutationT::TypeInfo: Sync,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
+    SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync + 'a,
 {
     fn resolve_field_async<'b>(
         &'b self,
