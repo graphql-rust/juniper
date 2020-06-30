@@ -112,11 +112,10 @@ fn impl_scalar_struct(
     };
 
     let _async = quote!(
-
-        impl <__S> #crate_name::GraphQLTypeAsync<__S> for #ident
+        impl <__S> #crate_name::GraphQLValueAsync<__S> for #ident
         where
             __S: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<__S> + Send + Sync,
+            Self: Send + Sync,
             Self::Context: Send + Sync,
             Self::TypeInfo: Send + Sync,
         {
@@ -126,9 +125,8 @@ fn impl_scalar_struct(
                 selection_set: Option<&'a [#crate_name::Selection<__S>]>,
                 executor: &'a #crate_name::Executor<Self::Context, __S>,
             ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<__S>> {
-                use #crate_name::GraphQLType;
                 use #crate_name::futures::future;
-                let v = self.resolve(info, selection_set, executor);
+                let v = #crate_name::GraphQLValue::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
@@ -141,10 +139,7 @@ fn impl_scalar_struct(
         where
             S: #crate_name::ScalarValue,
         {
-            type Context = ();
-            type TypeInfo = ();
-
-            fn name(_: &Self::TypeInfo) -> Option<&str> {
+            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
             }
 
@@ -159,6 +154,18 @@ fn impl_scalar_struct(
                     #description
                     .into_meta()
             }
+        }
+
+        impl<S> #crate_name::GraphQLValue<S> for #ident
+        where
+            S: #crate_name::ScalarValue,
+        {
+            type Context = ();
+            type TypeInfo = ();
+
+            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                <Self as #crate_name::GraphQLType<S>>::name(info)
+            }
 
             fn resolve(
                 &self,
@@ -166,7 +173,7 @@ fn impl_scalar_struct(
                 selection: Option<&[#crate_name::Selection<S>]>,
                 executor: &#crate_name::Executor<Self::Context, S>,
             ) -> #crate_name::ExecutionResult<S> {
-                #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
+                #crate_name::GraphQLValue::resolve(&self.0, info, selection, executor)
             }
         }
 

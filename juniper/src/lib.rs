@@ -185,11 +185,14 @@ pub use crate::{
         model::{RootNode, SchemaType},
     },
     types::{
-        async_await::GraphQLTypeAsync,
-        base::{Arguments, GraphQLType, TypeKind},
+        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
         marker::{self, GraphQLUnion},
         scalars::{EmptyMutation, EmptySubscription, ID},
-        subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
+        subscriptions::{
+            GraphQLSubscriptionType, GraphQLSubscriptionValue, SubscriptionConnection,
+            SubscriptionCoordinator,
+        },
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},

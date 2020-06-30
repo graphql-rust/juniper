@@ -250,10 +250,10 @@ pub fn build_scalar(
     };
 
     let _async = quote!(
-        impl#async_generic_type_decl #crate_name::GraphQLTypeAsync<#async_generic_type> for #impl_for_type
+        impl#async_generic_type_decl #crate_name::GraphQLValueAsync<#async_generic_type> for #impl_for_type
         where
             #async_generic_type: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<#async_generic_type> + Send + Sync,
+            Self: Send + Sync,
             Self::Context: Send + Sync,
             Self::TypeInfo: Send + Sync,
         {
@@ -263,9 +263,8 @@ pub fn build_scalar(
                 selection_set: Option<&'a [#crate_name::Selection<#async_generic_type>]>,
                 executor: &'a #crate_name::Executor<Self::Context, #async_generic_type>,
             ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<#async_generic_type>> {
-                use #crate_name::GraphQLType;
                 use #crate_name::futures::future;
-                let v = self.resolve(info, selection_set, executor);
+                let v = #crate_name::GraphQLValue::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
@@ -283,10 +282,7 @@ pub fn build_scalar(
         impl#generic_type_decl #crate_name::GraphQLType<#generic_type> for #impl_for_type
         #generic_type_bound
         {
-            type Context = ();
-            type TypeInfo = ();
-
-            fn name(_: &Self::TypeInfo) -> Option<&str> {
+            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
             }
 
@@ -300,6 +296,17 @@ pub fn build_scalar(
                 registry.build_scalar_type::<Self>(info)
                     #description
                     .into_meta()
+            }
+        }
+
+        impl#generic_type_decl #crate_name::GraphQLValue<#generic_type> for #impl_for_type
+        #generic_type_bound
+        {
+            type Context = ();
+            type TypeInfo = ();
+
+            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                <Self as #crate_name::GraphQLType<#generic_type>>::name(info)
             }
 
             fn resolve(

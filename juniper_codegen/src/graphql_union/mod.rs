@@ -524,10 +524,7 @@ impl ToTokens for UnionDefinition {
             impl#ext_impl_generics #crate_path::GraphQLType<#scalar> for #ty_full
                 #where_clause
             {
-                type Context = #context;
-                type TypeInfo = ();
-
-                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
                 }
 
@@ -543,6 +540,20 @@ impl ToTokens for UnionDefinition {
                     registry.build_union_type::<#ty_full>(info, types)
                     #description
                     .into_meta()
+                }
+            }
+        };
+
+        let value_impl = quote! {
+            #[automatically_derived]
+            impl#ext_impl_generics #crate_path::GraphQLValue<#scalar> for #ty_full
+                #where_clause
+            {
+                type Context = #context;
+                type TypeInfo = ();
+
+                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                    <Self as #crate_path::GraphQLType<#scalar>>::name(info)
                 }
 
                 fn concrete_type_name(
@@ -575,9 +586,9 @@ impl ToTokens for UnionDefinition {
             }
         };
 
-        let async_type_impl = quote! {
+        let value_async_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::GraphQLTypeAsync<#scalar> for #ty_full
+            impl#ext_impl_generics #crate_path::GraphQLValueAsync<#scalar> for #ty_full
                 #where_async
             {
                 fn resolve_into_type_async<'b>(
@@ -621,7 +632,13 @@ impl ToTokens for UnionDefinition {
             }
         };
 
-        into.append_all(&[union_impl, output_type_impl, type_impl, async_type_impl]);
+        into.append_all(&[
+            union_impl,
+            output_type_impl,
+            type_impl,
+            value_impl,
+            value_async_impl,
+        ]);
     }
 }
 

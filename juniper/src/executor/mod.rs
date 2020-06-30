@@ -22,7 +22,12 @@ use crate::{
         },
         model::{RootNode, SchemaType, TypeType},
     },
-    types::{base::GraphQLType, name::Name},
+    types::{
+        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        base::{GraphQLType, GraphQLValue},
+        name::Name,
+        subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
+    },
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
     GraphQLError,
 };
@@ -244,7 +249,7 @@ impl<S> IntoFieldError<S> for FieldError<S> {
 #[doc(hidden)]
 pub trait IntoResolvable<'a, S, T, C>
 where
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
     S: ScalarValue,
 {
     #[doc(hidden)]
@@ -253,7 +258,7 @@ where
 
 impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for T
 where
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
     S: ScalarValue,
     T::Context: FromContext<C>,
 {
@@ -265,7 +270,7 @@ where
 impl<'a, S, T, C, E: IntoFieldError<S>> IntoResolvable<'a, S, T, C> for Result<T, E>
 where
     S: ScalarValue,
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
     T::Context: FromContext<C>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
@@ -277,7 +282,7 @@ where
 impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for (&'a T::Context, T)
 where
     S: ScalarValue,
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some(self))
@@ -287,7 +292,7 @@ where
 impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C> for Option<(&'a T::Context, T)>
 where
     S: ScalarValue,
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
@@ -297,7 +302,7 @@ where
 impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T), S>
 where
     S: ScalarValue,
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(Some)
@@ -308,7 +313,7 @@ impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
     for FieldResult<Option<(&'a T::Context, T)>, S>
 where
     S: ScalarValue,
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
@@ -369,7 +374,7 @@ where
         'i: 'res,
         'v: 'res,
         'a: 'res,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        T: GraphQLSubscriptionValue<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -393,7 +398,7 @@ where
     where
         't: 'res,
         'a: 'res,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+        T: GraphQLSubscriptionValue<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -405,7 +410,7 @@ where
     pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
         NewCtxT: FromContext<CtxT>,
-        T: GraphQLType<S, Context = NewCtxT> + ?Sized,
+        T: GraphQLValue<S, Context = NewCtxT> + ?Sized,
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .resolve(info, value)
@@ -414,7 +419,7 @@ where
     /// Resolve a single arbitrary value into an `ExecutionResult`
     pub fn resolve<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
-        T: GraphQLType<S, Context = CtxT> + ?Sized,
+        T: GraphQLValue<S, Context = CtxT> + ?Sized,
     {
         value.resolve(info, self.current_selection_set, self)
     }
@@ -422,7 +427,7 @@ where
     /// Resolve a single arbitrary value into an `ExecutionResult`
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
+        T: GraphQLValueAsync<S, Context = CtxT> + Send + Sync + ?Sized,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -439,7 +444,7 @@ where
         value: &T,
     ) -> ExecutionResult<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = NewCtxT> + Send + Sync,
+        T: GraphQLValueAsync<S, Context = NewCtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
         S: Send + Sync,
         NewCtxT: FromContext<CtxT> + Send + Sync,
@@ -453,15 +458,12 @@ where
     /// If the field fails to resolve, `null` will be returned.
     pub fn resolve_into_value<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
-        T: GraphQLType<S, Context = CtxT>,
+        T: GraphQLValue<S, Context = CtxT>,
     {
-        match self.resolve(info, value) {
-            Ok(v) => v,
-            Err(e) => {
-                self.push_error(e);
-                Value::null()
-            }
-        }
+        self.resolve(info, value).unwrap_or_else(|e| {
+            self.push_error(e);
+            Value::null()
+        })
     }
 
     /// Resolve a single arbitrary value into a return value
@@ -469,7 +471,7 @@ where
     /// If the field fails to resolve, `null` will be returned.
     pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
+        T: GraphQLValueAsync<S, Context = CtxT> + Send + Sync + ?Sized,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -851,9 +853,9 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync,
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -998,11 +1000,11 @@ where
     'd: 'r,
     'op: 'd,
     S: ScalarValue + Send + Sync,
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'r,
 {

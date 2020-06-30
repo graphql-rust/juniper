@@ -190,26 +190,26 @@ pub trait ScalarValue:
 
     /// Convert the given scalar value into an integer value
     ///
-    /// This function is used for implementing `GraphQLType` for `i32` for all
+    /// This function is used for implementing `GraphQLValue` for `i32` for all
     /// scalar values. Implementations should convert all supported integer
     /// types with 32 bit or less to an integer if requested.
     fn as_int(&self) -> Option<i32>;
 
     /// Convert the given scalar value into a string value
     ///
-    /// This function is used for implementing `GraphQLType` for `String` for all
+    /// This function is used for implementing `GraphQLValue` for `String` for all
     /// scalar values
     fn as_string(&self) -> Option<String>;
 
     /// Convert the given scalar value into a string value
     ///
-    /// This function is used for implementing `GraphQLType` for `String` for all
+    /// This function is used for implementing `GraphQLValue` for `String` for all
     /// scalar values
     fn as_str(&self) -> Option<&str>;
 
     /// Convert the given scalar value into a float value
     ///
-    /// This function is used for implementing `GraphQLType` for `f64` for all
+    /// This function is used for implementing `GraphQLValue` for `f64` for all
     /// scalar values. Implementations should convert all supported integer
     /// types with 64 bit or less and all floating point values with 64 bit or
     /// less to a float if requested.
@@ -217,7 +217,7 @@ pub trait ScalarValue:
 
     /// Convert the given scalar value into a boolean value
     ///
-    /// This function is used for implementing `GraphQLType` for `bool` for all
+    /// This function is used for implementing `GraphQLValue` for `bool` for all
     /// scalar values.
     fn as_boolean(&self) -> Option<bool>;
 }
