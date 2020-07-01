@@ -8,7 +8,9 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, unparenthesize},
+    util::{
+        path_eq_single, span_container::SpanContainer, strip_attr, unite_attrs, unparenthesize,
+    },
 };
 
 use super::{
@@ -27,23 +29,8 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
             "#[graphql_union] attribute is applicable to trait definitions only",
         )
     })?;
-
-    let mut trait_attrs = Vec::with_capacity(ast.attrs.len() + 1);
-    trait_attrs.push(parse_quote! { #[graphql_union(#attr_args)] });
-    trait_attrs.extend_from_slice(&ast.attrs);
-
-    // Remove repeated attributes from the definition, to omit duplicate expansion.
-    ast.attrs = ast
-        .attrs
-        .into_iter()
-        .filter_map(|attr| {
-            if path_eq_single(&attr.path, "graphql_union") {
-                None
-            } else {
-                Some(attr)
-            }
-        })
-        .collect();
+    let trait_attrs = unite_attrs(("graphql_union", &attr_args), &ast.attrs);
+    ast.attrs = strip_attr("graphql_union", ast.attrs);
 
     let meta = UnionMeta::from_attrs("graphql_union", &trait_attrs)?;
 
