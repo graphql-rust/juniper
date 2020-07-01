@@ -15,58 +15,9 @@ use syn::{
     spanned::Spanned as _,
 };
 
-use crate::util::{filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _};
-
-/// Attempts to merge an [`Option`]ed `$field` of a `$self` struct with the same `$field` of
-/// `$another` struct. If both are [`Some`], then throws a duplication error with a [`Span`] related
-/// to the `$another` struct (a later one).
-///
-/// The type of [`Span`] may be explicitly specified as one of the [`SpanContainer`] methods.
-/// By default, [`SpanContainer::span_ident`] is used.
-macro_rules! try_merge_opt {
-    ($field:ident: $self:ident, $another:ident => $span:ident) => {{
-        if let Some(v) = $self.$field {
-            $another
-                .$field
-                .replace(v)
-                .none_or_else(|dup| dup_attr_err(dup.$span()))?;
-        }
-        $another.$field
-    }};
-
-    ($field:ident: $self:ident, $another:ident) => {
-        try_merge_opt!($field: $self, $another => span_ident)
-    };
-}
-
-/// Attempts to merge a [`HashMap`]ed `$field` of a `$self` struct with the same `$field` of
-/// `$another` struct. If some [`HashMap`] entries are duplicated, then throws a duplication error
-/// with a [`Span`] related to the `$another` struct (a later one).
-///
-/// The type of [`Span`] may be explicitly specified as one of the [`SpanContainer`] methods.
-/// By default, [`SpanContainer::span_ident`] is used.
-macro_rules! try_merge_hashmap {
-    ($field:ident: $self:ident, $another:ident => $span:ident) => {{
-        if !$self.$field.is_empty() {
-            for (ty, rslvr) in $self.$field {
-                $another
-                    .$field
-                    .insert(ty, rslvr)
-                    .none_or_else(|dup| dup_attr_err(dup.$span()))?;
-            }
-        }
-        $another.$field
-    }};
-
-    ($field:ident: $self:ident, $another:ident) => {
-        try_merge_hashmap!($field: $self, $another => span_ident)
-    };
-}
-
-/// Creates and returns duplication error pointing to the given `span`.
-fn dup_attr_err(span: Span) -> syn::Error {
-    syn::Error::new(span, "duplicated attribute")
-}
+use crate::util::{
+    dup_attr_err, filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _,
+};
 
 /// Helper alias for the type of [`UnionMeta::external_resolvers`] field.
 type UnionMetaResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
@@ -213,7 +164,8 @@ impl UnionMeta {
         })
     }
 
-    /// Parses [`UnionMeta`] from the given multiple `name`d attributes placed on type definition.
+    /// Parses [`UnionMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a type
+    /// definition.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -291,7 +243,7 @@ impl UnionVariantMeta {
         })
     }
 
-    /// Parses [`UnionVariantMeta`] from the given multiple `name`d attributes placed on
+    /// Parses [`UnionVariantMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
     /// variant/field/method definition.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         filter_attrs(name, attrs)

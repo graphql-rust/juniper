@@ -19,6 +19,11 @@ use syn::{
 
 pub use self::option_ext::OptionExt;
 
+/// Creates and returns duplication [`syn::Error`] pointing to the given [`Span`].
+pub fn dup_attr_err(span: Span) -> syn::Error {
+    syn::Error::new(span, "duplicated attribute")
+}
+
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.
 pub fn name_of_type(ty: &syn::Type) -> Option<syn::Ident> {
