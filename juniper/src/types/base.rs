@@ -290,6 +290,16 @@ where
 
 crate::sa::assert_obj_safe!(GraphQLValue<Context = (), TypeInfo = ()>);
 
+pub type DynGraphQLValue<S, C, TI> =
+    dyn GraphQLValue<S, Context = C, TypeInfo = TI> + Send + Sync + 'static;
+
+pub trait AsDynGraphQLValue<S: ScalarValue = DefaultScalarValue> {
+    type Context;
+    type TypeInfo;
+
+    fn as_dyn_graphql_type(&self) -> &DynGraphQLValue<S, Self::Context, Self::TypeInfo>;
+}
+
 /// Primary trait used to expose Rust types in a GraphQL schema.
 ///
 /// All of the convenience macros ultimately expand into an implementation of

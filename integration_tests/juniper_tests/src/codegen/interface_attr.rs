@@ -1,10 +1,10 @@
 //! Tests for `#[graphql_interface]` macro.
 
-use juniper::{execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription, GraphQLObject, GraphQLType, RootNode, ScalarValue, Variables, GraphQLTypeMeta};
+use juniper::{execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription, GraphQLObject, GraphQLType, RootNode, ScalarValue, Variables};
 
 /* SUGARED
 #[derive(GraphQLObject)]
-#[graphql(implements Character)]
+#[graphql(implements(Character))]
 struct Human {
     id: String,
     home_planet: String,
@@ -16,11 +16,12 @@ struct Human {
     home_planet: String,
 }
 #[automatically_derived]
-impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLType<__S> for Human {
-    type Context = <Self as ::juniper::GraphQLType<__S>>::Context;
-    type TypeInfo = <Self as ::juniper::GraphQLType<__S>>::TypeInfo;
+impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Human {
+    type Context = <Self as ::juniper::GraphQLValue<__S>>::Context;
+    type TypeInfo = <Self as ::juniper::GraphQLValue<__S>>::TypeInfo;
 
-    fn as_dyn_graphql_type(&self) -> &(dyn GraphQLType<__S, Context = Self::Context, TypeInfo = Self::TypeInfo> + 'static + Send + Sync) {
+    #[inline]
+    fn as_dyn_graphql_type(&self) -> &::juniper::DynGraphQLValue<__S, Self::Context, Self::TypeInfo> {
         self
     }
 }
@@ -43,7 +44,7 @@ impl<GraphQLScalarValue: ::juniper::ScalarValue> Character<GraphQLScalarValue> f
 
 /* SUGARED
 #[derive(GraphQLObject)]
-#[graphql(implements Character)]
+#[graphql(implements(Character))]
 struct Droid {
     id: String,
     primary_function: String,
@@ -55,11 +56,12 @@ struct Droid {
     primary_function: String,
 }
 #[automatically_derived]
-impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLType<__S> for Droid {
-    type Context = <Self as ::juniper::GraphQLType<__S>>::Context;
-    type TypeInfo = <Self as ::juniper::GraphQLType<__S>>::TypeInfo;
+impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Droid {
+    type Context = <Self as ::juniper::GraphQLValue<__S>>::Context;
+    type TypeInfo = <Self as ::juniper::GraphQLValue<__S>>::TypeInfo;
 
-    fn as_dyn_graphql_type(&self) -> &(dyn GraphQLType<__S, Context = Self::Context, TypeInfo = Self::TypeInfo> + 'static + Send + Sync) {
+    #[inline]
+    fn as_dyn_graphql_type(&self) -> &::juniper::DynGraphQLValue<__S, Self::Context, Self::TypeInfo> {
         self
     }
 }
@@ -89,7 +91,7 @@ impl<GraphQLScalarValue: ::juniper::ScalarValue> Character<GraphQLScalarValue> f
 // ------------------------------------------
 
 /* SUGARED
-#[graphql_interface]
+#[graphql_interface(for(Human, Droid))]
 trait Character {
     fn id(&self) -> &str;
 
@@ -97,20 +99,19 @@ trait Character {
     fn as_droid(&self) -> Option<&Droid> { None }
 }
    DESUGARS INTO: */
-trait Character<GraphQLScalarValue: ::juniper::ScalarValue = ::juniper::DefaultScalarValue>: ::juniper::AsDynGraphQLType<GraphQLScalarValue> {
+trait Character<GraphQLScalarValue: ::juniper::ScalarValue = ::juniper::DefaultScalarValue>: ::juniper::AsDynGraphQLValue<GraphQLScalarValue> {
     fn id(&self) -> &str;
 
     fn as_droid(&self) -> Option<&Droid> { None }
 }
 #[automatically_derived]
-impl<'__obj> ::juniper::marker::GraphQLInterface for dyn Character<Context = (), TypeInfo = ()> + '__obj + Send + Sync
+impl<'__obj, __S> ::juniper::marker::GraphQLInterface<__S> for dyn Character<__S, Context = (), TypeInfo = ()> + '__obj + Send + Sync
+where
+    __S: ::juniper::ScalarValue,
 {
     fn mark() {
-        if let Some(objects) = ::juniper::GRAPHQL_IFACE_TYPES.get("Character") {
-            for obj in objects {
-                (obj.mark_fn)();
-            }
-        }
+        <Human as ::juniper::marker::GraphQLObjectType<__S>>::mark();
+        <Droid as ::juniper::marker::GraphQLObjectType<__S>>::mark();
     }
 }
 #[automatically_derived]
@@ -119,22 +120,21 @@ where
     __S: ::juniper::ScalarValue,
 {
     fn mark() {
-        if let Some(objects) = ::juniper::GRAPHQL_IFACE_TYPES.get("Character") {
-            for obj in objects {
-                (obj.mark_fn)();
-            }
-        }
+        ::juniper::sa::assert_type_ne_all!(Human, Droid);
+
+        <Human as ::juniper::marker::GraphQLObjectType<__S>>::mark();
+        <Droid as ::juniper::marker::GraphQLObjectType<__S>>::mark();
     }
 }
 #[automatically_derived]
-impl<'__obj, __S> ::juniper::GraphQLType<__S> for dyn Character<__S, Context = (), TypeInfo = ()> + '__obj + Send + Sync
+impl<'__obj, __S> ::juniper::GraphQLValue<__S> for dyn Character<__S, Context = (), TypeInfo = ()> + '__obj + Send + Sync
 where
     __S: ::juniper::ScalarValue,
 {
     type Context = ();
     type TypeInfo = ();
     fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-        <Self as ::juniper::GraphQLTypeMeta<__S>>::name(info)
+        <Self as ::juniper::GraphQLType<__S>>::name(info)
     }
     fn resolve_field(
         &self,
@@ -161,10 +161,9 @@ where
     }
 
     fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
-
         // First, check custom downcaster to be used.
         if ({ Character::as_droid(self) } as ::std::option::Option<&Droid>).is_some() {
-            return <Droid as ::juniper::GraphQLTypeMeta<__S>>::name(info)
+            return <Droid as ::juniper::GraphQLType<__S>>::name(info)
                 .unwrap()
                 .to_string();
         }
@@ -174,7 +173,7 @@ where
     }
     fn resolve_into_type(
         &self,
-        ti: &Self::TypeInfo,
+        info: &Self::TypeInfo,
         type_name: &str,
         _: Option<&[::juniper::Selection<__S>]>,
         executor: &::juniper::Executor<Self::Context, __S>,
@@ -182,15 +181,15 @@ where
         let context = executor.context();
 
         // First, check custom downcaster to be used.
-        if type_name == (<Droid as ::juniper::GraphQLTypeMeta<__S>>::name(ti)).unwrap() {
+        if type_name == (<Droid as ::juniper::GraphQLType<__S>>::name(info)).unwrap() {
             return ::juniper::IntoResolvable::into(
                 Character::as_droid(self),
                 executor.context(),
             )
-                .and_then(|res| match res {
-                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                    None => Ok(::juniper::Value::null()),
-                });
+            .and_then(|res| match res {
+                Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
+                None => Ok(::juniper::Value::null()),
+            });
         }
 
         // Otherwise, resolve inner type as dyn object.
@@ -198,18 +197,18 @@ where
             self.as_dyn_graphql_type(),
             executor.context(),
         )
-            .and_then(|res| match res {
-                Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                None => Ok(::juniper::Value::null()),
-            });
+        .and_then(|res| match res {
+            Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
+            None => Ok(::juniper::Value::null()),
+        });
     }
 }
 #[automatically_derived]
-impl<'__obj, __S> ::juniper::GraphQLTypeMeta<__S> for dyn Character<__S, Context = (), TypeInfo = ()> + '__obj + Send + Sync
+impl<'__obj, __S> ::juniper::GraphQLType<__S> for dyn Character<__S, Context = (), TypeInfo = ()> + '__obj + Send + Sync
 where
     __S: ::juniper::ScalarValue,
 {
-    fn name(_: &Self::TypeInfo) -> Option<&str> {
+    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
         Some("Character")
     }
     fn meta<'r>(
@@ -219,15 +218,8 @@ where
     where
         __S: 'r,
     {
-        //panic!("🔬 {:#?}", registry.types);
-        // Ensure custom downcaster type is registered
-        //let _ = registry.get_type::<&Droid>(info);
-
-        // Ensure all child types are registered
-        // TODO: how?
-        // TODO: get_type_by_name and iter
-        //let _ = registry.get_type::<&Human>(info);
-
+        let _ = registry.get_type::<&Human>(info);
+        let _ = registry.get_type::<&Droid>(info);
 
         let fields = vec![
             // TODO: try array
@@ -240,10 +232,10 @@ where
     }
 }
 #[automatically_derived]
-impl<'__obj, __S> ::juniper::GraphQLTypeAsync<__S> for dyn Character<__S, Context = (), TypeInfo = ()> + '__obj + Send + Sync
+impl<'__obj, __S> ::juniper::GraphQLValueAsync<__S> for dyn Character<__S, Context = (), TypeInfo = ()> + '__obj + Send + Sync
 where
     __S: ::juniper::ScalarValue,
-    Self: Send + Sync,
+    Self: Sync,
     __S: Send + Sync,
 {
     fn resolve_field_async<'b>(
@@ -253,20 +245,20 @@ where
         arguments: &'b ::juniper::Arguments<__S>,
         executor: &'b ::juniper::Executor<Self::Context, __S>,
     ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<__S>> {
-        // TODO: similar to what happens in GraphQLType impl
-        let res = self.resolve_field(info, field_name, arguments, executor);
+        // TODO: similar to what happens in GraphQLValue impl
+        let res = ::juniper::GraphQLValue::resolve_field(self, info, field_name, arguments, executor);
         ::juniper::futures::future::FutureExt::boxed(async move { res })
     }
 
     fn resolve_into_type_async<'b>(
         &'b self,
-        ti: &'b Self::TypeInfo,
+        info: &'b Self::TypeInfo,
         type_name: &str,
         se: Option<&'b [::juniper::Selection<'b, __S>]>,
         executor: &'b ::juniper::Executor<'b, 'b, Self::Context, __S>,
     ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<__S>> {
-        // TODO: similar to what happens in GraphQLType impl
-        let res = self.resolve_into_type(ti, type_name, se, executor);
+        // TODO: similar to what happens in GraphQLValue impl
+        let res = ::juniper::GraphQLValue::resolve_into_type(self, info, type_name, se, executor);
         ::juniper::futures::future::FutureExt::boxed(async move { res })
     }
 }
@@ -275,7 +267,7 @@ where
 
 fn schema<'q, C, S, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
     where
-        Q: GraphQLTypeMeta<S, Context = C, TypeInfo = ()> + 'q,
+        Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
         S: ScalarValue + 'q,
 {
     RootNode::new(
@@ -395,13 +387,3 @@ mod poc {
         );
     }
 }
-
-/*
-struct Woop;
-
-impl Woop {
-    fn get<TI, S>(&self) -> for<'r> fn(info: &TI, registry: &mut Registry<'r, S>) -> MetaType<'r, S> {
-        unimplemented!()
-    }
-}
-*/
