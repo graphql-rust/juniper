@@ -2,6 +2,7 @@
 
 pub mod duplicate;
 pub mod option_ext;
+pub mod parse_buffer_ext;
 pub mod parse_impl;
 pub mod span_container;
 
@@ -13,11 +14,14 @@ use quote::quote;
 use span_container::SpanContainer;
 use std::collections::HashMap;
 use syn::{
-    parse, parse_quote, punctuated::Punctuated, spanned::Spanned, Attribute, Lit, Meta, MetaList,
-    MetaNameValue, NestedMeta, Token,
+    parse::{Parse, ParseStream},
+    parse_quote,
+    punctuated::Punctuated,
+    spanned::Spanned,
+    token, Attribute, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
 
-pub use self::option_ext::OptionExt;
+pub use self::{option_ext::OptionExt, parse_buffer_ext::ParseBufferExt};
 
 /// Creates and returns duplication [`syn::Error`] pointing to the given [`Span`].
 pub fn dup_attr_err(span: Span) -> syn::Error {
@@ -68,7 +72,7 @@ pub fn unite_attrs(
 ///
 /// This function is generally used for removing duplicate attributes during `proc_macro_attribute`
 /// expansion, so avoid unnecessary expansion duplication.
-pub fn strip_attr(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
+pub fn strip_attrs(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
     attrs
         .into_iter()
         .filter_map(|attr| {
@@ -344,15 +348,15 @@ pub struct ObjectAttributes {
     pub is_internal: bool,
 }
 
-impl syn::parse::Parse for ObjectAttributes {
-    fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
+impl Parse for ObjectAttributes {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut output = Self::default();
 
         while !input.is_empty() {
             let ident: syn::Ident = input.parse()?;
             match ident.to_string().as_str() {
                 "name" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
                     output.name = Some(SpanContainer::new(
                         ident.span(),
@@ -361,7 +365,7 @@ impl syn::parse::Parse for ObjectAttributes {
                     ));
                 }
                 "description" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
                     output.description = Some(SpanContainer::new(
                         ident.span(),
@@ -370,7 +374,7 @@ impl syn::parse::Parse for ObjectAttributes {
                     ));
                 }
                 "context" | "Context" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     // TODO: remove legacy support for string based Context.
                     let ctx = if let Ok(val) = input.parse::<syn::LitStr>() {
                         eprintln!("DEPRECATION WARNING: using a string literal for the Context is deprecated");
@@ -382,16 +386,16 @@ impl syn::parse::Parse for ObjectAttributes {
                     output.context = Some(SpanContainer::new(ident.span(), Some(ctx.span()), ctx));
                 }
                 "scalar" | "Scalar" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::Type>()?;
                     output.scalar = Some(SpanContainer::new(ident.span(), Some(val.span()), val));
                 }
                 "interfaces" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let content;
                     syn::bracketed!(content in input);
                     output.interfaces =
-                        syn::punctuated::Punctuated::<syn::Type, syn::Token![,]>::parse_terminated(
+                        syn::punctuated::Punctuated::<syn::Type, token::Comma>::parse_terminated(
                             &content,
                         )?
                         .into_iter()
@@ -411,9 +415,7 @@ impl syn::parse::Parse for ObjectAttributes {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
                 }
             }
-            if input.lookahead1().peek(syn::Token![,]) {
-                input.parse::<syn::Token![,]>()?;
-            }
+            input.try_parse::<token::Comma>()?;
         }
 
         Ok(output)
@@ -421,7 +423,7 @@ impl syn::parse::Parse for ObjectAttributes {
 }
 
 impl ObjectAttributes {
-    pub fn from_attrs(attrs: &[syn::Attribute]) -> syn::parse::Result<Self> {
+    pub fn from_attrs(attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let attr_opt = find_graphql_attr(attrs);
         if let Some(attr) = attr_opt {
             // Need to unwrap  outer (), which are not present for proc macro attributes,
@@ -448,8 +450,8 @@ pub struct FieldAttributeArgument {
     pub description: Option<syn::LitStr>,
 }
 
-impl parse::Parse for FieldAttributeArgument {
-    fn parse(input: parse::ParseStream) -> parse::Result<Self> {
+impl Parse for FieldAttributeArgument {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         let name = input.parse()?;
 
         let mut arg = Self {
@@ -463,7 +465,7 @@ impl parse::Parse for FieldAttributeArgument {
         syn::parenthesized!(content in input);
         while !content.is_empty() {
             let name = content.parse::<syn::Ident>()?;
-            content.parse::<Token![=]>()?;
+            content.parse::<token::Eq>()?;
 
             match name.to_string().as_str() {
                 "name" => {
@@ -480,7 +482,7 @@ impl parse::Parse for FieldAttributeArgument {
             }
 
             // Discard trailing comma.
-            content.parse::<Token![,]>().ok();
+            content.parse::<token::Comma>().ok();
         }
 
         Ok(arg)
@@ -502,13 +504,13 @@ enum FieldAttribute {
     Default(SpanContainer<Option<syn::Expr>>),
 }
 
-impl parse::Parse for FieldAttribute {
-    fn parse(input: parse::ParseStream) -> parse::Result<Self> {
+impl Parse for FieldAttribute {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         let ident = input.parse::<syn::Ident>()?;
 
         match ident.to_string().as_str() {
             "name" => {
-                input.parse::<Token![=]>()?;
+                input.parse::<token::Eq>()?;
                 let lit = input.parse::<syn::LitStr>()?;
                 let raw = lit.value();
                 if !is_valid_name(&raw) {
@@ -522,7 +524,7 @@ impl parse::Parse for FieldAttribute {
                 }
             }
             "description" => {
-                input.parse::<Token![=]>()?;
+                input.parse::<token::Eq>()?;
                 let lit = input.parse::<syn::LitStr>()?;
                 Ok(FieldAttribute::Description(SpanContainer::new(
                     ident.span(),
@@ -531,8 +533,8 @@ impl parse::Parse for FieldAttribute {
                 )))
             }
             "deprecated" | "deprecation" => {
-                let reason = if input.peek(Token![=]) {
-                    input.parse::<Token![=]>()?;
+                let reason = if input.peek(token::Eq) {
+                    input.parse::<token::Eq>()?;
                     Some(input.parse::<syn::LitStr>()?)
                 } else {
                     None
@@ -553,7 +555,7 @@ impl parse::Parse for FieldAttribute {
             "arguments" => {
                 let arg_content;
                 syn::parenthesized!(arg_content in input);
-                let args = Punctuated::<FieldAttributeArgument, Token![,]>::parse_terminated(
+                let args = Punctuated::<FieldAttributeArgument, token::Comma>::parse_terminated(
                     &arg_content,
                 )?;
                 let map = args
@@ -563,8 +565,8 @@ impl parse::Parse for FieldAttribute {
                 Ok(FieldAttribute::Arguments(map))
             }
             "default" => {
-                let default_expr = if input.peek(Token![=]) {
-                    input.parse::<Token![=]>()?;
+                let default_expr = if input.peek(token::Eq) {
+                    input.parse::<token::Eq>()?;
                     let lit = input.parse::<syn::LitStr>()?;
                     let default_expr = lit.parse::<syn::Expr>()?;
                     SpanContainer::new(ident.span(), Some(lit.span()), Some(default_expr))
@@ -592,9 +594,9 @@ pub struct FieldAttributes {
     pub default: Option<SpanContainer<Option<syn::Expr>>>,
 }
 
-impl parse::Parse for FieldAttributes {
-    fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
-        let items = Punctuated::<FieldAttribute, Token![,]>::parse_terminated(&input)?;
+impl Parse for FieldAttributes {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let items = Punctuated::<FieldAttribute, token::Comma>::parse_terminated(&input)?;
 
         let mut output = Self::default();
 
@@ -633,7 +635,7 @@ impl FieldAttributes {
     pub fn from_attrs(
         attrs: &[syn::Attribute],
         _mode: FieldAttributeParseMode,
-    ) -> syn::parse::Result<Self> {
+    ) -> syn::Result<Self> {
         let doc_comment = get_doc_comment(&attrs);
         let deprecation = get_deprecated(&attrs);
 

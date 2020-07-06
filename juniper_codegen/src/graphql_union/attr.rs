@@ -9,7 +9,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 use crate::{
     result::GraphQLScope,
     util::{
-        path_eq_single, span_container::SpanContainer, strip_attr, unite_attrs, unparenthesize,
+        path_eq_single, span_container::SpanContainer, strip_attrs, unite_attrs, unparenthesize,
     },
 };
 
@@ -30,7 +30,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
         )
     })?;
     let trait_attrs = unite_attrs(("graphql_union", &attr_args), &ast.attrs);
-    ast.attrs = strip_attr("graphql_union", ast.attrs);
+    ast.attrs = strip_attrs("graphql_union", ast.attrs);
 
     let meta = UnionMeta::from_attrs("graphql_union", &trait_attrs)?;
 
@@ -91,7 +91,6 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
         variants,
-        span: trait_span,
     };
 
     Ok(quote! {

@@ -46,7 +46,7 @@ macro_rules! try_merge_opt {
 //         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,
 //         and so we cannot move the definition into a sub-module and use the `#[macro_export]`
 //         attribute.
-/// Attempts to merge a [`HashMap`]ed `$field` of a `$self` struct with the same `$field` of
+/// Attempts to merge a [`HashMap`] `$field` of a `$self` struct with the same `$field` of
 /// `$another` struct. If some [`HashMap`] entries are duplicated, then throws a duplication error
 /// with a [`Span`] related to the `$another` struct (a later one).
 ///
@@ -72,6 +72,39 @@ macro_rules! try_merge_hashmap {
 
     ($field:ident: $self:ident, $another:ident) => {
         try_merge_hashmap!($field: $self, $another => span_ident)
+    };
+}
+
+// NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust
+//         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,
+//         and so we cannot move the definition into a sub-module and use the `#[macro_export]`
+//         attribute.
+/// Attempts to merge a [`HashSet`] `$field` of a `$self` struct with the same `$field` of
+/// `$another` struct. If some [`HashSet`] entries are duplicated, then throws a duplication error
+/// with a [`Span`] related to the `$another` struct (a later one).
+///
+/// The type of [`Span`] may be explicitly specified as one of the [`SpanContainer`] methods.
+/// By default, [`SpanContainer::span_ident`] is used.
+///
+/// [`HashSet`]: std::collections::HashSet
+/// [`Span`]: proc_macro2::Span
+/// [`SpanContainer`]: crate::util::span_container::SpanContainer
+/// [`SpanContainer::span_ident`]: crate::util::span_container::SpanContainer::span_ident
+macro_rules! try_merge_hashset {
+    ($field:ident: $self:ident, $another:ident => $span:ident) => {{
+        if !$self.$field.is_empty() {
+            for ty in $self.$field {
+                $another
+                    .$field
+                    .replace(ty)
+                    .none_or_else(|dup| dup_attr_err(dup.$span()))?;
+            }
+        }
+        $another.$field
+    }};
+
+    ($field:ident: $self:ident, $another:ident) => {
+        try_merge_hashset!($field: $self, $another => span_ident)
     };
 }
 

@@ -63,7 +63,7 @@ juniper::graphql_interface!(<'a> &'a dyn Character: () as "Character" where Scal
 # fn main() {}
 ```
 
-The `instance_resolvers` declaration lists all the implementors of the given
+The `instance_resolvers` declaration lists all the implementers of the given
 interface and how to resolve them.
 
 As you can see, you lose a bit of the point with using traits: you need to list

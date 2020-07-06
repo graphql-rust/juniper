@@ -85,7 +85,6 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics,
         variants,
-        span: enum_span,
     })
 }
 
@@ -214,6 +213,5 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics,
         variants,
-        span: struct_span,
     })
 }

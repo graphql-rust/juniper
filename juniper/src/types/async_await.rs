@@ -115,7 +115,7 @@ crate::sa::assert_obj_safe!(GraphQLValueAsync<Context = (), TypeInfo = ()>);
 
 /// Extension of [`GraphQLType`] trait with asynchronous queries/mutations resolvers.
 ///
-/// It's automatically implemented for [`GraphQLValueAsync`] and [`GraphQLType`] implementors, so
+/// It's automatically implemented for [`GraphQLValueAsync`] and [`GraphQLType`] implementers, so
 /// doesn't require manual or code-generated implementation.
 pub trait GraphQLTypeAsync<S = DefaultScalarValue>: GraphQLValueAsync<S> + GraphQLType<S>
 where

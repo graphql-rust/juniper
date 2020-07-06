@@ -13,10 +13,12 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
+    token,
 };
 
 use crate::util::{
     dup_attr_err, filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _,
+    ParseBufferExt as _,
 };
 
 /// Helper alias for the type of [`UnionMeta::external_resolvers`] field.
@@ -85,7 +87,7 @@ impl Parse for UnionMeta {
             let ident: syn::Ident = input.parse()?;
             match ident.to_string().as_str() {
                 "name" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let name = input.parse::<syn::LitStr>()?;
                     output
                         .name
@@ -97,7 +99,7 @@ impl Parse for UnionMeta {
                         .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "desc" | "description" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let desc = input.parse::<syn::LitStr>()?;
                     output
                         .description
@@ -109,7 +111,7 @@ impl Parse for UnionMeta {
                         .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "ctx" | "context" | "Context" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let ctx = input.parse::<syn::Type>()?;
                     output
                         .context
@@ -117,7 +119,7 @@ impl Parse for UnionMeta {
                         .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let scl = input.parse::<syn::Type>()?;
                     output
                         .scalar
@@ -126,7 +128,7 @@ impl Parse for UnionMeta {
                 }
                 "on" => {
                     let ty = input.parse::<syn::Type>()?;
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     let rslvr_spanned = SpanContainer::new(ident.span(), Some(ty.span()), rslvr);
                     let rslvr_span = rslvr_spanned.span_joined();
@@ -142,9 +144,7 @@ impl Parse for UnionMeta {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
                 }
             }
-            if input.lookahead1().peek(syn::Token![,]) {
-                input.parse::<syn::Token![,]>()?;
-            }
+            input.try_parse::<token::Comma>()?;
         }
 
         Ok(output)
@@ -152,7 +152,7 @@ impl Parse for UnionMeta {
 }
 
 impl UnionMeta {
-    /// Tries to merge two [`UnionMeta`]s into single one, reporting about duplicates, if any.
+    /// Tries to merge two [`UnionMeta`]s into a single one, reporting about duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
@@ -213,7 +213,7 @@ impl Parse for UnionVariantMeta {
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
                     .none_or_else(|_| dup_attr_err(ident.span()))?,
                 "with" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     output
                         .external_resolver
@@ -224,9 +224,7 @@ impl Parse for UnionVariantMeta {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
                 }
             }
-            if input.lookahead1().peek(syn::Token![,]) {
-                input.parse::<syn::Token![,]>()?;
-            }
+            input.try_parse::<token::Comma>()?;
         }
 
         Ok(output)
@@ -234,7 +232,7 @@ impl Parse for UnionVariantMeta {
 }
 
 impl UnionVariantMeta {
-    /// Tries to merge two [`UnionVariantMeta`]s into single one, reporting about duplicates, if
+    /// Tries to merge two [`UnionVariantMeta`]s into a single one, reporting about duplicates, if
     /// any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
@@ -308,6 +306,8 @@ struct UnionDefinition {
     pub ty: syn::Type,
 
     /// Generics of the Rust type that this [GraphQL union][1] is implemented for.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub generics: syn::Generics,
 
     /// Indicator whether code should be generated for a trait object, rather than for a regular
@@ -342,11 +342,6 @@ struct UnionDefinition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub variants: Vec<UnionVariantDefinition>,
-
-    /// [`Span`] that points to the Rust source code which defines this [GraphQL union][1].
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub span: Span,
 }
 
 impl ToTokens for UnionDefinition {
@@ -446,8 +441,7 @@ impl ToTokens for UnionDefinition {
         if self.scalar.is_none() {
             ext_generics.params.push(parse_quote! { #scalar });
             ext_generics
-                .where_clause
-                .get_or_insert_with(|| parse_quote! { where })
+                .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue });
         }

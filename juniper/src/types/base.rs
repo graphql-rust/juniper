@@ -297,7 +297,7 @@ pub trait AsDynGraphQLValue<S: ScalarValue = DefaultScalarValue> {
     type Context;
     type TypeInfo;
 
-    fn as_dyn_graphql_type(&self) -> &DynGraphQLValue<S, Self::Context, Self::TypeInfo>;
+    fn as_dyn_graphql_value(&self) -> &DynGraphQLValue<S, Self::Context, Self::TypeInfo>;
 }
 
 /// Primary trait used to expose Rust types in a GraphQL schema.
