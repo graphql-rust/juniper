@@ -26,15 +26,8 @@ impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Human {
     }
 }
 
-/* SUGARED
 #[graphql_interface]
 impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-   DESUGARS INTO: */
-impl<GraphQLScalarValue: ::juniper::ScalarValue> Character<GraphQLScalarValue> for Human {
     fn id(&self) -> &str {
         &self.id
     }
@@ -66,19 +59,8 @@ impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Droid {
     }
 }
 
-/* SUGARED
 #[graphql_interface]
 impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn as_droid(&self) -> Option<&Droid> {
-        Some(self)
-    }
-}
-   DESUGARS INTO: */
-impl<GraphQLScalarValue: ::juniper::ScalarValue> Character<GraphQLScalarValue> for Droid {
     fn id(&self) -> &str {
         &self.id
     }

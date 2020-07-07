@@ -9,11 +9,11 @@ use std::collections::{HashMap, HashSet};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt as _};
 use syn::{
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
     token,
-    ext::IdentExt as _,
 };
 
 use crate::util::{
