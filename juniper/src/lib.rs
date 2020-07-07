@@ -181,7 +181,7 @@ pub use crate::{
         model::{RootNode, SchemaType},
     },
     types::{
-        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        async_await::{GraphQLTypeAsync, GraphQLValueAsync, DynGraphQLValueAsync},
         base::{
             Arguments, AsDynGraphQLValue, DynGraphQLValue, GraphQLType, GraphQLValue, TypeKind,
         },

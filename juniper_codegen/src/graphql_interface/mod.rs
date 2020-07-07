@@ -391,8 +391,8 @@ impl ToTokens for InterfaceDefinition {
             };
             let r#async = quote! {
                 let res = ::juniper::IntoResolvable::into(
-                    self.as_dyn_graphql_value(),
-                    executor.context()
+                    self.as_dyn_graphql_value_async(),
+                    executor.context(),
                 );
                 return ::juniper::futures::future::FutureExt::boxed(async move {
                     match res? {

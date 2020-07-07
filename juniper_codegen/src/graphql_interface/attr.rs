@@ -120,7 +120,10 @@ pub fn expand_on_impl(
     }
 
     ast.generics.params.push(parse_quote! {
-        GraphQLScalarValue: ::juniper::ScalarValue
+        GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync
+    });
+    ast.generics.make_where_clause().predicates.push(parse_quote! {
+        Self: Sync
     });
 
     let (_, trait_path, _) = ast.trait_.as_mut().unwrap();

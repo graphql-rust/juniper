@@ -911,25 +911,6 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        let as_dyn_value = if !self.interfaces.is_empty() {
-            Some(quote! {
-                #[automatically_derived]
-                impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #type_generics_tokens
-                #where_clause
-                {
-                    type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
-                    type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;
-
-                    #[inline]
-                    fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<#scalar, Self::Context, Self::TypeInfo> {
-                        self
-                    }
-                }
-            })
-        } else {
-            None
-        };
-
         let resolve_field_async = {
             let resolve_matches_async = self.fields.iter().map(|field| {
                 let name = &field.name;
@@ -1016,6 +997,30 @@ impl GraphQLTypeDefiniton {
 
             // FIXME: add where clause for interfaces.
 
+            let as_dyn_value = if !self.interfaces.is_empty() {
+                Some(quote! {
+                    #[automatically_derived]
+                    impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #type_generics_tokens
+                    #where_async
+                    {
+                        type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
+                        type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;
+
+                        #[inline]
+                        fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<#scalar, Self::Context, Self::TypeInfo> {
+                            self
+                        }
+
+                        #[inline]
+                        fn as_dyn_graphql_value_async(&self) -> &::juniper::DynGraphQLValueAsync<#scalar, Self::Context, Self::TypeInfo> {
+                            self
+                        }
+                    }
+                })
+            } else {
+                None
+            };
+
             quote!(
                 impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #type_generics_tokens
                     #where_async
@@ -1042,6 +1047,8 @@ impl GraphQLTypeDefiniton {
                         }
                     }
                 }
+
+                #as_dyn_value
             )
         };
 
@@ -1132,8 +1139,6 @@ impl GraphQLTypeDefiniton {
         }
 
         #resolve_field_async
-
-        #as_dyn_value
         );
         output
     }

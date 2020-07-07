@@ -16,12 +16,19 @@ struct Human {
     home_planet: String,
 }
 #[automatically_derived]
-impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Human {
+impl<__S: ::juniper::ScalarValue + Send + Sync> ::juniper::AsDynGraphQLValue<__S> for Human
+where
+    Self: Sync,
+{
     type Context = <Self as ::juniper::GraphQLValue<__S>>::Context;
     type TypeInfo = <Self as ::juniper::GraphQLValue<__S>>::TypeInfo;
 
     #[inline]
     fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<__S, Self::Context, Self::TypeInfo> {
+        self
+    }
+    #[inline]
+    fn as_dyn_graphql_value_async(&self) -> &::juniper::DynGraphQLValueAsync<__S, Self::Context, Self::TypeInfo> {
         self
     }
 }
@@ -34,7 +41,10 @@ impl Character for Human {
     }
 }
    DESUGARS INTO: */
-impl<GraphQLScalarValue: ::juniper::ScalarValue> Character<GraphQLScalarValue> for Human {
+impl<GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync> Character<GraphQLScalarValue> for Human
+where
+    Self: Sync,
+{
     fn id(&self) -> &str {
         &self.id
     }
@@ -56,12 +66,19 @@ struct Droid {
     primary_function: String,
 }
 #[automatically_derived]
-impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Droid {
+impl<__S: ::juniper::ScalarValue + Send + Sync> ::juniper::AsDynGraphQLValue<__S> for Droid
+where
+    Self: Sync,
+{
     type Context = <Self as ::juniper::GraphQLValue<__S>>::Context;
     type TypeInfo = <Self as ::juniper::GraphQLValue<__S>>::TypeInfo;
 
     #[inline]
     fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<__S, Self::Context, Self::TypeInfo> {
+        self
+    }
+    #[inline]
+    fn as_dyn_graphql_value_async(&self) -> &::juniper::DynGraphQLValueAsync<__S, Self::Context, Self::TypeInfo> {
         self
     }
 }
@@ -78,7 +95,10 @@ impl Character for Droid {
     }
 }
    DESUGARS INTO: */
-impl<GraphQLScalarValue: ::juniper::ScalarValue> Character<GraphQLScalarValue> for Droid {
+impl<GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync> Character<GraphQLScalarValue> for Droid
+where
+    Self: Sync,
+{
     fn id(&self) -> &str {
         &self.id
     }

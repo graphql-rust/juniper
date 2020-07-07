@@ -7,6 +7,7 @@ use crate::{
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
     GraphQLEnum,
+    types::async_await::DynGraphQLValueAsync,
 };
 
 /// GraphQL type kind
@@ -298,7 +299,11 @@ pub trait AsDynGraphQLValue<S: ScalarValue = DefaultScalarValue> {
     type TypeInfo;
 
     fn as_dyn_graphql_value(&self) -> &DynGraphQLValue<S, Self::Context, Self::TypeInfo>;
+
+    fn as_dyn_graphql_value_async(&self) -> &DynGraphQLValueAsync<S, Self::Context, Self::TypeInfo>;
 }
+
+crate::sa::assert_obj_safe!(AsDynGraphQLValue<Context = (), TypeInfo = ()>);
 
 /// Primary trait used to expose Rust types in a GraphQL schema.
 ///

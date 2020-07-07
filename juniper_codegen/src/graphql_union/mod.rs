@@ -394,7 +394,7 @@ impl ToTokens for UnionDefinition {
                 if type_name == #get_name.unwrap() {
                     return ::juniper::IntoResolvable::into(
                         { #expr },
-                        executor.context()
+                        executor.context(),
                     )
                     .and_then(|res| match res {
                         Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
@@ -417,7 +417,7 @@ impl ToTokens for UnionDefinition {
                         if type_name == #get_name.unwrap() {
                             let res = ::juniper::IntoResolvable::into(
                                 { #expr },
-                                executor.context()
+                                executor.context(),
                             );
                             return ::juniper::futures::future::FutureExt::boxed(async move {
                                 match res? {
