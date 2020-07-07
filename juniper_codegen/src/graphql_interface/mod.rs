@@ -13,6 +13,7 @@ use syn::{
     parse_quote,
     spanned::Spanned as _,
     token,
+    ext::IdentExt as _,
 };
 
 use crate::util::{
@@ -92,7 +93,7 @@ impl Parse for InterfaceMeta {
         let mut output = Self::default();
 
         while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
+            let ident = input.call(syn::Ident::parse_any)?; // required to parse keywords
             match ident.to_string().as_str() {
                 "name" => {
                     input.parse::<token::Eq>()?;
@@ -469,7 +470,9 @@ impl ToTokens for InterfaceDefinition {
                 ) -> ::juniper::meta::MetaType<'r, #scalar>
                 where #scalar: 'r,
                 {
-                    // TODO: enumerate implementors
+                    // Ensure all implementer types are registered.
+                    #( let _ = registry.get_type::<#impler_types>(info); )*
+
                     // TODO: fields
                     registry.build_interface_type::<#ty_full>(info, &[])
                     #description

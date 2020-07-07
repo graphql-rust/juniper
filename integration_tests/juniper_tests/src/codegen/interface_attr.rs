@@ -90,12 +90,12 @@ impl<GraphQLScalarValue: ::juniper::ScalarValue> Character<GraphQLScalarValue> f
 
 // ------------------------------------------
 
-#[graphql_interface(implementers(Human, Droid))]
+#[graphql_interface(for(Human, Droid))]
 trait Character {
     fn id(&self) -> &str;
 
     //#[graphql_interface(downcast)]
-    //fn as_droid(&self) -> Option<&Droid> { None }
+    fn as_droid(&self) -> Option<&Droid> { None }
 }
 
 // ------------------------------------------

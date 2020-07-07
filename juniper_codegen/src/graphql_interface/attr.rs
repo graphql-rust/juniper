@@ -9,7 +9,7 @@ use crate::{
     util::{span_container::SpanContainer, strip_attrs, unite_attrs},
 };
 
-use super::{InterfaceDefinition, InterfaceMeta};
+use super::{InterfaceDefinition, InterfaceMeta, InterfaceImplementerDefinition};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
@@ -36,7 +36,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
 /// Expands `#[graphql_interface]` macro placed on trait definition.
 pub fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
-    ast: syn::ItemTrait,
+    mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
     let meta = InterfaceMeta::from_attrs("graphql_interface", &attrs)?;
 
@@ -60,8 +60,24 @@ pub fn expand_on_trait(
         context,
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
-        implementers: vec![], // TODO
+        implementers: meta.implementers.iter().map(|ty| {
+            let span = ty.span_ident();
+            InterfaceImplementerDefinition {
+                ty: ty.as_ref().clone(),
+                downcast_code: None,
+                downcast_check: None,
+                context_ty: None,
+                span,
+            }
+        }).collect()
     };
+
+    ast.generics.params.push(parse_quote! {
+        GraphQLScalarValue: ::juniper::ScalarValue = ::juniper::DefaultScalarValue
+    });
+    ast.supertraits.push(parse_quote! {
+        ::juniper::AsDynGraphQLValue<GraphQLScalarValue>
+    });
 
     Ok(quote! {
         #ast

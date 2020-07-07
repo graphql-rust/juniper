@@ -379,7 +379,7 @@ impl ToTokens for UnionDefinition {
             let var_check = &var.resolver_check;
             quote! {
                 if #var_check {
-                    return <#var_ty as ::juniper::GraphQLType<#scalar>>::name(&())
+                    return <#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)
                         .unwrap().to_string();
                 }
             }
@@ -389,7 +389,7 @@ impl ToTokens for UnionDefinition {
         let resolve_into_type = self.variants.iter().zip(match_resolves.iter()).map(|(var, expr)| {
             let var_ty = &var.ty;
 
-            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(&())) };
+            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)) };
             quote! {
                 if type_name == #get_name.unwrap() {
                     return ::juniper::IntoResolvable::into(
@@ -397,7 +397,7 @@ impl ToTokens for UnionDefinition {
                         executor.context()
                     )
                     .and_then(|res| match res {
-                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
                         None => Ok(::juniper::Value::null()),
                     });
                 }
@@ -411,7 +411,7 @@ impl ToTokens for UnionDefinition {
                     let var_ty = &var.ty;
 
                     let get_name = quote! {
-                        (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(&()))
+                        (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info))
                     };
                     quote! {
                         if type_name == #get_name.unwrap() {
@@ -423,7 +423,7 @@ impl ToTokens for UnionDefinition {
                                 match res? {
                                     Some((ctx, r)) => {
                                         let subexec = executor.replaced_context(ctx);
-                                        subexec.resolve_with_ctx_async(&(), &r).await
+                                        subexec.resolve_with_ctx_async(info, &r).await
                                     },
                                     None => Ok(::juniper::Value::null()),
                                 }
@@ -478,7 +478,7 @@ impl ToTokens for UnionDefinition {
                 where #scalar: 'r,
                 {
                     let types = &[
-                        #( registry.get_type::<&#var_types>(&(())), )*
+                        #( registry.get_type::<#var_types>(info), )*
                     ];
                     registry.build_union_type::<#ty_full>(info, types)
                     #description
@@ -502,7 +502,7 @@ impl ToTokens for UnionDefinition {
                 fn concrete_type_name(
                     &self,
                     context: &Self::Context,
-                    _: &Self::TypeInfo,
+                    info: &Self::TypeInfo,
                 ) -> String {
                     #( #match_names )*
                     panic!(
@@ -514,7 +514,7 @@ impl ToTokens for UnionDefinition {
 
                 fn resolve_into_type(
                     &self,
-                    _: &Self::TypeInfo,
+                    info: &Self::TypeInfo,
                     type_name: &str,
                     _: Option<&[::juniper::Selection<#scalar>]>,
                     executor: &::juniper::Executor<Self::Context, #scalar>,
@@ -536,7 +536,7 @@ impl ToTokens for UnionDefinition {
             {
                 fn resolve_into_type_async<'b>(
                     &'b self,
-                    _: &'b Self::TypeInfo,
+                    info: &'b Self::TypeInfo,
                     type_name: &str,
                     _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
                     executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
