@@ -11,9 +11,13 @@
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.14.2")]
 
-use std::{iter::FromIterator, pin::Pin};
+use std::{
+    iter::FromIterator,
+    pin::Pin,
+    task::{self, Poll},
+};
 
-use futures::{task::Poll, Stream};
+use futures::{future, stream, FutureExt as _, Stream, StreamExt as _, TryFutureExt as _};
 use juniper::{
     http::{GraphQLRequest, GraphQLResponse},
     BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object,
@@ -25,14 +29,14 @@ use juniper::{
 /// - handles subscription start
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
 }
@@ -40,14 +44,14 @@ where
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
     Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync,
 {
     /// Builds new [`Coordinator`] with specified `root_node`
     pub fn new(root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>) -> Self {
@@ -58,14 +62,14 @@ where
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S> SubscriptionCoordinator<'a, CtxT, S>
     for Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'a,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    CtxT: Sync,
+    S: ScalarValue + Send + Sync + 'a,
 {
     type Connection = Connection<'a, S>;
 
@@ -76,13 +80,9 @@ where
         req: &'a GraphQLRequest<S>,
         context: &'a CtxT,
     ) -> BoxFuture<'a, Result<Self::Connection, Self::Error>> {
-        let rn = &self.root_node;
-
-        Box::pin(async move {
-            let (stream, errors) = juniper::http::resolve_into_stream(req, rn, context).await?;
-
-            Ok(Connection::from_stream(stream, errors))
-        })
+        juniper::http::resolve_into_stream(req, &self.root_node, context)
+            .map_ok(|(stream, errors)| Connection::from_stream(stream, errors))
+            .boxed()
     }
 }
 
@@ -98,7 +98,7 @@ where
 /// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
 /// `Value::Object<Value::Object<_>>` - returns [`Value::Null`] if [`Value::Object`] consists of sub-objects
 pub struct Connection<'a, S> {
-    stream: Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
+    stream: Pin<Box<dyn Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
 }
 
 impl<'a, S> Connection<'a, S>
@@ -118,16 +118,13 @@ impl<'a, S> SubscriptionConnection<'a, S> for Connection<'a, S> where
 {
 }
 
-impl<'a, S> futures::Stream for Connection<'a, S>
+impl<'a, S> Stream for Connection<'a, S>
 where
     S: ScalarValue + Send + Sync + 'a,
 {
     type Item = GraphQLResponse<'a, S>;
 
-    fn poll_next(
-        self: Pin<&mut Self>,
-        cx: &mut futures::task::Context<'_>,
-    ) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Option<Self::Item>> {
         // this is safe as stream is only mutated here and is not moved anywhere
         let Connection { stream } = unsafe { self.get_unchecked_mut() };
         let stream = unsafe { Pin::new_unchecked(stream) };
@@ -146,22 +143,20 @@ where
 fn whole_responses_stream<'a, S>(
     stream: Value<ValuesStream<'a, S>>,
     errors: Vec<ExecutionError<S>>,
-) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
+) -> Pin<Box<dyn Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
 where
     S: ScalarValue + Send + Sync + 'a,
 {
-    use futures::stream::{self, StreamExt as _};
-
     if !errors.is_empty() {
-        return Box::pin(stream::once(async move {
-            GraphQLResponse::from_result(Ok((Value::Null, errors)))
-        }));
+        return Box::pin(stream::once(future::ready(GraphQLResponse::from_result(
+            Ok((Value::Null, errors)),
+        ))));
     }
 
     match stream {
-        Value::Null => Box::pin(stream::once(async move {
-            GraphQLResponse::from_result(Ok((Value::Null, vec![])))
-        })),
+        Value::Null => Box::pin(stream::once(future::ready(GraphQLResponse::from_result(
+            Ok((Value::Null, vec![])),
+        )))),
         Value::Scalar(s) => Box::pin(s.map(|res| match res {
             Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
             Err(err) => GraphQLResponse::from_result(Ok((Value::Null, vec![err]))),
@@ -176,9 +171,9 @@ where
         Value::Object(mut object) => {
             let obj_len = object.field_count();
             if obj_len == 0 {
-                return Box::pin(stream::once(async move {
-                    GraphQLResponse::from_result(Ok((Value::Null, vec![])))
-                }));
+                return Box::pin(stream::once(future::ready(GraphQLResponse::from_result(
+                    Ok((Value::Null, vec![])),
+                ))));
             }
 
             let mut filled_count = 0;
@@ -187,66 +182,65 @@ where
                 ready_vec.push(None);
             }
 
-            let stream =
-                futures::stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'a, S>>> {
-                    let mut obj_iterator = object.iter_mut();
+            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'a, S>>> {
+                let mut obj_iterator = object.iter_mut();
 
-                    // Due to having to modify `ready_vec` contents (by-move pattern)
-                    // and only being able to iterate over `object`'s mutable references (by-ref pattern)
-                    // `ready_vec` and `object` cannot be iterated simultaneously.
-                    // TODO: iterate over i and (ref field_name, ref val) once
-                    //       [this RFC](https://github.com/rust-lang/rust/issues/68354)
-                    //       is implemented
-                    for ready in ready_vec.iter_mut().take(obj_len) {
-                        let (field_name, val) = match obj_iterator.next() {
-                            Some(v) => v,
-                            None => break,
-                        };
+                // Due to having to modify `ready_vec` contents (by-move pattern)
+                // and only being able to iterate over `object`'s mutable references (by-ref pattern)
+                // `ready_vec` and `object` cannot be iterated simultaneously.
+                // TODO: iterate over i and (ref field_name, ref val) once
+                //       [this RFC](https://github.com/rust-lang/rust/issues/68354)
+                //       is implemented
+                for ready in ready_vec.iter_mut().take(obj_len) {
+                    let (field_name, val) = match obj_iterator.next() {
+                        Some(v) => v,
+                        None => break,
+                    };
 
-                        if ready.is_some() {
-                            continue;
-                        }
+                    if ready.is_some() {
+                        continue;
+                    }
 
-                        match val {
-                            Value::Scalar(stream) => {
-                                match Pin::new(stream).poll_next(&mut ctx) {
-                                    Poll::Ready(None) => return Poll::Ready(None),
-                                    Poll::Ready(Some(value)) => {
-                                        *ready = Some((field_name.clone(), value));
-                                        filled_count += 1;
-                                    }
-                                    Poll::Pending => { /* check back later */ }
+                    match val {
+                        Value::Scalar(stream) => {
+                            match Pin::new(stream).poll_next(&mut ctx) {
+                                Poll::Ready(None) => return Poll::Ready(None),
+                                Poll::Ready(Some(value)) => {
+                                    *ready = Some((field_name.clone(), value));
+                                    filled_count += 1;
                                 }
-                            }
-                            _ => {
-                                // For now only `Object<Value::Scalar>` is supported
-                                *ready = Some((field_name.clone(), Ok(Value::Null)));
-                                filled_count += 1;
+                                Poll::Pending => { /* check back later */ }
                             }
                         }
+                        _ => {
+                            // For now only `Object<Value::Scalar>` is supported
+                            *ready = Some((field_name.clone(), Ok(Value::Null)));
+                            filled_count += 1;
+                        }
                     }
+                }
 
-                    if filled_count == obj_len {
-                        filled_count = 0;
-                        let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
-                        let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
-                        let ready_vec_iterator = ready_vec.into_iter().map(|el| {
-                            let (name, val) = el.unwrap();
-                            if let Ok(value) = val {
-                                (name, value)
-                            } else {
-                                (name, Value::Null)
-                            }
-                        });
-                        let obj = Object::from_iter(ready_vec_iterator);
-                        Poll::Ready(Some(GraphQLResponse::from_result(Ok((
-                            Value::Object(obj),
-                            vec![],
-                        )))))
-                    } else {
-                        Poll::Pending
-                    }
-                });
+                if filled_count == obj_len {
+                    filled_count = 0;
+                    let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
+                    let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
+                    let ready_vec_iterator = ready_vec.into_iter().map(|el| {
+                        let (name, val) = el.unwrap();
+                        if let Ok(value) = val {
+                            (name, value)
+                        } else {
+                            (name, Value::Null)
+                        }
+                    });
+                    let obj = Object::from_iter(ready_vec_iterator);
+                    Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                        Value::Object(obj),
+                        vec![],
+                    )))))
+                } else {
+                    Poll::Pending
+                }
+            });
 
             Box::pin(stream)
         }
@@ -255,9 +249,10 @@ where
 
 #[cfg(test)]
 mod whole_responses_stream {
-    use super::*;
     use futures::{stream, StreamExt as _};
     use juniper::{DefaultScalarValue, ExecutionError, FieldError};
+
+    use super::*;
 
     #[tokio::test]
     async fn with_error() {

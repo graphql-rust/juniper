@@ -1,5 +1,3 @@
-use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
-
 use crate::{
     ast::InputValue,
     executor::Variables,
@@ -9,6 +7,7 @@ use crate::{
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
     GraphQLError::ValidationError,
+    GraphQLInputObject,
 };
 
 #[derive(Debug)]
@@ -16,7 +15,7 @@ struct TestComplexScalar;
 
 struct TestType;
 
-#[crate::graphql_scalar_internal]
+#[crate::graphql_scalar]
 impl GraphQLScalar for TestComplexScalar {
     fn resolve(&self) -> Value {
         Value::scalar(String::from("SerializedValue"))
@@ -65,7 +64,7 @@ struct InputWithDefaults {
     a: i32,
 }
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl TestType {
     fn field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)

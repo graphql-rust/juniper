@@ -41,6 +41,10 @@ Check the LICENSE file for details.
 
 use std::io::{Cursor, Read};
 
+use juniper::{
+    http::{self, GraphQLBatchRequest},
+    DefaultScalarValue, FieldError, GraphQLType, InputValue, RootNode, ScalarValue,
+};
 use rocket::{
     data::{FromDataSimple, Outcome as FromDataOutcome},
     http::{ContentType, RawStr, Status},
@@ -49,12 +53,6 @@ use rocket::{
     Data,
     Outcome::{Forward, Success},
     Request,
-};
-
-use juniper::{http, InputValue};
-
-use juniper::{
-    http::GraphQLBatchRequest, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue,
 };
 
 /// Simple wrapper around an incoming GraphQL request
@@ -422,7 +420,11 @@ mod fromform_tests {
 
 #[cfg(test)]
 mod tests {
-
+    use juniper::{
+        http::tests as http_tests,
+        tests::{model::Database, schema::Query},
+        EmptyMutation, EmptySubscription, RootNode,
+    };
     use rocket::{
         self, get,
         http::ContentType,
@@ -430,12 +432,6 @@ mod tests {
         post,
         request::Form,
         routes, Rocket, State,
-    };
-
-    use juniper::{
-        http::tests as http_tests,
-        tests::{model::Database, schema::Query},
-        EmptyMutation, EmptySubscription, RootNode,
     };
 
     type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;

@@ -8,7 +8,7 @@ use crate::{
     Value,
 };
 
-#[crate::graphql_scalar_internal(description = "Uuid")]
+#[crate::graphql_scalar(description = "Uuid")]
 impl<S> GraphQLScalar for Uuid
 where
     S: ScalarValue,

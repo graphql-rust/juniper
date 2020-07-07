@@ -6,11 +6,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
-pub fn build_derive_object(
-    ast: syn::DeriveInput,
-    is_internal: bool,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
+pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
     let ast_span = ast.span();
     let struct_fields = match ast.data {
         Data::Struct(data) => match data.fields {
@@ -105,7 +101,7 @@ pub fn build_derive_object(
         error.duplicate(duplicates.iter());
     }
 
-    if name.starts_with("__") && !is_internal {
+    if !attrs.is_internal && name.starts_with("__") {
         error.no_double_underscore(if let Some(name) = attrs.name {
             name.span_ident()
         } else {
@@ -132,9 +128,7 @@ pub fn build_derive_object(
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
-        mode: is_internal.into(),
     };
 
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    Ok(definition.into_tokens(juniper_crate_name))
+    Ok(definition.into_tokens())
 }

@@ -1,5 +1,3 @@
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 use crate::{
     ast::InputValue,
     executor::Variables,
@@ -8,6 +6,7 @@ use crate::{
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object, Value},
+    GraphQLEnum,
     GraphQLError::ValidationError,
 };
 
@@ -19,7 +18,7 @@ enum Color {
 }
 struct TestType;
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl TestType {
     fn to_string(color: Color) -> String {
         format!("Color::{:?}", color)

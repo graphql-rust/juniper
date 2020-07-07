@@ -1,10 +1,13 @@
 #![deny(warnings)]
 
-use futures::{Stream, StreamExt};
-use juniper::http::GraphQLRequest;
-use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
-use juniper_subscriptions::Coordinator;
 use std::pin::Pin;
+
+use futures::{Stream, StreamExt};
+use juniper::{
+    http::GraphQLRequest, DefaultScalarValue, EmptyMutation, FieldError, RootNode,
+    SubscriptionCoordinator,
+};
+use juniper_subscriptions::Coordinator;
 
 #[derive(Clone)]
 pub struct Database;
@@ -50,13 +53,11 @@ async fn main() {
     let schema = schema();
     let coordinator = Coordinator::new(schema);
     let req: GraphQLRequest<DefaultScalarValue> = serde_json::from_str(
-        r#"
-        {
+        r#"{
             "query": "subscription { helloWorld }"
-        }
-    "#,
+        }"#,
     )
-        .unwrap();
+    .unwrap();
     let ctx = Database::new();
     let mut conn = coordinator.subscribe(&req, &ctx).await.unwrap();
     while let Some(result) = conn.next().await {

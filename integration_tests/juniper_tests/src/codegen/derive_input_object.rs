@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 
 use juniper::{
-    self, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, InputValue,
+    DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue, InputValue,
     ToInputValue,
 };
 
@@ -63,9 +63,6 @@ impl<'a> ToInputValue for &'a Fake {
 }
 
 impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
-    type Context = ();
-    type TypeInfo = ();
-
     fn name(_: &()) -> Option<&'static str> {
         None
     }
@@ -82,6 +79,15 @@ impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
             }],
         );
         meta.into_meta()
+    }
+}
+
+impl<'a> GraphQLValue<DefaultScalarValue> for &'a Fake {
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
     }
 }
 

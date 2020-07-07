@@ -5,7 +5,7 @@
 
 use futures::Stream;
 
-use crate::{FieldError, GraphQLType, ScalarValue};
+use crate::{FieldError, GraphQLValue, ScalarValue};
 
 /// Trait for converting  `T` to `Ok(T)` if T is not Result.
 /// This is useful in subscription macros when user can provide type alias for
@@ -50,7 +50,7 @@ pub struct ResultStreamItem;
 pub struct ResultStreamResult;
 
 /// This trait is used in `juniper::graphql_subscription` macro to get stream's
-/// item type that implements `GraphQLType` from type alias provided
+/// item type that implements `GraphQLValue` from type alias provided
 /// by user.
 pub trait ExtractTypeFromStream<T, S>
 where
@@ -59,13 +59,13 @@ where
     /// Stream's return Value that will be returned if
     /// no errors occured. Is used to determine field type in
     /// `#[juniper::graphql_subscription]`
-    type Item: GraphQLType<S>;
+    type Item: GraphQLValue<S>;
 }
 
 impl<T, I, S> ExtractTypeFromStream<StreamItem, S> for T
 where
     T: futures::Stream<Item = I>,
-    I: GraphQLType<S>,
+    I: GraphQLValue<S>,
     S: ScalarValue,
 {
     type Item = I;
@@ -74,7 +74,7 @@ where
 impl<Ty, T, E, S> ExtractTypeFromStream<StreamResult, S> for Ty
 where
     Ty: futures::Stream<Item = Result<T, E>>,
-    T: GraphQLType<S>,
+    T: GraphQLValue<S>,
     S: ScalarValue,
 {
     type Item = T;
@@ -83,7 +83,7 @@ where
 impl<T, I, E, S> ExtractTypeFromStream<ResultStreamItem, S> for Result<T, E>
 where
     T: futures::Stream<Item = I>,
-    I: GraphQLType<S>,
+    I: GraphQLValue<S>,
     S: ScalarValue,
 {
     type Item = I;
@@ -92,7 +92,7 @@ where
 impl<T, E, I, ER, S> ExtractTypeFromStream<ResultStreamResult, S> for Result<T, E>
 where
     T: futures::Stream<Item = Result<I, ER>>,
-    I: GraphQLType<S>,
+    I: GraphQLValue<S>,
     S: ScalarValue,
 {
     type Item = I;

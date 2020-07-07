@@ -15,9 +15,7 @@ use syn::{
     spanned::Spanned as _,
 };
 
-use crate::util::{
-    filter_attrs, get_doc_comment, span_container::SpanContainer, Mode, OptionExt as _,
-};
+use crate::util::{filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _};
 
 /// Attempts to merge an [`Option`]ed `$field` of a `$self` struct with the same `$field` of
 /// `$another` struct. If both are [`Some`], then throws a duplication error with a [`Span`] related
@@ -122,6 +120,10 @@ struct UnionMeta {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub external_resolvers: UnionMetaResolvers,
+
+    /// Indicator whether the generated code is intended to be used only inside the `juniper`
+    /// library.
+    pub is_internal: bool,
 }
 
 impl Parse for UnionMeta {
@@ -182,6 +184,9 @@ impl Parse for UnionMeta {
                         .insert(ty, rslvr_spanned)
                         .none_or_else(|_| dup_attr_err(rslvr_span))?
                 }
+                "internal" => {
+                    output.is_internal = true;
+                }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
                 }
@@ -204,6 +209,7 @@ impl UnionMeta {
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
             external_resolvers: try_merge_hashmap!(external_resolvers: self, another => span_joined),
+            is_internal: self.is_internal || another.is_internal,
         })
     }
 
@@ -389,17 +395,10 @@ struct UnionDefinition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub span: Span,
-
-    /// [`Mode`] to generate code in for this [GraphQL union][1].
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub mode: Mode,
 }
 
 impl ToTokens for UnionDefinition {
     fn to_tokens(&self, into: &mut TokenStream) {
-        let crate_path = self.mode.crate_path();
-
         let name = &self.name;
         let ty = &self.ty;
 
@@ -423,7 +422,7 @@ impl ToTokens for UnionDefinition {
         let var_types: Vec<_> = self.variants.iter().map(|var| &var.ty).collect();
 
         let all_variants_unique = if var_types.len() > 1 {
-            Some(quote! { #crate_path::sa::assert_type_ne_all!(#(#var_types),*); })
+            Some(quote! { ::juniper::sa::assert_type_ne_all!(#(#var_types),*); })
         } else {
             None
         };
@@ -433,7 +432,7 @@ impl ToTokens for UnionDefinition {
             let var_check = &var.resolver_check;
             quote! {
                 if #var_check {
-                    return <#var_ty as #crate_path::GraphQLType<#scalar>>::name(&())
+                    return <#var_ty as ::juniper::GraphQLType<#scalar>>::name(&())
                         .unwrap().to_string();
                 }
             }
@@ -443,16 +442,16 @@ impl ToTokens for UnionDefinition {
         let resolve_into_type = self.variants.iter().zip(match_resolves.iter()).map(|(var, expr)| {
             let var_ty = &var.ty;
 
-            let get_name = quote! { (<#var_ty as #crate_path::GraphQLType<#scalar>>::name(&())) };
+            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(&())) };
             quote! {
                 if type_name == #get_name.unwrap() {
-                    return #crate_path::IntoResolvable::into(
+                    return ::juniper::IntoResolvable::into(
                         { #expr },
                         executor.context()
                     )
                     .and_then(|res| match res {
                         Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                        None => Ok(#crate_path::Value::null()),
+                        None => Ok(::juniper::Value::null()),
                     });
                 }
             }
@@ -465,21 +464,21 @@ impl ToTokens for UnionDefinition {
                     let var_ty = &var.ty;
 
                     let get_name = quote! {
-                        (<#var_ty as #crate_path::GraphQLType<#scalar>>::name(&()))
+                        (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(&()))
                     };
                     quote! {
                         if type_name == #get_name.unwrap() {
-                            let res = #crate_path::IntoResolvable::into(
+                            let res = ::juniper::IntoResolvable::into(
                                 { #expr },
                                 executor.context()
                             );
-                            return #crate_path::futures::future::FutureExt::boxed(async move {
+                            return ::juniper::futures::future::FutureExt::boxed(async move {
                                 match res? {
                                     Some((ctx, r)) => {
                                         let subexec = executor.replaced_context(ctx);
                                         subexec.resolve_with_ctx_async(&(), &r).await
                                     },
-                                    None => Ok(#crate_path::Value::null()),
+                                    None => Ok(::juniper::Value::null()),
                                 }
                             });
                         }
@@ -498,16 +497,14 @@ impl ToTokens for UnionDefinition {
                 .where_clause
                 .get_or_insert_with(|| parse_quote! { where })
                 .predicates
-                .push(parse_quote! { #scalar: #crate_path::ScalarValue });
+                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
         }
         let (ext_impl_generics, _, where_clause) = ext_generics.split_for_impl();
 
         let mut where_async = where_clause
             .cloned()
             .unwrap_or_else(|| parse_quote! { where });
-        where_async
-            .predicates
-            .push(parse_quote! { Self: Send + Sync });
+        where_async.predicates.push(parse_quote! { Self: Sync });
         if self.scalar.is_none() {
             where_async
                 .predicates
@@ -521,20 +518,17 @@ impl ToTokens for UnionDefinition {
 
         let type_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::GraphQLType<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::GraphQLType<#scalar> for #ty_full
                 #where_clause
             {
-                type Context = #context;
-                type TypeInfo = ();
-
-                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
                 }
 
                 fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut #crate_path::Registry<'r, #scalar>
-                ) -> #crate_path::meta::MetaType<'r, #scalar>
+                    registry: &mut ::juniper::Registry<'r, #scalar>
+                ) -> ::juniper::meta::MetaType<'r, #scalar>
                 where #scalar: 'r,
                 {
                     let types = &[
@@ -543,6 +537,20 @@ impl ToTokens for UnionDefinition {
                     registry.build_union_type::<#ty_full>(info, types)
                     #description
                     .into_meta()
+                }
+            }
+        };
+
+        let value_impl = quote! {
+            #[automatically_derived]
+            impl#ext_impl_generics ::juniper::GraphQLValue<#scalar> for #ty_full
+                #where_clause
+            {
+                type Context = #context;
+                type TypeInfo = ();
+
+                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
                 fn concrete_type_name(
@@ -562,9 +570,9 @@ impl ToTokens for UnionDefinition {
                     &self,
                     _: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[#crate_path::Selection<#scalar>]>,
-                    executor: &#crate_path::Executor<Self::Context, #scalar>,
-                ) -> #crate_path::ExecutionResult<#scalar> {
+                    _: Option<&[::juniper::Selection<#scalar>]>,
+                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::ExecutionResult<#scalar> {
                     let context = executor.context();
                     #( #resolve_into_type )*
                     panic!(
@@ -575,18 +583,18 @@ impl ToTokens for UnionDefinition {
             }
         };
 
-        let async_type_impl = quote! {
+        let value_async_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::GraphQLTypeAsync<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty_full
                 #where_async
             {
                 fn resolve_into_type_async<'b>(
                     &'b self,
                     _: &'b Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&'b [#crate_path::Selection<'b, #scalar>]>,
-                    executor: &'b #crate_path::Executor<'b, 'b, Self::Context, #scalar>
-                ) -> #crate_path::BoxFuture<'b, #crate_path::ExecutionResult<#scalar>> {
+                    _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
+                    executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     let context = executor.context();
                     #( #resolve_into_type_async )*
                     panic!(
@@ -599,29 +607,35 @@ impl ToTokens for UnionDefinition {
 
         let output_type_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::marker::IsOutputType<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty_full
                 #where_clause
             {
                 fn mark() {
-                    #( <#var_types as #crate_path::marker::GraphQLObjectType<#scalar>>::mark(); )*
+                    #( <#var_types as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
                 }
             }
         };
 
         let union_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::marker::GraphQLUnion<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::marker::GraphQLUnion<#scalar> for #ty_full
                 #where_clause
             {
                 fn mark() {
                     #all_variants_unique
 
-                    #( <#var_types as #crate_path::marker::GraphQLObjectType<#scalar>>::mark(); )*
+                    #( <#var_types as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
                 }
             }
         };
 
-        into.append_all(&[union_impl, output_type_impl, type_impl, async_type_impl]);
+        into.append_all(&[
+            union_impl,
+            output_type_impl,
+            type_impl,
+            value_impl,
+            value_async_impl,
+        ]);
     }
 }
 
@@ -634,20 +648,17 @@ impl ToTokens for UnionDefinition {
 fn emerge_union_variants_from_meta(
     variants: &mut Vec<UnionVariantDefinition>,
     external_resolvers: UnionMetaResolvers,
-    mode: Mode,
 ) {
     if external_resolvers.is_empty() {
         return;
     }
-
-    let crate_path = mode.crate_path();
 
     for (ty, rslvr) in external_resolvers {
         let span = rslvr.span_joined();
 
         let resolver_fn = rslvr.into_inner();
         let resolver_code = parse_quote! {
-            #resolver_fn(self, #crate_path::FromContext::from(context))
+            #resolver_fn(self, ::juniper::FromContext::from(context))
         };
         // Doing this may be quite an expensive, because resolving may contain some heavy
         // computation, so we're preforming it twice. Unfortunately, we have no other options here,

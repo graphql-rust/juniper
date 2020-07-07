@@ -17,7 +17,7 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[crate::graphql_object_internal(Context=Context)]
+#[crate::graphql_object(Context=Context)]
 impl<'a> WithLifetime<'a> {
     fn value(&'a self) -> &'a str {
         self.value
@@ -26,7 +26,7 @@ impl<'a> WithLifetime<'a> {
 
 struct WithContext;
 
-#[crate::graphql_object_internal(Context=Context)]
+#[crate::graphql_object(Context=Context)]
 impl WithContext {
     fn ctx(ctx: &Context) -> bool {
         ctx.flag1
@@ -36,7 +36,7 @@ impl WithContext {
 #[derive(Default)]
 struct Query;
 
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     Context = Context,
 )]
 impl Query {
@@ -48,7 +48,7 @@ impl Query {
 #[derive(Default)]
 struct Mutation;
 
-#[crate::graphql_object_internal(context = Context)]
+#[crate::graphql_object(context = Context)]
 impl Mutation {
     fn empty() -> bool {
         true
@@ -62,7 +62,7 @@ struct Subscription {
     b: bool,
 }
 
-#[crate::graphql_subscription_internal(
+#[crate::graphql_subscription(
     scalar = crate::DefaultScalarValue,
     name = "Subscription",
     context = Context,
@@ -149,7 +149,7 @@ impl Subscription {
 
 #[tokio::test]
 async fn object_introspect() {
-    let res = util::run_info_query::<Query, Mutation, Subscription, Context>("Subscription").await;
+    let res = util::run_info_query::<Query, Mutation, Subscription>("Subscription").await;
     assert_eq!(
         res,
         crate::graphql_value!({

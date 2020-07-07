@@ -1,8 +1,6 @@
 mod enums;
 mod input_object;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
-
 // This asserts that the input objects defined public actually became public
 #[allow(unused_imports)]
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
@@ -12,6 +10,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, Value},
+    GraphQLEnum,
 };
 
 #[derive(GraphQLEnum)]
@@ -27,7 +26,7 @@ struct Interface;
 
 struct Root;
 
-#[crate::graphql_scalar_internal(name = "SampleScalar")]
+#[crate::graphql_scalar(name = "SampleScalar")]
 impl GraphQLScalar for Scalar {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
@@ -55,7 +54,7 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
 });
 
 /// The root query object in the schema
-#[crate::graphql_object_internal(
+#[crate::graphql_object(
     interfaces = [&Interface]
     Scalar = crate::DefaultScalarValue,
 )]

@@ -1,13 +1,12 @@
 #![deny(unused_variables)]
 
-use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
-
 use crate::{
     ast::{FromInputValue, InputValue},
     executor::Variables,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
+    GraphQLInputObject,
 };
 
 struct Root;
@@ -83,7 +82,7 @@ struct FieldWithDefaults {
     field_two: i32,
 }
 
-#[crate::graphql_object_internal]
+#[crate::graphql_object]
 impl Root {
     fn test_field(
         a1: DefaultName,

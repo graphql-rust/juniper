@@ -1,9 +1,11 @@
+use futures::{future, stream};
+
 use crate::{
     http::{GraphQLRequest, GraphQLResponse},
     parser::Spanning,
-    types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value,
-    ValuesStream,
+    types::base::{is_excluded, merge_key_into, GraphQLType, GraphQLValue},
+    Arguments, BoxFuture, DefaultScalarValue, Executor, FieldError, Object, ScalarValue, Selection,
+    Value, ValuesStream,
 };
 
 /// Global subscription coordinator trait.
@@ -58,23 +60,24 @@ where
 /// server integration crates.
 pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
 
-/**
- This trait adds resolver logic with asynchronous subscription execution logic
- on GraphQL types. It should be used with `GraphQLType` in order to implement
- subscription resolvers on GraphQL objects.
-
- Subscription-related convenience macros expand into an implementation of this
- trait and `GraphQLType` for the given type.
-
- See trait methods for more detailed explanation on how this trait works.
-*/
-pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
+/// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.
+/// It should be used with [`GraphQLValue`] in order to implement [subscription][1] resolvers on
+/// [GraphQL objects][2].
+///
+/// [Subscription][1]-related convenience macros expand into an implementation of this trait and
+/// [`GraphQLValue`] for the given type.
+///
+/// See trait methods for more detailed explanation on how this trait works.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+/// [2]: https://spec.graphql.org/June2018/#sec-Objects
+pub trait GraphQLSubscriptionValue<S = DefaultScalarValue>: GraphQLValue<S> + Sync
 where
-    Self::Context: Send + Sync,
-    Self::TypeInfo: Send + Sync,
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
-    /// Resolve into `Value<ValuesStream>`
+    /// Resolves into `Value<ValuesStream>`.
     ///
     /// ## Default implementation
     ///
@@ -109,7 +112,7 @@ where
     /// This method is called by Self's `resolve_into_stream` default
     /// implementation every time any field is found in selection set.
     ///
-    /// It replaces `GraphQLType::resolve_field`.
+    /// It replaces `GraphQLValue::resolve_field`.
     /// Unlike `resolve_field`, which resolves each field into a single
     /// `Value<S>`, this method resolves each field into
     /// `Value<ValuesStream<S>>`.
@@ -138,7 +141,7 @@ where
     /// This method is called by Self's `resolve_into_stream` default
     /// implementation every time any fragment is found in selection set.
     ///
-    /// It replaces `GraphQLType::resolve_into_type`.
+    /// It replaces `GraphQLValue::resolve_into_type`.
     /// Unlike `resolve_into_type`, which resolves each fragment
     /// a single `Value<S>`, this method resolves each fragment into
     /// `Value<ValuesStream<S>>`.
@@ -160,7 +163,7 @@ where
         'res: 'f,
     {
         Box::pin(async move {
-            if Self::name(info) == Some(type_name) {
+            if self.type_name(info) == Some(type_name) {
                 self.resolve_into_stream(info, executor).await
             } else {
                 panic!("resolve_into_type_stream must be implemented");
@@ -169,13 +172,39 @@ where
     }
 }
 
+crate::sa::assert_obj_safe!(GraphQLSubscriptionValue<Context = (), TypeInfo = ()>);
+
+/// Extension of [`GraphQLType`] trait with asynchronous [subscription][1] execution logic.
+///
+/// It's automatically implemented for [`GraphQLSubscriptionValue`] and [`GraphQLType`]
+/// implementors, so doesn't require manual or code-generated implementation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+pub trait GraphQLSubscriptionType<S = DefaultScalarValue>:
+    GraphQLSubscriptionValue<S> + GraphQLType<S>
+where
+    Self::Context: Sync,
+    Self::TypeInfo: Sync,
+    S: ScalarValue + Send + Sync,
+{
+}
+
+impl<S, T> GraphQLSubscriptionType<S> for T
+where
+    T: GraphQLSubscriptionValue<S> + GraphQLType<S> + ?Sized,
+    T::Context: Sync,
+    T::TypeInfo: Sync,
+    S: ScalarValue + Send + Sync,
+{
+}
+
 /// Wrapper function around `resolve_selection_set_into_stream_recursive`.
 /// This wrapper is necessary because async fns can not be recursive.
 /// Panics if executor's current selection set is None.
-pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
+pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
+    executor: &'ref_e Executor<'ref_e, 'e, T::Context, S>,
 ) -> BoxFuture<'fut, Value<ValuesStream<'res, S>>>
 where
     'inf: 'res,
@@ -184,10 +213,10 @@ where
     'e: 'fut,
     'ref_e: 'fut,
     'res: 'fut,
-    T: GraphQLSubscriptionType<S, Context = CtxT> + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLSubscriptionValue<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance, info, executor,
@@ -197,16 +226,16 @@ where
 /// Selection set default resolver logic.
 /// Returns `Value::Null` if cannot keep resolving. Otherwise pushes errors to
 /// `Executor`.
-async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T, CtxT, S>(
+async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
+    executor: &'ref_e Executor<'ref_e, 'e, T::Context, S>,
 ) -> Value<ValuesStream<'res, S>>
 where
-    T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync + ?Sized,
-    T::TypeInfo: Send + Sync,
+    T: GraphQLSubscriptionValue<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
     'inf: 'res,
     'e: 'res,
 {
@@ -218,7 +247,8 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            T::name(info)
+            instance
+                .type_name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )
@@ -242,7 +272,7 @@ where
                         Value::scalar(instance.concrete_type_name(executor.context(), info));
                     object.add_field(
                         response_name,
-                        Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
+                        Value::Scalar(Box::pin(stream::once(future::ok(typename)))),
                     );
                     continue;
                 }
@@ -250,11 +280,11 @@ where
                 let meta_field = meta_type
                     .field_by_name(f.name.item)
                     .unwrap_or_else(|| {
-                        panic!(format!(
+                        panic!(
                             "Field {} not found on type {:?}",
                             f.name.item,
-                            meta_type.name()
-                        ))
+                            meta_type.name(),
+                        )
                     })
                     .clone();
 
@@ -338,6 +368,7 @@ where
                     Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
                 }
             }
+
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
                 start: ref start_pos,
