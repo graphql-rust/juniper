@@ -200,18 +200,12 @@ fn create(
         description: _impl.description,
         fields,
         generics: _impl.generics.clone(),
-        interfaces: if !_impl.attrs.interfaces.is_empty() {
-            Some(
-                _impl
-                    .attrs
-                    .interfaces
-                    .into_iter()
-                    .map(SpanContainer::into_inner)
-                    .collect(),
-            )
-        } else {
-            None
-        },
+        interfaces: _impl
+            .attrs
+            .interfaces
+            .into_iter()
+            .map(SpanContainer::into_inner)
+            .collect(),
         include_type_generics: false,
         generic_scalar: false,
         no_async: _impl.attrs.no_async.is_some(),

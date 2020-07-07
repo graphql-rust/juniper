@@ -2,28 +2,11 @@
 
 use juniper::{execute, graphql_object, graphql_interface, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription, GraphQLObject, GraphQLType, RootNode, ScalarValue, Variables};
 
-/* SUGARED
 #[derive(GraphQLObject)]
-#[graphql(implements(Character))]
+#[graphql(impl = dyn Character)]
 struct Human {
     id: String,
     home_planet: String,
-}
-   DESUGARS INTO: */
-#[derive(GraphQLObject)]
-struct Human {
-    id: String,
-    home_planet: String,
-}
-#[automatically_derived]
-impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Human {
-    type Context = <Self as ::juniper::GraphQLValue<__S>>::Context;
-    type TypeInfo = <Self as ::juniper::GraphQLValue<__S>>::TypeInfo;
-
-    #[inline]
-    fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<__S, Self::Context, Self::TypeInfo> {
-        self
-    }
 }
 
 #[graphql_interface]
@@ -35,28 +18,11 @@ impl Character for Human {
 
 // ------------------------------------------
 
-/* SUGARED
 #[derive(GraphQLObject)]
-#[graphql(implements(Character))]
+#[graphql(impl = dyn Character)]
 struct Droid {
     id: String,
     primary_function: String,
-}
-   DESUGARS INTO: */
-#[derive(GraphQLObject)]
-struct Droid {
-    id: String,
-    primary_function: String,
-}
-#[automatically_derived]
-impl<__S: ::juniper::ScalarValue> ::juniper::AsDynGraphQLValue<__S> for Droid {
-    type Context = <Self as ::juniper::GraphQLValue<__S>>::Context;
-    type TypeInfo = <Self as ::juniper::GraphQLValue<__S>>::TypeInfo;
-
-    #[inline]
-    fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<__S, Self::Context, Self::TypeInfo> {
-        self
-    }
 }
 
 #[graphql_interface]
@@ -72,7 +38,7 @@ impl Character for Droid {
 
 // ------------------------------------------
 
-#[graphql_interface(for(Human, Droid))]
+#[graphql_interface(for = [Human, Droid])]
 trait Character {
     fn id(&self) -> &str;
 

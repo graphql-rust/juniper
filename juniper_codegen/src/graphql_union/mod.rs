@@ -477,10 +477,10 @@ impl ToTokens for UnionDefinition {
                 ) -> ::juniper::meta::MetaType<'r, #scalar>
                 where #scalar: 'r,
                 {
-                    let types = &[
+                    let types = [
                         #( registry.get_type::<#var_types>(info), )*
                     ];
-                    registry.build_union_type::<#ty_full>(info, types)
+                    registry.build_union_type::<#ty_full>(info, &types)
                     #description
                     .into_meta()
                 }

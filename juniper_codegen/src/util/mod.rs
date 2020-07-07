@@ -6,13 +6,12 @@ pub mod parse_buffer_ext;
 pub mod parse_impl;
 pub mod span_container;
 
-use std::ops::Deref as _;
+use std::{collections::HashMap, ops::Deref as _};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
 use quote::quote;
 use span_container::SpanContainer;
-use std::collections::HashMap;
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -119,7 +118,7 @@ pub fn type_is_identifier_ref(ty: &syn::Type, name: &str) -> bool {
 /// [`syn::TypeParen`]s asap).
 pub fn unparenthesize(ty: &syn::Type) -> &syn::Type {
     match ty {
-        syn::Type::Paren(ty) => unparenthesize(ty.elem.deref()),
+        syn::Type::Paren(ty) => unparenthesize(&*ty.elem),
         _ => ty,
     }
 }
@@ -353,7 +352,7 @@ impl Parse for ObjectAttributes {
         let mut output = Self::default();
 
         while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
+            let ident = input.parse_any_ident()?;
             match ident.to_string().as_str() {
                 "name" => {
                     input.parse::<token::Eq>()?;
@@ -390,15 +389,11 @@ impl Parse for ObjectAttributes {
                     let val = input.parse::<syn::Type>()?;
                     output.scalar = Some(SpanContainer::new(ident.span(), Some(val.span()), val));
                 }
-                "interfaces" => {
+                "impl" | "implements" | "interfaces" => {
                     input.parse::<token::Eq>()?;
-                    let content;
-                    syn::bracketed!(content in input);
-                    output.interfaces =
-                        syn::punctuated::Punctuated::<syn::Type, token::Comma>::parse_terminated(
-                            &content,
-                        )?
-                        .into_iter()
+                    output.interfaces = input.parse_maybe_wrapped_and_punctuated::<
+                        syn::Type, token::Bracket, token::Comma,
+                    >()?.into_iter()
                         .map(|interface| {
                             SpanContainer::new(ident.span(), Some(interface.span()), interface)
                         })
@@ -708,7 +703,7 @@ pub struct GraphQLTypeDefiniton {
     pub description: Option<String>,
     pub fields: Vec<GraphQLTypeDefinitionField>,
     pub generics: syn::Generics,
-    pub interfaces: Option<Vec<syn::Type>>,
+    pub interfaces: Vec<syn::Type>,
     // Due to syn parsing differences,
     // when parsing an impl the type generics are included in the type
     // directly, but in syn::DeriveInput, the type generics are
@@ -852,13 +847,42 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|description| quote!( .description(#description) ));
 
-        let interfaces = self.interfaces.as_ref().map(|items| {
-            quote!(
+        let interfaces = if !self.interfaces.is_empty() {
+            let interfaces_ty = self.interfaces.iter().map(|ty| {
+                let mut ty: syn::Type = unparenthesize(ty).clone();
+
+                if let syn::Type::TraitObject(dyn_ty) = &mut ty {
+                    let mut dyn_ty = dyn_ty.clone();
+                    if let syn::TypeParamBound::Trait(syn::TraitBound { path, .. }) =
+                        dyn_ty.bounds.first_mut().unwrap()
+                    {
+                        let trait_params = &mut path.segments.last_mut().unwrap().arguments;
+                        if let syn::PathArguments::None = trait_params {
+                            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! {
+                                <#scalar, Context = Self::Context, TypeInfo = Self::TypeInfo>
+                            });
+                        } else if let syn::PathArguments::AngleBracketed(a) = trait_params {
+                            a.args.push(parse_quote! { #scalar });
+                            a.args.push(parse_quote! { Context = Self::Context });
+                            a.args.push(parse_quote! { TypeInfo = Self::TypeInfo });
+                        }
+                    }
+                    dyn_ty.bounds.push(parse_quote! { Send });
+                    dyn_ty.bounds.push(parse_quote! { Sync });
+                    ty = dyn_ty.into();
+                }
+
+                ty
+            });
+
+            Some(quote!(
                 .interfaces(&[
-                    #( registry.get_type::< #items >(&()) ,)*
+                    #( registry.get_type::<#interfaces_ty>(&()) ,)*
                 ])
-            )
-        });
+            ))
+        } else {
+            None
+        };
 
         // Preserve the original type_generics before modification,
         // since alteration makes them invalid if self.generic_scalar
@@ -886,6 +910,25 @@ impl GraphQLTypeDefiniton {
             None
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let as_dyn_value = if !self.interfaces.is_empty() {
+            Some(quote! {
+                #[automatically_derived]
+                impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #type_generics_tokens
+                #where_clause
+                {
+                    type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
+                    type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;
+
+                    #[inline]
+                    fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<#scalar, Self::Context, Self::TypeInfo> {
+                        self
+                    }
+                }
+            })
+        } else {
+            None
+        };
 
         let resolve_field_async = {
             let resolve_matches_async = self.fields.iter().map(|field| {
@@ -1041,7 +1084,7 @@ impl GraphQLTypeDefiniton {
                 ) -> ::juniper::meta::MetaType<'r, #scalar>
                     where #scalar : 'r,
                 {
-                    let fields = vec![
+                    let fields = [
                         #( #field_definitions ),*
                     ];
                     let meta = registry.build_object_type::<#ty>( info, &fields )
@@ -1089,6 +1132,8 @@ impl GraphQLTypeDefiniton {
         }
 
         #resolve_field_async
+
+        #as_dyn_value
         );
         output
     }
@@ -1184,13 +1229,15 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|description| quote!( .description(#description) ));
 
+        let interfaces = quote!();
+        /*
         let interfaces = self.interfaces.as_ref().map(|items| {
             quote!(
                 .interfaces(&[
                     #( registry.get_type::< #items >(&()) ,)*
                 ])
             )
-        });
+        });*/
 
         // Preserve the original type_generics before modification,
         // since alteration makes them invalid if self.generic_scalar

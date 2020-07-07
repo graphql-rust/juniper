@@ -137,7 +137,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
         description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
-        interfaces: None,
+        interfaces: vec![],
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),

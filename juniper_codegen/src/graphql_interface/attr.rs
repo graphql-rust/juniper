@@ -50,9 +50,34 @@ pub fn expand_on_trait(
         .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| trait_ident.unraw().to_string());
+    if !meta.is_internal && name.starts_with("__") {
+        ERR.no_double_underscore(
+            meta.name
+                .as_ref()
+                .map(SpanContainer::span_ident)
+                .unwrap_or_else(|| trait_ident.span()),
+        );
+    }
 
     let context = meta.context.map(SpanContainer::into_inner);
     //.or_else(|| variants.iter().find_map(|v| v.context_ty.as_ref()).cloned());
+
+    let implementers = meta
+        .implementers
+        .iter()
+        .map(|ty| {
+            let span = ty.span_ident();
+            InterfaceImplementerDefinition {
+                ty: ty.as_ref().clone(),
+                downcast_code: None,
+                downcast_check: None,
+                context_ty: None,
+                span,
+            }
+        })
+        .collect();
+
+    proc_macro_error::abort_if_dirty();
 
     let generated_code = InterfaceDefinition {
         name,
@@ -62,20 +87,7 @@ pub fn expand_on_trait(
         context,
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
-        implementers: meta
-            .implementers
-            .iter()
-            .map(|ty| {
-                let span = ty.span_ident();
-                InterfaceImplementerDefinition {
-                    ty: ty.as_ref().clone(),
-                    downcast_code: None,
-                    downcast_check: None,
-                    context_ty: None,
-                    span,
-                }
-            })
-            .collect(),
+        implementers,
     };
 
     ast.generics.params.push(parse_quote! {

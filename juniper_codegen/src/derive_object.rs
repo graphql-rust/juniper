@@ -89,12 +89,6 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
     // Early abort after checking all fields
     proc_macro_error::abort_if_dirty();
 
-    if !attrs.interfaces.is_empty() {
-        attrs.interfaces.iter().for_each(|elm| {
-            error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
-        });
-    }
-
     if let Some(duplicates) =
         crate::util::duplicate::Duplicate::find_by_key(&fields, |field| field.name.as_str())
     {
@@ -124,7 +118,11 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
         description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
-        interfaces: None,
+        interfaces: attrs
+            .interfaces
+            .into_iter()
+            .map(SpanContainer::into_inner)
+            .collect(),
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),

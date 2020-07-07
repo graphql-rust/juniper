@@ -9,7 +9,6 @@ use std::collections::{HashMap, HashSet};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt as _};
 use syn::{
-    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
@@ -18,7 +17,7 @@ use syn::{
 
 use crate::util::{
     dup_attr_err, filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _,
-    ParseBufferExt as _,
+    ParseBufferExt as _, ParseBufferExt,
 };
 
 /*
@@ -93,7 +92,7 @@ impl Parse for InterfaceMeta {
         let mut output = Self::default();
 
         while !input.is_empty() {
-            let ident = input.call(syn::Ident::parse_any)?; // required to parse keywords
+            let ident = input.parse_any_ident()?;
             match ident.to_string().as_str() {
                 "name" => {
                     input.parse::<token::Eq>()?;
@@ -136,16 +135,15 @@ impl Parse for InterfaceMeta {
                         .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "for" | "implementers" => {
-                    let inner;
-                    syn::parenthesized!(inner in input);
-                    while !inner.is_empty() {
-                        let impler = inner.parse::<syn::Type>()?;
+                    input.parse::<token::Eq>()?;
+                    for impler in input.parse_maybe_wrapped_and_punctuated::<
+                        syn::Type, token::Bracket, token::Comma,
+                    >()? {
                         let impler_span = impler.span();
                         output
                             .implementers
                             .replace(SpanContainer::new(ident.span(), Some(impler_span), impler))
                             .none_or_else(|_| dup_attr_err(impler_span))?;
-                        inner.try_parse::<token::Comma>()?;
                     }
                 }
                 "internal" => {
