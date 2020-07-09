@@ -5,7 +5,7 @@ use crate::{
     executor::Variables,
     introspection::IntrospectionFormat,
     schema::model::RootNode,
-    tests::{model::Database, schema::Query},
+    tests::fixtures::starwars::{model::Database, schema::Query},
     types::scalars::{EmptyMutation, EmptySubscription},
 };
 

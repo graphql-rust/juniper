@@ -3,7 +3,7 @@
 use std::env;
 
 use juniper::{
-    tests::{model::Database, schema::Query},
+    tests::fixtures::starwars::{model::Database, schema::Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
 use warp::{http::Response, Filter};
