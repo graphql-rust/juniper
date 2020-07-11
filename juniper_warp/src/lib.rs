@@ -40,14 +40,14 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
-use std::{collections::HashMap, str, sync::Arc};
-
+use anyhow::anyhow;
 use bytes::Bytes;
 use futures::{FutureExt as _, TryFutureExt};
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
 };
+use std::{collections::HashMap, str, sync::Arc};
 use tokio::task;
 use warp::{body, filters::BoxedFilter, header, http, query, Filter};
 
@@ -153,9 +153,8 @@ where
     let handle_post_graphql_request = move |context: CtxT, body: Bytes| {
         let schema = post_graphql_schema.clone();
         async move {
-            let query = str::from_utf8(body.as_ref()).map_err(|e| {
-                failure::format_err!("Request body query is not a valid UTF-8 string: {}", e)
-            })?;
+            let query = str::from_utf8(body.as_ref())
+                .map_err(|e| anyhow!("Request body query is not a valid UTF-8 string: {}", e))?;
             let req = GraphQLRequest::new(query.into(), None, None);
 
             let resp = req.execute(&schema, &context).await;
@@ -177,9 +176,8 @@ where
         let schema = schema.clone();
         async move {
             let req = GraphQLRequest::new(
-                qry.remove("query").ok_or_else(|| {
-                    failure::format_err!("Missing GraphQL query string in query parameters")
-                })?,
+                qry.remove("query")
+                    .ok_or_else(|| anyhow!("Missing GraphQL query string in query parameters"))?,
                 qry.remove("operation_name"),
                 qry.remove("variables")
                     .map(|vs| serde_json::from_str(&vs))
@@ -247,9 +245,8 @@ where
         let schema = post_graphql_schema.clone();
         async move {
             let res = task::spawn_blocking(move || {
-                let query = str::from_utf8(body.as_ref()).map_err(|e| {
-                    failure::format_err!("Request body is not a valid UTF-8 string: {}", e)
-                })?;
+                let query = str::from_utf8(body.as_ref())
+                    .map_err(|e| anyhow!("Request body is not a valid UTF-8 string: {}", e))?;
                 let req = GraphQLRequest::new(query.into(), None, None);
 
                 let resp = req.execute_sync(&schema, &context);
@@ -276,7 +273,7 @@ where
             let res = task::spawn_blocking(move || {
                 let req = GraphQLRequest::new(
                     qry.remove("query").ok_or_else(|| {
-                        failure::format_err!("Missing GraphQL query string in query parameters")
+                        anyhow!("Missing GraphQL query string in query parameters")
                     })?,
                     qry.remove("operation_name"),
                     qry.remove("variables")
@@ -314,7 +311,7 @@ pub struct JoinError(task::JoinError);
 
 impl warp::reject::Reject for JoinError {}
 
-fn build_response(response: Result<(Vec<u8>, bool), failure::Error>) -> http::Response<Vec<u8>> {
+fn build_response(response: Result<(Vec<u8>, bool), anyhow::Error>) -> http::Response<Vec<u8>> {
     match response {
         Ok((body, is_ok)) => http::Response::builder()
             .status(if is_ok { 200 } else { 400 })
@@ -434,7 +431,7 @@ pub mod subscriptions {
         websocket: warp::ws::WebSocket,
         coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, CtxT, S>>,
         context: CtxT,
-    ) -> impl Future<Output = Result<(), failure::Error>> + Send
+    ) -> impl Future<Output = Result<(), anyhow::Error>> + Send
     where
         Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
@@ -462,7 +459,7 @@ pub mod subscriptions {
         sink_rx
             .map_err(move |e| {
                 got_close_signal2.store(true, Ordering::Relaxed);
-                failure::format_err!("Websocket error: {}", e)
+                anyhow!("Websocket error: {}", e)
             })
             .try_fold((), move |_, msg| {
                 let coordinator = coordinator.clone();
@@ -478,9 +475,9 @@ pub mod subscriptions {
 
                     let msg = msg
                         .to_str()
-                        .map_err(|_| failure::format_err!("Non-text messages are not accepted"))?;
+                        .map_err(|_| anyhow!("Non-text messages are not accepted"))?;
                     let request: WsPayload<S> = serde_json::from_str(msg)
-                        .map_err(|e| failure::format_err!("Invalid WsPayload: {}", e))?;
+                        .map_err(|e| anyhow!("Invalid WsPayload: {}", e))?;
 
                     match request.type_name.as_str() {
                         "connection_init" => {}
@@ -501,10 +498,10 @@ pub mod subscriptions {
 
                             if let Some(ref payload) = request.payload {
                                 if payload.query.is_none() {
-                                    return Err(failure::format_err!("Query not found"));
+                                    return Err(anyhow!("Query not found"));
                                 }
                             } else {
-                                return Err(failure::format_err!("Payload not found"));
+                                return Err(anyhow!("Payload not found"));
                             }
 
                             tokio::task::spawn(async move {
