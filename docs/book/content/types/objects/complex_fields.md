@@ -81,7 +81,7 @@ struct Person {
 
 /// Doc comments are used as descriptions for GraphQL.
 #[juniper::graphql_object(
-    // With this attribtue you can change the public GraphQL name of the type.
+    // With this attribute you can change the public GraphQL name of the type.
     name = "PersonObject",
     // You can also specify a description here, which will overwrite 
     // a doc comment description.
