@@ -62,7 +62,7 @@ impl Mutations {
 # fn main() { }
 ```
 
-# Outputting schemas in the [GraphQL Schema Language][schema_language]
+# Converting a Rust schema to the [GraphQL Schema Language][schema_language]
 
 Many tools in the GraphQL ecosystem require the schema to be defined in the [GraphQL Schema Language][schema_language]. You can generate a [GraphQL Schema Language][schema_language] representation of your schema defined in Rust using the `schema-language` feature (on by default):
 
