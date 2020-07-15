@@ -3,12 +3,12 @@
 
 GraphQL subscriptions are a way to push data from the server to clients requesting real-time messages 
 from the server. Subscriptions are similar to queries in that they specify a set of fields to be delivered to the client,
-but instead of immediately returning a single answer, a result is sent every time a particular event happens on the 
+but instead of immediately returning a single answer a result is sent every time a particular event happens on the 
 server. 
 
 In order to execute subscriptions you need a coordinator (that spawns connections) 
 and a GraphQL object that can be resolved into a stream--elements of which will then 
-be returned to the end user. The [juniper_subscriptions][juniper_subscriptions] crate 
+be returned to the end user. The [`juniper_subscriptions`][juniper_subscriptions] crate 
 provides a default connection implementation. Currently subscriptions are only supported on the `master` branch. Add the following to your `Cargo.toml`:
 ```toml
 [dependencies]
@@ -18,9 +18,8 @@ juniper_subscriptions = { git = "https://github.com/graphql-rust/juniper", branc
 
 ### Schema Definition
 
-The Subscription is just a GraphQL object, similar to the Query root and Mutations object that you defined for the 
-operations in your [Schema][Schema], the difference is that all the operations defined there should be async and the return of it
-should be a [Stream][Stream].
+The `Subscription` is just a GraphQL object, similar to the query root and mutations object that you defined for the 
+operations in your [Schema][Schema]. For subscriptions all fields/operations should be async and should return a [Stream][Stream].
 
 This example shows a subscription operation that returns two events, the strings `Hello` and `World!`
 sequentially: 
@@ -67,20 +66,17 @@ impl Subscription {
 
 ### Coordinator
 
-Subscriptions require a bit more resources than regular queries, since they can provide a great vector 
-for DOS attacks and can bring down a server easily if not handled right. [SubscriptionCoordinator][SubscriptionCoordinator] trait provides the coordination logic. 
-It contains the schema and can keep track of opened connections, handle subscription 
-start and maintains a global subscription id. Once connection is established, subscription 
-coordinator spawns a [SubscriptionConnection][SubscriptionConnection], which handles a 
-single connection, provides resolver logic for a client stream and can provide re-connection 
+Subscriptions require a bit more resources than regular queries and provide a great vector for DOS attacks. This can can bring down a server easily if not handled correctly. The [`SubscriptionCoordinator`][SubscriptionCoordinator] trait provides coordination logic to enable functionality like DOS attack mitigation and resource limits.
+
+The [`SubscriptionCoordinator`][SubscriptionCoordinator] contains the schema and can keep track of opened connections, handle subscription 
+start and end, and maintain a global subscription id for each subscription. Each time a connection is established,  
+the [`SubscriptionCoordinator`][SubscriptionCoordinator] spawns a [`SubscriptionConnection`][SubscriptionConnection]. The [`SubscriptionConnection`][SubscriptionConnection] handles a single connection, providing resolver logic for a client stream as well as reconnection 
 and shutdown logic.
 
 
-The [Coordinator][Coordinator] struct is a simple implementation of the trait [SubscriptionCoordinator][SubscriptionCoordinator]
-that is responsible for handling the execution of subscription operation into your schema. The execution of the `subscribe` 
-operation returns a [Future][Future] with a Item value of a Result<[Connection][Connection], [GraphQLError][GraphQLError]>,
-where the connection is the Stream of values returned by the operation and the GraphQLError is the error that occurred in the
-resolution of this connection, which means that the subscription failed.
+While you can implement [`SubscriptionCoordinator`][SubscriptionCoordinator] yourself, Juniper contains a simple and generic implementation called [`Coordinator`][Coordinator].  The `subscribe` 
+operation returns a [`Future`][Future] with an `Item` value of a `Result<Connection, GraphQLError>`,
+where [`Connection`][Connection] is a `Stream` of values returned by the operation and [`GraphQLError`][GraphQLError] is the error when the subscription fails.
 
 ```rust
 # use juniper::http::GraphQLRequest;
