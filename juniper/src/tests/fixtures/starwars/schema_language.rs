@@ -22,9 +22,18 @@ mod tests {
 
         dbg!("{}", schema.as_schema_language());
 
-        assert_eq!(
-            &schema.as_schema_language(),
-            STATIC_GRAPHQL_SCHEMA_DEFINITION,
-        );
+        // `include_str()` keeps line endings. `git` will sadly by default
+        // convert them, making this test fail without runtime tweaks on
+        // Windows.
+        //
+        // See https://github.com/rust-lang/rust/pull/63681.
+        let expected = {
+            #[cfg(windows)]
+            STATIC_GRAPHQL_SCHEMA_DEFINITION.replace("\r\n", "\n");
+            #[cfg(not(windows))]
+            STATIC_GRAPHQL_SCHEMA_DEFINITION;
+        };
+
+        assert_eq!(expected, &schema.as_schema_language(),);
     }
 }
