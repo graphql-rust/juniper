@@ -140,20 +140,19 @@
 <a class="header" href="#how-to-achieve-realtime-data-with-graphql-subscriptions" id="how-to-achieve-realtime-data-with-graphql-subscriptions"><h3>How to achieve realtime data with GraphQL subscriptions</h3></a>
 <p>GraphQL subscriptions are a way to push data from the server to clients requesting real-time messages
 from the server. Subscriptions are similar to queries in that they specify a set of fields to be delivered to the client,
-but instead of immediately returning a single answer, a result is sent every time a particular event happens on the
+but instead of immediately returning a single answer a result is sent every time a particular event happens on the
 server.</p>
 <p>In order to execute subscriptions you need a coordinator (that spawns connections)
 and a GraphQL object that can be resolved into a stream--elements of which will then
-be returned to the end user. The <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions">juniper_subscriptions</a> crate
+be returned to the end user. The <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions"><code>juniper_subscriptions</code></a> crate
 provides a default connection implementation. Currently subscriptions are only supported on the <code>master</code> branch. Add the following to your <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">[dependencies]
 juniper = { git = &quot;https://github.com/graphql-rust/juniper&quot;, branch = &quot;master&quot; }
 juniper_subscriptions = { git = &quot;https://github.com/graphql-rust/juniper&quot;, branch = &quot;master&quot; }
 </code></pre>
 <a class="header" href="#schema-definition" id="schema-definition"><h3>Schema Definition</h3></a>
-<p>The Subscription is just a GraphQL object, similar to the Query root and Mutations object that you defined for the
-operations in your [Schema][Schema], the difference is that all the operations defined there should be async and the return of it
-should be a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
+<p>The <code>Subscription</code> is just a GraphQL object, similar to the query root and mutations object that you defined for the
+operations in your [Schema][Schema]. For subscriptions all fields/operations should be async and should return a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
 <p>This example shows a subscription operation that returns two events, the strings <code>Hello</code> and <code>World!</code>
 sequentially:</p>
 <pre><pre class="playpen"><code class="language-rust"># use juniper::http::GraphQLRequest;
@@ -193,18 +192,14 @@ impl Subscription {
 # fn main () {}
 </code></pre></pre>
 <a class="header" href="#coordinator" id="coordinator"><h3>Coordinator</h3></a>
-<p>Subscriptions require a bit more resources than regular queries, since they can provide a great vector
-for DOS attacks and can bring down a server easily if not handled right. [SubscriptionCoordinator][SubscriptionCoordinator] trait provides the coordination logic.
-It contains the schema and can keep track of opened connections, handle subscription
-start and maintains a global subscription id. Once connection is established, subscription
-coordinator spawns a [SubscriptionConnection][SubscriptionConnection], which handles a
-single connection, provides resolver logic for a client stream and can provide re-connection
+<p>Subscriptions require a bit more resources than regular queries and provide a great vector for DOS attacks. This can can bring down a server easily if not handled correctly. The [<code>SubscriptionCoordinator</code>][SubscriptionCoordinator] trait provides coordination logic to enable functionality like DOS attack mitigation and resource limits.</p>
+<p>The [<code>SubscriptionCoordinator</code>][SubscriptionCoordinator] contains the schema and can keep track of opened connections, handle subscription
+start and end, and maintain a global subscription id for each subscription. Each time a connection is established,<br />
+the [<code>SubscriptionCoordinator</code>][SubscriptionCoordinator] spawns a [<code>SubscriptionConnection</code>][SubscriptionConnection]. The [<code>SubscriptionConnection</code>][SubscriptionConnection] handles a single connection, providing resolver logic for a client stream as well as reconnection
 and shutdown logic.</p>
-<p>The [Coordinator][Coordinator] struct is a simple implementation of the trait [SubscriptionCoordinator][SubscriptionCoordinator]
-that is responsible for handling the execution of subscription operation into your schema. The execution of the <code>subscribe</code>
-operation returns a [Future][Future] with a Item value of a Result&lt;[Connection][Connection], [GraphQLError][GraphQLError]&gt;,
-where the connection is the Stream of values returned by the operation and the GraphQLError is the error that occurred in the
-resolution of this connection, which means that the subscription failed.</p>
+<p>While you can implement [<code>SubscriptionCoordinator</code>][SubscriptionCoordinator] yourself, Juniper contains a simple and generic implementation called [<code>Coordinator</code>][Coordinator].  The <code>subscribe</code>
+operation returns a [<code>Future</code>][Future] with an <code>Item</code> value of a <code>Result&lt;Connection, GraphQLError&gt;</code>,
+where [<code>Connection</code>][Connection] is a <code>Stream</code> of values returned by the operation and [<code>GraphQLError</code>][GraphQLError] is the error when the subscription fails.</p>
 <pre><pre class="playpen"><code class="language-rust"># use juniper::http::GraphQLRequest;
 # use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
 # use juniper_subscriptions::Coordinator;
