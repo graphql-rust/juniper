@@ -2009,18 +2009,15 @@ enum Character {
 These three define the root query fields, mutations and subscriptions of the schema, respectively.</p>
 <p>The usage of subscriptions is a little different from the mutation and query objects, so there is a specific <a href="../advanced/subscriptions.html">section</a> that discusses them.</p>
 <p>Both query and mutation objects are regular GraphQL objects, defined like any
-other object in Juniper. The mutation and subscription object, however, is optional since schemas
-can be read-only and without subscriptions as well. If mutations/subscriptions functionality is not needed, consider using <a href="https://docs.rs/juniper/0.14.2/juniper/struct.EmptyMutation.html">EmptyMutation</a>/[EmptySubscription][EmptySubscription].</p>
-<p>In Juniper, the <code>RootNode</code> type represents a schema. You usually don't have to
-create this object yourself: see the framework integrations for <a href="../servers/iron.html">Iron</a>
-and <a href="../servers/rocket.html">Rocket</a> how schemas are created together with the handlers
-themselves.</p>
-<p>When the schema is first created, Juniper will traverse the entire object graph
+other object in Juniper. The mutation and subscription objects, however, are optional since schemas
+can be read-only and do not require subscriptions. If mutation/subscription functionality is not needed, consider using <a href="https://docs.rs/juniper/0.14.2/juniper/struct.EmptyMutation.html">EmptyMutation</a>/[EmptySubscription][EmptySubscription].</p>
+<p>In Juniper, the <code>RootNode</code> type represents a schema. When the schema is first created,
+Juniper will traverse the entire object graph
 and register all types it can find. This means that if you define a GraphQL
-object somewhere but never references it, it will not be exposed in a schema.</p>
+object somewhere but never reference it, it will not be exposed in a schema.</p>
 <a class="header" href="#the-query-root" id="the-query-root"><h2>The query root</h2></a>
 <p>The query root is just a GraphQL object. You define it like any other GraphQL
-object in Juniper, most commonly using the <code>object</code> proc macro:</p>
+object in Juniper, most commonly using the <code>graphql_object</code> proc macro:</p>
 <pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
@@ -2036,8 +2033,8 @@ impl Root {
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#mutations" id="mutations"><h2>Mutations</h2></a>
-<p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field that
-usually performs some mutating side-effect, such as updating a database.</p>
+<p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field
+that performs some mutating side-effect such as updating a database.</p>
 <pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
