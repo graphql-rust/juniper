@@ -8,22 +8,18 @@ These three define the root query fields, mutations and subscriptions of the sch
 The usage of subscriptions is a little different from the mutation and query objects, so there is a specific [section][section] that discusses them.
 
 Both query and mutation objects are regular GraphQL objects, defined like any
-other object in Juniper. The mutation and subscription object, however, is optional since schemas
-can be read-only and without subscriptions as well. If mutations/subscriptions functionality is not needed, consider using [EmptyMutation][EmptyMutation]/[EmptySubscription][EmptySubscription].
+other object in Juniper. The mutation and subscription objects, however, are optional since schemas
+can be read-only and do not require subscriptions. If mutation/subscription functionality is not needed, consider using [EmptyMutation][EmptyMutation]/[EmptySubscription][EmptySubscription].
 
-In Juniper, the `RootNode` type represents a schema. You usually don't have to
-create this object yourself: see the framework integrations for [Iron](../servers/iron.md)
-and [Rocket](../servers/rocket.md) how schemas are created together with the handlers
-themselves.
-
-When the schema is first created, Juniper will traverse the entire object graph
+In Juniper, the `RootNode` type represents a schema. When the schema is first created,
+Juniper will traverse the entire object graph
 and register all types it can find. This means that if you define a GraphQL
-object somewhere but never references it, it will not be exposed in a schema.
+object somewhere but never reference it, it will not be exposed in a schema.
 
 ## The query root
 
 The query root is just a GraphQL object. You define it like any other GraphQL
-object in Juniper, most commonly using the `object` proc macro:
+object in Juniper, most commonly using the `graphql_object` proc macro:
 
 ```rust
 # use juniper::FieldResult;
@@ -43,8 +39,8 @@ impl Root {
 
 ## Mutations
 
-Mutations are _also_ just GraphQL objects. Each mutation is a single field that
-usually performs some mutating side-effect, such as updating a database.
+Mutations are _also_ just GraphQL objects. Each mutation is a single field
+that performs some mutating side-effect such as updating a database.
 
 ```rust
 # use juniper::FieldResult;
