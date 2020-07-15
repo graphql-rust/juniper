@@ -15,7 +15,7 @@ edition = "2018"
 serde_json = { version = "1.0.2" }
 juniper = { version = "0.14.2", default-features = false, path = "../juniper" }
 futures = { version = "0.3.1", features = ["compat"] }
-rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async", default-features = false }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "master", default-features = false }
 tokio = { version = "0.2", features = ["rt-core", "macros"] }
 
 [dev-dependencies.juniper]
