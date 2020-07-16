@@ -151,7 +151,7 @@ naturally map to GraphQL features, such as <code>Option&lt;T&gt;</code>, <code>V
 <code>String</code>, <code>f64</code>, and <code>i32</code>, references, and slices.</p>
 <p>For more advanced mappings, Juniper provides multiple macros to map your Rust
 types to a GraphQL schema. The most important one is the
-[object][jp_object] procedural macro that is used for declaring an object with
+<a href="https://docs.rs/juniper/latest/juniper/macro.graphql_object.html">graphql_object</a> procedural macro that is used for declaring an object with
 resolvers, which you will use for the <code>Query</code> and <code>Mutation</code> roots.</p>
 <pre><pre class="playpen"><code class="language-rust">use juniper::{FieldResult, EmptySubscription};
 
@@ -256,7 +256,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&l
 </code></pre></pre>
 <p>We now have a very simple but functional schema for a GraphQL server!</p>
 <p>To actually serve the schema, see the guides for our various <a href="./servers/index.html">server integrations</a>.</p>
-<p>You can also invoke the executor directly to get a result for a query:</p>
+<p>Juniper is a library that can be used in many contexts--it does not require a server and it does not have a dependency on a particular transport or serialization format. You can invoke the executor directly to get a result for a query:</p>
 <a class="header" href="#executor" id="executor"><h2>Executor</h2></a>
 <p>You can invoke <code>juniper::execute</code> directly to run a GraphQL query:</p>
 <pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
