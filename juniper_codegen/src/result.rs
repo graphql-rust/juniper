@@ -6,7 +6,7 @@ use proc_macro_error::{Diagnostic, Level};
 use std::fmt;
 
 /// URL of the GraphQL specification (June 2018 Edition).
-pub const SPEC_URL: &'static str = "https://spec.graphql.org/June2018/";
+pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
 
 #[allow(unused_variables)]
 pub enum GraphQLScope {

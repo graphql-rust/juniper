@@ -293,7 +293,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     response_name,
                     f.name.item,
-                    start_pos.clone(),
+                    *start_pos,
                     f.selection_set.as_ref().map(|x| &x[..]),
                 );
 
@@ -319,7 +319,7 @@ where
                     }
                     Ok(v) => merge_key_into(&mut object, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
 
                         if meta_field.field_type.is_non_null() {
                             return Value::Null;
@@ -365,7 +365,7 @@ where
                             _ => unreachable!(),
                         }
                     }
-                    Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
+                    Err(e) => sub_exec.push_error_at(e, *start_pos),
                 }
             }
 
@@ -393,7 +393,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
@@ -405,7 +405,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else {
                     return Value::Null;

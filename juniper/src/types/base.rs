@@ -457,7 +457,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     response_name,
                     f.name.item,
-                    start_pos.clone(),
+                    *start_pos,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
 
@@ -482,7 +482,7 @@ where
                     Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
 
                         if meta_field.field_type.is_non_null() {
                             return false;
@@ -540,7 +540,7 @@ where
                             merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else if !resolve_selection_set_into(
                     instance,

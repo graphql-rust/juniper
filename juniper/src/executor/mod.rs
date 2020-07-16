@@ -595,7 +595,7 @@ where
 
     /// Add an error to the execution engine at the current executor location
     pub fn push_error(&self, error: FieldError<S>) {
-        self.push_error_at(error, self.location().clone());
+        self.push_error_at(error, *self.location());
     }
 
     /// Add an error to the execution engine at a specific location

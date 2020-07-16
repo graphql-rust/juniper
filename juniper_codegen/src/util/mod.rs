@@ -600,7 +600,7 @@ impl FieldAttributes {
         let doc_comment = get_doc_comment(&attrs);
         let deprecation = get_deprecated(&attrs);
 
-        let attr_opt = attrs.into_iter().find(|attr| attr.path.is_ident("graphql"));
+        let attr_opt = attrs.iter().find(|attr| attr.path.is_ident("graphql"));
 
         let mut output = match attr_opt {
             Some(attr) => attr.parse_args()?,

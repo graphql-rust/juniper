@@ -42,7 +42,7 @@ where
     fn from_input_value(v: &InputValue) -> Option<UtcDateTime> {
         v.as_string_value()
             .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
-            .map(|d| UtcDateTime(d))
+            .map(UtcDateTime)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

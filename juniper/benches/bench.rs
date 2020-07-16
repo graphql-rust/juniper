@@ -5,8 +5,8 @@ extern crate juniper;
 use bencher::Bencher;
 
 use juniper::{
-    execute_sync, tests::model::Database, DefaultScalarValue, EmptyMutation, EmptySubscription,
-    RootNode, Variables,
+    execute_sync, tests::fixtures::starwars::model::Database, DefaultScalarValue, EmptyMutation,
+    EmptySubscription, RootNode, Variables,
 };
 
 fn query_type_name(b: &mut Bencher) {
