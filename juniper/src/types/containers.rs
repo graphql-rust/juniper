@@ -80,7 +80,7 @@ where
     T: FromInputValue<S>,
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Option<T>> {
+    fn from_input_value(v: &InputValue<S>) -> Option<Option<T>> {
         match v {
             &InputValue::Null => Some(None),
             v => v.convert().map(Some),
@@ -163,7 +163,7 @@ where
     T: FromInputValue<S>,
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Vec<T>>
+    fn from_input_value(v: &InputValue<S>) -> Option<Vec<T>>
 where {
         match *v {
             InputValue::List(ref ls) => {

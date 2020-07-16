@@ -259,7 +259,7 @@ impl GraphQLParserTranslator {
                     .map(|x| GraphQLParserTranslator::translate_argument(&x))
                     .collect()
             })
-            .unwrap_or_else(|| Vec::new());
+            .unwrap_or_else(Vec::new);
 
         ExternalField {
             position: Pos::default(),

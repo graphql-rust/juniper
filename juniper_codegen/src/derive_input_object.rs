@@ -102,9 +102,10 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
         error.not_empty(ast_span);
     }
 
-    match crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name) {
-        Some(duplicates) => error.duplicate(duplicates.iter()),
-        None => {}
+    if let Some(duplicates) =
+        crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name)
+    {
+        error.duplicate(duplicates.iter())
     }
 
     if !attrs.interfaces.is_empty() {
