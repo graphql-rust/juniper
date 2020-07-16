@@ -192,6 +192,8 @@ impl Example {
 type all fields must return. By using the <code>?</code> operator or <code>try!</code> macro, any type
 that implements the <code>Display</code> trait - which are most of the error types out
 there - those errors are automatically converted into <code>FieldError</code>.</p>
+<a class="header" href="#error-payloads-null-and-partial-errors" id="error-payloads-null-and-partial-errors"><h2>Error payloads, <code>null</code>, and partial errors</h2></a>
+<p>Juniper's error behavior conforms to the <a href="https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability">GraphQL specification</a>.</p>
 <p>When a field returns an error, the field's result is replaced by <code>null</code>, an
 additional <code>errors</code> object is created at the top level of the response, and the
 execution is resumed. For example, with the previous example and the following
