@@ -730,7 +730,7 @@ mod tests {
     #[tokio::test]
     async fn graphql_handler_works_json_post() {
         use juniper::{
-            tests::{model::Database, schema::Query},
+            tests::fixtures::starwars::{model::Database, schema::Query},
             EmptyMutation, EmptySubscription, RootNode,
         };
 
@@ -769,7 +769,7 @@ mod tests {
     #[tokio::test]
     async fn batch_requests_work() {
         use juniper::{
-            tests::{model::Database, schema::Query},
+            tests::fixtures::starwars::{model::Database, schema::Query},
             EmptyMutation, EmptySubscription, RootNode,
         };
 
@@ -824,7 +824,7 @@ mod tests_http_harness {
     use super::*;
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-        tests::{model::Database, schema::Query},
+        tests::fixtures::starwars::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
     use warp::{

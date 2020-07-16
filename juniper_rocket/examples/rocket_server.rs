@@ -3,7 +3,7 @@
 use rocket::{response::content, State};
 
 use juniper::{
-    tests::{model::Database, schema::Query},
+    tests::fixtures::starwars::{model::Database, schema::Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
 

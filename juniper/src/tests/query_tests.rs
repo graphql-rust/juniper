@@ -2,7 +2,7 @@ use crate::{
     ast::InputValue,
     executor::Variables,
     schema::model::RootNode,
-    tests::{model::Database, schema::Query},
+    tests::fixtures::starwars::{model::Database, schema::Query},
     types::scalars::{EmptyMutation, EmptySubscription},
     value::Value,
 };
