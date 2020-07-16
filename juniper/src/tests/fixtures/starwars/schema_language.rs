@@ -27,13 +27,12 @@ mod tests {
         // Windows.
         //
         // See https://github.com/rust-lang/rust/pull/63681.
-        let expected = {
-            #[cfg(windows)]
-            STATIC_GRAPHQL_SCHEMA_DEFINITION.replace("\r\n", "\n");
-            #[cfg(not(windows))]
-            STATIC_GRAPHQL_SCHEMA_DEFINITION;
-        };
+        #[cfg(windows)]
+        let expected = STATIC_GRAPHQL_SCHEMA_DEFINITION.replace("\r\n", "\n");
 
-        assert_eq!(expected, &schema.as_schema_language(),);
+        #[cfg(not(windows))]
+        let expected = STATIC_GRAPHQL_SCHEMA_DEFINITION;
+
+        assert_eq!(expected, &schema.as_schema_language());
     }
 }
