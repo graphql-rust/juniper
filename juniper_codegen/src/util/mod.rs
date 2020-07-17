@@ -1218,7 +1218,7 @@ impl GraphQLTypeDefiniton {
                             });
                             Ok(
                                 ::juniper::Value::Scalar::<
-                                    ::juniper::ValuesStream
+                                    ::juniper::ValuesStream::<#scalar>
                                 >(Box::pin(f))
                             )
                         })
