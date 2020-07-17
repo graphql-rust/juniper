@@ -178,7 +178,9 @@ struct TestSubscriptionType;
     Scalar = MyScalarValue
 )]
 impl TestSubscriptionType {
-    async fn foo() -> std::pin::Pin<Box<dyn futures::Stream<Item = FieldResult<i32, MyScalarValue>> + Send>> {
+    async fn foo(
+    ) -> std::pin::Pin<Box<dyn futures::Stream<Item = FieldResult<i32, MyScalarValue>> + Send>>
+    {
         Box::pin(futures::stream::empty())
     }
 }
@@ -187,11 +189,7 @@ async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
-    let schema = RootNode::new(
-        TestType,
-        EmptyMutation::<()>::new(),
-        TestSubscriptionType,
-    );
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new(), TestSubscriptionType);
 
     let (result, errs) = execute(query, None, &schema, &vars, &())
         .await
