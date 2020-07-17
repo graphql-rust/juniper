@@ -319,7 +319,7 @@ mod tests {
     };
     use juniper::{
         http::tests as http_tests,
-        tests::{model::Database, schema::Query},
+        tests::fixtures::starwars::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::{self, blocking::Response as ReqwestResponse};

@@ -93,7 +93,7 @@ where
     S: ScalarValue,
     T: FromInputValue<S>,
 {
-    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Box<T>> {
+    fn from_input_value(v: &InputValue<S>) -> Option<Box<T>> {
         match <T as FromInputValue<S>>::from_input_value(v) {
             Some(v) => Some(Box::new(v)),
             None => None,

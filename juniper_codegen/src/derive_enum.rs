@@ -103,10 +103,10 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
     if fields.is_empty() {
         error.not_empty(ast_span);
     }
-
-    match crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name) {
-        Some(duplicates) => error.duplicate(duplicates.iter()),
-        None => {}
+    if let Some(duplicates) =
+        crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name)
+    {
+        error.duplicate(duplicates.iter())
     }
 
     if !attrs.interfaces.is_empty() {

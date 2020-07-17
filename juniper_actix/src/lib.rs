@@ -224,7 +224,7 @@ mod tests {
     use futures::StreamExt;
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-        tests::{model::Database, schema::Query},
+        tests::fixtures::starwars::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
 
@@ -401,7 +401,7 @@ mod tests {
     #[actix_rt::test]
     async fn batch_request_works() {
         use juniper::{
-            tests::{model::Database, schema::Query},
+            tests::fixtures::starwars::{model::Database, schema::Query},
             EmptyMutation, EmptySubscription, RootNode,
         };
 

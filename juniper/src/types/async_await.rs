@@ -237,7 +237,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     &response_name,
                     f.name.item,
-                    start_pos.clone(),
+                    *start_pos,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
                 let args = Arguments::new(
@@ -336,7 +336,7 @@ where
                             }));
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else {
                     async_values.push(AsyncValueFuture::InlineFragment2(async move {
