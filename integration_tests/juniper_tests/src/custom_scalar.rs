@@ -4,7 +4,7 @@ use juniper::{
     execute,
     parser::{ParseError, ScalarToken, Spanning, Token},
     serde::de,
-    EmptyMutation, EmptySubscription, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
+    EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
     Value, Variables,
 };
 use std::fmt;
@@ -172,6 +172,17 @@ impl TestType {
     }
 }
 
+struct TestSubscriptionType;
+
+#[juniper::graphql_subscription(
+    Scalar = MyScalarValue
+)]
+impl TestSubscriptionType {
+    async fn foo() -> std::pin::Pin<Box<dyn futures::Stream<Item = FieldResult<i32, MyScalarValue>> + Send>> {
+        Box::pin(futures::stream::empty())
+    }
+}
+
 async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
@@ -179,7 +190,7 @@ where
     let schema = RootNode::new(
         TestType,
         EmptyMutation::<()>::new(),
-        EmptySubscription::<()>::new(),
+        TestSubscriptionType,
     );
 
     let (result, errs) = execute(query, None, &schema, &vars, &())
