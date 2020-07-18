@@ -440,7 +440,7 @@ pub mod subscriptions {
         Mutation::TypeInfo: Send + Sync,
         Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
-        CtxT: Clone + Send + Sync + 'static,
+        CtxT: Send + Sync + 'static,
         S: ScalarValue + Send + Sync + 'static,
     {
         let (sink_tx, sink_rx) = websocket.split();
