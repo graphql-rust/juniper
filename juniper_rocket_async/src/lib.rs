@@ -164,8 +164,8 @@ impl GraphQLResponse {
     /// # use rocket::response::content;
     /// # use rocket::State;
     /// #
-    /// # use juniper::tests::schema::Query;
-    /// # use juniper::tests::model::Database;
+    /// # use juniper::tests::fixtures::starwars::schema::Query;
+    /// # use juniper::tests::fixtures::starwars::model::Database;
     /// # use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode, Value};
     /// #
     /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
