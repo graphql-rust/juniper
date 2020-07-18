@@ -417,6 +417,7 @@ pub mod subscriptions {
         },
     };
 
+    use anyhow::anyhow;
     use futures::{channel::mpsc, Future, StreamExt as _, TryStreamExt as _};
     use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
     use juniper_subscriptions::Coordinator;
