@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `ObjA: juniper::ast::FromInputValue` is not satisfied
+error[E0277]: the trait bound `ObjA: juniper::FromInputValue` is not satisfied
   --> $DIR/impl_argument_no_object.rs:11:1
    |
 11 | / juniper::graphql_interface!(Character: () where Scalar = juniper::DefaultScalarValue |&self| {
@@ -8,11 +8,11 @@ error[E0277]: the trait bound `ObjA: juniper::ast::FromInputValue` is not satisf
 ...  |
 20 | |     }
 21 | | });
-   | |___^ the trait `juniper::ast::FromInputValue` is not implemented for `ObjA`
+   | |___^ the trait `juniper::FromInputValue` is not implemented for `ObjA`
    |
    = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `ObjA: juniper::ast::FromInputValue` is not satisfied
+error[E0277]: the trait bound `ObjA: juniper::FromInputValue` is not satisfied
   --> $DIR/impl_argument_no_object.rs:11:1
    |
 11 | / juniper::graphql_interface!(Character: () where Scalar = juniper::DefaultScalarValue |&self| {
@@ -22,6 +22,6 @@ error[E0277]: the trait bound `ObjA: juniper::ast::FromInputValue` is not satisf
 ...  |
 20 | |     }
 21 | | });
-   | |___^ the trait `juniper::ast::FromInputValue` is not implemented for `ObjA`
+   | |___^ the trait `juniper::FromInputValue` is not implemented for `ObjA`
    |
    = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)

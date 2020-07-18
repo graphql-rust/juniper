@@ -1,18 +1,18 @@
-error[E0277]: the trait bound `ObjectA: juniper::ast::FromInputValue<__S>` is not satisfied
+error[E0277]: the trait bound `ObjectA: juniper::FromInputValue<__S>` is not satisfied
  --> $DIR/derive_incompatible_object.rs:6:10
   |
 6 | #[derive(juniper::GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::ast::FromInputValue<__S>` is not implemented for `ObjectA`
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::FromInputValue<__S>` is not implemented for `ObjectA`
   |
   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `ObjectA: juniper::ast::FromInputValue<__S>` is not satisfied
+error[E0277]: the trait bound `ObjectA: juniper::FromInputValue<__S>` is not satisfied
  --> $DIR/derive_incompatible_object.rs:6:10
   |
 6 | #[derive(juniper::GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::ast::FromInputValue<__S>` is not implemented for `ObjectA`
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::FromInputValue<__S>` is not implemented for `ObjectA`
   |
-  = note: required by `juniper::ast::FromInputValue::from_input_value`
+  = note: required by `juniper::FromInputValue::from_input_value`
   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0599]: no method named `to_input_value` found for struct `ObjectA` in the current scope
@@ -26,5 +26,5 @@ error[E0599]: no method named `to_input_value` found for struct `ObjectA` in the
   |
   = help: items from traits can only be used if the trait is implemented and in scope
   = note: the following trait defines an item `to_input_value`, perhaps you need to implement it:
-          candidate #1: `juniper::ast::ToInputValue`
+          candidate #1: `juniper::ToInputValue`
   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
