@@ -15,7 +15,8 @@ For implementing [GraphQL unions][1] Juniper provides:
 Most of the time, we just need a trivial and straightforward Rust enum to represent a [GraphQL union][1].
 
 ```rust
-# #![allow(dead_code)]
+# extern crate juniper;
+# #[macro_use] extern crate derive_more;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -51,6 +52,8 @@ As an example, let's consider the situation where we need to bind some type para
 > It's the _library user's responsibility_ to ensure that ignored enum variant is _never_ returned from resolvers, otherwise resolving the GraphQL query will __panic at runtime__.
 
 ```rust
+# extern crate juniper;
+# #[macro_use] extern crate derive_more;
 # use std::marker::PhantomData;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
@@ -85,7 +88,7 @@ enum Character<S> {
 If some custom logic is needed to resolve a [GraphQL union][1] variant, you may specify an external function to do so:
 
 ```rust
-# #![allow(dead_code)]
+# extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -129,7 +132,7 @@ impl Character {
 With an external resolver function we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/June2018/#example-f8163).
 
 ```rust
-# #![allow(dead_code)]
+# extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -189,6 +192,7 @@ impl Character {
 Using Rust structs as [GraphQL unions][1] is very similar to using enums, with the nuance that specifying an external resolver function is the only way to declare a [GraphQL union][1] variant.
 
 ```rust
+# extern crate juniper;
 # use std::collections::HashMap;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -246,6 +250,7 @@ To use a Rust trait definition as a [GraphQL union][1] you need to use the `#[gr
 > A __trait has to be [object safe](https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety)__, because schema resolvers will need to return a [trait object](https://doc.rust-lang.org/stable/reference/types/trait-object.html) to specify a [GraphQL union][1] behind it.
 
 ```rust
+# extern crate juniper;
 use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
@@ -284,7 +289,7 @@ impl Character for Droid {
 If a context is required in a trait method to resolve a [GraphQL union][1] variant, specify it as an argument.
 
 ```rust
-# #![allow(unused_variables)]
+# extern crate juniper;
 # use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
 
@@ -336,6 +341,7 @@ impl Character for Droid {
 As with enums, we may want to omit some trait methods to be assumed as [GraphQL union][1] variants and ignore them.
 
 ```rust
+# extern crate juniper;
 use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
@@ -377,6 +383,7 @@ impl Character for Droid {
 Similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variant resolvers. Instead, custom functions may be specified:
 
 ```rust
+# extern crate juniper;
 # use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
 
@@ -444,7 +451,7 @@ fn get_droid<'db>(ch: &DynCharacter<'_>, ctx: &'db Database) -> Option<&'db Droi
 By default, `#[derive(GraphQLUnion)]` and `#[graphql_union]` macros generate code, which is generic over a [`ScalarValue`][2] type. This may introduce a problem when at least one of [GraphQL union][1] variants is restricted to a concrete [`ScalarValue`][2] type in its implementation. To resolve such problem, a concrete [`ScalarValue`][2] type should be specified:
 
 ```rust
-# #![allow(dead_code)]
+# extern crate juniper;
 use juniper::{DefaultScalarValue, GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]

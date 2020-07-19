@@ -25,19 +25,18 @@ This example shows a subscription operation that returns two events, the strings
 sequentially: 
 
 ```rust
-# use juniper::http::GraphQLRequest;
-# use juniper::{DefaultScalarValue, FieldError, SubscriptionCoordinator};
-# use juniper_subscriptions::Coordinator;
-# use futures::{Stream, StreamExt};
+# extern crate futures;
+# extern crate juniper;
+# extern crate juniper_subscriptions;
+# extern crate tokio;
+# use juniper::FieldError;
+# use futures::Stream;
 # use std::pin::Pin;
+#
 # #[derive(Clone)]
 # pub struct Database;
 # impl juniper::Context for Database {}
-# impl Database {
-#    fn new() -> Self {
-#        Self {}
-#    }
-# }
+
 # pub struct Query;
 # #[juniper::graphql_object(Context = Database)]
 # impl Query {
@@ -79,6 +78,11 @@ operation returns a [`Future`][Future] with an `Item` value of a `Result<Connect
 where [`Connection`][Connection] is a `Stream` of values returned by the operation and [`GraphQLError`][GraphQLError] is the error when the subscription fails.
 
 ```rust
+# extern crate futures;
+# extern crate juniper;
+# extern crate juniper_subscriptions;
+# extern crate serde_json;
+# extern crate tokio;
 # use juniper::http::GraphQLRequest;
 # use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
 # use juniper_subscriptions::Coordinator;
