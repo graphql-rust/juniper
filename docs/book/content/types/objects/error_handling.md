@@ -210,6 +210,7 @@ the string contains a server-side localized error message. However, it is also
 possible to return a unique string identifier and have the client present a localized string to the user.
 
 ```rust
+# extern crate juniper;
 #[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
@@ -306,6 +307,7 @@ before. Each resolver function has a custom `ValidationResult` which
 contains only fields provided by the function.
 
 ```rust
+# extern crate juniper;
 #[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
@@ -383,6 +385,7 @@ and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:
 
 ```rust
+# // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
 
 #[derive(juniper::GraphQLObject)]

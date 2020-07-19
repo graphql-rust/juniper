@@ -22,6 +22,7 @@ The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the `graphql_object` proc macro:
 
 ```rust
+# extern crate juniper;
 # use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
@@ -43,6 +44,7 @@ Mutations are _also_ just GraphQL objects. Each mutation is a single field
 that performs some mutating side-effect such as updating a database.
 
 ```rust
+# extern crate juniper;
 # use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
@@ -63,8 +65,7 @@ impl Mutations {
 Many tools in the GraphQL ecosystem require the schema to be defined in the [GraphQL Schema Language][schema_language]. You can generate a [GraphQL Schema Language][schema_language] representation of your schema defined in Rust using the `schema-language` feature (on by default):
 
 ```rust
-# // Only needed due to 2018 edition because the macro is not accessible.
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 use juniper::{FieldResult, EmptyMutation, EmptySubscription, RootNode};
 
 struct Query;

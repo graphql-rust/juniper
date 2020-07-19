@@ -10,6 +10,7 @@ example from the last chapter, this is how you would define `Person` using the
 macro:
 
 ```rust
+# extern crate juniper;
 
 struct Person {
     name: String,
@@ -43,6 +44,7 @@ field resolver. With this syntax, fields can also take arguments:
 
 
 ```rust
+# extern crate juniper;
 #[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
@@ -75,6 +77,7 @@ to `camelCase`. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:
 
 ```rust
+# extern crate juniper;
 
 struct Person {
 }
@@ -132,6 +135,7 @@ They can have custom descriptions and default values.
 This will become better once the [Rust RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented.
 
 ```rust
+# extern crate juniper;
 
 struct Person {}
 

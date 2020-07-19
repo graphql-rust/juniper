@@ -24,7 +24,7 @@ thiserror = "1.0"
 
 [dev-dependencies]
 juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema", "serde_json"] }
-env_logger = "0.5.11"
+env_logger = "0.7.1"
 log = "0.4.3"
 percent-encoding = "1.0"
 tokio = { version = "0.2", features = ["rt-core", "macros", "blocking"] }
