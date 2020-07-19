@@ -13,6 +13,7 @@ Let's make a slightly more compact but generic implementation of [the last
 chapter](non_struct_objects.md):
 
 ```rust
+# extern crate juniper;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 # #[derive(juniper::GraphQLObject)] struct ForumPost { title: String }
 

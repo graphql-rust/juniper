@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 /// The schema as a static/hardcoded GraphQL Schema Language.
 pub const STATIC_GRAPHQL_SCHEMA_DEFINITION: &str = include_str!("starwars.graphql");
 
