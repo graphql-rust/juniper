@@ -155,19 +155,18 @@ juniper_subscriptions = { git = &quot;https://github.com/graphql-rust/juniper&qu
 operations in your [Schema][Schema]. For subscriptions all fields/operations should be async and should return a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
 <p>This example shows a subscription operation that returns two events, the strings <code>Hello</code> and <code>World!</code>
 sequentially:</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::http::GraphQLRequest;
-# use juniper::{DefaultScalarValue, FieldError, SubscriptionCoordinator};
-# use juniper_subscriptions::Coordinator;
-# use futures::{Stream, StreamExt};
+<pre><pre class="playpen"><code class="language-rust"># extern crate futures;
+# extern crate juniper;
+# extern crate juniper_subscriptions;
+# extern crate tokio;
+# use juniper::FieldError;
+# use futures::Stream;
 # use std::pin::Pin;
+#
 # #[derive(Clone)]
 # pub struct Database;
 # impl juniper::Context for Database {}
-# impl Database {
-#    fn new() -&gt; Self {
-#        Self {}
-#    }
-# }
+
 # pub struct Query;
 # #[juniper::graphql_object(Context = Database)]
 # impl Query {
@@ -200,7 +199,12 @@ and shutdown logic.</p>
 <p>While you can implement [<code>SubscriptionCoordinator</code>][SubscriptionCoordinator] yourself, Juniper contains a simple and generic implementation called [<code>Coordinator</code>][Coordinator].  The <code>subscribe</code>
 operation returns a [<code>Future</code>][Future] with an <code>Item</code> value of a <code>Result&lt;Connection, GraphQLError&gt;</code>,
 where [<code>Connection</code>][Connection] is a <code>Stream</code> of values returned by the operation and [<code>GraphQLError</code>][GraphQLError] is the error when the subscription fails.</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::http::GraphQLRequest;
+<pre><pre class="playpen"><code class="language-rust"># extern crate futures;
+# extern crate juniper;
+# extern crate juniper_subscriptions;
+# extern crate serde_json;
+# extern crate tokio;
+# use juniper::http::GraphQLRequest;
 # use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
 # use juniper_subscriptions::Coordinator;
 # use futures::{Stream, StreamExt};

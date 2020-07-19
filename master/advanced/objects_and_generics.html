@@ -146,7 +146,8 @@ not make e.g. <code>Result&lt;T, E&gt;</code> into a GraphQL type, but you <em>c
 <code>Result&lt;User, String&gt;</code> into a GraphQL type.</p>
 <p>Let's make a slightly more compact but generic implementation of <a href="non_struct_objects.html">the last
 chapter</a>:</p>
-<pre><pre class="playpen"><code class="language-rust"># #[derive(juniper::GraphQLObject)] struct User { name: String }
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
 # #[derive(juniper::GraphQLObject)] struct ForumPost { title: String }
 
 #[derive(juniper::GraphQLObject)]

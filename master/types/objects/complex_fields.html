@@ -145,7 +145,8 @@ can be specified in this <code>impl</code> block. If you want to define normal m
 you have to do so in a separate, normal <code>impl</code> block. Continuing with the
 example from the last chapter, this is how you would define <code>Person</code> using the
 macro:</p>
-<pre><pre class="playpen"><code class="language-rust">
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+
 struct Person {
     name: String,
     age: i32,
@@ -174,7 +175,8 @@ impl Person {
 </code></pre></pre>
 <p>While this is a bit more verbose, it lets you write any kind of function in the
 field resolver. With this syntax, fields can also take arguments:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -201,7 +203,8 @@ chapter: <a href="using_contexts.html">Using contexts</a>.</p>
 <p>Like with the derive attribute, field names will be converted from <code>snake_case</code>
 to <code>camelCase</code>. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:</p>
-<pre><pre class="playpen"><code class="language-rust">
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+
 struct Person {
 }
 
@@ -252,7 +255,8 @@ impl Person {
 <p>They can have custom descriptions and default values.</p>
 <p><strong>Note</strong>: The syntax for this is currently a little awkward.
 This will become better once the <a href="https://github.com/rust-lang/rust/issues/60406">Rust RFC 2565</a> is implemented.</p>
-<pre><pre class="playpen"><code class="language-rust">
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+
 struct Person {}
 
 #[juniper::graphql_object]

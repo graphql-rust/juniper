@@ -145,7 +145,8 @@
 </ul>
 <a class="header" href="#enums" id="enums"><h2>Enums</h2></a>
 <p>Most of the time, we just need a trivial and straightforward Rust enum to represent a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a>.</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# #[macro_use] extern crate derive_more;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -176,7 +177,9 @@ enum Character {
 <p><strong>WARNING</strong>:<br />
 It's the <em>library user's responsibility</em> to ensure that ignored enum variant is <em>never</em> returned from resolvers, otherwise resolving the GraphQL query will <strong>panic at runtime</strong>.</p>
 </blockquote>
-<pre><pre class="playpen"><code class="language-rust"># use std::marker::PhantomData;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# #[macro_use] extern crate derive_more;
+# use std::marker::PhantomData;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -205,7 +208,7 @@ enum Character&lt;S&gt; {
 </code></pre></pre>
 <a class="header" href="#external-resolver-functions" id="external-resolver-functions"><h3>External resolver functions</h3></a>
 <p>If some custom logic is needed to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, you may specify an external function to do so:</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -246,7 +249,7 @@ impl Character {
 # fn main() {}
 </code></pre></pre>
 <p>With an external resolver function we can even declare a new <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant where the Rust type is absent in the initial enum definition. The attribute syntax <code>#[graphql(on VariantType = resolver_fn)]</code> follows the <a href="https://spec.graphql.org/June2018/#example-f8163">GraphQL syntax for dispatching union variants</a>.</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -299,7 +302,8 @@ impl Character {
 </code></pre></pre>
 <a class="header" href="#structs" id="structs"><h2>Structs</h2></a>
 <p>Using Rust structs as <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> is very similar to using enums, with the nuance that specifying an external resolver function is the only way to declare a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant.</p>
-<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use std::collections::HashMap;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -350,7 +354,8 @@ impl Character {
 <p><strong>NOTICE</strong>:<br />
 A <strong>trait has to be <a href="https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety">object safe</a></strong>, because schema resolvers will need to return a <a href="https://doc.rust-lang.org/stable/reference/types/trait-object.html">trait object</a> to specify a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> behind it.</p>
 </blockquote>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{graphql_union, GraphQLObject};
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
 struct Human {
@@ -383,7 +388,7 @@ impl Character for Droid {
 </code></pre></pre>
 <a class="header" href="#custom-context" id="custom-context"><h3>Custom context</h3></a>
 <p>If a context is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, specify it as an argument.</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 # use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
 
@@ -430,7 +435,8 @@ impl Character for Droid {
 </code></pre></pre>
 <a class="header" href="#ignoring-trait-methods" id="ignoring-trait-methods"><h3>Ignoring trait methods</h3></a>
 <p>As with enums, we may want to omit some trait methods to be assumed as <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variants and ignore them.</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{graphql_union, GraphQLObject};
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
 struct Human {
@@ -466,7 +472,8 @@ impl Character for Droid {
 </code></pre></pre>
 <a class="header" href="#external-resolver-functions-1" id="external-resolver-functions-1"><h3>External resolver functions</h3></a>
 <p>Similarly to enums and structs, it's not mandatory to use trait methods as <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant resolvers. Instead, custom functions may be specified:</p>
-<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
@@ -526,7 +533,7 @@ fn get_droid&lt;'db&gt;(ch: &amp;DynCharacter&lt;'_&gt;, ctx: &amp;'db Database)
 </code></pre></pre>
 <a class="header" href="#scalarvalue-considerations" id="scalarvalue-considerations"><h2><code>ScalarValue</code> considerations</h2></a>
 <p>By default, <code>#[derive(GraphQLUnion)]</code> and <code>#[graphql_union]</code> macros generate code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variants is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified:</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{DefaultScalarValue, GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]

@@ -175,7 +175,8 @@ crates. They are enabled via features that are on by default.</p>
 <p>Often, you might need a custom scalar that just wraps an existing type.</p>
 <p>This can be done with the newtype pattern and a custom derive, similar to how
 serde supports this pattern with <code>#[serde(transparent)]</code>.</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLScalarValue)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLScalarValue)]
 pub struct UserId(i32);
 
 #[derive(juniper::GraphQLObject)]
@@ -187,7 +188,8 @@ struct User {
 </code></pre></pre>
 <p>That's it, you can now user <code>UserId</code> in your schema.</p>
 <p>The macro also allows for more customization:</p>
-<pre><pre class="playpen"><code class="language-rust">/// You can use a doc comment to specify a description.
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+/// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalarValue)]
 #[graphql(
     transparent,
@@ -212,7 +214,8 @@ purpose.</p>
 <p>The example below is used just for illustration.</p>
 <p><strong>Note</strong>: the example assumes that the <code>Date</code> type implements
 <code>std::fmt::Display</code> and <code>std::str::FromStr</code>.</p>
-<pre><pre class="playpen"><code class="language-rust"># mod date { 
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# mod date { 
 #    pub struct Date; 
 #    impl std::str::FromStr for Date{ 
 #        type Err = String; fn from_str(_value: &amp;str) -&gt; Result&lt;Self, Self::Err&gt; { unimplemented!() }

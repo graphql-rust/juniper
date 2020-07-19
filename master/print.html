@@ -198,7 +198,8 @@ naturally map to GraphQL features, such as <code>Option&lt;T&gt;</code>, <code>V
 types to a GraphQL schema. The most important one is the
 <a href="https://docs.rs/juniper/latest/juniper/macro.graphql_object.html">graphql_object</a> procedural macro that is used for declaring an object with
 resolvers, which you will use for the <code>Query</code> and <code>Mutation</code> roots.</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{FieldResult, EmptySubscription};
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+use juniper::{FieldResult, EmptySubscription};
 
 # struct DatabasePool;
 # impl DatabasePool {
@@ -291,7 +292,7 @@ impl Mutation {
     }
 }
 
-// A root schema consists of a query and a mutation.
+// A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&lt;Context&gt;&gt;;
 
@@ -333,7 +334,7 @@ impl Query {
 }
 
 
-// A root schema consists of a query and a mutation.
+// A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Ctx&gt;, EmptySubscription&lt;Ctx&gt;&gt;;
 
@@ -390,7 +391,8 @@ is a struct.</p>
 struct you want to expose, the easiest way is to use the custom derive
 attribute. The other way is described in the <a href="complex_fields.html">Complex fields</a>
 chapter.</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -407,7 +409,8 @@ fact that GraphQL is self-documenting and add descriptions to the type and
 fields. Juniper will automatically use associated doc comments as GraphQL
 descriptions:</p>
 <p>!FILENAME GraphQL descriptions via Rust doc comments</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 /// Information about a person
 struct Person {
     /// The person's full name, including both first and last names
@@ -421,7 +424,8 @@ struct Person {
 <p>Objects and fields without doc comments can instead set a <code>description</code>
 via the <code>graphql</code> attribute. The following example is equivalent to the above:</p>
 <p>!FILENAME GraphQL descriptions via attribute</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 #[graphql(description=&quot;Information about a person&quot;)]
 struct Person {
     #[graphql(description=&quot;The person's full name, including both first and last names&quot;)]
@@ -435,7 +439,8 @@ struct Person {
 <p>Descriptions set via the <code>graphql</code> attribute take precedence over Rust
 doc comments. This enables internal Rust documentation and external GraphQL
 documentation to differ:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 #[graphql(description=&quot;This description shows up in GraphQL&quot;)]
 /// This description shows up in RustDoc
 struct Person {
@@ -463,7 +468,8 @@ or</li>
 </li>
 </ul>
 <p>Let's see what that means for building relationships between objects:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -483,7 +489,8 @@ objects.</p>
 <a class="header" href="#renaming-fields" id="renaming-fields"><h2>Renaming fields</h2></a>
 <p>By default, struct fields are converted from Rust's standard <code>snake_case</code> naming
 convention into GraphQL's <code>camelCase</code> convention:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     first_name: String, // Would be exposed as firstName in the GraphQL schema
     last_name: String, // Exposed as lastName
@@ -493,7 +500,8 @@ struct Person {
 </code></pre></pre>
 <p>You can override the name by using the <code>graphql</code> attribute on individual struct
 fields:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -506,7 +514,8 @@ struct Person {
 <a class="header" href="#deprecating-fields" id="deprecating-fields"><h2>Deprecating fields</h2></a>
 <p>To deprecate a field, you specify a deprecation reason using the <code>graphql</code>
 attribute:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -521,7 +530,8 @@ combined. Some restrictions from the GraphQL spec still applies though; you can
 only deprecate object fields and enum values.</p>
 <a class="header" href="#skipping-fields" id="skipping-fields"><h2>Skipping fields</h2></a>
 <p>By default all fields in a <code>GraphQLObject</code> are included in the generated GraphQL type. To prevent including a specific field, annotate the field with <code>#[graphql(skip)]</code>:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -541,7 +551,8 @@ can be specified in this <code>impl</code> block. If you want to define normal m
 you have to do so in a separate, normal <code>impl</code> block. Continuing with the
 example from the last chapter, this is how you would define <code>Person</code> using the
 macro:</p>
-<pre><pre class="playpen"><code class="language-rust">
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+
 struct Person {
     name: String,
     age: i32,
@@ -570,7 +581,8 @@ impl Person {
 </code></pre></pre>
 <p>While this is a bit more verbose, it lets you write any kind of function in the
 field resolver. With this syntax, fields can also take arguments:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -597,7 +609,8 @@ chapter: <a href="using_contexts.html">Using contexts</a>.</p>
 <p>Like with the derive attribute, field names will be converted from <code>snake_case</code>
 to <code>camelCase</code>. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:</p>
-<pre><pre class="playpen"><code class="language-rust">
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+
 struct Person {
 }
 
@@ -648,7 +661,8 @@ impl Person {
 <p>They can have custom descriptions and default values.</p>
 <p><strong>Note</strong>: The syntax for this is currently a little awkward.
 This will become better once the <a href="https://github.com/rust-lang/rust/issues/60406">Rust RFC 2565</a> is implemented.</p>
-<pre><pre class="playpen"><code class="language-rust">
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+
 struct Person {}
 
 #[juniper::graphql_object]
@@ -935,7 +949,8 @@ types. Strings are used to identify the problematic field name. Errors
 for a particular field are also returned as a string. In this example
 the string contains a server-side localized error message. However, it is also
 possible to return a unique string identifier and have the client present a localized string to the user.</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
@@ -1021,7 +1036,8 @@ GraphQL's type system to describe the errors more precisely.</p>
 field is set if the validation for that particular field fails. You will likely want some kind of code generation to reduce repetition as the number of types required is significantly larger than
 before. Each resolver function has a custom <code>ValidationResult</code> which
 contains only fields provided by the function.</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
@@ -1090,7 +1106,8 @@ errors when they occur.</p>
 <p>In the following example, a theoretical database could fail
 and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:</p>
-<pre><pre class="playpen"><code class="language-rust"># #[macro_use] extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
+# #[macro_use] extern crate juniper;
 
 #[derive(juniper::GraphQLObject)]
 pub struct Item {
@@ -1176,7 +1193,8 @@ explore this approach in a real world application.</p>
 <p>Enums in GraphQL are string constants grouped together to represent a set of
 possible values. Simple Rust enums can be converted to GraphQL enums by using a
 custom derive attribute:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLEnum)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLEnum)]
 enum Episode {
     NewHope,
     Empire,
@@ -1189,7 +1207,8 @@ enum Episode {
 values for these variants are <code>NEWHOPE</code>, <code>EMPIRE</code>, and <code>JEDI</code>, respectively. If
 you want to override this, you can use the <code>graphql</code> attribute, similar to how
 it works when <a href="objects/defining_objects.html">defining objects</a>:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLEnum)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLEnum)]
 enum Episode {
     #[graphql(name=&quot;NEW_HOPE&quot;)]
     NewHope,
@@ -1202,7 +1221,8 @@ enum Episode {
 <a class="header" href="#documentation-and-deprecation" id="documentation-and-deprecation"><h2>Documentation and deprecation</h2></a>
 <p>Just like when defining objects, the type itself can be renamed and documented,
 while individual enum variants can be renamed, documented, and deprecated:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLEnum)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLEnum)]
 #[graphql(name=&quot;Episode&quot;, description=&quot;An episode of Star Wars&quot;)]
 enum StarWarsEpisode {
     #[graphql(deprecated=&quot;We don't really talk about this one&quot;)]
@@ -1426,7 +1446,8 @@ juniper::graphql_interface!(Character: () where Scalar = &lt;S&gt; |&amp;self| {
 <p>Input objects are complex data structures that can be used as arguments to
 GraphQL fields. In Juniper, you can define input objects using a custom derive
 attribute, similar to simple objects and enums:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLInputObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLInputObject)]
 struct Coordinate {
     latitude: f64,
     longitude: f64
@@ -1449,7 +1470,8 @@ impl Root {
 <a class="header" href="#documentation-and-renaming" id="documentation-and-renaming"><h2>Documentation and renaming</h2></a>
 <p>Just like the <a href="objects/defining_objects.html">other</a> <a href="enums.html">derives</a>, you can rename
 and add documentation to both the type and the fields:</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLInputObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLInputObject)]
 #[graphql(name=&quot;Coordinate&quot;, description=&quot;A position on the globe&quot;)]
 struct WorldCoordinate {
     #[graphql(name=&quot;lat&quot;, description=&quot;The latitude&quot;)]
@@ -1512,7 +1534,8 @@ crates. They are enabled via features that are on by default.</p>
 <p>Often, you might need a custom scalar that just wraps an existing type.</p>
 <p>This can be done with the newtype pattern and a custom derive, similar to how
 serde supports this pattern with <code>#[serde(transparent)]</code>.</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLScalarValue)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLScalarValue)]
 pub struct UserId(i32);
 
 #[derive(juniper::GraphQLObject)]
@@ -1524,7 +1547,8 @@ struct User {
 </code></pre></pre>
 <p>That's it, you can now user <code>UserId</code> in your schema.</p>
 <p>The macro also allows for more customization:</p>
-<pre><pre class="playpen"><code class="language-rust">/// You can use a doc comment to specify a description.
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+/// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalarValue)]
 #[graphql(
     transparent,
@@ -1549,7 +1573,8 @@ purpose.</p>
 <p>The example below is used just for illustration.</p>
 <p><strong>Note</strong>: the example assumes that the <code>Date</code> type implements
 <code>std::fmt::Display</code> and <code>std::str::FromStr</code>.</p>
-<pre><pre class="playpen"><code class="language-rust"># mod date { 
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# mod date { 
 #    pub struct Date; 
 #    impl std::str::FromStr for Date{ 
 #        type Err = String; fn from_str(_value: &amp;str) -&gt; Result&lt;Self, Self::Err&gt; { unimplemented!() }
@@ -1599,7 +1624,8 @@ where
 </ul>
 <a class="header" href="#enums-2" id="enums-2"><h2>Enums</h2></a>
 <p>Most of the time, we just need a trivial and straightforward Rust enum to represent a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a>.</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# #[macro_use] extern crate derive_more;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -1630,7 +1656,9 @@ enum Character {
 <p><strong>WARNING</strong>:<br />
 It's the <em>library user's responsibility</em> to ensure that ignored enum variant is <em>never</em> returned from resolvers, otherwise resolving the GraphQL query will <strong>panic at runtime</strong>.</p>
 </blockquote>
-<pre><pre class="playpen"><code class="language-rust"># use std::marker::PhantomData;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# #[macro_use] extern crate derive_more;
+# use std::marker::PhantomData;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -1659,7 +1687,7 @@ enum Character&lt;S&gt; {
 </code></pre></pre>
 <a class="header" href="#external-resolver-functions" id="external-resolver-functions"><h3>External resolver functions</h3></a>
 <p>If some custom logic is needed to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, you may specify an external function to do so:</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -1700,7 +1728,7 @@ impl Character {
 # fn main() {}
 </code></pre></pre>
 <p>With an external resolver function we can even declare a new <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant where the Rust type is absent in the initial enum definition. The attribute syntax <code>#[graphql(on VariantType = resolver_fn)]</code> follows the <a href="https://spec.graphql.org/June2018/#example-f8163">GraphQL syntax for dispatching union variants</a>.</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -1753,7 +1781,8 @@ impl Character {
 </code></pre></pre>
 <a class="header" href="#structs" id="structs"><h2>Structs</h2></a>
 <p>Using Rust structs as <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> is very similar to using enums, with the nuance that specifying an external resolver function is the only way to declare a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant.</p>
-<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use std::collections::HashMap;
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -1804,7 +1833,8 @@ impl Character {
 <p><strong>NOTICE</strong>:<br />
 A <strong>trait has to be <a href="https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety">object safe</a></strong>, because schema resolvers will need to return a <a href="https://doc.rust-lang.org/stable/reference/types/trait-object.html">trait object</a> to specify a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> behind it.</p>
 </blockquote>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{graphql_union, GraphQLObject};
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
 struct Human {
@@ -1837,7 +1867,7 @@ impl Character for Droid {
 </code></pre></pre>
 <a class="header" href="#custom-context" id="custom-context"><h3>Custom context</h3></a>
 <p>If a context is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, specify it as an argument.</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 # use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
 
@@ -1884,7 +1914,8 @@ impl Character for Droid {
 </code></pre></pre>
 <a class="header" href="#ignoring-trait-methods" id="ignoring-trait-methods"><h3>Ignoring trait methods</h3></a>
 <p>As with enums, we may want to omit some trait methods to be assumed as <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variants and ignore them.</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{graphql_union, GraphQLObject};
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
 struct Human {
@@ -1920,7 +1951,8 @@ impl Character for Droid {
 </code></pre></pre>
 <a class="header" href="#external-resolver-functions-1" id="external-resolver-functions-1"><h3>External resolver functions</h3></a>
 <p>Similarly to enums and structs, it's not mandatory to use trait methods as <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant resolvers. Instead, custom functions may be specified:</p>
-<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
@@ -1980,7 +2012,7 @@ fn get_droid&lt;'db&gt;(ch: &amp;DynCharacter&lt;'_&gt;, ctx: &amp;'db Database)
 </code></pre></pre>
 <a class="header" href="#scalarvalue-considerations" id="scalarvalue-considerations"><h2><code>ScalarValue</code> considerations</h2></a>
 <p>By default, <code>#[derive(GraphQLUnion)]</code> and <code>#[graphql_union]</code> macros generate code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variants is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified:</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{DefaultScalarValue, GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -2020,7 +2052,8 @@ object somewhere but never reference it, it will not be exposed in a schema.</p>
 <a class="header" href="#the-query-root" id="the-query-root"><h2>The query root</h2></a>
 <p>The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the <code>graphql_object</code> proc macro:</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
 
@@ -2037,7 +2070,8 @@ impl Root {
 <a class="header" href="#mutations" id="mutations"><h2>Mutations</h2></a>
 <p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field
 that performs some mutating side-effect such as updating a database.</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
 
@@ -2053,8 +2087,7 @@ impl Mutations {
 </code></pre></pre>
 <a class="header" href="#converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea" id="converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea"><h1>Converting a Rust schema to the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a></h1></a>
 <p>Many tools in the GraphQL ecosystem require the schema to be defined in the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a>. You can generate a <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a> representation of your schema defined in Rust using the <code>schema-language</code> feature (on by default):</p>
-<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
-# #[macro_use] extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{FieldResult, EmptyMutation, EmptySubscription, RootNode};
 
 struct Query;
@@ -2303,7 +2336,9 @@ produced by issuing a specially crafted introspection query.</p>
 <p>Juniper provides a convenience function to introspect the entire schema. The
 result can then be converted to JSON for use with tools and libraries such as
 <a href="https://github.com/graphql-rust/graphql-client">graphql-client</a>:</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{EmptyMutation, EmptySubscription, FieldResult, IntrospectionFormat};
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# extern crate serde_json;
+use juniper::{EmptyMutation, EmptySubscription, FieldResult, IntrospectionFormat};
 
 // Define our schema.
 
@@ -2356,7 +2391,8 @@ at enums, but traits will work too - they don't <em>have</em> to be mapped into 
 interfaces.</p>
 <p>Using <code>Result</code>-like enums can be a useful way of reporting e.g. validation
 errors from a mutation:</p>
-<pre><pre class="playpen"><code class="language-rust"># #[derive(juniper::GraphQLObject)] struct User { name: String }
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
 
 #[derive(juniper::GraphQLObject)]
 struct ValidationError {
@@ -2409,7 +2445,8 @@ not make e.g. <code>Result&lt;T, E&gt;</code> into a GraphQL type, but you <em>c
 <code>Result&lt;User, String&gt;</code> into a GraphQL type.</p>
 <p>Let's make a slightly more compact but generic implementation of <a href="non_struct_objects.html">the last
 chapter</a>:</p>
-<pre><pre class="playpen"><code class="language-rust"># #[derive(juniper::GraphQLObject)] struct User { name: String }
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
 # #[derive(juniper::GraphQLObject)] struct ForumPost { title: String }
 
 #[derive(juniper::GraphQLObject)]
@@ -2696,19 +2733,18 @@ juniper_subscriptions = { git = &quot;https://github.com/graphql-rust/juniper&qu
 operations in your [Schema][Schema]. For subscriptions all fields/operations should be async and should return a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
 <p>This example shows a subscription operation that returns two events, the strings <code>Hello</code> and <code>World!</code>
 sequentially:</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::http::GraphQLRequest;
-# use juniper::{DefaultScalarValue, FieldError, SubscriptionCoordinator};
-# use juniper_subscriptions::Coordinator;
-# use futures::{Stream, StreamExt};
+<pre><pre class="playpen"><code class="language-rust"># extern crate futures;
+# extern crate juniper;
+# extern crate juniper_subscriptions;
+# extern crate tokio;
+# use juniper::FieldError;
+# use futures::Stream;
 # use std::pin::Pin;
+#
 # #[derive(Clone)]
 # pub struct Database;
 # impl juniper::Context for Database {}
-# impl Database {
-#    fn new() -&gt; Self {
-#        Self {}
-#    }
-# }
+
 # pub struct Query;
 # #[juniper::graphql_object(Context = Database)]
 # impl Query {
@@ -2741,7 +2777,12 @@ and shutdown logic.</p>
 <p>While you can implement [<code>SubscriptionCoordinator</code>][SubscriptionCoordinator] yourself, Juniper contains a simple and generic implementation called [<code>Coordinator</code>][Coordinator].  The <code>subscribe</code>
 operation returns a [<code>Future</code>][Future] with an <code>Item</code> value of a <code>Result&lt;Connection, GraphQLError&gt;</code>,
 where [<code>Connection</code>][Connection] is a <code>Stream</code> of values returned by the operation and [<code>GraphQLError</code>][GraphQLError] is the error when the subscription fails.</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::http::GraphQLRequest;
+<pre><pre class="playpen"><code class="language-rust"># extern crate futures;
+# extern crate juniper;
+# extern crate juniper_subscriptions;
+# extern crate serde_json;
+# extern crate tokio;
+# use juniper::http::GraphQLRequest;
 # use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
 # use juniper_subscriptions::Coordinator;
 # use futures::{Stream, StreamExt};

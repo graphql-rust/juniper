@@ -151,7 +151,8 @@ object somewhere but never reference it, it will not be exposed in a schema.</p>
 <a class="header" href="#the-query-root" id="the-query-root"><h2>The query root</h2></a>
 <p>The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the <code>graphql_object</code> proc macro:</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
 
@@ -168,7 +169,8 @@ impl Root {
 <a class="header" href="#mutations" id="mutations"><h2>Mutations</h2></a>
 <p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field
 that performs some mutating side-effect such as updating a database.</p>
-<pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
 
@@ -184,8 +186,7 @@ impl Mutations {
 </code></pre></pre>
 <a class="header" href="#converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea" id="converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea"><h1>Converting a Rust schema to the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a></h1></a>
 <p>Many tools in the GraphQL ecosystem require the schema to be defined in the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a>. You can generate a <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a> representation of your schema defined in Rust using the <code>schema-language</code> feature (on by default):</p>
-<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
-# #[macro_use] extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{FieldResult, EmptyMutation, EmptySubscription, RootNode};
 
 struct Query;

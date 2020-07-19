@@ -153,7 +153,8 @@ naturally map to GraphQL features, such as <code>Option&lt;T&gt;</code>, <code>V
 types to a GraphQL schema. The most important one is the
 <a href="https://docs.rs/juniper/latest/juniper/macro.graphql_object.html">graphql_object</a> procedural macro that is used for declaring an object with
 resolvers, which you will use for the <code>Query</code> and <code>Mutation</code> roots.</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{FieldResult, EmptySubscription};
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+use juniper::{FieldResult, EmptySubscription};
 
 # struct DatabasePool;
 # impl DatabasePool {
@@ -246,7 +247,7 @@ impl Mutation {
     }
 }
 
-// A root schema consists of a query and a mutation.
+// A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&lt;Context&gt;&gt;;
 
@@ -288,7 +289,7 @@ impl Query {
 }
 
 
-// A root schema consists of a query and a mutation.
+// A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Ctx&gt;, EmptySubscription&lt;Ctx&gt;&gt;;
 

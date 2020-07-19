@@ -307,7 +307,8 @@ types. Strings are used to identify the problematic field name. Errors
 for a particular field are also returned as a string. In this example
 the string contains a server-side localized error message. However, it is also
 possible to return a unique string identifier and have the client present a localized string to the user.</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
@@ -393,7 +394,8 @@ GraphQL's type system to describe the errors more precisely.</p>
 field is set if the validation for that particular field fails. You will likely want some kind of code generation to reduce repetition as the number of types required is significantly larger than
 before. Each resolver function has a custom <code>ValidationResult</code> which
 contains only fields provided by the function.</p>
-<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
@@ -462,7 +464,8 @@ errors when they occur.</p>
 <p>In the following example, a theoretical database could fail
 and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:</p>
-<pre><pre class="playpen"><code class="language-rust"># #[macro_use] extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
+# #[macro_use] extern crate juniper;
 
 #[derive(juniper::GraphQLObject)]
 pub struct Item {
