@@ -498,7 +498,7 @@ pub mod subscriptions {
                             let state = Arc::new(SubscriptionState {
                                 should_stop: AtomicBool::new(false),
                             });
-                            subscription_states.insert(request_id, state.clone());
+                            subscription_states.insert(request_id.clone(), state.clone());
 
                             let ws_tx = ws_tx.clone();
 
