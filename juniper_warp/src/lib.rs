@@ -484,7 +484,10 @@ pub mod subscriptions {
                         .map_err(|e| anyhow!("Invalid WsPayload: {}", e))?;
 
                     match request.type_name.as_str() {
-                        "connection_init" => {}
+                        "connection_init" => {
+                            let reply = format!(r#"{{"type":"connection_ack","payload":null}}"#);
+                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(reply))));
+                        }
                         "start" => {
                             if got_close_signal.load(Ordering::Relaxed) {
                                 return Ok(subscription_states);
