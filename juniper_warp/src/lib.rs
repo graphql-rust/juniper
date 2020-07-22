@@ -543,8 +543,6 @@ pub mod subscriptions {
                                         );
                                         let _ = ws_tx
                                             .unbounded_send(Some(Ok(Message::text(close_message))));
-                                        // close channel
-                                        let _ = ws_tx.unbounded_send(None);
                                         return;
                                     }
                                 };
@@ -588,7 +586,12 @@ pub mod subscriptions {
                                 request_id
                             );
                             let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_message))));
-
+                        }
+                        "connection_terminate" => {
+                            for (request_id, existing) in subscription_states.clone().iter() {
+                                existing.should_stop.store(true, Ordering::Relaxed);
+                                subscription_states.remove(request_id);
+                            }
                             // close channel
                             let _ = ws_tx.unbounded_send(None);
                         }
