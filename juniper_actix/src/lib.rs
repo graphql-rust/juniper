@@ -217,6 +217,412 @@ pub async fn playground_handler(
         .body(html))
 }
 
+/// `juniper_actix` subscriptions handler implementation.
+/// Cannot be merged to `juniper_actix` yet as GraphQL over WS[1]
+/// is not fully supported in current implementation.
+///
+/// *Note: this implementation is in an alpha state.*
+///
+/// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
+#[cfg(feature = "subscriptions")]
+pub mod subscriptions {
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
+    use actix::prelude::*;
+    use actix_web::http::header::{HeaderName, HeaderValue};
+    use actix_web::{web, HttpRequest, HttpResponse};
+    use actix_web_actors::ws;
+    use serde::Deserialize;
+
+    use futures::StreamExt as _;
+    use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
+    use juniper_subscriptions::Coordinator;
+
+    /// Listen to incoming messages and do one of the following:
+    ///  - execute subscription and return values from stream
+    ///  - stop stream and close ws connection
+    #[allow(dead_code)]
+    pub async fn subscriptions_handler<Query, Mutation, Subscription, CtxT, S>(
+        req: HttpRequest,
+        stream: web::Payload,
+        coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, CtxT, S>>,
+        context: CtxT,
+    ) -> Result<HttpResponse, actix_web::Error>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        let mut resp = ws::start(
+            SubscriptionActor {
+                coordinator,
+                context: Arc::new(context),
+                handler_addr: None,
+            },
+            &req,
+            stream,
+        )?;
+
+        resp.headers_mut().insert(
+            HeaderName::from_static("sec-websocket-protocol"),
+            HeaderValue::from_static("graphql-ws"),
+        );
+
+        Ok(resp)
+    }
+
+    struct SubscriptionHandlerActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, CtxT, S>>,
+        context: Arc<CtxT>,
+        owner_addr: Arc<Addr<SubscriptionActor<Query, Mutation, Subscription, CtxT, S>>>,
+    }
+
+    impl<Query, Mutation, Subscription, CtxT, S> Actor
+        for SubscriptionHandlerActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        type Context = Context<Self>;
+    }
+
+    impl<Query, Mutation, Subscription, CtxT, S> Handler<RequestMessage<S>>
+        for SubscriptionHandlerActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        type Result = ();
+
+        fn handle(&mut self, msg: RequestMessage<S>, ctx: &mut Context<Self>) -> Self::Result {
+            let request_id = msg.request.id.unwrap_or("1".to_owned());
+
+            let coordinator = self.coordinator.clone();
+            let context = self.context.clone();
+            let owner_addr = self.owner_addr.clone();
+
+            let payload = if let Some(payload) = msg.request.payload {
+                if payload.query.is_none() {
+                    owner_addr.do_send(ResponseMessage {
+                        response_type: ResponseTypeEnum::Error,
+                        request_id,
+                        payload: Some("Query not found".to_owned()),
+                    });
+
+                    return;
+                }
+
+                payload
+            } else {
+                owner_addr.do_send(ResponseMessage {
+                    response_type: ResponseTypeEnum::Error,
+                    request_id,
+                    payload: Some("Payload not found".to_owned()),
+                });
+
+                return;
+            };
+
+            let fut = async move {
+                let graphql_request =
+                    GraphQLRequest::<S>::new(payload.query.unwrap(), None, payload.variables);
+
+                let values_stream = match coordinator.subscribe(&graphql_request, &context).await {
+                    Ok(s) => s,
+                    Err(err) => {
+                        let response_text = serde_json::to_string(&err)
+                            .unwrap_or("Error deserializing GraphQLError".to_owned());
+
+                        owner_addr.do_send(ResponseMessage {
+                            response_type: ResponseTypeEnum::Error,
+                            request_id,
+                            payload: Some(response_text),
+                        });
+
+                        return;
+                    }
+                };
+
+                values_stream
+                    .for_each(move |response| {
+                        let request_id = request_id.clone();
+
+                        let response_text = serde_json::to_string(&response)
+                            .unwrap_or("Error deserializing GraphQLError".to_owned());
+
+                        owner_addr.do_send(ResponseMessage {
+                            response_type: ResponseTypeEnum::Data,
+                            request_id,
+                            payload: Some(response_text),
+                        });
+
+                        async {}
+                    })
+                    .await;
+            }
+            .into_actor(self);
+
+            ctx.spawn(fut);
+        }
+    }
+
+    impl<Query, Mutation, Subscription, CtxT, S> Handler<StopMessage>
+        for SubscriptionHandlerActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        type Result = ();
+
+        fn handle(&mut self, msg: StopMessage, ctx: &mut Context<Self>) -> Self::Result {
+            let owner_addr = self.owner_addr.clone();
+
+            let request_id = msg.id.unwrap_or("1".to_owned());
+
+            owner_addr.do_send(ResponseMessage {
+                response_type: ResponseTypeEnum::Complete,
+                request_id,
+                payload: None,
+            });
+
+            ctx.stop();
+        }
+    }
+
+    struct SubscriptionActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, CtxT, S>>,
+        context: Arc<CtxT>,
+        handler_addr:
+            Option<Arc<Addr<SubscriptionHandlerActor<Query, Mutation, Subscription, CtxT, S>>>>,
+    }
+
+    impl<Query, Mutation, Subscription, CtxT, S> Actor
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        type Context = ws::WebsocketContext<Self>;
+    }
+
+    impl<Query, Mutation, Subscription, CtxT, S> Handler<ResponseMessage>
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        type Result = ();
+
+        fn handle(&mut self, msg: ResponseMessage, ctx: &mut Self::Context) -> Self::Result {
+            let response_text = match msg.response_type {
+                ResponseTypeEnum::Data => format!(
+                    r#"{{"type":"data","id":"{}","payload":{} }}"#,
+                    msg.request_id,
+                    msg.payload.unwrap_or("".to_owned())
+                ),
+                ResponseTypeEnum::Complete => format!(
+                    r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                    msg.request_id
+                ),
+                _ => format!(
+                    r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                    msg.request_id,
+                    msg.payload.unwrap_or("".to_owned())
+                ),
+            };
+
+            ctx.text(response_text);
+        }
+    }
+
+    impl<Query, Mutation, Subscription, CtxT, S> Handler<StopMessage>
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        type Result = ();
+
+        fn handle(&mut self, _msg: StopMessage, ctx: &mut Self::Context) -> Self::Result {
+            ctx.stop();
+        }
+    }
+
+    impl<Query, Mutation, Subscription, CtxT, S>
+        StreamHandler<Result<ws::Message, ws::ProtocolError>>
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S>
+    where
+        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+            match msg {
+                Ok(ws::Message::Text(text)) => {
+                    let request: WsPayload<_> = match serde_json::from_str(&text) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            ctx.address().do_send(ResponseMessage {
+                                response_type: ResponseTypeEnum::Error,
+                                request_id: "1".to_owned(),
+                                payload: Some(format!("Invalid WsPayload: {}", e)),
+                            });
+
+                            return;
+                        }
+                    };
+
+                    match request.type_name.as_str() {
+                        "connection_init" => {
+                            let addr = SubscriptionHandlerActor {
+                                coordinator: self.coordinator.clone(),
+                                context: self.context.clone(),
+                                owner_addr: Arc::new(ctx.address()),
+                            }
+                            .start();
+
+                            self.handler_addr = Some(Arc::new(addr));
+                        }
+                        "start" => {
+                            let handler_addr = self.handler_addr.as_ref().unwrap().clone();
+
+                            handler_addr.do_send(RequestMessage { request });
+                        }
+                        "stop" => {
+                            if let Some(handler_addr) = &self.handler_addr {
+                                handler_addr.do_send(StopMessage { id: request.id });
+                            }
+                        }
+                        _ => (),
+                    };
+                }
+                _ => (),
+            }
+        }
+    }
+
+    #[derive(Message)]
+    #[rtype(result = "()")]
+    struct RequestMessage<S>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        request: WsPayload<S>,
+    }
+
+    enum ResponseTypeEnum {
+        Data,
+        Complete,
+        Error,
+    }
+
+    #[derive(Message)]
+    #[rtype(result = "()")]
+    struct ResponseMessage {
+        response_type: ResponseTypeEnum,
+        request_id: String,
+        payload: Option<String>,
+    }
+
+    #[derive(Message)]
+    #[rtype(result = "()")]
+    struct StopMessage {
+        id: Option<String>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
+    struct WsPayload<S>
+    where
+        S: ScalarValue + Send + Sync,
+    {
+        id: Option<String>,
+        #[serde(rename(deserialize = "type"))]
+        type_name: String,
+        payload: Option<GraphQLPayload<S>>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(bound = "InputValue<S>: Deserialize<'de>")]
+    struct GraphQLPayload<S>
+    where
+        S: ScalarValue + Send + Sync,
+    {
+        variables: Option<InputValue<S>>,
+        extensions: Option<HashMap<String, String>>,
+        #[serde(rename(deserialize = "operationName"))]
+        operaton_name: Option<String>,
+        query: Option<String>,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
