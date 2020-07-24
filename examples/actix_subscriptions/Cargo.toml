@@ -17,6 +17,7 @@ tokio = { version = "0.2", features = ["rt-core", "macros"] }
 env_logger = "0.7.1"
 serde = "1.0.114"
 serde_json = "1.0.56"
+rand = "0.7.3"
 
 juniper = { path = "../../juniper", features = ["expose-test-schema", "serde_json"] }
 juniper_subscriptions = { path = "../../juniper_subscriptions" }

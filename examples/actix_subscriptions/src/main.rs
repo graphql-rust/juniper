@@ -32,6 +32,24 @@ async fn graphql(
 
 struct Subscription;
 
+// TODO: creating this because I can't figure how to return the traits from juniper::tests::fixtures::starwars
+// is this related to not interfaces not being migrated?
+struct RandomHuman {
+    id: String,
+    name: String,
+}
+
+#[juniper::graphql_object(Context = Database)]
+impl RandomHuman {
+    fn id(&self) -> &str {
+        &self.id
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
 #[juniper::graphql_subscription(Context = Database)]
 impl Subscription {
     #[graphql(
@@ -39,10 +57,15 @@ impl Subscription {
     )]
     async fn random_human(
         context: &Database,
-    ) -> Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<RandomHuman, FieldError>> + Send>> {
         let mut counter = 0;
 
-        // TODO: actually return a random human. But how to pass the context inside the closure?
+        // TODO: can this be done without cloning?
+        let context = (*context).clone();
+
+        use rand::{rngs::StdRng, Rng, SeedableRng};
+        let mut rng = StdRng::from_entropy();
+
         let stream = tokio::time::interval(Duration::from_secs(3)).map(move |_| {
             counter += 1;
 
@@ -54,7 +77,13 @@ impl Subscription {
                     )),
                 ))
             } else {
-                Ok(format!("test_{}", counter))
+                let random_id = rng.gen_range(1000, 1005).to_string();
+                let human = context.get_human(&random_id).unwrap();
+
+                Ok(RandomHuman {
+                    id: human.id().to_owned(),
+                    name: human.name().to_owned(),
+                })
             }
         });
 
