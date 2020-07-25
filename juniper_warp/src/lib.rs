@@ -403,10 +403,19 @@ pub mod subscriptions {
 
     use anyhow::anyhow;
     use futures::{channel::mpsc, Future, StreamExt as _, TryFutureExt as _, TryStreamExt as _};
-    use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
+    use juniper::{
+        http::GraphQLRequest, ExecutionError, InputValue, ScalarValue,
+        SubscriptionCoordinator as _, Value,
+    };
     use juniper_subscriptions::Coordinator;
     use serde::{Deserialize, Serialize};
     use warp::ws::Message;
+
+    #[derive(Serialize)]
+    struct DataPayload<'a, S: ScalarValue> {
+        data: &'a Value<S>,
+        errors: &'a Vec<ExecutionError<S>>,
+    }
 
     /// Listen to incoming messages and do one of the following:
     ///  - execute subscription and return values from stream
@@ -531,15 +540,19 @@ pub mod subscriptions {
                                 };
 
                                 values_stream
-                                    .take_while(move |response| {
+                                    .take_while(move |(data, errors)| {
                                         let request_id = request_id.clone();
                                         let should_stop = state.should_stop.load(Ordering::Relaxed)
                                             || got_close_signal.load(Ordering::Relaxed);
                                         if !should_stop {
-                                            let mut response_text = serde_json::to_string(
-                                                &response,
-                                            )
-                                            .unwrap_or("Error deserializing response".to_owned());
+                                            let mut response_text =
+                                                serde_json::to_string(&DataPayload {
+                                                    data,
+                                                    errors,
+                                                })
+                                                .unwrap_or(
+                                                    "Error deserializing response".to_owned(),
+                                                );
 
                                             response_text = format!(
                                                 r#"{{"type":"data","id":"{}","payload":{} }}"#,
