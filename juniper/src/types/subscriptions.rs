@@ -1,11 +1,11 @@
 use futures::{future, stream};
 
 use crate::{
-    http::{GraphQLRequest, GraphQLResponse},
+    http::GraphQLRequest,
     parser::Spanning,
     types::base::{is_excluded, merge_key_into, GraphQLType, GraphQLValue},
-    Arguments, BoxFuture, DefaultScalarValue, Executor, FieldError, Object, ScalarValue, Selection,
-    Value, ValuesStream,
+    Arguments, BoxFuture, DefaultScalarValue, ExecutionError, Executor, FieldError, Object,
+    ScalarValue, Selection, Value, ValuesStream,
 };
 
 /// Global subscription coordinator trait.
@@ -33,7 +33,7 @@ where
 {
     /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`]
     /// returns
-    type Connection: SubscriptionConnection<'a, S>;
+    type Connection: SubscriptionConnection<S>;
 
     /// Type of error while trying to spawn [`SubscriptionConnection`]
     type Error;
@@ -58,7 +58,7 @@ where
 ///
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
-pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
+pub trait SubscriptionConnection<S>: futures::Stream<Item = (Value<S>, Vec<ExecutionError<S>>)> {}
 
 /// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.
 /// It should be used with [`GraphQLValue`] in order to implement [subscription][1] resolvers on
