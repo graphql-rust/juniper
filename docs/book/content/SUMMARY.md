@@ -25,6 +25,8 @@
     - [Hyper](servers/hyper.md)
   - [Third Party Integrations](servers/third-party.md)
 
+- [Tracing](tracing/index.md)
+
 - [Advanced Topics](advanced/index.md)
 
   - [Introspection](advanced/introspection.md)
