@@ -1,14 +1,14 @@
-use std::sync::Arc;
-use std::{env, pin::Pin, time::Duration};
+use std::{env, pin::Pin, sync::Arc, time::Duration};
 
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use futures::Stream;
 
-use juniper::tests::fixtures::starwars::{model::Database, schema::Query};
-use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
-use juniper_actix::subscriptions::subscriptions_handler;
-use juniper_actix::{graphql_handler, playground_handler};
+use juniper::{
+    tests::fixtures::starwars::{model::Database, schema::Query},
+    DefaultScalarValue, EmptyMutation, FieldError, RootNode,
+};
+use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
 use juniper_subscriptions::Coordinator;
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;

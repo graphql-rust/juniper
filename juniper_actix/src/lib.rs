@@ -226,12 +226,13 @@ pub async fn playground_handler(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use std::collections::HashMap;
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
 
     use actix::prelude::*;
-    use actix_web::http::header::{HeaderName, HeaderValue};
-    use actix_web::{web, HttpRequest, HttpResponse};
+    use actix_web::{
+        http::header::{HeaderName, HeaderValue},
+        web, HttpRequest, HttpResponse,
+    };
     use actix_web_actors::ws;
     use serde::Deserialize;
 
