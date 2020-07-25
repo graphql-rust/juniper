@@ -15,6 +15,7 @@ members = [
   "juniper_rocket",
   "juniper_rocket_async",
   "juniper_subscriptions",
+  "juniper_graphql_ws",
   "juniper_warp",
   "juniper_actix",
 ]
