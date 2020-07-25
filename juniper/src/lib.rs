@@ -246,7 +246,10 @@ where
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace_error!("GraphQLError: {:?}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
@@ -279,7 +282,10 @@ where
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace_error!("GraphQLError: {:?}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
@@ -289,7 +295,10 @@ where
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace_error!("GraphQLError: {:?}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
@@ -324,7 +333,10 @@ where
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace_error!("GraphQLError: {:?}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
@@ -334,7 +346,10 @@ where
         let errors = validate_input_values(&variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace_error!("GraphQLError: {:?}", gql_error);
+
+            return Err(gql_error);
         }
     }
 

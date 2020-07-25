@@ -19,6 +19,10 @@ serde_json = "1.0"
 tokio = { version = "0.2", features = ["blocking", "macros", "rt-core", "rt-util", "stream"] }
 uuid = "0.8"
 
+tracing = "0.1.17"
+tracing-subscriber = "0.2.9"
+tracing-log = "0.1.1"
+
 [build-dependencies]
 skeptic = "0.13"
 
