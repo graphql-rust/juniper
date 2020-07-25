@@ -19,9 +19,9 @@ use std::{
 
 use futures::{future, stream, FutureExt as _, Stream, StreamExt as _, TryFutureExt as _};
 use juniper::{
-    http::GraphQLRequest,
-    BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object,
-    ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream,
+    http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType,
+    GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value,
+    ValuesStream,
 };
 
 /// Simple [`SubscriptionCoordinator`] implementation:
@@ -113,10 +113,7 @@ where
     }
 }
 
-impl<'a, S> SubscriptionConnection<S> for Connection<'a, S> where
-    S: ScalarValue + Send + Sync + 'a
-{
-}
+impl<'a, S> SubscriptionConnection<S> for Connection<'a, S> where S: ScalarValue + Send + Sync + 'a {}
 
 impl<'a, S> Stream for Connection<'a, S>
 where
@@ -176,62 +173,64 @@ where
                 ready_vec.push(None);
             }
 
-            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<(Value<S>, Vec<ExecutionError<S>>)>> {
-                let mut obj_iterator = object.iter_mut();
+            let stream = stream::poll_fn(
+                move |mut ctx| -> Poll<Option<(Value<S>, Vec<ExecutionError<S>>)>> {
+                    let mut obj_iterator = object.iter_mut();
 
-                // Due to having to modify `ready_vec` contents (by-move pattern)
-                // and only being able to iterate over `object`'s mutable references (by-ref pattern)
-                // `ready_vec` and `object` cannot be iterated simultaneously.
-                // TODO: iterate over i and (ref field_name, ref val) once
-                //       [this RFC](https://github.com/rust-lang/rust/issues/68354)
-                //       is implemented
-                for ready in ready_vec.iter_mut().take(obj_len) {
-                    let (field_name, val) = match obj_iterator.next() {
-                        Some(v) => v,
-                        None => break,
-                    };
+                    // Due to having to modify `ready_vec` contents (by-move pattern)
+                    // and only being able to iterate over `object`'s mutable references (by-ref pattern)
+                    // `ready_vec` and `object` cannot be iterated simultaneously.
+                    // TODO: iterate over i and (ref field_name, ref val) once
+                    //       [this RFC](https://github.com/rust-lang/rust/issues/68354)
+                    //       is implemented
+                    for ready in ready_vec.iter_mut().take(obj_len) {
+                        let (field_name, val) = match obj_iterator.next() {
+                            Some(v) => v,
+                            None => break,
+                        };
 
-                    if ready.is_some() {
-                        continue;
-                    }
+                        if ready.is_some() {
+                            continue;
+                        }
 
-                    match val {
-                        Value::Scalar(stream) => {
-                            match Pin::new(stream).poll_next(&mut ctx) {
-                                Poll::Ready(None) => return Poll::Ready(None),
-                                Poll::Ready(Some(value)) => {
-                                    *ready = Some((field_name.clone(), value));
-                                    filled_count += 1;
+                        match val {
+                            Value::Scalar(stream) => {
+                                match Pin::new(stream).poll_next(&mut ctx) {
+                                    Poll::Ready(None) => return Poll::Ready(None),
+                                    Poll::Ready(Some(value)) => {
+                                        *ready = Some((field_name.clone(), value));
+                                        filled_count += 1;
+                                    }
+                                    Poll::Pending => { /* check back later */ }
                                 }
-                                Poll::Pending => { /* check back later */ }
+                            }
+                            _ => {
+                                // For now only `Object<Value::Scalar>` is supported
+                                *ready = Some((field_name.clone(), Ok(Value::Null)));
+                                filled_count += 1;
                             }
                         }
-                        _ => {
-                            // For now only `Object<Value::Scalar>` is supported
-                            *ready = Some((field_name.clone(), Ok(Value::Null)));
-                            filled_count += 1;
-                        }
                     }
-                }
 
-                if filled_count == obj_len {
-                    filled_count = 0;
-                    let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
-                    let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
-                    let ready_vec_iterator = ready_vec.into_iter().map(|el| {
-                        let (name, val) = el.unwrap();
-                        if let Ok(value) = val {
-                            (name, value)
-                        } else {
-                            (name, Value::Null)
-                        }
-                    });
-                    let obj = Object::from_iter(ready_vec_iterator);
-                    Poll::Ready(Some((Value::Object(obj), vec![])))
-                } else {
-                    Poll::Pending
-                }
-            });
+                    if filled_count == obj_len {
+                        filled_count = 0;
+                        let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
+                        let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
+                        let ready_vec_iterator = ready_vec.into_iter().map(|el| {
+                            let (name, val) = el.unwrap();
+                            if let Ok(value) = val {
+                                (name, value)
+                            } else {
+                                (name, Value::Null)
+                            }
+                        });
+                        let obj = Object::from_iter(ready_vec_iterator);
+                        Poll::Ready(Some((Value::Object(obj), vec![])))
+                    } else {
+                        Poll::Pending
+                    }
+                },
+            );
 
             Box::pin(stream)
         }
@@ -272,7 +271,8 @@ mod whole_responses_stream {
 
     #[tokio::test]
     async fn value_null() {
-        let expected: Vec<(_, Vec<ExecutionError<DefaultScalarValue>>)> = vec![(Value::<DefaultScalarValue>::Null, vec![])];
+        let expected: Vec<(_, Vec<ExecutionError<DefaultScalarValue>>)> =
+            vec![(Value::<DefaultScalarValue>::Null, vec![])];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![])
@@ -288,26 +288,11 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn value_scalar() {
         let expected: Vec<(_, Vec<ExecutionError<DefaultScalarValue>>)> = vec![
-            (
-                Value::Scalar(DefaultScalarValue::Int(1i32)),
-                vec![],
-            ),
-            (
-                Value::Scalar(DefaultScalarValue::Int(2i32)),
-                vec![],
-            ),
-            (
-                Value::Scalar(DefaultScalarValue::Int(3i32)),
-                vec![],
-            ),
-            (
-                Value::Scalar(DefaultScalarValue::Int(4i32)),
-                vec![],
-            ),
-            (
-                Value::Scalar(DefaultScalarValue::Int(5i32)),
-                vec![],
-            ),
+            (Value::Scalar(DefaultScalarValue::Int(1i32)), vec![]),
+            (Value::Scalar(DefaultScalarValue::Int(2i32)), vec![]),
+            (Value::Scalar(DefaultScalarValue::Int(3i32)), vec![]),
+            (Value::Scalar(DefaultScalarValue::Int(4i32)), vec![]),
+            (Value::Scalar(DefaultScalarValue::Int(5i32)), vec![]),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
@@ -332,19 +317,10 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn value_list() {
         let expected: Vec<(_, Vec<ExecutionError<DefaultScalarValue>>)> = vec![
-            (
-                Value::Scalar(DefaultScalarValue::Int(1i32)),
-                vec![],
-            ),
-            (
-                Value::Scalar(DefaultScalarValue::Int(2i32)),
-                vec![],
-            ),
+            (Value::Scalar(DefaultScalarValue::Int(1i32)), vec![]),
+            (Value::Scalar(DefaultScalarValue::Int(2i32)), vec![]),
             (Value::Null, vec![]),
-            (
-                Value::Scalar(DefaultScalarValue::Int(4i32)),
-                vec![],
-            ),
+            (Value::Scalar(DefaultScalarValue::Int(4i32)), vec![]),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 

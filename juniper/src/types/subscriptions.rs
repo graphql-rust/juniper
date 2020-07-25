@@ -58,7 +58,10 @@ where
 ///
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
-pub trait SubscriptionConnection<S>: futures::Stream<Item = (Value<S>, Vec<ExecutionError<S>>)> {}
+pub trait SubscriptionConnection<S>:
+    futures::Stream<Item = (Value<S>, Vec<ExecutionError<S>>)>
+{
+}
 
 /// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.
 /// It should be used with [`GraphQLValue`] in order to implement [subscription][1] resolvers on
