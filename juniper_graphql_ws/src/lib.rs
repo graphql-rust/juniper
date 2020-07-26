@@ -640,7 +640,7 @@ mod test {
     use juniper::{
         futures::sink::SinkExt,
         parser::{ParseError, Spanning, Token},
-        DefaultScalarValue, EmptyMutation, FieldResult, InputValue, RootNode, Value,
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode, Value,
     };
     use std::{convert::Infallible, io};
 
@@ -677,6 +677,20 @@ mod test {
                         .into_stream(),
                 )
                 .boxed()
+        }
+
+        /// error emits an error once, then never emits anything else.
+        async fn error(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
+            stream::once(future::ready(Err(FieldError::new(
+                "field error",
+                Value::null(),
+            ))))
+            .chain(
+                tokio::time::delay_for(Duration::from_secs(10000))
+                    .map(|_| unreachable!())
+                    .into_stream(),
+            )
+            .boxed()
         }
     }
 
@@ -1008,5 +1022,47 @@ mod test {
             },
             conn.next().await.unwrap()
         );
+    }
+
+    #[tokio::test]
+    async fn test_subscription_field_error() {
+        let mut conn = Connection::new(
+            new_test_schema(),
+            ConnectionConfig::new(Context(1)).with_keep_alive_interval(Duration::from_secs(0)),
+        );
+
+        conn.send(ClientMessage::ConnectionInit {
+            payload: Variables::default(),
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
+
+        conn.send(ClientMessage::Start {
+            id: "foo".to_string(),
+            payload: StartPayload {
+                query: "subscription Foo {error}".to_string(),
+                variables: Variables::default(),
+                operation_name: None,
+            },
+        })
+        .await
+        .unwrap();
+
+        match conn.next().await.unwrap() {
+            ServerMessage::Data {
+                id,
+                payload: DataPayload { data, errors },
+            } => {
+                assert_eq!(id, "foo");
+                assert_eq!(
+                    data,
+                    Value::Object([("error", Value::null())].iter().cloned().collect())
+                );
+                assert_eq!(errors.len(), 1);
+            }
+            msg @ _ => panic!("expected data, got: {:?}", msg),
+        }
     }
 }
