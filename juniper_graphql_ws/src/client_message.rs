@@ -1,12 +1,19 @@
 use juniper::{ScalarValue, Variables};
 
+/// The payload for a client's "start" message. This triggers execution of a query, mutation, or
+/// subscription.
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(bound(deserialize = "S: ScalarValue"))]
 #[serde(rename_all = "camelCase")]
 pub struct StartPayload<S: ScalarValue> {
+    /// The document body.
     pub query: String,
+
+    /// The optional variables.
     #[serde(default)]
     pub variables: Variables<S>,
+
+    /// The optional operation name (required if the document contains multiple operations).
     pub operation_name: Option<String>,
 }
 
@@ -18,16 +25,25 @@ pub struct StartPayload<S: ScalarValue> {
 pub enum ClientMessage<S: ScalarValue> {
     /// ConnectionInit is sent by the client upon connecting.
     ConnectionInit {
+        /// Optional parameters of any type sent from the client. These are often used for
+        /// authentication.
         #[serde(default)]
         payload: Variables<S>,
     },
     /// Start messages are used to execute a GraphQL operation.
     Start {
+        /// The id of the operation. This can be anything, but must be unique. If there are other
+        /// in-flight operations with the same id, the message will be ignored or cause an error.
         id: String,
+
+        /// The query, variables, and operation name.
         payload: StartPayload<S>,
     },
     /// Stop messages are used to unsubscribe from a subscription.
-    Stop { id: String },
+    Stop {
+        /// The id of the operation to stop.
+        id: String,
+    },
     /// ConnectionTerminate is used to terminate the connection.
     ConnectionTerminate,
 }

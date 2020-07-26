@@ -2,10 +2,10 @@
 
 use std::{env, pin::Pin, sync::Arc, time::Duration};
 
-use futures::{Future, FutureExt as _, Stream};
+use futures::{FutureExt as _, Stream};
 use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
-use juniper_subscriptions::Coordinator;
-use juniper_warp::{playground_filter, subscriptions::graphql_subscriptions};
+use juniper_graphql_ws::ConnectionConfig;
+use juniper_warp::{playground_filter, subscriptions::serve_graphql_ws};
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
@@ -134,6 +134,15 @@ fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
+async fn on_upgrade(ws: warp::ws::WebSocket, root_node: Arc<Schema>) {
+    serve_graphql_ws(ws, root_node, ConnectionConfig::new(Context {}))
+        .map(|r| {
+            if let Err(e) = r {
+                println!("Websocket error: {}", e);
+            }
+        }).await;
+}
+
 #[tokio::main]
 async fn main() {
     env::set_var("RUST_LOG", "warp_subscriptions");
@@ -151,28 +160,16 @@ async fn main() {
     let qm_state = warp::any().map(move || Context {});
     let qm_graphql_filter = juniper_warp::make_graphql_filter(qm_schema, qm_state.boxed());
 
-    let sub_state = warp::any().map(move || Context {});
-    let coordinator = Arc::new(juniper_subscriptions::Coordinator::new(schema()));
+    let root_node = Arc::new(schema());
 
     log::info!("Listening on 127.0.0.1:8080");
 
     let routes = (warp::path("subscriptions")
         .and(warp::ws())
-        .and(sub_state.clone())
-        .and(warp::any().map(move || Arc::clone(&coordinator)))
         .map(
-            |ws: warp::ws::Ws,
-             ctx: Context,
-             coordinator: Arc<Coordinator<'static, _, _, _, _, _>>| {
-                ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                    graphql_subscriptions(websocket, coordinator, ctx)
-                        .map(|r| {
-                            if let Err(e) = r {
-                                println!("Websocket error: {}", e);
-                            }
-                        })
-                        .boxed()
-                })
+            move |ws: warp::ws::Ws| {
+                let root_node = root_node.clone();
+                ws.on_upgrade(move |websocket| on_upgrade(websocket, root_node.clone()))
             },
         ))
     .map(|reply| {

@@ -2,20 +2,31 @@ use juniper::{ExecutionError, GraphQLError, ScalarValue, Value};
 use serde::{Serialize, Serializer};
 use std::{any::Any, fmt, marker::PhantomPinned};
 
+/// The payload for errors that are not associated with a GraphQL operation.
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionErrorPayload {
+    /// The error message.
     pub message: String,
 }
 
+/// Sent after execution of an operation. For queries and mutations, this is sent to the client
+/// once. For subscriptions, this is sent for every event in the event stream.
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(bound(serialize = "S: ScalarValue"))]
 #[serde(rename_all = "camelCase")]
 pub struct DataPayload<S> {
+    /// The result data.
     pub data: Value<S>,
+
+    /// The errors that have occurred during execution. Note that parse and validation errors are
+    /// not included here. They are sent via Error messages.
     pub errors: Vec<ExecutionError<S>>,
 }
 
+/// A payload for errors that can happen before execution. Errors that happen during execution are
+/// instead sent to the client via `DataPayload`. `ErrorPayload` is a wrapper for an owned
+/// `GraphQLError`.
 // XXX: Think carefully before deriving traits. This is self-referential (error references
 // _execution_params).
 pub struct ErrorPayload {
@@ -36,6 +47,11 @@ impl ErrorPayload {
             error: std::mem::transmute(error),
             _marker: PhantomPinned,
         }
+    }
+
+    /// Returns the contained GraphQLError.
+    pub fn graphql_error<'a>(&'a self) -> &GraphQLError<'a> {
+        &self.error
     }
 }
 
@@ -76,19 +92,39 @@ impl From<GraphQLError<'static>> for ErrorPayload {
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum ServerMessage<S: ScalarValue> {
-    /// ConnectionError is used when the server rejects a connection based on the client's ConnectionInit
-    /// message or when the server encounters a protocol error such as not being able to parse a
-    /// client's message.
-    ConnectionError { payload: ConnectionErrorPayload },
+    /// ConnectionError is used for errors that are not associated with a GraphQL operation. For
+    /// example, this will be used when:
+    ///
+    ///   * The server is unable to parse a client's message.
+    ///   * The client's initialization parameters are rejected.
+    ConnectionError {
+        /// The error that occurred.
+        payload: ConnectionErrorPayload,
+    },
     /// ConnectionAck is sent in response to a client's ConnectionInit message if the server accepted a
     /// connection.
     ConnectionAck,
     /// Data contains the result of a query, mutation, or subscription event.
-    Data { id: String, payload: DataPayload<S> },
+    Data {
+        /// The id of the operation that the data is for.
+        id: String,
+
+        /// The data and errors that occurred during execution.
+        payload: DataPayload<S>,
+    },
     /// Error contains an error that occurs before execution, such as validation errors.
-    Error { id: String, payload: ErrorPayload },
+    Error {
+        /// The id of the operation that triggered this error.
+        id: String,
+
+        /// The error(s).
+        payload: ErrorPayload,
+    },
     /// Complete indicates that no more data will be sent for the given operation.
-    Complete { id: String },
+    Complete {
+        /// The id of the operation that has completed.
+        id: String,
+    },
     /// ConnectionKeepAlive is sent periodically after accepting a connection.
     #[serde(rename = "ka")]
     ConnectionKeepAlive,
