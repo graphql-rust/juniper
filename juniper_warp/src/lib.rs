@@ -469,7 +469,7 @@ pub mod subscriptions {
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
         S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT>,
+        I: Init<S, CtxT> + Send,
     {
         let (ws_tx, ws_rx) = websocket.split();
         let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split();

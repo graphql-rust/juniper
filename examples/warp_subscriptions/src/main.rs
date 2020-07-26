@@ -134,15 +134,6 @@ fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
-async fn on_upgrade(ws: warp::ws::WebSocket, root_node: Arc<Schema>) {
-    serve_graphql_ws(ws, root_node, ConnectionConfig::new(Context {}))
-        .map(|r| {
-            if let Err(e) = r {
-                println!("Websocket error: {}", e);
-            }
-        }).await;
-}
-
 #[tokio::main]
 async fn main() {
     env::set_var("RUST_LOG", "warp_subscriptions");
@@ -166,12 +157,18 @@ async fn main() {
 
     let routes = (warp::path("subscriptions")
         .and(warp::ws())
-        .map(
-            move |ws: warp::ws::Ws| {
-                let root_node = root_node.clone();
-                ws.on_upgrade(move |websocket| on_upgrade(websocket, root_node.clone()))
-            },
-        ))
+        .map(move |ws: warp::ws::Ws| {
+            let root_node = root_node.clone();
+            ws.on_upgrade(move |websocket| async move {
+                serve_graphql_ws(websocket, root_node, ConnectionConfig::new(Context {}))
+                    .map(|r| {
+                        if let Err(e) = r {
+                            println!("Websocket error: {}", e);
+                        }
+                    })
+                    .await
+            })
+        }))
     .map(|reply| {
         // TODO#584: remove this workaround
         warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")

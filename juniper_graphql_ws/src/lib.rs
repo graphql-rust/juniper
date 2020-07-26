@@ -29,8 +29,7 @@ use juniper::{
         task::{Context, Poll, Waker},
         Sink, Stream,
     },
-    GraphQLError, RuleError, ScalarValue,
-    Variables,
+    GraphQLError, RuleError, ScalarValue, Variables,
 };
 use std::{
     collections::HashMap,
@@ -94,10 +93,6 @@ impl<S: ScalarValue, CtxT: Unpin + Send + 'static> Init<S, CtxT> for ConnectionC
 
 enum Reaction<S: Schema> {
     ServerMessage(ServerMessage<S::ScalarValue>),
-    Activate {
-        config: ConnectionConfig<S::Context>,
-        schema: S,
-    },
     EndStream,
 }
 
@@ -141,162 +136,164 @@ where
 enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     /// PreInit is the state before a ConnectionInit message has been accepted.
     PreInit { init: I, schema: S },
-    /// Initializing is the state after a ConnectionInit message has been received, but before the
-    /// init future has resolved.
-    Initializing,
     /// Active is the state after a ConnectionInit message has been accepted.
     Active {
         config: Arc<ConnectionConfig<S::Context>>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
         schema: S,
     },
+    /// Terminated is the state after a ConnectionInit message has been rejected.
+    Terminated,
 }
 
 impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
     // Each message we receive results in a stream of zero or more reactions. For example, a
     // ConnectionTerminate message results in a one-item stream with the EndStream reaction.
-    fn handle_message(
-        &mut self,
+    async fn handle_message(
+        self,
         msg: ClientMessage<S::ScalarValue>,
-    ) -> BoxStream<'static, Reaction<S>> {
+    ) -> (Self, BoxStream<'static, Reaction<S>>) {
         if let ClientMessage::ConnectionTerminate = msg {
-            return Reaction::EndStream.to_stream();
+            return (self, Reaction::EndStream.to_stream());
         }
 
         match self {
-            Self::PreInit { .. } => match msg {
-                ClientMessage::ConnectionInit { payload } => {
-                    match std::mem::replace(self, Self::Initializing) {
-                        Self::PreInit { init, schema } => init
-                            .init(payload)
-                            .map(|r| match r {
-                                Ok(config) => {
-                                    let keep_alive_interval = config.keep_alive_interval;
+            Self::PreInit { init, schema } => match msg {
+                ClientMessage::ConnectionInit { payload } => match init.init(payload).await {
+                    Ok(config) => {
+                        let keep_alive_interval = config.keep_alive_interval;
 
-                                    let mut s = stream::iter(vec![
-                                        Reaction::Activate { config, schema },
-                                        Reaction::ServerMessage(ServerMessage::ConnectionAck),
-                                    ])
-                                    .boxed();
+                        let mut s = stream::iter(vec![Reaction::ServerMessage(
+                            ServerMessage::ConnectionAck,
+                        )])
+                        .boxed();
 
-                                    if keep_alive_interval > Duration::from_secs(0) {
-                                        s = s
-                                            .chain(
-                                                Reaction::ServerMessage(
-                                                    ServerMessage::ConnectionKeepAlive,
-                                                )
-                                                .to_stream(),
-                                            )
-                                            .boxed();
-                                        s = s
-                                            .chain(stream::unfold((), move |_| async move {
-                                                tokio::time::delay_for(keep_alive_interval).await;
-                                                Some((
-                                                    Reaction::ServerMessage(
-                                                        ServerMessage::ConnectionKeepAlive,
-                                                    ),
-                                                    (),
-                                                ))
-                                            }))
-                                            .boxed();
-                                    }
+                        if keep_alive_interval > Duration::from_secs(0) {
+                            s = s
+                                .chain(
+                                    Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
+                                        .to_stream(),
+                                )
+                                .boxed();
+                            s = s
+                                .chain(stream::unfold((), move |_| async move {
+                                    tokio::time::delay_for(keep_alive_interval).await;
+                                    Some((
+                                        Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
+                                        (),
+                                    ))
+                                }))
+                                .boxed();
+                        }
 
-                                    s
-                                }
-                                Err(e) => stream::iter(vec![
-                                    Reaction::ServerMessage(ServerMessage::ConnectionError {
-                                        payload: ConnectionErrorPayload {
-                                            message: e.to_string(),
-                                        },
-                                    }),
-                                    Reaction::EndStream,
-                                ])
-                                .boxed(),
-                            })
-                            .into_stream()
-                            .flatten()
-                            .boxed(),
-                        _ => unreachable!(),
+                        (
+                            Self::Active {
+                                config: Arc::new(config),
+                                stoppers: HashMap::new(),
+                                schema,
+                            },
+                            s,
+                        )
                     }
-                }
-                _ => stream::empty().boxed(),
+                    Err(e) => (
+                        Self::Terminated,
+                        stream::iter(vec![
+                            Reaction::ServerMessage(ServerMessage::ConnectionError {
+                                payload: ConnectionErrorPayload {
+                                    message: e.to_string(),
+                                },
+                            }),
+                            Reaction::EndStream,
+                        ])
+                        .boxed(),
+                    ),
+                },
+                _ => (Self::PreInit { init, schema }, stream::empty().boxed()),
             },
-            Self::Initializing => stream::empty().boxed(),
             Self::Active {
                 config,
-                stoppers,
+                mut stoppers,
                 schema,
             } => {
-                match msg {
+                let reactions = match msg {
                     ClientMessage::Start { id, payload } => {
                         if stoppers.contains_key(&id) {
                             // We already have an operation with this id, so we can't start a new
                             // one.
-                            return stream::empty().boxed();
+                            stream::empty().boxed()
+                        } else {
+                            // Go ahead and prune canceled stoppers before adding a new one.
+                            stoppers.retain(|_, tx| !tx.is_canceled());
+
+                            if config.max_in_flight_operations > 0
+                                && stoppers.len() >= config.max_in_flight_operations
+                            {
+                                // Too many in-flight operations. Just send back a validation error.
+                                stream::iter(vec![
+                                    Reaction::ServerMessage(ServerMessage::Error {
+                                        id: id.clone(),
+                                        payload: GraphQLError::ValidationError(vec![
+                                            RuleError::new("Too many in-flight operations.", &[]),
+                                        ])
+                                        .into(),
+                                    }),
+                                    Reaction::ServerMessage(ServerMessage::Complete { id }),
+                                ])
+                                .boxed()
+                            } else {
+                                // Create a channel that we can use to cancel the operation.
+                                let (tx, rx) = oneshot::channel::<()>();
+                                stoppers.insert(id.clone(), tx);
+
+                                // Create the operation stream. This stream will emit Data and Error
+                                // messages, but will not emit Complete – that part is up to us.
+                                let s = Self::start(
+                                    id.clone(),
+                                    ExecutionParams {
+                                        start_payload: payload,
+                                        config: config.clone(),
+                                        schema: schema.clone(),
+                                    },
+                                )
+                                .into_stream()
+                                .flatten();
+
+                                // Combine this with our oneshot channel so that the stream ends if the
+                                // oneshot is ever fired.
+                                let s = stream::unfold((rx, s.boxed()), |(rx, mut s)| async move {
+                                    let next = match future::select(rx, s.next()).await {
+                                        Either::Left(_) => None,
+                                        Either::Right((r, rx)) => r.map(|r| (r, rx)),
+                                    };
+                                    next.map(|(r, rx)| (r, (rx, s)))
+                                });
+
+                                // Once the stream ends, send the Complete message.
+                                let s = s.chain(
+                                    Reaction::ServerMessage(ServerMessage::Complete { id })
+                                        .to_stream(),
+                                );
+
+                                s.boxed()
+                            }
                         }
-
-                        // Go ahead and prune canceled stoppers before adding a new one.
-                        stoppers.retain(|_, tx| !tx.is_canceled());
-
-                        if config.max_in_flight_operations > 0
-                            && stoppers.len() >= config.max_in_flight_operations
-                        {
-                            // Too many in-flight operations. Just send back a validation error.
-                            return stream::iter(vec![
-                                Reaction::ServerMessage(ServerMessage::Error {
-                                    id: id.clone(),
-                                    payload: GraphQLError::ValidationError(vec![RuleError::new(
-                                        "Too many in-flight operations.",
-                                        &[],
-                                    )])
-                                    .into(),
-                                }),
-                                Reaction::ServerMessage(ServerMessage::Complete { id }),
-                            ])
-                            .boxed();
-                        }
-
-                        // Create a channel that we can use to cancel the operation.
-                        let (tx, rx) = oneshot::channel::<()>();
-                        stoppers.insert(id.clone(), tx);
-
-                        // Create the operation stream. This stream will emit Data and Error
-                        // messages, but will not emit Complete – that part is up to us.
-                        let s = Self::start(
-                            id.clone(),
-                            ExecutionParams {
-                                start_payload: payload,
-                                config: config.clone(),
-                                schema: schema.clone(),
-                            },
-                        )
-                        .into_stream()
-                        .flatten();
-
-                        // Combine this with our oneshot channel so that the stream ends if the
-                        // oneshot is ever fired.
-                        let s = stream::unfold((rx, s.boxed()), |(rx, mut s)| async move {
-                            let next = match future::select(rx, s.next()).await {
-                                Either::Left(_) => None,
-                                Either::Right((r, rx)) => r.map(|r| (r, rx)),
-                            };
-                            next.map(|(r, rx)| (r, (rx, s)))
-                        });
-
-                        // Once the stream ends, send the Complete message.
-                        let s = s.chain(
-                            Reaction::ServerMessage(ServerMessage::Complete { id }).to_stream(),
-                        );
-
-                        s.boxed()
                     }
                     ClientMessage::Stop { id } => {
                         stoppers.remove(&id);
                         stream::empty().boxed()
                     }
                     _ => stream::empty().boxed(),
-                }
+                };
+                (
+                    Self::Active {
+                        config,
+                        stoppers,
+                        schema,
+                    },
+                    reactions,
+                )
             }
+            Self::Terminated => (self, stream::empty().boxed()),
         }
     }
 
@@ -488,13 +485,22 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
     }
 }
 
+enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
+    Ready {
+        state: ConnectionState<S, I>,
+    },
+    HandlingMessage {
+        result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
+    },
+    Closed,
+}
+
 /// Implements the graphql-ws protocol. This is a sink for `TryInto<ClientMessage>` and a stream of
 /// `ServerMessage`.
 pub struct Connection<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     reactions: SelectAll<BoxStream<'static, Reaction<S>>>,
-    state: ConnectionState<S, I>,
-    is_closed: bool,
     stream_waker: Option<Waker>,
+    sink_state: ConnectionSinkState<S, I>,
 }
 
 impl<S, I> Connection<S, I>
@@ -514,9 +520,10 @@ where
     pub fn new(schema: S, init: I) -> Self {
         Self {
             reactions: SelectAll::new(),
-            state: ConnectionState::PreInit { init, schema },
-            is_closed: false,
             stream_waker: None,
+            sink_state: ConnectionSinkState::Ready {
+                state: ConnectionState::PreInit { init, schema },
+            },
         }
     }
 }
@@ -526,41 +533,63 @@ where
     T: TryInto<ClientMessage<S::ScalarValue>>,
     T::Error: Error,
     S: Schema,
-    I: Init<S::ScalarValue, S::Context>,
+    I: Init<S::ScalarValue, S::Context> + Send,
 {
     type Error = Infallible;
 
-    fn poll_ready(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Result<(), Self::Error>> {
-        // We're always ready for new messages.
-        Poll::Ready(Ok(()))
+    fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), Self::Error>> {
+        match &mut self.sink_state {
+            ConnectionSinkState::Ready { .. } => Poll::Ready(Ok(())),
+            ConnectionSinkState::HandlingMessage { ref mut result } => {
+                match Pin::new(result).poll(cx) {
+                    Poll::Ready((state, reactions)) => {
+                        self.reactions.push(reactions);
+                        self.sink_state = ConnectionSinkState::Ready { state };
+                        Poll::Ready(Ok(()))
+                    }
+                    Poll::Pending => Poll::Pending,
+                }
+            }
+            ConnectionSinkState::Closed => panic!("poll_ready called after close"),
+        }
     }
 
-    fn start_send(mut self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
-        let reactions = match item.try_into() {
-            Ok(msg) => self.state.handle_message(msg),
-            Err(e) => {
-                // If we weren't able to parse the message, send back an error.
-                Reaction::ServerMessage(ServerMessage::ConnectionError {
-                    payload: ConnectionErrorPayload {
-                        message: e.to_string(),
+    fn start_send(self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
+        let s = self.get_mut();
+        let state = &mut s.sink_state;
+        *state = match std::mem::replace(state, ConnectionSinkState::Closed) {
+            ConnectionSinkState::Ready { state } => {
+                match item.try_into() {
+                    Ok(msg) => ConnectionSinkState::HandlingMessage {
+                        result: state.handle_message(msg).boxed(),
                     },
-                })
-                .to_stream()
+                    Err(e) => {
+                        // If we weren't able to parse the message, send back an error.
+                        s.reactions.push(
+                            Reaction::ServerMessage(ServerMessage::ConnectionError {
+                                payload: ConnectionErrorPayload {
+                                    message: e.to_string(),
+                                },
+                            })
+                            .to_stream(),
+                        );
+                        ConnectionSinkState::Ready { state }
+                    }
+                }
             }
+            _ => panic!("start_send called when not ready"),
         };
-        self.reactions.push(reactions);
         Ok(())
     }
 
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Result<(), Self::Error>> {
-        // Flushing an item doesn't really have any meaning here. Just return okay.
-        Poll::Ready(Ok(()))
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), Self::Error>> {
+        <Self as Sink<T>>::poll_ready(self, cx)
     }
 
     fn poll_close(mut self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Result<(), Self::Error>> {
-        // Close the stream too. No need to wait for it though.
-        self.is_closed = true;
+        self.sink_state = ConnectionSinkState::Closed;
         if let Some(waker) = self.stream_waker.take() {
+            // Wake up the stream so it can close too.
             waker.wake();
         }
         Poll::Ready(Ok(()))
@@ -577,7 +606,7 @@ where
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         self.stream_waker = Some(cx.waker().clone());
 
-        if self.is_closed {
+        if let ConnectionSinkState::Closed = self.sink_state {
             return Poll::Ready(None);
         }
 
@@ -587,13 +616,6 @@ where
                 match Pin::new(&mut self.reactions).poll_next(cx) {
                     Poll::Ready(Some(reaction)) => match reaction {
                         Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
-                        Reaction::Activate { config, schema } => {
-                            self.state = ConnectionState::Active {
-                                config: Arc::new(config),
-                                stoppers: HashMap::new(),
-                                schema,
-                            }
-                        }
                         Reaction::EndStream => return Poll::Ready(None),
                     },
                     Poll::Ready(None) => {
@@ -942,5 +964,49 @@ mod test {
                 conn.next().await.unwrap()
             );
         }
+    }
+
+    #[tokio::test]
+    async fn test_slow_init() {
+        let mut conn = Connection::new(
+            new_test_schema(),
+            ConnectionConfig::new(Context(1)).with_keep_alive_interval(Duration::from_secs(0)),
+        );
+
+        conn.send(ClientMessage::ConnectionInit {
+            payload: Variables::default(),
+        })
+        .await
+        .unwrap();
+
+        // If we send the start message before the init is handled, we should still get results.
+        conn.send(ClientMessage::Start {
+            id: "foo".to_string(),
+            payload: StartPayload {
+                query: "{context}".to_string(),
+                variables: Variables::default(),
+                operation_name: None,
+            },
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
+
+        assert_eq!(
+            ServerMessage::Data {
+                id: "foo".to_string(),
+                payload: DataPayload {
+                    data: Value::Object(
+                        [("context", Value::Scalar(DefaultScalarValue::Int(1)))]
+                            .iter()
+                            .cloned()
+                            .collect()
+                    ),
+                    errors: vec![],
+                },
+            },
+            conn.next().await.unwrap()
+        );
     }
 }
