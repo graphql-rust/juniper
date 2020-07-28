@@ -888,9 +888,16 @@ mod tests_http_harness {
 
     impl HttpIntegration for TestWarpIntegration {
         fn get(&self, url: &str) -> TestResponse {
-            use percent_encoding::{utf8_percent_encode, QUERY_ENCODE_SET};
+            use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+            use url::Url;
 
-            let url: String = utf8_percent_encode(&url.replace("/?", ""), QUERY_ENCODE_SET)
+            /// https://url.spec.whatwg.org/#query-state
+            const QUERY_ENCODE_SET: &AsciiSet =
+                &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+
+            let url = Url::parse(&format!("http://localhost:3000{}", url)).expect("url to parse");
+
+            let url: String = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
                 .into_iter()
                 .collect::<Vec<_>>()
                 .join("");

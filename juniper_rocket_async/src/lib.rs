@@ -44,11 +44,10 @@ use std::io::Cursor;
 use rocket::{
     data::{self, FromData},
     http::{ContentType, RawStr, Status},
+    outcome::Outcome::{Failure, Forward, Success},
     request::{FormItems, FromForm, FromFormValue},
     response::{self, content, Responder, Response},
-    Data,
-    Outcome::{Failure, Forward, Success},
-    Request,
+    Data, Request,
 };
 
 use juniper::{
