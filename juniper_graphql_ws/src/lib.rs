@@ -2,7 +2,7 @@
 
 # juniper_graphql_ws
 
-This crate contains an implementation of the graphql-ws protocol, as used by Apollo.
+This crate contains an implementation of the [graphql-ws protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/263844b5c1a850c1e29814564eb62cb587e5eaaf/PROTOCOL.md), as used by Apollo.
 
 */
 
@@ -329,9 +329,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             Err(e) => {
                 return Reaction::ServerMessage(ServerMessage::Error {
                     id: id.clone(),
+                    // e only references data owned by params. The new ErrorPayload will continue to keep that data alive.
                     payload: unsafe { ErrorPayload::new_unchecked(Box::new(params.clone()), e) },
                 })
-                .to_stream()
+                .to_stream();
             }
         }
 
@@ -454,6 +455,7 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                             return Poll::Ready(Some(Reaction::ServerMessage(
                                 ServerMessage::Error {
                                     id: id.clone(),
+                                    // e only references data owned by params. The new ErrorPayload will continue to keep that data alive.
                                     payload: unsafe {
                                         ErrorPayload::new_unchecked(Box::new(params.clone()), e)
                                     },

@@ -6,7 +6,7 @@ license = "BSD-2-Clause"
 description = "Graphql-ws protocol implementation for Juniper"
 documentation = "https://docs.rs/juniper_graphql_ws"
 repository = "https://github.com/graphql-rust/juniper"
-keywords = ["graphql-ws"]
+keywords = ["graphql-ws", "juniper", "graphql", "apollo"]
 edition = "2018"
 
 [dependencies]
