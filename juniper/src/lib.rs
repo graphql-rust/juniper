@@ -186,8 +186,8 @@ pub use crate::{
         marker::{self, GraphQLUnion},
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{
-            GraphQLSubscriptionType, GraphQLSubscriptionValue, SubscriptionConnection,
-            SubscriptionCoordinator,
+            ExecutionOutput, GraphQLSubscriptionType, GraphQLSubscriptionValue,
+            SubscriptionConnection, SubscriptionCoordinator,
         },
     },
     validation::RuleError,
