@@ -555,11 +555,10 @@ pub mod subscriptions {
                                         let should_stop = state.should_stop.load(Ordering::Relaxed)
                                             || got_close_signal.load(Ordering::Relaxed);
                                         if !should_stop {
-                                            let mut response_text =
-                                                serde_json::to_string(&response)
-                                                .unwrap_or(
-                                                    "Error deserializing response".to_owned(),
-                                                );
+                                            let mut response_text = serde_json::to_string(
+                                                &response,
+                                            )
+                                            .unwrap_or("Error deserializing response".to_owned());
 
                                             response_text = format!(
                                                 r#"{{"type":"data","id":"{}","payload":{} }}"#,

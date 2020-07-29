@@ -25,7 +25,7 @@ pub struct ExecutionOutput<S> {
 impl<S> ExecutionOutput<S> {
     /// Creates execution output from data, with no errors.
     pub fn from_data(data: Value<S>) -> Self {
-        Self{
+        Self {
             data,
             errors: vec![],
         }
@@ -82,10 +82,7 @@ where
 ///
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
-pub trait SubscriptionConnection<S>:
-    futures::Stream<Item = ExecutionOutput<S>>
-{
-}
+pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> {}
 
 /// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.
 /// It should be used with [`GraphQLValue`] in order to implement [subscription][1] resolvers on
