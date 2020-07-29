@@ -467,10 +467,13 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                     ref id,
                     ref mut stream,
                 } => match Pin::new(stream).poll_next(cx) {
-                    Poll::Ready(Some((data, errors))) => {
+                    Poll::Ready(Some(output)) => {
                         return Poll::Ready(Some(Reaction::ServerMessage(ServerMessage::Data {
                             id: id.clone(),
-                            payload: DataPayload { data, errors },
+                            payload: DataPayload {
+                                data: output.data,
+                                errors: output.errors,
+                            },
                         })));
                     }
                     Poll::Ready(None) => {
