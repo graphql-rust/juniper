@@ -1,0 +1,17 @@
+[tasks.build-verbose]
+condition = { channels = ["nightly"] }
+
+[tasks.build-verbose.windows]
+condition = { channels = ["nightly"], env = { "TARGET" = "x86_64-pc-windows-msvc" } }
+
+[tasks.test-verbose]
+condition = { channels = ["nightly"] }
+
+[tasks.test-verbose.windows]
+condition = { channels = ["nightly"], env = { "TARGET" = "x86_64-pc-windows-msvc" } }
+
+[tasks.ci-coverage-flow]
+condition = { channels = ["nightly"] }
+
+[tasks.ci-coverage-flow.windows]
+disabled = true
