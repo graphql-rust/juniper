@@ -245,6 +245,7 @@ where
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
+        __juniper_span_trace!("rule_validation");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
@@ -257,6 +258,7 @@ where
     let operation = get_operation(&document, operation_name)?;
 
     {
+        __juniper_span_trace!("validate_input_values");
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
@@ -267,6 +269,7 @@ where
         }
     }
 
+    __juniper_span_trace!("execute_sync");
     execute_validated_query(&document, operation, root_node, variables, context)
 }
 
@@ -291,6 +294,7 @@ where
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
+        __juniper_span_trace!("rule_validation");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
@@ -306,6 +310,7 @@ where
     let operation = get_operation(&document, operation_name)?;
 
     {
+        __juniper_span_trace!("validate_input_values");
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
@@ -316,8 +321,11 @@ where
         }
     }
 
-    executor::execute_validated_query_async(&document, operation, root_node, variables, context)
-        .await
+    let f = executor::execute_validated_query_async(
+        &document, operation, root_node, variables, context,
+    );
+
+    __juniper_instrument_trace!(f, "execute").await
 }
 
 /// Resolve subscription into `ValuesStream`
@@ -383,7 +391,6 @@ where
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
-    __juniper_span_trace!("execute_sync");
     execute_sync(
         match format {
             IntrospectionFormat::All => INTROSPECTION_QUERY,
