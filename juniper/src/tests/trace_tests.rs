@@ -12,7 +12,7 @@ use crate::{
 // TODO: tracing feature needs to be enable when testing
 // cargo test --features tracing
 #[test]
-fn test_trace_execute_clean() {
+fn test_execute_sync_clean() {
     let doc = r#"
         {
             hero {
@@ -54,7 +54,7 @@ fn test_trace_execute_clean() {
 }
 
 #[test]
-fn test_trace_execute_with_error() {
+fn test_execute_sync_with_error() {
     let doc = r#"
         {
             super_hero {
