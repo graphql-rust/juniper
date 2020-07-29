@@ -427,12 +427,6 @@ pub mod subscriptions {
     use serde::{Deserialize, Serialize};
     use warp::ws::Message;
 
-    #[derive(Serialize)]
-    struct DataPayload<'a, S: ScalarValue> {
-        data: &'a Value<S>,
-        errors: &'a Vec<ExecutionError<S>>,
-    }
-
     /// Listen to incoming messages and do one of the following:
     ///  - execute subscription and return values from stream
     ///  - stop stream and close ws connection
@@ -556,16 +550,13 @@ pub mod subscriptions {
                                 };
 
                                 values_stream
-                                    .take_while(move |(data, errors)| {
+                                    .take_while(move |response| {
                                         let request_id = request_id.clone();
                                         let should_stop = state.should_stop.load(Ordering::Relaxed)
                                             || got_close_signal.load(Ordering::Relaxed);
                                         if !should_stop {
                                             let mut response_text =
-                                                serde_json::to_string(&DataPayload {
-                                                    data,
-                                                    errors,
-                                                })
+                                                serde_json::to_string(&response)
                                                 .unwrap_or(
                                                     "Error deserializing response".to_owned(),
                                                 );

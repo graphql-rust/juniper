@@ -1,4 +1,5 @@
 use futures::{future, stream};
+use serde::Serialize;
 
 use crate::{
     http::GraphQLRequest,
@@ -7,6 +8,29 @@ use crate::{
     Arguments, BoxFuture, DefaultScalarValue, ExecutionError, Executor, FieldError, Object,
     ScalarValue, Selection, Value, ValuesStream,
 };
+
+/// Represents the result of executing a GraphQL operation (after parsing and validating has been
+/// done).
+#[derive(Debug, Serialize)]
+pub struct ExecutionOutput<S> {
+    /// The output data.
+    pub data: Value<S>,
+
+    /// The errors that occurred. Note that the presence of errors does not mean there is no data.
+    /// The output can have both data and errors.
+    #[serde(bound(serialize = "S: ScalarValue"))]
+    pub errors: Vec<ExecutionError<S>>,
+}
+
+impl<S> ExecutionOutput<S> {
+    /// Creates execution output from data, with no errors.
+    pub fn from_data(data: Value<S>) -> Self {
+        Self{
+            data,
+            errors: vec![],
+        }
+    }
+}
 
 /// Global subscription coordinator trait.
 ///
@@ -59,7 +83,7 @@ where
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
 pub trait SubscriptionConnection<S>:
-    futures::Stream<Item = (Value<S>, Vec<ExecutionError<S>>)>
+    futures::Stream<Item = ExecutionOutput<S>>
 {
 }
 
