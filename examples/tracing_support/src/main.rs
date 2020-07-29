@@ -67,7 +67,7 @@ impl Query {
         }
     }
 
-    /// Fetch a URL and return the response body text.
+    /// Double the provided number.
     async fn double(x: i32) -> Result<i32, FieldError> {
         Ok(x * 2)
     }
