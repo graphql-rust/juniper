@@ -15,11 +15,10 @@ tracing = "0.1.17"
 ## Usage
 
 ```rust
-# extern crate futures;
 # extern crate juniper;
-# extern crate tokio;
-# extern crate tracing;
-# extern crate tracing_subscriber;
+extern crate tokio;
+extern crate tracing;
+extern crate tracing_subscriber;
 use juniper::{EmptyMutation, EmptySubscription, RootNode, graphql_object, Variables};
 
 #[derive(Clone, Copy, Debug)]
