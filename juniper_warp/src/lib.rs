@@ -49,7 +49,7 @@ use juniper::{
 };
 use std::{collections::HashMap, str, sync::Arc};
 use tokio::task;
-use warp::{body, filters::BoxedFilter, header, http, query, Filter};
+use warp::{body, filters::BoxedFilter, http, query, Filter};
 
 /// Make a filter for graphql queries/mutations.
 ///
@@ -142,10 +142,6 @@ where
         }
     };
     let post_json_filter = warp::post()
-        .and(header::exact_ignore_case(
-            "content-type",
-            "application/json",
-        ))
         .and(context_extractor.clone())
         .and(body::json())
         .and_then(handle_post_json_request);
@@ -164,10 +160,6 @@ where
         .then(|res| async { Ok::<_, warp::Rejection>(build_response(res)) })
     };
     let post_graphql_filter = warp::post()
-        .and(header::exact_ignore_case(
-            "content-type",
-            "application/graphql",
-        ))
         .and(context_extractor.clone())
         .and(body::bytes())
         .and_then(handle_post_graphql_request);
@@ -233,10 +225,6 @@ where
         .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
     };
     let post_json_filter = warp::post()
-        .and(header::exact_ignore_case(
-            "content-type",
-            "application/json",
-        ))
         .and(context_extractor.clone())
         .and(body::json())
         .and_then(handle_post_json_request);
@@ -259,10 +247,6 @@ where
         .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
     };
     let post_graphql_filter = warp::post()
-        .and(header::exact_ignore_case(
-            "content-type",
-            "application/graphql",
-        ))
         .and(context_extractor.clone())
         .and(body::bytes())
         .and_then(handle_post_graphql_request);
@@ -913,7 +897,7 @@ mod tests_http_harness {
             self.make_request(
                 warp::test::request()
                     .method("POST")
-                    .header("content-type", "application/json")
+                    .header("content-type", "application/json; charset=utf-8")
                     .path(url)
                     .body(body),
             )
@@ -923,7 +907,7 @@ mod tests_http_harness {
             self.make_request(
                 warp::test::request()
                     .method("POST")
-                    .header("content-type", "application/graphql")
+                    .header("content-type", "application/graphql; charset=utf-8")
                     .path(url)
                     .body(body),
             )

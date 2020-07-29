@@ -1,5 +1,3 @@
-#![feature(decl_macro, proc_macro_hygiene)]
-
 use juniper::{
     tests::fixtures::starwars::{model::Database, schema::Query},
     EmptyMutation, EmptySubscription, RootNode,
