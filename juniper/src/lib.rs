@@ -369,6 +369,7 @@ where
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
+    __juniper_span_trace!("execute_sync");
     execute_sync(
         match format {
             IntrospectionFormat::All => INTROSPECTION_QUERY,

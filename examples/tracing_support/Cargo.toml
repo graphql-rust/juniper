@@ -1,0 +1,14 @@
+[package]
+name = "tracing_support"
+version = "0.1.0"
+authors = ["Christian Legnitto <christian.legnitto@robinhood.com>"]
+edition = "2018"
+publish = false
+
+[dependencies]
+tracing = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing" }
+tracing-subscriber = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing" }
+# Note instead of a path you would use the proper Juniper version in your own
+# project.
+juniper = { path = "../../juniper", features = ["tracing"] }
+tokio = { version = "0.2.22", features = ["rt-core", "macros", "blocking"] }
