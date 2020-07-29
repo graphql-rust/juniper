@@ -419,10 +419,7 @@ pub mod subscriptions {
 
     use anyhow::anyhow;
     use futures::{channel::mpsc, Future, StreamExt as _, TryFutureExt as _, TryStreamExt as _};
-    use juniper::{
-        http::GraphQLRequest, ExecutionError, InputValue, ScalarValue,
-        SubscriptionCoordinator as _, Value,
-    };
+    use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
     use juniper_subscriptions::Coordinator;
     use serde::{Deserialize, Serialize};
     use warp::ws::Message;
