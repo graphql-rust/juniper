@@ -245,7 +245,7 @@ where
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
         use futures::future;
-        future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
+        Box::pin(future::ready(self.resolve(info, selection_set, executor)))
     }
 }
 
