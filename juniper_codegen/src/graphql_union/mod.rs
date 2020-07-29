@@ -472,7 +472,7 @@ impl ToTokens for UnionDefinition {
                                 { #expr },
                                 executor.context()
                             );
-                            return ::juniper::futures::future::FutureExt::boxed(async move {
+                            return Box::pin(async move {
                                 match res? {
                                     Some((ctx, r)) => {
                                         let subexec = executor.replaced_context(ctx);
