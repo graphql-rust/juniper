@@ -59,6 +59,14 @@ impl Query {
         }]
     }
 
+    fn bob() -> User {
+        User {
+            id: 1,
+            kind: UserKind::Admin,
+            name: "Bob".into(),
+        }
+    }
+
     /// Fetch a URL and return the response body text.
     async fn double(x: i32) -> Result<i32, FieldError> {
         Ok(x * 2)
@@ -104,6 +112,9 @@ async fn main() {
     let (_, _errors) = juniper::execute(query, None, &root, &vars, &ctx)
         .instrument(trace_span!("doubling", "{}", 42))
         .await
-        .map_err(|e| format!("{:?}", e))
         .unwrap();
+
+    // You can also trace sync execution.
+    let query = "{ bob { name } }";
+    let (_, _errors) = juniper::execute_sync(query, None, &root, &vars, &ctx).unwrap();
 }
