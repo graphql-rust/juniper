@@ -10,6 +10,7 @@ This feature is off by default and can be enabled via the `tracing` feature.
 [dependencies]
 juniper = { version = "0.14.2", features = ["default", "tracing"]}
 tracing = "0.1.17"
+tracing-subscriber = "0.2.9"
 ```
 
 ## Usage
