@@ -37,7 +37,6 @@ Check the LICENSE file for details.
 */
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket_async/0.2.0")]
-#![feature(decl_macro, proc_macro_hygiene)]
 
 use std::io::Cursor;
 
@@ -152,8 +151,6 @@ impl GraphQLResponse {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(decl_macro, proc_macro_hygiene)]
-    /// #
     /// # extern crate juniper;
     /// # extern crate juniper_rocket_async;
     /// # extern crate rocket;

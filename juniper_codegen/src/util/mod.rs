@@ -880,8 +880,7 @@ impl GraphQLTypeDefiniton {
                                     Err(e) => Err(e),
                                 }
                             };
-                            use ::juniper::futures::future;
-                            future::FutureExt::boxed(f)
+                            Box::pin(f)
                         },
                     )
                 } else {
@@ -908,7 +907,7 @@ impl GraphQLTypeDefiniton {
                                 Err(e) => Err(e),
                             };
                             use ::juniper::futures::future;
-                            future::FutureExt::boxed(future::ready(v))
+                            Box::pin(future::ready(v))
                         )
                     };
 
@@ -1445,7 +1444,7 @@ impl GraphQLTypeDefiniton {
                 ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#scalar>> {
                     use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
-                    future::FutureExt::boxed(future::ready(v))
+                    Box::pin(future::ready(v))
                 }
             }
         );
