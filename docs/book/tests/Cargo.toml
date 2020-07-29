@@ -6,12 +6,13 @@ authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 build = "build.rs"
 
 [dependencies]
-juniper = { path = "../../../juniper" }
+juniper = { path = "../../../juniper", features = ["default", "tracing"] }
 juniper_iron = { path = "../../../juniper_iron" }
 juniper_subscriptions = { path = "../../../juniper_subscriptions" }
 
 derive_more = "0.99"
 futures = "0.3"
+tokio = { version = "0.2", features = ["rt-core", "blocking", "stream", "rt-util", "macros"] }
 iron = "0.5"
 mount = "0.4"
 skeptic = "0.13"
@@ -19,9 +20,8 @@ serde_json = "1.0"
 tokio = { version = "0.2", features = ["blocking", "macros", "rt-core", "rt-util", "stream"] }
 uuid = "0.8"
 
-tracing = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing", optional = true }
-tracing-subscriber = "0.2.9"
-tracing-log = "0.1.1"
+tracing = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing"}
+tracing-subscriber = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing"}
 
 [build-dependencies]
 skeptic = "0.13"

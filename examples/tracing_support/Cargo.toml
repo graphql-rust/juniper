@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 tracing = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing" }
-tracing-subscriber = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing" }
+tracing-subscriber = { git = "https://github.com/tokio-rs/tracing.git", branch = "davidbarsky/add-instrument-trait-to-tracing"}
 # Note instead of a path you would use the proper Juniper version in your own
 # project.
 juniper = { path = "../../juniper", features = ["tracing"] }
