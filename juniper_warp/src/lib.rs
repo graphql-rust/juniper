@@ -393,224 +393,103 @@ fn playground_response(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use std::{
-        collections::HashMap,
-        sync::{
-            atomic::{AtomicBool, Ordering},
-            Arc,
+    use juniper::{
+        futures::{
+            future::{self, Either},
+            sink::SinkExt,
+            stream::StreamExt,
         },
+        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
+    use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
+    use std::{convert::Infallible, fmt, sync::Arc};
 
-    use anyhow::anyhow;
-    use futures::{channel::mpsc, Future, StreamExt as _, TryFutureExt as _, TryStreamExt as _};
-    use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
-    use juniper_subscriptions::Coordinator;
-    use serde::{Deserialize, Serialize};
-    use warp::ws::Message;
+    struct Message(warp::ws::Message);
 
-    /// Listen to incoming messages and do one of the following:
-    ///  - execute subscription and return values from stream
-    ///  - stop stream and close ws connection
-    #[allow(dead_code)]
-    pub fn graphql_subscriptions<Query, Mutation, Subscription, CtxT, S>(
-        websocket: warp::ws::WebSocket,
-        coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, CtxT, S>>,
-        context: CtxT,
-    ) -> impl Future<Output = Result<(), anyhow::Error>> + Send
-    where
-        Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
-        Subscription::TypeInfo: Send + Sync,
-        CtxT: Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-    {
-        let (sink_tx, sink_rx) = websocket.split();
-        let (ws_tx, ws_rx) = mpsc::unbounded();
-        tokio::task::spawn(
-            ws_rx
-                .take_while(|v: &Option<_>| futures::future::ready(v.is_some()))
-                .map(|x| x.unwrap())
-                .forward(sink_tx),
-        );
+    impl<S: ScalarValue> std::convert::TryFrom<Message> for ClientMessage<S> {
+        type Error = serde_json::Error;
 
-        let context = Arc::new(context);
-        let got_close_signal = Arc::new(AtomicBool::new(false));
-        let got_close_signal2 = got_close_signal.clone();
-
-        struct SubscriptionState {
-            should_stop: AtomicBool,
+        fn try_from(msg: Message) -> serde_json::Result<Self> {
+            serde_json::from_slice(msg.0.as_bytes())
         }
-        let subscription_states = HashMap::<String, Arc<SubscriptionState>>::new();
-
-        sink_rx
-            .map_err(move |e| {
-                got_close_signal2.store(true, Ordering::Relaxed);
-                anyhow!("Websocket error: {}", e)
-            })
-            .try_fold(subscription_states, move |mut subscription_states, msg| {
-                let coordinator = coordinator.clone();
-                let context = context.clone();
-                let got_close_signal = got_close_signal.clone();
-                let ws_tx = ws_tx.clone();
-
-                async move {
-                    if msg.is_close() {
-                        return Ok(subscription_states);
-                    }
-
-                    let msg = msg
-                        .to_str()
-                        .map_err(|_| anyhow!("Non-text messages are not accepted"))?;
-                    let request: WsPayload<S> = serde_json::from_str(msg)
-                        .map_err(|e| anyhow!("Invalid WsPayload: {}", e))?;
-
-                    match request.type_name.as_str() {
-                        "connection_init" => {}
-                        "start" => {
-                            if got_close_signal.load(Ordering::Relaxed) {
-                                return Ok(subscription_states);
-                            }
-
-                            let request_id = request.id.clone().unwrap_or("1".to_owned());
-
-                            if let Some(existing) = subscription_states.get(&request_id) {
-                                existing.should_stop.store(true, Ordering::Relaxed);
-                            }
-                            let state = Arc::new(SubscriptionState {
-                                should_stop: AtomicBool::new(false),
-                            });
-                            subscription_states.insert(request_id.clone(), state.clone());
-
-                            let ws_tx = ws_tx.clone();
-
-                            if let Some(ref payload) = request.payload {
-                                if payload.query.is_none() {
-                                    return Err(anyhow!("Query not found"));
-                                }
-                            } else {
-                                return Err(anyhow!("Payload not found"));
-                            }
-
-                            tokio::task::spawn(async move {
-                                let payload = request.payload.unwrap();
-
-                                let graphql_request = GraphQLRequest::<S>::new(
-                                    payload.query.unwrap(),
-                                    None,
-                                    payload.variables,
-                                );
-
-                                let values_stream = match coordinator
-                                    .subscribe(&graphql_request, &context)
-                                    .await
-                                {
-                                    Ok(s) => s,
-                                    Err(err) => {
-                                        let _ =
-                                            ws_tx.unbounded_send(Some(Ok(Message::text(format!(
-                                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
-                                                request_id,
-                                                serde_json::ser::to_string(&err).unwrap_or(
-                                                    "Error deserializing GraphQLError".to_owned()
-                                                )
-                                            )))));
-
-                                        let close_message = format!(
-                                            r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                            request_id
-                                        );
-                                        let _ = ws_tx
-                                            .unbounded_send(Some(Ok(Message::text(close_message))));
-                                        // close channel
-                                        let _ = ws_tx.unbounded_send(None);
-                                        return;
-                                    }
-                                };
-
-                                values_stream
-                                    .take_while(move |response| {
-                                        let request_id = request_id.clone();
-                                        let should_stop = state.should_stop.load(Ordering::Relaxed)
-                                            || got_close_signal.load(Ordering::Relaxed);
-                                        if !should_stop {
-                                            let mut response_text = serde_json::to_string(
-                                                &response,
-                                            )
-                                            .unwrap_or("Error deserializing response".to_owned());
-
-                                            response_text = format!(
-                                                r#"{{"type":"data","id":"{}","payload":{} }}"#,
-                                                request_id, response_text
-                                            );
-
-                                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                                response_text,
-                                            ))));
-                                        }
-
-                                        async move { !should_stop }
-                                    })
-                                    .for_each(|_| async {})
-                                    .await;
-                            });
-                        }
-                        "stop" => {
-                            let request_id = request.id.unwrap_or("1".to_owned());
-                            if let Some(existing) = subscription_states.get(&request_id) {
-                                existing.should_stop.store(true, Ordering::Relaxed);
-                                subscription_states.remove(&request_id);
-                            }
-
-                            let close_message = format!(
-                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                request_id
-                            );
-                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_message))));
-
-                            // close channel
-                            let _ = ws_tx.unbounded_send(None);
-                        }
-                        _ => {}
-                    }
-
-                    Ok(subscription_states)
-                }
-            })
-            .map_ok(|_| ())
     }
 
-    #[derive(Deserialize)]
-    #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
-    struct WsPayload<S>
+    /// Errors that can happen while serving a connection.
+    #[derive(Debug)]
+    pub enum Error {
+        /// Errors that can happen in Warp while serving a connection.
+        Warp(warp::Error),
+
+        /// Errors that can happen while serializing outgoing messages. Note that errors that occur
+        /// while deserializing internal messages are handled internally by the protocol.
+        Serde(serde_json::Error),
+    }
+
+    impl fmt::Display for Error {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::Warp(e) => write!(f, "warp error: {}", e),
+                Self::Serde(e) => write!(f, "serde error: {}", e),
+            }
+        }
+    }
+
+    impl std::error::Error for Error {}
+
+    impl From<warp::Error> for Error {
+        fn from(err: warp::Error) -> Self {
+            Self::Warp(err)
+        }
+    }
+
+    impl From<Infallible> for Error {
+        fn from(_err: Infallible) -> Self {
+            unreachable!()
+        }
+    }
+
+    /// Serves the graphql-ws protocol over a WebSocket connection.
+    ///
+    /// The `init` argument is used to provide the context and additional configuration for
+    /// connections. This can be a `juniper_graphql_ws::ConnectionConfig` if the context and
+    /// configuration are already known, or it can be a closure that gets executed asynchronously
+    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
+    /// authentication based on the parameters provided by the client.
+    pub async fn serve_graphql_ws<Query, Mutation, Subscription, CtxT, S, I>(
+        websocket: warp::ws::WebSocket,
+        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+    ) -> Result<(), Error>
     where
-        S: ScalarValue + Send + Sync,
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
     {
-        id: Option<String>,
-        #[serde(rename(deserialize = "type"))]
-        type_name: String,
-        payload: Option<GraphQLPayload<S>>,
-    }
+        let (ws_tx, ws_rx) = websocket.split();
+        let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split();
 
-    #[derive(Debug, Deserialize)]
-    #[serde(bound = "InputValue<S>: Deserialize<'de>")]
-    struct GraphQLPayload<S>
-    where
-        S: ScalarValue + Send + Sync,
-    {
-        variables: Option<InputValue<S>>,
-        extensions: Option<HashMap<String, String>>,
-        #[serde(rename(deserialize = "operationName"))]
-        operaton_name: Option<String>,
-        query: Option<String>,
-    }
+        let ws_rx = ws_rx.map(|r| r.map(|msg| Message(msg)));
+        let s_rx = s_rx.map(|msg| {
+            serde_json::to_string(&msg)
+                .map(|t| warp::ws::Message::text(t))
+                .map_err(|e| Error::Serde(e))
+        });
 
-    #[derive(Serialize)]
-    struct Output {
-        data: String,
-        variables: String,
+        match future::select(
+            ws_rx.forward(s_tx.sink_err_into()),
+            s_rx.forward(ws_tx.sink_err_into()),
+        )
+        .await
+        {
+            Either::Left((r, _)) => r.map_err(|e| e.into()),
+            Either::Right((r, _)) => r,
+        }
     }
 }
 

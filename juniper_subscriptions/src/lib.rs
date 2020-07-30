@@ -222,19 +222,25 @@ where
                 }
 
                 if filled_count == obj_len {
+                    let mut errors = vec![];
                     filled_count = 0;
                     let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
                     let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
                     let ready_vec_iterator = ready_vec.into_iter().map(|el| {
                         let (name, val) = el.unwrap();
-                        if let Ok(value) = val {
-                            (name, value)
-                        } else {
-                            (name, Value::Null)
+                        match val {
+                            Ok(value) => (name, value),
+                            Err(e) => {
+                                errors.push(e);
+                                (name, Value::Null)
+                            }
                         }
                     });
                     let obj = Object::from_iter(ready_vec_iterator);
-                    Poll::Ready(Some(ExecutionOutput::from_data(Value::Object(obj))))
+                    Poll::Ready(Some(ExecutionOutput {
+                        data: Value::Object(obj),
+                        errors,
+                    }))
                 } else {
                     Poll::Pending
                 }
