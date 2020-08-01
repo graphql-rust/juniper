@@ -126,7 +126,6 @@ pub enum ServerMessage<S: ScalarValue> {
         id: String,
     },
     /// ConnectionKeepAlive is sent periodically after accepting a connection.
-    #[serde(rename = "ka")]
     ConnectionKeepAlive,
 }
 
@@ -185,7 +184,7 @@ mod test {
 
         assert_eq!(
             serde_json::to_string(&ServerMessage::ConnectionKeepAlive).unwrap(),
-            r##"{"type":"ka"}"##,
+            r##"{"type":"connection_keep_alive"}"##,
         );
     }
 }
