@@ -39,8 +39,8 @@ To get started quickly and get a feel for Juniper, check out the
 For specific information about macros, types and the Juniper api, the
 [API Reference][docsrs] is the best place to look.
 
-You can also check out [src/tests/schema.rs][test_schema_rs] to see a complex
-schema including polymorphism with traits and interfaces.
+You can also check out the [Star Wars schema][test_schema_rs] to see a complex
+example including polymorphism with traits and interfaces.
 For an example of web framework integration,
 see the [actix][actix_examples], [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples], and [warp][warp_examples] examples folders.
 
@@ -94,7 +94,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [graphql_spec]: http://facebook.github.io/graphql
 [schema_language]: https://graphql.org/learn/schema/#type-language
 [schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
-[test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
+[test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/fixtures/starwars/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
 [actix_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_actix/examples
 [hyper_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_hyper/examples
