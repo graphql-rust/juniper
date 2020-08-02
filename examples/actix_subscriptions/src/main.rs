@@ -1,4 +1,4 @@
-use std::{env, pin::Pin, sync::Arc, time::Duration};
+use std::{env, pin::Pin, time::Duration};
 
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
@@ -9,7 +9,7 @@ use juniper::{
     DefaultScalarValue, EmptyMutation, FieldError, RootNode,
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
-use juniper_subscriptions::Coordinator;
+use juniper_graphql_ws::ConnectionConfig;
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 
@@ -32,13 +32,12 @@ async fn graphql(
 
 struct Subscription;
 
-// TODO: creating this because I can't figure how to return the traits from juniper::tests::fixtures::starwars
-// is this related to not interfaces not being migrated?
 struct RandomHuman {
     id: String,
     name: String,
 }
 
+// TODO: remove this when async interfaces are merged
 #[juniper::graphql_object(Context = Database)]
 impl RandomHuman {
     fn id(&self) -> &str {
@@ -60,7 +59,6 @@ impl Subscription {
     ) -> Pin<Box<dyn Stream<Item = Result<RandomHuman, FieldError>> + Send>> {
         let mut counter = 0;
 
-        // TODO: can this be done without cloning?
         let context = (*context).clone();
 
         use rand::{rngs::StdRng, Rng, SeedableRng};
@@ -94,21 +92,16 @@ impl Subscription {
 async fn subscriptions(
     req: HttpRequest,
     stream: web::Payload,
-    coordinator: web::Data<
-        Arc<
-            Coordinator<
-                'static,
-                Query,
-                EmptyMutation<Database>,
-                Subscription,
-                Database,
-                DefaultScalarValue,
-            >,
-        >,
-    >,
+    schema: web::Data<Schema>,
 ) -> Result<HttpResponse, Error> {
     let context = Database::new();
-    subscriptions_handler(req, stream, Arc::clone(&coordinator), context).await
+    let schema = schema.into_inner();
+    let config = ConnectionConfig::new(context);
+    // set the keep alive interval to 15 secs so that it doesn't timeout in playground
+    // playground has a hard-coded timeout set to 20 secs
+    let config = config.with_keep_alive_interval(Duration::from_secs(15));
+
+    subscriptions_handler(req, stream, schema, config).await
 }
 
 #[actix_rt::main]
@@ -116,12 +109,9 @@ async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();
 
-    let coordinator = Arc::new(Coordinator::new(schema()));
-
     HttpServer::new(move || {
         App::new()
             .data(schema())
-            .data(Arc::clone(&coordinator))
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .wrap(
