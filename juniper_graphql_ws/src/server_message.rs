@@ -21,6 +21,7 @@ pub struct DataPayload<S> {
 
     /// The errors that have occurred during execution. Note that parse and validation errors are
     /// not included here. They are sent via Error messages.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<ExecutionError<S>>,
 }
 
@@ -163,7 +164,7 @@ mod test {
                 },
             })
             .unwrap(),
-            r##"{"type":"data","id":"foo","payload":{"data":null,"errors":[]}}"##,
+            r##"{"type":"data","id":"foo","payload":{"data":null}}"##,
         );
 
         assert_eq!(
