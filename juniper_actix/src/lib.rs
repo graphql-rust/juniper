@@ -327,7 +327,7 @@ pub mod subscriptions {
         I: Init<S, CtxT> + Send,
     {
         fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-            let msg = msg.map(|r| Message(r)).map_err(|e| Error::Actix(e));
+            let msg = msg.map(|r| Message(r));
 
             match msg {
                 Ok(msg) => {
@@ -403,7 +403,7 @@ pub mod subscriptions {
             msg: ServerMessageWrapper<S>,
             ctx: &mut ws::WebsocketContext<Self>,
         ) -> Self::Result {
-            let msg = serde_json::to_string(&msg.message).map_err(|e| Error::Serde(e));
+            let msg = serde_json::to_string(&msg.message);
 
             match msg {
                 Ok(msg) => {
@@ -411,7 +411,7 @@ pub mod subscriptions {
                 }
                 Err(e) => {
                     // TODO: log the event when tracing is merged
-                    ctx.text(format!("error: {}", e));
+                    ctx.text(format!("error serializing response: {}", e));
                 }
             }
         }
@@ -438,42 +438,33 @@ pub mod subscriptions {
                     serde_json::from_slice(text.as_bytes()).map_err(|e| Error::Serde(e))
                 }
                 ws::Message::Close(_) => Ok(ClientMessage::ConnectionTerminate),
-                _ => Err(Error::UnknownMessage),
+                _ => Err(Error::UnexpectedClientMessage),
             }
         }
     }
 
-    /// Errors that can happen while serving a connection.
+    /// Errors that can happen while handling client messages
     #[derive(Debug)]
     enum Error {
-        /// Errors that can happen in Actix while serving a connection.
-        Actix(ws::ProtocolError),
-
-        /// Errors that can happen while serializing outgoing messages. Note that errors that occur
-        /// while deserializing internal messages are handled internally by the protocol.
+        /// Errors that can happen while deserializing client messages
         Serde(serde_json::Error),
 
-        /// Error for messages that are not handled
-        UnknownMessage,
+        /// Error for unexpected client messages
+        UnexpectedClientMessage,
     }
 
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Self::Actix(e) => write!(f, "actix error: {}", e),
                 Self::Serde(e) => write!(f, "serde error: {}", e),
-                Self::UnknownMessage => write!(f, "unknown message"),
+                Self::UnexpectedClientMessage => {
+                    write!(f, "unexpected message received from the client")
+                }
             }
         }
     }
 
     impl std::error::Error for Error {}
-
-    impl From<ws::ProtocolError> for Error {
-        fn from(err: ws::ProtocolError) -> Self {
-            Self::Actix(err)
-        }
-    }
 }
 
 #[cfg(test)]
