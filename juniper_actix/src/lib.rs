@@ -335,8 +335,9 @@ pub mod subscriptions {
 
                     async move {
                         let mut tx = tx.lock().await;
-                        // Infallible - this should be safe to unwrap
-                        tx.send(msg).await.unwrap();
+                        tx.send(msg)
+                            .await
+                            .expect("Infallible: this should not happen");
                     }
                     .into_actor(self)
                     .wait(ctx);
@@ -458,7 +459,7 @@ pub mod subscriptions {
             match self {
                 Self::Serde(e) => write!(f, "serde error: {}", e),
                 Self::UnexpectedClientMessage => {
-                    write!(f, "unexpected message received from the client")
+                    write!(f, "unexpected message received from client")
                 }
             }
         }
