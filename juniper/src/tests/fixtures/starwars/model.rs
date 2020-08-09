@@ -29,6 +29,7 @@ pub trait Droid: Character {
     fn primary_function(&self) -> &Option<String>;
 }
 
+#[derive(Clone)]
 struct HumanData {
     id: String,
     name: String,
@@ -38,6 +39,7 @@ struct HumanData {
     home_planet: Option<String>,
 }
 
+#[derive(Clone)]
 struct DroidData {
     id: String,
     name: String,
@@ -101,7 +103,7 @@ impl Droid for DroidData {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Database {
     humans: HashMap<String, HumanData>,
     droids: HashMap<String, DroidData>,
