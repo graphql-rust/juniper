@@ -343,8 +343,8 @@ pub mod subscriptions {
                     .wait(ctx);
                 }
                 Err(_) => {
+                    // TODO: trace
                     // ignore the message if there's a transport error
-                    // TODO: log the event when tracing is merged
                 }
             }
         }
@@ -379,7 +379,12 @@ pub mod subscriptions {
             }
             .into_actor(self);
 
+            // TODO: trace
             ctx.spawn(fut);
+        }
+
+        fn stopped(&mut self, _: &mut Self::Context) {
+            // TODO: trace
         }
     }
 
@@ -411,8 +416,13 @@ pub mod subscriptions {
                     ctx.text(msg);
                 }
                 Err(e) => {
-                    // TODO: log the event when tracing is merged
-                    ctx.text(format!("error serializing response: {}", e));
+                    let reason = ws::CloseReason {
+                        code: ws::CloseCode::Error,
+                        description: Some(format!("error serializing response: {}", e)),
+                    };
+
+                    // TODO: trace
+                    ctx.close(Some(reason));
                 }
             }
         }
