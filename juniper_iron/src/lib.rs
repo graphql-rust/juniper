@@ -47,7 +47,7 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 #         Ok(&self.name)
 #     }
 #
-#     fn friends(context: &Database) -> FieldResult<Vec<&User>> {
+#     fn friends(&self, context: &Database) -> FieldResult<Vec<&User>> {
 #         Ok(self.friend_ids.iter()
 #             .filter_map(|id| executor.context().users.get(id))
 #             .collect())

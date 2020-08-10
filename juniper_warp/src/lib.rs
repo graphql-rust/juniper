@@ -421,7 +421,7 @@ pub mod subscriptions {
         Warp(warp::Error),
 
         /// Errors that can happen while serializing outgoing messages. Note that errors that occur
-        /// while deserializing internal messages are handled internally by the protocol.
+        /// while deserializing incoming messages are handled internally by the protocol.
         Serde(serde_json::Error),
     }
 

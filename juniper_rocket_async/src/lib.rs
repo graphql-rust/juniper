@@ -41,7 +41,7 @@ Check the LICENSE file for details.
 use std::io::Cursor;
 
 use rocket::{
-    data::{self, FromData},
+    data::{self, FromData, ToByteUnit},
     http::{ContentType, RawStr, Status},
     outcome::Outcome::{Failure, Forward, Success},
     request::{FormItems, FromForm, FromFormValue},
@@ -305,7 +305,7 @@ where
 
         Box::pin(async move {
             let mut body = String::new();
-            let mut reader = data.open().take(BODY_LIMIT);
+            let mut reader = data.open(BODY_LIMIT.bytes());
             if let Err(e) = reader.read_to_string(&mut body).await {
                 return Failure((Status::InternalServerError, format!("{:?}", e)));
             }
