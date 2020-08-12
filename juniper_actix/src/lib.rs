@@ -767,3 +767,101 @@ mod tests {
         run_http_test_suite(&TestActixWebIntegration);
     }
 }
+
+#[cfg(feature = "subscriptions")]
+#[cfg(test)]
+mod subscription_tests {
+    use std::time::Duration;
+
+    use actix_web::{test, web, App, Error, HttpRequest, HttpResponse};
+    use actix_web_actors::ws;
+    use async_trait::async_trait;
+    use futures::{SinkExt, StreamExt};
+    use tokio::time::timeout;
+
+    use super::subscriptions::subscriptions_handler;
+    use juniper::{
+        http::tests::{run_ws_test_suite, WsIntegration, WsIntegrationMessage},
+        tests::fixtures::starwars::{model::Database, schema::Query, schema::Subscription},
+        EmptyMutation,
+    };
+    use juniper_graphql_ws::ConnectionConfig;
+
+    #[derive(Default)]
+    struct TestActixWsIntegration;
+
+    #[async_trait(?Send)]
+    impl WsIntegration for TestActixWsIntegration {
+        async fn run(&self, operations: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error> {
+            let mut server = test::start(|| {
+                App::new()
+                    .data(Schema::new(
+                        Query,
+                        EmptyMutation::<Database>::new(),
+                        Subscription,
+                    ))
+                    .service(web::resource("/subscriptions").to(subscriptions))
+            });
+            let mut framed = server.ws_at("/subscriptions").await.unwrap();
+
+            for operation in &operations {
+                match operation {
+                    WsIntegrationMessage::Send(message) => {
+                        framed
+                            .send(ws::Message::Text(message.to_owned()))
+                            .await
+                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+                    }
+                    WsIntegrationMessage::Expect(message, message_timeout) => {
+                        let frame = timeout(Duration::from_millis(*message_timeout), framed.next())
+                            .await
+                            .map_err(|_| anyhow::anyhow!("Timed-out waiting for message"))?
+                            .ok_or_else(|| anyhow::anyhow!("Empty message received"))?
+                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+
+                        match frame {
+                            ws::Frame::Text(ref bytes) => {
+                                let expected_value =
+                                    serde_json::from_str::<serde_json::Value>(message)
+                                        .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+
+                                let value: serde_json::Value = serde_json::from_slice(bytes)
+                                    .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+
+                                if value != expected_value {
+                                    return Err(anyhow::anyhow!(
+                                        "Expected message: {}. Received message: {}",
+                                        expected_value,
+                                        value,
+                                    ));
+                                }
+                            }
+                            _ => return Err(anyhow::anyhow!("Received non-text frame")),
+                        }
+                    }
+                }
+            }
+
+            Ok(())
+        }
+    }
+
+    type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+
+    async fn subscriptions(
+        req: HttpRequest,
+        stream: web::Payload,
+        schema: web::Data<Schema>,
+    ) -> Result<HttpResponse, Error> {
+        let context = Database::new();
+        let schema = schema.into_inner();
+        let config = ConnectionConfig::new(context);
+
+        subscriptions_handler(req, stream, schema, config).await
+    }
+
+    #[actix_rt::test]
+    async fn test_actix_ws_integration() {
+        run_ws_test_suite(&mut TestActixWsIntegration::default()).await;
+    }
+}

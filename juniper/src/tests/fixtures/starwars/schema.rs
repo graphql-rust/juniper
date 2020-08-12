@@ -2,8 +2,11 @@
 
 use crate::{
     executor::Context,
+    graphql_subscription,
     tests::fixtures::starwars::model::{Character, Database, Droid, Episode, Human},
+    GraphQLObject,
 };
+use std::pin::Pin;
 
 impl Context for Database {}
 
@@ -128,5 +131,34 @@ impl Query {
     )))]
     fn hero(database: &Database, episode: Option<Episode>) -> Option<&dyn Character> {
         Some(database.get_hero(episode).as_character())
+    }
+}
+
+#[derive(GraphQLObject)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
+#[derive(Clone)]
+/// A humanoid creature in the Star Wars universe.
+/// TODO: remove this when async interfaces are merged
+struct HumanSubscription {
+    id: String,
+    name: String,
+    home_planet: String,
+}
+
+pub struct Subscription;
+
+type HumanStream = Pin<Box<dyn futures::Stream<Item = HumanSubscription> + Send>>;
+
+#[graphql_subscription(context = Database)]
+/// Super basic subscription fixture
+impl Subscription {
+    async fn async_human() -> HumanStream {
+        Box::pin(futures::stream::once(async {
+            HumanSubscription {
+                id: "stream id".to_string(),
+                name: "stream name".to_string(),
+                home_planet: "stream home planet".to_string(),
+            }
+        }))
     }
 }

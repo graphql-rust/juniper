@@ -356,6 +356,7 @@ where
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {
+    use async_trait::async_trait;
     use serde_json::{self, Value as Json};
 
     /// Normalized response content we expect to get back from
@@ -582,5 +583,171 @@ pub mod tests {
         let resp = integration.post_graphql("/", r#"{hero{name}"#);
 
         assert_eq!(resp.status_code, 400);
+    }
+
+    /// Normalized way to make requests to the WebSocket framework integration we are testing.
+    #[async_trait(?Send)]
+    pub trait WsIntegration {
+        /// Runs a test with the given messages
+        async fn run(&self, messages: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error>;
+    }
+
+    /// WebSocket framework integration message
+    pub enum WsIntegrationMessage {
+        /// Send message through the WebSocket
+        /// Takes a message as a String
+        Send(String),
+        /// Expect message to come through the WebSocket
+        /// Takes expected message as a String and a timeout in milliseconds
+        Expect(String, u64),
+    }
+
+    /// Default value in milliseconds for how long to wait for an incoming message
+    pub const WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT: u64 = 100;
+
+    #[allow(missing_docs)]
+    pub async fn run_ws_test_suite<T: WsIntegration>(integration: &T) {
+        println!("Running WebSocket Test suite for integration");
+
+        println!("  - test_ws_simple_subscription");
+        test_ws_simple_subscription(integration).await;
+
+        println!("  - test_ws_invalid_json");
+        test_ws_invalid_json(integration).await;
+
+        println!("  - test_ws_invalid_query");
+        test_ws_invalid_query(integration).await;
+    }
+
+    async fn test_ws_simple_subscription<T: WsIntegration>(integration: &T) {
+        let messages = vec![
+            WsIntegrationMessage::Send(
+                r#"{
+                    "type":"connection_init",
+                    "payload":{}
+                }"#
+                .to_owned(),
+            ),
+            WsIntegrationMessage::Expect(
+                r#"{
+                    "type":"connection_ack"
+                }"#
+                .to_owned(),
+                WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+            ),
+            WsIntegrationMessage::Expect(
+                r#"{
+                    "type":"ka"
+                }"#
+                .to_owned(),
+                WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+            ),
+            WsIntegrationMessage::Send(
+                r#"{
+                    "id":"1",
+                    "type":"start",
+                    "payload":{
+                        "variables":{},
+                        "extensions":{},
+                        "operationName":null,
+                        "query":"subscription { asyncHuman { id, name, homePlanet } }"
+                    }
+                }"#
+                .to_owned(),
+            ),
+            WsIntegrationMessage::Expect(
+                r#"{
+                    "type":"data",
+                    "id":"1",
+                    "payload":{
+                        "data":{
+                            "asyncHuman":{
+                                "id":"stream id",
+                                "name":"stream name",
+                                "homePlanet":"stream home planet"
+                            }
+                        }
+                    }
+                }"#
+                .to_owned(),
+                WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+            ),
+        ];
+
+        integration.run(messages).await.unwrap();
+    }
+
+    async fn test_ws_invalid_json<T: WsIntegration>(integration: &T) {
+        let messages = vec![
+            WsIntegrationMessage::Send("invalid json".to_owned()),
+            WsIntegrationMessage::Expect(
+                r#"{
+                    "type":"connection_error",
+                    "payload":{
+                        "message":"serde error: expected value at line 1 column 1"
+                    }
+                }"#
+                .to_owned(),
+                WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+            ),
+        ];
+
+        integration.run(messages).await.unwrap();
+    }
+
+    async fn test_ws_invalid_query<T: WsIntegration>(integration: &T) {
+        let messages = vec![
+            WsIntegrationMessage::Send(
+                r#"{
+                    "type":"connection_init",
+                    "payload":{}
+                }"#
+                .to_owned(),
+            ),
+            WsIntegrationMessage::Expect(
+                r#"{
+                    "type":"connection_ack"
+                }"#
+                .to_owned(),
+                WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT
+            ),
+            WsIntegrationMessage::Expect(
+                r#"{
+                    "type":"ka"
+                }"#
+                .to_owned(),
+                WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT
+            ),
+            WsIntegrationMessage::Send(
+                r#"{
+                    "id":"1",
+                    "type":"start",
+                    "payload":{
+                        "variables":{},
+                        "extensions":{},
+                        "operationName":null,
+                        "query":"subscription { asyncHuman }"
+                    }
+                }"#
+                .to_owned(),
+            ),
+            WsIntegrationMessage::Expect(
+                r#"{
+                    "type":"error",
+                    "id":"1",
+                    "payload":[{
+                        "message":"Field \"asyncHuman\" of type \"HumanSubscription!\" must have a selection of subfields. Did you mean \"asyncHuman { ... }\"?",
+                        "locations":[{
+                            "line":1,
+                            "column":16
+                        }]
+                    }]
+                }"#
+                .to_owned(),
+                WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT
+            )
+        ];
+
+        integration.run(messages).await.unwrap();
     }
 }
