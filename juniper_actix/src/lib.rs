@@ -40,7 +40,6 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_actix/0.1.0")]
 
-// use futures::{FutureExt as _};
 use actix_web::{
     error::{ErrorBadRequest, ErrorMethodNotAllowed, ErrorUnsupportedMediaType},
     http::{header::CONTENT_TYPE, Method},
@@ -234,10 +233,12 @@ pub mod subscriptions {
     use actix_web::{web, HttpRequest, HttpResponse};
     use actix_web_actors::ws;
 
-    use futures::SinkExt;
     use tokio::sync::Mutex;
 
-    use juniper::futures::stream::{SplitSink, SplitStream, StreamExt};
+    use juniper::futures::{
+        stream::{SplitSink, SplitStream, StreamExt},
+        SinkExt,
+    };
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
 
@@ -482,8 +483,8 @@ pub mod subscriptions {
 mod tests {
     use super::*;
     use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, App};
-    use futures::StreamExt;
     use juniper::{
+        futures::stream::StreamExt,
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::fixtures::starwars::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
@@ -775,24 +776,25 @@ mod subscription_tests {
 
     use actix_web::{test, web, App, Error, HttpRequest, HttpResponse};
     use actix_web_actors::ws;
-    use async_trait::async_trait;
-    use futures::{SinkExt, StreamExt};
     use tokio::time::timeout;
 
     use super::subscriptions::subscriptions_handler;
     use juniper::{
+        futures::{SinkExt, StreamExt},
         http::tests::{run_ws_test_suite, WsIntegration, WsIntegrationMessage},
         tests::fixtures::starwars::{model::Database, schema::Query, schema::Subscription},
-        EmptyMutation,
+        EmptyMutation, LocalBoxFuture,
     };
     use juniper_graphql_ws::ConnectionConfig;
 
     #[derive(Default)]
     struct TestActixWsIntegration;
 
-    #[async_trait(?Send)]
-    impl WsIntegration for TestActixWsIntegration {
-        async fn run(&self, operations: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error> {
+    impl TestActixWsIntegration {
+        async fn run_async(
+            &self,
+            messages: Vec<WsIntegrationMessage>,
+        ) -> Result<(), anyhow::Error> {
             let mut server = test::start(|| {
                 App::new()
                     .data(Schema::new(
@@ -804,15 +806,15 @@ mod subscription_tests {
             });
             let mut framed = server.ws_at("/subscriptions").await.unwrap();
 
-            for operation in &operations {
-                match operation {
-                    WsIntegrationMessage::Send(message) => {
+            for message in &messages {
+                match message {
+                    WsIntegrationMessage::Send(body) => {
                         framed
-                            .send(ws::Message::Text(message.to_owned()))
+                            .send(ws::Message::Text(body.to_owned()))
                             .await
                             .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
                     }
-                    WsIntegrationMessage::Expect(message, message_timeout) => {
+                    WsIntegrationMessage::Expect(body, message_timeout) => {
                         let frame = timeout(Duration::from_millis(*message_timeout), framed.next())
                             .await
                             .map_err(|_| anyhow::anyhow!("Timed-out waiting for message"))?
@@ -822,7 +824,7 @@ mod subscription_tests {
                         match frame {
                             ws::Frame::Text(ref bytes) => {
                                 let expected_value =
-                                    serde_json::from_str::<serde_json::Value>(message)
+                                    serde_json::from_str::<serde_json::Value>(body)
                                         .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
 
                                 let value: serde_json::Value = serde_json::from_slice(bytes)
@@ -843,6 +845,15 @@ mod subscription_tests {
             }
 
             Ok(())
+        }
+    }
+
+    impl WsIntegration for TestActixWsIntegration {
+        fn run(
+            &self,
+            messages: Vec<WsIntegrationMessage>,
+        ) -> LocalBoxFuture<Result<(), anyhow::Error>> {
+            Box::pin(self.run_async(messages))
         }
     }
 

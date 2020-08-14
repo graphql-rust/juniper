@@ -356,7 +356,7 @@ where
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {
-    use async_trait::async_trait;
+    use crate::LocalBoxFuture;
     use serde_json::{self, Value as Json};
 
     /// Normalized response content we expect to get back from
@@ -586,10 +586,11 @@ pub mod tests {
     }
 
     /// Normalized way to make requests to the WebSocket framework integration we are testing.
-    #[async_trait(?Send)]
     pub trait WsIntegration {
         /// Runs a test with the given messages
-        async fn run(&self, messages: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error>;
+        fn run(
+            &self, messages: Vec<WsIntegrationMessage>
+        ) -> LocalBoxFuture<Result<(), anyhow::Error>>;
     }
 
     /// WebSocket framework integration message
