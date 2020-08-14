@@ -29,22 +29,20 @@ macro_rules! __juniper_instrument_trace {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __juniper_span_internal {
-    ($trace_type:ident; $($element:expr),*) => {{
+    ($trace_type:ident; $($element:expr),*) => {
         #[cfg(feature = "tracing")]
-        use tracing;
-        #[cfg(feature = "tracing")]
-        let myspan = tracing::span!(tracing::Level::$trace_type, ($($element),*));
+        let myspan = $crate::tracing::span!($crate::tracing::Level::$trace_type, ($($element),*));
         #[cfg(feature = "tracing")]
         let _enter = myspan.enter();
-    }};
+    };
 }
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __juniper_span_trace {
-    ($($element:expr),*) => {{
-        $crate::__juniper_span_internal!(TRACE; $($element),*)
-    }}
+    ($($element:expr),*) => {
+        $crate::__juniper_span_internal!(TRACE; $($element),*);
+    }
 }
 
 // Macros to instrument events.
@@ -55,8 +53,7 @@ macro_rules! __juniper_trace_internal {
     ($trace_type:ident; $($element:expr),*) => {{
         #[cfg(feature = "tracing")]
         {
-            use tracing;
-            tracing::$trace_type!($($element),*);
+            $crate::tracing::$trace_type!($($element),*);
         }
     }};
 }

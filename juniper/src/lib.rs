@@ -124,6 +124,11 @@ pub use {futures, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::BoxFuture;
 
+// This is required by the `tracing` feature.
+#[cfg(feature = "tracing")]
+#[doc(hidden)]
+pub use tracing;
+
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
@@ -242,6 +247,9 @@ where
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
+    __juniper_span_trace!("execute_sync");
+
+    __juniper_trace!("GraphQLDocument: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -272,7 +280,7 @@ where
         }
     }
 
-    __juniper_span_trace!("execute_sync");
+    __juniper_span_trace!("execute_validated_query");
     execute_validated_query(&document, operation, root_node, variables, context)
 }
 
@@ -294,6 +302,9 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
+    __juniper_span_trace!("execute");
+
+    __juniper_trace!("GraphQLDocument: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -328,7 +339,7 @@ where
         &document, operation, root_node, variables, context,
     );
 
-    __juniper_instrument_trace!(f, "execute").await
+    __juniper_instrument_trace!(f, "execute_validated_query").await
 }
 
 /// Resolve subscription into `ValuesStream`
