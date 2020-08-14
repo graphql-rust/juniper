@@ -217,9 +217,12 @@ impl<'a> fmt::Display for GraphQLError<'a> {
         match self {
             GraphQLError::ParseError(error) => write!(f, "{}", error),
             GraphQLError::ValidationError(errors) => {
-                for error in errors {
-                    writeln!(f, "{}", error)?;
-                }
+                let errors = errors
+                    .iter()
+                    .map(|e| format!("{}", e))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                write!(f, "{}", errors)?;
                 Ok(())
             }
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
