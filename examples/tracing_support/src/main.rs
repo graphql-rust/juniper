@@ -115,6 +115,7 @@ async fn main() {
         .unwrap();
 
     // You can also trace sync execution.
-    let query = "{ bob { name } }";
-    let (_, _errors) = juniper::execute_sync(query, None, &root, &vars, &ctx).unwrap();
+    // This should output a validation error in the middle of other spans.
+    let query = "{ bob { field_that_does_not_exist } }";
+    let _ = juniper::execute_sync(query, None, &root, &vars, &ctx);
 }
