@@ -252,7 +252,7 @@ where
 {
     __juniper_span_trace!("execute_sync");
 
-    __juniper_trace!("GraphQLDocument: {}", document_source);
+    __juniper_trace!("document: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -263,7 +263,7 @@ where
         let errors = ctx.into_errors();
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
-            __juniper_trace!("GraphQLError: {:?}", gql_error);
+            __juniper_trace!("validation_error: {}", gql_error);
 
             return Err(gql_error);
         }
@@ -277,7 +277,7 @@ where
 
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
-            __juniper_trace!("GraphQLError: {:?}", gql_error);
+            __juniper_trace!("validation_error: {}", gql_error);
 
             return Err(gql_error);
         }
@@ -307,7 +307,7 @@ where
 {
     __juniper_span_trace!("execute");
 
-    __juniper_trace!("GraphQLDocument: {}", document_source);
+    __juniper_trace!("document: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -318,7 +318,7 @@ where
         let errors = ctx.into_errors();
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
-            __juniper_trace!("GraphQLError: {:?}", gql_error);
+            __juniper_trace!("validation_error: {}", gql_error);
 
             return Err(gql_error);
         }
@@ -332,7 +332,7 @@ where
 
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
-            __juniper_trace!("GraphQLError: {:?}", gql_error);
+            __juniper_trace!("validation_error: {}", gql_error);
 
             return Err(gql_error);
         }
