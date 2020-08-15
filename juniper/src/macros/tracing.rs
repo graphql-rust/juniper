@@ -6,8 +6,7 @@ macro_rules! __juniper_instrument_internal {
     ($trace_type:ident; $fut:expr, $($element:expr),*) => {{
         #[cfg(feature = "tracing")]
         {
-            use tracing;
-            tracing::Instrument::instrument($fut, tracing::$trace_type!($($element),*))
+            $crate::tracing::Instrument::instrument($fut, tracing::$trace_type!($($element),*))
         }
         #[cfg(not(feature = "tracing"))]
         {
