@@ -44,6 +44,38 @@ macro_rules! __juniper_span_trace {
     }
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __juniper_span_trace_debug {
+    ($($element:expr),*) => {
+        $crate::__juniper_span_internal!(DEBUG; $($element),*);
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __juniper_span_trace_info {
+    ($($element:expr),*) => {
+        $crate::__juniper_span_internal!(INFO; $($element),*);
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __juniper_span_trace_warn {
+    ($($element:expr),*) => {
+        $crate::__juniper_span_internal!(WARN; $($element),*);
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __juniper_span_trace_error {
+    ($($element:expr),*) => {
+        $crate::__juniper_span_internal!(ERROR; $($element),*);
+    }
+}
+
 // Macros to instrument events.
 
 #[doc(hidden)]
