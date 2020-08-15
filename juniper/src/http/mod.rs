@@ -353,7 +353,7 @@ where
     }
 }
 
-#[cfg(any(test, feature = "expose-test-schema"))]
+#[cfg(feature = "expose-test-schema")]
 #[allow(missing_docs)]
 pub mod tests {
     use crate::LocalBoxFuture;
