@@ -589,7 +589,8 @@ pub mod tests {
     pub trait WsIntegration {
         /// Runs a test with the given messages
         fn run(
-            &self, messages: Vec<WsIntegrationMessage>
+            &self,
+            messages: Vec<WsIntegrationMessage>,
         ) -> LocalBoxFuture<Result<(), anyhow::Error>>;
     }
 
