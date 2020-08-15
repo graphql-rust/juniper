@@ -17,6 +17,6 @@ serde = "1.0.115"
 serde_json = "1.0.57"
 rand = "0.7.3"
 
-juniper = { path = "../../juniper", features = ["expose-test-schema", "serde_json"] }
+juniper = { path = "../../juniper", features = ["expose-test-schema"] }
 juniper_actix = { path = "../../juniper_actix", features = ["subscriptions"] }
 juniper_graphql_ws = { path = "../../juniper_graphql_ws" }

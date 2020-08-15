@@ -36,4 +36,4 @@ env_logger = "0.7.1"
 log = "0.4.11"
 tokio = { version = "0.2", features = ["time"] }
 
-juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema", "serde_json"] }
+juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema"] }
