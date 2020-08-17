@@ -62,6 +62,11 @@ type all fields must return. By using the `?` operator or `try!` macro, any type
 that implements the `Display` trait - which are most of the error types out
 there - those errors are automatically converted into `FieldError`.
 
+## Error payloads, `null`, and partial errors
+
+Juniper's error behavior conforms to the [GraphQL specification](https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability).
+
+
 When a field returns an error, the field's result is replaced by `null`, an
 additional `errors` object is created at the top level of the response, and the
 execution is resumed. For example, with the previous example and the following
@@ -123,6 +128,7 @@ following would be returned:
   ]
 }
 ```
+
 
 ### Structured errors
 
@@ -204,6 +210,7 @@ the string contains a server-side localized error message. However, it is also
 possible to return a unique string identifier and have the client present a localized string to the user.
 
 ```rust
+# extern crate juniper;
 #[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
@@ -300,6 +307,7 @@ before. Each resolver function has a custom `ValidationResult` which
 contains only fields provided by the function.
 
 ```rust
+# extern crate juniper;
 #[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
@@ -377,6 +385,7 @@ and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:
 
 ```rust
+# // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
 
 #[derive(juniper::GraphQLObject)]

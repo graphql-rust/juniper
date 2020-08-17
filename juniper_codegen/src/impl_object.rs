@@ -14,7 +14,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, error: GraphQLScope) -
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
     };
-    definition.into_tokens().into()
+    definition.into_tokens()
 }
 
 /// Generate code for the juniper::graphql_subscription macro.
@@ -27,7 +27,7 @@ pub fn build_subscription(
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
     };
-    definition.into_subscription_tokens().into()
+    definition.into_subscription_tokens()
 }
 
 fn create(
@@ -172,9 +172,10 @@ fn create(
     // Early abort after checking all fields
     proc_macro_error::abort_if_dirty();
 
-    match crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name) {
-        Some(duplicates) => error.duplicate(duplicates.iter()),
-        None => {}
+    if let Some(duplicates) =
+        crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name)
+    {
+        error.duplicate(duplicates.iter())
     }
 
     if !_impl.attrs.is_internal && name.starts_with("__") {

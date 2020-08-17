@@ -634,7 +634,7 @@ impl FieldAttributes {
         let doc_comment = get_doc_comment(&attrs);
         let deprecation = get_deprecated(&attrs);
 
-        let attr_opt = attrs.into_iter().find(|attr| attr.path.is_ident("graphql"));
+        let attr_opt = attrs.iter().find(|attr| attr.path.is_ident("graphql"));
 
         let mut output = match attr_opt {
             Some(attr) => attr.parse_args()?,
@@ -943,8 +943,7 @@ impl GraphQLTypeDefiniton {
                                     Err(e) => Err(e),
                                 }
                             };
-                            use ::juniper::futures::future;
-                            future::FutureExt::boxed(f)
+                            Box::pin(f)
                         },
                     )
                 } else {
@@ -971,7 +970,7 @@ impl GraphQLTypeDefiniton {
                                 Err(e) => Err(e),
                             };
                             use ::juniper::futures::future;
-                            future::FutureExt::boxed(future::ready(v))
+                            Box::pin(future::ready(v))
                         )
                     };
 
@@ -1309,7 +1308,7 @@ impl GraphQLTypeDefiniton {
                             });
                             Ok(
                                 ::juniper::Value::Scalar::<
-                                    ::juniper::ValuesStream
+                                    ::juniper::ValuesStream::<#scalar>
                                 >(Box::pin(f))
                             )
                         })
@@ -1536,7 +1535,7 @@ impl GraphQLTypeDefiniton {
                 ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#scalar>> {
                     use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
-                    future::FutureExt::boxed(future::ready(v))
+                    Box::pin(future::ready(v))
                 }
             }
         );

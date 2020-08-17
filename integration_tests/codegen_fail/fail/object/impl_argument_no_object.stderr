@@ -1,7 +1,7 @@
-error[E0277]: the trait bound `Obj: juniper::ast::FromInputValue` is not satisfied
+error[E0277]: the trait bound `Obj: juniper::FromInputValue` is not satisfied
  --> $DIR/impl_argument_no_object.rs:8:1
   |
 8 | #[juniper::graphql_object]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::ast::FromInputValue` is not implemented for `Obj`
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::FromInputValue` is not implemented for `Obj`
   |
   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -22,10 +22,11 @@ naturally map to GraphQL features, such as `Option<T>`, `Vec<T>`, `Box<T>`,
 
 For more advanced mappings, Juniper provides multiple macros to map your Rust
 types to a GraphQL schema. The most important one is the
-[object][jp_object] procedural macro that is used for declaring an object with
+[graphql_object][graphql_object] procedural macro that is used for declaring an object with
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
 ```rust
+# extern crate juniper;
 use juniper::{FieldResult, EmptySubscription};
 
 # struct DatabasePool;
@@ -119,7 +120,7 @@ impl Mutation {
     }
 }
 
-// A root schema consists of a query and a mutation.
+// A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
 
@@ -132,7 +133,7 @@ We now have a very simple but functional schema for a GraphQL server!
 
 To actually serve the schema, see the guides for our various [server integrations](./servers/index.md).
 
-You can also invoke the executor directly to get a result for a query:
+Juniper is a library that can be used in many contexts--it does not require a server and it does not have a dependency on a particular transport or serialization format. You can invoke the executor directly to get a result for a query:
 
 ## Executor
 
@@ -168,7 +169,7 @@ impl Query {
 }
 
 
-// A root schema consists of a query and a mutation.
+// A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<Ctx>, EmptySubscription<Ctx>>;
 
@@ -202,4 +203,4 @@ fn main() {
 [rocket]: servers/rocket.md
 [iron]: servers/iron.md
 [tutorial]: ./tutorial.html
-[jp_obj_macro]: https://docs.rs/juniper/latest/juniper/macro.object.html
+[graphql_object]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html

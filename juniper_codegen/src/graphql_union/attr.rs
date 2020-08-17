@@ -116,13 +116,7 @@ fn parse_variant_from_trait_method(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter_map(|attr| {
-            if path_eq_single(&attr.path, "graphql_union") {
-                None
-            } else {
-                Some(attr)
-            }
-        })
+        .filter(|attr| !path_eq_single(&attr.path, "graphql_union"))
         .collect();
 
     let meta = UnionVariantMeta::from_attrs("graphql_union", &method_attrs)
@@ -285,7 +279,7 @@ fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<Option<syn::Typ
         return Err(sig.inputs.span());
     }
 
-    let second_arg_ty = match sig.inputs.iter().skip(1).next() {
+    let second_arg_ty = match sig.inputs.iter().nth(1) {
         Some(syn::FnArg::Typed(arg)) => arg.ty.deref(),
         None => return Ok(None),
         _ => return Err(sig.inputs.span()),

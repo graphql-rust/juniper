@@ -37,18 +37,16 @@ Check the LICENSE file for details.
 */
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket_async/0.2.0")]
-#![feature(decl_macro, proc_macro_hygiene)]
 
 use std::io::Cursor;
 
 use rocket::{
-    data::{FromDataFuture, FromDataSimple},
+    data::{self, FromData, ToByteUnit},
     http::{ContentType, RawStr, Status},
+    outcome::Outcome::{Failure, Forward, Success},
     request::{FormItems, FromForm, FromFormValue},
     response::{self, content, Responder, Response},
-    Data,
-    Outcome::{Failure, Forward, Success},
-    Request,
+    Data, Request,
 };
 
 use juniper::{
@@ -153,8 +151,6 @@ impl GraphQLResponse {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(decl_macro, proc_macro_hygiene)]
-    /// #
     /// # extern crate juniper;
     /// # extern crate juniper_rocket_async;
     /// # extern crate rocket;
@@ -164,8 +160,8 @@ impl GraphQLResponse {
     /// # use rocket::response::content;
     /// # use rocket::State;
     /// #
-    /// # use juniper::tests::schema::Query;
-    /// # use juniper::tests::model::Database;
+    /// # use juniper::tests::fixtures::starwars::schema::Query;
+    /// # use juniper::tests::fixtures::starwars::model::Database;
     /// # use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode, Value};
     /// #
     /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -257,7 +253,7 @@ where
                 }
                 _ => {
                     if strict {
-                        return Err(format!("Prohibited extra field '{}'", key).to_owned());
+                        return Err(format!("Prohibited extra field '{}'", key));
                     }
                 }
             }
@@ -288,13 +284,14 @@ where
 
 const BODY_LIMIT: u64 = 1024 * 100;
 
-impl<S> FromDataSimple for GraphQLRequest<S>
+#[rocket::async_trait]
+impl<S> FromData for GraphQLRequest<S>
 where
     S: ScalarValue,
 {
     type Error = String;
 
-    fn from_data(req: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
+    async fn from_data(req: &Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
         use tokio::io::AsyncReadExt as _;
 
         let content_type = req
@@ -303,12 +300,12 @@ where
         let is_json = match content_type {
             Some(("application", "json")) => true,
             Some(("application", "graphql")) => false,
-            _ => return Box::pin(async move { Forward(data) }),
+            _ => return Box::pin(async move { Forward(data) }).await,
         };
 
         Box::pin(async move {
             let mut body = String::new();
-            let mut reader = data.open().take(BODY_LIMIT);
+            let mut reader = data.open(BODY_LIMIT.bytes());
             if let Err(e) = reader.read_to_string(&mut body).await {
                 return Failure((Status::InternalServerError, format!("{:?}", e)));
             }
@@ -322,6 +319,7 @@ where
                 GraphQLBatchRequest::Single(http::GraphQLRequest::new(body, None, None))
             }))
         })
+        .await
     }
 }
 
@@ -458,13 +456,13 @@ mod tests {
 
     use juniper::{
         http::tests as http_tests,
-        tests::{model::Database, schema::Query},
+        tests::fixtures::starwars::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
     use rocket::{
         self, get,
         http::ContentType,
-        local::{Client, LocalResponse},
+        local::asynchronous::{Client, LocalResponse},
         post,
         request::Form,
         routes, Rocket, State,
@@ -566,14 +564,14 @@ mod tests {
         ))
     }
 
-    async fn make_test_response(mut response: LocalResponse<'_>) -> http_tests::TestResponse {
+    async fn make_test_response(response: LocalResponse<'_>) -> http_tests::TestResponse {
         let status_code = response.status().code as i32;
         let content_type = response
             .content_type()
             .expect("No content type header from handler")
             .to_string();
         let body = response
-            .body_string()
+            .into_string()
             .await
             .expect("No body returned from GraphQL handler");
 

@@ -419,7 +419,7 @@ impl ToTokens for UnionDefinition {
                                 { #expr },
                                 executor.context(),
                             );
-                            return ::juniper::futures::future::FutureExt::boxed(async move {
+                            return Box::pin(async move {
                                 match res? {
                                     Some((ctx, r)) => {
                                         let subexec = executor.replaced_context(ctx);
@@ -642,7 +642,7 @@ fn emerge_union_variants_from_meta(
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
 /// [2]: https://docs.rs/static_assertions/latest/static_assertions/macro.assert_type_ne_all.html
-fn all_variants_different(variants: &Vec<UnionVariantDefinition>) -> bool {
+fn all_variants_different(variants: &[UnionVariantDefinition]) -> bool {
     let mut types: Vec<_> = variants.iter().map(|var| &var.ty).collect();
     types.dedup();
     types.len() == variants.len()

@@ -1,12 +1,36 @@
 use futures::{future, stream};
+use serde::Serialize;
 
 use crate::{
-    http::{GraphQLRequest, GraphQLResponse},
+    http::GraphQLRequest,
     parser::Spanning,
     types::base::{is_excluded, merge_key_into, GraphQLType, GraphQLValue},
-    Arguments, BoxFuture, DefaultScalarValue, Executor, FieldError, Object, ScalarValue, Selection,
-    Value, ValuesStream,
+    Arguments, BoxFuture, DefaultScalarValue, ExecutionError, Executor, FieldError, Object,
+    ScalarValue, Selection, Value, ValuesStream,
 };
+
+/// Represents the result of executing a GraphQL operation (after parsing and validating has been
+/// done).
+#[derive(Debug, Serialize)]
+pub struct ExecutionOutput<S> {
+    /// The output data.
+    pub data: Value<S>,
+
+    /// The errors that occurred. Note that the presence of errors does not mean there is no data.
+    /// The output can have both data and errors.
+    #[serde(bound(serialize = "S: ScalarValue"))]
+    pub errors: Vec<ExecutionError<S>>,
+}
+
+impl<S> ExecutionOutput<S> {
+    /// Creates execution output from data, with no errors.
+    pub fn from_data(data: Value<S>) -> Self {
+        Self {
+            data,
+            errors: vec![],
+        }
+    }
+}
 
 /// Global subscription coordinator trait.
 ///
@@ -33,7 +57,7 @@ where
 {
     /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`]
     /// returns
-    type Connection: SubscriptionConnection<'a, S>;
+    type Connection: SubscriptionConnection<S>;
 
     /// Type of error while trying to spawn [`SubscriptionConnection`]
     type Error;
@@ -58,7 +82,7 @@ where
 ///
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
-pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
+pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> {}
 
 /// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.
 /// It should be used with [`GraphQLValue`] in order to implement [subscription][1] resolvers on
@@ -293,7 +317,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     response_name,
                     f.name.item,
-                    start_pos.clone(),
+                    *start_pos,
                     f.selection_set.as_ref().map(|x| &x[..]),
                 );
 
@@ -319,7 +343,7 @@ where
                     }
                     Ok(v) => merge_key_into(&mut object, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
 
                         if meta_field.field_type.is_non_null() {
                             return Value::Null;
@@ -365,7 +389,7 @@ where
                             _ => unreachable!(),
                         }
                     }
-                    Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
+                    Err(e) => sub_exec.push_error_at(e, *start_pos),
                 }
             }
 
@@ -393,7 +417,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
@@ -405,7 +429,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else {
                     return Value::Null;

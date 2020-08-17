@@ -2,7 +2,7 @@
 
 use crate::{
     executor::Context,
-    tests::model::{Character, Database, Droid, Episode, Human},
+    tests::fixtures::starwars::model::{Character, Database, Droid, Episode, Human},
 };
 
 impl Context for Database {}

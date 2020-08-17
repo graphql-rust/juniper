@@ -19,9 +19,9 @@ use std::{
 
 use futures::{future, stream, FutureExt as _, Stream, StreamExt as _, TryFutureExt as _};
 use juniper::{
-    http::{GraphQLRequest, GraphQLResponse},
-    BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object,
-    ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream,
+    http::GraphQLRequest, BoxFuture, ExecutionError, ExecutionOutput, GraphQLError,
+    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection,
+    SubscriptionCoordinator, Value, ValuesStream,
 };
 
 /// Simple [`SubscriptionCoordinator`] implementation:
@@ -88,8 +88,8 @@ where
 
 /// Simple [`SubscriptionConnection`] implementation.
 ///
-/// Resolves `Value<ValuesStream>` into `Stream<Item = GraphQLResponse>` using the following
-/// logic:
+/// Resolves `Value<ValuesStream>` into `Stream<Item = ExecutionOutput<S>>` using
+/// the following logic:
 ///
 /// [`Value::Null`] - returns [`Value::Null`] once
 /// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
@@ -98,7 +98,7 @@ where
 /// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
 /// `Value::Object<Value::Object<_>>` - returns [`Value::Null`] if [`Value::Object`] consists of sub-objects
 pub struct Connection<'a, S> {
-    stream: Pin<Box<dyn Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
+    stream: Pin<Box<dyn Stream<Item = ExecutionOutput<S>> + Send + 'a>>,
 }
 
 impl<'a, S> Connection<'a, S>
@@ -113,16 +113,13 @@ where
     }
 }
 
-impl<'a, S> SubscriptionConnection<'a, S> for Connection<'a, S> where
-    S: ScalarValue + Send + Sync + 'a
-{
-}
+impl<'a, S> SubscriptionConnection<S> for Connection<'a, S> where S: ScalarValue + Send + Sync + 'a {}
 
 impl<'a, S> Stream for Connection<'a, S>
 where
     S: ScalarValue + Send + Sync + 'a,
 {
-    type Item = GraphQLResponse<'a, S>;
+    type Item = ExecutionOutput<S>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Option<Self::Item>> {
         // this is safe as stream is only mutated here and is not moved anywhere
@@ -132,7 +129,7 @@ where
     }
 }
 
-/// Creates [`futures::Stream`] that yields [`GraphQLResponse`]s depending on the given [`Value`]:
+/// Creates [`futures::Stream`] that yields `ExecutionOutput<S>`s depending on the given [`Value`]:
 ///
 /// [`Value::Null`] - returns [`Value::Null`] once
 /// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
@@ -143,23 +140,28 @@ where
 fn whole_responses_stream<'a, S>(
     stream: Value<ValuesStream<'a, S>>,
     errors: Vec<ExecutionError<S>>,
-) -> Pin<Box<dyn Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
+) -> Pin<Box<dyn Stream<Item = ExecutionOutput<S>> + Send + 'a>>
 where
     S: ScalarValue + Send + Sync + 'a,
 {
     if !errors.is_empty() {
-        return Box::pin(stream::once(future::ready(GraphQLResponse::from_result(
-            Ok((Value::Null, errors)),
-        ))));
+        return stream::once(future::ready(ExecutionOutput {
+            data: Value::null(),
+            errors,
+        }))
+        .boxed();
     }
 
     match stream {
-        Value::Null => Box::pin(stream::once(future::ready(GraphQLResponse::from_result(
-            Ok((Value::Null, vec![])),
+        Value::Null => Box::pin(stream::once(future::ready(ExecutionOutput::from_data(
+            Value::null(),
         )))),
         Value::Scalar(s) => Box::pin(s.map(|res| match res {
-            Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
-            Err(err) => GraphQLResponse::from_result(Ok((Value::Null, vec![err]))),
+            Ok(val) => ExecutionOutput::from_data(val),
+            Err(err) => ExecutionOutput {
+                data: Value::null(),
+                errors: vec![err],
+            },
         })),
         Value::List(list) => {
             let mut streams = vec![];
@@ -171,9 +173,8 @@ where
         Value::Object(mut object) => {
             let obj_len = object.field_count();
             if obj_len == 0 {
-                return Box::pin(stream::once(future::ready(GraphQLResponse::from_result(
-                    Ok((Value::Null, vec![])),
-                ))));
+                return stream::once(future::ready(ExecutionOutput::from_data(Value::null())))
+                    .boxed();
             }
 
             let mut filled_count = 0;
@@ -182,7 +183,7 @@ where
                 ready_vec.push(None);
             }
 
-            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'a, S>>> {
+            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<ExecutionOutput<S>>> {
                 let mut obj_iterator = object.iter_mut();
 
                 // Due to having to modify `ready_vec` contents (by-move pattern)
@@ -221,22 +222,25 @@ where
                 }
 
                 if filled_count == obj_len {
+                    let mut errors = vec![];
                     filled_count = 0;
                     let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
                     let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
                     let ready_vec_iterator = ready_vec.into_iter().map(|el| {
                         let (name, val) = el.unwrap();
-                        if let Ok(value) = val {
-                            (name, value)
-                        } else {
-                            (name, Value::Null)
+                        match val {
+                            Ok(value) => (name, value),
+                            Err(e) => {
+                                errors.push(e);
+                                (name, Value::Null)
+                            }
                         }
                     });
                     let obj = Object::from_iter(ready_vec_iterator);
-                    Poll::Ready(Some(GraphQLResponse::from_result(Ok((
-                        Value::Object(obj),
-                        vec![],
-                    )))))
+                    Poll::Ready(Some(ExecutionOutput {
+                        data: Value::Object(obj),
+                        errors,
+                    }))
                 } else {
                     Poll::Pending
                 }
@@ -256,9 +260,13 @@ mod whole_responses_stream {
 
     #[tokio::test]
     async fn with_error() {
-        let expected = vec![GraphQLResponse::<DefaultScalarValue>::error(
-            FieldError::new("field error", Value::Null),
-        )];
+        let expected = vec![ExecutionOutput {
+            data: Value::<DefaultScalarValue>::Null,
+            errors: vec![ExecutionError::at_origin(FieldError::new(
+                "field error",
+                Value::Null,
+            ))],
+        }];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let result = whole_responses_stream::<DefaultScalarValue>(
@@ -277,10 +285,9 @@ mod whole_responses_stream {
 
     #[tokio::test]
     async fn value_null() {
-        let expected = vec![GraphQLResponse::<DefaultScalarValue>::from_result(Ok((
-            Value::Null,
-            vec![],
-        )))];
+        let expected = vec![ExecutionOutput::from_data(
+            Value::<DefaultScalarValue>::Null,
+        )];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![])
@@ -296,26 +303,11 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn value_scalar() {
         let expected = vec![
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(1i32)),
-                vec![],
-            ))),
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(2i32)),
-                vec![],
-            ))),
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(3i32)),
-                vec![],
-            ))),
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(4i32)),
-                vec![],
-            ))),
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(5i32)),
-                vec![],
-            ))),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(1i32))),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(2i32))),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(3i32))),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(4i32))),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(5i32))),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
@@ -340,19 +332,10 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn value_list() {
         let expected = vec![
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(1i32)),
-                vec![],
-            ))),
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(2i32)),
-                vec![],
-            ))),
-            GraphQLResponse::from_result(Ok((Value::Null, vec![]))),
-            GraphQLResponse::from_result(Ok((
-                Value::Scalar(DefaultScalarValue::Int(4i32)),
-                vec![],
-            ))),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(1i32))),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(2i32))),
+            ExecutionOutput::from_data(Value::null()),
+            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(4i32))),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
@@ -380,25 +363,19 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn value_object() {
         let expected = vec![
-            GraphQLResponse::from_result(Ok((
-                Value::Object(Object::from_iter(
-                    vec![
-                        ("one", Value::Scalar(DefaultScalarValue::Int(1i32))),
-                        ("two", Value::Scalar(DefaultScalarValue::Int(1i32))),
-                    ]
-                    .into_iter(),
-                )),
-                vec![],
+            ExecutionOutput::from_data(Value::Object(Object::from_iter(
+                vec![
+                    ("one", Value::Scalar(DefaultScalarValue::Int(1i32))),
+                    ("two", Value::Scalar(DefaultScalarValue::Int(1i32))),
+                ]
+                .into_iter(),
             ))),
-            GraphQLResponse::from_result(Ok((
-                Value::Object(Object::from_iter(
-                    vec![
-                        ("one", Value::Scalar(DefaultScalarValue::Int(2i32))),
-                        ("two", Value::Scalar(DefaultScalarValue::Int(2i32))),
-                    ]
-                    .into_iter(),
-                )),
-                vec![],
+            ExecutionOutput::from_data(Value::Object(Object::from_iter(
+                vec![
+                    ("one", Value::Scalar(DefaultScalarValue::Int(2i32))),
+                    ("two", Value::Scalar(DefaultScalarValue::Int(2i32))),
+                ]
+                .into_iter(),
             ))),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
