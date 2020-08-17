@@ -21,6 +21,8 @@ pub use server_message::*;
 mod schema;
 pub use schema::*;
 
+mod utils;
+
 use juniper::{
     futures::{
         channel::oneshot,

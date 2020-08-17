@@ -1,3 +1,4 @@
+use crate::utils::default_for_null;
 use juniper::{ScalarValue, Variables};
 
 /// The payload for a client's "start" message. This triggers execution of a query, mutation, or
@@ -10,7 +11,7 @@ pub struct StartPayload<S: ScalarValue> {
     pub query: String,
 
     /// The optional variables.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "default_for_null")]
     pub variables: Variables<S>,
 
     /// The optional operation name (required if the document contains multiple operations).
@@ -27,7 +28,7 @@ pub enum ClientMessage<S: ScalarValue> {
     ConnectionInit {
         /// Optional parameters of any type sent from the client. These are often used for
         /// authentication.
-        #[serde(default)]
+        #[serde(default, deserialize_with = "default_for_null")]
         payload: Variables<S>,
     },
     /// Start messages are used to execute a GraphQL operation.
@@ -127,5 +128,21 @@ mod test {
             ClientMessage::ConnectionTerminate,
             serde_json::from_str(r##"{"type": "connection_terminate"}"##).unwrap(),
         );
+    }
+
+    #[test]
+    fn test_deserialization_of_null() -> serde_json::Result<()> {
+        let payload = r#"{"query":"query","variables":null}"#;
+        let payload: StartPayload<DefaultScalarValue> = serde_json::from_str(payload)?;
+
+        let expected = StartPayload {
+            query: "query".into(),
+            variables: Variables::default(),
+            operation_name: None,
+        };
+
+        assert_eq!(expected, payload);
+
+        Ok(())
     }
 }
