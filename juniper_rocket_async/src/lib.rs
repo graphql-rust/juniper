@@ -37,18 +37,16 @@ Check the LICENSE file for details.
 */
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket_async/0.2.0")]
-#![feature(decl_macro, proc_macro_hygiene)]
 
 use std::io::Cursor;
 
 use rocket::{
-    data::{self, FromData},
+    data::{self, FromData, ToByteUnit},
     http::{ContentType, RawStr, Status},
+    outcome::Outcome::{Failure, Forward, Success},
     request::{FormItems, FromForm, FromFormValue},
     response::{self, content, Responder, Response},
-    Data,
-    Outcome::{Failure, Forward, Success},
-    Request,
+    Data, Request,
 };
 
 use juniper::{
@@ -153,26 +151,24 @@ impl GraphQLResponse {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(decl_macro, proc_macro_hygiene)]
-    /// #
     /// # extern crate juniper;
     /// # extern crate juniper_rocket_async;
     /// # extern crate rocket;
     /// #
-    /// # use rocket::http::Cookies;
+    /// # use rocket::http::CookieJar;
     /// # use rocket::request::Form;
     /// # use rocket::response::content;
     /// # use rocket::State;
     /// #
-    /// # use juniper::tests::schema::Query;
-    /// # use juniper::tests::model::Database;
+    /// # use juniper::tests::fixtures::starwars::schema::Query;
+    /// # use juniper::tests::fixtures::starwars::model::Database;
     /// # use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode, Value};
     /// #
     /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
     /// #
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
-    ///     mut cookies: Cookies,
+    ///     cookies: &CookieJar,
     ///     context: State<Database>,
     ///     request: Form<juniper_rocket_async::GraphQLRequest>,
     ///     schema: State<Schema>,
@@ -309,7 +305,7 @@ where
 
         Box::pin(async move {
             let mut body = String::new();
-            let mut reader = data.open().take(BODY_LIMIT);
+            let mut reader = data.open(BODY_LIMIT.bytes());
             if let Err(e) = reader.read_to_string(&mut body).await {
                 return Failure((Status::InternalServerError, format!("{:?}", e)));
             }

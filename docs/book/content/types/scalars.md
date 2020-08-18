@@ -47,6 +47,7 @@ This can be done with the newtype pattern and a custom derive, similar to how
 serde supports this pattern with `#[serde(transparent)]`.
 
 ```rust
+# extern crate juniper;
 #[derive(juniper::GraphQLScalarValue)]
 pub struct UserId(i32);
 
@@ -63,6 +64,7 @@ That's it, you can now user `UserId` in your schema.
 The macro also allows for more customization:
 
 ```rust
+# extern crate juniper;
 /// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalarValue)]
 #[graphql(
@@ -98,6 +100,7 @@ The example below is used just for illustration.
 
 
 ```rust
+# extern crate juniper;
 # mod date { 
 #    pub struct Date; 
 #    impl std::str::FromStr for Date{ 
