@@ -11,6 +11,8 @@ struct Human {
 
 #[graphql_interface]
 impl Character for Human {
+
+    #[graphql_interface]
     fn id(&self) -> &str {
         &self.id
     }
@@ -137,7 +139,6 @@ mod poc {
         }"#;
 
         let schema = schema(QueryRoot::Human);
-        panic!("🔬 {:#?}", schema.schema);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -153,13 +154,14 @@ mod poc {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
-                    humanId: id
+                    droidId: id
                     primaryFunction
                 }
             }
         }"#;
 
         let schema = schema(QueryRoot::Droid);
+        //panic!("🔬 {:#?}", schema.schema);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,

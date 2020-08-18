@@ -32,7 +32,7 @@ macro_rules! try_merge_opt {
             $another
                 .$field
                 .replace(v)
-                .none_or_else(|dup| dup_attr_err(dup.$span()))?;
+                .none_or_else(|dup| crate::util::err::dup_arg(&dup.$span()))?;
         }
         $another.$field
     }};
@@ -64,7 +64,7 @@ macro_rules! try_merge_hashmap {
                 $another
                     .$field
                     .insert(ty, rslvr)
-                    .none_or_else(|dup| dup_attr_err(dup.$span()))?;
+                    .none_or_else(|dup| crate::util::err::dup_arg(&dup.$span()))?;
             }
         }
         $another.$field
@@ -97,7 +97,7 @@ macro_rules! try_merge_hashset {
                 $another
                     .$field
                     .replace(ty)
-                    .none_or_else(|dup| dup_attr_err(dup.$span()))?;
+                    .none_or_else(|dup| crate::util::err::dup_arg(&dup.$span()))?;
             }
         }
         $another.$field

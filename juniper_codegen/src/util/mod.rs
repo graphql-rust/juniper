@@ -3,10 +3,11 @@
 pub mod duplicate;
 pub mod option_ext;
 pub mod parse_buffer_ext;
+pub mod err;
 pub mod parse_impl;
 pub mod span_container;
 
-use std::{collections::HashMap, ops::Deref as _};
+use std::{collections::HashMap};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
@@ -21,11 +22,6 @@ use syn::{
 };
 
 pub use self::{option_ext::OptionExt, parse_buffer_ext::ParseBufferExt};
-
-/// Creates and returns duplication [`syn::Error`] pointing to the given [`Span`].
-pub fn dup_attr_err(span: Span) -> syn::Error {
-    syn::Error::new(span, "duplicated attribute")
-}
 
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.

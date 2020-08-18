@@ -16,8 +16,8 @@ use syn::{
 };
 
 use crate::util::{
-    dup_attr_err, filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _,
-    ParseBufferExt as _, ParseBufferExt,
+    err, filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer,
+    OptionExt as _, ParseBufferExt as _,
 };
 
 /*
@@ -104,7 +104,7 @@ impl Parse for InterfaceMeta {
                             Some(name.span()),
                             name.value(),
                         ))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
@@ -116,7 +116,7 @@ impl Parse for InterfaceMeta {
                             Some(desc.span()),
                             desc.value(),
                         ))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
                     input.parse::<token::Eq>()?;
@@ -124,7 +124,7 @@ impl Parse for InterfaceMeta {
                     output
                         .context
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
@@ -132,7 +132,7 @@ impl Parse for InterfaceMeta {
                     output
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "for" | "implementers" => {
                     input.parse::<token::Eq>()?;
@@ -143,14 +143,14 @@ impl Parse for InterfaceMeta {
                         output
                             .implementers
                             .replace(SpanContainer::new(ident.span(), Some(impler_span), impler))
-                            .none_or_else(|_| dup_attr_err(impler_span))?;
+                            .none_or_else(|_| err::dup_arg(impler_span))?;
                     }
                 }
                 "internal" => {
                     output.is_internal = true;
                 }
-                _ => {
-                    return Err(syn::Error::new(ident.span(), "unknown attribute"));
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
                 }
             }
             input.try_parse::<token::Comma>()?;
@@ -185,6 +185,182 @@ impl InterfaceMeta {
         }
 
         Ok(meta)
+    }
+}
+
+#[derive(Debug, Default)]
+struct FieldMeta {
+    pub name: Option<SpanContainer<syn::LitStr>>,
+    pub description: Option<SpanContainer<syn::LitStr>>,
+    pub deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
+    pub ignore: Option<SpanContainer<syn::Ident>>,
+}
+
+impl Parse for FieldMeta {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut output = Self::default();
+
+        while !input.is_empty() {
+            let ident = input.parse::<syn::Ident>()?;
+            match ident.to_string().as_str() {
+                "name" => {
+                    input.parse::<token::Eq>()?;
+                    let name = input.parse::<syn::LitStr>()?;
+                    output
+                        .name
+                        .replace(SpanContainer::new(ident.span(), Some(name.span()), name))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "desc" | "description" => {
+                    input.parse::<token::Eq>()?;
+                    let desc = input.parse::<syn::LitStr>()?;
+                    output
+                        .description
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "deprecated" => {
+                    let mut reason = None;
+                    if input.is_next::<token::Eq>() {
+                        input.parse::<token::Eq>()?;
+                        reason = Some(input.parse::<syn::LitStr>()?);
+                    }
+                    output
+                        .deprecated
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            reason.as_ref().map(|r| r.span()),
+                            reason,
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "ignore" | "skip" => output
+                    .ignore
+                    .replace(SpanContainer::new(ident.span(), None, ident.clone()))
+                    .none_or_else(|_| err::dup_arg(&ident))?,
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
+                }
+            }
+            input.try_parse::<token::Comma>()?;
+        }
+
+        Ok(output)
+    }
+}
+
+impl FieldMeta {
+    /// Tries to merge two [`FieldMeta`]s into a single one, reporting about duplicates, if any.
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
+        Ok(Self {
+            name: try_merge_opt!(name: self, another),
+            description: try_merge_opt!(description: self, another),
+            deprecated: try_merge_opt!(deprecated: self, another),
+            ignore: try_merge_opt!(ignore: self, another),
+        })
+    }
+
+    /// Parses [`FieldMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
+    /// function/method definition.
+    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        let mut meta = filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
+
+        if meta.description.is_none() {
+            meta.description = get_doc_comment(attrs).map(|sc| {
+                let span = sc.span_ident();
+                sc.map(|desc| syn::LitStr::new(&desc, span))
+            });
+        }
+
+        if meta.deprecated.is_none() {
+            meta.deprecated = get_deprecated(attrs).map(|sc| {
+                let span = sc.span_ident();
+                sc.map(|depr| depr.reason.map(|rsn| syn::LitStr::new(&rsn, span)))
+            });
+        }
+
+        Ok(meta)
+    }
+}
+
+#[derive(Debug, Default)]
+struct ArgumentMeta {
+    pub name: Option<SpanContainer<syn::LitStr>>,
+    pub description: Option<SpanContainer<syn::LitStr>>,
+    pub default: Option<SpanContainer<Option<syn::Expr>>>,
+}
+
+impl Parse for ArgumentMeta {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut output = Self::default();
+
+        while !input.is_empty() {
+            let ident = input.parse::<syn::Ident>()?;
+            match ident.to_string().as_str() {
+                "name" => {
+                    input.parse::<token::Eq>()?;
+                    let name = input.parse::<syn::LitStr>()?;
+                    output
+                        .name
+                        .replace(SpanContainer::new(ident.span(), Some(name.span()), name))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "desc" | "description" => {
+                    input.parse::<token::Eq>()?;
+                    let desc = input.parse::<syn::LitStr>()?;
+                    output
+                        .description
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "default" => {
+                    let mut expr = None;
+                    if input.is_next::<token::Eq>() {
+                        input.parse::<token::Eq>()?;
+                        expr = Some(input.parse::<syn::Expr>()?);
+                    } else if input.is_next::<token::Paren>() {
+                        let inner;
+                        let _ = syn::parenthesized!(inner in input);
+                        expr = Some(inner.parse::<syn::Expr>()?);
+                    }
+                    output
+                        .default
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            expr.as_ref().map(|e| e.span()),
+                            expr,
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
+                }
+            }
+            input.try_parse::<token::Comma>()?;
+        }
+
+        Ok(output)
+    }
+}
+
+impl ArgumentMeta {
+    /// Tries to merge two [`ArgumentMeta`]s into a single one, reporting about duplicates, if any.
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
+        Ok(Self {
+            name: try_merge_opt!(name: self, another),
+            description: try_merge_opt!(description: self, another),
+            default: try_merge_opt!(default: self, another),
+        })
+    }
+
+    /// Parses [`ArgumentMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
+    /// function argument.
+    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
     }
 }
 

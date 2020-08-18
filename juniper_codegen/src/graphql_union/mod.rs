@@ -17,7 +17,7 @@ use syn::{
 };
 
 use crate::util::{
-    dup_attr_err, filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _,
+    err, filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _,
     ParseBufferExt as _,
 };
 
@@ -84,7 +84,7 @@ impl Parse for UnionMeta {
         let mut output = Self::default();
 
         while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
+            let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
                 "name" => {
                     input.parse::<token::Eq>()?;
@@ -96,7 +96,7 @@ impl Parse for UnionMeta {
                             Some(name.span()),
                             name.value(),
                         ))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
@@ -108,7 +108,7 @@ impl Parse for UnionMeta {
                             Some(desc.span()),
                             desc.value(),
                         ))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
                     input.parse::<token::Eq>()?;
@@ -116,7 +116,7 @@ impl Parse for UnionMeta {
                     output
                         .context
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
@@ -124,7 +124,7 @@ impl Parse for UnionMeta {
                     output
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "on" => {
                     let ty = input.parse::<syn::Type>()?;
@@ -135,13 +135,13 @@ impl Parse for UnionMeta {
                     output
                         .external_resolvers
                         .insert(ty, rslvr_spanned)
-                        .none_or_else(|_| dup_attr_err(rslvr_span))?
+                        .none_or_else(|_| err::dup_arg(rslvr_span))?
                 }
                 "internal" => {
                     output.is_internal = true;
                 }
-                _ => {
-                    return Err(syn::Error::new(ident.span(), "unknown attribute"));
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
                 }
             }
             input.try_parse::<token::Comma>()?;
@@ -206,22 +206,22 @@ impl Parse for UnionVariantMeta {
         let mut output = Self::default();
 
         while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
+            let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
                 "ignore" | "skip" => output
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
-                    .none_or_else(|_| dup_attr_err(ident.span()))?,
+                    .none_or_else(|_| err::dup_arg(&ident))?,
                 "with" => {
                     input.parse::<token::Eq>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     output
                         .external_resolver
                         .replace(SpanContainer::new(ident.span(), Some(rslvr.span()), rslvr))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                _ => {
-                    return Err(syn::Error::new(ident.span(), "unknown attribute"));
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
                 }
             }
             input.try_parse::<token::Comma>()?;
