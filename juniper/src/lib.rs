@@ -122,7 +122,7 @@ extern crate bson;
 pub use {futures, static_assertions as sa};
 
 #[doc(inline)]
-pub use futures::future::BoxFuture;
+pub use futures::future::{BoxFuture, LocalBoxFuture};
 
 // This is required by the `tracing` feature.
 #[cfg(feature = "tracing")]

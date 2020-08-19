@@ -25,7 +25,7 @@ warp = "0.2"
 
 [dev-dependencies]
 env_logger = "0.7.1"
-juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema", "serde_json"] }
+juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4.3"
 percent-encoding = "2"
 tokio = { version = "0.2", features = ["blocking", "macros", "rt-core"] }

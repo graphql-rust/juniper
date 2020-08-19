@@ -155,7 +155,7 @@ impl GraphQLResponse {
     /// # extern crate juniper_rocket_async;
     /// # extern crate rocket;
     /// #
-    /// # use rocket::http::Cookies;
+    /// # use rocket::http::CookieJar;
     /// # use rocket::request::Form;
     /// # use rocket::response::content;
     /// # use rocket::State;
@@ -168,7 +168,7 @@ impl GraphQLResponse {
     /// #
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
-    ///     mut cookies: Cookies,
+    ///     cookies: &CookieJar,
     ///     context: State<Database>,
     ///     request: Form<juniper_rocket_async::GraphQLRequest>,
     ///     schema: State<Schema>,
