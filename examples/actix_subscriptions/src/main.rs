@@ -2,7 +2,6 @@ use std::{env, pin::Pin, time::Duration};
 
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
-use futures::Stream;
 
 use juniper::{
     tests::fixtures::starwars::{model::Database, schema::Query},
@@ -49,14 +48,15 @@ impl RandomHuman {
     }
 }
 
+type RandomHumanStream =
+    Pin<Box<dyn futures::Stream<Item = Result<RandomHuman, FieldError>> + Send>>;
+
 #[juniper::graphql_subscription(Context = Database)]
 impl Subscription {
     #[graphql(
         description = "A random humanoid creature in the Star Wars universe every 3 seconds. Second result will be an error."
     )]
-    async fn random_human(
-        context: &Database,
-    ) -> Pin<Box<dyn Stream<Item = Result<RandomHuman, FieldError>> + Send>> {
+    async fn random_human(context: &Database) -> RandomHumanStream {
         let mut counter = 0;
 
         let context = (*context).clone();
