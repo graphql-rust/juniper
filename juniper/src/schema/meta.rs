@@ -647,6 +647,7 @@ impl<'a, S> Field<'a, S> {
     ///
     /// If the description hasn't been set, the description is set to the provided line.
     /// Otherwise, the doc string is added to the current description after a newline.
+    // TODO: remove after full proc macros
     pub fn push_docstring(mut self, multiline: &[&str]) -> Field<'a, S> {
         if let Some(docstring) = clean_docstring(multiline) {
             match &mut self.description {

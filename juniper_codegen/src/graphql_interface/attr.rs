@@ -9,7 +9,7 @@ use crate::{
     util::{span_container::SpanContainer, strip_attrs, unite_attrs},
 };
 
-use super::{InterfaceDefinition, InterfaceImplementerDefinition, InterfaceMeta};
+use super::{InterfaceDefinition, InterfaceImplementerDefinition, InterfaceMeta, InterfaceFieldDefinition, InterfaceFieldArgumentDefinition};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
@@ -87,6 +87,16 @@ pub fn expand_on_trait(
         context,
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
+        fields: vec![
+            InterfaceFieldDefinition {
+                name: "id".to_string(),
+                ty: parse_quote! { &str },
+                description: None,
+                deprecated: None,
+                arguments: vec![],
+                is_async: false,
+            }
+        ],
         implementers,
     };
 

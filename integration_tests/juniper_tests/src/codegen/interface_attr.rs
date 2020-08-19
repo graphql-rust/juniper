@@ -12,7 +12,7 @@ struct Human {
 #[graphql_interface]
 impl Character for Human {
 
-    #[graphql_interface]
+    //#[graphql_interface]
     fn id(&self) -> &str {
         &self.id
     }

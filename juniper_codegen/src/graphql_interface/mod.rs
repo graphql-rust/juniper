@@ -364,6 +364,22 @@ impl ArgumentMeta {
     }
 }
 
+struct InterfaceFieldArgumentDefinition {
+    pub name: String,
+    pub ty: syn::Type,
+    pub description: Option<String>,
+    pub default: Option<Option<syn::Expr>>,
+}
+
+struct InterfaceFieldDefinition {
+    pub name: String,
+    pub ty: syn::Type,
+    pub description: Option<String>,
+    pub deprecated: Option<Option<String>>,
+    pub arguments: Vec<InterfaceFieldArgumentDefinition>,
+    pub is_async: bool,
+}
+
 /// Definition of [GraphQL interface][1] implementer for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -448,6 +464,8 @@ struct InterfaceDefinition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     pub scalar: Option<syn::Type>,
 
+    pub fields: Vec<InterfaceFieldDefinition>,
+
     /// Implementers definitions of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -483,6 +501,71 @@ impl ToTokens for InterfaceDefinition {
         } else {
             None
         };
+
+        let fields_meta = self.fields.iter().map(|field| {
+            let (name, ty) = (&field.name, &field.ty);
+
+            let description = field
+                .description
+                .as_ref()
+                .map(|desc| quote! { .description(#desc) });
+
+            let deprecated = field.deprecated.as_ref().map(|reason| {
+                let reason = reason
+                    .as_ref()
+                    .map(|rsn| quote! { Some(#rsn) })
+                    .unwrap_or_else(|| quote! { None });
+                quote! { .deprecated(#reason) }
+            });
+
+            let arguments = field.arguments.iter().map(|arg| {
+                let (name, ty) = (&arg.name, &arg.ty);
+
+                let description = arg
+                    .description
+                    .as_ref()
+                    .map(|desc| quote! { .description(#desc) });
+
+                let method = if let Some(val) = &arg.default {
+                    let val = val
+                        .as_ref()
+                        .map(|v| quote! { #v })
+                        .unwrap_or_else(|| quote! { <#ty as Default>::default() });
+                    quote! { .arg_with_default::<#ty>(#name, &(#val), info) }
+                } else {
+                    quote! { .arg::<#ty>(#name, info) }
+                };
+
+                quote! { .argument(registry#method#description) }
+            });
+
+            quote! {
+                registry.field_convert::<#ty, _, Self::Context>(#name, info)
+                    #( #arguments )*
+                    #description
+                    #deprecated
+            }
+        });
+
+        let fields_resolvers = self.fields.iter().map(|field| {
+            let (name, ty) = (&field.name, &field.ty);
+
+            let code = quote! {};
+
+            quote! {
+                #name => {
+                    let res: #ty = (|| { #code })();
+
+                    ::juniper::IntoResolvable::into(res, executor.context())
+                        .and_then(|res| match res {
+                            Some((ctx, r)) => executor
+                                .replaced_context(ctx)
+                                .resolve_with_ctx(info, &r),
+                            None => Ok(::juniper::Value::null()),
+                        })
+                },
+            }
+        });
 
         let custom_downcast_checks = self.implementers.iter().filter_map(|impler| {
             let impler_check = impler.downcast_check.as_ref()?;
@@ -647,10 +730,12 @@ impl ToTokens for InterfaceDefinition {
                     // Ensure all implementer types are registered.
                     #( let _ = registry.get_type::<#impler_types>(info); )*
 
-                    // TODO: fields
-                    registry.build_interface_type::<#ty_full>(info, &[])
-                    #description
-                    .into_meta()
+                    let fields = [
+                        #( #fields_meta, )*
+                    ];
+                    registry.build_interface_type::<#ty_full>(info, &fields)
+                        #description
+                        .into_meta()
                 }
             }
         };
@@ -665,6 +750,23 @@ impl ToTokens for InterfaceDefinition {
 
                 fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                }
+
+                fn resolve_field(
+                    &self,
+                    info: &Self::TypeInfo,
+                    field: &str,
+                    args: &::juniper::Arguments<#scalar>,
+                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::ExecutionResult<#scalar> {
+                    match field {
+                        #( #fields_resolvers )*
+                        _ => panic!(
+                            "Field `{}` not found on type `{}`",
+                            field,
+                            <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                        ),
+                    }
                 }
 
                 fn concrete_type_name(
