@@ -119,7 +119,7 @@ extern crate bson;
 
 // These are required by the code generated via the `juniper_codegen` macros.
 #[doc(hidden)]
-pub use {futures, static_assertions as sa};
+pub use {async_trait::async_trait, futures, static_assertions as sa};
 
 #[doc(inline)]
 pub use futures::future::BoxFuture;

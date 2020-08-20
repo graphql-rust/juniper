@@ -34,6 +34,7 @@ schema-language = ["graphql-parser-integration"]
 [dependencies]
 juniper_codegen = { version = "0.14.2", path = "../juniper_codegen"  }
 
+async-trait = "0.1.38"
 bson = { version = "1.0", optional = true }
 chrono = { version = "0.4", optional = true }
 fnv = "1.0.3"

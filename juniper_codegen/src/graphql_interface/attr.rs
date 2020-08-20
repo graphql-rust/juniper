@@ -9,7 +9,10 @@ use crate::{
     util::{span_container::SpanContainer, strip_attrs, unite_attrs},
 };
 
-use super::{InterfaceDefinition, InterfaceImplementerDefinition, InterfaceMeta, InterfaceFieldDefinition, InterfaceFieldArgumentDefinition};
+use super::{
+    InterfaceDefinition, InterfaceFieldArgumentDefinition, InterfaceFieldDefinition,
+    InterfaceImplementerDefinition, InterfaceMeta,
+};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
@@ -79,6 +82,8 @@ pub fn expand_on_trait(
 
     proc_macro_error::abort_if_dirty();
 
+    let is_async_trait = true;
+
     let generated_code = InterfaceDefinition {
         name,
         ty: parse_quote! { #trait_ident },
@@ -87,16 +92,15 @@ pub fn expand_on_trait(
         context,
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
-        fields: vec![
-            InterfaceFieldDefinition {
-                name: "id".to_string(),
-                ty: parse_quote! { &str },
-                description: None,
-                deprecated: None,
-                arguments: vec![],
-                is_async: false,
-            }
-        ],
+        fields: vec![InterfaceFieldDefinition {
+            name: "id".to_string(),
+            ty: parse_quote! { &str },
+            description: None,
+            deprecated: None,
+            method: parse_quote! { id },
+            arguments: vec![],
+            is_async: true,
+        }],
         implementers,
     };
 
@@ -106,6 +110,21 @@ pub fn expand_on_trait(
     ast.supertraits.push(parse_quote! {
         ::juniper::AsDynGraphQLValue<GraphQLScalarValue>
     });
+    if is_async_trait {
+        ast.attrs.push(parse_quote! { #[::juniper::async_trait] });
+        for item in ast.items.iter_mut() {
+            if let syn::TraitItem::Method(m) = item {
+                if m.sig.asyncness.is_some() {
+                    m.sig
+                        .generics
+                        .where_clause
+                        .get_or_insert_with(|| parse_quote! { where })
+                        .predicates
+                        .push(parse_quote! { GraphQLScalarValue: 'async_trait })
+                }
+            }
+        }
+    }
 
     Ok(quote! {
         #ast
@@ -129,23 +148,38 @@ pub fn expand_on_impl(
         }
     }
 
+    let is_async_trait = true;
+
     ast.generics.params.push(parse_quote! {
         GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync
     });
-    ast.generics.make_where_clause().predicates.push(parse_quote! {
-        Self: Sync
-    });
+    ast.generics
+        .make_where_clause()
+        .predicates
+        .push(parse_quote! { Self: Sync });
 
     let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
     let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
     if let syn::PathArguments::None = trait_params {
-        *trait_params = syn::PathArguments::AngleBracketed(parse_quote! {
-            <GraphQLScalarValue>
-        });
+        *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <GraphQLScalarValue> });
     } else if let syn::PathArguments::AngleBracketed(a) = trait_params {
-        a.args.push(parse_quote! {
-            GraphQLScalarValue
-        });
+        a.args.push(parse_quote! { GraphQLScalarValue });
+    }
+
+    if is_async_trait {
+        ast.attrs.push(parse_quote! { #[::juniper::async_trait] });
+        for item in ast.items.iter_mut() {
+            if let syn::ImplItem::Method(m) = item {
+                if m.sig.asyncness.is_some() {
+                    m.sig
+                        .generics
+                        .where_clause
+                        .get_or_insert_with(|| parse_quote! { where })
+                        .predicates
+                        .push(parse_quote! { GraphQLScalarValue: 'async_trait })
+                }
+            }
+        }
     }
 
     Ok(quote! {

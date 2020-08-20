@@ -371,12 +371,30 @@ struct InterfaceFieldArgumentDefinition {
     pub default: Option<Option<syn::Expr>>,
 }
 
+enum InterfaceFieldArgument {
+    Regular(InterfaceFieldArgumentDefinition),
+    Context,
+    Executor,
+}
+
+impl InterfaceFieldArgument {
+    #[must_use]
+    pub fn as_regular(&self) -> Option<&InterfaceFieldArgumentDefinition> {
+        if let Self::Regular(arg) = self {
+            Some(arg)
+        } else {
+            None
+        }
+    }
+}
+
 struct InterfaceFieldDefinition {
     pub name: String,
     pub ty: syn::Type,
     pub description: Option<String>,
     pub deprecated: Option<Option<String>>,
-    pub arguments: Vec<InterfaceFieldArgumentDefinition>,
+    pub method: syn::Ident,
+    pub arguments: Vec<InterfaceFieldArgument>,
     pub is_async: bool,
 }
 
@@ -518,7 +536,9 @@ impl ToTokens for InterfaceDefinition {
                 quote! { .deprecated(#reason) }
             });
 
-            let arguments = field.arguments.iter().map(|arg| {
+            let arguments = field.arguments.iter().filter_map(|arg| {
+                let arg = arg.as_regular()?;
+
                 let (name, ty) = (&arg.name, &arg.ty);
 
                 let description = arg
@@ -536,7 +556,7 @@ impl ToTokens for InterfaceDefinition {
                     quote! { .arg::<#ty>(#name, info) }
                 };
 
-                quote! { .argument(registry#method#description) }
+                Some(quote! { .argument(registry#method#description) })
             });
 
             quote! {
@@ -544,26 +564,6 @@ impl ToTokens for InterfaceDefinition {
                     #( #arguments )*
                     #description
                     #deprecated
-            }
-        });
-
-        let fields_resolvers = self.fields.iter().map(|field| {
-            let (name, ty) = (&field.name, &field.ty);
-
-            let code = quote! {};
-
-            quote! {
-                #name => {
-                    let res: #ty = (|| { #code })();
-
-                    ::juniper::IntoResolvable::into(res, executor.context())
-                        .and_then(|res| match res {
-                            Some((ctx, r)) => executor
-                                .replaced_context(ctx)
-                                .resolve_with_ctx(info, &r),
-                            None => Ok(::juniper::Value::null()),
-                        })
-                },
             }
         });
 
@@ -700,6 +700,7 @@ impl ToTokens for InterfaceDefinition {
         }
 
         let mut ty_full = quote! { #ty#ty_generics };
+        let mut ty_interface = quote! { #ty#ty_generics };
         if self.is_trait_object {
             let mut ty_params = None;
             if !self.generics.params.is_empty() {
@@ -710,7 +711,101 @@ impl ToTokens for InterfaceDefinition {
                 dyn #ty<#ty_params #scalar, Context = #context, TypeInfo = ()> +
                     '__obj + Send + Sync
             };
+            ty_interface = quote! { #ty<#ty_params #scalar> };
         }
+
+        let fields_sync_resolvers = self.fields.iter().filter_map(|field| {
+            if field.is_async {
+                return None;
+            }
+            let (name, ty, method) = (&field.name, &field.ty, &field.method);
+            let arguments = field.arguments.iter().map(|arg| match arg {
+                InterfaceFieldArgument::Regular(arg) => {
+                    let (name, ty) = (&arg.name, &arg.ty);
+                    let err_text = format!(
+                        "Internal error: missing argument `{}` - validation must have failed",
+                        &name,
+                    );
+                    quote! { args.get::<#ty>(#name).expect(#err_text) }
+                }
+                InterfaceFieldArgument::Context => quote! { executor.context() },
+                InterfaceFieldArgument::Executor => quote! { &executor },
+            });
+
+            Some(quote! {
+                #name => {
+                    let res: #ty = <Self as #ty_interface>::#method(self#( , #arguments )*);
+                    ::juniper::IntoResolvable::into(res, executor.context())
+                        .and_then(|res| match res {
+                            Some((ctx, r)) => executor
+                                .replaced_context(ctx)
+                                .resolve_with_ctx(info, &r),
+                            None => Ok(::juniper::Value::null()),
+                        })
+                },
+            })
+        });
+        let fields_sync_panic = {
+            let names = self
+                .fields
+                .iter()
+                .filter_map(|field| {
+                    if field.is_async {
+                        Some(&field.name)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+            if names.is_empty() {
+                None
+            } else {
+                Some(quote! {
+                    #( #names )|* => panic!(
+                        "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+                        field,
+                        <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
+                    ),
+                })
+            }
+        };
+
+        let fields_async_resolvers = self.fields.iter().map(|field| {
+            let (name, ty) = (&field.name, &field.ty);
+
+            let method = &field.method;
+            let arguments = field.arguments.iter().map(|arg| match arg {
+                InterfaceFieldArgument::Regular(arg) => {
+                    let (name, ty) = (&arg.name, &arg.ty);
+                    let err_text = format!(
+                        "Internal error: missing argument `{}` - validation must have failed",
+                        &name,
+                    );
+                    quote! { args.get::<#ty>(#name).expect(#err_text) }
+                }
+                InterfaceFieldArgument::Context => quote! { executor.context() },
+                InterfaceFieldArgument::Executor => quote! { &executor },
+            });
+            let awt = if field.is_async {
+                Some(quote! { .await })
+            } else {
+                None
+            };
+
+            quote! {
+                #name => Box::pin(async move {
+                    let res: #ty = <Self as #ty_interface>::#method(self#( , #arguments )*)#awt;
+
+                    match ::juniper::IntoResolvable::into(res, executor.context())? {
+                        Some((ctx, r)) => {
+                            let subexec = executor.replaced_context(ctx);
+                            subexec.resolve_with_ctx_async(info, &r).await
+                        },
+                        None => Ok(::juniper::Value::null()),
+                    }
+                }),
+            }
+        });
 
         let type_impl = quote! {
             #[automatically_derived]
@@ -760,11 +855,12 @@ impl ToTokens for InterfaceDefinition {
                     executor: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
-                        #( #fields_resolvers )*
+                        #( #fields_sync_resolvers )*
+                        #fields_sync_panic
                         _ => panic!(
                             "Field `{}` not found on type `{}`",
                             field,
-                            <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                            <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
                         ),
                     }
                 }
@@ -797,6 +893,23 @@ impl ToTokens for InterfaceDefinition {
             impl#ext_impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty_full
                 #where_async
             {
+                fn resolve_field_async<'b>(
+                    &'b self,
+                    info: &'b Self::TypeInfo,
+                    field: &'b str,
+                    args: &'b ::juniper::Arguments<#scalar>,
+                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    match field {
+                        #( #fields_async_resolvers )*
+                        _ => panic!(
+                            "Field `{}` not found on type `{}`",
+                            field,
+                            <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
+                        ),
+                    }
+                }
+
                 fn resolve_into_type_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
