@@ -1,16 +1,20 @@
 //! Code generation for `#[graphql_interface]` macro.
 
+use std::mem;
+
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
     result::GraphQLScope,
-    util::{span_container::SpanContainer, strip_attrs, unite_attrs},
+    util::{
+        path_eq_single, span_container::SpanContainer, strip_attrs, to_camel_case, unite_attrs,
+    },
 };
 
 use super::{
-    InterfaceDefinition, InterfaceFieldArgument, InterfaceFieldDefinition,
+    FieldMeta, InterfaceDefinition, InterfaceFieldArgument, InterfaceFieldDefinition,
     InterfaceImplementerDefinition, InterfaceMeta,
 };
 
@@ -182,5 +186,47 @@ pub fn expand_on_impl(
 
     Ok(quote! {
         #ast
+    })
+}
+
+fn parse_field_from_trait_method(
+    method: &mut syn::TraitItemMethod,
+) -> Option<InterfaceFieldDefinition> {
+    let method_attrs = method.attrs.clone();
+
+    // Remove repeated attributes from the method, to omit incorrect expansion.
+    method.attrs = mem::take(&mut method.attrs)
+        .into_iter()
+        .filter(|attr| !path_eq_single(&attr.path, "graphql_interface"))
+        .collect();
+
+    let meta = FieldMeta::from_attrs("graphql_interface", &method_attrs)
+        .map_err(|e| proc_macro_error::emit_error!(e))
+        .ok()?;
+
+    if meta.ignore.is_some() {
+        return None;
+    }
+
+    let method_ident = &method.sig.ident;
+
+    let name = meta
+        .name
+        .as_ref()
+        .map(syn::LitStr::value)
+        .unwrap_or_else(|| to_camel_case(&method_ident.unraw().to_string()));
+    if name.starts_with("__") {
+        ERR.no_double_underscore(
+            meta.name
+                .as_ref()
+                .map(SpanContainer::span_ident)
+                .unwrap_or_else(|| method_ident.span()),
+        );
+        return None;
+    }
+
+    Some(InterfaceFieldDefinition {
+        name,
+        method: method_ident.clone(),
     })
 }
