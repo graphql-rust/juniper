@@ -10,7 +10,7 @@ use crate::{
 };
 
 use super::{
-    InterfaceDefinition, InterfaceFieldArgumentDefinition, InterfaceFieldDefinition,
+    InterfaceDefinition, InterfaceFieldArgument, InterfaceFieldDefinition,
     InterfaceImplementerDefinition, InterfaceMeta,
 };
 
@@ -94,11 +94,11 @@ pub fn expand_on_trait(
         generics: ast.generics.clone(),
         fields: vec![InterfaceFieldDefinition {
             name: "id".to_string(),
-            ty: parse_quote! { &str },
+            ty: parse_quote! { String },
             description: None,
             deprecated: None,
             method: parse_quote! { id },
-            arguments: vec![],
+            arguments: vec![InterfaceFieldArgument::Context],
             is_async: true,
         }],
         implementers,
@@ -117,8 +117,7 @@ pub fn expand_on_trait(
                 if m.sig.asyncness.is_some() {
                     m.sig
                         .generics
-                        .where_clause
-                        .get_or_insert_with(|| parse_quote! { where })
+                        .make_where_clause()
                         .predicates
                         .push(parse_quote! { GraphQLScalarValue: 'async_trait })
                 }
@@ -173,8 +172,7 @@ pub fn expand_on_impl(
                 if m.sig.asyncness.is_some() {
                     m.sig
                         .generics
-                        .where_clause
-                        .get_or_insert_with(|| parse_quote! { where })
+                        .make_where_clause()
                         .predicates
                         .push(parse_quote! { GraphQLScalarValue: 'async_trait })
                 }

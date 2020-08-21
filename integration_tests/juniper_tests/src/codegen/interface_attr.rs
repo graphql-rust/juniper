@@ -12,8 +12,8 @@ struct Human {
 #[graphql_interface]
 impl Character for Human {
     //#[graphql_interface]
-    async fn id(&self) -> &str {
-        &self.id
+    async fn id(&self, _: &()) -> String {
+        self.id.to_string()
     }
 }
 
@@ -28,8 +28,8 @@ struct Droid {
 
 #[graphql_interface]
 impl Character for Droid {
-    async fn id(&self) -> &str {
-        &self.id
+    async fn id(&self, _: &()) -> String {
+        self.id.to_string()
     }
 
     fn as_droid(&self) -> Option<&Droid> {
@@ -41,7 +41,7 @@ impl Character for Droid {
 
 #[graphql_interface(for = [Human, Droid])]
 trait Character {
-    async fn id(&self) -> &str;
+    async fn id(&self, context: &()) -> String;
 
     //#[graphql_interface(downcast)]
     fn as_droid(&self) -> Option<&Droid> { None }

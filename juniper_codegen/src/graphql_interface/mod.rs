@@ -786,16 +786,14 @@ impl ToTokens for InterfaceDefinition {
                 InterfaceFieldArgument::Context => quote! { executor.context() },
                 InterfaceFieldArgument::Executor => quote! { &executor },
             });
-            let awt = if field.is_async {
-                Some(quote! { .await })
-            } else {
-                None
-            };
+
+            let mut fut = quote! { <Self as #ty_interface>::#method(self#( , #arguments )*) };
+            if !field.is_async {
+                fut = quote! { ::juniper::futures::future::ready(#fut) };
+            }
 
             quote! {
-                #name => Box::pin(async move {
-                    let res: #ty = <Self as #ty_interface>::#method(self#( , #arguments )*)#awt;
-
+                #name => Box::pin(::juniper::futures::FutureExt::then(#fut, move |res: #ty| async move {
                     match ::juniper::IntoResolvable::into(res, executor.context())? {
                         Some((ctx, r)) => {
                             let subexec = executor.replaced_context(ctx);
@@ -803,7 +801,7 @@ impl ToTokens for InterfaceDefinition {
                         },
                         None => Ok(::juniper::Value::null()),
                     }
-                }),
+                })),
             }
         });
 
@@ -881,7 +879,6 @@ impl ToTokens for InterfaceDefinition {
                     _: Option<&[::juniper::Selection<#scalar>]>,
                     executor: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
-                    let context = executor.context();
                     #( #custom_downcasts )*
                     #regular_downcast
                 }
@@ -917,7 +914,6 @@ impl ToTokens for InterfaceDefinition {
                     _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
                     executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
-                    let context = executor.context();
                     #( #custom_async_downcasts )*
                     #regular_async_downcast
                 }
