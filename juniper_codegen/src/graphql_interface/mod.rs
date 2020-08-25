@@ -290,6 +290,8 @@ struct ArgumentMeta {
     pub name: Option<SpanContainer<syn::LitStr>>,
     pub description: Option<SpanContainer<syn::LitStr>>,
     pub default: Option<SpanContainer<Option<syn::Expr>>>,
+    pub context: Option<SpanContainer<syn::Ident>>,
+    pub executor: Option<SpanContainer<syn::Ident>>,
 }
 
 impl Parse for ArgumentMeta {
@@ -334,6 +336,26 @@ impl Parse for ArgumentMeta {
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "ctx" | "context" | "Context" => {
+                    output
+                        .context
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(ident.span()),
+                            ident.clone(),
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "exec" | "executor" => {
+                    output
+                        .executor
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(ident.span()),
+                            ident.clone(),
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -352,6 +374,8 @@ impl ArgumentMeta {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
             default: try_merge_opt!(default: self, another),
+            context: try_merge_opt!(context: self, another),
+            executor: try_merge_opt!(executor: self, another),
         })
     }
 
