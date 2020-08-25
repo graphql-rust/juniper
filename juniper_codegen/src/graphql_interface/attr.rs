@@ -17,7 +17,7 @@ use crate::{
 use super::{
     ArgumentMeta, FieldMeta, InterfaceDefinition, InterfaceFieldArgument,
     InterfaceFieldArgumentDefinition, InterfaceFieldDefinition, InterfaceImplementerDefinition,
-    InterfaceMeta,
+    InterfaceMeta, ImplementerMeta,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -51,7 +51,6 @@ pub fn expand_on_trait(
 ) -> syn::Result<TokenStream> {
     let meta = InterfaceMeta::from_attrs("graphql_interface", &attrs)?;
 
-    let trait_span = ast.span();
     let trait_ident = &ast.ident;
 
     let name = meta
@@ -99,7 +98,15 @@ pub fn expand_on_trait(
 
     proc_macro_error::abort_if_dirty();
 
-    let is_async_trait = true;
+    let is_async_trait = meta.asyncness.is_some()
+        || ast
+            .items
+            .iter()
+            .find_map(|item| match item {
+                syn::TraitItem::Method(m) => m.sig.asyncness,
+                _ => None,
+            })
+            .is_some();
 
     let generated_code = InterfaceDefinition {
         name,
@@ -146,17 +153,17 @@ pub fn expand_on_impl(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemImpl,
 ) -> syn::Result<TokenStream> {
-    for attr in attrs {
-        if !attr.tokens.is_empty() && attr.tokens.to_string().as_str() != "()" {
-            return Err(syn::Error::new(
-                attr.tokens.span(),
-                "#[graphql_interface] attribute cannot have any arguments when placed on a trait \
-                 implementation",
-            ));
-        }
-    }
+    let meta = ImplementerMeta::from_attrs("graphql_interface", &attrs)?;
 
-    let is_async_trait = true;
+    let is_async_trait = meta.asyncness.is_some()
+        || ast
+        .items
+        .iter()
+        .find_map(|item| match item {
+            syn::ImplItem::Method(m) => m.sig.asyncness,
+            _ => None,
+        })
+        .is_some();
 
     ast.generics.params.push(parse_quote! {
         GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync
@@ -232,7 +239,6 @@ fn parse_field_from_trait_method(
         if method.sig.inputs.is_empty() {
             return err_no_method_receiver(&method.sig.inputs);
         }
-        let args_len = method.sig.inputs.len();
         let mut args_iter = method.sig.inputs.iter_mut();
         match args_iter.next().unwrap() {
             syn::FnArg::Receiver(rcv) => {

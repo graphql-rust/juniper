@@ -4,7 +4,7 @@
 
 pub mod attr;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt as _};
@@ -71,6 +71,8 @@ struct InterfaceMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     pub implementers: HashSet<SpanContainer<syn::Type>>,
+
+    pub asyncness: Option<SpanContainer<syn::Ident>>,
 
     /*
     /// Explicitly specified external downcasting functions for [GraphQL interface][1] implementers.
@@ -146,6 +148,13 @@ impl Parse for InterfaceMeta {
                             .none_or_else(|_| err::dup_arg(impler_span))?;
                     }
                 }
+                "async" => {
+                    let span = ident.span();
+                    output
+                        .asyncness
+                        .replace(SpanContainer::new(span, Some(span), ident))
+                        .none_or_else(|_| err::dup_arg(span))?;
+                }
                 "internal" => {
                     output.is_internal = true;
                 }
@@ -169,6 +178,7 @@ impl InterfaceMeta {
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
             implementers: try_merge_hashset!(implementers: self, another => span_joined),
+            asyncness: try_merge_opt!(asyncness: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
     }
@@ -185,6 +195,58 @@ impl InterfaceMeta {
         }
 
         Ok(meta)
+    }
+}
+
+/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait
+/// implementation block, when generating code for [GraphQL interface][1] type.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+#[derive(Debug, Default)]
+struct ImplementerMeta {
+    pub asyncness: Option<SpanContainer<syn::Ident>>,
+}
+
+impl Parse for ImplementerMeta {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut output = Self::default();
+
+        while !input.is_empty() {
+            let ident = input.parse_any_ident()?;
+            match ident.to_string().as_str() {
+                "async" => {
+                    let span = ident.span();
+                    output
+                        .asyncness
+                        .replace(SpanContainer::new(span, Some(span), ident))
+                        .none_or_else(|_| err::dup_arg(span))?;
+                }
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
+                }
+            }
+            input.try_parse::<token::Comma>()?;
+        }
+
+        Ok(output)
+    }
+}
+
+impl ImplementerMeta {
+    /// Tries to merge two [`ImplementerMeta`]s into a single one, reporting about duplicates, if
+    /// any.
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
+        Ok(Self {
+            asyncness: try_merge_opt!(asyncness: self, another),
+        })
+    }
+
+    /// Parses [`ImplementerMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
+    /// trait implementation block.
+    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
     }
 }
 
@@ -337,24 +399,18 @@ impl Parse for ArgumentMeta {
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
+                    let span = ident.span();
                     output
                         .context
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(ident.span()),
-                            ident.clone(),
-                        ))
-                        .none_or_else(|_| err::dup_arg(&ident))?
+                        .replace(SpanContainer::new(span, Some(span), ident))
+                        .none_or_else(|_| err::dup_arg(span))?
                 }
                 "exec" | "executor" => {
+                    let span = ident.span();
                     output
                         .executor
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(ident.span()),
-                            ident.clone(),
-                        ))
-                        .none_or_else(|_| err::dup_arg(&ident))?
+                        .replace(SpanContainer::new(span, Some(span), ident))
+                        .none_or_else(|_| err::dup_arg(span))?
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
