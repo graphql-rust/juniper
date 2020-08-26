@@ -111,7 +111,8 @@ pub fn expand_on_trait(
     let generated_code = InterfaceDefinition {
         name,
         ty: parse_quote! { #trait_ident },
-        is_trait_object: true,
+        trait_object: Some(meta.alias.map(|a| a.as_ref().clone())),
+        visibility: ast.vis.clone(),
         description: meta.description.map(SpanContainer::into_inner),
         context,
         scalar: meta.scalar.map(SpanContainer::into_inner),
@@ -126,6 +127,7 @@ pub fn expand_on_trait(
     ast.supertraits.push(parse_quote! {
         ::juniper::AsDynGraphQLValue<GraphQLScalarValue>
     });
+    ast.attrs.push(parse_quote! { #[allow(unused_qualifications)] });
     if is_async_trait {
         ast.attrs.push(parse_quote! { #[::juniper::async_trait] });
         for item in ast.items.iter_mut() {

@@ -72,6 +72,8 @@ struct InterfaceMeta {
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     pub implementers: HashSet<SpanContainer<syn::Type>>,
 
+    pub alias: Option<SpanContainer<syn::Ident>>,
+
     pub asyncness: Option<SpanContainer<syn::Ident>>,
 
     /*
@@ -148,6 +150,14 @@ impl Parse for InterfaceMeta {
                             .none_or_else(|_| err::dup_arg(impler_span))?;
                     }
                 }
+                "dyn" => {
+                    input.parse::<token::Eq>()?;
+                    let alias = input.parse::<syn::Ident>()?;
+                    output
+                        .alias
+                        .replace(SpanContainer::new(ident.span(), Some(alias.span()), alias))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "async" => {
                     let span = ident.span();
                     output
@@ -178,6 +188,7 @@ impl InterfaceMeta {
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
             implementers: try_merge_hashset!(implementers: self, another => span_joined),
+            alias: try_merge_opt!(alias: self, another),
             asyncness: try_merge_opt!(asyncness: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
@@ -510,7 +521,7 @@ struct InterfaceImplementerDefinition {
     /// [`Span`] that points to the Rust source code which defines this [GraphQL interface][1]
     /// implementer.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     pub span: Span,
 }
 
@@ -533,9 +544,9 @@ struct InterfaceDefinition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     pub generics: syn::Generics,
 
-    /// Indicator whether code should be generated for a trait object, rather than for a regular
-    /// Rust type.
-    pub is_trait_object: bool,
+    pub trait_object: Option<Option<syn::Ident>>,
+
+    pub visibility: syn::Visibility,
 
     /// Description of this [GraphQL interface][1] to put into GraphQL schema.
     ///
@@ -586,6 +597,7 @@ impl ToTokens for InterfaceDefinition {
             .as_ref()
             .map(|scl| quote! { #scl })
             .unwrap_or_else(|| quote! { __S });
+        let is_generic_scalar = self.scalar.is_none();
 
         let description = self
             .description
@@ -658,7 +670,7 @@ impl ToTokens for InterfaceDefinition {
                 }
             })
         });
-        let regular_downcast_check = if self.is_trait_object {
+        let regular_downcast_check = if self.trait_object.is_some() {
             quote! {
                 self.as_dyn_graphql_value().concrete_type_name(context, info)
             }
@@ -717,7 +729,7 @@ impl ToTokens for InterfaceDefinition {
                 }
             })
         });
-        let (regular_downcast, regular_async_downcast) = if self.is_trait_object {
+        let (regular_downcast, regular_async_downcast) = if self.trait_object.is_some() {
             let sync = quote! {
                 return ::juniper::IntoResolvable::into(
                     self.as_dyn_graphql_value(),
@@ -757,10 +769,10 @@ impl ToTokens for InterfaceDefinition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let mut ext_generics = self.generics.clone();
-        if self.is_trait_object {
+        if self.trait_object.is_some() {
             ext_generics.params.push(parse_quote! { '__obj });
         }
-        if self.scalar.is_none() {
+        if is_generic_scalar {
             ext_generics.params.push(parse_quote! { #scalar });
             ext_generics
                 .make_where_clause()
@@ -773,7 +785,7 @@ impl ToTokens for InterfaceDefinition {
             .cloned()
             .unwrap_or_else(|| parse_quote! { where });
         where_async.predicates.push(parse_quote! { Self: Sync });
-        if self.scalar.is_none() {
+        if is_generic_scalar {
             where_async
                 .predicates
                 .push(parse_quote! { #scalar: Send + Sync });
@@ -781,7 +793,7 @@ impl ToTokens for InterfaceDefinition {
 
         let mut ty_full = quote! { #ty#ty_generics };
         let mut ty_interface = quote! { #ty#ty_generics };
-        if self.is_trait_object {
+        if self.trait_object.is_some() {
             let mut ty_params = None;
             if !self.generics.params.is_empty() {
                 let params = &self.generics.params;
@@ -792,6 +804,41 @@ impl ToTokens for InterfaceDefinition {
                     '__obj + Send + Sync
             };
             ty_interface = quote! { #ty<#ty_params #scalar> };
+        }
+
+        let mut dyn_alias = quote! {};
+        if let Some(Some(alias)) = self.trait_object.as_ref().as_ref() {
+            let doc = format!(
+                "Helper alias for the `{}` [trait object][2] implementing [GraphQL interface][1].\
+                 \n\n\
+                 [1]: https://spec.graphql.org/June2018/#sec-Interfaces\n\
+                 [2]: https://doc.rust-lang.org/reference/types/trait-object.html",
+                quote! { #ty },
+            );
+
+            let mut ty_params = None;
+            if !self.generics.params.is_empty() {
+                let params = &self.generics.params;
+                ty_params = Some(quote! { #params });
+            };
+            let (scalar_left, scalar_right) = if is_generic_scalar {
+                let left = Some(quote! { , S = ::juniper::DefaultScalarValue });
+                (left, quote! { S })
+            } else {
+                (None, scalar.clone())
+            };
+            let ty_params_left = ty_params.as_ref().map(|ps| quote! { , #ps });
+            let ty_params_right = ty_params.map(|ps| quote! { #ps, });
+
+            let vis = &self.visibility;
+
+            dyn_alias = quote! {
+                #[allow(unused_qualifications)]
+                #[doc = #doc]
+                #vis type #alias<'a #ty_params_left #scalar_left> =
+                    dyn #ty<#ty_params_right #scalar_right, Context = #context, TypeInfo = ()> +
+                        'a + Send + Sync;
+            }
         }
 
         let fields_sync_resolvers = self.fields.iter().filter_map(|field| {
@@ -873,13 +920,15 @@ impl ToTokens for InterfaceDefinition {
             }
 
             quote! {
-                #name => Box::pin(::juniper::futures::FutureExt::then(#fut, move |res: #ty| async move {
-                    match ::juniper::IntoResolvable::into(res, executor.context())? {
-                        Some((ctx, r)) => {
-                            let subexec = executor.replaced_context(ctx);
-                            subexec.resolve_with_ctx_async(info, &r).await
-                        },
-                        None => Ok(::juniper::Value::null()),
+                #name => Box::pin(::juniper::futures::FutureExt::then(#fut, move |res: #ty| {
+                    async move {
+                        match ::juniper::IntoResolvable::into(res, executor.context())? {
+                            Some((ctx, r)) => {
+                                let subexec = executor.replaced_context(ctx);
+                                subexec.resolve_with_ctx_async(info, &r).await
+                            },
+                            None => Ok(::juniper::Value::null()),
+                        }
                     }
                 })),
             }
@@ -1025,6 +1074,7 @@ impl ToTokens for InterfaceDefinition {
         };
 
         into.append_all(&[
+            dyn_alias,
             interface_impl,
             output_type_impl,
             type_impl,

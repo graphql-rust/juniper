@@ -4,7 +4,6 @@ mod derive_object;
 mod derive_object_with_raw_idents;
 mod impl_object;
 mod impl_scalar;
-mod poc_interface_attr;
 mod interface_attr;
 mod scalar_value_transparent;
 mod union_attr;
