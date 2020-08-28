@@ -1174,6 +1174,308 @@ mod generic_lifetime_async {
     }
 }
 
+mod argument {
+    use super::*;
+
+    #[graphql_interface(for = Human, dyn = DynCharacter)]
+    trait Character {
+        fn id(&self, is_planet: bool) -> &str;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    #[graphql_interface]
+    impl Character for Human {
+        fn id(&self, is_planet: bool) -> &str {
+            if is_planet {
+                &self.home_planet
+            } else {
+                &self.id
+            }
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            Box::new(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_id_field() {
+        let schema = schema(QueryRoot);
+
+        for (input, expected) in &[
+            ("{ character { id(isPlanet: true) } }", "earth"),
+            ("{ character { id(isPlanet: false) } }", "human-32"),
+        ] {
+            let expected: &str = *expected;
+
+            assert_eq!(
+                execute(*input, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"character": {"id": expected}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn camelcases_name() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields {
+                    args {
+                        name
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": { "fields": [{"args": [{"name": "isPlanet"}]}]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields {
+                    args {
+                        description
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": { "fields": [{"args": [{"description": None}]}]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_defaults() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields {
+                    args {
+                        defaultValue
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": { "fields": [{"args": [{"defaultValue": None}]}]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod description_from_doc_comments {
+    use super::*;
+
+    /// Rust docs.
+    #[graphql_interface(for = Human, dyn = DynCharacter)]
+    trait Character {
+        /// Rust `id` docs.
+        fn id(&self) -> &str;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    #[graphql_interface]
+    impl Character for Human {
+        fn id(&self) -> &str {
+            &self.id
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            Box::new(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn uses_doc_comment_as_description() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                description
+                fields {
+                    description
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {
+                    "description": "Rust docs.", "fields": [{"description": "Rust `id` docs."}],
+                }}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod explicit_name_and_description {
+    use super::*;
+
+    /// Rust docs.
+    #[graphql_interface(name = "MyChar", desc = "My character.", for = Human, dyn = DynCharacter)]
+    trait Character {
+        /// Rust `id` docs.
+        #[graphql_interface(name = "myid", desc = "My character ID.")]
+        fn id(
+            &self,
+            #[graphql_interface(name = "myname", desc = "My argument.", default)] n: Option<String>,
+        ) -> &str;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    #[graphql_interface]
+    impl Character for Human {
+        fn id(&self, _: Option<String>) -> &str {
+            &self.id
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            Box::new(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_myid_field() {
+        const DOC: &str = r#"{
+            character {
+                myid
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"character": {"myid": "human-32"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_custom_name() {
+        const DOC: &str = r#"{
+            __type(name: "MyChar") {
+                name
+                fields {
+                    name
+                    args {
+                        name
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {
+                    "name": "MyChar",
+                    "fields": [{"name": "myid", "args": [{"name": "myname"}]}],
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_custom_description() {
+        const DOC: &str = r#"{
+            __type(name: "MyChar") {
+                description
+                fields {
+                    description
+                    args {
+                        description
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {
+                    "description": "My character.",
+                    "fields": [{
+                        "description": "My character ID.",
+                        "args": [{"description": "My argument."}],
+                    }],
+                }}),
+                vec![],
+            )),
+        );
+    }
+}
+
 // -------------------------------------------
 
 #[derive(GraphQLObject)]
