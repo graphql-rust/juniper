@@ -542,6 +542,164 @@ mod trivial_async {
     }
 }
 
+/*
+mod explicit_async {
+    use super::*;
+
+    #[graphql_interface(for = [Human, Droid], dyn = DynCharacter)]
+    trait Character {
+        fn id(&self) -> &str;
+
+        async fn info(&self) -> String {
+            format!("None available")
+        }
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    #[graphql_interface]
+    impl Character for Human {
+        fn id(&self) -> &str {
+            &self.id
+        }
+
+        async fn info(&self) -> String {
+            format!("Home planet is {}", &self.home_planet)
+        }
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Droid {
+        id: String,
+        primary_function: String,
+    }
+
+    #[graphql_interface(async)]
+    impl Character for Droid {
+        fn id(&self) -> &str {
+            &self.id
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            let ch: Box<DynCharacter<'_>> = match self {
+                Self::Human => Box::new(Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }),
+                Self::Droid => Box::new(Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }),
+            };
+            ch
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        const DOC: &str = r#"{
+            character {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+            }
+        }"#;
+
+        for (root, expected_id) in &[
+            (QueryRoot::Human, "human-32"),
+            (QueryRoot::Droid, "droid-99"),
+        ] {
+            let schema = schema(*root);
+
+            let expected_id: &str = *expected_id;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_info_field() {
+        const DOC: &str = r#"{
+            character {
+                info
+            }
+        }"#;
+
+        for (root, expected) in &[
+            (QueryRoot::Human, "Home planet is earth"),
+            (QueryRoot::Droid, "None available"),
+        ] {
+            let schema = schema(*root);
+
+            let expected: &str = *expected;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"character": {"info": expected}}), vec![])),
+            );
+        }
+    }
+}
+ */
+
 mod generic {
     use super::*;
 
