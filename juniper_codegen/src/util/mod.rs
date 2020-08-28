@@ -854,10 +854,9 @@ impl GraphQLTypeDefiniton {
                     {
                         let trait_params = &mut path.segments.last_mut().unwrap().arguments;
                         if let syn::PathArguments::None = trait_params {
-                            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! {
-                                <#scalar, Context = Self::Context, TypeInfo = Self::TypeInfo>
-                            });
-                        } else if let syn::PathArguments::AngleBracketed(a) = trait_params {
+                            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
+                        }
+                        if let syn::PathArguments::AngleBracketed(a) = trait_params {
                             a.args.push(parse_quote! { #scalar });
                             a.args.push(parse_quote! { Context = Self::Context });
                             a.args.push(parse_quote! { TypeInfo = Self::TypeInfo });
@@ -865,6 +864,7 @@ impl GraphQLTypeDefiniton {
                     }
                     dyn_ty.bounds.push(parse_quote! { Send });
                     dyn_ty.bounds.push(parse_quote! { Sync });
+
                     ty = dyn_ty.into();
                 }
 

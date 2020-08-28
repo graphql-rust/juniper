@@ -15,9 +15,9 @@ use crate::{
 };
 
 use super::{
-    ArgumentMeta, FieldMeta, InterfaceDefinition, InterfaceFieldArgument,
+    ArgumentMeta, FieldMeta, ImplementerMeta, InterfaceDefinition, InterfaceFieldArgument,
     InterfaceFieldArgumentDefinition, InterfaceFieldDefinition, InterfaceImplementerDefinition,
-    InterfaceMeta, ImplementerMeta,
+    InterfaceMeta,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -127,20 +127,20 @@ pub fn expand_on_trait(
     ast.supertraits.push(parse_quote! {
         ::juniper::AsDynGraphQLValue<GraphQLScalarValue>
     });
-    ast.attrs.push(parse_quote! { #[allow(unused_qualifications)] });
+    ast.attrs
+        .push(parse_quote! { #[allow(unused_qualifications)] });
     if is_async_trait {
-        ast.attrs.push(parse_quote! { #[::juniper::async_trait] });
-        for item in ast.items.iter_mut() {
-            if let syn::TraitItem::Method(m) = item {
-                if m.sig.asyncness.is_some() {
-                    m.sig
-                        .generics
-                        .make_where_clause()
-                        .predicates
-                        .push(parse_quote! { GraphQLScalarValue: 'async_trait })
+        inject_async_trait(
+            &mut ast.attrs,
+            ast.items.iter_mut().filter_map(|i| {
+                if let syn::TraitItem::Method(m) = i {
+                    Some(&mut m.sig)
+                } else {
+                    None
                 }
-            }
-        }
+            }),
+            &ast.generics,
+        );
     }
 
     Ok(quote! {
@@ -159,13 +159,13 @@ pub fn expand_on_impl(
 
     let is_async_trait = meta.asyncness.is_some()
         || ast
-        .items
-        .iter()
-        .find_map(|item| match item {
-            syn::ImplItem::Method(m) => m.sig.asyncness,
-            _ => None,
-        })
-        .is_some();
+            .items
+            .iter()
+            .find_map(|item| match item {
+                syn::ImplItem::Method(m) => m.sig.asyncness,
+                _ => None,
+            })
+            .is_some();
 
     ast.generics.params.push(parse_quote! {
         GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync
@@ -174,31 +174,61 @@ pub fn expand_on_impl(
         .make_where_clause()
         .predicates
         .push(parse_quote! { Self: Sync });
+    ast.attrs
+        .push(parse_quote! { #[allow(unused_qualifications)] });
 
     let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
     let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
     if let syn::PathArguments::None = trait_params {
-        *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <GraphQLScalarValue> });
-    } else if let syn::PathArguments::AngleBracketed(a) = trait_params {
+        *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
+    }
+    if let syn::PathArguments::AngleBracketed(a) = trait_params {
         a.args.push(parse_quote! { GraphQLScalarValue });
     }
 
     if is_async_trait {
-        ast.attrs.push(parse_quote! { #[::juniper::async_trait] });
-        for item in ast.items.iter_mut() {
-            if let syn::ImplItem::Method(m) = item {
-                if m.sig.asyncness.is_some() {
-                    m.sig
-                        .generics
-                        .make_where_clause()
-                        .predicates
-                        .push(parse_quote! { GraphQLScalarValue: 'async_trait })
+        inject_async_trait(
+            &mut ast.attrs,
+            ast.items.iter_mut().filter_map(|i| {
+                if let syn::ImplItem::Method(m) = i {
+                    Some(&mut m.sig)
+                } else {
+                    None
                 }
-            }
-        }
+            }),
+            &ast.generics,
+        );
     }
 
     Ok(quote! { #ast })
+}
+
+fn inject_async_trait<'m, M>(attrs: &mut Vec<syn::Attribute>, methods: M, generics: &syn::Generics)
+where
+    M: IntoIterator<Item = &'m mut syn::Signature>,
+{
+    attrs.push(parse_quote! { #[allow(clippy::type_repetition_in_bounds)] });
+    attrs.push(parse_quote! { #[::juniper::async_trait] });
+
+    for method in methods.into_iter() {
+        if method.asyncness.is_some() {
+            let where_clause = &mut method.generics.make_where_clause().predicates;
+            for p in &generics.params {
+                let ty_param = match p {
+                    syn::GenericParam::Type(t) => {
+                        let ty_param = &t.ident;
+                        quote! { #ty_param }
+                    }
+                    syn::GenericParam::Lifetime(l) => {
+                        let ty_param = &l.lifetime;
+                        quote! { #ty_param }
+                    }
+                    syn::GenericParam::Const(_) => continue,
+                };
+                where_clause.push(parse_quote! { #ty_param: 'async_trait });
+            }
+        }
+    }
 }
 
 fn parse_field_from_trait_method(
