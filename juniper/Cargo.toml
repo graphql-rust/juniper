@@ -39,19 +39,19 @@ scalar-naivetime = []
 [dependencies]
 juniper_codegen = { version = "0.14.2", path = "../juniper_codegen"  }
 
-anyhow = { version = "1.0.32", optional = true }
-bson = { version = "1.0.0", optional = true }
-chrono = { version = "0.4.0", optional = true }
+anyhow = { default-features = false, version = "1.0.32", optional = true }
+bson = { version = "1.0", optional = true }
+chrono = { default-features = false, version = "0.4", optional = true }
 fnv = "1.0.3"
-futures = "0.3.1"
+futures = { default-features = false, features = ["alloc"], version = "0.3.1" }
 futures-enum = "0.1.12"
-indexmap = { version = "1.0.0", features = ["serde-1"] }
-serde = { version = "1.0.8", features = ["derive"] }
-serde_json = { version="1.0.2", optional = true }
+indexmap = { version = "1.0", features = ["serde-1"] }
+serde = { default-features = false, version = "1.0.8", features = ["derive"] }
+serde_json = { default-features = false, version = "1.0", optional = true }
 static_assertions = "1.1"
-url = { version = "2", optional = true }
-uuid = { version = "0.8", optional = true }
-graphql-parser = {version = "0.3.0", optional = true }
+url = { version = "2.0", optional = true }
+uuid = { default-features = false, version = "0.8", optional = true }
+graphql-parser = { version = "0.3", optional = true }
 
 [dev-dependencies]
 bencher = "0.1.2"
