@@ -122,7 +122,7 @@ extern crate bson;
 pub use {async_trait::async_trait, futures, static_assertions as sa};
 
 #[doc(inline)]
-pub use futures::future::BoxFuture;
+pub use futures::future::{BoxFuture, LocalBoxFuture};
 
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive

@@ -20,5 +20,5 @@ tokio = { version = "0.2", features = ["rt-core", "macros"] }
 
 [dev-dependencies.juniper]
 version = "0.14.2"
-features = ["expose-test-schema", "serde_json"]
+features = ["expose-test-schema"]
 path = "../juniper"
