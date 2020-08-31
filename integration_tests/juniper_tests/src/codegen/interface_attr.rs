@@ -1393,7 +1393,7 @@ mod argument {
 
     #[graphql_interface(for = Human, dyn = DynCharacter)]
     trait Character {
-        fn id(&self, is_planet: bool) -> &str;
+        fn id_wide(&self, is_planet: bool) -> &str;
     }
 
     #[derive(GraphQLObject)]
@@ -1405,7 +1405,7 @@ mod argument {
 
     #[graphql_interface]
     impl Character for Human {
-        fn id(&self, is_planet: bool) -> &str {
+        fn id_wide(&self, is_planet: bool) -> &str {
             if is_planet {
                 &self.home_planet
             } else {
@@ -1431,14 +1431,14 @@ mod argument {
         let schema = schema(QueryRoot);
 
         for (input, expected) in &[
-            ("{ character { id(isPlanet: true) } }", "earth"),
-            ("{ character { id(isPlanet: false) } }", "human-32"),
+            ("{ character { idWide(isPlanet: true) } }", "earth"),
+            ("{ character { idWide(isPlanet: false) } }", "human-32"),
         ] {
             let expected: &str = *expected;
 
             assert_eq!(
                 execute(*input, None, &schema, &Variables::new(), &()).await,
-                Ok((graphql_value!({"character": {"id": expected}}), vec![])),
+                Ok((graphql_value!({"character": {"idWide": expected}}), vec![])),
             );
         }
     }
@@ -1448,6 +1448,7 @@ mod argument {
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
+                    name
                     args {
                         name
                     }
@@ -1460,7 +1461,9 @@ mod argument {
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
-                graphql_value!({"__type": { "fields": [{"args": [{"name": "isPlanet"}]}]}}),
+                graphql_value!({"__type": {"fields": [
+                    {"name": "idWide", "args": [{"name": "isPlanet"}]},
+                ]}}),
                 vec![],
             )),
         );
@@ -1581,10 +1584,10 @@ mod explicit_name_and_description {
     #[graphql_interface(name = "MyChar", desc = "My character.", for = Human, dyn = DynCharacter)]
     trait Character {
         /// Rust `id` docs.
-        #[graphql_interface(name = "myid", desc = "My character ID.")]
+        #[graphql_interface(name = "myId", desc = "My character ID.")]
         fn id(
             &self,
-            #[graphql_interface(name = "myname", desc = "My argument.", default)] n: Option<String>,
+            #[graphql_interface(name = "myName", desc = "My argument.", default)] n: Option<String>,
         ) -> &str;
     }
 
@@ -1618,7 +1621,7 @@ mod explicit_name_and_description {
     async fn resolves_myid_field() {
         const DOC: &str = r#"{
             character {
-                myid
+                myId
             }
         }"#;
 
@@ -1626,7 +1629,7 @@ mod explicit_name_and_description {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"character": {"myid": "human-32"}}), vec![])),
+            Ok((graphql_value!({"character": {"myId": "human-32"}}), vec![])),
         );
     }
 
@@ -1651,7 +1654,7 @@ mod explicit_name_and_description {
             Ok((
                 graphql_value!({"__type": {
                     "name": "MyChar",
-                    "fields": [{"name": "myid", "args": [{"name": "myname"}]}],
+                    "fields": [{"name": "myId", "args": [{"name": "myName"}]}],
                 }}),
                 vec![],
             )),
@@ -1690,7 +1693,6 @@ mod explicit_name_and_description {
     }
 }
 
-// TODO: check field name camelCases
 // TODO: check argument defaults
 // -------------------------------------------
 
