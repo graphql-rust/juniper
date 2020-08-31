@@ -604,7 +604,11 @@ impl ToTokens for InterfaceDefinition {
             .as_ref()
             .map(|desc| quote! { .description(#desc) });
 
-        let impler_types: Vec<_> = self.implementers.iter().map(|impler| &impler.ty).collect();
+        let mut impler_types: Vec<_> = self.implementers.iter().map(|impler| &impler.ty).collect();
+        impler_types.sort_unstable_by(|a, b| {
+            let (a, b) = (quote! { #a }.to_string(), quote! { #b }.to_string());
+            a.cmp(&b)
+        });
 
         let all_implers_unique = if impler_types.len() > 1 {
             Some(quote! { ::juniper::sa::assert_type_ne_all!(#(#impler_types),*); })

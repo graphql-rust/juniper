@@ -162,6 +162,60 @@ mod trivial {
     }
 
     #[tokio::test]
+    async fn registers_all_implementers() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                possibleTypes {
+                    kind
+                    name
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"possibleTypes": [
+                    {"kind": "OBJECT", "name": "Droid"},
+                    {"kind": "OBJECT", "name": "Human"},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn registers_itself_in_implementers() {
+        for object in &["Human", "Droid"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        interfaces {{
+                            kind
+                            name
+                        }}
+                    }}
+                }}"#,
+                object,
+            );
+
+            let schema = schema(QueryRoot::Human);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({"__type": {"interfaces": [
+                        {"kind": "INTERFACE", "name": "Character"},
+                    ]}}),
+                    vec![],
+                )),
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn uses_trait_name() {
         const DOC: &str = r#"{
             __type(name: "Character") {
@@ -510,6 +564,60 @@ mod trivial_async {
     }
 
     #[tokio::test]
+    async fn registers_all_implementers() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                possibleTypes {
+                    kind
+                    name
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"possibleTypes": [
+                    {"kind": "OBJECT", "name": "Droid"},
+                    {"kind": "OBJECT", "name": "Human"},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn registers_itself_in_implementers() {
+        for object in &["Human", "Droid"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        interfaces {{
+                            kind
+                            name
+                        }}
+                    }}
+                }}"#,
+                object,
+            );
+
+            let schema = schema(QueryRoot::Human);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({"__type": {"interfaces": [
+                        {"kind": "INTERFACE", "name": "Character"},
+                    ]}}),
+                    vec![],
+                )),
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn uses_trait_name() {
         const DOC: &str = r#"{
             __type(name: "Character") {
@@ -840,6 +948,60 @@ mod generic {
     }
 
     #[tokio::test]
+    async fn registers_all_implementers() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                possibleTypes {
+                    kind
+                    name
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"possibleTypes": [
+                    {"kind": "OBJECT", "name": "Droid"},
+                    {"kind": "OBJECT", "name": "Human"},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn registers_itself_in_implementers() {
+        for object in &["Human", "Droid"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        interfaces {{
+                            kind
+                            name
+                        }}
+                    }}
+                }}"#,
+                object,
+            );
+
+            let schema = schema(QueryRoot::Human);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({"__type": {"interfaces": [
+                        {"kind": "INTERFACE", "name": "Character"},
+                    ]}}),
+                    vec![],
+                )),
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn uses_trait_name_without_type_params() {
         const DOC: &str = r#"{
             __type(name: "Character") {
@@ -995,6 +1157,60 @@ mod generic_async {
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
         );
+    }
+
+    #[tokio::test]
+    async fn registers_all_implementers() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                possibleTypes {
+                    kind
+                    name
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"possibleTypes": [
+                    {"kind": "OBJECT", "name": "Droid"},
+                    {"kind": "OBJECT", "name": "Human"},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn registers_itself_in_implementers() {
+        for object in &["Human", "Droid"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        interfaces {{
+                            kind
+                            name
+                        }}
+                    }}
+                }}"#,
+                object,
+            );
+
+            let schema = schema(QueryRoot::Human);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({"__type": {"interfaces": [
+                        {"kind": "INTERFACE", "name": "Character"},
+                    ]}}),
+                    vec![],
+                )),
+            );
+        }
     }
 
     #[tokio::test]
@@ -1473,7 +1689,6 @@ mod explicit_name_and_description {
         );
     }
 }
-
 
 // TODO: check field name camelCases
 // TODO: check argument defaults
