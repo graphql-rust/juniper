@@ -645,9 +645,9 @@ impl ToTokens for InterfaceDefinition {
                 let method = if let Some(val) = &arg.default {
                     let val = val
                         .as_ref()
-                        .map(|v| quote! { #v })
+                        .map(|v| quote! { (#v).into() })
                         .unwrap_or_else(|| quote! { <#ty as Default>::default() });
-                    quote! { .arg_with_default::<#ty>(#name, &(#val), info) }
+                    quote! { .arg_with_default::<#ty>(#name, &#val, info) }
                 } else {
                     quote! { .arg::<#ty>(#name, info) }
                 };

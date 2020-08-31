@@ -1516,6 +1516,98 @@ mod argument {
     }
 }
 
+mod default_argument {
+    use super::*;
+
+    #[graphql_interface(for = Human, dyn = DynCharacter)]
+    trait Character {
+        async fn id(
+            &self,
+            #[graphql_interface(default)] first: String,
+            #[graphql_interface(default = "second".to_string())] second: String,
+            #[graphql_interface(default = "t")] third: String,
+        ) -> String;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Human {
+        id: String,
+    }
+
+    #[graphql_interface]
+    impl Character for Human {
+        async fn id(&self, first: String, second: String, third: String) -> String {
+            format!("{}|{}&{}", first, second, third)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            Box::new(Human {
+                id: "human-32".to_string(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_id_field() {
+        let schema = schema(QueryRoot);
+
+        for (input, expected) in &[
+            ("{ character { id } }", "|second&t"),
+            (r#"{ character { id(first: "first") } }"#, "first|second&t"),
+            (r#"{ character { id(second: "") } }"#, "|&t"),
+            (
+                r#"{ character { id(first: "first", second: "") } }"#,
+                "first|&t",
+            ),
+            (
+                r#"{ character { id(first: "first", second: "", third: "") } }"#,
+                "first|&",
+            ),
+        ] {
+            let expected: &str = *expected;
+
+            assert_eq!(
+                execute(*input, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"character": {"id": expected}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn has_defaults() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields {
+                    args {
+                        name
+                        defaultValue
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [{"args": [
+                    {"name": "first", "defaultValue": r#""""#},
+                    {"name": "second", "defaultValue": r#""second""#},
+                    {"name": "third", "defaultValue": r#""t""#},
+                ]}]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod description_from_doc_comments {
     use super::*;
 
@@ -1693,7 +1785,6 @@ mod explicit_name_and_description {
     }
 }
 
-// TODO: check argument defaults
 // -------------------------------------------
 
 #[derive(GraphQLObject)]
