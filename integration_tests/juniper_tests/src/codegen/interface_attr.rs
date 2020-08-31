@@ -542,7 +542,6 @@ mod trivial_async {
     }
 }
 
-/*
 mod explicit_async {
     use super::*;
 
@@ -551,7 +550,7 @@ mod explicit_async {
         fn id(&self) -> &str;
 
         async fn info(&self) -> String {
-            format!("None available")
+            "None available".to_owned()
         }
     }
 
@@ -698,7 +697,6 @@ mod explicit_async {
         }
     }
 }
- */
 
 mod generic {
     use super::*;
@@ -1476,6 +1474,9 @@ mod explicit_name_and_description {
     }
 }
 
+
+// TODO: check field name camelCases
+// TODO: check argument defaults
 // -------------------------------------------
 
 #[derive(GraphQLObject)]

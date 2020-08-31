@@ -107,6 +107,14 @@ pub fn expand_on_trait(
                 _ => None,
             })
             .is_some();
+    let has_default_async_methods = ast
+        .items
+        .iter()
+        .find(|item| match item {
+            syn::TraitItem::Method(m) => m.sig.asyncness.and(m.default.as_ref()).is_some(),
+            _ => false,
+        })
+        .is_some();
 
     let generated_code = InterfaceDefinition {
         name,
@@ -127,8 +135,12 @@ pub fn expand_on_trait(
     ast.supertraits.push(parse_quote! {
         ::juniper::AsDynGraphQLValue<GraphQLScalarValue>
     });
+    if is_async_trait && has_default_async_methods {
+        // Hack for object safety. See details: https://docs.rs/async-trait/#dyn-traits
+        ast.supertraits.push(parse_quote! { Sync });
+    }
     ast.attrs
-        .push(parse_quote! { #[allow(unused_qualifications)] });
+        .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
     if is_async_trait {
         inject_async_trait(
             &mut ast.attrs,
@@ -170,12 +182,8 @@ pub fn expand_on_impl(
     ast.generics.params.push(parse_quote! {
         GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync
     });
-    ast.generics
-        .make_where_clause()
-        .predicates
-        .push(parse_quote! { Self: Sync });
     ast.attrs
-        .push(parse_quote! { #[allow(unused_qualifications)] });
+        .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
 
     let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
     let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
