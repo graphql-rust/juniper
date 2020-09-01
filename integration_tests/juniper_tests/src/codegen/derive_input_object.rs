@@ -1,8 +1,8 @@
 use fnv::FnvHashMap;
 
 use juniper::{
-    DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue, InputValue,
-    ToInputValue,
+    marker, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue,
+    InputValue, ToInputValue,
 };
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -49,6 +49,8 @@ struct OverrideDocComment {
 
 #[derive(Debug, PartialEq)]
 struct Fake;
+
+impl<'a> marker::IsInputType<DefaultScalarValue> for &'a Fake {}
 
 impl<'a> FromInputValue for &'a Fake {
     fn from_input_value(_v: &InputValue) -> Option<&'a Fake> {

@@ -3,7 +3,7 @@ use juniper::DefaultScalarValue;
 use juniper::Object;
 
 #[cfg(test)]
-use juniper::{self, execute, EmptyMutation, EmptySubscription, RootNode, Value, Variables};
+use juniper::{self, execute, EmptyMutation, EmptySubscription, RootNode, Value, Variables, FieldError};
 
 pub struct MyObject;
 
@@ -83,4 +83,17 @@ where
         .expect("fields not a list");
 
     f((type_info, fields));
+}
+
+mod fallible {
+    use super::*;
+
+    struct Obj;
+
+    #[juniper::graphql_object]
+    impl Obj {
+        fn test(&self, arg: String) -> Result<String, FieldError> {
+            Ok(arg)
+        }
+    }
 }

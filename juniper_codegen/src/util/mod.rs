@@ -1,13 +1,13 @@
 #![allow(clippy::single_match)]
 
 pub mod duplicate;
+pub mod err;
 pub mod option_ext;
 pub mod parse_buffer_ext;
-pub mod err;
 pub mod parse_impl;
 pub mod span_container;
 
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
@@ -890,12 +890,9 @@ impl GraphQLTypeDefiniton {
         if self.scalar.is_none() && self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
-
             generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
+            generics
+                .make_where_clause()
                 .predicates
                 .push(parse_quote!(__S: ::juniper::ScalarValue));
         }
@@ -990,8 +987,6 @@ impl GraphQLTypeDefiniton {
                 .push(parse_quote!( #scalar: Send + Sync ));
             where_async.predicates.push(parse_quote!(Self: Sync));
 
-            // FIXME: add where clause for interfaces.
-
             let as_dyn_value = if !self.interfaces.is_empty() {
                 Some(quote! {
                     #[automatically_derived]
@@ -1047,26 +1042,24 @@ impl GraphQLTypeDefiniton {
             )
         };
 
-        // FIXME: enable this if interfaces are supported
-        // let marks = self.fields.iter().map(|field| {
-        //     let field_ty = &field._type;
+        let marks = self.fields.iter().map(|field| {
+            let field_ty = &field._type;
 
-        //     let field_marks = field.args.iter().map(|arg| {
-        //         let arg_ty = &arg._type;
-        //         quote!(<#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark();)
-        //     });
+            let field_marks = field.args.iter().map(|arg| {
+                let arg_ty = &arg._type;
+                quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+            });
 
-        //     quote!(
-        //         #( #field_marks)*
-        //         <#field_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
-        //     )
-        // });
+            quote! {
+                #( #field_marks )*
+                <#field_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+            }
+        });
 
         let output = quote!(
             impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #type_generics_tokens #where_clause {
                 fn mark() {
-                    // FIXME: enable this if interfaces are supported
-                    // #( #marks )*
+                    #( #marks )*
                 }
             }
 
@@ -1229,15 +1222,42 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|description| quote!( .description(#description) ));
 
-        let interfaces = quote!();
-        /*
-        let interfaces = self.interfaces.as_ref().map(|items| {
-            quote!(
+        let interfaces = if !self.interfaces.is_empty() {
+            let interfaces_ty = self.interfaces.iter().map(|ty| {
+                let mut ty: syn::Type = unparenthesize(ty).clone();
+
+                if let syn::Type::TraitObject(dyn_ty) = &mut ty {
+                    let mut dyn_ty = dyn_ty.clone();
+                    if let syn::TypeParamBound::Trait(syn::TraitBound { path, .. }) =
+                        dyn_ty.bounds.first_mut().unwrap()
+                    {
+                        let trait_params = &mut path.segments.last_mut().unwrap().arguments;
+                        if let syn::PathArguments::None = trait_params {
+                            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
+                        }
+                        if let syn::PathArguments::AngleBracketed(a) = trait_params {
+                            a.args.push(parse_quote! { #scalar });
+                            a.args.push(parse_quote! { Context = Self::Context });
+                            a.args.push(parse_quote! { TypeInfo = Self::TypeInfo });
+                        }
+                    }
+                    dyn_ty.bounds.push(parse_quote! { Send });
+                    dyn_ty.bounds.push(parse_quote! { Sync });
+
+                    ty = dyn_ty.into();
+                }
+
+                ty
+            });
+
+            Some(quote!(
                 .interfaces(&[
-                    #( registry.get_type::< #items >(&()) ,)*
+                    #( registry.get_type::<#interfaces_ty>(&()) ,)*
                 ])
-            )
-        });*/
+            ))
+        } else {
+            None
+        };
 
         // Preserve the original type_generics before modification,
         // since alteration makes them invalid if self.generic_scalar
@@ -1313,7 +1333,29 @@ impl GraphQLTypeDefiniton {
             },
         );
 
+        let marks = self.fields.iter().map(|field| {
+            let field_ty = &field._type;
+
+            let field_marks = field.args.iter().map(|arg| {
+                let arg_ty = &arg._type;
+                quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+            });
+
+            quote! {
+                #( #field_marks )*
+                <<#field_ty as ::juniper::futures::Stream>::Item as ::juniper::marker::IsOutputType<#scalar>>::mark();
+            }
+        });
+
         let graphql_implementation = quote!(
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                fn mark() {
+                    #( #marks )*
+                }
+            }
+
             impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #type_generics_tokens
                 #where_clause
             {
@@ -1777,18 +1819,16 @@ impl GraphQLTypeDefiniton {
             {}
         );
 
-        // FIXME: enable this if interfaces are supported
-        // let marks = self.fields.iter().map(|field| {
-        //     let _ty = &field._type;
-        //     quote!(<#_ty as ::juniper::marker::IsInputType<#scalar>>::mark();)
-        // });
+        let marks = self.fields.iter().map(|field| {
+            let ty = &field._type;
+            quote! { <#ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+        });
 
         let mut body = quote!(
             impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ty #type_generics_tokens
                 #where_clause {
                     fn mark() {
-                        // FIXME: enable this if interfaces are supported
-                        // #( #marks )*
+                        #( #marks )*
                     }
                 }
 
