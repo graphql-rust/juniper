@@ -227,22 +227,19 @@ pub async fn playground_handler(
 pub mod subscriptions {
     use std::{fmt, sync::Arc};
 
-    use actix::{prelude::*, Actor, StreamHandler};
-    use actix_web::{
-        http::header::{HeaderName, HeaderValue},
-        web, HttpRequest, HttpResponse,
-    };
+    use actix::prelude::*;
+    use actix::{Actor, StreamHandler};
+    use actix_web::http::header::{HeaderName, HeaderValue};
+    use actix_web::{web, HttpRequest, HttpResponse};
     use actix_web_actors::ws;
 
     use tokio::sync::Mutex;
 
-    use juniper::{
-        futures::{
-            stream::{SplitSink, SplitStream, StreamExt},
-            SinkExt,
-        },
-        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+    use juniper::futures::{
+        stream::{SplitSink, SplitStream, StreamExt},
+        SinkExt,
     };
+    use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
 
     /// Serves the graphql-ws protocol over a WebSocket connection.
@@ -785,10 +782,7 @@ mod subscription_tests {
     use juniper::{
         futures::{SinkExt, StreamExt},
         http::tests::{run_ws_test_suite, WsIntegration, WsIntegrationMessage},
-        tests::fixtures::starwars::{
-            model::Database,
-            schema::{Query, Subscription},
-        },
+        tests::fixtures::starwars::{model::Database, schema::Query, schema::Subscription},
         EmptyMutation, LocalBoxFuture,
     };
     use juniper_graphql_ws::ConnectionConfig;
