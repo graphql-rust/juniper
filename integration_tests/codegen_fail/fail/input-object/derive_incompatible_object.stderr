@@ -1,3 +1,12 @@
+error[E0277]: the trait bound `ObjectA: juniper::marker::IsInputType<__S>` is not satisfied
+ --> $DIR/derive_incompatible_object.rs:6:10
+  |
+6 | #[derive(juniper::GraphQLInputObject)]
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::marker::IsInputType<__S>` is not implemented for `ObjectA`
+  |
+  = note: required by `juniper::marker::IsInputType::mark`
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `ObjectA: juniper::FromInputValue<__S>` is not satisfied
  --> $DIR/derive_incompatible_object.rs:6:10
   |

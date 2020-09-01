@@ -831,12 +831,9 @@ impl GraphQLTypeDefiniton {
         if self.scalar.is_none() && self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
-
             generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
+            generics
+                .make_where_clause()
                 .predicates
                 .push(parse_quote!(__S: ::juniper::ScalarValue));
         }
@@ -1001,10 +998,10 @@ impl GraphQLTypeDefiniton {
                 ) -> ::juniper::meta::MetaType<'r, #scalar>
                     where #scalar : 'r,
                 {
-                    let fields = vec![
+                    let fields = [
                         #( #field_definitions ),*
                     ];
-                    let meta = registry.build_object_type::<#ty>( info, &fields )
+                    let meta = registry.build_object_type::<#ty>(info, &fields)
                         #description
                         #interfaces;
                     meta.into_meta()
@@ -1226,7 +1223,29 @@ impl GraphQLTypeDefiniton {
             },
         );
 
+        let marks = self.fields.iter().map(|field| {
+            let field_ty = &field._type;
+
+            let field_marks = field.args.iter().map(|arg| {
+                let arg_ty = &arg._type;
+                quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+            });
+
+            quote! {
+                #( #field_marks )*
+                <<#field_ty as ::juniper::futures::Stream>::Item as ::juniper::marker::IsOutputType<#scalar>>::mark();
+            }
+        });
+
         let graphql_implementation = quote!(
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                fn mark() {
+                    #( #marks )*
+                }
+            }
+
             impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #type_generics_tokens
                 #where_clause
             {
@@ -1240,10 +1259,10 @@ impl GraphQLTypeDefiniton {
                     ) -> ::juniper::meta::MetaType<'r, #scalar>
                         where #scalar : 'r,
                     {
-                        let fields = vec![
+                        let fields = [
                             #( #field_definitions ),*
                         ];
-                        let meta = registry.build_object_type::<#ty>( info, &fields )
+                        let meta = registry.build_object_type::<#ty>(info, &fields)
                             #description
                             #interfaces;
                         meta.into_meta()
@@ -1690,18 +1709,16 @@ impl GraphQLTypeDefiniton {
             {}
         );
 
-        // FIXME: enable this if interfaces are supported
-        // let marks = self.fields.iter().map(|field| {
-        //     let _ty = &field._type;
-        //     quote!(<#_ty as ::juniper::marker::IsInputType<#scalar>>::mark();)
-        // });
+        let marks = self.fields.iter().map(|field| {
+            let field_ty = &field._type;
+            quote! { <#field_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+        });
 
         let mut body = quote!(
             impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ty #type_generics_tokens
                 #where_clause {
                     fn mark() {
-                        // FIXME: enable this if interfaces are supported
-                        // #( #marks )*
+                        #( #marks )*
                     }
                 }
 

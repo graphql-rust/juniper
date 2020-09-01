@@ -53,7 +53,7 @@ pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
 /// types. Each type which can be used as an output type should
 /// implement this trait. The specification defines enum, scalar,
 /// object, union, and interface as output types.
-pub trait IsOutputType<S: ScalarValue>: GraphQLType<S> {
+pub trait IsOutputType<S: ScalarValue> {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types
@@ -89,6 +89,13 @@ where
 {
 }
 
+impl<S, T, E> IsOutputType<S> for Result<T, E>
+where
+    T: IsOutputType<S>,
+    S: ScalarValue,
+{
+}
+
 impl<S, T> IsOutputType<S> for Vec<T>
 where
     T: IsOutputType<S>,
@@ -96,7 +103,7 @@ where
 {
 }
 
-impl<'a, S, T> IsOutputType<S> for &'a [T]
+impl<S, T> IsOutputType<S> for [T]
 where
     T: IsOutputType<S>,
     S: ScalarValue,
@@ -110,7 +117,7 @@ where
 {
 }
 
-impl<'a, S, T> IsInputType<S> for &'a [T]
+impl<S, T> IsInputType<S> for [T]
 where
     T: IsInputType<S>,
     S: ScalarValue,
@@ -119,29 +126,29 @@ where
 
 impl<'a, S, T> IsInputType<S> for &T
 where
-    T: IsInputType<S>,
+    T: IsInputType<S> + ?Sized,
     S: ScalarValue,
 {
 }
 impl<'a, S, T> IsOutputType<S> for &T
 where
-    T: IsOutputType<S>,
+    T: IsOutputType<S> + ?Sized,
     S: ScalarValue,
 {
 }
 
 impl<S, T> IsInputType<S> for Box<T>
 where
-    T: IsInputType<S>,
+    T: IsInputType<S> + ?Sized,
     S: ScalarValue,
 {
 }
 impl<S, T> IsOutputType<S> for Box<T>
 where
-    T: IsOutputType<S>,
+    T: IsOutputType<S> + ?Sized,
     S: ScalarValue,
 {
 }
 
-impl<'a, S> IsInputType<S> for &str where S: ScalarValue {}
-impl<'a, S> IsOutputType<S> for &str where S: ScalarValue {}
+impl<'a, S> IsInputType<S> for str where S: ScalarValue {}
+impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}

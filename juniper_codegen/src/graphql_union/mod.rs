@@ -611,7 +611,7 @@ impl ToTokens for UnionDefinition {
                 #where_clause
             {
                 fn mark() {
-                    #( <#var_types as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
+                    #( <#var_types as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
                 }
             }
         };
