@@ -959,26 +959,24 @@ impl GraphQLTypeDefiniton {
             )
         };
 
-        // FIXME: enable this if interfaces are supported
-        // let marks = self.fields.iter().map(|field| {
-        //     let field_ty = &field._type;
+        let marks = self.fields.iter().map(|field| {
+            let field_ty = &field._type;
 
-        //     let field_marks = field.args.iter().map(|arg| {
-        //         let arg_ty = &arg._type;
-        //         quote!(<#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark();)
-        //     });
+            let field_marks = field.args.iter().map(|arg| {
+                let arg_ty = &arg._type;
+                quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+            });
 
-        //     quote!(
-        //         #( #field_marks)*
-        //         <#field_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
-        //     )
-        // });
+            quote! {
+                #( #field_marks )*
+                <#field_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+            }
+        });
 
         let output = quote!(
             impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #type_generics_tokens #where_clause {
                 fn mark() {
-                    // FIXME: enable this if interfaces are supported
-                    // #( #marks )*
+                    #( #marks )*
                 }
             }
 

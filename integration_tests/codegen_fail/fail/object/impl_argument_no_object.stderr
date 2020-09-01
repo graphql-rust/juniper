@@ -1,3 +1,12 @@
+error[E0277]: the trait bound `Obj: juniper::marker::IsInputType<juniper::DefaultScalarValue>` is not satisfied
+ --> $DIR/impl_argument_no_object.rs:8:1
+  |
+8 | #[juniper::graphql_object]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::marker::IsInputType<juniper::DefaultScalarValue>` is not implemented for `Obj`
+  |
+  = note: required by `juniper::marker::IsInputType::mark`
+  = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `Obj: juniper::FromInputValue` is not satisfied
  --> $DIR/impl_argument_no_object.rs:8:1
   |
