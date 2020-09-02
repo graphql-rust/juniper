@@ -960,16 +960,21 @@ impl GraphQLTypeDefiniton {
         };
 
         let marks = self.fields.iter().map(|field| {
-            let field_ty = &field._type;
-
             let field_marks = field.args.iter().map(|arg| {
                 let arg_ty = &arg._type;
                 quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
             });
 
+            let field_ty = &field._type;
+            let resolved_ty = quote! {
+                <#field_ty as ::juniper::IntoResolvable<
+                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
+                >>::Type
+            };
+
             quote! {
                 #( #field_marks )*
-                <#field_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
             }
         });
 
@@ -1222,17 +1227,24 @@ impl GraphQLTypeDefiniton {
         );
 
         let marks = self.fields.iter().map(|field| {
-            let field_ty = &field._type;
-
             let field_marks = field.args.iter().map(|arg| {
                 let arg_ty = &arg._type;
                 quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
             });
 
+            let field_ty = &field._type;
+            let stream_item_ty = quote! {
+                <#field_ty as ::juniper::IntoFieldResult::<_, #scalar>>::Item
+            };
+            let resolved_ty = quote! {
+                <#stream_item_ty as ::juniper::IntoResolvable<
+                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
+                >>::Type
+            };
+
             quote! {
                 #( #field_marks )*
-                <<#field_ty as ::juniper::IntoFieldResult::<_, #scalar>>::Item
-                    as ::juniper::marker::IsOutputType<#scalar>>::mark();
+                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
             }
         });
 

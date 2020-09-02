@@ -3,7 +3,7 @@
 use crate::{
     executor::Context,
     graphql_subscription,
-    tests::fixtures::starwars::model::{Character, Database, Droid, Episode, Human},
+    tests::fixtures::starwars::model::{/*Character, */Database, Droid, Episode, Human},
     GraphQLObject,
 };
 use std::pin::Pin;

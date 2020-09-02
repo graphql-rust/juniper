@@ -253,6 +253,8 @@ where
     T: GraphQLValue<S>,
     S: ScalarValue,
 {
+    type Type;
+
     #[doc(hidden)]
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
 }
@@ -263,6 +265,8 @@ where
     S: ScalarValue,
     T::Context: FromContext<C>,
 {
+    type Type = T;
+
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some((FromContext::from(ctx), self)))
     }
@@ -274,6 +278,8 @@ where
     T: GraphQLValue<S>,
     T::Context: FromContext<C>,
 {
+    type Type = T;
+
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(|v: T| Some((<T::Context as FromContext<C>>::from(ctx), v)))
             .map_err(IntoFieldError::into_field_error)
@@ -285,6 +291,8 @@ where
     S: ScalarValue,
     T: GraphQLValue<S>,
 {
+    type Type = T;
+
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some(self))
     }
@@ -295,6 +303,8 @@ where
     S: ScalarValue,
     T: GraphQLValue<S>,
 {
+    type Type = T;
+
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
     }
@@ -305,6 +315,8 @@ where
     S: ScalarValue,
     T: GraphQLValue<S>,
 {
+    type Type = T;
+
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(Some)
     }
@@ -316,6 +328,8 @@ where
     S: ScalarValue,
     T: GraphQLValue<S>,
 {
+    type Type = T;
+
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
     }
