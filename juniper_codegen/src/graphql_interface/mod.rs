@@ -215,6 +215,7 @@ impl InterfaceMeta {
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
 struct ImplementerMeta {
+    pub scalar: Option<SpanContainer<syn::Type>>,
     pub asyncness: Option<SpanContainer<syn::Ident>>,
 }
 
@@ -225,6 +226,14 @@ impl Parse for ImplementerMeta {
         while !input.is_empty() {
             let ident = input.parse_any_ident()?;
             match ident.to_string().as_str() {
+                "scalar" | "Scalar" | "ScalarValue" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::Type>()?;
+                    output
+                        .scalar
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "async" => {
                     let span = ident.span();
                     output
@@ -248,6 +257,7 @@ impl ImplementerMeta {
     /// any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
+            scalar: try_merge_opt!(scalar: self, another),
             asyncness: try_merge_opt!(asyncness: self, another),
         })
     }
