@@ -1231,7 +1231,8 @@ impl GraphQLTypeDefiniton {
 
             quote! {
                 #( #field_marks )*
-                <<#field_ty as ::juniper::futures::Stream>::Item as ::juniper::marker::IsOutputType<#scalar>>::mark();
+                <<#field_ty as ::juniper::IntoFieldResult::<_, #scalar>>::Item
+                    as ::juniper::marker::IsOutputType<#scalar>>::mark();
             }
         });
 

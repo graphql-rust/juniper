@@ -10,6 +10,7 @@ use std::pin::Pin;
 
 impl Context for Database {}
 
+/*
 graphql_interface!(<'a> &'a dyn Character: Database as "Character" |&self| {
     description: "A character in the Star Wars Trilogy"
 
@@ -35,11 +36,12 @@ graphql_interface!(<'a> &'a dyn Character: Database as "Character" |&self| {
         &dyn Droid => context.get_droid(&self.id()),
     }
 });
+ */
 
 #[crate::graphql_object(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
-    interfaces = [&dyn Character],
+    // interfaces = [&dyn Character],
     // FIXME: make async work
     noasync
 )]
@@ -55,10 +57,11 @@ impl<'a> &'a dyn Human {
         Some(self.name())
     }
 
+    /*
     /// The friends of the human
     fn friends(&self, ctx: &Database) -> Vec<&dyn Character> {
         ctx.get_friends(self.as_character())
-    }
+    }*/
 
     /// Which movies they appear in
     fn appears_in(&self) -> &[Episode] {
@@ -74,7 +77,7 @@ impl<'a> &'a dyn Human {
 #[crate::graphql_object(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
-    interfaces = [&dyn Character],
+    // interfaces = [&dyn Character],
     // FIXME: make async work
     noasync
 )]
@@ -90,10 +93,11 @@ impl<'a> &'a dyn Droid {
         Some(self.name())
     }
 
+    /*
     /// The friends of the droid
     fn friends(&self, ctx: &Database) -> Vec<&dyn Character> {
         ctx.get_friends(self.as_character())
-    }
+    }*/
 
     /// Which movies they appear in
     fn appears_in(&self) -> &[Episode] {
@@ -126,12 +130,13 @@ impl Query {
         database.get_droid(&id)
     }
 
+    /*
     #[graphql(arguments(episode(
         description = "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode"
     )))]
     fn hero(database: &Database, episode: Option<Episode>) -> Option<&dyn Character> {
         Some(database.get_hero(episode).as_character())
-    }
+    }*/
 }
 
 #[derive(GraphQLObject)]

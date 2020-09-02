@@ -179,6 +179,10 @@ macro_rules! graphql_interface {
         );
 
         $crate::__juniper_impl_trait!(
+            impl<$($scalar)* $(, $lifetimes)* > IsOutputType for $name { }
+        );
+
+        $crate::__juniper_impl_trait!(
             impl<$($scalar)* $(, $lifetimes)* > GraphQLValue for $name {
                 type Context = $ctx;
                 type TypeInfo = ();
