@@ -663,6 +663,25 @@ impl ToTokens for InterfaceDefinition {
             }
         });
 
+        let fields_marks = self.fields.iter().map(|field| {
+            let arguments_marks = field.arguments.iter().filter_map(|arg| {
+                let arg_ty = &arg.as_regular()?.ty;
+                Some(quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); })
+            });
+
+            let field_ty = &field.ty;
+            let resolved_ty = quote! {
+                <#field_ty as ::juniper::IntoResolvable<
+                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
+                >>::Type
+            };
+
+            quote! {
+                #( #arguments_marks )*
+                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+            }
+        });
+
         let custom_downcast_checks = self.implementers.iter().filter_map(|impler| {
             let impler_check = impler.downcast_check.as_ref()?;
             let impler_ty = &impler.ty;
@@ -1059,7 +1078,8 @@ impl ToTokens for InterfaceDefinition {
                 #where_clause
             {
                 fn mark() {
-                    #( <#impler_types as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
+                    #( #fields_marks )*
+                    #( <#impler_types as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
                 }
             }
         };
