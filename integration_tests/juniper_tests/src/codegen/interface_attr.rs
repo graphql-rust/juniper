@@ -1608,7 +1608,7 @@ mod default_argument {
     }
 }
 
-mod description_from_doc_comments {
+mod description_from_doc_comment {
     use super::*;
 
     /// Rust docs.
@@ -1669,18 +1669,163 @@ mod description_from_doc_comments {
     }
 }
 
-mod explicit_name_and_description {
+mod deprecation_from_attr {
+    #![allow(deprecated)]
+
+    use super::*;
+
+    #[graphql_interface(for = Human, dyn = DynCharacter)]
+    trait Character {
+        fn id(&self) -> &str;
+
+        #[deprecated]
+        fn a(&self) -> &str {
+            "a"
+        }
+
+        #[deprecated(note = "Use `id`.")]
+        fn b(&self) -> &str {
+            "b"
+        }
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    #[graphql_interface]
+    impl Character for Human {
+        fn id(&self) -> &str {
+            &self.id
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            Box::new(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"character": {"id": "human-32"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_deprecated_fields() {
+        const DOC: &str = r#"{
+            character {
+                a
+                b
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"character": {"a": "a", "b": "b"}}), vec![],)),
+        );
+    }
+
+    #[tokio::test]
+    async fn deprecates_fields() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields(includeDeprecated: true) {
+                    name
+                    isDeprecated
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"name": "id", "isDeprecated": false},
+                    {"name": "a", "isDeprecated": true},
+                    {"name": "b", "isDeprecated": true},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn provides_deprecation_reason() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields(includeDeprecated: true) {
+                    name
+                    deprecationReason
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"name": "id", "deprecationReason": None},
+                    {"name": "a", "deprecationReason": None},
+                    {"name": "b", "deprecationReason": "Use `id`."},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod explicit_name_description_and_deprecation {
+    #![allow(deprecated)]
+
     use super::*;
 
     /// Rust docs.
     #[graphql_interface(name = "MyChar", desc = "My character.", for = Human, dyn = DynCharacter)]
     trait Character {
         /// Rust `id` docs.
-        #[graphql_interface(name = "myId", desc = "My character ID.")]
+        #[graphql_interface(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
+        #[deprecated(note = "Should be omitted.")]
         fn id(
             &self,
             #[graphql_interface(name = "myName", desc = "My argument.", default)] n: Option<String>,
         ) -> &str;
+
+        #[graphql_interface(deprecated)]
+        #[deprecated(note = "Should be omitted.")]
+        fn a(&self) -> &str {
+            "a"
+        }
+
+        fn b(&self) -> &str {
+            "b"
+        }
     }
 
     #[derive(GraphQLObject)]
@@ -1710,10 +1855,12 @@ mod explicit_name_and_description {
     }
 
     #[tokio::test]
-    async fn resolves_myid_field() {
+    async fn resolves_fields() {
         const DOC: &str = r#"{
             character {
                 myId
+                a
+                b
             }
         }"#;
 
@@ -1721,7 +1868,10 @@ mod explicit_name_and_description {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"character": {"myId": "human-32"}}), vec![])),
+            Ok((
+                graphql_value!({"character": {"myId": "human-32", "a": "a", "b": "b"}}),
+                vec![],
+            )),
         );
     }
 
@@ -1730,7 +1880,7 @@ mod explicit_name_and_description {
         const DOC: &str = r#"{
             __type(name: "MyChar") {
                 name
-                fields {
+                fields(includeDeprecated: true) {
                     name
                     args {
                         name
@@ -1746,7 +1896,11 @@ mod explicit_name_and_description {
             Ok((
                 graphql_value!({"__type": {
                     "name": "MyChar",
-                    "fields": [{"name": "myId", "args": [{"name": "myName"}]}],
+                    "fields": [
+                        {"name": "myId", "args": [{"name": "myName"}]},
+                        {"name": "a", "args": []},
+                        {"name": "b", "args": []},
+                    ],
                 }}),
                 vec![],
             )),
@@ -1758,7 +1912,8 @@ mod explicit_name_and_description {
         const DOC: &str = r#"{
             __type(name: "MyChar") {
                 description
-                fields {
+                fields(includeDeprecated: true) {
+                    name
                     description
                     args {
                         description
@@ -1775,8 +1930,54 @@ mod explicit_name_and_description {
                 graphql_value!({"__type": {
                     "description": "My character.",
                     "fields": [{
+                        "name": "myId",
                         "description": "My character ID.",
                         "args": [{"description": "My argument."}],
+                    }, {
+                        "name": "a",
+                        "description": None,
+                        "args": [],
+                    }, {
+                        "name": "b",
+                        "description": None,
+                        "args": [],
+                    }],
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_custom_deprecation() {
+        const DOC: &str = r#"{
+            __type(name: "MyChar") {
+                fields(includeDeprecated: true) {
+                    name
+                    isDeprecated
+                    deprecationReason
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {
+                    "fields": [{
+                        "name": "myId",
+                        "isDeprecated": true,
+                        "deprecationReason": "Not used.",
+                    }, {
+                        "name": "a",
+                        "isDeprecated": true,
+                        "deprecationReason": None,
+                    }, {
+                        "name": "b",
+                        "isDeprecated": false,
+                        "deprecationReason": None,
                     }],
                 }}),
                 vec![],
@@ -2036,6 +2237,108 @@ mod custom_scalar {
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
             );
         }
+    }
+}
+
+mod ignored_methods {
+    use super::*;
+
+    #[graphql_interface(for = Human, dyn = DynCharacter)]
+    trait Character {
+        fn id(&self) -> &str;
+
+        #[graphql_interface(ignore)]
+        fn ignored(&self) -> Option<&Human> {
+            None
+        }
+
+        #[graphql_interface(skip)]
+        fn skipped(&self) {}
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = dyn Character)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    #[graphql_interface]
+    impl Character for Human {
+        fn id(&self) -> &str {
+            &self.id
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            Box::new(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"character": {"id": "human-32"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn ignored_methods_are_not_fields() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields {
+                    name
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [{"name": "id"}]}}),
+                vec![],
+            )),
+        );
     }
 }
 

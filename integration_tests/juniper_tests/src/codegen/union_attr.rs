@@ -305,7 +305,7 @@ mod generic {
     }
 }
 
-mod description_from_doc_comments {
+mod description_from_doc_comment {
     use super::*;
 
     /// Rust docs.
