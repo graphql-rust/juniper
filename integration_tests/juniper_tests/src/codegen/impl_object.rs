@@ -3,7 +3,7 @@ use juniper::DefaultScalarValue;
 use juniper::Object;
 
 #[cfg(test)]
-use juniper::{self, execute, EmptyMutation, EmptySubscription, RootNode, Value, Variables, FieldError};
+use juniper::{execute, EmptyMutation, EmptySubscription, FieldError, RootNode, Value, Variables};
 
 pub struct MyObject;
 

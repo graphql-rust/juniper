@@ -77,7 +77,7 @@ pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
 /// types. Each type which can be used as an output type should
 /// implement this trait. The specification defines enum, scalar,
 /// object, union, and interface as output types.
-pub trait IsOutputType<S: ScalarValue> {
+pub trait IsOutputType<S: ScalarValue>: GraphQLType<S> {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types
@@ -107,13 +107,6 @@ where
 }
 
 impl<S, T> IsOutputType<S> for Option<T>
-where
-    T: IsOutputType<S>,
-    S: ScalarValue,
-{
-}
-
-impl<S, T, E> IsOutputType<S> for Result<T, E>
 where
     T: IsOutputType<S>,
     S: ScalarValue,
