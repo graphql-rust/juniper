@@ -195,6 +195,9 @@ fn impl_scalar_struct(
                 <#inner_ty as ::juniper::ParseScalarValue<S>>::from_str(value)
             }
         }
+
+        impl<S: ::juniper::ScalarValue> ::juniper::marker::IsOutputType<S> for #ident { }
+        impl<S: ::juniper::ScalarValue> ::juniper::marker::IsInputType<S> for #ident { }
     );
 
     Ok(content)

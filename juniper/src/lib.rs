@@ -188,7 +188,7 @@ pub use crate::{
     types::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},
         base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
-        marker::{self, GraphQLUnion},
+        marker::{self, GraphQLUnion, IsOutputType},
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{
             ExecutionOutput, GraphQLSubscriptionType, GraphQLSubscriptionValue,

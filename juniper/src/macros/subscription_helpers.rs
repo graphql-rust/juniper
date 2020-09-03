@@ -7,27 +7,36 @@ use futures::Stream;
 
 use crate::{FieldError, GraphQLValue, ScalarValue};
 
-/// Trait for converting  `T` to `Ok(T)` if T is not Result.
-/// This is useful in subscription macros when user can provide type alias for
-/// Stream or Result<Stream, _> and then a function on Stream should be called.
+/// Trait for wrapping [`Stream`] into [`Ok`] if it's not [`Result`].
+///
+/// Used in subscription macros when user can provide type alias for [`Stream`] or
+/// `Result<Stream, _>` and then a function on [`Stream`] should be called.
 pub trait IntoFieldResult<T, S> {
-    /// Turn current type into a generic result
+    /// Type of items yielded by this [`Stream`].
+    type Item;
+
+    /// Turns current [`Stream`] type into a generic [`Result`].
     fn into_result(self) -> Result<T, FieldError<S>>;
 }
 
 impl<T, E, S> IntoFieldResult<T, S> for Result<T, E>
 where
+    T: IntoFieldResult<T, S>,
     E: Into<FieldError<S>>,
 {
+    type Item = T::Item;
+
     fn into_result(self) -> Result<T, FieldError<S>> {
         self.map_err(|e| e.into())
     }
 }
 
-impl<T, I, S> IntoFieldResult<T, S> for T
+impl<T, S> IntoFieldResult<T, S> for T
 where
-    T: Stream<Item = I>,
+    T: Stream,
 {
+    type Item = T::Item;
+
     fn into_result(self) -> Result<T, FieldError<S>> {
         Ok(self)
     }
