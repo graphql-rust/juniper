@@ -162,7 +162,9 @@ impl UnionMeta {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
-            external_resolvers: try_merge_hashmap!(external_resolvers: self, another => span_joined),
+            external_resolvers: try_merge_hashmap!(
+                external_resolvers: self, another => span_joined
+            ),
             is_internal: self.is_internal || another.is_internal,
         })
     }

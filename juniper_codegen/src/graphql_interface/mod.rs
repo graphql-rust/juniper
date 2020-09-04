@@ -4,7 +4,7 @@
 
 pub mod attr;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt as _};
@@ -23,9 +23,8 @@ use crate::{
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
 
-/*
-/// Helper alias for the type of [`InterfaceMeta::external_downcasters`] field.
-type InterfaceMetaDowncasters = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;*/
+/// Helper alias for the type of [`InterfaceMeta::external_downcasts`] field.
+type InterfaceMetaDowncasts = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
 
 /// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_interface]`) attribute placed
 /// on a trait definition, when generating code for [GraphQL interface][1] type.
@@ -79,7 +78,6 @@ struct InterfaceMeta {
 
     pub asyncness: Option<SpanContainer<syn::Ident>>,
 
-    /*
     /// Explicitly specified external downcasting functions for [GraphQL interface][1] implementers.
     ///
     /// If absent, then macro will try to auto-infer all the possible variants from the type
@@ -88,7 +86,8 @@ struct InterfaceMeta {
     /// inferred.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub downcasters: InterfaceMetaDowncasters,*/
+    pub external_downcasts: InterfaceMetaDowncasts,
+
     /// Indicator whether the generated code is intended to be used only inside the `juniper`
     /// library.
     pub is_internal: bool,
@@ -168,6 +167,17 @@ impl Parse for InterfaceMeta {
                         .replace(SpanContainer::new(span, Some(span), ident))
                         .none_or_else(|_| err::dup_arg(span))?;
                 }
+                "on" => {
+                    let ty = input.parse::<syn::Type>()?;
+                    input.parse::<token::Eq>()?;
+                    let dwncst = input.parse::<syn::ExprPath>()?;
+                    let dwncst_spanned = SpanContainer::new(ident.span(), Some(ty.span()), dwncst);
+                    let dwncst_span = dwncst_spanned.span_joined();
+                    output
+                        .external_downcasts
+                        .insert(ty, dwncst_spanned)
+                        .none_or_else(|_| err::dup_arg(dwncst_span))?
+                }
                 "internal" => {
                     output.is_internal = true;
                 }
@@ -193,6 +203,9 @@ impl InterfaceMeta {
             implementers: try_merge_hashset!(implementers: self, another => span_joined),
             alias: try_merge_opt!(alias: self, another),
             asyncness: try_merge_opt!(asyncness: self, another),
+            external_downcasts: try_merge_hashmap!(
+                external_downcasts: self, another => span_joined
+            ),
             is_internal: self.is_internal || another.is_internal,
         })
     }
@@ -568,7 +581,7 @@ enum ImplementerDowncastDefinition {
         with_context: bool,
     },
     External {
-        path: syn::Path,
+        path: syn::ExprPath,
     },
 }
 
@@ -818,14 +831,13 @@ impl ToTokens for InterfaceDefinition {
                 if type_name == <
                     #impler_ty as ::juniper::GraphQLType<#scalar>
                 >::name(info).unwrap() {
-                    return ::juniper::IntoResolvable::into(
-                        { #fn_path(self #ctx_arg) },
-                        executor.context(),
-                    )
-                    .and_then(|res| match res {
-                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
-                        None => Ok(::juniper::Value::null()),
-                    });
+                    return ::juniper::IntoResolvable::into({ #fn_path(self #ctx_arg) }, context)
+                        .and_then(|res| match res {
+                            Some((ctx, r)) => executor
+                                .replaced_context(ctx)
+                                .resolve_with_ctx(info, &r),
+                            None => Ok(::juniper::Value::null()),
+                        });
                 }
             })
         });
@@ -849,10 +861,7 @@ impl ToTokens for InterfaceDefinition {
                 if type_name == <
                     #impler_ty as ::juniper::GraphQLType<#scalar>
                 >::name(info).unwrap() {
-                    let res = ::juniper::IntoResolvable::into(
-                        { #fn_path(self #ctx_arg) },
-                        executor.context(),
-                    );
+                    let res = ::juniper::IntoResolvable::into({ #fn_path(self #ctx_arg) }, context);
                     return ::juniper::futures::future::FutureExt::boxed(async move {
                         match res? {
                             Some((ctx, r)) => {
@@ -867,19 +876,15 @@ impl ToTokens for InterfaceDefinition {
         });
         let (regular_downcast, regular_async_downcast) = if self.trait_object.is_some() {
             let sync = quote! {
-                return ::juniper::IntoResolvable::into(
-                    self.as_dyn_graphql_value(),
-                    executor.context(),
-                )
-                .and_then(|res| match res {
-                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
-                    None => Ok(::juniper::Value::null()),
-                })
+                return ::juniper::IntoResolvable::into(self.as_dyn_graphql_value(), context)
+                    .and_then(|res| match res {
+                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
+                        None => Ok(::juniper::Value::null()),
+                    })
             };
             let r#async = quote! {
                 let res = ::juniper::IntoResolvable::into(
-                    self.as_dyn_graphql_value_async(),
-                    executor.context(),
+                    self.as_dyn_graphql_value_async(), context,
                 );
                 return ::juniper::futures::future::FutureExt::boxed(async move {
                     match res? {
@@ -1144,6 +1149,7 @@ impl ToTokens for InterfaceDefinition {
                     _: Option<&[::juniper::Selection<#scalar>]>,
                     executor: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
+                    let context = executor.context();
                     #( #custom_downcasts )*
                     #regular_downcast
                 }
@@ -1179,6 +1185,7 @@ impl ToTokens for InterfaceDefinition {
                     _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
                     executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    let context = executor.context();
                     #( #custom_async_downcasts )*
                     #regular_async_downcast
                 }

@@ -3,7 +3,7 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -83,6 +83,16 @@ pub fn expand_on_trait(
             }
         })
         .collect();
+    for (ty, downcast) in &meta.external_downcasts {
+        match implementers.iter_mut().find(|i| &i.ty == ty) {
+            Some(impler) => {
+                impler.downcast = Some(ImplementerDowncastDefinition::External {
+                    path: downcast.inner().clone(),
+                });
+            }
+            None => err_only_implementer_downcast(&downcast.span_joined()),
+        }
+    }
 
     proc_macro_error::abort_if_dirty();
 
@@ -94,13 +104,14 @@ pub fn expand_on_trait(
                 Some(TraitMethod::Downcast(d)) => {
                     match implementers.iter_mut().find(|i| i.ty == d.ty) {
                         Some(impler) => {
-                            impler.downcast = d.downcast;
-                            impler.context_ty = d.context_ty;
+                            if let Some(external) = &impler.downcast {
+                                err_duplicate_downcast(m, external, &impler.ty);
+                            } else {
+                                impler.downcast = d.downcast;
+                                impler.context_ty = d.context_ty;
+                            }
                         }
-                        None => ERR.emit_custom(
-                            d.span,
-                            "downcasting is possible only to interface implementers",
-                        ),
+                        None => err_only_implementer_downcast(&d.span),
                     }
                 }
                 _ => {}
@@ -318,30 +329,6 @@ impl TraitMethod {
             return None;
         }
 
-        /*
-        let downcast = {
-            /* TODO
-            if let Some(other) = trait_meta.external_resolvers.get(&ty) {
-                ERR.custom(
-                    method_span,
-                    format!(
-                        "trait method `{}` conflicts with the external resolver function `{}` declared \
-                     on the trait to resolve the variant type `{}`",
-                        method_ident,
-                        other.to_token_stream(),
-                        ty.to_token_stream(),
-
-                    ),
-                )
-                    .note(String::from(
-                        "use `#[graphql_union(ignore)]` attribute to ignore this trait method for union \
-                 variants resolution",
-                    ))
-                    .emit();
-            }*/
-
-        };*/
-
         let downcast = ImplementerDowncastDefinition::Method {
             name: method_ident.clone(),
             with_context: context_ty.is_some(),
@@ -535,4 +522,39 @@ fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     )
     .emit();
     return None;
+}
+
+fn err_only_implementer_downcast<S: Spanned>(span: &S) {
+    ERR.custom(
+        span.span(),
+        "downcasting is possible only to interface implementers",
+    )
+    .emit();
+}
+
+fn err_duplicate_downcast(
+    method: &syn::TraitItemMethod,
+    external: &ImplementerDowncastDefinition,
+    impler_ty: &syn::Type,
+) {
+    let external = match external {
+        ImplementerDowncastDefinition::External { path } => path,
+        _ => unreachable!(),
+    };
+
+    ERR.custom(
+        method.span(),
+        format!(
+            "trait method `{}` conflicts with the external downcast function `{}` declared \
+             on the trait to downcast into the implementer type `{}`",
+            method.sig.ident,
+            external.to_token_stream(),
+            impler_ty.to_token_stream(),
+        ),
+    )
+    .note(String::from(
+        "use `#[graphql_interface(ignore)]` attribute to ignore this trait method for interface \
+         implementers downcasting",
+    ))
+    .emit()
 }
