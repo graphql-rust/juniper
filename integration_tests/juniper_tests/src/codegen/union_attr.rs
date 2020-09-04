@@ -821,7 +821,7 @@ mod explicit_custom_context {
     }
 }
 
-mod ignored_methods {
+mod ignored_method {
     use super::*;
 
     #[graphql_union]

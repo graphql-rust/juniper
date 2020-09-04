@@ -16,9 +16,12 @@ use syn::{
     token,
 };
 
-use crate::util::{
-    err, filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _,
-    ParseBufferExt as _,
+use crate::{
+    common::parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
+    },
+    util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
 };
 
 /// Helper alias for the type of [`UnionMeta::external_resolvers`] field.

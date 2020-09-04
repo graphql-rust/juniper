@@ -1,3 +1,6 @@
+pub(crate) mod attr;
+pub(crate) mod downcaster;
+
 use std::{
     any::TypeId,
     iter::{self, FromIterator as _},

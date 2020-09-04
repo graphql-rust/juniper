@@ -1,6 +1,7 @@
 use crate::{
     result::GraphQLScope,
-    util::{self, span_container::SpanContainer, ParseBufferExt as _},
+    common::parse::ParseBufferExt as _,
+    util::{self, span_container::SpanContainer},
 };
 use proc_macro2::TokenStream;
 use quote::quote;

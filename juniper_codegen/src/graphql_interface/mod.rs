@@ -15,9 +15,12 @@ use syn::{
     token,
 };
 
-use crate::util::{
-    err, filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer,
-    OptionExt as _, ParseBufferExt as _,
+use crate::{
+    common::parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
+    },
+    util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
 
 /*
@@ -85,7 +88,7 @@ struct InterfaceMeta {
     /// inferred.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub external_downcasters: InterfaceMetaDowncasters,*/
+    pub downcasters: InterfaceMetaDowncasters,*/
     /// Indicator whether the generated code is intended to be used only inside the `juniper`
     /// library.
     pub is_internal: bool,
@@ -272,14 +275,15 @@ impl ImplementerMeta {
 }
 
 #[derive(Debug, Default)]
-struct FieldMeta {
+struct TraitMethodMeta {
     pub name: Option<SpanContainer<syn::LitStr>>,
     pub description: Option<SpanContainer<syn::LitStr>>,
     pub deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
     pub ignore: Option<SpanContainer<syn::Ident>>,
+    pub downcast: Option<SpanContainer<syn::Ident>>,
 }
 
-impl Parse for FieldMeta {
+impl Parse for TraitMethodMeta {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut output = Self::default();
 
@@ -321,6 +325,10 @@ impl Parse for FieldMeta {
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
                     .none_or_else(|_| err::dup_arg(&ident))?,
+                "downcast" => output
+                    .downcast
+                    .replace(SpanContainer::new(ident.span(), None, ident.clone()))
+                    .none_or_else(|_| err::dup_arg(&ident))?,
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -332,7 +340,7 @@ impl Parse for FieldMeta {
     }
 }
 
-impl FieldMeta {
+impl TraitMethodMeta {
     /// Tries to merge two [`FieldMeta`]s into a single one, reporting about duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
@@ -340,6 +348,7 @@ impl FieldMeta {
             description: try_merge_opt!(description: self, another),
             deprecated: try_merge_opt!(deprecated: self, another),
             ignore: try_merge_opt!(ignore: self, another),
+            downcast: try_merge_opt!(downcast: self, another),
         })
     }
 
@@ -349,6 +358,32 @@ impl FieldMeta {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
+
+        if let Some(ignore) = &meta.ignore {
+            if meta.name.is_some()
+                || meta.description.is_some()
+                || meta.deprecated.is_some()
+                || meta.downcast.is_some()
+            {
+                return Err(syn::Error::new(
+                    ignore.span(),
+                    "`ignore` attribute argument is not composable with any other arguments",
+                ));
+            }
+        }
+
+        if let Some(downcast) = &meta.downcast {
+            if meta.name.is_some()
+                || meta.description.is_some()
+                || meta.deprecated.is_some()
+                || meta.ignore.is_some()
+            {
+                return Err(syn::Error::new(
+                    downcast.span(),
+                    "`downcast` attribute argument is not composable with any other arguments",
+                ));
+            }
+        }
 
         if meta.description.is_none() {
             meta.description = get_doc_comment(attrs).map(|sc| {
@@ -459,9 +494,37 @@ impl ArgumentMeta {
     /// Parses [`ArgumentMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
     /// function argument.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        filter_attrs(name, attrs)
+        let meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
-            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
+
+        if let Some(context) = &meta.context {
+            if meta.name.is_some()
+                || meta.description.is_some()
+                || meta.default.is_some()
+                || meta.executor.is_some()
+            {
+                return Err(syn::Error::new(
+                    context.span(),
+                    "`context` attribute argument is not composable with any other arguments",
+                ));
+            }
+        }
+
+        if let Some(executor) = &meta.executor {
+            if meta.name.is_some()
+                || meta.description.is_some()
+                || meta.default.is_some()
+                || meta.context.is_some()
+            {
+                return Err(syn::Error::new(
+                    executor.span(),
+                    "`executor` attribute argument is not composable with any other arguments",
+                ));
+            }
+        }
+
+        Ok(meta)
     }
 }
 
@@ -499,25 +562,26 @@ struct InterfaceFieldDefinition {
     pub is_async: bool,
 }
 
+enum ImplementerDowncastDefinition {
+    Method {
+        name: syn::Ident,
+        with_context: bool,
+    },
+    External {
+        path: syn::Path,
+    },
+}
+
 /// Definition of [GraphQL interface][1] implementer for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-struct InterfaceImplementerDefinition {
+struct ImplementerDefinition {
     /// Rust type that this [GraphQL interface][1] implementer resolves into.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     pub ty: syn::Type,
 
-    /// Rust code for downcasting into this [GraphQL interface][1] implementer.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub downcast_code: Option<syn::Expr>,
-
-    /// Rust code for checking whether [GraphQL interface][1] should be downcast into this
-    /// implementer.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub downcast_check: Option<syn::Expr>,
+    pub downcast: Option<ImplementerDowncastDefinition>,
 
     /// Rust type of `juniper::Context` that this [GraphQL interface][1] implementer requires for
     /// downcasting.
@@ -588,7 +652,7 @@ struct InterfaceDefinition {
     /// Implementers definitions of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub implementers: Vec<InterfaceImplementerDefinition>,
+    pub implementers: Vec<ImplementerDefinition>,
 }
 
 impl ToTokens for InterfaceDefinition {
@@ -693,13 +757,30 @@ impl ToTokens for InterfaceDefinition {
         });
 
         let custom_downcast_checks = self.implementers.iter().filter_map(|impler| {
-            let impler_check = impler.downcast_check.as_ref()?;
             let impler_ty = &impler.ty;
 
+            let mut ctx_arg = Some(quote! { , ::juniper::FromContext::from(context) });
+            let fn_path = match impler.downcast.as_ref()? {
+                ImplementerDowncastDefinition::Method { name, with_context } => {
+                    if !with_context {
+                        ctx_arg = None;
+                    }
+                    quote! { #ty::#name }
+                }
+                ImplementerDowncastDefinition::External { path } => {
+                    quote! { #path }
+                }
+            };
+
+            // Doing this may be quite an expensive, because resolving may contain some heavy
+            // computation, so we're preforming it twice. Unfortunately, we have no other options
+            // here, until the `juniper::GraphQLType` itself will allow to do it in some cleverer
+            // way.
             Some(quote! {
-                if #impler_check {
+                if ({ #fn_path(self #ctx_arg) } as ::std::option::Option<&#impler_ty>).is_some() {
                     return <#impler_ty as ::juniper::GraphQLType<#scalar>>::name(info)
-                        .unwrap().to_string();
+                        .unwrap()
+                        .to_string();
                 }
             })
         });
@@ -718,17 +799,28 @@ impl ToTokens for InterfaceDefinition {
         };
 
         let custom_downcasts = self.implementers.iter().filter_map(|impler| {
-            let downcast_code = impler.downcast_code.as_ref()?;
             let impler_ty = &impler.ty;
 
-            let get_name = quote! {
-                (<#impler_ty as ::juniper::GraphQLType<#scalar>>::name(info))
+            let mut ctx_arg = Some(quote! { , ::juniper::FromContext::from(context) });
+            let fn_path = match impler.downcast.as_ref()? {
+                ImplementerDowncastDefinition::Method { name, with_context } => {
+                    if !with_context {
+                        ctx_arg = None;
+                    }
+                    quote! { #ty::#name }
+                }
+                ImplementerDowncastDefinition::External { path } => {
+                    quote! { #path }
+                }
             };
+
             Some(quote! {
-                if type_name == #get_name.unwrap() {
+                if type_name == <
+                    #impler_ty as ::juniper::GraphQLType<#scalar>
+                >::name(info).unwrap() {
                     return ::juniper::IntoResolvable::into(
-                        { #downcast_code },
-                        executor.context()
+                        { #fn_path(self #ctx_arg) },
+                        executor.context(),
                     )
                     .and_then(|res| match res {
                         Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
@@ -738,17 +830,28 @@ impl ToTokens for InterfaceDefinition {
             })
         });
         let custom_async_downcasts = self.implementers.iter().filter_map(|impler| {
-            let downcast_code = impler.downcast_code.as_ref()?;
             let impler_ty = &impler.ty;
 
-            let get_name = quote! {
-                (<#impler_ty as ::juniper::GraphQLType<#scalar>>::name(info))
+            let mut ctx_arg = Some(quote! { , ::juniper::FromContext::from(context) });
+            let fn_path = match impler.downcast.as_ref()? {
+                ImplementerDowncastDefinition::Method { name, with_context } => {
+                    if !with_context {
+                        ctx_arg = None;
+                    }
+                    quote! { #ty::#name }
+                }
+                ImplementerDowncastDefinition::External { path } => {
+                    quote! { #path }
+                }
             };
+
             Some(quote! {
-                if type_name == #get_name.unwrap() {
+                if type_name == <
+                    #impler_ty as ::juniper::GraphQLType<#scalar>
+                >::name(info).unwrap() {
                     let res = ::juniper::IntoResolvable::into(
-                        { #downcast_code },
-                        executor.context()
+                        { #fn_path(self #ctx_arg) },
+                        executor.context(),
                     );
                     return ::juniper::futures::future::FutureExt::boxed(async move {
                         match res? {

@@ -1,9 +1,6 @@
 #![allow(clippy::single_match)]
 
 pub mod duplicate;
-pub mod err;
-pub mod option_ext;
-pub mod parse_buffer_ext;
 pub mod parse_impl;
 pub mod span_container;
 
@@ -21,7 +18,7 @@ use syn::{
     token, Attribute, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
 
-pub use self::{option_ext::OptionExt, parse_buffer_ext::ParseBufferExt};
+use crate::common::{parse::ParseBufferExt as _, unparenthesize};
 
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.
@@ -107,15 +104,6 @@ pub fn type_is_identifier_ref(ty: &syn::Type, name: &str) -> bool {
     match ty {
         syn::Type::Reference(_ref) => type_is_identifier(&*_ref.elem, name),
         _ => false,
-    }
-}
-
-/// Retrieves the innermost non-parenthesized [`syn::Type`] from the given one (unwraps nested
-/// [`syn::TypeParen`]s asap).
-pub fn unparenthesize(ty: &syn::Type) -> &syn::Type {
-    match ty {
-        syn::Type::Paren(ty) => unparenthesize(&*ty.elem),
-        _ => ty,
     }
 }
 
