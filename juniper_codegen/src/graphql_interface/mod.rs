@@ -996,7 +996,9 @@ impl ToTokens for InterfaceDefinition {
                     );
                     quote! { args.get::<#ty>(#name).expect(#err_text) }
                 }
-                InterfaceFieldArgument::Context => quote! { executor.context() },
+                InterfaceFieldArgument::Context => quote! {
+                    ::juniper::FromContext::from(executor.context())
+                },
                 InterfaceFieldArgument::Executor => quote! { &executor },
             });
 
@@ -1051,7 +1053,9 @@ impl ToTokens for InterfaceDefinition {
                     );
                     quote! { args.get::<#ty>(#name).expect(#err_text) }
                 }
-                InterfaceFieldArgument::Context => quote! { executor.context() },
+                InterfaceFieldArgument::Context => quote! {
+                    ::juniper::FromContext::from(executor.context())
+                },
                 InterfaceFieldArgument::Executor => quote! { &executor },
             });
 

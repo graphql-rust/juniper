@@ -7,7 +7,7 @@ use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
-    common::{parse, unparenthesize},
+    common::{parse, unparenthesize, anonymize_lifetimes},
     result::GraphQLScope,
     util::{
         path_eq_single, span_container::SpanContainer, strip_attrs, to_camel_case, unite_attrs,
@@ -391,10 +391,11 @@ impl TraitMethod {
                 .collect()
         };
 
-        let ty = match &method.sig.output {
+        let mut ty = match &method.sig.output {
             syn::ReturnType::Default => parse_quote! { () },
             syn::ReturnType::Type(_, ty) => unparenthesize(&*ty).clone(),
         };
+        anonymize_lifetimes(&mut ty);
 
         let description = meta.description.as_ref().map(|d| d.as_ref().value());
         let deprecated = meta
