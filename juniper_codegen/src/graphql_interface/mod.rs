@@ -548,17 +548,26 @@ struct InterfaceFieldArgumentDefinition {
     pub default: Option<Option<syn::Expr>>,
 }
 
-enum InterfaceFieldArgument {
+enum MethodArgument {
     Regular(InterfaceFieldArgumentDefinition),
-    Context,
+    Context(syn::Type),
     Executor,
 }
 
-impl InterfaceFieldArgument {
+impl MethodArgument {
     #[must_use]
     pub fn as_regular(&self) -> Option<&InterfaceFieldArgumentDefinition> {
         if let Self::Regular(arg) = self {
             Some(arg)
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    fn context_ty(&self) -> Option<&syn::Type> {
+        if let Self::Context(ty) = self {
+            Some(ty)
         } else {
             None
         }
@@ -571,7 +580,7 @@ struct InterfaceFieldDefinition {
     pub description: Option<String>,
     pub deprecated: Option<Option<String>>,
     pub method: syn::Ident,
-    pub arguments: Vec<InterfaceFieldArgument>,
+    pub arguments: Vec<MethodArgument>,
     pub is_async: bool,
 }
 
@@ -988,7 +997,7 @@ impl ToTokens for InterfaceDefinition {
             }
             let (name, ty, method) = (&field.name, &field.ty, &field.method);
             let arguments = field.arguments.iter().map(|arg| match arg {
-                InterfaceFieldArgument::Regular(arg) => {
+                MethodArgument::Regular(arg) => {
                     let (name, ty) = (&arg.name, &arg.ty);
                     let err_text = format!(
                         "Internal error: missing argument `{}` - validation must have failed",
@@ -996,10 +1005,10 @@ impl ToTokens for InterfaceDefinition {
                     );
                     quote! { args.get::<#ty>(#name).expect(#err_text) }
                 }
-                InterfaceFieldArgument::Context => quote! {
+                MethodArgument::Context(_) => quote! {
                     ::juniper::FromContext::from(executor.context())
                 },
-                InterfaceFieldArgument::Executor => quote! { &executor },
+                MethodArgument::Executor => quote! { &executor },
             });
 
             Some(quote! {
@@ -1045,7 +1054,7 @@ impl ToTokens for InterfaceDefinition {
 
             let method = &field.method;
             let arguments = field.arguments.iter().map(|arg| match arg {
-                InterfaceFieldArgument::Regular(arg) => {
+                MethodArgument::Regular(arg) => {
                     let (name, ty) = (&arg.name, &arg.ty);
                     let err_text = format!(
                         "Internal error: missing argument `{}` - validation must have failed",
@@ -1053,10 +1062,10 @@ impl ToTokens for InterfaceDefinition {
                     );
                     quote! { args.get::<#ty>(#name).expect(#err_text) }
                 }
-                InterfaceFieldArgument::Context => quote! {
+                MethodArgument::Context(_) => quote! {
                     ::juniper::FromContext::from(executor.context())
                 },
-                InterfaceFieldArgument::Executor => quote! { &executor },
+                MethodArgument::Executor => quote! { &executor },
             });
 
             let mut fut = quote! { <Self as #ty_interface>::#method(self#( , #arguments )*) };

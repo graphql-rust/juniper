@@ -647,27 +647,27 @@ mod custom_scalar {
     }
 }
 
-mod inferred_custom_context {
+mod explicit_custom_context {
     use super::*;
 
-    #[graphql_union]
+    #[graphql_union(context = CustomContext)]
     trait Character {
-        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
+        fn as_human(&self) -> Option<&HumanCustomContext> {
             None
         }
-        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
+        fn as_droid(&self) -> Option<&DroidCustomContext> {
             None
         }
     }
 
     impl Character for HumanCustomContext {
-        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
+        fn as_human(&self) -> Option<&HumanCustomContext> {
             Some(&self)
         }
     }
 
     impl Character for DroidCustomContext {
-        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
+        fn as_droid(&self) -> Option<&DroidCustomContext> {
             Some(&self)
         }
     }
@@ -734,27 +734,27 @@ mod inferred_custom_context {
     }
 }
 
-mod explicit_custom_context {
+mod inferred_custom_context {
     use super::*;
 
-    #[graphql_union(context = CustomContext)]
+    #[graphql_union]
     trait Character {
-        fn as_human(&self) -> Option<&HumanCustomContext> {
+        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
             None
         }
-        fn as_droid(&self) -> Option<&DroidCustomContext> {
+        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
             None
         }
     }
 
     impl Character for HumanCustomContext {
-        fn as_human(&self) -> Option<&HumanCustomContext> {
+        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
             Some(&self)
         }
     }
 
     impl Character for DroidCustomContext {
-        fn as_droid(&self) -> Option<&DroidCustomContext> {
+        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
             Some(&self)
         }
     }

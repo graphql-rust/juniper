@@ -2,15 +2,6 @@ pub(crate) mod parse;
 
 use proc_macro2::Span;
 
-/// Retrieves the innermost non-parenthesized [`syn::Type`] from the given one (unwraps nested
-/// [`syn::TypeParen`]s asap).
-pub(crate) fn unparenthesize(ty: &syn::Type) -> &syn::Type {
-    match ty {
-        syn::Type::Paren(ty) => unparenthesize(&*ty.elem),
-        _ => ty,
-    }
-}
-
 pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
     use syn::{GenericArgument as GA, Type as T};
 
@@ -34,7 +25,9 @@ pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
                     syn::TypeParamBound::Lifetime(lt) => {
                         lt.ident = syn::Ident::new("_", Span::call_site())
                     }
-                    syn::TypeParamBound::Trait(_) => todo!(),
+                    syn::TypeParamBound::Trait(_) => {
+                        todo!("Anonymizing lifetimes in trait is not yet supported")
+                    }
                 }
             }
         }
@@ -45,8 +38,6 @@ pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
             }
             anonymize_lifetimes(&mut *ref_ty.elem);
         }
-
-        T::BareFn(_) => todo!(),
 
         T::Path(ty) => {
             for seg in ty.path.segments.iter_mut() {
@@ -76,6 +67,12 @@ pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
             }
         }
 
-        T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) | T::__Nonexhaustive => {}
+        // These types unlikely will be used as GraphQL types.
+        T::BareFn(_)
+        | T::Infer(_)
+        | T::Macro(_)
+        | T::Never(_)
+        | T::Verbatim(_)
+        | T::__Nonexhaustive => {}
     }
 }

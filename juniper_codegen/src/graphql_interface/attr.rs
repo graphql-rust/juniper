@@ -7,7 +7,10 @@ use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
-    common::{parse, unparenthesize, anonymize_lifetimes},
+    common::{
+        anonymize_lifetimes,
+        parse::{self, TypeExt as _},
+    },
     result::GraphQLScope,
     util::{
         path_eq_single, span_container::SpanContainer, strip_attrs, to_camel_case, unite_attrs,
@@ -16,8 +19,8 @@ use crate::{
 
 use super::{
     ArgumentMeta, ImplementerDefinition, ImplementerDowncastDefinition, ImplementerMeta,
-    InterfaceDefinition, InterfaceFieldArgument, InterfaceFieldArgumentDefinition,
-    InterfaceFieldDefinition, InterfaceMeta, TraitMethodMeta,
+    InterfaceDefinition, InterfaceFieldArgumentDefinition, InterfaceFieldDefinition, InterfaceMeta,
+    MethodArgument, TraitMethodMeta,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -66,9 +69,6 @@ pub fn expand_on_trait(
                 .unwrap_or_else(|| trait_ident.span()),
         );
     }
-
-    let context = meta.context.map(SpanContainer::into_inner);
-    //.or_else(|| variants.iter().find_map(|v| v.context_ty.as_ref()).cloned());
 
     let mut implementers: Vec<_> = meta
         .implementers
@@ -120,6 +120,24 @@ pub fn expand_on_trait(
     }
 
     proc_macro_error::abort_if_dirty();
+
+    let context = meta
+        .context
+        .map(SpanContainer::into_inner)
+        .or_else(|| {
+            fields.iter().find_map(|f| {
+                f.arguments
+                    .iter()
+                    .find_map(MethodArgument::context_ty)
+                    .cloned()
+            })
+        })
+        .or_else(|| {
+            implementers
+                .iter()
+                .find_map(|impler| impler.context_ty.as_ref())
+                .cloned()
+        });
 
     let is_async_trait = meta.asyncness.is_some()
         || ast
@@ -393,7 +411,7 @@ impl TraitMethod {
 
         let mut ty = match &method.sig.output {
             syn::ReturnType::Default => parse_quote! { () },
-            syn::ReturnType::Type(_, ty) => unparenthesize(&*ty).clone(),
+            syn::ReturnType::Type(_, ty) => ty.unparenthesized().clone(),
         };
         anonymize_lifetimes(&mut ty);
 
@@ -414,7 +432,7 @@ impl TraitMethod {
         })
     }
 
-    fn parse_field_argument(argument: &mut syn::PatType) -> Option<InterfaceFieldArgument> {
+    fn parse_field_argument(argument: &mut syn::PatType) -> Option<MethodArgument> {
         let argument_attrs = argument.attrs.clone();
 
         // Remove repeated attributes from the method, to omit incorrect expansion.
@@ -428,15 +446,17 @@ impl TraitMethod {
             .ok()?;
 
         if meta.context.is_some() {
-            return Some(InterfaceFieldArgument::Context);
+            return Some(MethodArgument::Context(argument.ty.unreferenced().clone()));
         }
         if meta.executor.is_some() {
-            return Some(InterfaceFieldArgument::Executor);
+            return Some(MethodArgument::Executor);
         }
         if let syn::Pat::Ident(name) = &*argument.pat {
             let arg = match name.ident.unraw().to_string().as_str() {
-                "context" | "ctx" => Some(InterfaceFieldArgument::Context),
-                "executor" => Some(InterfaceFieldArgument::Executor),
+                "context" | "ctx" => {
+                    Some(MethodArgument::Context(argument.ty.unreferenced().clone()))
+                }
+                "executor" => Some(MethodArgument::Executor),
                 _ => None,
             };
             if arg.is_some() {
@@ -456,7 +476,7 @@ impl TraitMethod {
             )
             .note(String::from(
                 "use `#[graphql_interface(name = ...)]` attribute to specify custom argument's \
-                     name without requiring it being a single identifier",
+                 name without requiring it being a single identifier",
             ))
             .emit();
             return None;
@@ -471,14 +491,12 @@ impl TraitMethod {
             return None;
         }
 
-        Some(InterfaceFieldArgument::Regular(
-            InterfaceFieldArgumentDefinition {
-                name,
-                ty: argument.ty.as_ref().clone(),
-                description: meta.description.as_ref().map(|d| d.as_ref().value()),
-                default: meta.default.as_ref().map(|v| v.as_ref().clone()),
-            },
-        ))
+        Some(MethodArgument::Regular(InterfaceFieldArgumentDefinition {
+            name,
+            ty: argument.ty.as_ref().clone(),
+            description: meta.description.as_ref().map(|d| d.as_ref().value()),
+            default: meta.default.as_ref().map(|v| v.as_ref().clone()),
+        }))
     }
 }
 

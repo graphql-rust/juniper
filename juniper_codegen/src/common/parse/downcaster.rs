@@ -1,7 +1,7 @@
 use proc_macro2::Span;
 use syn::{ext::IdentExt as _, spanned::Spanned as _};
 
-use crate::common::unparenthesize;
+use crate::common::parse::TypeExt as _;
 
 /// Parses downcasting output type from the downcaster method return type.
 ///
@@ -15,7 +15,7 @@ pub(crate) fn output_type(ret_ty: &syn::ReturnType) -> Result<syn::Type, Span> {
         _ => return Err(ret_ty.span()),
     };
 
-    let path = match unparenthesize(ret_ty) {
+    let path = match ret_ty.unparenthesized() {
         syn::Type::Path(syn::TypePath { qself: None, path }) => path,
         _ => return Err(ret_ty.span()),
     };
@@ -36,12 +36,12 @@ pub(crate) fn output_type(ret_ty: &syn::ReturnType) -> Result<syn::Type, Span> {
     }
 
     let out_ty = match args.first() {
-        Some(syn::GenericArgument::Type(inner_ty)) => match unparenthesize(inner_ty) {
+        Some(syn::GenericArgument::Type(inner_ty)) => match inner_ty.unparenthesized() {
             syn::Type::Reference(inner_ty) => {
                 if inner_ty.mutability.is_some() {
                     return Err(inner_ty.span());
                 }
-                unparenthesize(&*inner_ty.elem).clone()
+                inner_ty.elem.unparenthesized().clone()
             }
             _ => return Err(ret_ty.span()),
         },
@@ -76,12 +76,12 @@ pub(crate) fn context_ty(sig: &syn::Signature) -> Result<Option<syn::Type>, Span
         None => return Ok(None),
         _ => return Err(sig.inputs.span()),
     };
-    match unparenthesize(second_arg_ty) {
+    match second_arg_ty.unparenthesized() {
         syn::Type::Reference(ref_ty) => {
             if ref_ty.mutability.is_some() {
                 return Err(ref_ty.span());
             }
-            Ok(Some(unparenthesize(&*ref_ty.elem).clone()))
+            Ok(Some(ref_ty.elem.unparenthesized().clone()))
         }
         ty => Err(ty.span()),
     }

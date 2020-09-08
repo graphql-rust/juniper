@@ -13,7 +13,7 @@ use syn::{
     token::{self, Token},
 };
 
-pub trait ParseBufferExt {
+pub(crate) trait ParseBufferExt {
     /// Tries to parse `T` as the next token.
     ///
     /// Doesn't move [`ParseStream`]'s cursor if there is no `T`.
@@ -82,5 +82,33 @@ impl<'a> ParseBufferExt for ParseBuffer<'a> {
         } else {
             Punctuated::from_iter(iter::once(self.parse::<T>()?))
         })
+    }
+}
+
+pub(crate) trait TypeExt {
+    /// Retrieves the innermost non-parenthesized [`syn::Type`] from the given one (unwraps nested
+    /// [`syn::TypeParen`]s asap).
+    fn unparenthesized(&self) -> &Self;
+
+    /// Retrieves the inner [`syn::Type`] from the given reference type, or just returns "as is" if
+    /// the type is not a reference.
+    ///
+    /// Also, unparenthesizes the type, if required.
+    fn unreferenced(&self) -> &Self;
+}
+
+impl TypeExt for syn::Type {
+    fn unparenthesized(&self) -> &Self {
+        match self {
+            Self::Paren(ty) => ty.elem.unparenthesized(),
+            ty => ty,
+        }
+    }
+
+    fn unreferenced(&self) -> &Self {
+        match self.unparenthesized() {
+            Self::Reference(ref_ty) => &*ref_ty.elem,
+            ty => ty,
+        }
     }
 }

@@ -18,7 +18,7 @@ use syn::{
     token, Attribute, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
 
-use crate::common::{parse::ParseBufferExt as _, unparenthesize};
+use crate::common::parse::{ParseBufferExt as _, TypeExt as _};
 
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.
@@ -833,7 +833,7 @@ impl GraphQLTypeDefiniton {
 
         let interfaces = if !self.interfaces.is_empty() {
             let interfaces_ty = self.interfaces.iter().map(|ty| {
-                let mut ty: syn::Type = unparenthesize(ty).clone();
+                let mut ty: syn::Type = ty.unparenthesized().clone();
 
                 if let syn::Type::TraitObject(dyn_ty) = &mut ty {
                     let mut dyn_ty = dyn_ty.clone();
@@ -1217,7 +1217,7 @@ impl GraphQLTypeDefiniton {
 
         let interfaces = if !self.interfaces.is_empty() {
             let interfaces_ty = self.interfaces.iter().map(|ty| {
-                let mut ty: syn::Type = unparenthesize(ty).clone();
+                let mut ty: syn::Type = ty.unparenthesized().clone();
 
                 if let syn::Type::TraitObject(dyn_ty) = &mut ty {
                     let mut dyn_ty = dyn_ty.clone();
