@@ -139,6 +139,32 @@ pub fn expand_on_trait(
                 .cloned()
         });
 
+    let is_implicit_generic_scalar = meta.scalar.is_none();
+    let is_explicit_generic_scalar = meta
+        .scalar
+        .as_ref()
+        .map(|sc| {
+            ast.generics
+                .params
+                .iter()
+                .find(|p| {
+                    if let syn::GenericParam::Type(tp) = p {
+                        let ident = &tp.ident;
+                        let ty: syn::Type = parse_quote! { #ident };
+                        &ty == sc.as_ref()
+                    } else {
+                        false
+                    }
+                })
+                .is_some()
+        })
+        .unwrap_or_default();
+    let scalar = meta
+        .scalar
+        .clone()
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| parse_quote! { GraphQLScalarValue });
+
     let is_async_trait = meta.asyncness.is_some()
         || ast
             .items
@@ -170,18 +196,28 @@ pub fn expand_on_trait(
         implementers,
     };
 
-    ast.generics.params.push(parse_quote! {
-        GraphQLScalarValue: ::juniper::ScalarValue = ::juniper::DefaultScalarValue
-    });
+    ast.attrs
+        .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
+
+    if is_implicit_generic_scalar {
+        ast.generics.params.push(parse_quote! {
+            GraphQLScalarValue: ::juniper::ScalarValue = ::juniper::DefaultScalarValue
+        });
+    }
+    if is_implicit_generic_scalar {
+        ast.generics
+            .make_where_clause()
+            .predicates
+            .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+    }
     ast.supertraits.push(parse_quote! {
-        ::juniper::AsDynGraphQLValue<GraphQLScalarValue>
+        ::juniper::AsDynGraphQLValue<#scalar>
     });
     if is_async_trait && has_default_async_methods {
         // Hack for object safety. See details: https://docs.rs/async-trait/#dyn-traits
         ast.supertraits.push(parse_quote! { Sync });
     }
-    ast.attrs
-        .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
+
     if is_async_trait {
         inject_async_trait(
             &mut ast.attrs,
@@ -220,28 +256,58 @@ pub fn expand_on_impl(
             })
             .is_some();
 
-    let is_generic_scalar = meta.scalar.is_none();
+    let is_implicit_generic_scalar = meta.scalar.is_none();
+    let is_explicit_generic_scalar = meta
+        .scalar
+        .as_ref()
+        .map(|sc| {
+            ast.generics
+                .params
+                .iter()
+                .find(|p| {
+                    if let syn::GenericParam::Type(tp) = p {
+                        let ident = &tp.ident;
+                        let ty: syn::Type = parse_quote! { #ident };
+                        &ty == sc.as_ref()
+                    } else {
+                        false
+                    }
+                })
+                .is_some()
+        })
+        .unwrap_or_default();
 
     ast.attrs
         .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
 
-    if is_generic_scalar {
+    if is_implicit_generic_scalar {
         ast.generics.params.push(parse_quote! {
             GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync
         });
     }
-
-    let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
-    let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
-    if let syn::PathArguments::None = trait_params {
-        *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
+    if is_explicit_generic_scalar {
+        let scalar = &meta.scalar;
+        ast.generics
+            .make_where_clause()
+            .predicates
+            .push(parse_quote! {
+                #scalar: ::juniper::ScalarValue + Send + Sync
+            });
     }
-    if let syn::PathArguments::AngleBracketed(a) = trait_params {
-        a.args.push(if is_generic_scalar {
-            parse_quote! { GraphQLScalarValue }
-        } else {
-            syn::GenericArgument::Type(meta.scalar.clone().unwrap().into_inner())
-        });
+
+    if !is_explicit_generic_scalar {
+        let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
+        let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
+        if let syn::PathArguments::None = trait_params {
+            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
+        }
+        if let syn::PathArguments::AngleBracketed(a) = trait_params {
+            a.args.push(if is_implicit_generic_scalar {
+                parse_quote! { GraphQLScalarValue }
+            } else {
+                syn::GenericArgument::Type(meta.scalar.clone().unwrap().into_inner())
+            });
+        }
     }
 
     if is_async_trait {
@@ -265,7 +331,6 @@ fn inject_async_trait<'m, M>(attrs: &mut Vec<syn::Attribute>, methods: M, generi
 where
     M: IntoIterator<Item = &'m mut syn::Signature>,
 {
-    attrs.push(parse_quote! { #[allow(clippy::type_repetition_in_bounds)] });
     attrs.push(parse_quote! { #[::juniper::async_trait] });
 
     for method in methods.into_iter() {
