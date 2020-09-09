@@ -63,7 +63,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
         Self {
             context,
             max_in_flight_operations: 0,
-            keep_alive_interval: Duration::from_secs(30),
+            keep_alive_interval: Duration::from_secs(15),
         }
     }
 
