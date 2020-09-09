@@ -10,6 +10,7 @@ use crate::{
     common::{
         anonymize_lifetimes,
         parse::{self, TypeExt as _},
+        ScalarValueType,
     },
     result::GraphQLScope,
     util::{
@@ -139,31 +140,27 @@ pub fn expand_on_trait(
                 .cloned()
         });
 
-    let is_implicit_generic_scalar = meta.scalar.is_none();
-    let is_explicit_generic_scalar = meta
+    let scalar_ty = meta
         .scalar
         .as_ref()
         .map(|sc| {
             ast.generics
                 .params
                 .iter()
-                .find(|p| {
+                .find_map(|p| {
                     if let syn::GenericParam::Type(tp) = p {
                         let ident = &tp.ident;
                         let ty: syn::Type = parse_quote! { #ident };
-                        &ty == sc.as_ref()
-                    } else {
-                        false
+                        if &ty == sc.as_ref() {
+                            return Some(&tp.ident);
+                        }
                     }
+                    None
                 })
-                .is_some()
+                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
+                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
         })
-        .unwrap_or_default();
-    let scalar = meta
-        .scalar
-        .clone()
-        .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| parse_quote! { GraphQLScalarValue });
+        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
 
     let is_async_trait = meta.asyncness.is_some()
         || ast
@@ -190,7 +187,7 @@ pub fn expand_on_trait(
         visibility: ast.vis.clone(),
         description: meta.description.map(SpanContainer::into_inner),
         context,
-        scalar: meta.scalar.map(SpanContainer::into_inner),
+        scalar: scalar_ty.clone(),
         generics: ast.generics.clone(),
         fields,
         implementers,
@@ -199,20 +196,23 @@ pub fn expand_on_trait(
     ast.attrs
         .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
 
-    if is_implicit_generic_scalar {
-        ast.generics.params.push(parse_quote! {
-            GraphQLScalarValue: ::juniper::ScalarValue = ::juniper::DefaultScalarValue
-        });
-    }
-    if is_implicit_generic_scalar {
+    let scalar = if scalar_ty.is_explicit_generic() {
+        scalar_ty.as_tokens().unwrap()
+    } else {
+        quote! { GraphQLScalarValue }
+    };
+    let default_scalar = scalar_ty.default_scalar();
+    if !scalar_ty.is_explicit_generic() {
         ast.generics
-            .make_where_clause()
-            .predicates
-            .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+            .params
+            .push(parse_quote! { #scalar = #default_scalar });
     }
-    ast.supertraits.push(parse_quote! {
-        ::juniper::AsDynGraphQLValue<#scalar>
-    });
+    ast.generics
+        .make_where_clause()
+        .predicates
+        .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+    ast.supertraits
+        .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar> });
     if is_async_trait && has_default_async_methods {
         // Hack for object safety. See details: https://docs.rs/async-trait/#dyn-traits
         ast.supertraits.push(parse_quote! { Sync });
@@ -256,57 +256,52 @@ pub fn expand_on_impl(
             })
             .is_some();
 
-    let is_implicit_generic_scalar = meta.scalar.is_none();
-    let is_explicit_generic_scalar = meta
+    let scalar_ty = meta
         .scalar
         .as_ref()
         .map(|sc| {
             ast.generics
                 .params
                 .iter()
-                .find(|p| {
+                .find_map(|p| {
                     if let syn::GenericParam::Type(tp) = p {
                         let ident = &tp.ident;
                         let ty: syn::Type = parse_quote! { #ident };
-                        &ty == sc.as_ref()
-                    } else {
-                        false
+                        if &ty == sc.as_ref() {
+                            return Some(&tp.ident);
+                        }
                     }
+                    None
                 })
-                .is_some()
+                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
+                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
         })
-        .unwrap_or_default();
+        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
 
     ast.attrs
         .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
 
-    if is_implicit_generic_scalar {
-        ast.generics.params.push(parse_quote! {
-            GraphQLScalarValue: ::juniper::ScalarValue + Send + Sync
-        });
+    let scalar = scalar_ty
+        .as_tokens()
+        .unwrap_or_else(|| quote! { GraphQLScalarValue });
+    if scalar_ty.is_implicit_generic() {
+        ast.generics.params.push(parse_quote! { #scalar });
     }
-    if is_explicit_generic_scalar {
-        let scalar = &meta.scalar;
+    if scalar_ty.is_generic() {
         ast.generics
             .make_where_clause()
             .predicates
-            .push(parse_quote! {
-                #scalar: ::juniper::ScalarValue + Send + Sync
-            });
+            .push(parse_quote! { #scalar: ::juniper::ScalarValue + Send + Sync });
     }
 
-    if !is_explicit_generic_scalar {
+    if !scalar_ty.is_explicit_generic() {
         let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
         let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
         if let syn::PathArguments::None = trait_params {
             *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
         }
         if let syn::PathArguments::AngleBracketed(a) = trait_params {
-            a.args.push(if is_implicit_generic_scalar {
-                parse_quote! { GraphQLScalarValue }
-            } else {
-                syn::GenericArgument::Type(meta.scalar.clone().unwrap().into_inner())
-            });
+            a.args.push(parse_quote! { #scalar });
         }
     }
 

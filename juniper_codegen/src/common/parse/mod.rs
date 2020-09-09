@@ -2,6 +2,7 @@ pub(crate) mod attr;
 pub(crate) mod downcaster;
 
 use std::{
+    mem,
     any::TypeId,
     iter::{self, FromIterator as _},
 };
@@ -11,6 +12,7 @@ use syn::{
     parse::{Parse, ParseBuffer},
     punctuated::Punctuated,
     token::{self, Token},
+    parse_quote,
 };
 
 pub(crate) trait ParseBufferExt {
@@ -109,6 +111,61 @@ impl TypeExt for syn::Type {
         match self.unparenthesized() {
             Self::Reference(ref_ty) => &*ref_ty.elem,
             ty => ty,
+        }
+    }
+}
+
+pub(crate) trait GenericsExt {
+    fn remove_defaults(&mut self);
+
+    fn move_bounds_to_where_clause(&mut self);
+}
+
+impl GenericsExt for syn::Generics {
+    fn remove_defaults(&mut self) {
+        use syn::GenericParam as P;
+
+        for p in &mut self.params {
+            match p {
+                P::Type(p) => {
+                    p.eq_token = None;
+                    p.default = None;
+                }
+                P::Lifetime(_) => {}
+                P::Const(p) => {
+                    p.eq_token = None;
+                    p.default = None;
+                }
+            }
+        }
+    }
+
+    fn move_bounds_to_where_clause(&mut self) {
+        use syn::GenericParam as P;
+
+        let _ = self.make_where_clause();
+        let where_clause = self.where_clause.as_mut().unwrap();
+
+        for p in &mut self.params {
+            match p {
+                P::Type(p) => {
+                    if p.colon_token.is_some() {
+                        p.colon_token = None;
+                        let bounds = mem::take(&mut p.bounds);
+                        let ty = &p.ident;
+                        where_clause.predicates.push(parse_quote! { #ty: #bounds });
+                    }
+                }
+                P::Lifetime(p) => {
+                    if p.colon_token.is_some() {
+                        p.colon_token = None;
+                        let bounds = mem::take(&mut p.bounds);
+                        let lt = &p.lifetime;
+                        where_clause.predicates.push(parse_quote! { #lt: #bounds });
+                    }
+                }
+                P::Const(_) => {}
+            }
         }
     }
 }

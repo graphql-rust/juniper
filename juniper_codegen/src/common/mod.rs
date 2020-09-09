@@ -1,6 +1,8 @@
 pub(crate) mod parse;
 
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
+use quote::quote;
+use syn::parse_quote;
 
 pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
     use syn::{GenericArgument as GA, Type as T};
@@ -74,5 +76,48 @@ pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
         | T::Never(_)
         | T::Verbatim(_)
         | T::__Nonexhaustive => {}
+    }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum ScalarValueType {
+    Concrete(syn::Type),
+    ExplicitGeneric(syn::Ident),
+    ImplicitGeneric,
+}
+
+impl ScalarValueType {
+    #[must_use]
+    pub(crate) fn is_generic(&self) -> bool {
+        matches!(self, Self::ExplicitGeneric(_) | Self::ImplicitGeneric)
+    }
+
+    #[must_use]
+    pub(crate) fn is_explicit_generic(&self) -> bool {
+        matches!(self, Self::ExplicitGeneric(_))
+    }
+
+    #[must_use]
+    pub(crate) fn is_implicit_generic(&self) -> bool {
+        matches!(self, Self::ImplicitGeneric)
+    }
+
+    #[must_use]
+    pub(crate) fn as_tokens(&self) -> Option<TokenStream> {
+        match self {
+            Self::Concrete(ty) => Some(quote! { #ty }),
+            Self::ExplicitGeneric(ty_param) => Some(quote! { #ty_param }),
+            Self::ImplicitGeneric => None,
+        }
+    }
+
+    #[must_use]
+    pub(crate) fn default_scalar(&self) -> syn::Type {
+        match self {
+            Self::Concrete(ty) => ty.clone(),
+            Self::ExplicitGeneric(_) | Self::ImplicitGeneric => {
+                parse_quote! { ::juniper::DefaultScalarValue }
+            }
+        }
     }
 }

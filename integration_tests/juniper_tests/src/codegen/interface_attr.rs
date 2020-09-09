@@ -2417,7 +2417,7 @@ mod explicit_generic_scalar {
     use super::*;
 
     #[graphql_interface(for = [Human, Droid], dyn = DynCharacter, scalar = S)]
-    trait Character<S: ScalarValue> {
+    trait Character<S: ScalarValue = DefaultScalarValue> {
         fn id(&self) -> FieldResult<&str, S>;
     }
 

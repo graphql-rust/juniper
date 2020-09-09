@@ -16,9 +16,12 @@ use syn::{
 };
 
 use crate::{
-    common::parse::{
-        attr::{err, OptionExt as _},
-        ParseBufferExt as _,
+    common::{
+        parse::{
+            attr::{err, OptionExt as _},
+            GenericsExt as _, ParseBufferExt as _,
+        },
+        ScalarValueType,
     },
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
@@ -667,7 +670,7 @@ struct InterfaceDefinition {
     /// `juniper::ScalarValue` type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub scalar: Option<syn::Type>,
+    pub scalar: ScalarValueType,
 
     pub fields: Vec<InterfaceFieldDefinition>,
 
@@ -688,12 +691,7 @@ impl ToTokens for InterfaceDefinition {
             .map(|ctx| quote! { #ctx })
             .unwrap_or_else(|| quote! { () });
 
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|scl| quote! { #scl })
-            .unwrap_or_else(|| quote! { __S });
-        let is_generic_scalar = self.scalar.is_none();
+        let scalar = self.scalar.as_tokens().unwrap_or_else(|| quote! { __S });
 
         let description = self
             .description
@@ -916,14 +914,21 @@ impl ToTokens for InterfaceDefinition {
             (panic.clone(), panic)
         };
 
-        let (_, ty_generics, _) = self.generics.split_for_impl();
+        let mut generics = self.generics.clone();
+        if self.trait_object.is_some() {
+            generics.remove_defaults();
+            generics.move_bounds_to_where_clause();
+        }
+        let (_, ty_generics, _) = generics.split_for_impl();
 
-        let mut ext_generics = self.generics.clone();
+        let mut ext_generics = generics.clone();
         if self.trait_object.is_some() {
             ext_generics.params.push(parse_quote! { '__obj });
         }
-        if is_generic_scalar {
+        if self.scalar.is_implicit_generic() {
             ext_generics.params.push(parse_quote! { #scalar });
+        }
+        if self.scalar.is_generic() {
             ext_generics
                 .make_where_clause()
                 .predicates
@@ -935,25 +940,32 @@ impl ToTokens for InterfaceDefinition {
             .cloned()
             .unwrap_or_else(|| parse_quote! { where });
         where_async.predicates.push(parse_quote! { Self: Sync });
-        if is_generic_scalar {
+        if self.scalar.is_generic() {
             where_async
                 .predicates
                 .push(parse_quote! { #scalar: Send + Sync });
         }
 
         let mut ty_full = quote! { #ty#ty_generics };
-        let mut ty_interface = quote! { #ty#ty_generics };
+        let mut ty_interface = ty_full.clone();
         if self.trait_object.is_some() {
             let mut ty_params = None;
-            if !self.generics.params.is_empty() {
-                let params = &self.generics.params;
+            if !generics.params.is_empty() {
+                let params = &generics.params;
                 ty_params = Some(quote! { #params, });
             };
-            ty_full = quote! {
-                dyn #ty<#ty_params #scalar, Context = #context, TypeInfo = ()> +
-                    '__obj + Send + Sync
+
+            let scalar = if self.scalar.is_explicit_generic() {
+                None
+            } else {
+                Some(&scalar)
             };
             ty_interface = quote! { #ty<#ty_params #scalar> };
+
+            let scalar = scalar.map(|sc| quote! { #sc, });
+            ty_full = quote! {
+                dyn #ty<#ty_params #scalar Context = #context, TypeInfo = ()> + '__obj + Send + Sync
+            };
         }
 
         let mut dyn_alias = quote! {};
@@ -966,19 +978,24 @@ impl ToTokens for InterfaceDefinition {
                 quote! { #ty },
             );
 
-            let mut ty_params = None;
-            if !self.generics.params.is_empty() {
-                let params = &self.generics.params;
-                ty_params = Some(quote! { #params });
+            let (mut ty_params_left, mut ty_params_right) = (None, None);
+            if !generics.params.is_empty() {
+                let params = &generics.params;
+                ty_params_right = Some(quote! { #params, });
+
+                // We should preserve defaults for left side.
+                let mut generics = self.generics.clone();
+                generics.move_bounds_to_where_clause();
+                let params = &generics.params;
+                ty_params_left = Some(quote! { , #params });
             };
-            let (scalar_left, scalar_right) = if is_generic_scalar {
-                let left = Some(quote! { , S = ::juniper::DefaultScalarValue });
-                (left, quote! { S })
-            } else {
-                (None, scalar.clone())
-            };
-            let ty_params_left = ty_params.as_ref().map(|ps| quote! { , #ps });
-            let ty_params_right = ty_params.map(|ps| quote! { #ps, });
+
+            let (mut scalar_left, mut scalar_right) = (None, None);
+            if !self.scalar.is_explicit_generic() {
+                let default_scalar = self.scalar.default_scalar();
+                scalar_left = Some(quote! { , S = #default_scalar });
+                scalar_right = Some(quote! { S, });
+            }
 
             let vis = &self.visibility;
 
@@ -986,7 +1003,7 @@ impl ToTokens for InterfaceDefinition {
                 #[allow(unused_qualifications)]
                 #[doc = #doc]
                 #vis type #alias<'a #ty_params_left #scalar_left> =
-                    dyn #ty<#ty_params_right #scalar_right, Context = #context, TypeInfo = ()> +
+                    dyn #ty<#ty_params_right #scalar_right Context = #context, TypeInfo = ()> +
                         'a + Send + Sync;
             }
         }
