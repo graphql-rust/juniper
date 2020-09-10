@@ -1,8 +1,8 @@
-error[E0277]: the trait bound `Test: juniper::marker::GraphQLObjectType<__S>` is not satisfied
+error[E0277]: the trait bound `Test: GraphQLObjectType<__S>` is not satisfied
  --> $DIR/trait_non_object_variant.rs:9:1
   |
 9 | #[graphql_union]
-  | ^^^^^^^^^^^^^^^^ the trait `juniper::marker::GraphQLObjectType<__S>` is not implemented for `Test`
+  | ^^^^^^^^^^^^^^^^ the trait `GraphQLObjectType<__S>` is not implemented for `Test`
   |
   = note: required by `juniper::marker::GraphQLObjectType::mark`
   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
