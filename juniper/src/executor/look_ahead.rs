@@ -334,7 +334,7 @@ pub struct ConcreteLookAheadSelection<'a, S: 'a> {
 ///
 /// `'sel` lifetime is intended to point to the data that this `LookAheadSelection` (or
 /// `ConcreteLookAheadSelection`) points to.
-pub trait LookAheadMethods<'sel,  S> {
+pub trait LookAheadMethods<'sel, S> {
     /// Get the (potentially aliased) name of the field represented by the current selection
     fn field_name(&self) -> &'sel str;
 
