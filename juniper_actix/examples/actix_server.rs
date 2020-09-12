@@ -37,7 +37,7 @@ async fn graphql(
     graphql_handler(&schema, &context, req, payload).await
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();

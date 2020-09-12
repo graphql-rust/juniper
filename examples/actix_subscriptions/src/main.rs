@@ -104,7 +104,7 @@ async fn subscriptions(
     subscriptions_handler(req, stream, schema, config).await
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();
