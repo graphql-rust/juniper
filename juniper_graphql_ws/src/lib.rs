@@ -76,8 +76,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
     }
 
     /// Specifies the interval at which to send keep-alives. Specifying a zero duration will
-    /// disable keep-alives. By default, keep-alives are sent every
-    /// 30 seconds.
+    /// disable keep-alives. By default, keep-alives are sent every 15 seconds.
     pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
         self.keep_alive_interval = interval;
         self
