@@ -16,6 +16,7 @@ actix = "0.10.0"
 actix-web = { version = "3.0.0", features = ["rustls"] }
 actix-web-actors = "3.0.0"
 
+
 futures = { version = "0.3.5", features = ["compat"] }
 tokio = { version = "0.2", features = ["time"] }
 serde = { version = "1.0.116", features = ["derive"] }
@@ -27,6 +28,7 @@ juniper = { version = "0.14.2", path = "../juniper", default-features = false  }
 juniper_graphql_ws = { path = "../juniper_graphql_ws", optional = true }
 
 [dev-dependencies]
+actix-rt = "1.1.1"
 actix-cors = "0.3.0"
 actix-identity = "0.3.0"
 
