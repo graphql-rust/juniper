@@ -21,8 +21,8 @@ where
 mod trivial {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid])]
-    trait Character {
+    #[graphql_interface(enum = Actor, for = [Human, Droid])]
+    trait ActorInterface {
         fn id(&self) -> &str;
     }
 

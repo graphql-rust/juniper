@@ -3,7 +3,7 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens as _};
+use quote::{format_ident, quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -19,9 +19,10 @@ use crate::{
 };
 
 use super::{
-    ArgumentMeta, ImplementerDefinition, ImplementerDowncastDefinition, ImplementerMeta,
-    InterfaceDefinition, InterfaceFieldArgumentDefinition, InterfaceFieldDefinition, InterfaceMeta,
-    MethodArgument, TraitMethodMeta,
+    inject_async_trait, ArgumentMeta, DynValue, EnumValue, ImplementerDefinition,
+    ImplementerDowncastDefinition, ImplementerMeta, InterfaceDefinition,
+    InterfaceFieldArgumentDefinition, InterfaceFieldDefinition, InterfaceMeta, MethodArgument,
+    TraitMethodMeta,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -180,17 +181,26 @@ pub fn expand_on_trait(
         })
         .is_some();
 
+    let is_trait_object = meta.as_dyn.is_some();
+    let ty = if is_trait_object {
+        trait_ident.clone()
+    } else if let Some(enum_ident) = &meta.as_enum {
+        enum_ident.as_ref().clone()
+    } else {
+        format_ident!("{}Value", trait_ident)
+    };
+
     let generated_code = InterfaceDefinition {
         name,
-        ty: parse_quote! { #trait_ident },
-        trait_object: Some(meta.alias.map(|a| a.as_ref().clone())),
+        ty,
+        trait_object: meta.as_dyn.as_ref().map(|a| a.as_ref().clone()),
         visibility: ast.vis.clone(),
         description: meta.description.map(SpanContainer::into_inner),
-        context,
+        context: context.clone(),
         scalar: scalar_ty.clone(),
         generics: ast.generics.clone(),
         fields,
-        implementers,
+        implementers: implementers.clone(),
     };
 
     ast.attrs
@@ -232,8 +242,72 @@ pub fn expand_on_trait(
         );
     }
 
+    let value_type = if is_trait_object {
+        let dyn_alias = DynValue {
+            ident: meta.as_dyn.as_ref().unwrap().as_ref().clone(),
+            visibility: ast.vis.clone(),
+            trait_ident: trait_ident.clone(),
+            trait_generics: ast.generics.clone(),
+            scalar: scalar_ty.clone(),
+            context,
+        };
+        quote! { #dyn_alias }
+    } else {
+        let enum_type = EnumValue {
+            ident: meta
+                .as_enum
+                .as_ref()
+                .map(SpanContainer::as_ref)
+                .cloned()
+                .unwrap_or_else(|| format_ident!("{}Value", trait_ident)),
+            visibility: ast.vis.clone(),
+            variants: implementers
+                .iter()
+                .map(|impler| impler.ty.clone())
+                .collect(),
+            trait_ident: trait_ident.clone(),
+            trait_generics: ast.generics.clone(),
+            trait_types: ast
+                .items
+                .iter()
+                .filter_map(|i| {
+                    if let syn::TraitItem::Type(ty) = i {
+                        Some((ty.ident.clone(), ty.generics.clone()))
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            trait_consts: ast
+                .items
+                .iter()
+                .filter_map(|i| {
+                    if let syn::TraitItem::Const(cnst) = i {
+                        Some((cnst.ident.clone(), cnst.ty.clone()))
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            trait_methods: ast
+                .items
+                .iter()
+                .filter_map(|i| {
+                    if let syn::TraitItem::Method(m) = i {
+                        Some(m.sig.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+        };
+        quote! { #enum_type }
+    };
+
     Ok(quote! {
         #ast
+
+        #value_type
 
         #generated_code
     })
@@ -320,33 +394,6 @@ pub fn expand_on_impl(
     }
 
     Ok(quote! { #ast })
-}
-
-fn inject_async_trait<'m, M>(attrs: &mut Vec<syn::Attribute>, methods: M, generics: &syn::Generics)
-where
-    M: IntoIterator<Item = &'m mut syn::Signature>,
-{
-    attrs.push(parse_quote! { #[::juniper::async_trait] });
-
-    for method in methods.into_iter() {
-        if method.asyncness.is_some() {
-            let where_clause = &mut method.generics.make_where_clause().predicates;
-            for p in &generics.params {
-                let ty_param = match p {
-                    syn::GenericParam::Type(t) => {
-                        let ty_param = &t.ident;
-                        quote! { #ty_param }
-                    }
-                    syn::GenericParam::Lifetime(l) => {
-                        let ty_param = &l.lifetime;
-                        quote! { #ty_param }
-                    }
-                    syn::GenericParam::Const(_) => continue,
-                };
-                where_clause.push(parse_quote! { #ty_param: 'async_trait });
-            }
-        }
-    }
 }
 
 enum TraitMethod {

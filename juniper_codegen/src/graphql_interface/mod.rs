@@ -7,7 +7,7 @@ pub mod attr;
 use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt as _};
+use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -50,6 +50,17 @@ struct InterfaceMeta {
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
     pub description: Option<SpanContainer<String>>,
 
+    pub as_enum: Option<SpanContainer<syn::Ident>>,
+
+    pub as_dyn: Option<SpanContainer<syn::Ident>>,
+
+    /// Explicitly specified Rust types of [GraphQL objects][2] implementing this
+    /// [GraphQL interface][1] type.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
+    pub implementers: HashSet<SpanContainer<syn::Type>>,
+
     /// Explicitly specified type of `juniper::Context` to use for resolving this
     /// [GraphQL interface][1] type with.
     ///
@@ -69,15 +80,6 @@ struct InterfaceMeta {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     pub scalar: Option<SpanContainer<syn::Type>>,
-
-    /// Explicitly specified Rust types of [GraphQL objects][2] implementing this
-    /// [GraphQL interface][1] type.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
-    pub implementers: HashSet<SpanContainer<syn::Type>>,
-
-    pub alias: Option<SpanContainer<syn::Ident>>,
 
     pub asyncness: Option<SpanContainer<syn::Ident>>,
 
@@ -159,7 +161,15 @@ impl Parse for InterfaceMeta {
                     input.parse::<token::Eq>()?;
                     let alias = input.parse::<syn::Ident>()?;
                     output
-                        .alias
+                        .as_dyn
+                        .replace(SpanContainer::new(ident.span(), Some(alias.span()), alias))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "enum" => {
+                    input.parse::<token::Eq>()?;
+                    let alias = input.parse::<syn::Ident>()?;
+                    output
+                        .as_enum
                         .replace(SpanContainer::new(ident.span(), Some(alias.span()), alias))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -204,7 +214,8 @@ impl InterfaceMeta {
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
             implementers: try_merge_hashset!(implementers: self, another => span_joined),
-            alias: try_merge_opt!(alias: self, another),
+            as_dyn: try_merge_opt!(as_dyn: self, another),
+            as_enum: try_merge_opt!(as_enum: self, another),
             asyncness: try_merge_opt!(asyncness: self, another),
             external_downcasts: try_merge_hashmap!(
                 external_downcasts: self, another => span_joined
@@ -219,6 +230,15 @@ impl InterfaceMeta {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
+
+        if let Some(as_dyn) = &meta.as_dyn {
+            if meta.as_enum.is_some() {
+                return Err(syn::Error::new(
+                    as_dyn.span(),
+                    "`dyn` attribute argument is not composable with `enum` attribute argument",
+                ));
+            }
+        }
 
         if meta.description.is_none() {
             meta.description = get_doc_comment(attrs);
@@ -587,6 +607,7 @@ struct InterfaceFieldDefinition {
     pub is_async: bool,
 }
 
+#[derive(Clone)]
 enum ImplementerDowncastDefinition {
     Method {
         name: syn::Ident,
@@ -600,6 +621,7 @@ enum ImplementerDowncastDefinition {
 /// Definition of [GraphQL interface][1] implementer for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+#[derive(Clone)]
 struct ImplementerDefinition {
     /// Rust type that this [GraphQL interface][1] implementer resolves into.
     ///
@@ -636,14 +658,14 @@ struct InterfaceDefinition {
     /// Rust type that this [GraphQL interface][1] is represented with.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub ty: syn::Type,
+    pub ty: syn::Ident,
 
     /// Generics of the Rust type that this [GraphQL interface][1] is implemented for.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     pub generics: syn::Generics,
 
-    pub trait_object: Option<Option<syn::Ident>>,
+    pub trait_object: Option<syn::Ident>,
 
     pub visibility: syn::Visibility,
 
@@ -968,46 +990,6 @@ impl ToTokens for InterfaceDefinition {
             };
         }
 
-        let mut dyn_alias = quote! {};
-        if let Some(Some(alias)) = self.trait_object.as_ref().as_ref() {
-            let doc = format!(
-                "Helper alias for the `{}` [trait object][2] implementing [GraphQL interface][1].\
-                 \n\n\
-                 [1]: https://spec.graphql.org/June2018/#sec-Interfaces\n\
-                 [2]: https://doc.rust-lang.org/reference/types/trait-object.html",
-                quote! { #ty },
-            );
-
-            let (mut ty_params_left, mut ty_params_right) = (None, None);
-            if !generics.params.is_empty() {
-                let params = &generics.params;
-                ty_params_right = Some(quote! { #params, });
-
-                // We should preserve defaults for left side.
-                let mut generics = self.generics.clone();
-                generics.move_bounds_to_where_clause();
-                let params = &generics.params;
-                ty_params_left = Some(quote! { , #params });
-            };
-
-            let (mut scalar_left, mut scalar_right) = (None, None);
-            if !self.scalar.is_explicit_generic() {
-                let default_scalar = self.scalar.default_scalar();
-                scalar_left = Some(quote! { , S = #default_scalar });
-                scalar_right = Some(quote! { S, });
-            }
-
-            let vis = &self.visibility;
-
-            dyn_alias = quote! {
-                #[allow(unused_qualifications)]
-                #[doc = #doc]
-                #vis type #alias<'a #ty_params_left #scalar_left> =
-                    dyn #ty<#ty_params_right #scalar_right Context = #context, TypeInfo = ()> +
-                        'a + Send + Sync;
-            }
-        }
-
         let fields_sync_resolvers = self.fields.iter().filter_map(|field| {
             if field.is_async {
                 return None;
@@ -1248,12 +1230,252 @@ impl ToTokens for InterfaceDefinition {
         };
 
         into.append_all(&[
-            dyn_alias,
             interface_impl,
             output_type_impl,
             type_impl,
             value_impl,
             value_async_impl,
         ]);
+    }
+}
+
+struct EnumValue {
+    pub ident: syn::Ident,
+    pub visibility: syn::Visibility,
+    pub variants: Vec<syn::Type>,
+    pub trait_ident: syn::Ident,
+    pub trait_generics: syn::Generics,
+    pub trait_types: Vec<(syn::Ident, syn::Generics)>,
+    pub trait_consts: Vec<(syn::Ident, syn::Type)>,
+    pub trait_methods: Vec<syn::Signature>,
+}
+
+impl EnumValue {
+    fn variant_ident(num: usize) -> syn::Ident {
+        format_ident!("Impl{}", num)
+    }
+
+    fn to_type_definition_tokens(&self) -> TokenStream {
+        let enum_ty = &self.ident;
+        let vis = &self.visibility;
+
+        let doc = format!(
+            "Type implementing [GraphQL interface][1] represented by `{}` trait.\
+             \n\n\
+             [1]: https://spec.graphql.org/June2018/#sec-Interfaces",
+            self.trait_ident,
+        );
+
+        let variants = self.variants.iter().enumerate().map(|(n, ty)| {
+            let variant = Self::variant_ident(n);
+
+            quote! { #variant(#ty), }
+        });
+
+        quote! {
+            #[automatically_derived]
+            #[doc = #doc]
+            #vis enum #enum_ty {
+                #( #variants )*
+            }
+        }
+    }
+
+    fn to_from_impls_tokens(&self) -> impl Iterator<Item = TokenStream> + '_ {
+        let enum_ty = &self.ident;
+
+        self.variants.iter().enumerate().map(move |(n, ty)| {
+            let variant = Self::variant_ident(n);
+
+            quote! {
+                #[automatically_derived]
+                impl From<#ty> for #enum_ty {
+                    fn from(v: #ty) -> Self {
+                        Self::#variant(v)
+                    }
+                }
+            }
+        })
+    }
+
+    fn to_trait_impl_tokens(&self) -> TokenStream {
+        let enum_ty = &self.ident;
+
+        let trait_ident = &self.trait_ident;
+        let (trait_params, trait_generics, where_clause) = self.trait_generics.split_for_impl();
+
+        let var_ty = self.variants.first().unwrap();
+
+        let assoc_types = self.trait_types.iter().map(|(ty, ty_gen)| {
+            quote! {
+                type #ty#ty_gen = <#var_ty as #trait_ident#trait_generics>::#ty#ty_gen;
+            }
+        });
+
+        let assoc_consts = self.trait_consts.iter().map(|(ident, ty)| {
+            quote! {
+                const #ident: #ty = <#var_ty as #trait_ident#trait_generics>::#ident;
+            }
+        });
+
+        let methods = self.trait_methods.iter().map(|sig| {
+            let method = &sig.ident;
+
+            let args = sig.inputs.iter().filter_map(|arg| match arg {
+                syn::FnArg::Receiver(_) => None,
+                syn::FnArg::Typed(a) => Some(&a.pat),
+            });
+
+            let and_await = if sig.asyncness.is_some() {
+                Some(quote! { .await })
+            } else {
+                None
+            };
+
+            let match_arms = self.variants.iter().enumerate().map(|(n, ty)| {
+                let variant = Self::variant_ident(n);
+                let args = args.clone();
+
+                quote! {
+                    Self::#variant(v) =>
+                        <#ty as #trait_ident#trait_generics>::#method(v #( , #args )* )#and_await,
+                }
+            });
+
+            quote! {
+                #sig {
+                    match self {
+                        #( #match_arms )*
+                    }
+                }
+            }
+        });
+
+        let mut impl_tokens = quote! {
+            #[automatically_derived]
+            impl#trait_params #trait_ident#trait_generics for #enum_ty #where_clause {
+                #( #assoc_types )*
+
+                #( #assoc_consts )*
+
+                #( #methods )*
+            }
+        };
+
+        if self
+            .trait_methods
+            .iter()
+            .find(|sig| sig.asyncness.is_some())
+            .is_some()
+        {
+            let mut ast: syn::ItemImpl = parse_quote! { #impl_tokens };
+            inject_async_trait(
+                &mut ast.attrs,
+                ast.items.iter_mut().filter_map(|i| {
+                    if let syn::ImplItem::Method(m) = i {
+                        Some(&mut m.sig)
+                    } else {
+                        None
+                    }
+                }),
+                &ast.generics,
+            );
+            impl_tokens = quote! { #ast };
+        }
+
+        impl_tokens
+    }
+}
+
+impl ToTokens for EnumValue {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        into.append_all(&[self.to_type_definition_tokens()]);
+        into.append_all(self.to_from_impls_tokens());
+        into.append_all(&[self.to_trait_impl_tokens()]);
+    }
+}
+
+struct DynValue {
+    pub ident: syn::Ident,
+    pub visibility: syn::Visibility,
+    pub trait_ident: syn::Ident,
+    pub trait_generics: syn::Generics,
+    pub scalar: ScalarValueType,
+    pub context: Option<syn::Type>,
+}
+
+impl ToTokens for DynValue {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        let dyn_ty = &self.ident;
+        let vis = &self.visibility;
+
+        let doc = format!(
+            "Helper alias for the `{}` [trait object][2] implementing [GraphQL interface][1].\
+             \n\n\
+             [1]: https://spec.graphql.org/June2018/#sec-Interfaces\n\
+             [2]: https://doc.rust-lang.org/reference/types/trait-object.html",
+            self.trait_ident,
+        );
+
+        let trait_ident = &self.trait_ident;
+
+        let (mut ty_params_left, mut ty_params_right) = (None, None);
+        if !self.trait_generics.params.is_empty() {
+            // We should preserve defaults for left side.
+            let mut generics = self.trait_generics.clone();
+            generics.move_bounds_to_where_clause();
+            let params = &generics.params;
+            ty_params_left = Some(quote! { , #params });
+
+            generics.remove_defaults();
+            let params = &generics.params;
+            ty_params_right = Some(quote! { #params, });
+        };
+
+        let (mut scalar_left, mut scalar_right) = (None, None);
+        if !self.scalar.is_explicit_generic() {
+            let default_scalar = self.scalar.default_scalar();
+            scalar_left = Some(quote! { , S = #default_scalar });
+            scalar_right = Some(quote! { S, });
+        }
+
+        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
+
+        let dyn_alias = quote! {
+            #[automatically_derived]
+            #[doc = #doc]
+            #vis type #dyn_ty<'a #ty_params_left #scalar_left> =
+                dyn #trait_ident<#ty_params_right #scalar_right Context = #context, TypeInfo = ()> +
+                    'a + Send + Sync;
+        };
+
+        into.append_all(&[dyn_alias]);
+    }
+}
+
+fn inject_async_trait<'m, M>(attrs: &mut Vec<syn::Attribute>, methods: M, generics: &syn::Generics)
+where
+    M: IntoIterator<Item = &'m mut syn::Signature>,
+{
+    attrs.push(parse_quote! { #[::juniper::async_trait] });
+
+    for method in methods.into_iter() {
+        if method.asyncness.is_some() {
+            let where_clause = &mut method.generics.make_where_clause().predicates;
+            for p in &generics.params {
+                let ty_param = match p {
+                    syn::GenericParam::Type(t) => {
+                        let ty_param = &t.ident;
+                        quote! { #ty_param }
+                    }
+                    syn::GenericParam::Lifetime(l) => {
+                        let ty_param = &l.lifetime;
+                        quote! { #ty_param }
+                    }
+                    syn::GenericParam::Const(_) => continue,
+                };
+                where_clause.push(parse_quote! { #ty_param: 'async_trait });
+            }
+        }
     }
 }
