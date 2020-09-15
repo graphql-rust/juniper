@@ -16,6 +16,13 @@ enum SomeEnum {
     Full,
 }
 
+#[derive(juniper::GraphQLEnum, Debug, PartialEq)]
+#[graphql(rename = "none")]
+enum NoRenameEnum {
+    OneVariant,
+    AnotherVariant,
+}
+
 /// Enum doc.
 #[derive(juniper::GraphQLEnum)]
 enum DocEnum {
@@ -63,6 +70,12 @@ fn test_derived_enum() {
 
     assert_eq!(meta.name(), Some("Some"));
     assert_eq!(meta.description(), Some(&"enum descr".to_string()));
+
+    // Test no rename variant.
+    assert_eq!(
+        <_ as ToInputValue>::to_input_value(&NoRenameEnum::AnotherVariant),
+        InputValue::scalar("AnotherVariant")
+    );
 
     // Test Regular variant.
     assert_eq!(
