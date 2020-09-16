@@ -19,7 +19,7 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, ArgumentMeta, DynValue, EnumValue, ImplementerDefinition,
+    inject_async_trait, ArgumentMeta, TraitObjectType, EnumType, ImplementerDefinition,
     ImplementerDowncastDefinition, ImplementerMeta, InterfaceDefinition,
     InterfaceFieldArgumentDefinition, InterfaceFieldDefinition, InterfaceMeta, MethodArgument,
     TraitMethodMeta,
@@ -203,32 +203,35 @@ pub fn expand_on_trait(
         implementers: implementers.clone(),
     };
 
-    ast.attrs
-        .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
+    if is_trait_object {
+        ast.attrs.push(parse_quote! {
+            #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
+        });
 
-    let scalar = if scalar_ty.is_explicit_generic() {
-        scalar_ty.as_tokens().unwrap()
-    } else {
-        quote! { GraphQLScalarValue }
-    };
-    let default_scalar = scalar_ty.default_scalar();
-    if !scalar_ty.is_explicit_generic() {
+        let scalar = if scalar_ty.is_explicit_generic() {
+            scalar_ty.ty_tokens().unwrap()
+        } else {
+            quote! { GraphQLScalarValue }
+        };
+        let default_scalar = scalar_ty.default_ty();
+        if !scalar_ty.is_explicit_generic() {
+            ast.generics
+                .params
+                .push(parse_quote! { #scalar = #default_scalar });
+        }
         ast.generics
-            .params
-            .push(parse_quote! { #scalar = #default_scalar });
-    }
-    ast.generics
-        .make_where_clause()
-        .predicates
-        .push(parse_quote! { #scalar: ::juniper::ScalarValue });
-    ast.supertraits
-        .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar> });
-    if is_async_trait && has_default_async_methods {
-        // Hack for object safety. See details: https://docs.rs/async-trait/#dyn-traits
-        ast.supertraits.push(parse_quote! { Sync });
+            .make_where_clause()
+            .predicates
+            .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        ast.supertraits
+            .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar> });
     }
 
     if is_async_trait {
+        if has_default_async_methods {
+            // Hack for object safety. See details: https://docs.rs/async-trait/#dyn-traits
+            ast.supertraits.push(parse_quote! { Sync });
+        }
         inject_async_trait(
             &mut ast.attrs,
             ast.items.iter_mut().filter_map(|i| {
@@ -243,64 +246,10 @@ pub fn expand_on_trait(
     }
 
     let value_type = if is_trait_object {
-        let dyn_alias = DynValue {
-            ident: meta.as_dyn.as_ref().unwrap().as_ref().clone(),
-            visibility: ast.vis.clone(),
-            trait_ident: trait_ident.clone(),
-            trait_generics: ast.generics.clone(),
-            scalar: scalar_ty.clone(),
-            context,
-        };
+        let dyn_alias = TraitObjectType::new(&ast, &meta, context);
         quote! { #dyn_alias }
     } else {
-        let enum_type = EnumValue {
-            ident: meta
-                .as_enum
-                .as_ref()
-                .map(SpanContainer::as_ref)
-                .cloned()
-                .unwrap_or_else(|| format_ident!("{}Value", trait_ident)),
-            visibility: ast.vis.clone(),
-            variants: implementers
-                .iter()
-                .map(|impler| impler.ty.clone())
-                .collect(),
-            trait_ident: trait_ident.clone(),
-            trait_generics: ast.generics.clone(),
-            trait_types: ast
-                .items
-                .iter()
-                .filter_map(|i| {
-                    if let syn::TraitItem::Type(ty) = i {
-                        Some((ty.ident.clone(), ty.generics.clone()))
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            trait_consts: ast
-                .items
-                .iter()
-                .filter_map(|i| {
-                    if let syn::TraitItem::Const(cnst) = i {
-                        Some((cnst.ident.clone(), cnst.ty.clone()))
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            trait_methods: ast
-                .items
-                .iter()
-                .filter_map(|i| {
-                    if let syn::TraitItem::Method(m) = i {
-                        Some(m.sig.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-        };
+        let enum_type = EnumType::new(&ast, &meta, &implementers);
         quote! { #enum_type }
     };
 
@@ -330,52 +279,57 @@ pub fn expand_on_impl(
             })
             .is_some();
 
-    let scalar_ty = meta
-        .scalar
-        .as_ref()
-        .map(|sc| {
-            ast.generics
-                .params
-                .iter()
-                .find_map(|p| {
-                    if let syn::GenericParam::Type(tp) = p {
-                        let ident = &tp.ident;
-                        let ty: syn::Type = parse_quote! { #ident };
-                        if &ty == sc.as_ref() {
-                            return Some(&tp.ident);
+    let is_trait_object = meta.as_dyn.is_some();
+
+    if is_trait_object {
+        let scalar_ty = meta
+            .scalar
+            .as_ref()
+            .map(|sc| {
+                ast.generics
+                    .params
+                    .iter()
+                    .find_map(|p| {
+                        if let syn::GenericParam::Type(tp) = p {
+                            let ident = &tp.ident;
+                            let ty: syn::Type = parse_quote! { #ident };
+                            if &ty == sc.as_ref() {
+                                return Some(&tp.ident);
+                            }
                         }
-                    }
-                    None
-                })
-                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
-                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
-        })
-        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
+                        None
+                    })
+                    .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
+                    .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
+            })
+            .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
 
-    ast.attrs
-        .push(parse_quote! { #[allow(unused_qualifications, clippy::type_repetition_in_bounds)] });
+        ast.attrs.push(parse_quote! {
+            #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
+        });
 
-    let scalar = scalar_ty
-        .as_tokens()
-        .unwrap_or_else(|| quote! { GraphQLScalarValue });
-    if scalar_ty.is_implicit_generic() {
-        ast.generics.params.push(parse_quote! { #scalar });
-    }
-    if scalar_ty.is_generic() {
-        ast.generics
-            .make_where_clause()
-            .predicates
-            .push(parse_quote! { #scalar: ::juniper::ScalarValue + Send + Sync });
-    }
-
-    if !scalar_ty.is_explicit_generic() {
-        let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
-        let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
-        if let syn::PathArguments::None = trait_params {
-            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
+        let scalar = scalar_ty
+            .ty_tokens()
+            .unwrap_or_else(|| quote! { GraphQLScalarValue });
+        if scalar_ty.is_implicit_generic() {
+            ast.generics.params.push(parse_quote! { #scalar });
         }
-        if let syn::PathArguments::AngleBracketed(a) = trait_params {
-            a.args.push(parse_quote! { #scalar });
+        if scalar_ty.is_generic() {
+            ast.generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #scalar: ::juniper::ScalarValue + Send + Sync });
+        }
+
+        if !scalar_ty.is_explicit_generic() {
+            let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
+            let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
+            if let syn::PathArguments::None = trait_params {
+                *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
+            }
+            if let syn::PathArguments::AngleBracketed(a) = trait_params {
+                a.args.push(parse_quote! { #scalar });
+            }
         }
     }
 

@@ -1,4 +1,5 @@
 pub(crate) mod parse;
+pub(crate) mod gen;
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
@@ -103,7 +104,7 @@ impl ScalarValueType {
     }
 
     #[must_use]
-    pub(crate) fn as_tokens(&self) -> Option<TokenStream> {
+    pub(crate) fn ty_tokens(&self) -> Option<TokenStream> {
         match self {
             Self::Concrete(ty) => Some(quote! { #ty }),
             Self::ExplicitGeneric(ty_param) => Some(quote! { #ty_param }),
@@ -112,7 +113,12 @@ impl ScalarValueType {
     }
 
     #[must_use]
-    pub(crate) fn default_scalar(&self) -> syn::Type {
+    pub(crate) fn ty_tokens_default(&self) -> TokenStream {
+        self.ty_tokens().unwrap_or_else(|| quote! { __S })
+    }
+
+    #[must_use]
+    pub(crate) fn default_ty(&self) -> syn::Type {
         match self {
             Self::Concrete(ty) => ty.clone(),
             Self::ExplicitGeneric(_) | Self::ImplicitGeneric => {
