@@ -2,8 +2,8 @@ pub(crate) mod parse;
 pub(crate) mod gen;
 
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
 use syn::parse_quote;
+use quote::ToTokens;
 
 pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
     use syn::{GenericArgument as GA, Type as T};
@@ -104,17 +104,12 @@ impl ScalarValueType {
     }
 
     #[must_use]
-    pub(crate) fn ty_tokens(&self) -> Option<TokenStream> {
+    pub(crate) fn ty(&self) -> syn::Type {
         match self {
-            Self::Concrete(ty) => Some(quote! { #ty }),
-            Self::ExplicitGeneric(ty_param) => Some(quote! { #ty_param }),
-            Self::ImplicitGeneric => None,
+            Self::Concrete(ty) => ty.clone(),
+            Self::ExplicitGeneric(ty_param) => parse_quote! { #ty_param },
+            Self::ImplicitGeneric => parse_quote! { __S },
         }
-    }
-
-    #[must_use]
-    pub(crate) fn ty_tokens_default(&self) -> TokenStream {
-        self.ty_tokens().unwrap_or_else(|| quote! { __S })
     }
 
     #[must_use]
@@ -125,5 +120,11 @@ impl ScalarValueType {
                 parse_quote! { ::juniper::DefaultScalarValue }
             }
         }
+    }
+}
+
+impl ToTokens for ScalarValueType {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        self.ty().to_tokens(into)
     }
 }

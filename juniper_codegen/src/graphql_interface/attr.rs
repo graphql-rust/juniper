@@ -3,7 +3,7 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{format_ident, quote, ToTokens as _};
+use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -19,10 +19,10 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, ArgumentMeta, TraitObjectType, EnumType, ImplementerDefinition,
-    ImplementerDowncastDefinition, ImplementerMeta, InterfaceDefinition,
-    InterfaceFieldArgumentDefinition, InterfaceFieldDefinition, InterfaceMeta, MethodArgument,
-    TraitMethodMeta,
+    inject_async_trait, ArgumentMeta, Definition, EnumType, ImplementerDefinition,
+    ImplementerDowncastDefinition, ImplementerMeta, InterfaceFieldArgumentDefinition,
+    InterfaceFieldDefinition, InterfaceMeta, MethodArgument, TraitMethodMeta, TraitObjectType,
+    Type,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -72,17 +72,36 @@ pub fn expand_on_trait(
         );
     }
 
+    let scalar = meta
+        .scalar
+        .as_ref()
+        .map(|sc| {
+            ast.generics
+                .params
+                .iter()
+                .find_map(|p| {
+                    if let syn::GenericParam::Type(tp) = p {
+                        let ident = &tp.ident;
+                        let ty: syn::Type = parse_quote! { #ident };
+                        if &ty == sc.as_ref() {
+                            return Some(&tp.ident);
+                        }
+                    }
+                    None
+                })
+                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
+                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
+        })
+        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
+
     let mut implementers: Vec<_> = meta
         .implementers
         .iter()
-        .map(|ty| {
-            let span = ty.span_ident();
-            ImplementerDefinition {
-                ty: ty.as_ref().clone(),
-                downcast: None,
-                context_ty: None,
-                span,
-            }
+        .map(|ty| ImplementerDefinition {
+            ty: ty.as_ref().clone(),
+            downcast: None,
+            context_ty: None,
+            scalar: scalar.clone(),
         })
         .collect();
     for (ty, downcast) in &meta.external_downcasts {
@@ -113,7 +132,7 @@ pub fn expand_on_trait(
                                 impler.context_ty = d.context_ty;
                             }
                         }
-                        None => err_only_implementer_downcast(&d.span),
+                        None => err_only_implementer_downcast(&m.sig),
                     }
                 }
                 _ => {}
@@ -125,7 +144,8 @@ pub fn expand_on_trait(
 
     let context = meta
         .context
-        .map(SpanContainer::into_inner)
+        .as_ref()
+        .map(|c| c.as_ref().clone())
         .or_else(|| {
             fields.iter().find_map(|f| {
                 f.arguments
@@ -141,27 +161,7 @@ pub fn expand_on_trait(
                 .cloned()
         });
 
-    let scalar_ty = meta
-        .scalar
-        .as_ref()
-        .map(|sc| {
-            ast.generics
-                .params
-                .iter()
-                .find_map(|p| {
-                    if let syn::GenericParam::Type(tp) = p {
-                        let ident = &tp.ident;
-                        let ty: syn::Type = parse_quote! { #ident };
-                        if &ty == sc.as_ref() {
-                            return Some(&tp.ident);
-                        }
-                    }
-                    None
-                })
-                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
-                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
-        })
-        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
+    let is_trait_object = meta.r#dyn.is_some();
 
     let is_async_trait = meta.asyncness.is_some()
         || ast
@@ -181,50 +181,25 @@ pub fn expand_on_trait(
         })
         .is_some();
 
-    let is_trait_object = meta.as_dyn.is_some();
-    let ty = if is_trait_object {
-        trait_ident.clone()
-    } else if let Some(enum_ident) = &meta.as_enum {
-        enum_ident.as_ref().clone()
-    } else {
-        format_ident!("{}Value", trait_ident)
-    };
-
-    let generated_code = InterfaceDefinition {
-        name,
-        ty,
-        trait_object: meta.as_dyn.as_ref().map(|a| a.as_ref().clone()),
-        visibility: ast.vis.clone(),
-        description: meta.description.map(SpanContainer::into_inner),
-        context: context.clone(),
-        scalar: scalar_ty.clone(),
-        generics: ast.generics.clone(),
-        fields,
-        implementers: implementers.clone(),
-    };
-
+    // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
     if is_trait_object {
         ast.attrs.push(parse_quote! {
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
         });
 
-        let scalar = if scalar_ty.is_explicit_generic() {
-            scalar_ty.ty_tokens().unwrap()
-        } else {
-            quote! { GraphQLScalarValue }
-        };
-        let default_scalar = scalar_ty.default_ty();
-        if !scalar_ty.is_explicit_generic() {
+        let scalar_ty = scalar.ty();
+        let default_scalar_ty = scalar.default_ty();
+        if !scalar.is_explicit_generic() {
             ast.generics
                 .params
-                .push(parse_quote! { #scalar = #default_scalar });
+                .push(parse_quote! { #scalar_ty = #default_scalar_ty });
         }
         ast.generics
             .make_where_clause()
             .predicates
-            .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+            .push(parse_quote! { #scalar_ty: ::juniper::ScalarValue });
         ast.supertraits
-            .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar> });
+            .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar_ty> });
     }
 
     if is_async_trait {
@@ -245,18 +220,30 @@ pub fn expand_on_trait(
         );
     }
 
-    let value_type = if is_trait_object {
-        let dyn_alias = TraitObjectType::new(&ast, &meta, context);
-        quote! { #dyn_alias }
+    let ty = if is_trait_object {
+        Type::TraitObject(TraitObjectType::new(&ast, &meta, context.clone()))
     } else {
-        let enum_type = EnumType::new(&ast, &meta, &implementers);
-        quote! { #enum_type }
+        Type::Enum(EnumType::new(&ast, &meta, &implementers))
+    };
+
+    let generated_code = Definition {
+        ty,
+
+        trait_ident: trait_ident.clone(),
+        trait_generics: ast.generics.clone(),
+
+        name,
+        description: meta.description.map(SpanContainer::into_inner),
+
+        context,
+        scalar,
+
+        fields,
+        implementers,
     };
 
     Ok(quote! {
         #ast
-
-        #value_type
 
         #generated_code
     })
@@ -279,10 +266,10 @@ pub fn expand_on_impl(
             })
             .is_some();
 
-    let is_trait_object = meta.as_dyn.is_some();
+    let is_trait_object = meta.r#dyn.is_some();
 
     if is_trait_object {
-        let scalar_ty = meta
+        let scalar = meta
             .scalar
             .as_ref()
             .map(|sc| {
@@ -308,20 +295,17 @@ pub fn expand_on_impl(
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
         });
 
-        let scalar = scalar_ty
-            .ty_tokens()
-            .unwrap_or_else(|| quote! { GraphQLScalarValue });
-        if scalar_ty.is_implicit_generic() {
+        if scalar.is_implicit_generic() {
             ast.generics.params.push(parse_quote! { #scalar });
         }
-        if scalar_ty.is_generic() {
+        if scalar.is_generic() {
             ast.generics
                 .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue + Send + Sync });
         }
 
-        if !scalar_ty.is_explicit_generic() {
+        if !scalar.is_explicit_generic() {
             let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
             let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
             if let syn::PathArguments::None = trait_params {
@@ -381,7 +365,6 @@ impl TraitMethod {
     }
 
     fn parse_downcast(method: &mut syn::TraitItemMethod) -> Option<ImplementerDefinition> {
-        let method_span = method.sig.span();
         let method_ident = &method.sig.ident;
 
         let ty = parse::downcaster::output_type(&method.sig.output)
@@ -417,7 +400,7 @@ impl TraitMethod {
             ty,
             downcast: Some(downcast),
             context_ty,
-            span: method_span,
+            scalar: ScalarValueType::ImplicitGeneric,
         })
     }
 

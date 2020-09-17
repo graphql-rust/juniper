@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::quote;
 
 pub(crate) fn sync_resolving_code() -> TokenStream {
     quote! {
