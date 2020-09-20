@@ -163,6 +163,7 @@ pub fn expand_on_trait(
 
     let is_trait_object = meta.r#dyn.is_some();
 
+
     let is_async_trait = meta.asyncness.is_some()
         || ast
             .items

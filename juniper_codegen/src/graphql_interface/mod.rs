@@ -1109,7 +1109,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
+            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
             {
                 fn resolve_field_async<'b>(
                     &'b self,

@@ -831,6 +831,7 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|description| quote!( .description(#description) ));
 
+        let mut has_dyn_interfaces = false;
         let interfaces = if !self.interfaces.is_empty() {
             let interfaces_ty = self.interfaces.iter().map(|ty| {
                 let mut ty: syn::Type = ty.unparenthesized().clone();
@@ -853,6 +854,7 @@ impl GraphQLTypeDefiniton {
                     dyn_ty.bounds.push(parse_quote! { Send });
                     dyn_ty.bounds.push(parse_quote! { Sync });
 
+                    has_dyn_interfaces = true;
                     ty = dyn_ty.into();
                 }
 
@@ -975,7 +977,7 @@ impl GraphQLTypeDefiniton {
                 .push(parse_quote!( #scalar: Send + Sync ));
             where_async.predicates.push(parse_quote!(Self: Sync));
 
-            let as_dyn_value = if !self.interfaces.is_empty() {
+            let as_dyn_value = if has_dyn_interfaces {
                 Some(quote! {
                     #[automatically_derived]
                     impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #type_generics_tokens
