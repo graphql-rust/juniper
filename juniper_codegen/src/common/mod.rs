@@ -113,6 +113,14 @@ impl ScalarValueType {
     }
 
     #[must_use]
+    pub(crate) fn generic_ty(&self) -> syn::Type {
+        match self {
+            Self::ExplicitGeneric(ty_param) => parse_quote! { #ty_param },
+            Self::ImplicitGeneric | Self::Concrete(_) => parse_quote! { __S },
+        }
+    }
+
+    #[must_use]
     pub(crate) fn default_ty(&self) -> syn::Type {
         match self {
             Self::Concrete(ty) => ty.clone(),

@@ -163,7 +163,6 @@ pub fn expand_on_trait(
 
     let is_trait_object = meta.r#dyn.is_some();
 
-
     let is_async_trait = meta.asyncness.is_some()
         || ast
             .items
@@ -182,18 +181,40 @@ pub fn expand_on_trait(
         })
         .is_some();
 
+    let ty = if is_trait_object {
+        Type::TraitObject(TraitObjectType::new(&ast, &meta, scalar.clone(), context.clone()))
+    } else {
+        Type::Enum(EnumType::new(&ast, &meta, &implementers, scalar.clone()))
+    };
+
+    let generated_code = Definition {
+        ty,
+
+        trait_ident: trait_ident.clone(),
+        trait_generics: ast.generics.clone(),
+
+        name,
+        description: meta.description.map(SpanContainer::into_inner),
+
+        context,
+        scalar: scalar.clone(),
+
+        fields,
+        implementers,
+    };
+
     // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
     if is_trait_object {
         ast.attrs.push(parse_quote! {
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
         });
 
-        let scalar_ty = scalar.ty();
-        let default_scalar_ty = scalar.default_ty();
+        let scalar_ty = scalar.generic_ty();
         if !scalar.is_explicit_generic() {
+            let default_ty = scalar.default_ty();
             ast.generics
                 .params
-                .push(parse_quote! { #scalar_ty = #default_scalar_ty });
+                .push(parse_quote! { #scalar_ty = #default_ty });
         }
         ast.generics
             .make_where_clause()
@@ -220,28 +241,6 @@ pub fn expand_on_trait(
             &ast.generics,
         );
     }
-
-    let ty = if is_trait_object {
-        Type::TraitObject(TraitObjectType::new(&ast, &meta, context.clone()))
-    } else {
-        Type::Enum(EnumType::new(&ast, &meta, &implementers))
-    };
-
-    let generated_code = Definition {
-        ty,
-
-        trait_ident: trait_ident.clone(),
-        trait_generics: ast.generics.clone(),
-
-        name,
-        description: meta.description.map(SpanContainer::into_inner),
-
-        context,
-        scalar,
-
-        fields,
-        implementers,
-    };
 
     Ok(quote! {
         #ast

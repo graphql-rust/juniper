@@ -774,15 +774,20 @@ struct ImplementerDefinition {
 }
 
 impl ImplementerDefinition {
-    fn downcast_call_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
-        let mut ctx_arg = Some(quote! { , ::juniper::FromContext::from(context) });
+    fn downcast_call_tokens(
+        &self,
+        trait_ty: &syn::Type,
+        ctx: Option<syn::Expr>,
+    ) -> Option<TokenStream> {
+        let ctx = ctx.unwrap_or_else(|| parse_quote! { executor.context() });
+        let mut ctx_arg = Some(quote! { , ::juniper::FromContext::from(#ctx) });
 
         let fn_path = match self.downcast.as_ref()? {
             ImplementerDowncastDefinition::Method { name, with_context } => {
                 if !with_context {
                     ctx_arg = None;
                 }
-                quote! { <#trait_ty>::#name }
+                quote! { <Self as #trait_ty>::#name }
             }
             ImplementerDowncastDefinition::External { path } => {
                 quote! { #path }
@@ -802,7 +807,7 @@ impl ImplementerDefinition {
         let ty = &self.ty;
         let scalar = &self.scalar;
 
-        let downcast = self.downcast_call_tokens(trait_ty);
+        let downcast = self.downcast_call_tokens(trait_ty, Some(parse_quote! { context }));
 
         // Doing this may be quite an expensive, because resolving may contain some heavy
         // computation, so we're preforming it twice. Unfortunately, we have no other options here,
@@ -822,7 +827,7 @@ impl ImplementerDefinition {
         let ty = &self.ty;
         let scalar = &self.scalar;
 
-        let downcast = self.downcast_call_tokens(trait_ty);
+        let downcast = self.downcast_call_tokens(trait_ty, None);
 
         let resolving_code = gen::sync_resolving_code();
 
@@ -842,7 +847,7 @@ impl ImplementerDefinition {
         let ty = &self.ty;
         let scalar = &self.scalar;
 
-        let downcast = self.downcast_call_tokens(trait_ty);
+        let downcast = self.downcast_call_tokens(trait_ty, None);
 
         let resolving_code = gen::async_resolving_code(None);
 
@@ -904,13 +909,6 @@ struct Definition {
 }
 
 impl Definition {
-    fn trait_ty(&self) -> syn::Type {
-        let ty = &self.trait_ident;
-        let (_, generics, _) = self.trait_generics.split_for_impl();
-
-        parse_quote! { #ty#generics }
-    }
-
     fn no_field_panic_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
@@ -926,7 +924,7 @@ impl Definition {
     fn impl_graphql_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics(scalar);
+        let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
         let ty = self.ty.ty_tokens();
@@ -980,11 +978,11 @@ impl Definition {
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics(scalar);
+        let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
         let ty = self.ty.ty_tokens();
-        let trait_ty = self.trait_ty();
+        let trait_ty = self.ty.trait_ty();
         let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
 
         let fields_resolvers = self
@@ -1021,7 +1019,7 @@ impl Definition {
             .implementers
             .iter()
             .filter_map(|i| i.concrete_type_name_method_tokens(&trait_ty));
-        let regular_downcast_check = self.ty.concrete_type_name_method_tokens(scalar);
+        let regular_downcast_check = self.ty.concrete_type_name_method_tokens();
 
         let custom_downcasts = self
             .implementers
@@ -1080,7 +1078,7 @@ impl Definition {
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics(scalar);
+        let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let mut where_clause = where_clause
             .cloned()
@@ -1093,7 +1091,7 @@ impl Definition {
         }
 
         let ty = self.ty.ty_tokens();
-        let trait_ty = self.trait_ty();
+        let trait_ty = self.ty.trait_ty();
 
         let fields_resolvers = self
             .fields
@@ -1141,7 +1139,7 @@ impl Definition {
     fn impl_graphql_interface_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics(scalar);
+        let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
         let ty = self.ty.ty_tokens();
@@ -1170,7 +1168,7 @@ impl Definition {
     fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics(scalar);
+        let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
         let ty = self.ty.ty_tokens();
@@ -1231,6 +1229,7 @@ struct EnumType {
     trait_types: Vec<(syn::Ident, syn::Generics)>,
     trait_consts: Vec<(syn::Ident, syn::Type)>,
     trait_methods: Vec<syn::Signature>,
+    scalar: ScalarValueType,
 }
 
 impl EnumType {
@@ -1238,6 +1237,7 @@ impl EnumType {
         r#trait: &syn::ItemTrait,
         meta: &InterfaceMeta,
         implers: &Vec<ImplementerDefinition>,
+        scalar: ScalarValueType,
     ) -> Self {
         Self {
             ident: meta
@@ -1283,6 +1283,7 @@ impl EnumType {
                     }
                 })
                 .collect(),
+            scalar,
         }
     }
 
@@ -1290,16 +1291,27 @@ impl EnumType {
         format_ident!("Impl{}", num)
     }
 
-    fn impl_generics(&self, scalar: &ScalarValueType) -> syn::Generics {
+    fn impl_generics(&self) -> syn::Generics {
         let mut generics = syn::Generics::default();
-        if scalar.is_generic() {
+
+        if self.scalar.is_generic() {
+            let scalar = &self.scalar;
             generics.params.push(parse_quote! { #scalar });
             generics
                 .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue });
         }
+
         generics
+    }
+
+    fn trait_ty(&self) -> syn::Type {
+        let ty = &self.trait_ident;
+
+        let (_, generics, _) = self.trait_generics.split_for_impl();
+
+        parse_quote! { #ty#generics }
     }
 
     fn ty_tokens(&self) -> TokenStream {
@@ -1439,7 +1451,9 @@ impl EnumType {
         impl_tokens
     }
 
-    fn concrete_type_name_method_tokens(&self, scalar: &ScalarValueType) -> TokenStream {
+    fn concrete_type_name_method_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
         let match_arms = self.variants.iter().enumerate().map(|(n, ty)| {
             let variant = Self::variant_ident(n);
 
@@ -1510,30 +1524,57 @@ struct TraitObjectType {
     pub visibility: syn::Visibility,
     pub trait_ident: syn::Ident,
     pub trait_generics: syn::Generics,
+    pub scalar: ScalarValueType,
     pub context: Option<syn::Type>,
 }
 
 impl TraitObjectType {
-    fn new(r#trait: &syn::ItemTrait, meta: &InterfaceMeta, context: Option<syn::Type>) -> Self {
+    fn new(
+        r#trait: &syn::ItemTrait,
+        meta: &InterfaceMeta,
+        scalar: ScalarValueType,
+        context: Option<syn::Type>,
+    ) -> Self {
         Self {
             ident: meta.r#dyn.as_ref().unwrap().as_ref().clone(),
             visibility: r#trait.vis.clone(),
             trait_ident: r#trait.ident.clone(),
             trait_generics: r#trait.generics.clone(),
+            scalar,
             context,
         }
     }
 
-    fn impl_generics(&self, scalar: &ScalarValueType) -> syn::Generics {
+    fn impl_generics(&self) -> syn::Generics {
         let mut generics = self.trait_generics.clone();
+
         generics.params.push(parse_quote! { '__obj });
+
+        let scalar = &self.scalar;
+        if scalar.is_implicit_generic() {
+            generics.params.push(parse_quote! { #scalar });
+        }
         if scalar.is_generic() {
             generics
                 .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue });
         }
+
         generics
+    }
+
+    fn trait_ty(&self) -> syn::Type {
+        let ty = &self.trait_ident;
+
+        let mut generics = self.trait_generics.clone();
+        if !self.scalar.is_explicit_generic() {
+            let scalar = &self.scalar;
+            generics.params.push(parse_quote! { #scalar });
+        }
+        let (_, generics, _) = generics.split_for_impl();
+
+        parse_quote! { #ty#generics }
     }
 
     fn ty_tokens(&self) -> TokenStream {
@@ -1542,6 +1583,10 @@ impl TraitObjectType {
         let mut generics = self.trait_generics.clone();
         generics.remove_defaults();
         generics.move_bounds_to_where_clause();
+        if !self.scalar.is_explicit_generic() {
+            let scalar = &self.scalar;
+            generics.params.push(parse_quote! { #scalar });
+        }
         let ty_params = &generics.params;
 
         let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
@@ -1591,10 +1636,18 @@ impl ToTokens for TraitObjectType {
 
         let trait_ident = &self.trait_ident;
 
+        let mut generics = self.trait_generics.clone();
+        if !self.scalar.is_explicit_generic() {
+            let scalar_ty = self.scalar.generic_ty();
+            let default_ty = self.scalar.default_ty();
+            generics
+                .params
+                .push(parse_quote! { #scalar_ty = #default_ty });
+        }
+
         let (mut ty_params_left, mut ty_params_right) = (None, None);
-        if !self.trait_generics.params.is_empty() {
+        if !generics.params.is_empty() {
             // We should preserve defaults for left side.
-            let mut generics = self.trait_generics.clone();
             generics.move_bounds_to_where_clause();
             let params = &generics.params;
             ty_params_left = Some(quote! { , #params });
@@ -1624,10 +1677,17 @@ enum Type {
 }
 
 impl Type {
-    fn impl_generics(&self, scalar: &ScalarValueType) -> syn::Generics {
+    fn impl_generics(&self) -> syn::Generics {
         match self {
-            Self::Enum(e) => e.impl_generics(scalar),
-            Self::TraitObject(o) => o.impl_generics(scalar),
+            Self::Enum(e) => e.impl_generics(),
+            Self::TraitObject(o) => o.impl_generics(),
+        }
+    }
+
+    fn trait_ty(&self) -> syn::Type {
+        match self {
+            Self::Enum(e) => e.trait_ty(),
+            Self::TraitObject(o) => o.trait_ty(),
         }
     }
 
@@ -1638,9 +1698,9 @@ impl Type {
         }
     }
 
-    fn concrete_type_name_method_tokens(&self, scalar: &ScalarValueType) -> TokenStream {
+    fn concrete_type_name_method_tokens(&self) -> TokenStream {
         match self {
-            Self::Enum(e) => e.concrete_type_name_method_tokens(scalar),
+            Self::Enum(e) => e.concrete_type_name_method_tokens(),
             Self::TraitObject(o) => o.concrete_type_name_method_tokens(),
         }
     }
