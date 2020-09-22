@@ -1386,10 +1386,20 @@ impl EnumType {
         let methods = self.trait_methods.iter().map(|sig| {
             let method = &sig.ident;
 
-            let args = sig.inputs.iter().filter_map(|arg| match arg {
-                syn::FnArg::Receiver(_) => None,
-                syn::FnArg::Typed(a) => Some(&a.pat),
-            });
+            let mut sig = sig.clone();
+            let mut args = vec![];
+            for (n, arg) in sig.inputs.iter_mut().enumerate() {
+                match arg {
+                    syn::FnArg::Receiver(_) => {},
+                    syn::FnArg::Typed(a) => {
+                        if !matches!(&*a.pat, syn::Pat::Ident(_)) {
+                            let ident = format_ident!("__arg{}", n);
+                            a.pat = parse_quote! { #ident };
+                        }
+                        args.push(a.pat.clone());
+                    }
+                }
+            }
 
             let and_await = if sig.asyncness.is_some() {
                 Some(quote! { .await })

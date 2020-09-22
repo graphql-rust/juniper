@@ -1422,6 +1422,7 @@ mod fallible_field {
         }
     }
 }
+
 /*
 mod generic {
     use super::*;
@@ -3903,7 +3904,7 @@ mod inferred_custom_context_from_downcast {
     #[graphql_interface(for = [Human, Droid])]
     trait Character {
         #[graphql_interface(downcast)]
-        fn as_human<'db>(&self, db: &'db Database) -> Option<&'db Human>;
+        fn as_human<'s>(&'s self, _: &Database) -> Option<&'s Human>;
 
         async fn id(&self) -> &str;
     }
@@ -3925,8 +3926,8 @@ mod inferred_custom_context_from_downcast {
 
     #[graphql_interface]
     impl Character for Human {
-        fn as_human<'db>(&self, _: &'db Database) -> Option<&'db Human> {
-            None
+        fn as_human<'s>(&'s self, _: &Database) -> Option<&'s Human> {
+            Some(self)
         }
 
         async fn id(&self) -> &str {
@@ -3954,7 +3955,7 @@ mod inferred_custom_context_from_downcast {
 
     #[graphql_interface]
     impl Character for Droid {
-        fn as_human<'db>(&self, _: &'db Database) -> Option<&'db Human> {
+        fn as_human<'s>(&'s self, _: &Database) -> Option<&'s Human> {
             None
         }
 
@@ -3974,13 +3975,7 @@ mod inferred_custom_context_from_downcast {
         }
     }
 
-    //#[derive(Clone, Copy)]
-    enum QueryRoot {
-        Human,
-        Droid,
-    }
-    /*
-    #[derive(Clone, Copy)]
+    #[derive(Clone)]
     enum QueryRoot {
         Human,
         Droid,
@@ -4017,7 +4012,6 @@ mod inferred_custom_context_from_downcast {
             ch
         }
     }
-
 
     #[tokio::test]
     async fn enum_resolves_human() {
@@ -4064,7 +4058,7 @@ mod inferred_custom_context_from_downcast {
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &db).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-88", "primaryFunction": "sit"}}),
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
             )),
         );
@@ -4122,36 +4116,47 @@ mod inferred_custom_context_from_downcast {
     }
 
     #[tokio::test]
-    async fn resolves_info_field() {
-        for interface in &["character", "hero"] {
-            let doc = format!(
-                r#"{{
-                    {} {{
-                        info
-                    }}
-                }}"#,
-                interface,
-            );
-
-            let expected_interface: &str = *interface;
-
-            for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
-                let schema = schema(*root);
-                let db = Database { droid: None };
-
-                let expected_info: &str = *expected_info;
-                assert_eq!(
-                    execute(&doc, None, &schema, &Variables::new(), &db).await,
-                    Ok((
-                        graphql_value!({expected_interface: {
-                            "info": expected_info,
-                        }}),
-                        vec![],
-                    )),
-                );
+    async fn enum_resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
             }
+        }"#;
+
+        for (root, expected_id) in &[
+            (QueryRoot::Human, "human-32"),
+            (QueryRoot::Droid, "droid-99"),
+        ] {
+            let schema = schema(root.clone());
+            let db = Database { droid: None };
+
+            let expected_id: &str = *expected_id;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &db).await,
+                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
+            );
         }
-    }*/
+    }
+
+    #[tokio::test]
+    async fn dyn_resolves_info_field() {
+        const DOC: &str = r#"{
+            hero {
+                info
+            }
+        }"#;
+
+        for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
+            let schema = schema(root.clone());
+            let db = Database { droid: None };
+
+            let expected_info: &str = *expected_info;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &db).await,
+                Ok((graphql_value!({"hero": {"info": expected_info}}), vec![])),
+            );
+        }
+    }
 }
 
 mod executor {
@@ -4580,193 +4585,192 @@ mod downcast_method {
         }
     }
 
-    //#[derive(Clone, Copy)]
+    #[derive(Clone)]
     enum QueryRoot {
         Human,
         Droid,
     }
-    /*
-       #[graphql_object]
-       impl QueryRoot {
-           fn character(&self) -> CharacterValue {
-               match self {
-                   Self::Human => Human {
-                       id: "human-32".to_string(),
-                       home_planet: "earth".to_string(),
-                   }
-                   .into(),
-                   Self::Droid => Droid {
-                       id: "droid-99".to_string(),
-                       primary_function: "run".to_string(),
-                   }
-                   .into(),
-               }
-           }
 
-           fn hero(&self) -> Box<DynHero<'_>> {
-               let ch: Box<DynHero<'_>> = match self {
-                   Self::Human => Box::new(Human {
-                       id: "human-32".to_string(),
-                       home_planet: "earth".to_string(),
-                   }),
-                   Self::Droid => Box::new(Droid {
-                       id: "droid-99".to_string(),
-                       primary_function: "run".to_string(),
-                   }),
-               };
-               ch
-           }
-       }
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
+            match self {
+                Self::Human => Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }
+                .into(),
+                Self::Droid => Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }
+                .into(),
+            }
+        }
 
-       #[tokio::test]
-       async fn enum_resolves_human() {
-           const DOC: &str = r#"{
-               character {
-                   ... on Human {
-                       humanId: id
-                       homePlanet
-                   }
-               }
-           }"#;
+        fn hero(&self) -> Box<DynHero<'_>> {
+            let ch: Box<DynHero<'_>> = match self {
+                Self::Human => Box::new(Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }),
+                Self::Droid => Box::new(Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }),
+            };
+            ch
+        }
+    }
 
-           let schema = schema(QueryRoot::Human);
+    #[tokio::test]
+    async fn enum_resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
 
-           assert_eq!(
-               execute(DOC, None, &schema, &Variables::new(), &()).await,
-               Ok((
-                   graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
-                   vec![],
-               )),
-           );
-       }
+        let schema = schema(QueryRoot::Human);
 
-       #[tokio::test]
-       async fn enum_resolves_droid() {
-           const DOC: &str = r#"{
-               character {
-                   ... on Droid {
-                       droidId: id
-                       primaryFunction
-                   }
-               }
-           }"#;
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
 
-           let schema = schema(QueryRoot::Droid);
+    #[tokio::test]
+    async fn enum_resolves_droid() {
+        const DOC: &str = r#"{
+            character {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
 
-           assert_eq!(
-               execute(DOC, None, &schema, &Variables::new(), &()).await,
-               Ok((
-                   graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
-                   vec![],
-               )),
-           );
-       }
+        let schema = schema(QueryRoot::Droid);
 
-       #[tokio::test]
-       async fn dyn_resolves_human() {
-           const DOC: &str = r#"{
-               hero {
-                   ... on Human {
-                       humanId: id
-                       homePlanet
-                   }
-               }
-           }"#;
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
 
-           let schema = schema(QueryRoot::Human);
+    #[tokio::test]
+    async fn dyn_resolves_human() {
+        const DOC: &str = r#"{
+            hero {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
 
-           assert_eq!(
-               execute(DOC, None, &schema, &Variables::new(), &()).await,
-               Ok((
-                   graphql_value!({"hero": {"humanId": "human-32", "homePlanet": "earth"}}),
-                   vec![],
-               )),
-           );
-       }
+        let schema = schema(QueryRoot::Human);
 
-       #[tokio::test]
-       async fn dyn_resolves_droid() {
-           const DOC: &str = r#"{
-               hero {
-                   ... on Droid {
-                       droidId: id
-                       primaryFunction
-                   }
-               }
-           }"#;
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"hero": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
 
-           let schema = schema(QueryRoot::Droid);
+    #[tokio::test]
+    async fn dyn_resolves_droid() {
+        const DOC: &str = r#"{
+            hero {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
 
-           assert_eq!(
-               execute(DOC, None, &schema, &Variables::new(), &()).await,
-               Ok((
-                   graphql_value!({"hero": {"droidId": "droid-99", "primaryFunction": "run"}}),
-                   vec![],
-               )),
-           );
-       }
+        let schema = schema(QueryRoot::Droid);
 
-       #[tokio::test]
-       async fn enum_resolves_id_field() {
-           const DOC: &str = r#"{
-               character {
-                   id
-               }
-           }"#;
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"hero": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
 
-           for (root, expected_id) in &[
-               (QueryRoot::Human, "human-32"),
-               (QueryRoot::Droid, "droid-99"),
-           ] {
-               let schema = schema(*root);
+    #[tokio::test]
+    async fn enum_resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+            }
+       }"#;
 
-               let expected_id: &str = *expected_id;
-               assert_eq!(
-                   execute(DOC, None, &schema, &Variables::new(), &()).await,
-                   Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
-               );
-           }
-       }
+        for (root, expected_id) in &[
+            (QueryRoot::Human, "human-32"),
+            (QueryRoot::Droid, "droid-99"),
+        ] {
+            let schema = schema(root.clone());
 
-       #[tokio::test]
-       async fn dyn_resolves_info_field() {
-           const DOC: &str = r#"{
-               hero {
-                   info
-               }
-           }"#;
+            let expected_id: &str = *expected_id;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
+            );
+        }
+    }
 
-           for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
-               let schema = schema(*root);
+    #[tokio::test]
+    async fn dyn_resolves_info_field() {
+        const DOC: &str = r#"{
+            hero {
+                info
+            }
+        }"#;
 
-               let expected_info: &str = *expected_info;
-               assert_eq!(
-                   execute(DOC, None, &schema, &Variables::new(), &()).await,
-                   Ok((graphql_value!({"hero": {"info": expected_info}}), vec![])),
-               );
-           }
-       }
+        for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
+            let schema = schema(root.clone());
 
-       #[tokio::test]
-       async fn is_not_field() {
-           let schema = schema(QueryRoot::Human);
+            let expected_info: &str = *expected_info;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"hero": {"info": expected_info}}), vec![])),
+            );
+        }
+    }
 
-           for (doc, field) in &[
-               (r#"{__type(name: "Character") { fields { name } } }"#, "id"),
-               (r#"{__type(name: "Hero") { fields { name } } }"#, "info"),
-           ] {
-               let expected_field: &str = *field;
-               assert_eq!(
-                   execute(*doc, None, &schema, &Variables::new(), &()).await,
-                   Ok((
-                       graphql_value!({"__type": {"fields": [{"name": expected_field}]}}),
-                       vec![],
-                   )),
-               );
-           }
-       }
+    #[tokio::test]
+    async fn is_not_field() {
+        let schema = schema(QueryRoot::Human);
 
-    */
+        for (doc, field) in &[
+            (r#"{__type(name: "Character") { fields { name } } }"#, "id"),
+            (r#"{__type(name: "Hero") { fields { name } } }"#, "info"),
+        ] {
+            let expected_field: &str = *field;
+
+            assert_eq!(
+                execute(*doc, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({"__type": {"fields": [{"name": expected_field}]}}),
+                    vec![],
+                )),
+            );
+        }
+    }
 }
 
 mod external_downcast {
@@ -4846,7 +4850,7 @@ mod external_downcast {
         }
     }
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone)]
     enum QueryRoot {
         Human,
         Droid,
@@ -4968,7 +4972,7 @@ mod external_downcast {
     #[tokio::test]
     async fn dyn_resolves_droid() {
         const DOC: &str = r#"{
-            character {
+            hero {
                 ... on Droid {
                     droidId: id
                     primaryFunction
@@ -4988,7 +4992,7 @@ mod external_downcast {
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &db).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-01", "primaryFunction": "swim"}}),
+                graphql_value!({"hero": {"droidId": "droid-01", "primaryFunction": "swim"}}),
                 vec![],
             )),
         );
@@ -5014,7 +5018,7 @@ mod external_downcast {
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root.clone());
 
             let expected_id: &str = *expected_id;
             assert_eq!(
@@ -5040,13 +5044,13 @@ mod external_downcast {
             }),
         };
 
-        for (root, expected_id) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
-            let schema = schema(*root);
+        for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
+            let schema = schema(root.clone());
 
-            let expected_id: &str = *expected_id;
+            let expected_info: &str = *expected_info;
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &db).await,
-                Ok((graphql_value!({"hero": {"info": expected_id}}), vec![])),
+                Ok((graphql_value!({"hero": {"info": expected_info}}), vec![])),
             );
         }
     }
