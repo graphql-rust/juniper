@@ -190,9 +190,6 @@ pub fn expand_on_trait(
     let generated_code = Definition {
         ty,
 
-        trait_ident: trait_ident.clone(),
-        trait_generics: ast.generics.clone(),
-
         name,
         description: meta.description.map(SpanContainer::into_inner),
 

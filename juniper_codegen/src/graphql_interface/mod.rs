@@ -866,10 +866,6 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     ty: Type,
 
-    trait_ident: syn::Ident,
-
-    trait_generics: syn::Generics,
-
     /// Name of this [GraphQL interface][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -1291,12 +1287,26 @@ impl EnumType {
         format_ident!("Impl{}", num)
     }
 
-    fn impl_generics(&self) -> syn::Generics {
-        let mut generics = syn::Generics::default();
+    fn has_phantom_variant(&self) -> bool {
+        !self.trait_generics.params.is_empty()
+    }
 
-        if self.scalar.is_generic() {
-            let scalar = &self.scalar;
+    fn non_exhaustive_match_arm_tokens(&self) -> Option<TokenStream> {
+        if self.has_phantom_variant() {
+            Some(quote! { _ => unreachable!(), })
+        } else {
+            None
+        }
+    }
+
+    fn impl_generics(&self) -> syn::Generics {
+        let mut generics = self.trait_generics.clone();
+
+        let scalar = &self.scalar;
+        if self.scalar.is_implicit_generic() {
             generics.params.push(parse_quote! { #scalar });
+        }
+        if self.scalar.is_generic() {
             generics
                 .make_where_clause()
                 .predicates
@@ -1308,7 +1318,6 @@ impl EnumType {
 
     fn trait_ty(&self) -> syn::Type {
         let ty = &self.trait_ident;
-
         let (_, generics, _) = self.trait_generics.split_for_impl();
 
         parse_quote! { #ty#generics }
@@ -1316,12 +1325,14 @@ impl EnumType {
 
     fn ty_tokens(&self) -> TokenStream {
         let ty = &self.ident;
+        let (_, generics, _) = self.trait_generics.split_for_impl();
 
-        quote! { #ty }
+        quote! { #ty#generics }
     }
 
     fn type_definition_tokens(&self) -> TokenStream {
         let enum_ty = &self.ident;
+        let generics = &self.trait_generics;
         let vis = &self.visibility;
 
         let doc = format!(
@@ -1337,24 +1348,52 @@ impl EnumType {
             quote! { #variant(#ty), }
         });
 
+        let phantom_variant = if self.has_phantom_variant() {
+            let ty_params = generics.params.iter().map(|p| {
+                let ty = match p {
+                    syn::GenericParam::Type(ty) => {
+                        let ident = &ty.ident;
+                        quote! { #ident }
+                    }
+                    syn::GenericParam::Lifetime(lt) => {
+                        let lifetime = &lt.lifetime;
+                        quote! { &#lifetime () }
+                    }
+                    syn::GenericParam::Const(_) => unimplemented!(),
+                };
+                quote! {
+                    ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
+                }
+            });
+
+            Some(quote! {
+                #[doc(hidden)]
+                __Phantom(#( #ty_params ),*),
+            })
+        } else {
+            None
+        };
+
         quote! {
             #[automatically_derived]
             #[doc = #doc]
-            #vis enum #enum_ty {
+            #vis enum #enum_ty#generics {
                 #( #variants )*
+                #phantom_variant
             }
         }
     }
 
     fn impl_from_tokens(&self) -> impl Iterator<Item = TokenStream> + '_ {
         let enum_ty = &self.ident;
+        let (impl_generics, generics, where_clause) = self.trait_generics.split_for_impl();
 
         self.variants.iter().enumerate().map(move |(n, ty)| {
             let variant = Self::variant_ident(n);
 
             quote! {
                 #[automatically_derived]
-                impl From<#ty> for #enum_ty {
+                impl#impl_generics From<#ty> for #enum_ty#generics #where_clause {
                     fn from(v: #ty) -> Self {
                         Self::#variant(v)
                     }
@@ -1367,19 +1406,19 @@ impl EnumType {
         let enum_ty = &self.ident;
 
         let trait_ident = &self.trait_ident;
-        let (trait_params, trait_generics, where_clause) = self.trait_generics.split_for_impl();
+        let (impl_generics, generics, where_clause) = self.trait_generics.split_for_impl();
 
         let var_ty = self.variants.first().unwrap();
 
         let assoc_types = self.trait_types.iter().map(|(ty, ty_gen)| {
             quote! {
-                type #ty#ty_gen = <#var_ty as #trait_ident#trait_generics>::#ty#ty_gen;
+                type #ty#ty_gen = <#var_ty as #trait_ident#generics>::#ty#ty_gen;
             }
         });
 
         let assoc_consts = self.trait_consts.iter().map(|(ident, ty)| {
             quote! {
-                const #ident: #ty = <#var_ty as #trait_ident#trait_generics>::#ident;
+                const #ident: #ty = <#var_ty as #trait_ident#generics>::#ident;
             }
         });
 
@@ -1390,7 +1429,7 @@ impl EnumType {
             let mut args = vec![];
             for (n, arg) in sig.inputs.iter_mut().enumerate() {
                 match arg {
-                    syn::FnArg::Receiver(_) => {},
+                    syn::FnArg::Receiver(_) => {}
                     syn::FnArg::Typed(a) => {
                         if !matches!(&*a.pat, syn::Pat::Ident(_)) {
                             let ident = format_ident!("__arg{}", n);
@@ -1413,14 +1452,16 @@ impl EnumType {
 
                 quote! {
                     Self::#variant(v) =>
-                        <#ty as #trait_ident#trait_generics>::#method(v #( , #args )* )#and_await,
+                        <#ty as #trait_ident#generics>::#method(v #( , #args )* )#and_await,
                 }
             });
+            let non_exhaustive_match_arm = self.non_exhaustive_match_arm_tokens();
 
             quote! {
                 #sig {
                     match self {
                         #( #match_arms )*
+                        #non_exhaustive_match_arm
                     }
                 }
             }
@@ -1428,7 +1469,7 @@ impl EnumType {
 
         let mut impl_tokens = quote! {
             #[automatically_derived]
-            impl#trait_params #trait_ident#trait_generics for #enum_ty #where_clause {
+            impl#impl_generics #trait_ident#generics for #enum_ty#generics #where_clause {
                 #( #assoc_types )*
 
                 #( #assoc_consts )*
@@ -1473,10 +1514,12 @@ impl EnumType {
                 >::concrete_type_name(v, context, info),
             }
         });
+        let non_exhaustive_match_arm = self.non_exhaustive_match_arm_tokens();
 
         quote! {
             match self {
                 #( #match_arms )*
+                #non_exhaustive_match_arm
             }
         }
     }
@@ -1491,10 +1534,12 @@ impl EnumType {
                 Self::#variant(res) => #resolving_code,
             }
         });
+        let non_exhaustive_match_arm = self.non_exhaustive_match_arm_tokens();
 
         quote! {
             match self {
                 #( #match_arms )*
+                #non_exhaustive_match_arm
             }
         }
     }
@@ -1512,10 +1557,12 @@ impl EnumType {
                 }
             }
         });
+        let non_exhaustive_match_arm = self.non_exhaustive_match_arm_tokens();
 
         quote! {
             match self {
                 #( #match_arms )*
+                #non_exhaustive_match_arm
             }
         }
     }
