@@ -1916,9 +1916,7 @@ mod generic_lifetime_async {
 
     #[graphql_interface(for = [Human, Droid])]
     trait Character<'me, A> {
-        async fn id(&self) -> &str
-        where
-            'me: 'async_trait;
+        async fn id<'a>(&'a self) -> &'a str;
     }
 
     #[graphql_interface(dyn = DynHero, for = [Human, Droid])]
@@ -1935,8 +1933,7 @@ mod generic_lifetime_async {
 
     #[graphql_interface]
     impl<'me, A> Character<'me, A> for Human {
-        async fn id(&self) -> &str where
-            'me: 'async_trait{
+        async fn id<'a>(&'a self) -> &'a str {
             &self.id
         }
     }
@@ -1957,8 +1954,7 @@ mod generic_lifetime_async {
 
     #[graphql_interface]
     impl<'me, A> Character<'me, A> for Droid {
-        async fn id(&self) -> &str where
-            'me: 'async_trait {
+        async fn id<'a>(&'a self) -> &'a str {
             &self.id
         }
     }
