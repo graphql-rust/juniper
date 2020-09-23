@@ -27,8 +27,9 @@ default = [
     "uuid",
 ]
 expose-test-schema = ["anyhow", "serde_json"]
-schema-language = ["graphql-parser-integration"]
 graphql-parser-integration = ["graphql-parser"]
+scalar-naivetime = []
+schema-language = ["graphql-parser-integration"]
 
 [dependencies]
 juniper_codegen = { version = "0.14.2", path = "../juniper_codegen"  }
@@ -42,11 +43,11 @@ futures = { default-features = false, features = ["alloc"], version = "0.3.1" }
 futures-enum = "0.1.12"
 graphql-parser = { version = "0.3", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
-serde = { version = "1.0.8", features = ["derive"] }
-serde_json = { version = "1.0.2", optional = true }
+serde = { version = "1.0.8", features = ["derive"], default-features = false }
+serde_json = { version = "1.0.2", default-features = false, optional = true }
 static_assertions = "1.1"
 url = { version = "2.0", optional = true }
-uuid = { version = "0.8", optional = true }
+uuid = { version = "0.8", default-features = false, optional = true }
 
 [dev-dependencies]
 bencher = "0.1.2"

@@ -1,12 +1,3 @@
-use std::marker::PhantomData;
-
-use crate::{
-    ast::InputValue,
-    schema::model::RootNode,
-    types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, Object, Value},
-};
-
 /*
 
 Syntax to validate:
@@ -19,135 +10,84 @@ Syntax to validate:
 
 */
 
+use crate::{
+    ast::InputValue,
+    graphql_interface, graphql_object,
+    schema::model::RootNode,
+    types::scalars::{EmptyMutation, EmptySubscription},
+    value::{DefaultScalarValue, Object, Value},
+};
+
 struct Concrete;
 
-struct CustomName;
-
-#[allow(dead_code)]
-struct WithLifetime<'a> {
-    data: PhantomData<&'a i32>,
-}
-
-#[allow(dead_code)]
-struct WithGenerics<T> {
-    data: T,
-}
-
-struct DescriptionFirst;
-struct FieldsFirst;
-struct InterfacesFirst;
-
-struct CommasWithTrailing;
-struct CommasOnMeta;
-
-struct ResolversWithTrailingComma;
-
-struct Root;
-
-#[crate::graphql_object]
+#[graphql_object(impl = [CustomNameValue, DescriptionValue, WithLifetime<'_>, WithGenerics<()>])]
 impl Concrete {
     fn simple() -> i32 {
         0
     }
 }
 
-graphql_interface!(CustomName: () as "ACustomNamedInterface" |&self| {
-    field simple() -> i32 { 0 }
+#[graphql_interface(for = Concrete, name = "ACustomNamedInterface")]
+trait CustomName {
+    fn simple(&self) -> i32;
+}
+#[graphql_interface]
+impl CustomName for Concrete {
+    fn simple(&self) -> i32 {
+        Self::simple()
+    }
+}
 
-    instance_resolvers: |_| { Concrete => Some(Concrete) }
-});
+#[graphql_interface(for = Concrete)]
+trait WithLifetime<'a> {
+    fn simple(&self) -> i32;
+}
+#[graphql_interface]
+impl<'a> WithLifetime<'a> for Concrete {
+    fn simple(&self) -> i32 {
+        Self::simple()
+    }
+}
 
-graphql_interface!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
-    field simple() -> i32 { 0 }
-    instance_resolvers: |_| { Concrete => Some(Concrete) }
-});
+#[graphql_interface(for = Concrete)]
+trait WithGenerics<T> {
+    fn simple(&self) -> i32;
+}
+#[graphql_interface]
+impl<T> WithGenerics<T> for Concrete {
+    fn simple(&self) -> i32 {
+        Self::simple()
+    }
+}
 
-graphql_interface!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
-    field simple() -> i32 { 0 }
-    instance_resolvers: |_| { Concrete => Some(Concrete) }
-});
+#[graphql_interface(for = Concrete, desc = "A description")]
+trait Description {
+    fn simple(&self) -> i32;
+}
+#[graphql_interface]
+impl Description for Concrete {
+    fn simple(&self) -> i32 {
+        Self::simple()
+    }
+}
 
-graphql_interface!(DescriptionFirst: () |&self| {
-    description: "A description"
+struct Root;
 
-    field simple() -> i32 { 0 }
-
-    instance_resolvers: |_| { Concrete => Some(Concrete) }
-});
-
-graphql_interface!(FieldsFirst: () |&self| {
-    field simple() -> i32 { 0 }
-
-    description: "A description"
-
-    instance_resolvers: |_| { Concrete => Some(Concrete) }
-});
-
-graphql_interface!(InterfacesFirst: () |&self| {
-    instance_resolvers: |_| { Concrete => Some(Concrete) }
-
-    field simple() -> i32 { 0 }
-
-    description: "A description"
-});
-
-graphql_interface!(CommasWithTrailing: () |&self| {
-    instance_resolvers: |_| { Concrete => Some(Concrete) },
-
-    field simple() -> i32 { 0 },
-
-    description: "A description",
-});
-
-graphql_interface!(CommasOnMeta: () |&self| {
-    instance_resolvers: |_| { Concrete => Some(Concrete) }
-    description: "A description",
-
-    field simple() -> i32 { 0 }
-});
-
-graphql_interface!(ResolversWithTrailingComma: () |&self| {
-    instance_resolvers: |_| { Concrete => Some(Concrete), }
-    description: "A description",
-
-    field simple() -> i32 { 0 }
-});
-
-#[crate::graphql_object(
-    // FIXME: make async work
-    noasync
-)]
+#[crate::graphql_object]
 impl<'a> Root {
-    fn custom_name() -> CustomName {
-        CustomName {}
+    fn custom_name() -> CustomNameValue {
+        Concrete.into()
     }
 
-    fn with_lifetime() -> WithLifetime<'a> {
-        WithLifetime { data: PhantomData }
+    fn with_lifetime() -> WithLifetimeValue<'a> {
+        Concrete.into()
     }
-    fn with_generics() -> WithGenerics<i32> {
-        WithGenerics { data: 123 }
-    }
-
-    fn description_first() -> DescriptionFirst {
-        DescriptionFirst {}
-    }
-    fn fields_first() -> FieldsFirst {
-        FieldsFirst {}
-    }
-    fn interfaces_first() -> InterfacesFirst {
-        InterfacesFirst {}
+    fn with_generics() -> WithGenericsValue<i32> {
+        Concrete.into()
     }
 
-    fn commas_with_trailing() -> CommasWithTrailing {
-        CommasWithTrailing {}
-    }
-    fn commas_on_meta() -> CommasOnMeta {
-        CommasOnMeta {}
-    }
-
-    fn resolvers_with_trailing_comma() -> ResolversWithTrailingComma {
-        ResolversWithTrailingComma {}
+    fn description() -> DescriptionValue {
+        Concrete.into()
     }
 }
 
@@ -156,16 +96,16 @@ where
     F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let doc = r#"
-    query ($typeName: String!) {
-        __type(name: $typeName) {
-            name
-            description
-            fields(includeDeprecated: true) {
+        query ($typeName: String!) {
+            __type(name: $typeName) {
                 name
+                description
+                fields(includeDeprecated: true) {
+                    name
+                }
             }
-        }
-    }
-    "#;
+        }"#;
+
     let schema = RootNode::new(
         Root {},
         EmptyMutation::<()>::new(),
@@ -256,115 +196,10 @@ async fn introspect_with_generics() {
 
 #[tokio::test]
 async fn introspect_description_first() {
-    run_type_info_query("DescriptionFirst", |object, fields| {
+    run_type_info_query("Description", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::scalar("DescriptionFirst"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(fields.contains(&Value::object(
-            vec![("name", Value::scalar("simple"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
-async fn introspect_fields_first() {
-    run_type_info_query("FieldsFirst", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("FieldsFirst"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(fields.contains(&Value::object(
-            vec![("name", Value::scalar("simple"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
-async fn introspect_interfaces_first() {
-    run_type_info_query("InterfacesFirst", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("InterfacesFirst"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(fields.contains(&Value::object(
-            vec![("name", Value::scalar("simple"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
-async fn introspect_commas_with_trailing() {
-    run_type_info_query("CommasWithTrailing", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("CommasWithTrailing"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(fields.contains(&Value::object(
-            vec![("name", Value::scalar("simple"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
-async fn introspect_commas_on_meta() {
-    run_type_info_query("CommasOnMeta", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("CommasOnMeta"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(fields.contains(&Value::object(
-            vec![("name", Value::scalar("simple"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
-async fn introspect_resolvers_with_trailing_comma() {
-    run_type_info_query("ResolversWithTrailingComma", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("ResolversWithTrailingComma"))
+            Some(&Value::scalar("Description"))
         );
         assert_eq!(
             object.get_field_value("description"),

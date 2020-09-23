@@ -80,18 +80,6 @@ where
     field_path: Arc<FieldPath<'a>>,
 }
 
-pub trait FromExecutor<T> {
-    /// Performs the conversion.
-    fn from(value: &T) -> &Self;
-}
-
-/*
-impl<'r, 'a, CtxA, CtxB, ScA, ScB> FromExecutor<Executor<'r, 'a, CtxA, ScA>> for Executor<'r, 'a, CtxB, ScB> {
-    fn from(a: Executor<'r, 'a, CtxA, ScA>) -> Self {
-        todo!()
-    }
-}*/
-
 /// Error type for errors that occur during query execution
 ///
 /// All execution errors contain the source position in the query of the field

@@ -639,30 +639,6 @@ impl<'a, S> Field<'a, S> {
         self
     }
 
-    /// Adds a (multi)line doc string to the description of the field.
-    /// Any leading or trailing newlines will be removed.
-    ///
-    /// If the docstring contains newlines, repeated leading tab and space characters
-    /// will be removed from the beginning of each line.
-    ///
-    /// If the description hasn't been set, the description is set to the provided line.
-    /// Otherwise, the doc string is added to the current description after a newline.
-    // TODO: remove after full proc macros
-    pub fn push_docstring(mut self, multiline: &[&str]) -> Field<'a, S> {
-        if let Some(docstring) = clean_docstring(multiline) {
-            match &mut self.description {
-                &mut Some(ref mut desc) => {
-                    desc.push('\n');
-                    desc.push_str(&docstring);
-                }
-                desc @ &mut None => {
-                    *desc = Some(docstring);
-                }
-            }
-        }
-        self
-    }
-
     /// Add an argument to the field
     ///
     /// Arguments are unordered and can't contain duplicates by name.
@@ -704,27 +680,6 @@ impl<'a, S> Argument<'a, S> {
     /// This overwrites the description if any was previously set.
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
-        self
-    }
-
-    /// Adds a (multi)line doc string to the description of the field.
-    /// Any leading or trailing newlines will be removed.
-    ///
-    /// If the docstring contains newlines, repeated leading tab and space characters
-    /// will be removed from the beginning of each line.
-    ///
-    /// If the description hasn't been set, the description is set to the provided line.
-    /// Otherwise, the doc string is added to the current description after a newline.
-    pub fn push_docstring(mut self, multiline: &[&str]) -> Argument<'a, S> {
-        if let Some(docstring) = clean_docstring(multiline) {
-            match &mut self.description {
-                &mut Some(ref mut desc) => {
-                    desc.push('\n');
-                    desc.push_str(&docstring);
-                }
-                desc @ &mut None => *desc = Some(docstring),
-            }
-        }
         self
     }
 
