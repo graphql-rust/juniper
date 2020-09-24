@@ -2,10 +2,11 @@ use crate::{
     ast::InputValue,
     executor::Variables,
     schema::model::RootNode,
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
     value::Value,
 };
+
 
 #[tokio::test]
 async fn test_hero_name() {

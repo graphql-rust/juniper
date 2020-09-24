@@ -20,7 +20,9 @@ use crate::{
 
 struct Concrete;
 
-#[graphql_object(impl = [CustomNameValue, DescriptionValue, WithLifetime<'_>, WithGenerics<()>])]
+#[graphql_object(impl = [
+    CustomNameValue, DescriptionValue, WithLifetimeValue<'_>, WithGenericsValue<()>,
+])]
 impl Concrete {
     fn simple() -> i32 {
         0

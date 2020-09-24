@@ -71,7 +71,7 @@ pub trait Character {
     fn appears_in(&self) -> &[Episode];
 }
 
-#[derive(GraphQLObject, Clone)]
+#[derive(Clone)]
 struct Human {
     id: String,
     name: String,
@@ -244,8 +244,8 @@ impl Character for Droid {
 
 #[derive(Default, Clone)]
 pub struct Database {
-    humans: HashMap<String, HumanData>,
-    droids: HashMap<String, DroidData>,
+    humans: HashMap<String, Human>,
+    droids: HashMap<String, Droid>,
 }
 
 impl Context for Database {}
@@ -257,7 +257,7 @@ impl Database {
 
         humans.insert(
             "1000".to_owned(),
-            HumanData::new(
+            Human::new(
                 "1000",
                 "Luke Skywalker",
                 &["1002", "1003", "2000", "2001"],
@@ -269,7 +269,7 @@ impl Database {
 
         humans.insert(
             "1001".to_owned(),
-            HumanData::new(
+            Human::new(
                 "1001",
                 "Darth Vader",
                 &["1004"],
@@ -281,7 +281,7 @@ impl Database {
 
         humans.insert(
             "1002".to_owned(),
-            HumanData::new(
+            Human::new(
                 "1002",
                 "Han Solo",
                 &["1000", "1003", "2001"],
@@ -293,7 +293,7 @@ impl Database {
 
         humans.insert(
             "1003".to_owned(),
-            HumanData::new(
+            Human::new(
                 "1003",
                 "Leia Organa",
                 &["1000", "1002", "2000", "2001"],
@@ -305,7 +305,7 @@ impl Database {
 
         humans.insert(
             "1004".to_owned(),
-            HumanData::new(
+            Human::new(
                 "1004",
                 "Wilhuff Tarkin",
                 &["1001"],
@@ -317,7 +317,7 @@ impl Database {
 
         droids.insert(
             "2000".to_owned(),
-            DroidData::new(
+            Droid::new(
                 "2000",
                 "C-3PO",
                 &["1000", "1002", "1003", "2001"],
@@ -329,7 +329,7 @@ impl Database {
 
         droids.insert(
             "2001".to_owned(),
-            DroidData::new(
+            Droid::new(
                 "2001",
                 "R2-D2",
                 &["1000", "1002", "1003"],
