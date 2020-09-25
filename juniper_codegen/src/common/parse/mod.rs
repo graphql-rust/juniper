@@ -2,17 +2,17 @@ pub(crate) mod attr;
 pub(crate) mod downcaster;
 
 use std::{
-    mem,
     any::TypeId,
     iter::{self, FromIterator as _},
+    mem,
 };
 
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseBuffer},
+    parse_quote,
     punctuated::Punctuated,
     token::{self, Token},
-    parse_quote,
 };
 
 pub(crate) trait ParseBufferExt {

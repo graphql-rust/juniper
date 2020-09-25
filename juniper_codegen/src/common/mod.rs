@@ -1,9 +1,9 @@
-pub(crate) mod parse;
 pub(crate) mod gen;
+pub(crate) mod parse;
 
 use proc_macro2::{Span, TokenStream};
-use syn::parse_quote;
 use quote::ToTokens;
+use syn::parse_quote;
 
 pub(crate) fn anonymize_lifetimes(ty: &mut syn::Type) {
     use syn::{GenericArgument as GA, Type as T};

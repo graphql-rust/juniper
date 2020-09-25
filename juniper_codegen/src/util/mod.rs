@@ -45,38 +45,6 @@ pub fn name_of_type(ty: &syn::Type) -> Option<syn::Ident> {
         .map(|segment| segment.ident.clone())
 }
 
-/// Prepends the given `attrs` collection with a new [`syn::Attribute`] generated from the given
-/// `attr_path` and `attr_args`.
-///
-/// This function is generally used for uniting `proc_macro_attribute` with its body attributes.
-pub fn unite_attrs(
-    (attr_path, attr_args): (&str, &TokenStream),
-    attrs: &Vec<syn::Attribute>,
-) -> Vec<syn::Attribute> {
-    let mut full_attrs = Vec::with_capacity(attrs.len() + 1);
-    let attr_path = syn::Ident::new(attr_path, Span::call_site());
-    full_attrs.push(parse_quote! { #[#attr_path(#attr_args)] });
-    full_attrs.extend_from_slice(attrs);
-    full_attrs
-}
-
-/// Strips all `attr_path` attributes from the given `attrs` collection.
-///
-/// This function is generally used for removing duplicate attributes during `proc_macro_attribute`
-/// expansion, so avoid unnecessary expansion duplication.
-pub fn strip_attrs(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
-    attrs
-        .into_iter()
-        .filter_map(|attr| {
-            if path_eq_single(&attr.path, attr_path) {
-                None
-            } else {
-                Some(attr)
-            }
-        })
-        .collect()
-}
-
 /// Compares a path to a one-segment string value,
 /// return true if equal.
 pub fn path_eq_single(path: &syn::Path, value: &str) -> bool {

@@ -6,9 +6,7 @@ use quote::{quote, ToTokens};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{
-    common::parse::TypeExt as _,
-    result::GraphQLScope,
-    util::{span_container::SpanContainer},
+    common::parse::TypeExt as _, result::GraphQLScope, util::span_container::SpanContainer,
 };
 
 use super::{

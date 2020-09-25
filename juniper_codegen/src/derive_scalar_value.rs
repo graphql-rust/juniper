@@ -1,6 +1,6 @@
 use crate::{
-    result::GraphQLScope,
     common::parse::ParseBufferExt as _,
+    result::GraphQLScope,
     util::{self, span_container::SpanContainer},
 };
 use proc_macro2::TokenStream;

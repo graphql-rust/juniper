@@ -9,7 +9,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 use crate::{
     common::parse,
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, strip_attrs, unite_attrs},
+    util::{path_eq_single, span_container::SpanContainer},
 };
 
 use super::{
@@ -28,8 +28,8 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
             "#[graphql_union] attribute is applicable to trait definitions only",
         )
     })?;
-    let trait_attrs = unite_attrs(("graphql_union", &attr_args), &ast.attrs);
-    ast.attrs = strip_attrs("graphql_union", ast.attrs);
+    let trait_attrs = parse::attr::unite(("graphql_union", &attr_args), &ast.attrs);
+    ast.attrs = parse::attr::strip("graphql_union", ast.attrs);
 
     let meta = UnionMeta::from_attrs("graphql_union", &trait_attrs)?;
 

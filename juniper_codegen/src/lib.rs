@@ -115,9 +115,9 @@ mod derive_scalar_value;
 mod impl_object;
 mod impl_scalar;
 
+mod common;
 mod graphql_interface;
 mod graphql_union;
-mod common;
 
 use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};

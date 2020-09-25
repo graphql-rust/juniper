@@ -13,9 +13,7 @@ use crate::{
         ScalarValueType,
     },
     result::GraphQLScope,
-    util::{
-        path_eq_single, span_container::SpanContainer, strip_attrs, to_camel_case, unite_attrs,
-    },
+    util::{path_eq_single, span_container::SpanContainer, to_camel_case},
 };
 
 use super::{
@@ -31,13 +29,13 @@ const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
 /// Expands `#[graphql_interface]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
     if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body.clone()) {
-        let trait_attrs = unite_attrs(("graphql_interface", &attr_args), &ast.attrs);
-        ast.attrs = strip_attrs("graphql_interface", ast.attrs);
+        let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
+        ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
         return expand_on_trait(trait_attrs, ast);
     } else if let Ok(mut ast) = syn::parse2::<syn::ItemImpl>(body) {
         if ast.trait_.is_some() {
-            let impl_attrs = unite_attrs(("graphql_interface", &attr_args), &ast.attrs);
-            ast.attrs = strip_attrs("graphql_interface", ast.attrs);
+            let impl_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
+            ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
             return expand_on_impl(impl_attrs, ast);
         }
     }
@@ -182,7 +180,12 @@ pub fn expand_on_trait(
         .is_some();
 
     let ty = if is_trait_object {
-        Type::TraitObject(TraitObjectType::new(&ast, &meta, scalar.clone(), context.clone()))
+        Type::TraitObject(TraitObjectType::new(
+            &ast,
+            &meta,
+            scalar.clone(),
+            context.clone(),
+        ))
     } else {
         Type::Enum(EnumType::new(&ast, &meta, &implementers, scalar.clone()))
     };
