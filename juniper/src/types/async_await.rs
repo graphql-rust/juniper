@@ -113,8 +113,11 @@ where
 
 crate::sa::assert_obj_safe!(GraphQLValueAsync<Context = (), TypeInfo = ()>);
 
+/// Helper alias for naming [trait objects][1] of [`GraphQLValueAsync`].
+///
+/// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
 pub type DynGraphQLValueAsync<S, C, TI> =
-dyn GraphQLValueAsync<S, Context = C, TypeInfo = TI> + Send + 'static;
+    dyn GraphQLValueAsync<S, Context = C, TypeInfo = TI> + Send + 'static;
 
 /// Extension of [`GraphQLType`] trait with asynchronous queries/mutations resolvers.
 ///

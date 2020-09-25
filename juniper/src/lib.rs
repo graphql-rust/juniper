@@ -128,7 +128,7 @@ pub use futures::future::{BoxFuture, LocalBoxFuture};
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_object, graphql_scalar, graphql_subscription, graphql_union, graphql_interface,
+    graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
     GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
 };
 
@@ -175,16 +175,17 @@ pub use crate::{
         LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
-    macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
+    macros::helper::{
+        subscription::{ExtractTypeFromStream, IntoFieldResult},
+        AsDynGraphQLValue,
+    },
     schema::{
         meta,
         model::{RootNode, SchemaType},
     },
     types::{
-        async_await::{GraphQLTypeAsync, GraphQLValueAsync, DynGraphQLValueAsync},
-        base::{
-            Arguments, AsDynGraphQLValue, DynGraphQLValue, GraphQLType, GraphQLValue, TypeKind,
-        },
+        async_await::{DynGraphQLValueAsync, GraphQLTypeAsync, GraphQLValueAsync},
+        base::{Arguments, DynGraphQLValue, GraphQLType, GraphQLValue, TypeKind},
         marker::{self, GraphQLInterface, GraphQLUnion},
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{
