@@ -1,4 +1,4 @@
-//! Helper traits for macros.
+//! Helper definitions for macros.
 
 pub mod helper;
 

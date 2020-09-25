@@ -7,10 +7,11 @@ use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
     executor::Variables,
+    graphql_interface, graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, Value},
-    GraphQLEnum, graphql_object, graphql_interface,
+    GraphQLEnum,
 };
 
 #[derive(GraphQLEnum)]
@@ -49,7 +50,7 @@ trait Interface {
 struct Root;
 
 /// The root query object in the schema
-#[graphql_object(interfaces = InterfaceValue, scalar = DefaultScalarValue)]
+#[graphql_object(interfaces = InterfaceValue)]
 impl Root {
     fn sample_enum() -> Sample {
         Sample::One

@@ -7,7 +7,6 @@ use crate::{
     value::Value,
 };
 
-
 #[tokio::test]
 async fn test_hero_name() {
     let doc = r#"

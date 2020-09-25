@@ -98,16 +98,16 @@ where
     F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let doc = r#"
-        query ($typeName: String!) {
-            __type(name: $typeName) {
+    query ($typeName: String!) {
+        __type(name: $typeName) {
+            name
+            description
+            fields(includeDeprecated: true) {
                 name
-                description
-                fields(includeDeprecated: true) {
-                    name
-                }
             }
-        }"#;
-
+        }
+    }
+    "#;
     let schema = RootNode::new(
         Root {},
         EmptyMutation::<()>::new(),
