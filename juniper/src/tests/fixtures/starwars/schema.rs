@@ -3,17 +3,13 @@
 use std::{collections::HashMap, pin::Pin};
 
 use crate::{
-    executor::Registry, graphql_interface, graphql_object, graphql_subscription,
-    schema::meta::MetaType, value::ScalarValue, Context, DefaultScalarValue, GraphQLEnum,
-    GraphQLObject, GraphQLType, GraphQLValue,
+    graphql_interface, graphql_object, graphql_subscription, Context, DefaultScalarValue,
+    GraphQLEnum,
 };
 
 pub struct Query;
 
-#[crate::graphql_object(
-    context = Database,
-    scalar = crate::DefaultScalarValue,
-)]
+#[graphql_object(context = Database, scalar = DefaultScalarValue)]
 /// The root query object of the schema
 impl Query {
     #[graphql(arguments(id(description = "id of the human")))]
@@ -30,8 +26,8 @@ impl Query {
         description = "If omitted, returns the hero of the whole saga. \
                        If provided, returns the hero of that particular episode"
     )))]
-    fn hero(database: &Database, episode: Option<Episode>) -> Option<&dyn Character> {
-        Some(database.get_hero(episode).as_character())
+    fn hero(database: &Database, episode: Option<Episode>) -> Option<CharacterValue> {
+        Some(database.get_hero(episode))
     }
 }
 
@@ -55,7 +51,7 @@ pub enum Episode {
     Jedi,
 }
 
-#[graphql_interface(for = [Human], context = Database)]
+#[graphql_interface(for = [Human, Droid], context = Database, scalar = DefaultScalarValue)]
 /// A character in the Star Wars Trilogy
 pub trait Character {
     /// The id of the character
@@ -69,10 +65,13 @@ pub trait Character {
 
     /// Which movies they appear in
     fn appears_in(&self) -> &[Episode];
+
+    #[graphql_interface(ignore)]
+    fn friends_ids(&self) -> &[String];
 }
 
 #[derive(Clone)]
-struct Human {
+pub struct Human {
     id: String,
     name: String,
     friend_ids: Vec<String>,
@@ -105,6 +104,7 @@ impl Human {
     }
 }
 
+/// A humanoid creature in the Star Wars universe.
 #[graphql_object(
     context = Database,
     scalar = DefaultScalarValue,
@@ -118,7 +118,7 @@ impl Human {
 
     /// The name of the human
     fn name(&self) -> Option<&str> {
-        Some(&self.name)
+        Some(self.name.as_str())
     }
 
     /// The friends of the human
@@ -137,7 +137,7 @@ impl Human {
     }
 }
 
-#[graphql_interface]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl Character for Human {
     fn id(&self) -> &str {
         &self.id
@@ -154,10 +154,14 @@ impl Character for Human {
     fn appears_in(&self) -> &[Episode] {
         &self.appears_in
     }
+
+    fn friends_ids(&self) -> &[String] {
+        &self.friend_ids
+    }
 }
 
 #[derive(Clone)]
-struct Droid {
+pub struct Droid {
     id: String,
     name: String,
     friend_ids: Vec<String>,
@@ -190,12 +194,12 @@ impl Droid {
     }
 }
 
+/// A mechanical creature in the Star Wars universe.
 #[graphql_object(
     context = Database,
-    scalar = crate::DefaultScalarValue,
+    scalar = DefaultScalarValue,
     interfaces = CharacterValue,
 )]
-/// A mechanical creature in the Star Wars universe.
 impl Droid {
     /// The id of the droid
     fn id(&self) -> &str {
@@ -204,7 +208,7 @@ impl Droid {
 
     /// The name of the droid
     fn name(&self) -> Option<&str> {
-        Some(&self.name)
+        Some(self.name.as_str())
     }
 
     /// The friends of the droid
@@ -223,7 +227,7 @@ impl Droid {
     }
 }
 
-#[graphql_interface]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl Character for Droid {
     fn id(&self) -> &str {
         &self.id
@@ -239,6 +243,10 @@ impl Character for Droid {
 
     fn appears_in(&self) -> &[Episode] {
         &self.appears_in
+    }
+
+    fn friends_ids(&self) -> &[String] {
+        &self.friend_ids
     }
 }
 
@@ -342,11 +350,11 @@ impl Database {
         Database { humans, droids }
     }
 
-    pub fn get_hero(&self, episode: Option<Episode>) -> &dyn Character {
+    pub fn get_hero(&self, episode: Option<Episode>) -> CharacterValue {
         if episode == Some(Episode::Empire) {
-            self.get_human("1000").unwrap().as_character()
+            self.get_human("1000").unwrap().clone().into()
         } else {
-            self.get_droid("2001").unwrap().as_character()
+            self.get_droid("2001").unwrap().clone().into()
         }
     }
 
@@ -360,16 +368,16 @@ impl Database {
 
     pub fn get_character(&self, id: &str) -> Option<CharacterValue> {
         if let Some(h) = self.humans.get(id) {
-            Some(h.into())
+            Some(h.clone().into())
         } else if let Some(d) = self.droids.get(id) {
-            Some(d.into())
+            Some(d.clone().into())
         } else {
             None
         }
     }
 
     pub fn get_friends(&self, c: &dyn Character) -> Vec<CharacterValue> {
-        c.friend_ids()
+        c.friends_ids()
             .iter()
             .flat_map(|id| self.get_character(id))
             .collect()

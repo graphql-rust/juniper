@@ -642,8 +642,8 @@ async fn test_query_inline_fragments_droid() {
                     "hero",
                     Value::object(
                         vec![
-                            ("name", Value::scalar("R2-D2")),
                             ("__typename", Value::scalar("Droid")),
+                            ("name", Value::scalar("R2-D2")),
                             ("primaryFunction", Value::scalar("Astromech")),
                         ]
                         .into_iter()
@@ -663,8 +663,8 @@ async fn test_query_inline_fragments_human() {
     let doc = r#"
         query InlineFragments {
             hero(episode: EMPIRE) {
-                name
                 __typename
+                name
             }
         }
         "#;
@@ -683,8 +683,8 @@ async fn test_query_inline_fragments_human() {
                     "hero",
                     Value::object(
                         vec![
-                            ("name", Value::scalar("Luke Skywalker")),
                             ("__typename", Value::scalar("Human")),
+                            ("name", Value::scalar("Luke Skywalker")),
                         ]
                         .into_iter()
                         .collect(),

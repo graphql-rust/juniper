@@ -754,35 +754,3 @@ where
 {
     <T as FromInputValue<S>>::from_input_value(v).is_some()
 }
-
-fn clean_docstring(multiline: &[&str]) -> Option<String> {
-    if multiline.is_empty() {
-        return None;
-    }
-    let trim_start = multiline
-        .iter()
-        .filter_map(|ln| ln.chars().position(|ch| !ch.is_whitespace()))
-        .min()
-        .unwrap_or(0);
-    Some(
-        multiline
-            .iter()
-            .enumerate()
-            .flat_map(|(line, ln)| {
-                let new_ln = if !ln.chars().next().map(char::is_whitespace).unwrap_or(false) {
-                    ln.trim_end() // skip trimming the first line
-                } else if ln.len() >= trim_start {
-                    ln[trim_start..].trim_end()
-                } else {
-                    ""
-                };
-                new_ln.chars().chain(
-                    ['\n']
-                        .iter()
-                        .take_while(move |_| line < multiline.len() - 1)
-                        .cloned(),
-                )
-            })
-            .collect::<String>(),
-    )
-}

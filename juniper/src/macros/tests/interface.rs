@@ -29,59 +29,59 @@ impl Concrete {
     }
 }
 
-#[graphql_interface(for = Concrete, name = "ACustomNamedInterface")]
+#[graphql_interface(for = Concrete, name = "ACustomNamedInterface", scalar = DefaultScalarValue)]
 trait CustomName {
     fn simple(&self) -> i32;
 }
-#[graphql_interface]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl CustomName for Concrete {
     fn simple(&self) -> i32 {
-        Self::simple()
+        0
     }
 }
 
-#[graphql_interface(for = Concrete)]
+#[graphql_interface(for = Concrete, scalar = DefaultScalarValue)]
 trait WithLifetime<'a> {
     fn simple(&self) -> i32;
 }
-#[graphql_interface]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl<'a> WithLifetime<'a> for Concrete {
     fn simple(&self) -> i32 {
-        Self::simple()
+        0
     }
 }
 
-#[graphql_interface(for = Concrete)]
+#[graphql_interface(for = Concrete, scalar = DefaultScalarValue)]
 trait WithGenerics<T> {
     fn simple(&self) -> i32;
 }
-#[graphql_interface]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl<T> WithGenerics<T> for Concrete {
     fn simple(&self) -> i32 {
-        Self::simple()
+        0
     }
 }
 
-#[graphql_interface(for = Concrete, desc = "A description")]
+#[graphql_interface(for = Concrete, desc = "A description", scalar = DefaultScalarValue)]
 trait Description {
     fn simple(&self) -> i32;
 }
-#[graphql_interface]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl Description for Concrete {
     fn simple(&self) -> i32 {
-        Self::simple()
+        0
     }
 }
 
 struct Root;
 
 #[crate::graphql_object]
-impl<'a> Root {
+impl Root {
     fn custom_name() -> CustomNameValue {
         Concrete.into()
     }
 
-    fn with_lifetime() -> WithLifetimeValue<'a> {
+    fn with_lifetime() -> WithLifetimeValue<'static> {
         Concrete.into()
     }
     fn with_generics() -> WithGenericsValue<i32> {

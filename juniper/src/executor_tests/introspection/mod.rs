@@ -10,7 +10,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, Value},
-    GraphQLEnum,
+    GraphQLEnum, graphql_object, graphql_interface,
 };
 
 #[derive(GraphQLEnum)]
@@ -21,10 +21,6 @@ enum Sample {
 }
 
 struct Scalar(i32);
-
-struct Interface;
-
-struct Root;
 
 #[crate::graphql_scalar(name = "SampleScalar")]
 impl GraphQLScalar for Scalar {
@@ -41,23 +37,19 @@ impl GraphQLScalar for Scalar {
     }
 }
 
-graphql_interface!(Interface: () as "SampleInterface" |&self| {
-    description: "A sample interface"
-
-    field sample_enum() -> Sample as "A sample field in the interface" {
+/// A sample interface
+#[graphql_interface(name = "SampleInterface", for = Root, scalar = DefaultScalarValue)]
+trait Interface {
+    /// A sample field in the interface
+    fn sample_enum(&self) -> Sample {
         Sample::One
     }
+}
 
-    instance_resolvers: |&_| {
-        Root => Some(Root),
-    }
-});
+struct Root;
 
 /// The root query object in the schema
-#[crate::graphql_object(
-    interfaces = [&Interface]
-    Scalar = crate::DefaultScalarValue,
-)]
+#[graphql_object(interfaces = InterfaceValue, scalar = DefaultScalarValue)]
 impl Root {
     fn sample_enum() -> Sample {
         Sample::One
@@ -65,7 +57,7 @@ impl Root {
 
     #[graphql(arguments(
         first(description = "The first number",),
-        second(description = "The second number", default = 123,),
+        second(description = "The second number", default = 123),
     ))]
 
     /// A sample scalar field on the object
@@ -73,6 +65,9 @@ impl Root {
         Scalar(first + second)
     }
 }
+
+#[graphql_interface(scalar = DefaultScalarValue)]
+impl Interface for Root {}
 
 #[tokio::test]
 async fn test_execution() {

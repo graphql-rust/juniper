@@ -10,13 +10,15 @@ Syntax to validate:
 
 */
 
+#![allow(deprecated)]
+
 use crate::{
     ast::InputValue,
     executor::FieldResult,
+    graphql_interface, graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    graphql_object, graphql_interface
 };
 
 #[derive(Debug)]
@@ -102,7 +104,50 @@ impl Root {
     }
 }
 
-#[graphql_interface(for = Root)]
+#[graphql_interface(scalar = DefaultScalarValue)]
+impl Interface for Root {
+    fn simple(&self) -> i32 {
+        0
+    }
+
+    fn description(&self) -> i32 {
+        0
+    }
+
+    fn deprecated(&self) -> i32 {
+        0
+    }
+
+    fn deprecated_descr(&self) -> i32 {
+        0
+    }
+
+    fn attr_description(&self) -> i32 {
+        0
+    }
+
+    fn attr_description_collapse(&self) -> i32 {
+        0
+    }
+
+    fn attr_description_long(&self) -> i32 {
+        0
+    }
+
+    fn attr_deprecated(&self) -> i32 {
+        0
+    }
+
+    fn attr_deprecated_reason(&self) -> i32 {
+        0
+    }
+
+    fn attr_deprecated_descr(&self) -> i32 {
+        0
+    }
+}
+
+#[graphql_interface(for = Root, scalar = DefaultScalarValue)]
 trait Interface {
     fn simple(&self) -> i32;
 
@@ -110,10 +155,10 @@ trait Interface {
     fn description(&self) -> i32;
 
     #[graphql_interface(deprecated = "Deprecation reason")]
-    fn deprecated() -> i32;
+    fn deprecated(&self) -> i32;
 
     #[graphql_interface(desc = "Field description", deprecated = "Deprecation reason")]
-    fn deprecated_descr() -> i32;
+    fn deprecated_descr(&self) -> i32;
 
     /// Field description
     fn attr_description(&self) -> i32;
@@ -129,14 +174,14 @@ trait Interface {
     fn attr_description_long(&self) -> i32;
 
     #[deprecated]
-    fn attr_deprecated() -> i32;
+    fn attr_deprecated(&self) -> i32;
 
     #[deprecated(note = "Deprecation reason")]
-    fn attr_deprecated_reason() -> i32;
+    fn attr_deprecated_reason(&self) -> i32;
 
     /// Field description
     #[deprecated(note = "Deprecation reason")]
-    fn attr_deprecated_descr() -> i32;
+    fn attr_deprecated_descr(&self) -> i32;
 }
 
 async fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
