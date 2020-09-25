@@ -1,9 +1,9 @@
 //! Tests for `#[graphql_interface]` macro.
 
 use juniper::{
-    execute, graphql_interface, graphql_object, graphql_value, sa, AsDynGraphQLValue,
-    DefaultScalarValue, EmptyMutation, EmptySubscription, Executor, FieldError, FieldResult,
-    GraphQLObject, GraphQLType, IntoFieldError, RootNode, ScalarValue, Variables,
+    execute, graphql_interface, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation,
+    EmptySubscription, Executor, FieldError, FieldResult, GraphQLObject, GraphQLType,
+    IntoFieldError, RootNode, ScalarValue, Variables,
 };
 
 fn schema<'q, C, S, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
@@ -32,7 +32,7 @@ mod trivial {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -53,7 +53,7 @@ mod trivial {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -380,8 +380,6 @@ mod explicit_alias {
         home_planet: String,
     }
 
-    sa::assert_not_impl_all!(Human: AsDynGraphQLValue<DefaultScalarValue>);
-
     #[graphql_interface]
     impl Character for Human {
         fn id(&self) -> &str {
@@ -395,8 +393,6 @@ mod explicit_alias {
         id: String,
         primary_function: String,
     }
-
-    sa::assert_not_impl_all!(Droid: AsDynGraphQLValue<DefaultScalarValue>);
 
     #[graphql_interface]
     impl Character for Droid {
@@ -558,7 +554,7 @@ mod trivial_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -579,7 +575,7 @@ mod trivial_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -913,7 +909,7 @@ mod explicit_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -938,7 +934,7 @@ mod explicit_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -1171,7 +1167,7 @@ mod fallible_field {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -1192,7 +1188,7 @@ mod fallible_field {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -1437,7 +1433,7 @@ mod generic {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero<u8, ()>])]
+    #[graphql(impl = [CharacterValue, DynHero<u8, (), __S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -1458,7 +1454,7 @@ mod generic {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<(), u8>, dyn Hero<u8, ()>])]
+    #[graphql(impl = [CharacterValue<(), u8>, DynHero<u8, (), __S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -1681,7 +1677,7 @@ mod generic_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero<u8, ()>])]
+    #[graphql(impl = [CharacterValue, DynHero<u8, (), __S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -1702,7 +1698,7 @@ mod generic_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<(), u8>, dyn Hero<u8, ()>])]
+    #[graphql(impl = [CharacterValue<(), u8>, DynHero<u8, (), __S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -1925,7 +1921,7 @@ mod generic_lifetime_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<'_, ()>, dyn Hero<'_, ()>])]
+    #[graphql(impl = [CharacterValue<()>, DynHero<(), __S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -1946,7 +1942,7 @@ mod generic_lifetime_async {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<'_, ()>, dyn Hero<'_, ()>])]
+    #[graphql(impl = [CharacterValue<()>, DynHero<(), __S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -2169,7 +2165,7 @@ mod argument {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -2834,7 +2830,7 @@ mod explicit_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], scalar = DefaultScalarValue)]
+    #[graphql(impl = [CharacterValue, DynHero], scalar = DefaultScalarValue)]
     struct Human {
         id: String,
         home_planet: String,
@@ -2855,7 +2851,7 @@ mod explicit_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], scalar = DefaultScalarValue)]
+    #[graphql(impl = [CharacterValue, DynHero], scalar = DefaultScalarValue)]
     struct Droid {
         id: String,
         primary_function: String,
@@ -3060,7 +3056,7 @@ mod custom_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], scalar = MyScalarValue)]
+    #[graphql(impl = [CharacterValue, DynHero], scalar = MyScalarValue)]
     struct Human {
         id: String,
         home_planet: String,
@@ -3081,7 +3077,7 @@ mod custom_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], scalar = MyScalarValue)]
+    #[graphql(impl = [CharacterValue, DynHero], scalar = MyScalarValue)]
     struct Droid {
         id: String,
         primary_function: String,
@@ -3283,7 +3279,7 @@ mod explicit_generic_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<__S>, dyn Hero])]
+    #[graphql(impl = [CharacterValue<__S>, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -3304,7 +3300,7 @@ mod explicit_generic_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<__S>, dyn Hero])]
+    #[graphql(impl = [CharacterValue<__S>, DynHero<__S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -3519,7 +3515,7 @@ mod explicit_custom_context {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = CustomContext)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = CustomContext)]
     struct Human {
         id: String,
         home_planet: String,
@@ -3556,7 +3552,7 @@ mod explicit_custom_context {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = CustomContext)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = CustomContext)]
     struct Droid {
         id: String,
         primary_function: String,
@@ -3781,7 +3777,7 @@ mod inferred_custom_context_from_field {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = CustomContext)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = CustomContext)]
     struct Human {
         id: String,
         home_planet: String,
@@ -3810,7 +3806,7 @@ mod inferred_custom_context_from_field {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = CustomContext)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = CustomContext)]
     struct Droid {
         id: String,
         primary_function: String,
@@ -4033,7 +4029,7 @@ mod inferred_custom_context_from_downcast {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = Database)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = Database)]
     struct Human {
         id: String,
         home_planet: String,
@@ -4062,7 +4058,7 @@ mod inferred_custom_context_from_downcast {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = Database)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = Database)]
     struct Droid {
         id: String,
         primary_function: String,
@@ -4314,7 +4310,7 @@ mod executor {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<__S>, dyn Hero])]
+    #[graphql(impl = [CharacterValue<__S>, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -4341,7 +4337,7 @@ mod executor {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue<__S>, dyn Hero])]
+    #[graphql(impl = [CharacterValue<__S>, DynHero<__S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -4651,7 +4647,7 @@ mod downcast_method {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Human {
         id: String,
         home_planet: String,
@@ -4676,7 +4672,7 @@ mod downcast_method {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero])]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
     struct Droid {
         id: String,
         primary_function: String,
@@ -4924,7 +4920,7 @@ mod external_downcast {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = Database)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = Database)]
     struct Human {
         id: String,
         home_planet: String,
@@ -4945,7 +4941,7 @@ mod external_downcast {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, dyn Hero], context = Database)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>], context = Database)]
     struct Droid {
         id: String,
         primary_function: String,

@@ -18,7 +18,7 @@ use syn::{
     token, Attribute, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
 
-use crate::common::parse::{ParseBufferExt as _, TypeExt as _};
+use crate::common::parse::ParseBufferExt as _;
 
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.
@@ -831,35 +831,8 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|description| quote!( .description(#description) ));
 
-        let mut has_dyn_interfaces = false;
         let interfaces = if !self.interfaces.is_empty() {
-            let interfaces_ty = self.interfaces.iter().map(|ty| {
-                let mut ty: syn::Type = ty.unparenthesized().clone();
-
-                if let syn::Type::TraitObject(dyn_ty) = &mut ty {
-                    let mut dyn_ty = dyn_ty.clone();
-                    if let syn::TypeParamBound::Trait(syn::TraitBound { path, .. }) =
-                        dyn_ty.bounds.first_mut().unwrap()
-                    {
-                        let trait_params = &mut path.segments.last_mut().unwrap().arguments;
-                        if let syn::PathArguments::None = trait_params {
-                            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
-                        }
-                        if let syn::PathArguments::AngleBracketed(a) = trait_params {
-                            a.args.push(parse_quote! { #scalar });
-                            a.args.push(parse_quote! { Context = Self::Context });
-                            a.args.push(parse_quote! { TypeInfo = Self::TypeInfo });
-                        }
-                    }
-                    dyn_ty.bounds.push(parse_quote! { Send });
-                    dyn_ty.bounds.push(parse_quote! { Sync });
-
-                    has_dyn_interfaces = true;
-                    ty = dyn_ty.into();
-                }
-
-                ty
-            });
+            let interfaces_ty = &self.interfaces;
 
             Some(quote!(
                 .interfaces(&[
@@ -977,7 +950,7 @@ impl GraphQLTypeDefiniton {
                 .push(parse_quote!( #scalar: Send + Sync ));
             where_async.predicates.push(parse_quote!(Self: Sync));
 
-            let as_dyn_value = if has_dyn_interfaces {
+            let as_dyn_value = if !self.interfaces.is_empty() {
                 Some(quote! {
                     #[automatically_derived]
                     impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #type_generics_tokens
@@ -1218,32 +1191,7 @@ impl GraphQLTypeDefiniton {
             .map(|description| quote!( .description(#description) ));
 
         let interfaces = if !self.interfaces.is_empty() {
-            let interfaces_ty = self.interfaces.iter().map(|ty| {
-                let mut ty: syn::Type = ty.unparenthesized().clone();
-
-                if let syn::Type::TraitObject(dyn_ty) = &mut ty {
-                    let mut dyn_ty = dyn_ty.clone();
-                    if let syn::TypeParamBound::Trait(syn::TraitBound { path, .. }) =
-                        dyn_ty.bounds.first_mut().unwrap()
-                    {
-                        let trait_params = &mut path.segments.last_mut().unwrap().arguments;
-                        if let syn::PathArguments::None = trait_params {
-                            *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
-                        }
-                        if let syn::PathArguments::AngleBracketed(a) = trait_params {
-                            a.args.push(parse_quote! { #scalar });
-                            a.args.push(parse_quote! { Context = Self::Context });
-                            a.args.push(parse_quote! { TypeInfo = Self::TypeInfo });
-                        }
-                    }
-                    dyn_ty.bounds.push(parse_quote! { Send });
-                    dyn_ty.bounds.push(parse_quote! { Sync });
-
-                    ty = dyn_ty.into();
-                }
-
-                ty
-            });
+            let interfaces_ty = &self.interfaces;
 
             Some(quote!(
                 .interfaces(&[
