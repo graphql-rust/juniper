@@ -27,21 +27,18 @@ use crate::{
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
 
-/// Helper alias for the type of [`InterfaceMeta::external_downcasts`] field.
-type InterfaceMetaDowncasts = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
-
-/// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_interface]`) attribute placed
-/// on a trait definition, when generating code for [GraphQL interface][1] type.
+/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait
+/// definition, when generating code for [GraphQL interface][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
-struct InterfaceMeta {
+struct TraitMeta {
     /// Explicitly specified name of [GraphQL interface][1] type.
     ///
-    /// If absent, then Rust type name is used by default.
+    /// If absent, then Rust trait name is used by default.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub name: Option<SpanContainer<String>>,
+    name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of [GraphQL interface][1] type.
     ///
@@ -49,57 +46,82 @@ struct InterfaceMeta {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    pub description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<String>>,
 
-    pub r#enum: Option<SpanContainer<syn::Ident>>,
+    /// Explicitly specified identifier of the enum Rust type behind the trait, being an actual
+    /// implementation of a [GraphQL interface][1] type.
+    ///
+    /// If absent, then `{trait_name}Value` identifier will be used.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    r#enum: Option<SpanContainer<syn::Ident>>,
 
-    pub r#dyn: Option<SpanContainer<syn::Ident>>,
+    /// Explicitly specified identifier of the Rust type alias of the [trait object][2], being an
+    /// actual implementation of a [GraphQL interface][1] type.
+    ///
+    /// Effectively makes code generation to use a [trait object][2] as a [GraphQL interface][1]
+    /// type rather than an enum. If absent, then enum is used by default.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
+    r#dyn: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified Rust types of [GraphQL objects][2] implementing this
     /// [GraphQL interface][1] type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
-    pub implementers: HashSet<SpanContainer<syn::Type>>,
+    implementers: HashSet<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified type of `juniper::Context` to use for resolving this
+    /// Explicitly specified type of [`Context`] to use for resolving this [GraphQL interface][1]
+    /// type with.
+    ///
+    /// If absent, then unit type `()` is assumed as type of [`Context`].
+    ///
+    /// [`Context`]: juniper::Context
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    context: Option<SpanContainer<syn::Type>>,
+
+    /// Explicitly specified type of [`ScalarValue`] to use for resolving this
     /// [GraphQL interface][1] type with.
     ///
-    /// If absent, then unit type `()` is assumed as type of `juniper::Context`.
+    /// If absent, then generated code will be generic over any [`ScalarValue`] type, which, in
+    /// turn, requires all [interface][1] implementers to be generic over any [`ScalarValue`] type
+    /// too. That's why this type should be specified only if one of the implementers implements
+    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
     ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub context: Option<SpanContainer<syn::Type>>,
+    scalar: Option<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified type of `juniper::ScalarValue` to use for resolving this
-    /// [GraphQL interface][1] type with.
+    /// Explicitly specified marker indicating that the Rust trait should be transformed into
+    /// [`async_trait`].
     ///
-    /// If absent, then generated code will be generic over any `juniper::ScalarValue` type, which,
-    /// in turn, requires all [interface][1] implementers to be generic over any
-    /// `juniper::ScalarValue` type too. That's why this type should be specified only if one of the
-    /// implementers implements `juniper::GraphQLType` in a non-generic way over
-    /// `juniper::ScalarValue` type.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub scalar: Option<SpanContainer<syn::Type>>,
-
-    pub asyncness: Option<SpanContainer<syn::Ident>>,
+    /// If absent, then trait will be transformed into [`async_trait`] only if it contains async
+    /// methods.
+    asyncness: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified external downcasting functions for [GraphQL interface][1] implementers.
     ///
-    /// If absent, then macro will try to auto-infer all the possible variants from the type
-    /// declaration, if possible. That's why specifying an external resolver function has sense,
-    /// when some custom [union][1] variant resolving logic is involved, or variants cannot be
-    /// inferred.
+    /// If absent, then macro will downcast to the implementers via enum dispatch or dynamic
+    /// dispatch (if the one is chosen). That's why specifying an external resolver function has
+    /// sense, when some custom [interface][1] implementer resolving logic is involved.
+    ///
+    /// Once the downcasting function is specified for some [GraphQL object][2] implementer type, it
+    /// cannot be downcast another such function or trait method marked with a
+    /// [`MethodMeta::downcast`] marker.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub external_downcasts: InterfaceMetaDowncasts,
+    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
+    external_downcasts: HashMap<syn::Type, SpanContainer<syn::ExprPath>>,
 
-    /// Indicator whether the generated code is intended to be used only inside the `juniper`
+    /// Indicator whether the generated code is intended to be used only inside the [`juniper`]
     /// library.
-    pub is_internal: bool,
+    is_internal: bool,
 }
 
-impl Parse for InterfaceMeta {
+impl Parse for TraitMeta {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut output = Self::default();
 
@@ -206,8 +228,8 @@ impl Parse for InterfaceMeta {
     }
 }
 
-impl InterfaceMeta {
-    /// Tries to merge two [`InterfaceMeta`]s into a single one, reporting about duplicates, if any.
+impl TraitMeta {
+    /// Tries to merge two [`TraitMeta`]s into a single one, reporting about duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
@@ -225,9 +247,9 @@ impl InterfaceMeta {
         })
     }
 
-    /// Parses [`InterfaceMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
-    /// trait definition.
-    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+    /// Parses [`TraitMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a trait
+    /// definition.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
@@ -254,13 +276,39 @@ impl InterfaceMeta {
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
-struct ImplementerMeta {
-    pub scalar: Option<SpanContainer<syn::Type>>,
-    pub asyncness: Option<SpanContainer<syn::Ident>>,
-    pub r#dyn: Option<SpanContainer<syn::Ident>>,
+struct ImplMeta {
+    /// Explicitly specified type of [`ScalarValue`] to use for implementing the
+    /// [GraphQL interface][1] type.
+    ///
+    /// If absent, then generated code will be generic over any [`ScalarValue`] type, which, in
+    /// turn, requires all [interface][1] implementers to be generic over any [`ScalarValue`] type
+    /// too. That's why this type should be specified only if the implementer itself implements
+    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    scalar: Option<SpanContainer<syn::Type>>,
+
+    /// Explicitly specified marker indicating that the trait implementation block should be
+    /// transformed with applying [`async_trait`].
+    ///
+    /// If absent, then trait will be transformed with applying [`async_trait`] only if it contains
+    /// async methods.
+    ///
+    /// This marker is especially useful when Rust trait contains async default methods, while the
+    /// implementation block doesn't.
+    asyncness: Option<SpanContainer<syn::Ident>>,
+
+    /// Explicitly specified marker indicating that the implemented [GraphQL interface][1] type is
+    /// represented as a [trait object][2] in Rust type system rather then an enum (default mode,
+    /// when the marker is absent).
+    ///
+    /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
+    r#dyn: Option<SpanContainer<syn::Ident>>,
 }
 
-impl Parse for ImplementerMeta {
+impl Parse for ImplMeta {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut output = Self::default();
 
@@ -300,9 +348,8 @@ impl Parse for ImplementerMeta {
     }
 }
 
-impl ImplementerMeta {
-    /// Tries to merge two [`ImplementerMeta`]s into a single one, reporting about duplicates, if
-    /// any.
+impl ImplMeta {
+    /// Tries to merge two [`ImplMeta`]s into a single one, reporting about duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             scalar: try_merge_opt!(scalar: self, another),
@@ -311,8 +358,8 @@ impl ImplementerMeta {
         })
     }
 
-    /// Parses [`ImplementerMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
-    /// trait implementation block.
+    /// Parses [`ImplMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a trait
+    /// implementation block.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -320,16 +367,54 @@ impl ImplementerMeta {
     }
 }
 
+/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait method
+/// definition, when generating code for [GraphQL interface][1] type.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
-struct TraitMethodMeta {
-    pub name: Option<SpanContainer<syn::LitStr>>,
-    pub description: Option<SpanContainer<syn::LitStr>>,
-    pub deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
-    pub ignore: Option<SpanContainer<syn::Ident>>,
-    pub downcast: Option<SpanContainer<syn::Ident>>,
+struct MethodMeta {
+    /// Explicitly specified name of a [GraphQL field][1] represented by this trait method.
+    ///
+    /// If absent, then `camelCased` Rust method name is used by default.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    name: Option<SpanContainer<syn::LitStr>>,
+
+    /// Explicitly specified [description][2] of this [GraphQL field][1].
+    ///
+    /// If absent, then Rust doc comment is used as the [description][2], if any.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
+    description: Option<SpanContainer<syn::LitStr>>,
+
+    /// Explicitly specified [deprecation][2] of this [GraphQL field][1].
+    ///
+    /// If absent, then Rust `#[deprecated]` attribute is used as the [deprecation][2], if any.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/June2018/#sec-Deprecation
+    deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
+
+    /// Explicitly specified marker indicating that this trait method should be omitted by code
+    /// generation and not considered in the [GraphQL interface][1] type definition.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    ignore: Option<SpanContainer<syn::Ident>>,
+
+    /// Explicitly specified marker indicating that this trait method doesn't represent a
+    /// [GraphQL field][1], but is a downcasting function into the [GraphQL object][2] implementer
+    /// type returned by this trait method.
+    ///
+    /// Once this marker is specified, the [GraphQL object][2] implementer type cannot be downcast
+    /// via another trait method or [`TraitMeta::external_downcasts`] function.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
+    downcast: Option<SpanContainer<syn::Ident>>,
 }
 
-impl Parse for TraitMethodMeta {
+impl Parse for MethodMeta {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut output = Self::default();
 
@@ -386,8 +471,8 @@ impl Parse for TraitMethodMeta {
     }
 }
 
-impl TraitMethodMeta {
-    /// Tries to merge two [`FieldMeta`]s into a single one, reporting about duplicates, if any.
+impl MethodMeta {
+    /// Tries to merge two [`MethodMeta`]s into a single one, reporting about duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
@@ -398,8 +483,8 @@ impl TraitMethodMeta {
         })
     }
 
-    /// Parses [`FieldMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
-    /// function/method definition.
+    /// Parses [`MethodMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
+    /// method definition.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -1231,7 +1316,7 @@ struct EnumType {
 impl EnumType {
     fn new(
         r#trait: &syn::ItemTrait,
-        meta: &InterfaceMeta,
+        meta: &TraitMeta,
         implers: &Vec<ImplementerDefinition>,
         scalar: ScalarValueType,
     ) -> Self {
@@ -1588,7 +1673,7 @@ struct TraitObjectType {
 impl TraitObjectType {
     fn new(
         r#trait: &syn::ItemTrait,
-        meta: &InterfaceMeta,
+        meta: &TraitMeta,
         scalar: ScalarValueType,
         context: Option<syn::Type>,
     ) -> Self {

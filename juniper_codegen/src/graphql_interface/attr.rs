@@ -16,10 +16,9 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, ArgumentMeta, Definition, EnumType, ImplementerDefinition,
-    ImplementerDowncastDefinition, ImplementerMeta, InterfaceFieldArgumentDefinition,
-    InterfaceFieldDefinition, InterfaceMeta, MethodArgument, TraitMethodMeta, TraitObjectType,
-    Type,
+    inject_async_trait, ArgumentMeta, Definition, EnumType, ImplMeta, ImplementerDefinition,
+    ImplementerDowncastDefinition, InterfaceFieldArgumentDefinition, InterfaceFieldDefinition,
+    MethodArgument, MethodMeta, TraitMeta, TraitObjectType, Type,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -51,7 +50,7 @@ pub fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
-    let meta = InterfaceMeta::from_attrs("graphql_interface", &attrs)?;
+    let meta = TraitMeta::from_attrs("graphql_interface", &attrs)?;
 
     let trait_ident = &ast.ident;
 
@@ -253,7 +252,7 @@ pub fn expand_on_impl(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemImpl,
 ) -> syn::Result<TokenStream> {
-    let meta = ImplementerMeta::from_attrs("graphql_interface", &attrs)?;
+    let meta = ImplMeta::from_attrs("graphql_interface", &attrs)?;
 
     let is_async_trait = meta.asyncness.is_some()
         || ast
@@ -348,7 +347,7 @@ impl TraitMethod {
             .filter(|attr| !path_eq_single(&attr.path, "graphql_interface"))
             .collect();
 
-        let meta = TraitMethodMeta::from_attrs("graphql_interface", &method_attrs)
+        let meta = MethodMeta::from_attrs("graphql_interface", &method_attrs)
             .map_err(|e| proc_macro_error::emit_error!(e))
             .ok()?;
 
@@ -405,7 +404,7 @@ impl TraitMethod {
 
     fn parse_field(
         method: &mut syn::TraitItemMethod,
-        meta: TraitMethodMeta,
+        meta: MethodMeta,
     ) -> Option<InterfaceFieldDefinition> {
         let method_ident = &method.sig.ident;
 
