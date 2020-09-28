@@ -1,3 +1,6 @@
+//! Common functions, definitions and extensions for parsing, normalizing and modifying Rust syntax,
+//! used by this crate.
+
 pub(crate) mod attr;
 pub(crate) mod downcaster;
 
@@ -7,6 +10,7 @@ use std::{
     mem,
 };
 
+use proc_macro2::Span;
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseBuffer},
@@ -15,6 +19,7 @@ use syn::{
     token::{self, Token},
 };
 
+/// Extension of [`ParseBuffer`] providing common function widely used by this crate for parsing.
 pub(crate) trait ParseBufferExt {
     /// Tries to parse `T` as the next token.
     ///
@@ -24,6 +29,7 @@ pub(crate) trait ParseBufferExt {
     /// Checks whether next token is `T`.
     ///
     /// Doesn't move [`ParseStream`]'s cursor.
+    #[must_use]
     fn is_next<T: Default + Token>(&self) -> bool;
 
     /// Parses next token as [`syn::Ident`] _allowing_ Rust keywords, while default [`Parse`]
@@ -75,7 +81,7 @@ impl<'a> ParseBufferExt for ParseBuffer<'a> {
             } else if TypeId::of::<W>() == TypeId::of::<token::Paren>() {
                 let _ = syn::parenthesized!(inner in self);
             } else {
-                panic!(
+                unimplemented!(
                     "ParseBufferExt::parse_maybe_wrapped_and_punctuated supports only brackets, \
                      braces and parentheses as wrappers.",
                 );
@@ -87,16 +93,21 @@ impl<'a> ParseBufferExt for ParseBuffer<'a> {
     }
 }
 
+/// Extension of [`syn::Type`] providing common function widely used by this crate for parsing.
 pub(crate) trait TypeExt {
     /// Retrieves the innermost non-parenthesized [`syn::Type`] from the given one (unwraps nested
     /// [`syn::TypeParen`]s asap).
+    #[must_use]
     fn unparenthesized(&self) -> &Self;
 
     /// Retrieves the inner [`syn::Type`] from the given reference type, or just returns "as is" if
     /// the type is not a reference.
     ///
-    /// Also, unparenthesizes the type, if required.
+    /// Also, makes the type [`TypeExt::unparenthesized`], if possible.
+    #[must_use]
     fn unreferenced(&self) -> &Self;
+
+    fn lifetimes_anonymized(&mut self);
 }
 
 impl TypeExt for syn::Type {
@@ -113,11 +124,90 @@ impl TypeExt for syn::Type {
             ty => ty,
         }
     }
+
+    fn lifetimes_anonymized(&mut self) {
+        use syn::{GenericArgument as GA, Type as T};
+
+        match self {
+            T::Array(syn::TypeArray { elem, .. })
+            | T::Group(syn::TypeGroup { elem, .. })
+            | T::Paren(syn::TypeParen { elem, .. })
+            | T::Ptr(syn::TypePtr { elem, .. })
+            | T::Slice(syn::TypeSlice { elem, .. }) => (&mut *elem).lifetimes_anonymized(),
+
+            T::Tuple(syn::TypeTuple { elems, .. }) => {
+                for ty in elems.iter_mut() {
+                    ty.lifetimes_anonymized();
+                }
+            }
+
+            T::ImplTrait(syn::TypeImplTrait { bounds, .. })
+            | T::TraitObject(syn::TypeTraitObject { bounds, .. }) => {
+                for bound in bounds.iter_mut() {
+                    match bound {
+                        syn::TypeParamBound::Lifetime(lt) => {
+                            lt.ident = syn::Ident::new("_", Span::call_site())
+                        }
+                        syn::TypeParamBound::Trait(_) => {
+                            todo!("Anonymizing lifetimes in trait is not yet supported")
+                        }
+                    }
+                }
+            }
+
+            T::Reference(ref_ty) => {
+                if let Some(lt) = ref_ty.lifetime.as_mut() {
+                    lt.ident = syn::Ident::new("_", Span::call_site());
+                }
+                (&mut *ref_ty.elem).lifetimes_anonymized();
+            }
+
+            T::Path(ty) => {
+                for seg in ty.path.segments.iter_mut() {
+                    match &mut seg.arguments {
+                        syn::PathArguments::AngleBracketed(angle) => {
+                            for arg in angle.args.iter_mut() {
+                                match arg {
+                                    GA::Lifetime(lt) => {
+                                        lt.ident = syn::Ident::new("_", Span::call_site());
+                                    }
+                                    GA::Type(ty) => ty.lifetimes_anonymized(),
+                                    GA::Binding(b) => b.ty.lifetimes_anonymized(),
+                                    GA::Constraint(_) | GA::Const(_) => {}
+                                }
+                            }
+                        }
+                        syn::PathArguments::Parenthesized(args) => {
+                            for ty in args.inputs.iter_mut() {
+                                ty.lifetimes_anonymized();
+                            }
+                            if let syn::ReturnType::Type(_, ty) = &mut args.output {
+                                (&mut *ty).lifetimes_anonymized();
+                            }
+                        }
+                        syn::PathArguments::None => {}
+                    }
+                }
+            }
+
+            // These types unlikely will be used as GraphQL types.
+            T::BareFn(_)
+            | T::Infer(_)
+            | T::Macro(_)
+            | T::Never(_)
+            | T::Verbatim(_)
+            | T::__Nonexhaustive => {}
+        }
+    }
 }
 
+/// Extension of [`syn::Generics`] providing common function widely used by this crate for parsing.
 pub(crate) trait GenericsExt {
+    /// Removes all default types out of type parameters and const parameters in these
+    /// [`syn::Generics`].
     fn remove_defaults(&mut self);
 
+    /// Moves all trait and lifetime bounds of these [`syn::Generics`] to its [`syn::WhereClause`].
     fn move_bounds_to_where_clause(&mut self);
 }
 

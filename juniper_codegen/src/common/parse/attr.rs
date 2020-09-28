@@ -1,3 +1,6 @@
+//! Common functions, definitions and extensions for parsing and modifying Rust attributes, used by
+//! this crate.
+
 use proc_macro2::{Span, TokenStream};
 use syn::parse_quote;
 
@@ -35,6 +38,7 @@ pub(crate) fn strip(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Att
         .collect()
 }
 
+/// Common errors of parsing Rust attributes, appeared in this crate.
 pub(crate) mod err {
     use proc_macro2::Span;
     use syn::spanned::Spanned;
@@ -55,7 +59,9 @@ pub(crate) mod err {
         )
     }
 
+    /// Helper coercion for [`Span`] and [`Spanned`] types to use in function arguments.
     pub(crate) trait AsSpan {
+        /// Returns the coerced [`Span`].
         #[must_use]
         fn as_span(&self) -> Span;
     }
@@ -75,7 +81,7 @@ pub(crate) mod err {
     }
 }
 
-/// Handy extension of [`Option`] methods used in this crate.
+/// Handy extension of [`Option`] methods, used in this crate.
 pub(crate) trait OptionExt {
     type Inner;
 

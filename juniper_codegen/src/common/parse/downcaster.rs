@@ -1,3 +1,9 @@
+//! Common functions, definitions and extensions for parsing downcasting functions, used by GraphQL
+//! [interfaces][1] and [unions][2] definitions to downcast its type to a concrete implementer type.
+//!
+//! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+//! [2]: https://spec.graphql.org/June2018/#sec-Unions
+
 use proc_macro2::Span;
 use syn::{ext::IdentExt as _, spanned::Spanned as _};
 

@@ -8,7 +8,6 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
     common::{
-        anonymize_lifetimes,
         parse::{self, TypeExt as _},
         ScalarValueType,
     },
@@ -457,7 +456,7 @@ impl TraitMethod {
             syn::ReturnType::Default => parse_quote! { () },
             syn::ReturnType::Type(_, ty) => ty.unparenthesized().clone(),
         };
-        anonymize_lifetimes(&mut ty);
+        ty.lifetimes_anonymized();
 
         let description = meta.description.as_ref().map(|d| d.as_ref().value());
         let deprecated = meta
