@@ -1,6 +1,14 @@
+//! Common code generated parts, used by this crate.
+
 use proc_macro2::TokenStream;
 use quote::quote;
 
+/// Generate the code resolving some [GraphQL type][1] in a synchronous manner.
+///
+/// Value of a [GraphQL type][1] should be stored in a `res` binding in the generated code, before
+/// including this piece of code.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Types
 pub(crate) fn sync_resolving_code() -> TokenStream {
     quote! {
         ::juniper::IntoResolvable::into(res, executor.context())
@@ -11,6 +19,17 @@ pub(crate) fn sync_resolving_code() -> TokenStream {
     }
 }
 
+/// Generate the code resolving some [GraphQL type][1] in an asynchronous manner.
+///
+/// Value of a [GraphQL type][1] should be resolvable with `fut` binding representing a [`Future`]
+/// in the generated code, before including this piece of code.
+///
+/// Optional `ty` argument may be used to annotate a concrete type of the resolving
+/// [GraphQL type][1] (the [`Future::Output`]).
+///
+/// [`Future`]: std::future::Future
+/// [`Future::Output`]: std::future::Future::Output
+/// [1]: https://spec.graphql.org/June2018/#sec-Types
 pub(crate) fn async_resolving_code(ty: Option<&syn::Type>) -> TokenStream {
     let ty = ty.map(|t| quote! { : #t });
 
