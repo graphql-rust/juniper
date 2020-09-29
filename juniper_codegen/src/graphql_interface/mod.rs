@@ -1540,19 +1540,51 @@ impl Implementer {
     }
 }
 
+/// Representation of Rust enum implementing [GraphQL interface][1] type for code generation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 struct EnumType {
+    /// Name of this [`EnumType`] to generate it with.
     ident: syn::Ident,
+
+    /// [`syn::Visibility`] of this [`EnumType`] to generate it with.
     visibility: syn::Visibility,
+
+    /// Rust types of all [GraphQL interface][1] implements to represent variants of this
+    /// [`EnumType`].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     variants: Vec<syn::Type>,
+
+    /// Name of the trait describing the [GraphQL interface][1] represented by this [`EnumType`].
     trait_ident: syn::Ident,
+
+    /// [`syn::Generics`] of the trait describing the [GraphQL interface][1] represented by this
+    /// [`EnumType`].
     trait_generics: syn::Generics,
+
+    /// Associated types of the trait describing the [GraphQL interface][1] represented by this
+    /// [`EnumType`].
     trait_types: Vec<(syn::Ident, syn::Generics)>,
+
+    /// Associated constants of the trait describing the [GraphQL interface][1] represented by this
+    /// [`EnumType`].
     trait_consts: Vec<(syn::Ident, syn::Type)>,
+
+    /// Methods of the trait describing the [GraphQL interface][1] represented by this [`EnumType`].
     trait_methods: Vec<syn::Signature>,
+
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation with for this
+    /// [`EnumType`].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
     scalar: ScalarValueType,
 }
 
 impl EnumType {
+    /// Constructs new [`EnumType`] out of the given parameters.
+    #[must_use]
     fn new(
         r#trait: &syn::ItemTrait,
         meta: &TraitMeta,
@@ -1607,14 +1639,25 @@ impl EnumType {
         }
     }
 
+    /// Returns name of a single variant of this [`EnumType`] by the given positional `num` in the
+    /// enum type definition.
+    #[must_use]
     fn variant_ident(num: usize) -> syn::Ident {
         format_ident!("Impl{}", num)
     }
 
+    /// Indicates whether this [`EnumType`] has non-exhaustive phantom variant to hold type
+    /// parameters.
+    #[must_use]
     fn has_phantom_variant(&self) -> bool {
         !self.trait_generics.params.is_empty()
     }
 
+    /// Returns generate code for dispatching non-exhaustive phantom variant of this [`EnumType`]
+    /// in `match` expressions.
+    ///
+    /// Returns [`None`] if this [`EnumType`] is exhaustive.
+    #[must_use]
     fn non_exhaustive_match_arm_tokens(&self) -> Option<TokenStream> {
         if self.has_phantom_variant() {
             Some(quote! { _ => unreachable!(), })
@@ -1623,6 +1666,11 @@ impl EnumType {
         }
     }
 
+    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and similar) implementation
+    /// for this [`EnumType`]
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    #[must_use]
     fn impl_generics(&self) -> syn::Generics {
         let mut generics = self.trait_generics.clone();
 
@@ -1640,6 +1688,11 @@ impl EnumType {
         generics
     }
 
+    /// Returns full type signature of the original trait describing the [GraphQL interface][1] for
+    /// this [`EnumType`].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    #[must_use]
     fn trait_ty(&self) -> syn::Type {
         let ty = &self.trait_ident;
         let (_, generics, _) = self.trait_generics.split_for_impl();
@@ -1647,6 +1700,8 @@ impl EnumType {
         parse_quote! { #ty#generics }
     }
 
+    /// Returns generated code of the full type signature of this [`EnumType`].
+    #[must_use]
     fn ty_tokens(&self) -> TokenStream {
         let ty = &self.ident;
         let (_, generics, _) = self.trait_generics.split_for_impl();
@@ -1654,6 +1709,11 @@ impl EnumType {
         quote! { #ty#generics }
     }
 
+    /// Returns generate code of the Rust type definitions of this [`EnumType`].
+    ///
+    /// If the [`EnumType::trait_generics`] are not empty, then they are contained in the generated
+    /// enum too.
+    #[must_use]
     fn type_definition_tokens(&self) -> TokenStream {
         let enum_ty = &self.ident;
         let generics = &self.trait_generics;
@@ -1708,6 +1768,9 @@ impl EnumType {
         }
     }
 
+    /// Returns generated code implementing [`From`] trait for this [`EnumType`] from its
+    /// [`EnumType::variants`].
+    #[must_use]
     fn impl_from_tokens(&self) -> impl Iterator<Item = TokenStream> + '_ {
         let enum_ty = &self.ident;
         let (impl_generics, generics, where_clause) = self.trait_generics.split_for_impl();
@@ -1726,6 +1789,11 @@ impl EnumType {
         })
     }
 
+    /// Returns generated code implementing the original trait describing the [GraphQL interface][1]
+    /// for this [`EnumType`].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    #[must_use]
     fn impl_trait_tokens(&self) -> TokenStream {
         let enum_ty = &self.ident;
 
@@ -1826,6 +1894,11 @@ impl EnumType {
         impl_tokens
     }
 
+    /// Returns generated code for the [`GraphQLValue::concrete_type_name`] method, which returns
+    /// name of the underlying [`Implementer`] GraphQL type contained in this [`EnumType`].
+    ///
+    /// [`GraphQLValue::concrete_type_name`]: juniper::GraphQLValue::concrete_type_name
+    #[must_use]
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
@@ -1848,6 +1921,11 @@ impl EnumType {
         }
     }
 
+    /// Returns generated code for the [`GraphQLValue::resolve_into_type`] method, which downcasts
+    /// this [`EnumType`] into its underlying [`Implementer`] type synchronously.
+    ///
+    /// [`GraphQLValue::resolve_into_type`]: juniper::GraphQLValue::resolve_into_type
+    #[must_use]
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         let resolving_code = gen::sync_resolving_code();
 
@@ -1868,6 +1946,11 @@ impl EnumType {
         }
     }
 
+    /// Returns generated code for the [`GraphQLValueAsync::resolve_into_type_async`][0] method,
+    /// which downcasts this [`EnumType`] into its underlying [`Implementer`] type asynchronously.
+    ///
+    /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
+    #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
         let resolving_code = gen::async_resolving_code(None);
 
