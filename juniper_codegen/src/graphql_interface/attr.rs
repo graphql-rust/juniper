@@ -16,9 +16,9 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, ArgumentMeta, Definition, EnumType, ImplMeta, ImplementerDefinition,
-    ImplementerDowncastDefinition, InterfaceFieldArgumentDefinition, InterfaceFieldDefinition,
-    MethodArgument, MethodMeta, TraitMeta, TraitObjectType, Type,
+    inject_async_trait, ArgumentMeta, Definition, EnumType, Field, FieldArgument, ImplMeta,
+    ImplementerDefinition, ImplementerDowncastDefinition, MethodArgument, MethodMeta, TraitMeta,
+    TraitObjectType, Type,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -333,7 +333,7 @@ pub fn expand_on_impl(
 }
 
 enum TraitMethod {
-    Field(InterfaceFieldDefinition),
+    Field(Field),
     Downcast(ImplementerDefinition),
 }
 
@@ -402,10 +402,7 @@ impl TraitMethod {
         })
     }
 
-    fn parse_field(
-        method: &mut syn::TraitItemMethod,
-        meta: MethodMeta,
-    ) -> Option<InterfaceFieldDefinition> {
+    fn parse_field(method: &mut syn::TraitItemMethod, meta: MethodMeta) -> Option<Field> {
         let method_ident = &method.sig.ident;
 
         let name = meta
@@ -463,7 +460,7 @@ impl TraitMethod {
             .as_ref()
             .map(|d| d.as_ref().as_ref().map(syn::LitStr::value));
 
-        Some(InterfaceFieldDefinition {
+        Some(Field {
             name,
             ty,
             description,
@@ -533,7 +530,7 @@ impl TraitMethod {
             return None;
         }
 
-        Some(MethodArgument::Regular(InterfaceFieldArgumentDefinition {
+        Some(MethodArgument::Regular(FieldArgument {
             name,
             ty: argument.ty.as_ref().clone(),
             description: meta.description.as_ref().map(|d| d.as_ref().value()),

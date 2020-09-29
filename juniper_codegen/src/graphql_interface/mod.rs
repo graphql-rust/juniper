@@ -534,13 +534,59 @@ impl MethodMeta {
     }
 }
 
+/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait method
+/// argument, when generating code for [GraphQL interface][1] type.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
 struct ArgumentMeta {
-    pub name: Option<SpanContainer<syn::LitStr>>,
-    pub description: Option<SpanContainer<syn::LitStr>>,
-    pub default: Option<SpanContainer<Option<syn::Expr>>>,
-    pub context: Option<SpanContainer<syn::Ident>>,
-    pub executor: Option<SpanContainer<syn::Ident>>,
+    /// Explicitly specified name of a [GraphQL argument][1] represented by this method argument.
+    ///
+    /// If absent, then `camelCased` Rust argument name is used by default.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    name: Option<SpanContainer<syn::LitStr>>,
+
+    /// Explicitly specified [description][2] of this [GraphQL argument][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
+    description: Option<SpanContainer<syn::LitStr>>,
+
+    /// Explicitly specified [default value][2] of this [GraphQL argument][1].
+    ///
+    /// If the exact default expression is not specified, then the [`Default::default`] value is
+    /// used.
+    ///
+    /// If absent, then this [GraphQL argument][1] is considered as [required][2].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/June2018/#sec-Required-Arguments
+    default: Option<SpanContainer<Option<syn::Expr>>>,
+
+    /// Explicitly specified marker indicating that this method argument doesn't represent a
+    /// [GraphQL argument][1], but is a [`Context`] being injected into a [GraphQL field][2]
+    /// resolving function.
+    ///
+    /// If absent, then the method argument still is considered as [`Context`] if it's named
+    /// `context` or `ctx`.
+    ///
+    /// [`Context`]: juniper::Context
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    context: Option<SpanContainer<syn::Ident>>,
+
+    /// Explicitly specified marker indicating that this method argument doesn't represent a
+    /// [GraphQL argument][1], but is a [`Executor`] being injected into a [GraphQL field][2]
+    /// resolving function.
+    ///
+    /// If absent, then the method argument still is considered as [`Context`] if it's named
+    /// `executor`.
+    ///
+    /// [`Executor`]: juniper::Executor
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    executor: Option<SpanContainer<syn::Ident>>,
 }
 
 impl Parse for ArgumentMeta {
@@ -624,7 +670,7 @@ impl ArgumentMeta {
 
     /// Parses [`ArgumentMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
     /// function argument.
-    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
@@ -659,22 +705,64 @@ impl ArgumentMeta {
     }
 }
 
-struct InterfaceFieldArgumentDefinition {
-    pub name: String,
-    pub ty: syn::Type,
-    pub description: Option<String>,
-    pub default: Option<Option<syn::Expr>>,
+/// Representation of [GraphQL interface][1] field [argument][2] for code generation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+#[derive(Debug)]
+struct FieldArgument {
+    /// Name of this [GraphQL field argument][2].
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    name: String,
+
+    /// Rust type that this [GraphQL field argument][2] is represented by.
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    ty: syn::Type,
+
+    /// [Description][1] of this [GraphQL field argument][2].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Descriptions
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    description: Option<String>,
+
+    /// Default value of this [GraphQL field argument][2].
+    ///
+    /// If outer [`Option`] is [`None`], then this [argument][2] is a [required][3] one.
+    ///
+    /// If inner [`Option`] is [`None`], then the [`Default::default`] value is used.
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [3]: https://spec.graphql.org/June2018/#sec-Required-Arguments
+    default: Option<Option<syn::Expr>>,
 }
 
+/// Possible kinds of Rust trait method arguments for code generation.
+#[derive(Debug)]
 enum MethodArgument {
-    Regular(InterfaceFieldArgumentDefinition),
+    /// Regular [GraphQL field argument][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    Regular(FieldArgument),
+
+    /// [`Context`] passed into a [GraphQL field][2] resolving method.
+    ///
+    /// [`Context`]: juniper::Context
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     Context(syn::Type),
+
+    /// [`Executor`] passed into a [GraphQL field][2] resolving method.
+    ///
+    /// [`Executor`]: juniper::Executor
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     Executor,
 }
 
 impl MethodArgument {
+    /// Returns this [`MethodArgument`] as a [`FieldArgument`], if it represents one.
     #[must_use]
-    pub fn as_regular(&self) -> Option<&InterfaceFieldArgumentDefinition> {
+    fn as_regular(&self) -> Option<&FieldArgument> {
         if let Self::Regular(arg) = self {
             Some(arg)
         } else {
@@ -682,6 +770,7 @@ impl MethodArgument {
         }
     }
 
+    /// Returns [`syn::Type`] of this [`MethodArgument::Context`], if it represents one.
     #[must_use]
     fn context_ty(&self) -> Option<&syn::Type> {
         if let Self::Context(ty) = self {
@@ -691,7 +780,13 @@ impl MethodArgument {
         }
     }
 
-    fn meta_method_tokens(&self) -> Option<TokenStream> {
+    /// Returns generated code for the [`GraphQLType::meta`] method, which registers this
+    /// [`MethodArgument`] in [`Registry`], if it represents a [`FieldArgument`].
+    ///
+    /// [`GraphQLType::meta`]: juniper::GraphQLType::meta
+    /// [`Registry`]: juniper::Registry
+    #[must_use]
+    fn method_meta_tokens(&self) -> Option<TokenStream> {
         let arg = self.as_regular()?;
 
         let (name, ty) = (&arg.name, &arg.ty);
@@ -714,7 +809,12 @@ impl MethodArgument {
         Some(quote! { .argument(registry#method#description) })
     }
 
-    fn resolve_field_method_tokens(&self) -> TokenStream {
+    /// Returns generated code for the [`GraphQLValue::resolve_field`] method, which provides the
+    /// value of this [`MethodArgument`] to be passed into a trait method call.
+    ///
+    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
+    #[must_use]
+    fn method_resolve_field_tokens(&self) -> TokenStream {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
@@ -737,18 +837,61 @@ impl MethodArgument {
     }
 }
 
-struct InterfaceFieldDefinition {
-    pub name: String,
-    pub ty: syn::Type,
-    pub description: Option<String>,
-    pub deprecated: Option<Option<String>>,
-    pub method: syn::Ident,
-    pub arguments: Vec<MethodArgument>,
-    pub is_async: bool,
+/// Representation of [GraphQL interface][1] [field][2] for code generation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+#[derive(Debug)]
+struct Field {
+    /// Name of this [GraphQL field][2].
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    name: String,
+
+    /// Rust type that this [GraphQL field][2] is represented by (method return type).
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    ty: syn::Type,
+
+    /// [Description][1] of this [GraphQL field][2].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Descriptions
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    description: Option<String>,
+
+    /// [Deprecation][1] of this [GraphQL field][2].
+    ///
+    /// If inner [`Option`] is [`None`], then deprecation has no message attached.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Deprecation
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    deprecated: Option<Option<String>>,
+
+    /// Name of Rust trait method representing this [GraphQL field][2].
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    method: syn::Ident,
+
+    /// Rust trait [`MethodArgument`]s required to call the trait method representing this
+    /// [GraphQL field][2].
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    arguments: Vec<MethodArgument>,
+
+    /// Indicator whether this [GraphQL field][2] should be resolved asynchronously.
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    is_async: bool,
 }
 
-impl InterfaceFieldDefinition {
-    fn meta_method_tokens(&self) -> TokenStream {
+impl Field {
+    /// Returns generated code for the [`GraphQLType::meta`] method, which registers this
+    /// [`Field`] in [`Registry`].
+    ///
+    /// [`GraphQLType::meta`]: juniper::GraphQLType::meta
+    /// [`Registry`]: juniper::Registry
+    #[must_use]
+    fn method_meta_tokens(&self) -> TokenStream {
         let (name, ty) = (&self.name, &self.ty);
 
         let description = self
@@ -767,7 +910,7 @@ impl InterfaceFieldDefinition {
         let arguments = self
             .arguments
             .iter()
-            .filter_map(MethodArgument::meta_method_tokens);
+            .filter_map(MethodArgument::method_meta_tokens);
 
         quote! {
             registry.field_convert::<#ty, _, Self::Context>(#name, info)
@@ -777,7 +920,14 @@ impl InterfaceFieldDefinition {
         }
     }
 
-    fn resolve_field_method_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
+    /// Returns generated code for the [`GraphQLValue::resolve_field`] method, which resolves this
+    /// [`Field`] synchronously.
+    ///
+    /// Returns [`None`] if this [`Field::is_async`].
+    ///
+    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
+    #[must_use]
+    fn method_resolve_field_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
         if self.is_async {
             return None;
         }
@@ -787,7 +937,7 @@ impl InterfaceFieldDefinition {
         let arguments = self
             .arguments
             .iter()
-            .map(MethodArgument::resolve_field_method_tokens);
+            .map(MethodArgument::method_resolve_field_tokens);
 
         let resolving_code = gen::sync_resolving_code();
 
@@ -799,13 +949,18 @@ impl InterfaceFieldDefinition {
         })
     }
 
-    fn resolve_field_async_method_tokens(&self, trait_ty: &syn::Type) -> TokenStream {
+    /// Returns generated code for the [`GraphQLValueAsync::resolve_field_async`] method, which
+    /// resolves this [`Field`] asynchronously.
+    ///
+    /// [`GraphQLValueAsync::resolve_field_async`]: juniper::GraphQLValueAsync::resolve_field_async
+    #[must_use]
+    fn method_resolve_field_async_tokens(&self, trait_ty: &syn::Type) -> TokenStream {
         let (name, ty, method) = (&self.name, &self.ty, &self.method);
 
         let arguments = self
             .arguments
             .iter()
-            .map(MethodArgument::resolve_field_method_tokens);
+            .map(MethodArgument::method_resolve_field_tokens);
 
         let mut fut = quote! { <Self as #trait_ty>::#method(self #( , #arguments )*) };
         if !self.is_async {
@@ -823,7 +978,7 @@ impl InterfaceFieldDefinition {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum ImplementerDowncastDefinition {
     Method {
         name: syn::Ident,
@@ -981,7 +1136,7 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     scalar: ScalarValueType,
 
-    fields: Vec<InterfaceFieldDefinition>,
+    fields: Vec<Field>,
 
     /// Implementers definitions of this [GraphQL interface][1].
     ///
@@ -1023,10 +1178,7 @@ impl Definition {
             a.cmp(&b)
         });
 
-        let fields_meta = self
-            .fields
-            .iter()
-            .map(InterfaceFieldDefinition::meta_method_tokens);
+        let fields_meta = self.fields.iter().map(Field::method_meta_tokens);
 
         quote! {
             #[automatically_derived]
@@ -1069,7 +1221,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .filter_map(|f| f.resolve_field_method_tokens(&trait_ty));
+            .filter_map(|f| f.method_resolve_field_tokens(&trait_ty));
         let async_fields_panic = {
             let names = self
                 .fields
@@ -1177,7 +1329,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.resolve_field_async_method_tokens(&trait_ty));
+            .map(|f| f.method_resolve_field_async_tokens(&trait_ty));
         let no_field_panic = self.no_field_panic_tokens();
 
         let custom_downcasts = self
