@@ -17,8 +17,7 @@ use crate::{
 
 use super::{
     inject_async_trait, ArgumentMeta, Definition, EnumType, Field, FieldArgument, ImplMeta,
-    ImplementerDefinition, ImplementerDowncastDefinition, MethodArgument, MethodMeta, TraitMeta,
-    TraitObjectType, Type,
+    Implementer, ImplementerDowncast, MethodArgument, MethodMeta, TraitMeta, TraitObjectType, Type,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -93,7 +92,7 @@ pub fn expand_on_trait(
     let mut implementers: Vec<_> = meta
         .implementers
         .iter()
-        .map(|ty| ImplementerDefinition {
+        .map(|ty| Implementer {
             ty: ty.as_ref().clone(),
             downcast: None,
             context_ty: None,
@@ -103,7 +102,7 @@ pub fn expand_on_trait(
     for (ty, downcast) in &meta.external_downcasts {
         match implementers.iter_mut().find(|i| &i.ty == ty) {
             Some(impler) => {
-                impler.downcast = Some(ImplementerDowncastDefinition::External {
+                impler.downcast = Some(ImplementerDowncast::External {
                     path: downcast.inner().clone(),
                 });
             }
@@ -334,7 +333,7 @@ pub fn expand_on_impl(
 
 enum TraitMethod {
     Field(Field),
-    Downcast(ImplementerDefinition),
+    Downcast(Implementer),
 }
 
 impl TraitMethod {
@@ -362,7 +361,7 @@ impl TraitMethod {
         Some(Self::Field(Self::parse_field(method, meta)?))
     }
 
-    fn parse_downcast(method: &mut syn::TraitItemMethod) -> Option<ImplementerDefinition> {
+    fn parse_downcast(method: &mut syn::TraitItemMethod) -> Option<Implementer> {
         let method_ident = &method.sig.ident;
 
         let ty = parse::downcaster::output_type(&method.sig.output)
@@ -389,12 +388,12 @@ impl TraitMethod {
             return None;
         }
 
-        let downcast = ImplementerDowncastDefinition::Method {
+        let downcast = ImplementerDowncast::Method {
             name: method_ident.clone(),
             with_context: context_ty.is_some(),
         };
 
-        Some(ImplementerDefinition {
+        Some(Implementer {
             ty,
             downcast: Some(downcast),
             context_ty,
@@ -592,11 +591,11 @@ fn err_only_implementer_downcast<S: Spanned>(span: &S) {
 
 fn err_duplicate_downcast(
     method: &syn::TraitItemMethod,
-    external: &ImplementerDowncastDefinition,
+    external: &ImplementerDowncast,
     impler_ty: &syn::Type,
 ) {
     let external = match external {
-        ImplementerDowncastDefinition::External { path } => path,
+        ImplementerDowncast::External { path } => path,
         _ => unreachable!(),
     };
 
