@@ -1,0 +1,28 @@
+use juniper::{graphql_interface, GraphQLObject};
+
+#[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue)]
+pub struct ObjA {
+    test: String,
+}
+
+#[graphql_interface]
+impl Character for ObjA {
+    fn as_obja(&self) -> Option<&ObjA> {
+        Some(self)
+    }
+}
+
+#[graphql_interface(for = ObjA)]
+#[graphql_interface(on ObjA = downcast_obja)]
+trait Character {
+    fn id(&self, __num: i32) -> &str {
+        "funA"
+    }
+
+    #[graphql_interface(downcast)]
+    fn as_obja(&self) -> Option<&ObjA>;
+}
+
+fn main() {}
+
