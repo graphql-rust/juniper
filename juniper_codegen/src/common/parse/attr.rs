@@ -12,7 +12,7 @@ use crate::util::path_eq_single;
 /// This function is generally used for uniting `proc_macro_attribute` with its body attributes.
 pub(crate) fn unite(
     (attr_path, attr_args): (&str, &TokenStream),
-    attrs: &Vec<syn::Attribute>,
+    attrs: &[syn::Attribute],
 ) -> Vec<syn::Attribute> {
     let mut full_attrs = Vec::with_capacity(attrs.len() + 1);
     let attr_path = syn::Ident::new(attr_path, Span::call_site());
@@ -28,13 +28,7 @@ pub(crate) fn unite(
 pub(crate) fn strip(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
     attrs
         .into_iter()
-        .filter_map(|attr| {
-            if path_eq_single(&attr.path, attr_path) {
-                None
-            } else {
-                Some(attr)
-            }
-        })
+        .filter(|attr| !path_eq_single(&attr.path, attr_path))
         .collect()
 }
 

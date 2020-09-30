@@ -167,24 +167,25 @@ pub fn expand_on_trait(
                 _ => None,
             })
             .is_some();
-    let has_default_async_methods = ast
-        .items
-        .iter()
-        .find(|item| match item {
-            syn::TraitItem::Method(m) => m.sig.asyncness.and(m.default.as_ref()).is_some(),
-            _ => false,
-        })
-        .is_some();
+    let has_default_async_methods = ast.items.iter().any(|item| match item {
+        syn::TraitItem::Method(m) => m.sig.asyncness.and(m.default.as_ref()).is_some(),
+        _ => false,
+    });
 
     let ty = if is_trait_object {
-        Type::TraitObject(TraitObjectType::new(
+        Type::TraitObject(Box::new(TraitObjectType::new(
             &ast,
             &meta,
             scalar.clone(),
             context.clone(),
-        ))
+        )))
     } else {
-        Type::Enum(EnumType::new(&ast, &meta, &implementers, scalar.clone()))
+        Type::Enum(Box::new(EnumType::new(
+            &ast,
+            &meta,
+            &implementers,
+            scalar.clone(),
+        )))
     };
 
     let generated_code = Definition {
@@ -342,7 +343,7 @@ enum TraitMethod {
     /// [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    Downcast(Implementer),
+    Downcast(Box<Implementer>),
 }
 
 impl TraitMethod {
@@ -369,7 +370,7 @@ impl TraitMethod {
         }
 
         if meta.downcast.is_some() {
-            return Some(Self::Downcast(Self::parse_downcast(method)?));
+            return Some(Self::Downcast(Box::new(Self::parse_downcast(method)?)));
         }
 
         Some(Self::Field(Self::parse_field(method, meta)?))
@@ -448,7 +449,7 @@ impl TraitMethod {
             let mut args_iter = method.sig.inputs.iter_mut();
             match args_iter.next().unwrap() {
                 syn::FnArg::Receiver(rcv) => {
-                    if !rcv.reference.is_some() || rcv.mutability.is_some() {
+                    if rcv.reference.is_none() || rcv.mutability.is_some() {
                         return err_invalid_method_receiver(rcv);
                     }
                 }
@@ -591,7 +592,8 @@ fn err_disallowed_attr<T, S: Spanned>(span: &S, arg: &str) -> Option<T> {
         ),
     )
     .emit();
-    return None;
+
+    None
 }
 
 /// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given `span`.
@@ -602,7 +604,8 @@ fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
         "trait method receiver can only be a shared reference `&self`",
     )
     .emit();
-    return None;
+
+    None
 }
 
 /// Emits "no trait method receiver" [`syn::Error`] pointing to the given `span`.
@@ -613,7 +616,8 @@ fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
         "trait method should have a shared reference receiver `&self`",
     )
     .emit();
-    return None;
+
+    None
 }
 
 /// Emits "non-implementer downcast target" [`syn::Error`] pointing to the given `span`.

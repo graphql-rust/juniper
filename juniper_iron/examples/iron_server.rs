@@ -8,7 +8,7 @@ use std::env;
 
 use iron::prelude::*;
 use juniper::{
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription,
 };
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};

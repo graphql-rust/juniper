@@ -1464,9 +1464,7 @@ impl Implementer {
     /// [`GraphQLValue::concrete_type_name`]: juniper::GraphQLValue::concrete_type_name
     #[must_use]
     fn method_concrete_type_name_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
-        if self.downcast.is_none() {
-            return None;
-        }
+        self.downcast.as_ref()?;
 
         let ty = &self.ty;
         let scalar = &self.scalar;
@@ -1492,9 +1490,7 @@ impl Implementer {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn method_resolve_into_type_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
-        if self.downcast.is_none() {
-            return None;
-        }
+        self.downcast.as_ref()?;
 
         let ty = &self.ty;
         let scalar = &self.scalar;
@@ -1520,9 +1516,7 @@ impl Implementer {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
-        if self.downcast.is_none() {
-            return None;
-        }
+        self.downcast.as_ref()?;
 
         let ty = &self.ty;
         let scalar = &self.scalar;
@@ -1596,7 +1590,7 @@ impl EnumType {
     fn new(
         r#trait: &syn::ItemTrait,
         meta: &TraitMeta,
-        implers: &Vec<Implementer>,
+        implers: &[Implementer],
         scalar: ScalarValueType,
     ) -> Self {
         Self {
@@ -1778,7 +1772,6 @@ impl EnumType {
 
     /// Returns generated code implementing [`From`] trait for this [`EnumType`] from its
     /// [`EnumType::variants`].
-    #[must_use]
     fn impl_from_tokens(&self) -> impl Iterator<Item = TokenStream> + '_ {
         let enum_ty = &self.ident;
         let (impl_generics, generics, where_clause) = self.trait_generics.split_for_impl();
@@ -1878,12 +1871,7 @@ impl EnumType {
             }
         };
 
-        if self
-            .trait_methods
-            .iter()
-            .find(|sig| sig.asyncness.is_some())
-            .is_some()
-        {
+        if self.trait_methods.iter().any(|sig| sig.asyncness.is_some()) {
             let mut ast: syn::ItemImpl = parse_quote! { #impl_tokens };
             inject_async_trait(
                 &mut ast.attrs,
@@ -2209,13 +2197,13 @@ enum Type {
     /// [GraphQL interface][1] type implementation as Rust enum.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    Enum(EnumType),
+    Enum(Box<EnumType>),
 
     /// [GraphQL interface][1] type implementation as Rust [trait object][2].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
-    TraitObject(TraitObjectType),
+    TraitObject(Box<TraitObjectType>),
 }
 
 impl Type {
