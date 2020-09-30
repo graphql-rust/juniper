@@ -331,12 +331,26 @@ pub fn expand_on_impl(
     Ok(quote! { #ast })
 }
 
+/// Representation of parsed Rust trait method for `#[graphql_interface]` macro code generation.
 enum TraitMethod {
+    /// Method represents a [`Field`] of [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     Field(Field),
+
+    /// Method represents a custom downcasting function into the [`Implementer`] of
+    /// [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     Downcast(Implementer),
 }
 
 impl TraitMethod {
+    /// Parses this [`TraitMethod`] from the given trait method definition.
+    ///
+    /// Returns [`None`] if the trait method marked with `#[graphql_interface(ignore)]` attribute,
+    /// or parsing fails.
+    #[must_use]
     fn parse(method: &mut syn::TraitItemMethod) -> Option<Self> {
         let method_attrs = method.attrs.clone();
 
@@ -361,6 +375,10 @@ impl TraitMethod {
         Some(Self::Field(Self::parse_field(method, meta)?))
     }
 
+    /// Parses [`TraitMethod::Downcast`] from the given trait method definition.
+    ///
+    /// Returns [`None`] if parsing fails.
+    #[must_use]
     fn parse_downcast(method: &mut syn::TraitItemMethod) -> Option<Implementer> {
         let method_ident = &method.sig.ident;
 
@@ -401,6 +419,10 @@ impl TraitMethod {
         })
     }
 
+    /// Parses [`TraitMethod::Field`] from the given trait method definition.
+    ///
+    /// Returns [`None`] if parsing fails.
+    #[must_use]
     fn parse_field(method: &mut syn::TraitItemMethod, meta: MethodMeta) -> Option<Field> {
         let method_ident = &method.sig.ident;
 
@@ -470,6 +492,10 @@ impl TraitMethod {
         })
     }
 
+    /// Parses [`MethodArgument`] from the given trait method argument definition.
+    ///
+    /// Returns [`None`] if parsing fails.
+    #[must_use]
     fn parse_field_argument(argument: &mut syn::PatType) -> Option<MethodArgument> {
         let argument_attrs = argument.attrs.clone();
 
@@ -538,6 +564,9 @@ impl TraitMethod {
     }
 }
 
+/// Checks whether the given [`ArgumentMeta`] doesn't contain arguments related to
+/// [`FieldArgument`].
+#[must_use]
 fn ensure_no_regular_field_argument_meta(meta: &ArgumentMeta) -> Option<()> {
     if let Some(span) = &meta.name {
         return err_disallowed_attr(&span, "name");
@@ -551,18 +580,22 @@ fn ensure_no_regular_field_argument_meta(meta: &ArgumentMeta) -> Option<()> {
     Some(())
 }
 
-fn err_disallowed_attr<T, S: Spanned>(span: &S, attr: &str) -> Option<T> {
+/// Emits "argument is not allowed" [`syn::Error`] for the given `arg` pointing to the given `span`.
+#[must_use]
+fn err_disallowed_attr<T, S: Spanned>(span: &S, arg: &str) -> Option<T> {
     ERR.custom(
         span.span(),
         format!(
-            "attribute `#[graphql_interface({} = ...)]` is not allowed here",
-            attr,
+            "attribute argument `#[graphql_interface({} = ...)]` is not allowed here",
+            arg,
         ),
     )
     .emit();
     return None;
 }
 
+/// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given `span`.
+#[must_use]
 fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.custom(
         span.span(),
@@ -572,6 +605,8 @@ fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     return None;
 }
 
+/// Emits "no trait method receiver" [`syn::Error`] pointing to the given `span`.
+#[must_use]
 fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.custom(
         span.span(),
@@ -581,6 +616,7 @@ fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     return None;
 }
 
+/// Emits "non-implementer downcast target" [`syn::Error`] pointing to the given `span`.
 fn err_only_implementer_downcast<S: Spanned>(span: &S) {
     ERR.custom(
         span.span(),
@@ -589,6 +625,8 @@ fn err_only_implementer_downcast<S: Spanned>(span: &S) {
     .emit();
 }
 
+/// Emits "duplicate downcast" [`syn::Error`] for the given `method` and `external`
+/// [`ImplementerDowncast`] function.
 fn err_duplicate_downcast(
     method: &syn::TraitItemMethod,
     external: &ImplementerDowncast,
@@ -602,16 +640,16 @@ fn err_duplicate_downcast(
     ERR.custom(
         method.span(),
         format!(
-            "trait method `{}` conflicts with the external downcast function `{}` declared \
-             on the trait to downcast into the implementer type `{}`",
+            "trait method `{}` conflicts with the external downcast function `{}` declared on the \
+             trait to downcast into the implementer type `{}`",
             method.sig.ident,
             external.to_token_stream(),
             impler_ty.to_token_stream(),
         ),
     )
     .note(String::from(
-        "use `#[graphql_interface(ignore)]` attribute to ignore this trait method for interface \
-         implementers downcasting",
+        "use `#[graphql_interface(ignore)]` attribute argument to ignore this trait method for \
+         interface implementers downcasting",
     ))
     .emit()
 }
