@@ -4,7 +4,7 @@ use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 
 use juniper::{
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Character as _, Database, Query},
     DefaultScalarValue, EmptyMutation, FieldError, RootNode,
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
@@ -76,11 +76,11 @@ impl Subscription {
                 ))
             } else {
                 let random_id = rng.gen_range(1000, 1005).to_string();
-                let human = context.get_human(&random_id).unwrap();
+                let human = context.get_human(&random_id).unwrap().clone();
 
                 Ok(RandomHuman {
                     id: human.id().to_owned(),
-                    name: human.name().to_owned(),
+                    name: human.name().unwrap().to_owned(),
                 })
             }
         });
