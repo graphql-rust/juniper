@@ -1,0 +1,20 @@
+error: GraphQL interface trait method `as_obja` conflicts with the external downcast function `downcast_obja` declared on the trait to downcast into the implementer type `ObjA`
+  --> $DIR/downcast_method_conflicts_with_external_downcast_fn.rs:24:5
+   |
+24 |     fn as_obja(&self) -> Option<&ObjA>;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: https://spec.graphql.org/June2018/#sec-Interfaces
+   = note: use `#[graphql_interface(ignore)]` attribute argument to ignore this trait method for interface implementers downcasting
+
+error[E0412]: cannot find type `CharacterValue` in this scope
+ --> $DIR/downcast_method_conflicts_with_external_downcast_fn.rs:4:18
+  |
+4 | #[graphql(impl = CharacterValue)]
+  |                  ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0405]: cannot find trait `Character` in this scope
+  --> $DIR/downcast_method_conflicts_with_external_downcast_fn.rs:10:6
+   |
+10 | impl Character for ObjA {
+   |      ^^^^^^^^^ not found in this scope

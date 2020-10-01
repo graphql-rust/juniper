@@ -1,0 +1,8 @@
+error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
+  --> $DIR/field_non_output_return_type.rs:17:1
+   |
+17 | #[graphql_interface(for = ObjA)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
+   |
+   = note: required by `juniper::marker::IsOutputType::mark`
+   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
