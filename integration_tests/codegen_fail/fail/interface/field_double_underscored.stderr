@@ -1,16 +1,19 @@
-error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
-  --> $DIR/attr_non_input_object_argument.rs:16:1
+error: All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.
+  --> $DIR/field_double_underscored.rs:14:8
    |
-16 | #[graphql_interface(for = ObjA)]
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
+14 |     fn __id(&self) -> &str {
+   |        ^^^^
    |
-   = note: required by `juniper::marker::IsInputType::mark`
-   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: https://spec.graphql.org/June2018/#sec-Schema
 
-error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
-  --> $DIR/attr_non_input_object_argument.rs:16:1
+error[E0412]: cannot find type `CharacterValue` in this scope
+ --> $DIR/field_double_underscored.rs:4:18
+  |
+4 | #[graphql(impl = CharacterValue)]
+  |                  ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0405]: cannot find trait `Character` in this scope
+  --> $DIR/field_double_underscored.rs:10:6
    |
-16 | #[graphql_interface(for = ObjA)]
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
-   |
-   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+10 | impl Character for ObjA {}
+   |      ^^^^^^^^^ not found in this scope

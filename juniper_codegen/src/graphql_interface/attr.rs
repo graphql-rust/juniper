@@ -52,6 +52,7 @@ pub fn expand_on_trait(
     let meta = TraitMeta::from_attrs("graphql_interface", &attrs)?;
 
     let trait_ident = &ast.ident;
+    let trait_span = ast.span();
 
     let name = meta
         .name
@@ -133,6 +134,16 @@ pub fn expand_on_trait(
                 _ => {}
             }
         }
+    }
+
+    proc_macro_error::abort_if_dirty();
+
+    if fields.is_empty() {
+        ERR.emit_custom(trait_span, "must have at least one field");
+    }
+
+    if !all_fields_different(&fields) {
+        ERR.emit_custom(trait_span, "must have a different name for each field");
     }
 
     proc_macro_error::abort_if_dirty();
@@ -656,4 +667,13 @@ fn err_duplicate_downcast(
          interface implementers downcasting",
     ))
     .emit()
+}
+
+/// Checks whether all [GraphQL interface][1] fields have different names.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+fn all_fields_different(fields: &[Field]) -> bool {
+    let mut names: Vec<_> = fields.iter().map(|f| &f.name).collect();
+    names.dedup();
+    names.len() == fields.len()
 }

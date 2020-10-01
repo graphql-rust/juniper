@@ -8,6 +8,10 @@ pub struct ObjA {
 
 #[graphql_interface]
 impl Character for ObjA {
+    fn id(&self, _: i32) -> &str {
+        "funA"
+    }
+
     fn as_obja(&self) -> Option<&ObjA> {
         Some(self)
     }
@@ -16,13 +20,10 @@ impl Character for ObjA {
 #[graphql_interface(for = ObjA)]
 #[graphql_interface(on ObjA = downcast_obja)]
 trait Character {
-    fn id(&self, __num: i32) -> &str {
-        "funA"
-    }
+    fn id(&self, num: i32) -> &str;
 
     #[graphql_interface(downcast)]
     fn as_obja(&self) -> Option<&ObjA>;
 }
 
 fn main() {}
-

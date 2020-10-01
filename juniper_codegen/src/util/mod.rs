@@ -224,11 +224,18 @@ fn get_doc_attr(attrs: &[Attribute]) -> Option<Vec<MetaNameValue>> {
 pub fn to_camel_case(s: &str) -> String {
     let mut dest = String::new();
 
-    // handle '_' to be more friendly with the
-    // _var convention for unused variables
-    let s_iter = if s.starts_with('_') { &s[1..] } else { s }
-        .split('_')
-        .enumerate();
+    // Handle `_` and `__` to be more friendly with the `_var` convention for unused variables, and
+    // GraphQL introspection identifiers.
+    let s_iter = if s.starts_with("__") {
+        dest.push_str("__");
+        &s[2..]
+    } else if s.starts_with('_') {
+        &s[1..]
+    } else {
+        s
+    }
+    .split('_')
+    .enumerate();
 
     for (i, part) in s_iter {
         if i > 0 && part.len() == 1 {
@@ -1935,6 +1942,7 @@ mod test {
     fn test_to_camel_case() {
         assert_eq!(&to_camel_case("test")[..], "test");
         assert_eq!(&to_camel_case("_test")[..], "test");
+        assert_eq!(&to_camel_case("__test")[..], "__test");
         assert_eq!(&to_camel_case("first_second")[..], "firstSecond");
         assert_eq!(&to_camel_case("first_")[..], "first");
         assert_eq!(&to_camel_case("a_b_c")[..], "aBC");

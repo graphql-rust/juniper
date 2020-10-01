@@ -1,7 +1,7 @@
 error: GraphQL interface trait method `as_obja` conflicts with the external downcast function `downcast_obja` declared on the trait to downcast into the implementer type `ObjA`
-  --> $DIR/downcast_method_conflicts_with_external_downcast_fn.rs:24:5
+  --> $DIR/downcast_method_conflicts_with_external_downcast_fn.rs:26:5
    |
-24 |     fn as_obja(&self) -> Option<&ObjA>;
+26 |     fn as_obja(&self) -> Option<&ObjA>;
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: https://spec.graphql.org/June2018/#sec-Interfaces
