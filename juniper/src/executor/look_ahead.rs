@@ -330,10 +330,13 @@ pub struct ConcreteLookAheadSelection<'a, S: 'a> {
     children: Vec<ConcreteLookAheadSelection<'a, S>>,
 }
 
-/// A set of common methods for `ConcreteLookAheadSelection` and `LookAheadSelection`
-pub trait LookAheadMethods<S> {
+/// Set of common methods for `ConcreteLookAheadSelection` and `LookAheadSelection`.
+///
+/// `'sel` lifetime is intended to point to the data that this `LookAheadSelection` (or
+/// `ConcreteLookAheadSelection`) points to.
+pub trait LookAheadMethods<'sel, S> {
     /// Get the (potentially aliased) name of the field represented by the current selection
-    fn field_name(&self) -> &str;
+    fn field_name(&self) -> &'sel str;
 
     /// Get the the child selection for a given field
     /// If a child has an alias, it will only match if the alias matches `name`
@@ -364,14 +367,14 @@ pub trait LookAheadMethods<S> {
 
     /// Get the (possibly aliased) names of the top level children for the current selection
     #[deprecated(note = "please use `children` to access the child selections instead")]
-    fn child_names(&self) -> Vec<&str>;
+    fn child_names(&self) -> Vec<&'sel str>;
 
     /// Get an iterator over the children for the current selection
     fn children(&self) -> Vec<&Self>;
 }
 
-impl<'a, S> LookAheadMethods<S> for ConcreteLookAheadSelection<'a, S> {
-    fn field_name(&self) -> &str {
+impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
+    fn field_name(&self) -> &'a str {
         self.alias.unwrap_or(self.name)
     }
 
@@ -383,7 +386,7 @@ impl<'a, S> LookAheadMethods<S> for ConcreteLookAheadSelection<'a, S> {
         &self.arguments
     }
 
-    fn child_names(&self) -> Vec<&str> {
+    fn child_names(&self) -> Vec<&'a str> {
         self.children.iter().map(|c| c.field_name()).collect()
     }
 
@@ -400,8 +403,8 @@ impl<'a, S> LookAheadMethods<S> for ConcreteLookAheadSelection<'a, S> {
     }
 }
 
-impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
-    fn field_name(&self) -> &str {
+impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
+    fn field_name(&self) -> &'a str {
         self.alias.unwrap_or(self.name)
     }
 
@@ -416,7 +419,7 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
         &self.arguments
     }
 
-    fn child_names(&self) -> Vec<&str> {
+    fn child_names(&self) -> Vec<&'a str> {
         self.children.iter().map(|c| c.inner.field_name()).collect()
     }
 
