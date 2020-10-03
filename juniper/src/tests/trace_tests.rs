@@ -8,7 +8,7 @@ use crate::{
 };
 
 // TODO: waiting for https://github.com/tokio-rs/tracing/pull/793
-// TODO: async tests waiting for https://github.com/tokio-rs/tracing/pull/808
+// TODO: async tests
 // TODO: tracing feature needs to be enable when testing
 // cargo test --features tracing
 #[test]
