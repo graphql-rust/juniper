@@ -168,7 +168,7 @@ use crate::{
 };
 
 pub use crate::{
-    ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
+    ast::{Document, FromInputValue, InputValue, Operation, Selection, ToInputValue, Type},
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
@@ -228,6 +228,90 @@ impl<'a> fmt::Display for GraphQLError<'a> {
 
 impl<'a> std::error::Error for GraphQLError<'a> {}
 
+pub fn parse<'a, S, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+) -> Result<Document<'a, S>, Spanning<ParseError<'a>>>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+{
+    parse_document_source(document_source, &root_node.schema)
+}
+
+pub struct ValidDocument<'a, S, QueryT, MutationT, SubscriptionT>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+{
+    document: &'a Document<'a, S>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    variables: Variables<S>,
+    operation: &'a Spanning<Operation<'a, S>>,
+}
+
+pub fn validate<'a, 'e, S, QueryT, MutationT, SubscriptionT>(
+    document: &'a Document<'a, S>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    operation_name: Option<&str>,
+    variables: Variables<S>,
+) -> Result<ValidDocument<'a, S, QueryT, MutationT, SubscriptionT>, GraphQLError<'e>>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+{
+    let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+    visit_all_rules(&mut ctx, &document);
+
+    let errors = ctx.into_errors();
+    if !errors.is_empty() {
+        return Err(GraphQLError::ValidationError(errors));
+    }
+
+    let operation = get_operation(&document, operation_name)?;
+
+    {
+        let errors = validate_input_values(&variables, operation, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    let doc = ValidDocument {
+        document,
+        root_node,
+        variables,
+        operation,
+    };
+    Ok(doc)
+}
+
+pub fn execute_valid_sync<'a, S, QueryT, MutationT, SubscriptionT>(
+    doc: &'a ValidDocument<'a, S, QueryT, MutationT, SubscriptionT>,
+    context: &QueryT::Context,
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+{
+    execute_validated_query(
+        &doc.document,
+        &doc.operation,
+        &doc.root_node,
+        &doc.variables,
+        context,
+    )
+}
+
 /// Execute a query synchronously in a provided schema
 pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
@@ -242,29 +326,15 @@ where
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
-    let document = parse_document_source(document_source, &root_node.schema)?;
-
-    {
-        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-        visit_all_rules(&mut ctx, &document);
-
-        let errors = ctx.into_errors();
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
-
-    let operation = get_operation(&document, operation_name)?;
-
-    {
-        let errors = validate_input_values(variables, operation, &root_node.schema);
-
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
-
-    execute_validated_query(&document, operation, root_node, variables, context)
+    let doc: Document<'a, S> = parse(&document_source, &root_node)?;
+    let valid_doc = validate(&doc, &root_node, operation_name, variables.to_owned())?;
+    execute_validated_query(
+        &valid_doc.document,
+        &valid_doc.operation,
+        valid_doc.root_node,
+        &valid_doc.variables,
+        context,
+    )
 }
 
 /// Execute a query in a provided schema
@@ -285,30 +355,16 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let document = parse_document_source(document_source, &root_node.schema)?;
-
-    {
-        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-        visit_all_rules(&mut ctx, &document);
-
-        let errors = ctx.into_errors();
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
-
-    let operation = get_operation(&document, operation_name)?;
-
-    {
-        let errors = validate_input_values(variables, operation, &root_node.schema);
-
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
-
-    executor::execute_validated_query_async(&document, operation, root_node, variables, context)
-        .await
+    let doc: Document<'a, S> = parse(&document_source, &root_node)?;
+    let valid_doc = validate(&doc, &root_node, operation_name, variables.to_owned())?;
+    executor::execute_validated_query_async(
+        &valid_doc.document,
+        &valid_doc.operation,
+        valid_doc.root_node,
+        &valid_doc.variables,
+        context,
+    )
+    .await
 }
 
 /// Resolve subscription into `ValuesStream`
@@ -329,31 +385,17 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let document: crate::ast::Document<'a, S> =
-        parse_document_source(document_source, &root_node.schema)?;
-
-    {
-        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-        visit_all_rules(&mut ctx, &document);
-
-        let errors = ctx.into_errors();
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
-
-    let operation = get_operation(&document, operation_name)?;
-
-    {
-        let errors = validate_input_values(&variables, operation, &root_node.schema);
-
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
-
-    executor::resolve_validated_subscription(&document, operation, root_node, variables, context)
-        .await
+    let doc: Document<'a, S> = parse(&document_source, &root_node)?;
+    let valid_doc: ValidDocument<'a, S, QueryT, MutationT, SubscriptionT> =
+        validate(&doc, &root_node, operation_name, variables.to_owned())?;
+    executor::resolve_validated_subscription(
+        &valid_doc.document,
+        &valid_doc.operation,
+        valid_doc.root_node,
+        &valid_doc.variables,
+        context,
+    )
+    .await
 }
 
 /// Execute the reference introspection query in the provided schema
