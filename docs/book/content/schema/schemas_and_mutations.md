@@ -22,6 +22,7 @@ The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the `graphql_object` proc macro:
 
 ```rust
+# #![allow(unused_variables)]
 # extern crate juniper;
 # use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
@@ -44,6 +45,7 @@ Mutations are _also_ just GraphQL objects. Each mutation is a single field
 that performs some mutating side-effect such as updating a database.
 
 ```rust
+# #![allow(unused_variables)]
 # extern crate juniper;
 # use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }

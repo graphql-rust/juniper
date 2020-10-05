@@ -26,6 +26,7 @@ types to a GraphQL schema. The most important one is the
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
 ```rust
+# #![allow(unused_variables)]
 # extern crate juniper;
 use juniper::{FieldResult, EmptySubscription};
 
