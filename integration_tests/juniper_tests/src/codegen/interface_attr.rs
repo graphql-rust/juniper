@@ -18,6 +18,97 @@ where
     )
 }
 
+mod no_implers {
+    use super::*;
+
+    #[graphql_interface]
+    trait Character {
+        fn id(&self) -> &str;
+    }
+
+    #[graphql_interface(dyn = DynHero)]
+    trait Hero {
+        fn info(&self) -> &str;
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
+            unimplemented!()
+        }
+
+        fn hero(&self) -> Box<DynHero<'_>> {
+            unimplemented!()
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_interface() {
+        let schema = schema(QueryRoot);
+
+        for interface in &["Character", "Hero"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        kind
+                    }}
+                }}"#,
+                interface,
+            );
+
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn uses_trait_name() {
+        let schema = schema(QueryRoot);
+
+        for interface in &["Character", "Hero"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        name
+                    }}
+                }}"#,
+                interface,
+            );
+
+            let expected_name: &str = *interface;
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"__type": {"name": expected_name}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        let schema = schema(QueryRoot);
+
+        for interface in &["Character", "Hero"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        description
+                    }}
+                }}"#,
+                interface,
+            );
+
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            );
+        }
+    }
+}
+
 mod trivial {
     use super::*;
 

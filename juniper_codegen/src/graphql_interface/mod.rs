@@ -1661,7 +1661,7 @@ impl EnumType {
     /// Returns [`None`] if this [`EnumType`] is exhaustive.
     #[must_use]
     fn non_exhaustive_match_arm_tokens(&self) -> Option<TokenStream> {
-        if self.has_phantom_variant() {
+        if self.has_phantom_variant() || self.variants.is_empty() {
             Some(quote! { _ => unreachable!(), })
         } else {
             None
@@ -1801,7 +1801,7 @@ impl EnumType {
         let trait_ident = &self.trait_ident;
         let (impl_generics, generics, where_clause) = self.trait_generics.split_for_impl();
 
-        let var_ty = self.variants.first().unwrap();
+        let var_ty = self.variants.first();
 
         let assoc_types = self.trait_types.iter().map(|(ty, ty_gen)| {
             quote! {
