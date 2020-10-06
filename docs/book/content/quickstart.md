@@ -115,7 +115,7 @@ struct Mutation;
 impl Mutation {
 
     fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human> {
-        let db = executor.context().pool.get_connection()?;
+        let db = context.pool.get_connection()?;
         let human: Human = db.insert_human(&new_human)?;
         Ok(human)
     }
