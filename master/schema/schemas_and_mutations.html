@@ -151,7 +151,8 @@ object somewhere but never reference it, it will not be exposed in a schema.</p>
 <a class="header" href="#the-query-root" id="the-query-root"><h2>The query root</h2></a>
 <p>The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the <code>graphql_object</code> proc macro:</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
+# extern crate juniper;
 # use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
@@ -169,7 +170,8 @@ impl Root {
 <a class="header" href="#mutations" id="mutations"><h2>Mutations</h2></a>
 <p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field
 that performs some mutating side-effect such as updating a database.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
+# extern crate juniper;
 # use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;

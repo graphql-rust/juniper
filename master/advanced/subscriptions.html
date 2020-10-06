@@ -199,7 +199,8 @@ and shutdown logic.</p>
 <p>While you can implement [<code>SubscriptionCoordinator</code>][SubscriptionCoordinator] yourself, Juniper contains a simple and generic implementation called [<code>Coordinator</code>][Coordinator].  The <code>subscribe</code>
 operation returns a [<code>Future</code>][Future] with an <code>Item</code> value of a <code>Result&lt;Connection, GraphQLError&gt;</code>,
 where [<code>Connection</code>][Connection] is a <code>Stream</code> of values returned by the operation and [<code>GraphQLError</code>][GraphQLError] is the error when the subscription fails.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate futures;
+<pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
+# extern crate futures;
 # extern crate juniper;
 # extern crate juniper_subscriptions;
 # extern crate serde_json;
@@ -209,8 +210,6 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # use juniper_subscriptions::Coordinator;
 # use futures::{Stream, StreamExt};
 # use std::pin::Pin;
-# use tokio::runtime::Runtime;
-# use tokio::task;
 # 
 # #[derive(Clone)]
 # pub struct Database;
