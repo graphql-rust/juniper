@@ -1,9 +1,9 @@
 Interfaces
 ==========
 
-[GraphQL interfaces][1] map well to interfaces known from common object-oriented languages such as Java or C#, but Rust, unfortunately, has no concept that maps perfectly to them. The nearest analogue of [GraphQL interfaces][1] are Rust traits, and the main difference is that in GraphQL [interface type][1] serves both as an _abstraction_ and a _boxed value (downcastable to concrete implementers)_, while in Rust, a trait is an _abstraction only_ and _to represent such a boxed value a separate type is required_, like enum or trait object, because Rust trait does not represent a type itself, and so can have no values. This difference imposes some unintuitive and non-obvious corner cases when we try to express [GraphQL interfaces][1] in Rust, but on the other hand gives you full control over which type is backing your interface, and how it's resolved.
+[GraphQL interfaces][1] map well to interfaces known from common object-oriented languages such as Java or C#, but Rust, unfortunately, has no concept that maps perfectly to them. The nearest analogue of [GraphQL interfaces][1] are Rust traits, and the main difference is that in GraphQL an [interface type][1] serves both as an _abstraction_ and a _boxed value (downcastable to concrete implementers)_, while in Rust, a trait is an _abstraction only_ and _to represent such a boxed value a separate type is required_, like enum or trait object, because Rust trait doesn't represent a type itself, and so can have no values. This difference imposes some unintuitive and non-obvious corner cases when we try to express [GraphQL interfaces][1] in Rust, but on the other hand gives you full control over which type is backing your interface, and how it's resolved.
 
-For implementing [GraphQL interfaces][1] Juniper provides `#[graphql_interface]` macro.
+For implementing [GraphQL interfaces][1] Juniper provides the `#[graphql_interface]` macro.
 
 
 
@@ -35,7 +35,7 @@ By default, Juniper generates an enum representing the values of the defined [Gr
 # extern crate juniper;
 use juniper::{graphql_interface, GraphQLObject};
 
-#[graphql_interface(for = Human)] // enumerating all implementers is mandatory 
+#[graphql_interface(for = [Human, Droid])] // enumerating all implementers is mandatory 
 trait Character {
     fn id(&self) -> &str;
 }
@@ -51,7 +51,19 @@ impl Character for Human {
         &self.id
     }
 }
-#
+
+#[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue)]
+struct Droid {
+    id: String,
+}
+#[graphql_interface]
+impl Character for Droid {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 # fn main() {
 let human = Human { id: "human-32".to_owned() };
 // Values type for interface has `From` implementations for all its implementers,
@@ -91,7 +103,7 @@ impl Character for Human {
 
 ### Trait object values
 
-If, for some reason, we would like to use [trait objects][2] for representing [interface][1] values incorporating dynamic dispatch, that should be specified explicitly in the trait definition.
+If, for some reason, we would like to use [trait objects][2] for representing [interface][1] values incorporating dynamic dispatch, then it should be specified explicitly in the trait definition.
 
 Downcasting [trait objects][2] in Rust is not that trivial, that's why macro transforms the trait definition slightly, imposing some additional type parameters under-the-hood.
 
@@ -104,7 +116,7 @@ Downcasting [trait objects][2] in Rust is not that trivial, that's why macro tra
 use juniper::{graphql_interface, GraphQLObject};
 
 // `dyn` argument accepts the name of type alias for the required trait object,
-// and macro generates this alias automatically
+// and macro generates this alias automatically.
 #[graphql_interface(dyn = DynCharacter, for = Human)] 
 trait Character {
     async fn id(&self) -> &str; // async fields are supported natively
@@ -121,7 +133,19 @@ impl Character for Human {
         &self.id
     }
 }
-#
+
+#[derive(GraphQLObject)]
+#[graphql(impl = DynCharacter<__S>)]
+struct Droid {
+    id: String,
+}
+#[graphql_interface]
+impl Character for Droid {
+    async fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 # #[tokio::main]
 # async fn main() {
 let human = Human { id: "human-32".to_owned() };
@@ -152,11 +176,57 @@ trait Character {
 struct Human {
     id: String,
 }
-#[graphql_interface] // implementing requires macro attribute too, (°ｏ°)!
+#[graphql_interface]
 impl Character for Human {
     fn id(&self) -> &str {
         &self.id
     }
+}
+#
+# fn main() {}
+```
+
+
+### Fields, arguments and interface customization
+
+Similarly to [GraphQL objects][5] Juniper allows to fully customize [interface][1] fields and their arguments.
+
+```rust
+# #![allow(deprecated)]
+# extern crate juniper;
+use juniper::graphql_interface;
+
+// Renames the interface in GraphQL schema.
+#[graphql_interface(name = "MyCharacter")] 
+// Describes the interface in GraphQL schema.
+#[graphql_interface(description = "My own character.")]
+// Usual Rust docs are supported too as GraphQL interface description, 
+// but `description` attribute argument takes precedence over them, if specified.
+/// This doc is absent in GraphQL schema.  
+trait Character {
+    // Renames the field in GraphQL schema.
+    #[graphql_interface(name = "myId")]
+    // Deprecates the field in GraphQL schema.
+    // Usual Rust `#[deprecated]` attribute is supported too as field deprecation,
+    // but `deprecated` attribute argument takes precedence over it, if specified.
+    #[graphql_interface(deprecated = "Do not use it.")]
+    // Describes the field in GraphQL schema.
+    #[graphql_interface(description = "ID of my own character.")]
+    // Usual Rust docs are supported too as field description, 
+    // but `description` attribute argument takes precedence over them, if specified.
+    /// This description is absent in GraphQL schema.  
+    fn id(
+        &self,
+        // Renames the argument in GraphQL schema.
+        #[graphql_interface(name = "myNum")]
+        // Describes the argument in GraphQL schema.
+        #[graphql_interface(description = "ID number of my own character.")]
+        // Specifies the default value for the argument.
+        // The concrete value may be omitted, and the `Default::default` one 
+        // will be used in such case.
+        #[graphql_interface(default = 5)]
+        num: i32,
+    ) -> &str;
 }
 #
 # fn main() {}
@@ -271,210 +341,113 @@ impl<S: ScalarValue> Character<S> for Human {
 ```
 
 
+### Downcasting
 
+By default, the [GraphQL interface][1] value is downcast to one of its implementer types via matching the enum variant or downcasting the trait object (if `dyn` is used).
 
+However, if some custom logic is needed to downcast a [GraphQL interface][1] implementer, you may specify either an external function or a trait method to do so.
 
+```rust
+# extern crate juniper;
+# use std::collections::HashMap;
+use juniper::{graphql_interface, GraphQLObject};
 
-Traits are maybe the most obvious concept you want to use when building
-interfaces. But because GraphQL supports downcasting while Rust doesn't, you'll
-have to manually specify how to convert a trait into a concrete type. This can
-be done in a couple of different ways:
-
-### Downcasting via accessor methods
-
-```rust,ignore
-#[derive(juniper::GraphQLObject)]
-struct Human {
-    id: String,
-    home_planet: String,
+struct Database {
+    droids: HashMap<String, Droid>,
 }
+impl juniper::Context for Database {}
 
-#[derive(juniper::GraphQLObject)]
-struct Droid {
-    id: String,
-    primary_function: String,
-}
-
+#[graphql_interface(for = [Human, Droid], Context = Database)]
+#[graphql_interface(on Droid = get_droid)] // enables downcasting `Droid` via `get_droid()` function
 trait Character {
     fn id(&self) -> &str;
 
-    // Downcast methods, each concrete class will need to implement one of these
-    fn as_human(&self) -> Option<&Human> { None }
-    fn as_droid(&self) -> Option<&Droid> { None }
-}
-
-impl Character for Human {
-    fn id(&self) -> &str { self.id.as_str() }
-    fn as_human(&self) -> Option<&Human> { Some(&self) }
-}
-
-impl Character for Droid {
-    fn id(&self) -> &str { self.id.as_str() }
-    fn as_droid(&self) -> Option<&Droid> { Some(&self) }
-}
-
-juniper::graphql_interface!(<'a> &'a dyn Character: () as "Character" where Scalar = <S> |&self| {
-    field id() -> &str { self.id() }
-
-    instance_resolvers: |_| {
-        // The left hand side indicates the concrete type T, the right hand
-        // side should be an expression returning Option<T>
-        &Human => self.as_human(),
-        &Droid => self.as_droid(),
+    #[graphql_interface(downcast)] // makes method a downcast to `Human`, not a field 
+    // NOTICE: The method signature may optionally contain `&Database` context argument.
+    fn as_human(&self) -> Option<&Human> {
+        None
     }
-});
+}
 
+#[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue, Context = Database)]
+struct Human {
+    id: String,
+}
+#[graphql_interface]
+impl Character for Human {
+    fn id(&self) -> &str {
+        &self.id
+    }
+
+    fn as_human(&self) -> Option<&Self> {
+        Some(self)
+    }   
+}
+
+#[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue, Context = Database)]
+struct Droid {
+    id: String,
+}
+#[graphql_interface]
+impl Character for Droid {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+// External downcast function doesn't have to be a method of a type.
+// It's only a matter of the function signature to match the requirements.
+fn get_droid<'db>(ch: &CharacterValue, db: &'db Database) -> Option<&'db Droid> {
+    db.droids.get(ch.id())
+}
+#
 # fn main() {}
 ```
 
-The `instance_resolvers` declaration lists all the implementers of the given
-interface and how to resolve them.
 
-As you can see, you lose a bit of the point with using traits: you need to list
-all the concrete types in the trait itself, and there's a bit of repetition
-going on.
 
-### Using an extra database lookup
 
-If you can afford an extra database lookup when the concrete class is requested,
-you can do away with the downcast methods and use the context instead. Here,
-we'll use two hashmaps, but this could be two tables and some SQL calls instead:
+## `ScalarValue` considerations
 
-```rust,ignore
-# use std::collections::HashMap;
-#[derive(juniper::GraphQLObject)]
-#[graphql(Context = Database)]
-struct Human {
-    id: String,
-    home_planet: String,
-}
+By default, `#[graphql_interface]` macro generates code, which is generic over a [`ScalarValue`][3] type. This may introduce a problem when at least one of [GraphQL interface][1] implementers is restricted to a concrete [`ScalarValue`][3] type in its implementation. To resolve such problem, a concrete [`ScalarValue`][3] type should be specified.
 
-#[derive(juniper::GraphQLObject)]
-#[graphql(Context = Database)]
-struct Droid {
-    id: String,
-    primary_function: String,
-}
+```rust
+# extern crate juniper;
+use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
 
-struct Database {
-    humans: HashMap<String, Human>,
-    droids: HashMap<String, Droid>,
-}
-
-impl juniper::Context for Database {}
-
+#[graphql_interface(for = [Human, Droid])]
+#[graphql_interface(Scalar = DefaultScalarValue)] // removing this line will fail compilation
 trait Character {
     fn id(&self) -> &str;
 }
 
+#[derive(GraphQLObject)]
+#[graphql(Scalar = DefaultScalarValue)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+#[graphql_interface(Scalar = DefaultScalarValue)]
 impl Character for Human {
-    fn id(&self) -> &str { self.id.as_str() }
+    fn id(&self) -> &str {
+        &self.id
+    }   
 }
 
+#[derive(GraphQLObject)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+#[graphql_interface(Scalar = DefaultScalarValue)]
 impl Character for Droid {
-    fn id(&self) -> &str { self.id.as_str() }
+    fn id(&self) -> &str {
+        &self.id
+    }   
 }
-
-juniper::graphql_interface!(<'a> &'a dyn Character: Database as "Character" where Scalar = <S> |&self| {
-    field id() -> &str { self.id() }
-
-    instance_resolvers: |&context| {
-        &Human => context.humans.get(self.id()),
-        &Droid => context.droids.get(self.id()),
-    }
-});
-
-# fn main() {}
-```
-
-This removes the need of downcast methods, but still requires some repetition.
-
-## Placeholder objects
-
-Continuing on from the last example, the trait itself seems a bit unneccesary.
-Maybe it can just be a struct containing the ID?
-
-```rust,ignore
-# use std::collections::HashMap;
-#[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
-struct Human {
-    id: String,
-    home_planet: String,
-}
-
-#[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
-struct Droid {
-    id: String,
-    primary_function: String,
-}
-
-struct Database {
-    humans: HashMap<String, Human>,
-    droids: HashMap<String, Droid>,
-}
-
-impl juniper::Context for Database {}
-
-struct Character {
-    id: String,
-}
-
-juniper::graphql_interface!(Character: Database where Scalar = <S> |&self| {
-    field id() -> &str { self.id.as_str() }
-
-    instance_resolvers: |&context| {
-        &Human => context.humans.get(&self.id),
-        &Droid => context.droids.get(&self.id),
-    }
-});
-
-# fn main() {}
-```
-
-This reduces repetition some more, but might be impractical if the interface's
-surface area is large. 
-
-## Enums
-
-Using enums and pattern matching lies half-way between using traits and using
-placeholder objects. We don't need the extra database call in this case, so
-we'll remove it.
-
-```rust,ignore
-#[derive(juniper::GraphQLObject)]
-struct Human {
-    id: String,
-    home_planet: String,
-}
-
-#[derive(juniper::GraphQLObject)]
-struct Droid {
-    id: String,
-    primary_function: String,
-}
-
-# #[allow(dead_code)]
-enum Character {
-    Human(Human),
-    Droid(Droid),
-}
-
-juniper::graphql_interface!(Character: () where Scalar = <S> |&self| {
-    field id() -> &str {
-        match *self {
-            Character::Human(Human { ref id, .. }) |
-            Character::Droid(Droid { ref id, .. }) => id,
-        }
-    }
-
-    instance_resolvers: |_| {
-        &Human => match *self { Character::Human(ref h) => Some(h), _ => None },
-        &Droid => match *self { Character::Droid(ref d) => Some(d), _ => None },
-    }
-});
-
+#
 # fn main() {}
 ```
 
@@ -486,3 +459,4 @@ juniper::graphql_interface!(Character: () where Scalar = <S> |&self| {
 [2]: https://doc.rust-lang.org/reference/types/trait-object.html
 [3]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
 [4]: https://docs.rs/juniper/latest/juniper/struct.Executor.html
+[5]: https://spec.graphql.org/June2018/#sec-Objects
