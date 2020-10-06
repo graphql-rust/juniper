@@ -142,6 +142,10 @@ pub enum Definition<'a, S> {
     Fragment(Spanning<Fragment<'a, S>>),
 }
 
+/// Parsed GraphQL request.
+///
+/// `S` is an instance of [ScalarValue]
+/// By default [DefaultScalarValue]
 pub type Document<'a, S> = Vec<Definition<'a, S>>;
 
 /// Parse an unstructured input value into a Rust data type.

@@ -10,11 +10,11 @@ use serde::{
 };
 
 use crate::{
-    ast::InputValue,
+    ast::{Document, InputValue},
     executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
-    Value, Variables,
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, ParseError,
+    RootNode, Spanning, Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -69,6 +69,23 @@ where
             operation_name,
             variables,
         }
+    }
+
+    /// Parse this GraphQL request using the specified schema
+    ///
+    /// This is a wrapper for the `parse_document_source` function exposed at the
+    /// top level of this crate.
+    pub fn parse<'a, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        schema: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    ) -> Result<Document<'a, S>, Spanning<ParseError<'a>>>
+    where
+        S: ScalarValue,
+        QueryT: GraphQLType<S>,
+        MutationT: GraphQLType<S, Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    {
+        crate::parse_document_source(&self.query, &schema.schema)
     }
 
     /// Execute a GraphQL request synchronously using the specified schema and context
