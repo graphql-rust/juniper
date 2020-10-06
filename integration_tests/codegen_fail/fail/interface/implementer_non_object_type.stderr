@@ -1,0 +1,17 @@
+error[E0277]: the trait bound `ObjA: GraphQLObjectType<__S>` is not satisfied
+  --> $DIR/implementer_non_object_type.rs:15:1
+   |
+15 | #[graphql_interface(for = ObjA)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `GraphQLObjectType<__S>` is not implemented for `ObjA`
+   |
+   = note: required by `juniper::marker::GraphQLObjectType::mark`
+   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ObjA: IsOutputType<__S>` is not satisfied
+  --> $DIR/implementer_non_object_type.rs:15:1
+   |
+15 | #[graphql_interface(for = ObjA)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjA`
+   |
+   = note: required by `juniper::marker::IsOutputType::mark`
+   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)

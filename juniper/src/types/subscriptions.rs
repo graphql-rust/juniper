@@ -201,7 +201,7 @@ crate::sa::assert_obj_safe!(GraphQLSubscriptionValue<Context = (), TypeInfo = ()
 /// Extension of [`GraphQLType`] trait with asynchronous [subscription][1] execution logic.
 ///
 /// It's automatically implemented for [`GraphQLSubscriptionValue`] and [`GraphQLType`]
-/// implementors, so doesn't require manual or code-generated implementation.
+/// implementers, so doesn't require manual or code-generated implementation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Subscription
 pub trait GraphQLSubscriptionType<S = DefaultScalarValue>:

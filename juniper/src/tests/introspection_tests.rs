@@ -1,13 +1,14 @@
 use std::collections::HashSet;
 
-use super::schema_introspection::*;
 use crate::{
     executor::Variables,
     introspection::IntrospectionFormat,
     schema::model::RootNode,
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
 };
+
+use super::schema_introspection::*;
 
 #[tokio::test]
 async fn test_introspection_query_type_name() {
