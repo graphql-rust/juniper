@@ -26,12 +26,10 @@ fn get_first_method_arg(
     inputs: syn::punctuated::Punctuated<syn::FnArg, syn::Token![,]>,
 ) -> Option<syn::Ident> {
     if let Some(fn_arg) = inputs.first() {
-        match fn_arg {
-            syn::FnArg::Typed(pat_type) => match &*pat_type.pat {
-                syn::Pat::Ident(pat_ident) => return Some(pat_ident.ident.clone()),
-                _ => (),
-            },
-            _ => (),
+        if let syn::FnArg::Typed(pat_type) = fn_arg {
+            if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
+                return Some(pat_ident.ident.clone());
+            }
         }
     }
 
@@ -70,19 +68,11 @@ fn get_enum_type(return_type: &Option<syn::Type>) -> Option<syn::PathSegment> {
                                     }
                                 });
 
-                            if let Some(generic_type_arg) = generic_type_arg {
-                                match generic_type_arg {
-                                    syn::GenericArgument::Type(the_type) => match the_type {
-                                        syn::Type::Path(type_path) => {
-                                            if let Some(path_segment) =
-                                                type_path.path.segments.first()
-                                            {
-                                                return Some(path_segment.clone());
-                                            }
-                                        }
-                                        _ => (),
-                                    },
-                                    _ => (),
+                            if let Some(syn::GenericArgument::Type(syn::Type::Path(type_path))) =
+                                generic_type_arg
+                            {
+                                if let Some(path_segment) = type_path.path.segments.first() {
+                                    return Some(path_segment.clone());
                                 }
                             }
                         }
@@ -115,13 +105,10 @@ impl syn::parse::Parse for ScalarCodegenInput {
         let custom_data_type_is_struct: bool =
             !parse_custom_scalar_value_impl.generics.params.is_empty();
 
-        match *parse_custom_scalar_value_impl.self_ty {
-            syn::Type::Path(type_path) => {
-                if let Some(path_segment) = type_path.path.segments.first() {
-                    impl_for_type = Some(path_segment.clone());
-                }
+        if let syn::Type::Path(type_path) = *parse_custom_scalar_value_impl.self_ty {
+            if let Some(path_segment) = type_path.path.segments.first() {
+                impl_for_type = Some(path_segment.clone());
             }
-            _ => (),
         }
 
         for impl_item in parse_custom_scalar_value_impl.items {

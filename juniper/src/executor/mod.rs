@@ -1025,10 +1025,9 @@ where
 
     let mut fragments = vec![];
     for def in document.iter() {
-        match def {
-            Definition::Fragment(f) => fragments.push(f),
-            _ => (),
-        };
+        if let Definition::Fragment(f) = def {
+            fragments.push(f)
+        }
     }
 
     let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {

@@ -1,5 +1,5 @@
 use juniper::{
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
 use rocket::{response::content, State};

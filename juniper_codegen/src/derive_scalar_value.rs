@@ -1,10 +1,11 @@
 use crate::{
+    common::parse::ParseBufferExt as _,
     result::GraphQLScope,
     util::{self, span_container::SpanContainer},
 };
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, spanned::Spanned, Data, Fields, Ident, Variant};
+use syn::{spanned::Spanned, token, Data, Fields, Ident, Variant};
 
 #[derive(Debug, Default)]
 struct TransparentAttributes {
@@ -25,12 +26,12 @@ impl syn::parse::Parse for TransparentAttributes {
             let ident: syn::Ident = input.parse()?;
             match ident.to_string().as_str() {
                 "name" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
                     output.name = Some(val.value());
                 }
                 "description" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
                     output.description = Some(val.value());
                 }
@@ -39,9 +40,7 @@ impl syn::parse::Parse for TransparentAttributes {
                 }
                 _ => return Err(syn::Error::new(ident.span(), "unknown attribute")),
             }
-            if input.lookahead1().peek(syn::Token![,]) {
-                input.parse::<syn::Token![,]>()?;
-            }
+            input.try_parse::<token::Comma>()?;
         }
 
         Ok(output)

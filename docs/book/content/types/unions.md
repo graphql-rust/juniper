@@ -16,7 +16,7 @@ Most of the time, we just need a trivial and straightforward Rust enum to repres
 
 ```rust
 # extern crate juniper;
-# #[macro_use] extern crate derive_more;
+# extern crate derive_more;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -53,7 +53,7 @@ As an example, let's consider the situation where we need to bind some type para
 
 ```rust
 # extern crate juniper;
-# #[macro_use] extern crate derive_more;
+# extern crate derive_more;
 # use std::marker::PhantomData;
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
@@ -88,6 +88,7 @@ enum Character<S> {
 If some custom logic is needed to resolve a [GraphQL union][1] variant, you may specify an external function to do so:
 
 ```rust
+# #![allow(dead_code)]
 # extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -132,6 +133,7 @@ impl Character {
 With an external resolver function we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/June2018/#example-f8163).
 
 ```rust
+# #![allow(dead_code)]
 # extern crate juniper;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -289,6 +291,7 @@ impl Character for Droid {
 If a context is required in a trait method to resolve a [GraphQL union][1] variant, specify it as an argument.
 
 ```rust
+# #![allow(unused_variables)]
 # extern crate juniper;
 # use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
@@ -451,6 +454,7 @@ fn get_droid<'db>(ch: &DynCharacter<'_>, ctx: &'db Database) -> Option<&'db Droi
 By default, `#[derive(GraphQLUnion)]` and `#[graphql_union]` macros generate code, which is generic over a [`ScalarValue`][2] type. This may introduce a problem when at least one of [GraphQL union][1] variants is restricted to a concrete [`ScalarValue`][2] type in its implementation. To resolve such problem, a concrete [`ScalarValue`][2] type should be specified:
 
 ```rust
+# #![allow(dead_code)]
 # extern crate juniper;
 use juniper::{DefaultScalarValue, GraphQLObject, GraphQLUnion};
 

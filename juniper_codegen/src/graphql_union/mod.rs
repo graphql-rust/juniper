@@ -13,60 +13,16 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
+    token,
 };
 
-use crate::util::{filter_attrs, get_doc_comment, span_container::SpanContainer, OptionExt as _};
-
-/// Attempts to merge an [`Option`]ed `$field` of a `$self` struct with the same `$field` of
-/// `$another` struct. If both are [`Some`], then throws a duplication error with a [`Span`] related
-/// to the `$another` struct (a later one).
-///
-/// The type of [`Span`] may be explicitly specified as one of the [`SpanContainer`] methods.
-/// By default, [`SpanContainer::span_ident`] is used.
-macro_rules! try_merge_opt {
-    ($field:ident: $self:ident, $another:ident => $span:ident) => {{
-        if let Some(v) = $self.$field {
-            $another
-                .$field
-                .replace(v)
-                .none_or_else(|dup| dup_attr_err(dup.$span()))?;
-        }
-        $another.$field
-    }};
-
-    ($field:ident: $self:ident, $another:ident) => {
-        try_merge_opt!($field: $self, $another => span_ident)
-    };
-}
-
-/// Attempts to merge a [`HashMap`]ed `$field` of a `$self` struct with the same `$field` of
-/// `$another` struct. If some [`HashMap`] entries are duplicated, then throws a duplication error
-/// with a [`Span`] related to the `$another` struct (a later one).
-///
-/// The type of [`Span`] may be explicitly specified as one of the [`SpanContainer`] methods.
-/// By default, [`SpanContainer::span_ident`] is used.
-macro_rules! try_merge_hashmap {
-    ($field:ident: $self:ident, $another:ident => $span:ident) => {{
-        if !$self.$field.is_empty() {
-            for (ty, rslvr) in $self.$field {
-                $another
-                    .$field
-                    .insert(ty, rslvr)
-                    .none_or_else(|dup| dup_attr_err(dup.$span()))?;
-            }
-        }
-        $another.$field
-    }};
-
-    ($field:ident: $self:ident, $another:ident) => {
-        try_merge_hashmap!($field: $self, $another => span_ident)
-    };
-}
-
-/// Creates and returns duplication error pointing to the given `span`.
-fn dup_attr_err(span: Span) -> syn::Error {
-    syn::Error::new(span, "duplicated attribute")
-}
+use crate::{
+    common::parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
+    },
+    util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
+};
 
 /// Helper alias for the type of [`UnionMeta::external_resolvers`] field.
 type UnionMetaResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
@@ -131,10 +87,10 @@ impl Parse for UnionMeta {
         let mut output = Self::default();
 
         while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
+            let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
                 "name" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let name = input.parse::<syn::LitStr>()?;
                     output
                         .name
@@ -143,10 +99,10 @@ impl Parse for UnionMeta {
                             Some(name.span()),
                             name.value(),
                         ))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "desc" | "description" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let desc = input.parse::<syn::LitStr>()?;
                     output
                         .description
@@ -155,45 +111,43 @@ impl Parse for UnionMeta {
                             Some(desc.span()),
                             desc.value(),
                         ))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let ctx = input.parse::<syn::Type>()?;
                     output
                         .context
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let scl = input.parse::<syn::Type>()?;
                     output
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "on" => {
                     let ty = input.parse::<syn::Type>()?;
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     let rslvr_spanned = SpanContainer::new(ident.span(), Some(ty.span()), rslvr);
                     let rslvr_span = rslvr_spanned.span_joined();
                     output
                         .external_resolvers
                         .insert(ty, rslvr_spanned)
-                        .none_or_else(|_| dup_attr_err(rslvr_span))?
+                        .none_or_else(|_| err::dup_arg(rslvr_span))?
                 }
                 "internal" => {
                     output.is_internal = true;
                 }
-                _ => {
-                    return Err(syn::Error::new(ident.span(), "unknown attribute"));
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
                 }
             }
-            if input.lookahead1().peek(syn::Token![,]) {
-                input.parse::<syn::Token![,]>()?;
-            }
+            input.try_parse::<token::Comma>()?;
         }
 
         Ok(output)
@@ -201,19 +155,22 @@ impl Parse for UnionMeta {
 }
 
 impl UnionMeta {
-    /// Tries to merge two [`UnionMeta`]s into single one, reporting about duplicates, if any.
+    /// Tries to merge two [`UnionMeta`]s into a single one, reporting about duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
-            external_resolvers: try_merge_hashmap!(external_resolvers: self, another => span_joined),
+            external_resolvers: try_merge_hashmap!(
+                external_resolvers: self, another => span_joined
+            ),
             is_internal: self.is_internal || another.is_internal,
         })
     }
 
-    /// Parses [`UnionMeta`] from the given multiple `name`d attributes placed on type definition.
+    /// Parses [`UnionMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a type
+    /// definition.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -254,27 +211,25 @@ impl Parse for UnionVariantMeta {
         let mut output = Self::default();
 
         while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
+            let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
                 "ignore" | "skip" => output
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
-                    .none_or_else(|_| dup_attr_err(ident.span()))?,
+                    .none_or_else(|_| err::dup_arg(&ident))?,
                 "with" => {
-                    input.parse::<syn::Token![=]>()?;
+                    input.parse::<token::Eq>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     output
                         .external_resolver
                         .replace(SpanContainer::new(ident.span(), Some(rslvr.span()), rslvr))
-                        .none_or_else(|_| dup_attr_err(ident.span()))?
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                _ => {
-                    return Err(syn::Error::new(ident.span(), "unknown attribute"));
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
                 }
             }
-            if input.lookahead1().peek(syn::Token![,]) {
-                input.parse::<syn::Token![,]>()?;
-            }
+            input.try_parse::<token::Comma>()?;
         }
 
         Ok(output)
@@ -282,7 +237,7 @@ impl Parse for UnionVariantMeta {
 }
 
 impl UnionVariantMeta {
-    /// Tries to merge two [`UnionVariantMeta`]s into single one, reporting about duplicates, if
+    /// Tries to merge two [`UnionVariantMeta`]s into a single one, reporting about duplicates, if
     /// any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
@@ -291,7 +246,7 @@ impl UnionVariantMeta {
         })
     }
 
-    /// Parses [`UnionVariantMeta`] from the given multiple `name`d attributes placed on
+    /// Parses [`UnionVariantMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
     /// variant/field/method definition.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         filter_attrs(name, attrs)
@@ -356,6 +311,8 @@ struct UnionDefinition {
     pub ty: syn::Type,
 
     /// Generics of the Rust type that this [GraphQL union][1] is implemented for.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub generics: syn::Generics,
 
     /// Indicator whether code should be generated for a trait object, rather than for a regular
@@ -390,11 +347,6 @@ struct UnionDefinition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub variants: Vec<UnionVariantDefinition>,
-
-    /// [`Span`] that points to the Rust source code which defines this [GraphQL union][1].
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub span: Span,
 }
 
 impl ToTokens for UnionDefinition {
@@ -432,7 +384,7 @@ impl ToTokens for UnionDefinition {
             let var_check = &var.resolver_check;
             quote! {
                 if #var_check {
-                    return <#var_ty as ::juniper::GraphQLType<#scalar>>::name(&())
+                    return <#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)
                         .unwrap().to_string();
                 }
             }
@@ -442,15 +394,15 @@ impl ToTokens for UnionDefinition {
         let resolve_into_type = self.variants.iter().zip(match_resolves.iter()).map(|(var, expr)| {
             let var_ty = &var.ty;
 
-            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(&())) };
+            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)) };
             quote! {
                 if type_name == #get_name.unwrap() {
                     return ::juniper::IntoResolvable::into(
                         { #expr },
-                        executor.context()
+                        executor.context(),
                     )
                     .and_then(|res| match res {
-                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
                         None => Ok(::juniper::Value::null()),
                     });
                 }
@@ -464,19 +416,19 @@ impl ToTokens for UnionDefinition {
                     let var_ty = &var.ty;
 
                     let get_name = quote! {
-                        (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(&()))
+                        (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info))
                     };
                     quote! {
                         if type_name == #get_name.unwrap() {
                             let res = ::juniper::IntoResolvable::into(
                                 { #expr },
-                                executor.context()
+                                executor.context(),
                             );
                             return Box::pin(async move {
                                 match res? {
                                     Some((ctx, r)) => {
                                         let subexec = executor.replaced_context(ctx);
-                                        subexec.resolve_with_ctx_async(&(), &r).await
+                                        subexec.resolve_with_ctx_async(info, &r).await
                                     },
                                     None => Ok(::juniper::Value::null()),
                                 }
@@ -494,8 +446,7 @@ impl ToTokens for UnionDefinition {
         if self.scalar.is_none() {
             ext_generics.params.push(parse_quote! { #scalar });
             ext_generics
-                .where_clause
-                .get_or_insert_with(|| parse_quote! { where })
+                .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue });
         }
@@ -531,10 +482,10 @@ impl ToTokens for UnionDefinition {
                 ) -> ::juniper::meta::MetaType<'r, #scalar>
                 where #scalar: 'r,
                 {
-                    let types = &[
-                        #( registry.get_type::<&#var_types>(&(())), )*
+                    let types = [
+                        #( registry.get_type::<#var_types>(info), )*
                     ];
-                    registry.build_union_type::<#ty_full>(info, types)
+                    registry.build_union_type::<#ty_full>(info, &types)
                     #description
                     .into_meta()
                 }
@@ -556,7 +507,7 @@ impl ToTokens for UnionDefinition {
                 fn concrete_type_name(
                     &self,
                     context: &Self::Context,
-                    _: &Self::TypeInfo,
+                    info: &Self::TypeInfo,
                 ) -> String {
                     #( #match_names )*
                     panic!(
@@ -568,7 +519,7 @@ impl ToTokens for UnionDefinition {
 
                 fn resolve_into_type(
                     &self,
-                    _: &Self::TypeInfo,
+                    info: &Self::TypeInfo,
                     type_name: &str,
                     _: Option<&[::juniper::Selection<#scalar>]>,
                     executor: &::juniper::Executor<Self::Context, #scalar>,
@@ -590,7 +541,7 @@ impl ToTokens for UnionDefinition {
             {
                 fn resolve_into_type_async<'b>(
                     &'b self,
-                    _: &'b Self::TypeInfo,
+                    info: &'b Self::TypeInfo,
                     type_name: &str,
                     _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
                     executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>

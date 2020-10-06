@@ -1,14 +1,15 @@
 //! Code generation for `#[graphql_union]` macro.
 
-use std::{mem, ops::Deref as _};
+use std::mem;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
+    common::parse,
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, unparenthesize},
+    util::{path_eq_single, span_container::SpanContainer},
 };
 
 use super::{
@@ -27,17 +28,8 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
             "#[graphql_union] attribute is applicable to trait definitions only",
         )
     })?;
-
-    let mut trait_attrs = Vec::with_capacity(ast.attrs.len() + 1);
-    trait_attrs.push(parse_quote! { #[graphql_union(#attr_args)] });
-    trait_attrs.extend_from_slice(&ast.attrs);
-
-    // Remove repeated attributes from the definition, to omit duplicate expansion.
-    ast.attrs = ast
-        .attrs
-        .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql_union"))
-        .collect();
+    let trait_attrs = parse::attr::unite(("graphql_union", &attr_args), &ast.attrs);
+    ast.attrs = parse::attr::strip("graphql_union", ast.attrs);
 
     let meta = UnionMeta::from_attrs("graphql_union", &trait_attrs)?;
 
@@ -98,7 +90,6 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
         variants,
-        span: trait_span,
     };
 
     Ok(quote! {
@@ -149,7 +140,7 @@ fn parse_variant_from_trait_method(
     let method_span = method.sig.span();
     let method_ident = &method.sig.ident;
 
-    let ty = parse_trait_method_output_type(&method.sig)
+    let ty = parse::downcaster::output_type(&method.sig.output)
         .map_err(|span| {
             ERR.emit_custom(
                 span,
@@ -157,7 +148,7 @@ fn parse_variant_from_trait_method(
             )
         })
         .ok()?;
-    let method_context_ty = parse_trait_method_input_args(&method.sig)
+    let method_context_ty = parse::downcaster::context_ty(&method.sig)
         .map_err(|span| {
             ERR.emit_custom(
                 span,
@@ -168,7 +159,7 @@ fn parse_variant_from_trait_method(
     if let Some(is_async) = &method.sig.asyncness {
         ERR.emit_custom(
             is_async.span(),
-            "doesn't support async union variants resolvers yet",
+            "async downcast to union variants is not supported",
         );
         return None;
     }
@@ -219,86 +210,4 @@ fn parse_variant_from_trait_method(
         context_ty: method_context_ty,
         span: method_span,
     })
-}
-
-/// Parses type of [GraphQL union][1] variant from the return type of trait method.
-///
-/// If return type is invalid, then returns the [`Span`] to display the corresponding error at.
-///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
-fn parse_trait_method_output_type(sig: &syn::Signature) -> Result<syn::Type, Span> {
-    let ret_ty = match &sig.output {
-        syn::ReturnType::Type(_, ty) => ty.deref(),
-        _ => return Err(sig.span()),
-    };
-
-    let path = match unparenthesize(ret_ty) {
-        syn::Type::Path(syn::TypePath { qself: None, path }) => path,
-        _ => return Err(ret_ty.span()),
-    };
-
-    let (ident, args) = match path.segments.last() {
-        Some(syn::PathSegment {
-            ident,
-            arguments: syn::PathArguments::AngleBracketed(generic),
-        }) => (ident, &generic.args),
-        _ => return Err(ret_ty.span()),
-    };
-
-    if ident.unraw() != "Option" {
-        return Err(ret_ty.span());
-    }
-
-    if args.len() != 1 {
-        return Err(ret_ty.span());
-    }
-    let var_ty = match args.first() {
-        Some(syn::GenericArgument::Type(inner_ty)) => match unparenthesize(inner_ty) {
-            syn::Type::Reference(inner_ty) => {
-                if inner_ty.mutability.is_some() {
-                    return Err(inner_ty.span());
-                }
-                unparenthesize(inner_ty.elem.deref()).clone()
-            }
-            _ => return Err(ret_ty.span()),
-        },
-        _ => return Err(ret_ty.span()),
-    };
-    Ok(var_ty)
-}
-
-/// Parses trait method input arguments and validates them to be acceptable for resolving into
-/// [GraphQL union][1] variant type. Returns type of the context used in input arguments, if any.
-///
-/// If input arguments are invalid, then returns the [`Span`] to display the corresponding error at.
-///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
-fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<Option<syn::Type>, Span> {
-    match sig.receiver() {
-        Some(syn::FnArg::Receiver(rcv)) => {
-            if rcv.reference.is_none() || rcv.mutability.is_some() {
-                return Err(rcv.span());
-            }
-        }
-        _ => return Err(sig.span()),
-    }
-
-    if sig.inputs.len() > 2 {
-        return Err(sig.inputs.span());
-    }
-
-    let second_arg_ty = match sig.inputs.iter().nth(1) {
-        Some(syn::FnArg::Typed(arg)) => arg.ty.deref(),
-        None => return Ok(None),
-        _ => return Err(sig.inputs.span()),
-    };
-    match unparenthesize(second_arg_ty) {
-        syn::Type::Reference(ref_ty) => {
-            if ref_ty.mutability.is_some() {
-                return Err(ref_ty.span());
-            }
-            Ok(Some(ref_ty.elem.deref().clone()))
-        }
-        ty => Err(ty.span()),
-    }
 }

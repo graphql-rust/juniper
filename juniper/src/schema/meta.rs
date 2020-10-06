@@ -639,29 +639,6 @@ impl<'a, S> Field<'a, S> {
         self
     }
 
-    /// Adds a (multi)line doc string to the description of the field.
-    /// Any leading or trailing newlines will be removed.
-    ///
-    /// If the docstring contains newlines, repeated leading tab and space characters
-    /// will be removed from the beginning of each line.
-    ///
-    /// If the description hasn't been set, the description is set to the provided line.
-    /// Otherwise, the doc string is added to the current description after a newline.
-    pub fn push_docstring(mut self, multiline: &[&str]) -> Field<'a, S> {
-        if let Some(docstring) = clean_docstring(multiline) {
-            match &mut self.description {
-                &mut Some(ref mut desc) => {
-                    desc.push('\n');
-                    desc.push_str(&docstring);
-                }
-                desc @ &mut None => {
-                    *desc = Some(docstring);
-                }
-            }
-        }
-        self
-    }
-
     /// Add an argument to the field
     ///
     /// Arguments are unordered and can't contain duplicates by name.
@@ -706,30 +683,9 @@ impl<'a, S> Argument<'a, S> {
         self
     }
 
-    /// Adds a (multi)line doc string to the description of the field.
-    /// Any leading or trailing newlines will be removed.
-    ///
-    /// If the docstring contains newlines, repeated leading tab and space characters
-    /// will be removed from the beginning of each line.
-    ///
-    /// If the description hasn't been set, the description is set to the provided line.
-    /// Otherwise, the doc string is added to the current description after a newline.
-    pub fn push_docstring(mut self, multiline: &[&str]) -> Argument<'a, S> {
-        if let Some(docstring) = clean_docstring(multiline) {
-            match &mut self.description {
-                &mut Some(ref mut desc) => {
-                    desc.push('\n');
-                    desc.push_str(&docstring);
-                }
-                desc @ &mut None => *desc = Some(docstring),
-            }
-        }
-        self
-    }
-
     /// Set the default value of the argument
     ///
-    /// This overwrites the description if any was previously set.
+    /// This overwrites the default value if any was previously set.
     pub fn default_value(mut self, default_value: InputValue<S>) -> Self {
         self.default_value = Some(default_value);
         self
@@ -797,36 +753,4 @@ where
     T: FromInputValue<S>,
 {
     <T as FromInputValue<S>>::from_input_value(v).is_some()
-}
-
-fn clean_docstring(multiline: &[&str]) -> Option<String> {
-    if multiline.is_empty() {
-        return None;
-    }
-    let trim_start = multiline
-        .iter()
-        .filter_map(|ln| ln.chars().position(|ch| !ch.is_whitespace()))
-        .min()
-        .unwrap_or(0);
-    Some(
-        multiline
-            .iter()
-            .enumerate()
-            .flat_map(|(line, ln)| {
-                let new_ln = if !ln.chars().next().map(char::is_whitespace).unwrap_or(false) {
-                    ln.trim_end() // skip trimming the first line
-                } else if ln.len() >= trim_start {
-                    ln[trim_start..].trim_end()
-                } else {
-                    ""
-                };
-                new_ln.chars().chain(
-                    ['\n']
-                        .iter()
-                        .take_while(move |_| line < multiline.len() - 1)
-                        .cloned(),
-                )
-            })
-            .collect::<String>(),
-    )
 }

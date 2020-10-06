@@ -1,15 +1,3 @@
-use crate::{
-    ast::InputValue,
-    executor::FieldResult,
-    schema::model::RootNode,
-    types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, Object, Value},
-};
-
-struct Interface;
-#[derive(Debug)]
-struct Root;
-
 /*
 
 Syntax to validate:
@@ -22,9 +10,21 @@ Syntax to validate:
 
 */
 
-#[crate::graphql_object(
-    interfaces = [&Interface],
-)]
+#![allow(deprecated)]
+
+use crate::{
+    ast::InputValue,
+    executor::FieldResult,
+    graphql_interface, graphql_object,
+    schema::model::RootNode,
+    types::scalars::{EmptyMutation, EmptySubscription},
+    value::{DefaultScalarValue, Object, Value},
+};
+
+#[derive(Debug)]
+struct Root;
+
+#[graphql_object(interfaces = [InterfaceValue])]
 impl Root {
     fn simple() -> i32 {
         0
@@ -104,44 +104,85 @@ impl Root {
     }
 }
 
-graphql_interface!(Interface: () |&self| {
-    field simple() -> i32 { 0 }
+#[graphql_interface(scalar = DefaultScalarValue)]
+impl Interface for Root {
+    fn simple(&self) -> i32 {
+        0
+    }
 
-    field description() -> i32 as "Field description" { 0 }
+    fn description(&self) -> i32 {
+        0
+    }
 
-    field deprecated "Deprecation reason"
-        deprecated() -> i32 { 0 }
+    fn deprecated(&self) -> i32 {
+        0
+    }
 
-    field deprecated "Deprecation reason"
-        deprecated_descr() -> i32 as "Field description" { 0 }
+    fn deprecated_descr(&self) -> i32 {
+        0
+    }
+
+    fn attr_description(&self) -> i32 {
+        0
+    }
+
+    fn attr_description_collapse(&self) -> i32 {
+        0
+    }
+
+    fn attr_description_long(&self) -> i32 {
+        0
+    }
+
+    fn attr_deprecated(&self) -> i32 {
+        0
+    }
+
+    fn attr_deprecated_reason(&self) -> i32 {
+        0
+    }
+
+    fn attr_deprecated_descr(&self) -> i32 {
+        0
+    }
+}
+
+#[graphql_interface(for = Root, scalar = DefaultScalarValue)]
+trait Interface {
+    fn simple(&self) -> i32;
+
+    #[graphql_interface(desc = "Field description")]
+    fn description(&self) -> i32;
+
+    #[graphql_interface(deprecated = "Deprecation reason")]
+    fn deprecated(&self) -> i32;
+
+    #[graphql_interface(desc = "Field description", deprecated = "Deprecation reason")]
+    fn deprecated_descr(&self) -> i32;
 
     /// Field description
-    field attr_description() -> i32 { 0 }
+    fn attr_description(&self) -> i32;
 
     /// Field description
     /// with `collapse_docs` behavior
-    field attr_description_collapse() -> i32 { 0 }
+    fn attr_description_collapse(&self) -> i32;
 
     /// Get the i32 representation of 0.
     ///
     /// - This comment is longer.
     /// - These two lines are rendered as bullets by GraphiQL.
-    field attr_description_long() -> i32 { 0 }
+    fn attr_description_long(&self) -> i32;
 
     #[deprecated]
-    field attr_deprecated() -> i32 { 0 }
+    fn attr_deprecated(&self) -> i32;
 
     #[deprecated(note = "Deprecation reason")]
-    field attr_deprecated_reason() -> i32 { 0 }
+    fn attr_deprecated_reason(&self) -> i32;
 
     /// Field description
     #[deprecated(note = "Deprecation reason")]
-    field attr_deprecated_descr() -> i32 { 0 }
-
-    instance_resolvers: |&_| {
-        Root => Some(Root {}),
-    }
-});
+    fn attr_deprecated_descr(&self) -> i32;
+}
 
 async fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
 where

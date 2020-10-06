@@ -138,7 +138,7 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
         fields,
         // NOTICE: only unit variants allow -> no generics possible
         generics: syn::Generics::default(),
-        interfaces: None,
+        interfaces: vec![],
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),

@@ -305,7 +305,7 @@ mod generic {
     }
 }
 
-mod description_from_doc_comments {
+mod description_from_doc_comment {
     use super::*;
 
     /// Rust docs.
@@ -647,93 +647,6 @@ mod custom_scalar {
     }
 }
 
-mod inferred_custom_context {
-    use super::*;
-
-    #[graphql_union]
-    trait Character {
-        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
-            None
-        }
-        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
-            None
-        }
-    }
-
-    impl Character for HumanCustomContext {
-        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
-            Some(&self)
-        }
-    }
-
-    impl Character for DroidCustomContext {
-        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
-            Some(&self)
-        }
-    }
-
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
-
-    struct QueryRoot;
-
-    #[graphql_object(context = CustomContext)]
-    impl QueryRoot {
-        fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match ctx {
-                CustomContext::Human => Box::new(HumanCustomContext {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
-                }),
-                CustomContext::Droid => Box::new(DroidCustomContext {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
-                }),
-                _ => unimplemented!(),
-            };
-            ch
-        }
-    }
-
-    const DOC: &str = r#"{
-        character {
-            ... on HumanCustomContext {
-                humanId: id
-                homePlanet
-            }
-            ... on DroidCustomContext {
-                droidId: id
-                primaryFunction
-            }
-        }
-    }"#;
-
-    #[tokio::test]
-    async fn resolves_human() {
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
-            Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn resolves_droid() {
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
-            Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
-                vec![],
-            )),
-        );
-    }
-}
-
 mod explicit_custom_context {
     use super::*;
 
@@ -821,7 +734,94 @@ mod explicit_custom_context {
     }
 }
 
-mod ignored_methods {
+mod inferred_custom_context {
+    use super::*;
+
+    #[graphql_union]
+    trait Character {
+        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
+            None
+        }
+        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
+            None
+        }
+    }
+
+    impl Character for HumanCustomContext {
+        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
+            Some(&self)
+        }
+    }
+
+    impl Character for DroidCustomContext {
+        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
+            Some(&self)
+        }
+    }
+
+    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+
+    struct QueryRoot;
+
+    #[graphql_object(context = CustomContext)]
+    impl QueryRoot {
+        fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_>> {
+            let ch: Box<DynCharacter<'_>> = match ctx {
+                CustomContext::Human => Box::new(HumanCustomContext {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }),
+                CustomContext::Droid => Box::new(DroidCustomContext {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }),
+                _ => unimplemented!(),
+            };
+            ch
+        }
+    }
+
+    const DOC: &str = r#"{
+        character {
+            ... on HumanCustomContext {
+                humanId: id
+                homePlanet
+            }
+            ... on DroidCustomContext {
+                droidId: id
+                primaryFunction
+            }
+        }
+    }"#;
+
+    #[tokio::test]
+    async fn resolves_human() {
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod ignored_method {
     use super::*;
 
     #[graphql_union]

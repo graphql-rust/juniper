@@ -119,7 +119,7 @@ extern crate bson;
 
 // These are required by the code generated via the `juniper_codegen` macros.
 #[doc(hidden)]
-pub use {futures, static_assertions as sa};
+pub use {async_trait::async_trait, futures, static_assertions as sa};
 
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
@@ -128,8 +128,8 @@ pub use futures::future::{BoxFuture, LocalBoxFuture};
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_object, graphql_scalar, graphql_subscription, graphql_union, GraphQLEnum,
-    GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
+    graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
+    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
 };
 
 #[macro_use]
@@ -175,16 +175,19 @@ pub use crate::{
         LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
-    macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
+    macros::helper::{
+        subscription::{ExtractTypeFromStream, IntoFieldResult},
+        AsDynGraphQLValue,
+    },
     parser::{ParseError, Spanning},
     schema::{
         meta,
         model::{RootNode, SchemaType},
     },
     types::{
-        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
-        base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
-        marker::{self, GraphQLUnion, IsOutputType},
+        async_await::{DynGraphQLValueAsync, GraphQLTypeAsync, GraphQLValueAsync},
+        base::{Arguments, DynGraphQLValue, GraphQLType, GraphQLValue, TypeKind},
+        marker::{self, GraphQLInterface, GraphQLUnion},
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{
             ExecutionOutput, GraphQLSubscriptionType, GraphQLSubscriptionValue,

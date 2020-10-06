@@ -5,7 +5,7 @@ use hyper::{
     Body, Method, Response, Server, StatusCode,
 };
 use juniper::{
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
 
