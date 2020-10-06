@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 actix-web = "3.0.0"
-actix-cors = "0.3.0"
+actix-cors = "0.4.0"
 
 futures = "0.3.5"
 tokio = { version = "0.2", features = ["rt-core", "macros"] }

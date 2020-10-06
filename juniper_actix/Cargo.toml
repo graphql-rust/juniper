@@ -29,7 +29,7 @@ juniper_graphql_ws = { path = "../juniper_graphql_ws", optional = true }
 
 [dev-dependencies]
 actix-rt = "1.1.1"
-actix-cors = "0.3.0"
+actix-cors = "0.4.0"
 actix-identity = "0.3.0"
 
 bytes = "0.5.6"
