@@ -2,6 +2,8 @@
 
 ## Features
 
+- Added a public method for parsing queries ([#776](https://github.com/graphql-rust/juniper/pull/776))
+
 - Added async support. ([#2](https://github.com/graphql-rust/juniper/issues/2))
     - `execute()` is now async. Synchronous execution can still be used via `execute_sync()`.
     - Field resolvers may optionally be declared as `async` and return a future.
