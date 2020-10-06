@@ -1,0 +1,10 @@
+[package]
+name = "simple"
+version = "0.1.0"
+authors = ["Miroslav Zoricak <miroslav.zoricak@gmail.com>"]
+edition = "2018"
+publish = false
+
+[dependencies]
+juniper = { git = "https://github.com/graphql-rust/juniper" }
+juniper_warp = { git = "https://github.com/graphql-rust/juniper" }
