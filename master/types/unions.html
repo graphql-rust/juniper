@@ -137,8 +137,8 @@
                 <div id="content" class="content">
                     <main>
                         <a class="header" href="#unions" id="unions"><h1>Unions</h1></a>
-<p>From the server's point of view, <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> are similar to interfaces - the only exception is that they don't contain fields on their own.</p>
-<p>For implementing <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> Juniper provides:</p>
+<p>From the server's point of view, <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> are somewhat similar to <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interfaces</a> - the main difference is that they don't contain fields on their own.</p>
+<p>The most obvious and straightforward way to represent a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> in Rust is enum. However, we also can do so either with trait or a regular struct. That's why, for implementing <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> Juniper provides:</p>
 <ul>
 <li><code>#[derive(GraphQLUnion)]</code> macro for enums and structs.</li>
 <li><code>#[graphql_union]</code> for traits.</li>
@@ -389,7 +389,7 @@ impl Character for Droid {
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#custom-context" id="custom-context"><h3>Custom context</h3></a>
-<p>If a context is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, specify it as an argument.</p>
+<p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, specify it as an argument.</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
 # extern crate juniper;
 # use std::collections::HashMap;

@@ -1452,7 +1452,7 @@ trait Character {
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#custom-context" id="custom-context"><h3>Custom context</h3></a>
-<p>If a context is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
+<p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 # use std::collections::HashMap;
 use juniper::{graphql_interface, GraphQLObject};
@@ -1500,19 +1500,18 @@ impl Character for Human {
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#using-executor-and-explicit-generic-scalar" id="using-executor-and-explicit-generic-scalar"><h3>Using executor and explicit generic scalar</h3></a>
-<p>If an executor is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
+<p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
 <p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 use juniper::{graphql_interface, Executor, GraphQLObject, LookAheadMethods as _, ScalarValue};
 
-#[graphql_interface(for = Human, Scalar = S)] // notice specifying scalar as existing type parameter
+#[graphql_interface(for = Human, Scalar = S)] // notice specifying `ScalarValue` as existing type parameter
 trait Character&lt;S: ScalarValue&gt; {             
     // If a field argument is named `executor`, it's automatically assumed
     // as an executor argument.
     async fn id&lt;'a&gt;(&amp;self, executor: &amp;'a Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'a str
     where
         S: Send + Sync; // required by `#[async_trait]` transformation ¯\_(ツ)_/¯
-    
 
     // Otherwise, you may mark it explicitly as an executor argument.
     async fn name&lt;'b&gt;(
@@ -1549,7 +1548,7 @@ impl&lt;S: ScalarValue&gt; Character&lt;S&gt; for Human {
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#downcasting" id="downcasting"><h3>Downcasting</h3></a>
-<p>By default, the <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> value is downcast to one of its implementer types via matching the enum variant or downcasting the trait object (if <code>dyn</code> is used).</p>
+<p>By default, the <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> value is downcast to one of its implementer types via matching the enum variant or downcasting the trait object (if <code>dyn</code> macro argument is used).</p>
 <p>However, if some custom logic is needed to downcast a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> implementer, you may specify either an external function or a trait method to do so.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
 # use std::collections::HashMap;
@@ -1608,6 +1607,7 @@ fn get_droid&lt;'db&gt;(ch: &amp;CharacterValue, db: &amp;'db Database) -&gt; Op
 #
 # fn main() {}
 </code></pre></pre>
+<p>The attribute syntax <code>#[graphql_interface(on ImplementerType = resolver_fn)]</code> follows the <a href="https://spec.graphql.org/June2018/#example-5cc55">GraphQL syntax for downcasting interface implementer</a>.</p>
 <a class="header" href="#scalarvalue-considerations" id="scalarvalue-considerations"><h2><code>ScalarValue</code> considerations</h2></a>
 <p>By default, <code>#[graphql_interface]</code> macro generates code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> implementers is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
@@ -1620,7 +1620,7 @@ trait Character {
 }
 
 #[derive(GraphQLObject)]
-#[graphql(Scalar = DefaultScalarValue)]
+#[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
 struct Human {
     id: String,
     home_planet: String,
@@ -1633,6 +1633,7 @@ impl Character for Human {
 }
 
 #[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -1822,8 +1823,8 @@ where
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#unions" id="unions"><h1>Unions</h1></a>
-<p>From the server's point of view, <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> are similar to interfaces - the only exception is that they don't contain fields on their own.</p>
-<p>For implementing <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> Juniper provides:</p>
+<p>From the server's point of view, <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> are somewhat similar to <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interfaces</a> - the main difference is that they don't contain fields on their own.</p>
+<p>The most obvious and straightforward way to represent a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> in Rust is enum. However, we also can do so either with trait or a regular struct. That's why, for implementing <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL unions</a> Juniper provides:</p>
 <ul>
 <li><code>#[derive(GraphQLUnion)]</code> macro for enums and structs.</li>
 <li><code>#[graphql_union]</code> for traits.</li>
@@ -2074,7 +2075,7 @@ impl Character for Droid {
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#custom-context-1" id="custom-context-1"><h3>Custom context</h3></a>
-<p>If a context is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, specify it as an argument.</p>
+<p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Unions">GraphQL union</a> variant, specify it as an argument.</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
 # extern crate juniper;
 # use std::collections::HashMap;
