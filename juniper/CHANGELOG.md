@@ -36,26 +36,33 @@
 ## Fixes
 
 - Massively improved the `#[graphql_union]` proc macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
-    - Applicable to traits.
-    - Supports custom resolvers.
-    - Supports generics.
-    - Supports multiple `#[graphql_union]` attributes.
+  - Applicable to traits.
+  - Supports custom resolvers.
+  - Supports generics.
+  - Supports multiple `#[graphql_union]` attributes.
 
 - Massively improved the `#[derive(GraphQLUnion)]` macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
-    - Applicable to enums and structs.
-    - Supports custom resolvers.
-    - Supports generics.
-    - Supports multiple `#[graphql]` attributes.
+  - Applicable to enums and structs.
+  - Supports custom resolvers.
+  - Supports generics.
+  - Supports multiple `#[graphql]` attributes.
+
+- Massively improved the `#[graphql_interface]` macro. ([#682](https://github.com/graphql-rust/juniper/pull/682)):
+  - Applicable to traits and generates enum or trait object to represent a GraphQL interface.
+  - Supports passing context and executor to a field resolver. 
+  - Supports custom downcast functions and methods.
+  - Supports generics.
+  - Supports multiple `#[graphql_interface]` attributes.
     
- - The `GraphQLEnum` derive now supports specifying a custom context. ([#621](https://github.com/graphql-rust/juniper/pull/621))
-   - Example:
-   ```rust
-   #[derive(juniper::GraphQLEnum)]
-   #[graphql(context = CustomContext)]
-   enum TestEnum {
-       A,
-   }
-   ```
+- The `GraphQLEnum` derive now supports specifying a custom context. ([#621](https://github.com/graphql-rust/juniper/pull/621))
+  - Example:
+  ```rust
+  #[derive(juniper::GraphQLEnum)]
+  #[graphql(context = CustomContext)]
+  enum TestEnum {
+      A,
+  }
+  ```
 
 - Added support for renaming arguments within a GraphQL object. ([#631](https://github.com/graphql-rust/juniper/pull/631))
   - Example:
@@ -86,6 +93,8 @@
 - Removed the `graphql_scalar!` macro. Use the `#[graphql_scalar]` proc macro instead.
 
 - Removed the deprecated `ScalarValue` custom derive. Use `GraphQLScalarValue` instead.
+
+- Removed the `graphql_interface!` macro. Use the `#[graphql_interface]` proc macro instead.
 
 - Removed the `graphql_union!` macro. Use the `#[graphql_union]` proc macro or custom resolvers for the `#[derive(GraphQLUnion)]` instead.
 
