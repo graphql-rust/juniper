@@ -235,7 +235,7 @@ trait Character {
 
 ### Custom context
 
-If a context is required in a trait method to resolve a [GraphQL interface][1] field, specify it as an argument.
+If a [`Context`][6] is required in a trait method to resolve a [GraphQL interface][1] field, specify it as an argument.
 
 ```rust
 # extern crate juniper;
@@ -288,7 +288,7 @@ impl Character for Human {
 
 ### Using executor and explicit generic scalar
 
-If an executor is required in a trait method to resolve a [GraphQL interface][1] field, specify it as an argument.
+If an [`Executor`][4] is required in a trait method to resolve a [GraphQL interface][1] field, specify it as an argument.
 
 This requires to explicitly parametrize over [`ScalarValue`][3], as [`Executor`][4] does so. 
 
@@ -296,14 +296,13 @@ This requires to explicitly parametrize over [`ScalarValue`][3], as [`Executor`]
 # extern crate juniper;
 use juniper::{graphql_interface, Executor, GraphQLObject, LookAheadMethods as _, ScalarValue};
 
-#[graphql_interface(for = Human, Scalar = S)] // notice specifying scalar as existing type parameter
+#[graphql_interface(for = Human, Scalar = S)] // notice specifying `ScalarValue` as existing type parameter
 trait Character<S: ScalarValue> {             
     // If a field argument is named `executor`, it's automatically assumed
     // as an executor argument.
     async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
     where
         S: Send + Sync; // required by `#[async_trait]` transformation ¯\_(ツ)_/¯
-    
 
     // Otherwise, you may mark it explicitly as an executor argument.
     async fn name<'b>(
@@ -343,7 +342,7 @@ impl<S: ScalarValue> Character<S> for Human {
 
 ### Downcasting
 
-By default, the [GraphQL interface][1] value is downcast to one of its implementer types via matching the enum variant or downcasting the trait object (if `dyn` is used).
+By default, the [GraphQL interface][1] value is downcast to one of its implementer types via matching the enum variant or downcasting the trait object (if `dyn` macro argument is used).
 
 However, if some custom logic is needed to downcast a [GraphQL interface][1] implementer, you may specify either an external function or a trait method to do so.
 
@@ -406,6 +405,8 @@ fn get_droid<'db>(ch: &CharacterValue, db: &'db Database) -> Option<&'db Droid> 
 # fn main() {}
 ```
 
+The attribute syntax `#[graphql_interface(on ImplementerType = resolver_fn)]` follows the [GraphQL syntax for downcasting interface implementer](https://spec.graphql.org/June2018/#example-5cc55).
+
 
 
 
@@ -424,7 +425,7 @@ trait Character {
 }
 
 #[derive(GraphQLObject)]
-#[graphql(Scalar = DefaultScalarValue)]
+#[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
 struct Human {
     id: String,
     home_planet: String,
@@ -437,6 +438,7 @@ impl Character for Human {
 }
 
 #[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -460,3 +462,4 @@ impl Character for Droid {
 [3]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
 [4]: https://docs.rs/juniper/latest/juniper/struct.Executor.html
 [5]: https://spec.graphql.org/June2018/#sec-Objects
+[6]: https://docs.rs/juniper/0.14.2/juniper/trait.Context.html

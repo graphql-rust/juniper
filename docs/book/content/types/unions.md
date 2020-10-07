@@ -1,9 +1,9 @@
 Unions
 ======
 
-From the server's point of view, [GraphQL unions][1] are similar to interfaces - the only exception is that they don't contain fields on their own.
+From the server's point of view, [GraphQL unions][1] are somewhat similar to [interfaces][5] - the main difference is that they don't contain fields on their own.
 
-For implementing [GraphQL unions][1] Juniper provides:
+The most obvious and straightforward way to represent a [GraphQL union][1] in Rust is enum. However, we also can do so either with trait or a regular struct. That's why, for implementing [GraphQL unions][1] Juniper provides:
 - `#[derive(GraphQLUnion)]` macro for enums and structs.
 - `#[graphql_union]` for traits.
 
@@ -288,7 +288,7 @@ impl Character for Droid {
 
 ### Custom context
 
-If a context is required in a trait method to resolve a [GraphQL union][1] variant, specify it as an argument.
+If a [`Context`][6] is required in a trait method to resolve a [GraphQL union][1] variant, specify it as an argument.
 
 ```rust
 # #![allow(unused_variables)]
@@ -487,3 +487,5 @@ enum Character {
 
 [1]: https://spec.graphql.org/June2018/#sec-Unions
 [2]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
+[5]: https://spec.graphql.org/June2018/#sec-Interfaces
+[6]: https://docs.rs/juniper/0.14.2/juniper/trait.Context.html
