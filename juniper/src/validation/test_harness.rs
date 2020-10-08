@@ -11,7 +11,6 @@ use crate::{
         scalars::ID,
     },
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
-    value::ScalarValue,
     GraphQLInputObject,
 };
 
@@ -69,18 +68,12 @@ struct ComplexInput {
     string_list_field: Option<Vec<Option<String>>>,
 }
 
-impl<S> GraphQLType<S> for Being
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Being {
     fn name(_: &()) -> Option<&'static str> {
         Some("Being")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[registry
             .field::<Option<String>>("name", i)
             .argument(registry.arg::<Option<bool>>("surname", i))];
@@ -89,10 +82,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Being
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Being {
     type Context = ();
     type TypeInfo = ();
 
@@ -101,18 +91,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Pet
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Pet {
     fn name(_: &()) -> Option<&'static str> {
         Some("Pet")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[registry
             .field::<Option<String>>("name", i)
             .argument(registry.arg::<Option<bool>>("surname", i))];
@@ -121,10 +105,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Pet
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Pet {
     type Context = ();
     type TypeInfo = ();
 
@@ -133,18 +114,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Canine
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Canine {
     fn name(_: &()) -> Option<&'static str> {
         Some("Canine")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[registry
             .field::<Option<String>>("name", i)
             .argument(registry.arg::<Option<bool>>("surname", i))];
@@ -153,10 +128,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Canine
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Canine {
     type Context = ();
     type TypeInfo = ();
 
@@ -165,18 +137,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for DogCommand
-where
-    S: ScalarValue,
-{
+impl GraphQLType for DogCommand {
     fn name(_: &()) -> Option<&'static str> {
         Some("DogCommand")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry
             .build_enum_type::<Self>(
                 i,
@@ -190,10 +156,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for DogCommand
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for DogCommand {
     type Context = ();
     type TypeInfo = ();
 
@@ -202,11 +165,8 @@ where
     }
 }
 
-impl<S> FromInputValue<S> for DogCommand
-where
-    S: ScalarValue,
-{
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand> {
+impl FromInputValue for DogCommand {
+    fn from_input_value<'a>(v: &InputValue) -> Option<DogCommand> {
         match v.as_enum_value() {
             Some("SIT") => Some(DogCommand::Sit),
             Some("HEEL") => Some(DogCommand::Heel),
@@ -216,18 +176,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Dog
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Dog {
     fn name(_: &()) -> Option<&'static str> {
         Some("Dog")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry
                 .field::<Option<String>>("name", i)
@@ -258,10 +212,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Dog
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Dog {
     type Context = ();
     type TypeInfo = ();
 
@@ -270,18 +221,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for FurColor
-where
-    S: ScalarValue,
-{
+impl GraphQLType for FurColor {
     fn name(_: &()) -> Option<&'static str> {
         Some("FurColor")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry
             .build_enum_type::<Self>(
                 i,
@@ -296,10 +241,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for FurColor
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for FurColor {
     type Context = ();
     type TypeInfo = ();
 
@@ -308,11 +250,8 @@ where
     }
 }
 
-impl<S> FromInputValue<S> for FurColor
-where
-    S: ScalarValue,
-{
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor> {
+impl FromInputValue for FurColor {
+    fn from_input_value<'a>(v: &InputValue) -> Option<FurColor> {
         match v.as_enum_value() {
             Some("BROWN") => Some(FurColor::Brown),
             Some("BLACK") => Some(FurColor::Black),
@@ -323,18 +262,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Cat
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Cat {
     fn name(_: &()) -> Option<&'static str> {
         Some("Cat")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry
                 .field::<Option<String>>("name", i)
@@ -352,10 +285,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Cat
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Cat {
     type Context = ();
     type TypeInfo = ();
 
@@ -364,28 +294,19 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for CatOrDog
-where
-    S: ScalarValue,
-{
+impl GraphQLType for CatOrDog {
     fn name(_: &()) -> Option<&'static str> {
         Some("CatOrDog")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let types = &[registry.get_type::<Cat>(i), registry.get_type::<Dog>(i)];
 
         registry.build_union_type::<Self>(i, types).into_meta()
     }
 }
 
-impl<S> GraphQLValue<S> for CatOrDog
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for CatOrDog {
     type Context = ();
     type TypeInfo = ();
 
@@ -394,28 +315,19 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Intelligent
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Intelligent {
     fn name(_: &()) -> Option<&'static str> {
         Some("Intelligent")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[registry.field::<Option<i32>>("iq", i)];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
 }
 
-impl<S> GraphQLValue<S> for Intelligent
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Intelligent {
     type Context = ();
     type TypeInfo = ();
 
@@ -424,18 +336,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Human
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Human {
     fn name(_: &()) -> Option<&'static str> {
         Some("Human")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry
                 .field::<Option<String>>("name", i)
@@ -454,10 +360,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Human
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Human {
     type Context = ();
     type TypeInfo = ();
 
@@ -466,18 +369,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for Alien
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Alien {
     fn name(_: &()) -> Option<&'static str> {
         Some("Alien")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry
                 .field::<Option<String>>("name", i)
@@ -496,10 +393,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Alien
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Alien {
     type Context = ();
     type TypeInfo = ();
 
@@ -508,28 +402,19 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for DogOrHuman
-where
-    S: ScalarValue,
-{
+impl GraphQLType for DogOrHuman {
     fn name(_: &()) -> Option<&'static str> {
         Some("DogOrHuman")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let types = &[registry.get_type::<Dog>(i), registry.get_type::<Human>(i)];
 
         registry.build_union_type::<Self>(i, types).into_meta()
     }
 }
 
-impl<S> GraphQLValue<S> for DogOrHuman
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for DogOrHuman {
     type Context = ();
     type TypeInfo = ();
 
@@ -538,28 +423,19 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for HumanOrAlien
-where
-    S: ScalarValue,
-{
+impl GraphQLType for HumanOrAlien {
     fn name(_: &()) -> Option<&'static str> {
         Some("HumanOrAlien")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let types = &[registry.get_type::<Human>(i), registry.get_type::<Alien>(i)];
 
         registry.build_union_type::<Self>(i, types).into_meta()
     }
 }
 
-impl<S> GraphQLValue<S> for HumanOrAlien
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for HumanOrAlien {
     type Context = ();
     type TypeInfo = ();
 
@@ -568,18 +444,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for ComplexInput
-where
-    S: ScalarValue,
-{
+impl GraphQLType for ComplexInput {
     fn name(_: &()) -> Option<&'static str> {
         Some("ComplexInput")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.arg::<bool>("requiredField", i),
             registry.arg::<Option<i32>>("intField", i),
@@ -594,10 +464,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for ComplexInput
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for ComplexInput {
     type Context = ();
     type TypeInfo = ();
 
@@ -606,11 +473,8 @@ where
     }
 }
 
-impl<S> FromInputValue<S> for ComplexInput
-where
-    S: ScalarValue,
-{
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput> {
+impl FromInputValue for ComplexInput {
+    fn from_input_value<'a>(v: &InputValue) -> Option<ComplexInput> {
         let obj = match v.to_object_value() {
             Some(o) => o,
             None => return None,
@@ -629,18 +493,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for ComplicatedArgs
-where
-    S: ScalarValue,
-{
+impl GraphQLType for ComplicatedArgs {
     fn name(_: &()) -> Option<&'static str> {
         Some("ComplicatedArgs")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry
                 .field::<Option<String>>("intArgField", i)
@@ -689,10 +547,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for ComplicatedArgs
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for ComplicatedArgs {
     type Context = ();
     type TypeInfo = ();
 
@@ -701,18 +556,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for QueryRoot
-where
-    S: ScalarValue,
-{
+impl GraphQLType for QueryRoot {
     fn name(_: &()) -> Option<&'static str> {
         Some("QueryRoot")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry
                 .field::<Option<Human>>("human", i)
@@ -731,10 +580,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for QueryRoot
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for QueryRoot {
     type Context = ();
     type TypeInfo = ();
 
@@ -743,18 +589,12 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for MutationRoot
-where
-    S: ScalarValue,
-{
+impl GraphQLType for MutationRoot {
     fn name(_: &()) -> Option<&str> {
         Some("MutationRoot")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = [registry.field::<i32>("testInput", i).argument(
             registry.arg_with_default::<TestInput>(
                 "input",
@@ -770,10 +610,7 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for MutationRoot
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for MutationRoot {
     type Context = ();
     type TypeInfo = ();
 
@@ -782,28 +619,19 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for SubscriptionRoot
-where
-    S: ScalarValue,
-{
+impl GraphQLType for SubscriptionRoot {
     fn name(_: &()) -> Option<&str> {
         Some("SubscriptionRoot")
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = [];
 
         registry.build_object_type::<Self>(i, &fields).into_meta()
     }
 }
 
-impl<S> GraphQLValue<S> for SubscriptionRoot
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for SubscriptionRoot {
     type Context = ();
     type TypeInfo = ();
 
@@ -812,19 +640,12 @@ where
     }
 }
 
-pub fn validate<'a, Q, M, Sub, V, F, S>(
-    r: Q,
-    m: M,
-    s: Sub,
-    q: &'a str,
-    factory: F,
-) -> Vec<RuleError>
+pub fn validate<'a, Q, M, Sub, V, F>(r: Q, m: M, s: Sub, q: &'a str, factory: F) -> Vec<RuleError>
 where
-    S: ScalarValue + 'a,
-    Q: GraphQLType<S, TypeInfo = ()>,
-    M: GraphQLType<S, TypeInfo = ()>,
-    Sub: GraphQLType<S, TypeInfo = ()>,
-    V: Visitor<'a, S> + 'a,
+    Q: GraphQLType<TypeInfo = ()>,
+    M: GraphQLType<TypeInfo = ()>,
+    Sub: GraphQLType<TypeInfo = ()>,
+    V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
     let mut root = RootNode::new(r, m, s);
@@ -870,27 +691,25 @@ where
     ctx.into_errors()
 }
 
-pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
+pub fn expect_passes_rule<'a, V, F>(factory: F, q: &'a str)
 where
-    S: ScalarValue + 'a,
-    V: Visitor<'a, S> + 'a,
+    V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
     expect_passes_rule_with_schema(QueryRoot, MutationRoot, SubscriptionRoot, factory, q);
 }
 
-pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
+pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F>(
     r: Q,
     m: M,
     s: Sub,
     factory: F,
     q: &'a str,
 ) where
-    S: ScalarValue + 'a,
-    Q: GraphQLType<S, TypeInfo = ()>,
-    M: GraphQLType<S, TypeInfo = ()>,
-    Sub: GraphQLType<S, TypeInfo = ()>,
-    V: Visitor<'a, S> + 'a,
+    Q: GraphQLType<TypeInfo = ()>,
+    M: GraphQLType<TypeInfo = ()>,
+    Sub: GraphQLType<TypeInfo = ()>,
+    V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
     let errs = validate(r, m, s, q, factory);
@@ -901,29 +720,33 @@ pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
     }
 }
 
-pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
+pub fn expect_fails_rule<'a, V, F>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
-    S: ScalarValue + 'a,
-    V: Visitor<'a, S> + 'a,
+    V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
     expect_fails_rule_with_schema(QueryRoot, MutationRoot, factory, q, expected_errors);
 }
 
-pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
+pub fn expect_fails_rule_with_schema<'a, Q, M, V, F>(
     r: Q,
     m: M,
     factory: F,
     q: &'a str,
     expected_errors: &[RuleError],
 ) where
-    S: ScalarValue + 'a,
-    Q: GraphQLType<S, TypeInfo = ()>,
-    M: GraphQLType<S, TypeInfo = ()>,
-    V: Visitor<'a, S> + 'a,
+    Q: GraphQLType<TypeInfo = ()>,
+    M: GraphQLType<TypeInfo = ()>,
+    V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, crate::EmptySubscription::<S>::new(), q, factory);
+    let errs = validate::<Q, M, crate::EmptySubscription, V, F>(
+        r,
+        m,
+        crate::EmptySubscription::new(),
+        q,
+        factory,
+    );
 
     if errs.is_empty() {
         panic!("Expected rule to fail, but no errors were found");

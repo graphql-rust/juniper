@@ -8,12 +8,12 @@ use crate::{
 };
 
 /// The result of converting a string into a scalar value
-pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;
+pub type ParseScalarResult<'a> = Result<DefaultScalarValue, ParseError<'a>>;
 
 /// A trait used to convert a `ScalarToken` into a certain scalar value type
-pub trait ParseScalarValue<S = DefaultScalarValue> {
+pub trait ParseScalarValue {
     /// See the trait documentation
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_>;
 }
 
 /// A trait marking a type that could be used as internal representation of

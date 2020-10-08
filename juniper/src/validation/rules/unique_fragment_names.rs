@@ -4,7 +4,6 @@ use crate::{
     ast::Fragment,
     parser::{SourcePosition, Spanning},
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 pub struct UniqueFragmentNames<'a> {
@@ -17,14 +16,11 @@ pub fn factory<'a>() -> UniqueFragmentNames<'a> {
     }
 }
 
-impl<'a, S> Visitor<'a, S> for UniqueFragmentNames<'a>
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
     fn enter_fragment_definition(
         &mut self,
-        context: &mut ValidatorContext<'a, S>,
-        f: &'a Spanning<Fragment<S>>,
+        context: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
     ) {
         match self.names.entry(f.item.name.item) {
             Entry::Occupied(e) => {
@@ -51,12 +47,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn no_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -70,7 +65,7 @@ mod tests {
 
     #[test]
     fn one_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -88,7 +83,7 @@ mod tests {
 
     #[test]
     fn many_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -113,7 +108,7 @@ mod tests {
 
     #[test]
     fn inline_fragments_always_unique() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -132,7 +127,7 @@ mod tests {
 
     #[test]
     fn fragment_and_operation_named_the_same() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo {
@@ -149,7 +144,7 @@ mod tests {
 
     #[test]
     fn fragments_named_the_same() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           {
@@ -176,7 +171,7 @@ mod tests {
 
     #[test]
     fn fragments_named_the_same_no_reference() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment fragA on Dog {

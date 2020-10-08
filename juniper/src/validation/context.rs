@@ -17,14 +17,14 @@ pub struct RuleError {
 }
 
 #[doc(hidden)]
-pub struct ValidatorContext<'a, S: Debug + 'a> {
-    pub schema: &'a SchemaType<'a, S>,
+pub struct ValidatorContext<'a> {
+    pub schema: &'a SchemaType<'a>,
     errors: Vec<RuleError>,
-    type_stack: Vec<Option<&'a MetaType<'a, S>>>,
+    type_stack: Vec<Option<&'a MetaType<'a>>>,
     type_literal_stack: Vec<Option<Type<'a>>>,
-    input_type_stack: Vec<Option<&'a MetaType<'a, S>>>,
+    input_type_stack: Vec<Option<&'a MetaType<'a>>>,
     input_type_literal_stack: Vec<Option<Type<'a>>>,
-    parent_type_stack: Vec<Option<&'a MetaType<'a, S>>>,
+    parent_type_stack: Vec<Option<&'a MetaType<'a>>>,
     fragment_names: HashSet<&'a str>,
 }
 
@@ -66,9 +66,9 @@ impl fmt::Display for RuleError {
 
 impl std::error::Error for RuleError {}
 
-impl<'a, S: Debug> ValidatorContext<'a, S> {
+impl<'a> ValidatorContext<'a> {
     #[doc(hidden)]
-    pub fn new(schema: &'a SchemaType<S>, document: &Document<'a, S>) -> ValidatorContext<'a, S> {
+    pub fn new(schema: &'a SchemaType, document: &Document<'a>) -> ValidatorContext<'a> {
         ValidatorContext {
             errors: Vec::new(),
             schema,
@@ -106,7 +106,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
     where
-        F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
+        F: FnOnce(&mut ValidatorContext<'a>) -> R,
     {
         if let Some(t) = t {
             self.type_stack
@@ -128,7 +128,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn with_pushed_parent_type<F, R>(&mut self, f: F) -> R
     where
-        F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
+        F: FnOnce(&mut ValidatorContext<'a>) -> R,
     {
         self.parent_type_stack
             .push(*self.type_stack.last().unwrap_or(&None));
@@ -141,7 +141,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
     where
-        F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
+        F: FnOnce(&mut ValidatorContext<'a>) -> R,
     {
         if let Some(t) = t {
             self.input_type_stack
@@ -161,7 +161,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn current_type(&self) -> Option<&'a MetaType<'a, S>> {
+    pub fn current_type(&self) -> Option<&'a MetaType<'a>> {
         *self.type_stack.last().unwrap_or(&None)
     }
 
@@ -174,7 +174,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn parent_type(&self) -> Option<&'a MetaType<'a, S>> {
+    pub fn parent_type(&self) -> Option<&'a MetaType<'a>> {
         *self.parent_type_stack.last().unwrap_or(&None)
     }
 

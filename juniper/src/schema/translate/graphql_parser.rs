@@ -25,12 +25,11 @@ use crate::{
 
 pub struct GraphQLParserTranslator;
 
-impl<'a, S: 'a, T> From<&'a SchemaType<'a, S>> for Document<'a, T>
+impl<'a, T> From<&'a SchemaType<'a>> for Document<'a, T>
 where
-    S: ScalarValue,
     T: Text<'a> + Default,
 {
-    fn from(input: &'a SchemaType<'a, S>) -> Document<'a, T> {
+    fn from(input: &'a SchemaType<'a>) -> Document<'a, T> {
         GraphQLParserTranslator::translate_schema(input)
     }
 }
@@ -40,10 +39,8 @@ impl<'a, T> SchemaTranslator<'a, graphql_parser::schema::Document<'a, T>>
 where
     T: Text<'a> + Default,
 {
-    fn translate_schema<S: 'a>(input: &'a SchemaType<S>) -> graphql_parser::schema::Document<'a, T>
-    where
-        S: ScalarValue,
-    {
+    fn translate_schema(input: &'a SchemaType) -> graphql_parser::schema::Document<'a, T>
+where {
         let mut doc = Document::default();
 
         // Translate type defs.
@@ -76,9 +73,8 @@ where
 }
 
 impl GraphQLParserTranslator {
-    fn translate_argument<'a, S, T>(input: &'a Argument<S>) -> ExternalInputValue<'a, T>
+    fn translate_argument<'a, T>(input: &'a Argument) -> ExternalInputValue<'a, T>
     where
-        S: ScalarValue,
         T: Text<'a>,
     {
         ExternalInputValue {
@@ -94,9 +90,8 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_value<'a, S: 'a, T>(input: &'a InputValue<S>) -> ExternalValue<'a, T>
+    fn translate_value<'a, T>(input: &'a InputValue) -> ExternalValue<'a, T>
     where
-        S: ScalarValue,
         T: Text<'a>,
     {
         match input {
@@ -152,9 +147,8 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_meta<'a, S, T>(input: &'a MetaType<S>) -> ExternalTypeDefinition<'a, T>
+    fn translate_meta<'a, T>(input: &'a MetaType) -> ExternalTypeDefinition<'a, T>
     where
-        S: ScalarValue,
         T: Text<'a>,
     {
         match input {
@@ -245,9 +239,8 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_field<'a, S: 'a, T>(input: &'a Field<S>) -> ExternalField<'a, T>
+    fn translate_field<'a, T>(input: &'a Field) -> ExternalField<'a, T>
     where
-        S: ScalarValue,
         T: Text<'a>,
     {
         let arguments = input

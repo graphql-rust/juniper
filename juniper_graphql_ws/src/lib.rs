@@ -31,7 +31,7 @@ use juniper::{
         task::{Context, Poll, Waker},
         Sink, Stream,
     },
-    GraphQLError, RuleError, ScalarValue, Variables,
+    GraphQLError, RuleError, Variables,
 };
 use std::{
     collections::HashMap,
@@ -44,7 +44,7 @@ use std::{
 };
 
 struct ExecutionParams<S: Schema> {
-    start_payload: StartPayload<S::ScalarValue>,
+    start_payload: StartPayload,
     config: Arc<ConnectionConfig<S::Context>>,
     schema: S,
 }
@@ -83,21 +83,21 @@ impl<CtxT> ConnectionConfig<CtxT> {
     }
 }
 
-impl<S: ScalarValue, CtxT: Unpin + Send + 'static> Init<S, CtxT> for ConnectionConfig<CtxT> {
+impl<CtxT: Unpin + Send + 'static> Init<CtxT> for ConnectionConfig<CtxT> {
     type Error = Infallible;
     type Future = future::Ready<Result<Self, Self::Error>>;
 
-    fn init(self, _params: Variables<S>) -> Self::Future {
+    fn init(self, _params: Variables) -> Self::Future {
         future::ready(Ok(self))
     }
 }
 
-enum Reaction<S: Schema> {
-    ServerMessage(ServerMessage<S::ScalarValue>),
+enum Reaction {
+    ServerMessage(ServerMessage),
     EndStream,
 }
 
-impl<S: Schema> Reaction<S> {
+impl Reaction {
     /// Converts the reaction into a one-item stream.
     fn to_stream(self) -> BoxStream<'static, Self> {
         stream::once(future::ready(self)).boxed()
@@ -107,7 +107,7 @@ impl<S: Schema> Reaction<S> {
 /// Init defines the requirements for types that can provide connection configurations when
 /// ConnectionInit messages are received. Implementations are provided for `ConnectionConfig` and
 /// closures that meet the requirements.
-pub trait Init<S: ScalarValue, CtxT>: Unpin + 'static {
+pub trait Init<CtxT>: Unpin + 'static {
     /// The error that is returned on failure. The formatted error will be used as the contents of
     /// the "message" field sent back to the client.
     type Error: Error;
@@ -116,25 +116,24 @@ pub trait Init<S: ScalarValue, CtxT>: Unpin + 'static {
     type Future: Future<Output = Result<ConnectionConfig<CtxT>, Self::Error>> + Send + 'static;
 
     /// Returns a future for the configuration to use.
-    fn init(self, params: Variables<S>) -> Self::Future;
+    fn init(self, params: Variables) -> Self::Future;
 }
 
-impl<F, S, CtxT, Fut, E> Init<S, CtxT> for F
+impl<F, CtxT, Fut, E> Init<CtxT> for F
 where
-    S: ScalarValue,
-    F: FnOnce(Variables<S>) -> Fut + Unpin + 'static,
+    F: FnOnce(Variables) -> Fut + Unpin + 'static,
     Fut: Future<Output = Result<ConnectionConfig<CtxT>, E>> + Send + 'static,
     E: Error,
 {
     type Error = E;
     type Future = Fut;
 
-    fn init(self, params: Variables<S>) -> Fut {
+    fn init(self, params: Variables) -> Fut {
         self(params)
     }
 }
 
-enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
+enum ConnectionState<S: Schema, I: Init<S::Context>> {
     /// PreInit is the state before a ConnectionInit message has been accepted.
     PreInit { init: I, schema: S },
     /// Active is the state after a ConnectionInit message has been accepted.
@@ -147,13 +146,10 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     Terminated,
 }
 
-impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
+impl<S: Schema, I: Init<S::Context>> ConnectionState<S, I> {
     // Each message we receive results in a stream of zero or more reactions. For example, a
     // ConnectionTerminate message results in a one-item stream with the EndStream reaction.
-    async fn handle_message(
-        self,
-        msg: ClientMessage<S::ScalarValue>,
-    ) -> (Self, BoxStream<'static, Reaction<S>>) {
+    async fn handle_message(self, msg: ClientMessage) -> (Self, BoxStream<'static, Reaction>) {
         if let ClientMessage::ConnectionTerminate = msg {
             return (self, Reaction::EndStream.to_stream());
         }
@@ -298,7 +294,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         }
     }
 
-    async fn start(id: String, params: ExecutionParams<S>) -> BoxStream<'static, Reaction<S>> {
+    async fn start(id: String, params: ExecutionParams<S>) -> BoxStream<'static, Reaction> {
         // TODO: This could be made more efficient if juniper exposed functionality to allow us to
         // parse and validate the query, determine whether it's a subscription, and then execute
         // it. For now, the query gets parsed and validated twice.
@@ -360,7 +356,7 @@ impl<S: Stream + Unpin> Stream for InterruptableStream<S> {
 }
 
 /// SubscriptionStartState is the state for a subscription operation.
-enum SubscriptionStartState<S: Schema> {
+enum SubscriptionStartState {
     /// Init is the start before being polled for the first time.
     Init { id: String },
     /// ResolvingIntoStream is the state after being polled for the first time. In this state,
@@ -369,17 +365,14 @@ enum SubscriptionStartState<S: Schema> {
         id: String,
         future: BoxFuture<
             'static,
-            Result<
-                juniper_subscriptions::Connection<'static, S::ScalarValue>,
-                GraphQLError<'static>,
-            >,
+            Result<juniper_subscriptions::Connection<'static>, GraphQLError<'static>>,
         >,
     },
     /// Streaming is the state after we've successfully obtained the event stream for the
     /// subscription. In this state, we're just forwarding events back to the client.
     Streaming {
         id: String,
-        stream: juniper_subscriptions::Connection<'static, S::ScalarValue>,
+        stream: juniper_subscriptions::Connection<'static>,
     },
     /// Terminated is the state once we're all done.
     Terminated,
@@ -388,7 +381,7 @@ enum SubscriptionStartState<S: Schema> {
 /// SubscriptionStart is the stream for a subscription operation.
 struct SubscriptionStart<S: Schema> {
     params: Arc<ExecutionParams<S>>,
-    state: SubscriptionStartState<S>,
+    state: SubscriptionStartState,
     _marker: PhantomPinned,
 }
 
@@ -403,7 +396,7 @@ impl<S: Schema> SubscriptionStart<S> {
 }
 
 impl<S: Schema> Stream for SubscriptionStart<S> {
-    type Item = Reaction<S>;
+    type Item = Reaction;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         let (params, state) = unsafe {
@@ -491,20 +484,20 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
     }
 }
 
-enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
+enum ConnectionSinkState<S: Schema, I: Init<S::Context>> {
     Ready {
         state: ConnectionState<S, I>,
     },
     HandlingMessage {
-        result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
+        result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction>)>,
     },
     Closed,
 }
 
 /// Implements the graphql-ws protocol. This is a sink for `TryInto<ClientMessage>` and a stream of
 /// `ServerMessage`.
-pub struct Connection<S: Schema, I: Init<S::ScalarValue, S::Context>> {
-    reactions: SelectAll<BoxStream<'static, Reaction<S>>>,
+pub struct Connection<S: Schema, I: Init<S::Context>> {
+    reactions: SelectAll<BoxStream<'static, Reaction>>,
     stream_waker: Option<Waker>,
     sink_state: ConnectionSinkState<S, I>,
 }
@@ -512,7 +505,7 @@ pub struct Connection<S: Schema, I: Init<S::ScalarValue, S::Context>> {
 impl<S, I> Connection<S, I>
 where
     S: Schema,
-    I: Init<S::ScalarValue, S::Context>,
+    I: Init<S::Context>,
 {
     /// Creates a new connection, which is a sink for `TryInto<ClientMessage>` and a stream of `ServerMessage`.
     ///
@@ -536,10 +529,10 @@ where
 
 impl<S, I, T> Sink<T> for Connection<S, I>
 where
-    T: TryInto<ClientMessage<S::ScalarValue>>,
+    T: TryInto<ClientMessage>,
     T::Error: Error,
     S: Schema,
-    I: Init<S::ScalarValue, S::Context> + Send,
+    I: Init<S::Context> + Send,
 {
     type Error = Infallible;
 
@@ -605,9 +598,9 @@ where
 impl<S, I> Stream for Connection<S, I>
 where
     S: Schema,
-    I: Init<S::ScalarValue, S::Context>,
+    I: Init<S::Context>,
 {
-    type Item = ServerMessage<S::ScalarValue>;
+    type Item = ServerMessage;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         self.stream_waker = Some(cx.waker().clone());

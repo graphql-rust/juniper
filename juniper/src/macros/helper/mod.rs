@@ -2,13 +2,13 @@
 
 pub mod subscription;
 
-use crate::{DefaultScalarValue, DynGraphQLValue, DynGraphQLValueAsync, ScalarValue};
+use crate::{DynGraphQLValue, DynGraphQLValueAsync};
 
 /// Conversion of a [`GraphQLValue`] to its [trait object][1].
 ///
 /// [`GraphQLValue`]: crate::GraphQLValue
 /// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
-pub trait AsDynGraphQLValue<S: ScalarValue = DefaultScalarValue> {
+pub trait AsDynGraphQLValue {
     /// Context type of this [`GraphQLValue`].
     ///
     /// [`GraphQLValue`]: crate::GraphQLValue
@@ -22,13 +22,12 @@ pub trait AsDynGraphQLValue<S: ScalarValue = DefaultScalarValue> {
     /// Converts this value to a [`DynGraphQLValue`] [trait object][1].
     ///
     /// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
-    fn as_dyn_graphql_value(&self) -> &DynGraphQLValue<S, Self::Context, Self::TypeInfo>;
+    fn as_dyn_graphql_value(&self) -> &DynGraphQLValue<Self::Context, Self::TypeInfo>;
 
     /// Converts this value to a [`DynGraphQLValueAsync`] [trait object][1].
     ///
     /// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
-    fn as_dyn_graphql_value_async(&self)
-        -> &DynGraphQLValueAsync<S, Self::Context, Self::TypeInfo>;
+    fn as_dyn_graphql_value_async(&self) -> &DynGraphQLValueAsync<Self::Context, Self::TypeInfo>;
 }
 
 crate::sa::assert_obj_safe!(AsDynGraphQLValue<Context = (), TypeInfo = ()>);

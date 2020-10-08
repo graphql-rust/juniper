@@ -4,7 +4,6 @@ use crate::{
     ast::{Operation, VariableDefinition},
     parser::{SourcePosition, Spanning},
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 pub struct UniqueVariableNames<'a> {
@@ -17,22 +16,19 @@ pub fn factory<'a>() -> UniqueVariableNames<'a> {
     }
 }
 
-impl<'a, S> Visitor<'a, S> for UniqueVariableNames<'a>
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        _: &'a Spanning<Operation<S>>,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<Operation>,
     ) {
         self.names = HashMap::new();
     }
 
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        ctx: &mut ValidatorContext<'a>,
+        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition),
     ) {
         match self.names.entry(var_name.item) {
             Entry::Occupied(e) => {
@@ -56,12 +52,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn unique_variable_names() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query A($x: Int, $y: String) { __typename }
@@ -72,7 +67,7 @@ mod tests {
 
     #[test]
     fn duplicate_variable_names() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query A($x: Int, $x: Int, $x: String) { __typename }

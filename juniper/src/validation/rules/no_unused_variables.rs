@@ -2,7 +2,6 @@ use crate::{
     ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition},
     parser::Spanning,
     validation::{RuleError, ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -58,11 +57,8 @@ impl<'a> NoUnusedVariables<'a> {
     }
 }
 
-impl<'a, S> Visitor<'a, S> for NoUnusedVariables<'a>
-where
-    S: ScalarValue,
-{
-    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
+impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
+    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, _: &'a Document) {
         for (op_name, def_vars) in &self.defined_variables {
             let mut used = HashSet::new();
             let mut visited = HashSet::new();
@@ -85,8 +81,8 @@ where
 
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        op: &'a Spanning<Operation<S>>,
+        _: &mut ValidatorContext<'a>,
+        op: &'a Spanning<Operation>,
     ) {
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -95,16 +91,16 @@ where
 
     fn enter_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        f: &'a Spanning<Fragment<S>>,
+        _: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
     }
 
     fn enter_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        spread: &'a Spanning<FragmentSpread<S>>,
+        _: &mut ValidatorContext<'a>,
+        spread: &'a Spanning<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
@@ -116,8 +112,8 @@ where
 
     fn enter_variable_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        _: &mut ValidatorContext<'a>,
+        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition),
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
@@ -128,8 +124,8 @@ where
 
     fn enter_argument(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        _: &mut ValidatorContext<'a>,
+        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>),
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
@@ -158,12 +154,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn uses_all_variables() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -175,7 +170,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -191,7 +186,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply_in_inline_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -211,7 +206,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_in_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -236,7 +231,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_fragment_in_multiple_operations() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String) {
@@ -257,7 +252,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_recursive_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String) {
@@ -274,7 +269,7 @@ mod tests {
 
     #[test]
     fn variable_not_used() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -290,7 +285,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_1() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -312,7 +307,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_in_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -341,7 +336,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_2() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -376,7 +371,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_unreferenced_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($b: String) {
@@ -398,7 +393,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_fragment_used_by_other_operation() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($b: String) {

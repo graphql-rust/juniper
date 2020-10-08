@@ -4,7 +4,7 @@ use crate::{
 };
 use std::fmt::{self, Display, Formatter};
 mod object;
-mod scalar;
+pub mod scalar;
 
 pub use self::object::Object;
 
@@ -162,8 +162,8 @@ where {
     }
 }
 
-impl<S: ScalarValue> ToInputValue<S> for Value<S> {
-    fn to_input_value(&self) -> InputValue<S> {
+impl ToInputValue for Value<DefaultScalarValue> {
+    fn to_input_value(&self) -> InputValue<DefaultScalarValue> {
         match *self {
             Value::Null => InputValue::Null,
             Value::Scalar(ref s) => InputValue::Scalar(s.clone()),

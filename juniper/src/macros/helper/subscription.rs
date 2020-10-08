@@ -5,39 +5,39 @@
 
 use futures::Stream;
 
-use crate::{FieldError, GraphQLValue, ScalarValue};
+use crate::{FieldError, GraphQLValue};
 
 /// Trait for wrapping [`Stream`] into [`Ok`] if it's not [`Result`].
 ///
 /// Used in subscription macros when user can provide type alias for [`Stream`] or
 /// `Result<Stream, _>` and then a function on [`Stream`] should be called.
-pub trait IntoFieldResult<T, S> {
+pub trait IntoFieldResult<T> {
     /// Type of items yielded by this [`Stream`].
     type Item;
 
     /// Turns current [`Stream`] type into a generic [`Result`].
-    fn into_result(self) -> Result<T, FieldError<S>>;
+    fn into_result(self) -> Result<T, FieldError>;
 }
 
-impl<T, E, S> IntoFieldResult<T, S> for Result<T, E>
+impl<T, E> IntoFieldResult<T> for Result<T, E>
 where
-    T: IntoFieldResult<T, S>,
-    E: Into<FieldError<S>>,
+    T: IntoFieldResult<T>,
+    E: Into<FieldError>,
 {
     type Item = T::Item;
 
-    fn into_result(self) -> Result<T, FieldError<S>> {
+    fn into_result(self) -> Result<T, FieldError> {
         self.map_err(|e| e.into())
     }
 }
 
-impl<T, S> IntoFieldResult<T, S> for T
+impl<T> IntoFieldResult<T> for T
 where
     T: Stream,
 {
     type Item = T::Item;
 
-    fn into_result(self) -> Result<T, FieldError<S>> {
+    fn into_result(self) -> Result<T, FieldError> {
         Ok(self)
     }
 }
@@ -61,48 +61,41 @@ pub struct ResultStreamResult;
 /// This trait is used in `juniper::graphql_subscription` macro to get stream's
 /// item type that implements `GraphQLValue` from type alias provided
 /// by user.
-pub trait ExtractTypeFromStream<T, S>
-where
-    S: ScalarValue,
-{
+pub trait ExtractTypeFromStream<T> {
     /// Stream's return Value that will be returned if
     /// no errors occured. Is used to determine field type in
     /// `#[juniper::graphql_subscription]`
-    type Item: GraphQLValue<S>;
+    type Item: GraphQLValue;
 }
 
-impl<T, I, S> ExtractTypeFromStream<StreamItem, S> for T
+impl<T, I> ExtractTypeFromStream<StreamItem> for T
 where
     T: futures::Stream<Item = I>,
-    I: GraphQLValue<S>,
-    S: ScalarValue,
+    I: GraphQLValue,
 {
     type Item = I;
 }
 
-impl<Ty, T, E, S> ExtractTypeFromStream<StreamResult, S> for Ty
+impl<Ty, T, E> ExtractTypeFromStream<StreamResult> for Ty
 where
     Ty: futures::Stream<Item = Result<T, E>>,
-    T: GraphQLValue<S>,
-    S: ScalarValue,
+    T: GraphQLValue,
 {
     type Item = T;
 }
 
-impl<T, I, E, S> ExtractTypeFromStream<ResultStreamItem, S> for Result<T, E>
+impl<T, I, E> ExtractTypeFromStream<ResultStreamItem> for Result<T, E>
 where
     T: futures::Stream<Item = I>,
-    I: GraphQLValue<S>,
-    S: ScalarValue,
+    I: GraphQLValue,
 {
     type Item = I;
 }
 
-impl<T, E, I, ER, S> ExtractTypeFromStream<ResultStreamResult, S> for Result<T, E>
+impl<T, E, I, ER> ExtractTypeFromStream<ResultStreamResult> for Result<T, E>
 where
     T: futures::Stream<Item = Result<I, ER>>,
-    I: GraphQLValue<S>,
-    S: ScalarValue,
+    I: GraphQLValue,
 {
     type Item = I;
 }

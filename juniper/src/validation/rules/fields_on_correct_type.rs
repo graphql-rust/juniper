@@ -3,7 +3,6 @@ use crate::{
     parser::Spanning,
     schema::meta::MetaType,
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 pub struct FieldsOnCorrectType;
@@ -12,15 +11,8 @@ pub fn factory() -> FieldsOnCorrectType {
     FieldsOnCorrectType
 }
 
-impl<'a, S> Visitor<'a, S> for FieldsOnCorrectType
-where
-    S: ScalarValue,
-{
-    fn enter_field(
-        &mut self,
-        context: &mut ValidatorContext<'a, S>,
-        field: &'a Spanning<Field<S>>,
-    ) {
+impl<'a> Visitor<'a> for FieldsOnCorrectType {
+    fn enter_field(&mut self, context: &mut ValidatorContext<'a>, field: &'a Spanning<Field>) {
         {
             if let Some(parent_type) = context.parent_type() {
                 let field_name = &field.item.name;
@@ -57,12 +49,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn selection_on_object() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment objectFieldSelection on Dog {
@@ -75,7 +66,7 @@ mod tests {
 
     #[test]
     fn aliased_selection_on_object() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment aliasedObjectFieldSelection on Dog {
@@ -88,7 +79,7 @@ mod tests {
 
     #[test]
     fn selection_on_interface() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment interfaceFieldSelection on Pet {
@@ -101,7 +92,7 @@ mod tests {
 
     #[test]
     fn aliased_selection_on_interface() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment interfaceFieldSelection on Pet {
@@ -113,7 +104,7 @@ mod tests {
 
     #[test]
     fn lying_alias_selection() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment lyingAliasSelection on Dog {
@@ -125,7 +116,7 @@ mod tests {
 
     #[test]
     fn ignores_unknown_type() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment unknownSelection on UnknownType {
@@ -137,7 +128,7 @@ mod tests {
 
     #[test]
     fn nested_unknown_fields() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment typeKnownAgain on Pet {
@@ -163,7 +154,7 @@ mod tests {
 
     #[test]
     fn unknown_field_on_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment fieldNotDefined on Dog {
@@ -179,7 +170,7 @@ mod tests {
 
     #[test]
     fn ignores_deeply_unknown_field() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment deepFieldNotDefined on Dog {
@@ -197,7 +188,7 @@ mod tests {
 
     #[test]
     fn unknown_subfield() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment subFieldNotDefined on Human {
@@ -215,7 +206,7 @@ mod tests {
 
     #[test]
     fn unknown_field_on_inline_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment fieldNotDefined on Pet {
@@ -233,7 +224,7 @@ mod tests {
 
     #[test]
     fn unknown_aliased_target() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment aliasedFieldTargetNotDefined on Dog {
@@ -249,7 +240,7 @@ mod tests {
 
     #[test]
     fn unknown_aliased_lying_field_target() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment aliasedLyingFieldTargetNotDefined on Dog {
@@ -265,7 +256,7 @@ mod tests {
 
     #[test]
     fn not_defined_on_interface() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment notDefinedOnInterface on Pet {
@@ -281,7 +272,7 @@ mod tests {
 
     #[test]
     fn defined_in_concrete_types_but_not_interface() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment definedOnImplementorsButNotInterface on Pet {
@@ -297,7 +288,7 @@ mod tests {
 
     #[test]
     fn meta_field_on_union() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment definedOnImplementorsButNotInterface on Pet {
@@ -309,7 +300,7 @@ mod tests {
 
     #[test]
     fn fields_on_union() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment definedOnImplementorsQueriedOnUnion on CatOrDog {
@@ -325,7 +316,7 @@ mod tests {
 
     #[test]
     fn typename_on_union() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment objectFieldSelection on Pet {
@@ -343,7 +334,7 @@ mod tests {
 
     #[test]
     fn valid_field_in_inline_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment objectFieldSelection on Pet {

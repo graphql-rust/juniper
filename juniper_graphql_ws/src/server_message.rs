@@ -1,4 +1,4 @@
-use juniper::{ExecutionError, GraphQLError, ScalarValue, Value};
+use juniper::{DefaultScalarValue, ExecutionError, GraphQLError, Value};
 use serde::{Serialize, Serializer};
 use std::{any::Any, fmt, marker::PhantomPinned};
 
@@ -13,16 +13,15 @@ pub struct ConnectionErrorPayload {
 /// Sent after execution of an operation. For queries and mutations, this is sent to the client
 /// once. For subscriptions, this is sent for every event in the event stream.
 #[derive(Debug, Serialize, PartialEq)]
-#[serde(bound(serialize = "S: ScalarValue"))]
 #[serde(rename_all = "camelCase")]
-pub struct DataPayload<S> {
+pub struct DataPayload {
     /// The result data.
-    pub data: Value<S>,
+    pub data: Value<DefaultScalarValue>,
 
     /// The errors that have occurred during execution. Note that parse and validation errors are
     /// not included here. They are sent via Error messages.
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub errors: Vec<ExecutionError<S>>,
+    pub errors: Vec<ExecutionError>,
 }
 
 /// A payload for errors that can happen before execution. Errors that happen during execution are
@@ -89,10 +88,9 @@ impl From<GraphQLError<'static>> for ErrorPayload {
 
 /// ServerMessage defines the message types that servers can send.
 #[derive(Debug, Serialize, PartialEq)]
-#[serde(bound(serialize = "S: ScalarValue"))]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
-pub enum ServerMessage<S: ScalarValue> {
+pub enum ServerMessage {
     /// ConnectionError is used for errors that are not associated with a GraphQL operation. For
     /// example, this will be used when:
     ///
@@ -111,7 +109,7 @@ pub enum ServerMessage<S: ScalarValue> {
         id: String,
 
         /// The data and errors that occurred during execution.
-        payload: DataPayload<S>,
+        payload: DataPayload,
     },
     /// Error contains an error that occurs before execution, such as validation errors.
     Error {

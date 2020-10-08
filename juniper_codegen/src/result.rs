@@ -54,7 +54,6 @@ impl fmt::Display for GraphQLScope {
 pub enum UnsupportedAttribute {
     Skip,
     Interface,
-    Scalar,
     Deprecation,
     Default,
 }

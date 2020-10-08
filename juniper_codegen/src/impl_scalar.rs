@@ -176,9 +176,6 @@ pub fn build_scalar(
             "unable to find target for implementation target for `GraphQLScalar`",
         )
     })?;
-    let custom_data_type = input
-        .custom_data_type
-        .ok_or_else(|| error.custom_error(body_span, "unable to find custom scalar data type"))?;
     let resolve_body = input
         .resolve_body
         .ok_or_else(|| error.custom_error(body_span, "unable to find body of `resolve` method"))?;
@@ -218,41 +215,20 @@ pub fn build_scalar(
         Some(val) => quote!(.description(#val)),
         None => quote!(),
     };
-    let async_generic_type = match input.custom_data_type_is_struct {
-        true => quote!(__S),
-        _ => quote!(#custom_data_type),
-    };
-    let async_generic_type_decl = match input.custom_data_type_is_struct {
-        true => quote!(<#async_generic_type>),
-        _ => quote!(),
-    };
-    let generic_type = match input.custom_data_type_is_struct {
-        true => quote!(S),
-        _ => quote!(#custom_data_type),
-    };
-    let generic_type_decl = match input.custom_data_type_is_struct {
-        true => quote!(<#generic_type>),
-        _ => quote!(),
-    };
-    let generic_type_bound = match input.custom_data_type_is_struct {
-        true => quote!(where #generic_type: ::juniper::ScalarValue,),
-        _ => quote!(),
-    };
 
     let _async = quote!(
-        impl#async_generic_type_decl ::juniper::GraphQLValueAsync<#async_generic_type> for #impl_for_type
+        impl ::juniper::GraphQLValueAsync for #impl_for_type
         where
             Self: Sync,
             Self::TypeInfo: Sync,
             Self::Context: Sync,
-            #async_generic_type: ::juniper::ScalarValue + Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,
                 info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [::juniper::Selection<#async_generic_type>]>,
-                executor: &'a ::juniper::Executor<Self::Context, #async_generic_type>,
-            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#async_generic_type>> {
+                selection_set: Option<&'a [::juniper::Selection]>,
+                executor: &'a ::juniper::Executor<Self::Context>,
+            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult> {
                 use ::juniper::futures::future;
                 let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
@@ -263,14 +239,11 @@ pub fn build_scalar(
     let content = quote!(
         #_async
 
-        impl#generic_type_decl ::juniper::marker::IsInputType<#generic_type> for #impl_for_type
-            #generic_type_bound { }
+        impl ::juniper::marker::IsInputType for #impl_for_type { }
 
-        impl#generic_type_decl ::juniper::marker::IsOutputType<#generic_type> for #impl_for_type
-            #generic_type_bound { }
+        impl ::juniper::marker::IsOutputType for #impl_for_type { }
 
-        impl#generic_type_decl ::juniper::GraphQLType<#generic_type> for #impl_for_type
-        #generic_type_bound
+        impl ::juniper::GraphQLType for #impl_for_type
         {
             fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
@@ -278,10 +251,8 @@ pub fn build_scalar(
 
             fn meta<'r>(
                 info: &Self::TypeInfo,
-                registry: &mut ::juniper::Registry<'r, #generic_type>,
-            ) -> ::juniper::meta::MetaType<'r, #generic_type>
-            where
-                #generic_type: 'r,
+                registry: &mut ::juniper::Registry<'r>,
+            ) -> ::juniper::meta::MetaType<'r>
             {
                 registry.build_scalar_type::<Self>(info)
                     #description
@@ -289,45 +260,41 @@ pub fn build_scalar(
             }
         }
 
-        impl#generic_type_decl ::juniper::GraphQLValue<#generic_type> for #impl_for_type
-        #generic_type_bound
+        impl ::juniper::GraphQLValue for #impl_for_type
         {
             type Context = ();
             type TypeInfo = ();
 
             fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                <Self as ::juniper::GraphQLType<#generic_type>>::name(info)
+                <Self as ::juniper::GraphQLType>::name(info)
             }
 
             fn resolve(
                 &self,
                 info: &(),
-                selection: Option<&[::juniper::Selection<#generic_type>]>,
-                executor: &::juniper::Executor<Self::Context, #generic_type>,
-            ) -> ::juniper::ExecutionResult<#generic_type> {
+                selection: Option<&[::juniper::Selection]>,
+                executor: &::juniper::Executor<Self::Context>,
+            ) -> ::juniper::ExecutionResult {
                 Ok(#resolve_body)
             }
         }
 
-        impl#generic_type_decl ::juniper::ToInputValue<#generic_type> for #impl_for_type
-        #generic_type_bound
+        impl ::juniper::ToInputValue for #impl_for_type
         {
-            fn to_input_value(&self) -> ::juniper::InputValue<#generic_type> {
+            fn to_input_value(&self) -> ::juniper::InputValue {
                 let v = #resolve_body;
                 ::juniper::ToInputValue::to_input_value(&v)
             }
         }
 
-        impl#generic_type_decl ::juniper::FromInputValue<#generic_type> for #impl_for_type
-        #generic_type_bound
+        impl ::juniper::FromInputValue for #impl_for_type
         {
-            fn from_input_value(#from_input_value_arg: &::juniper::InputValue<#generic_type>) -> #from_input_value_result {
+            fn from_input_value(#from_input_value_arg: &::juniper::InputValue) -> #from_input_value_result {
                 #from_input_value_body
             }
         }
 
-        impl#generic_type_decl ::juniper::ParseScalarValue<#generic_type> for #impl_for_type
-        #generic_type_bound
+        impl ::juniper::ParseScalarValue for #impl_for_type
             {
                 fn from_str<'a>(
                     #from_str_arg: ::juniper::parser::ScalarToken<'a>,

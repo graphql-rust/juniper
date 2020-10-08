@@ -7,10 +7,7 @@ use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
-    common::{
-        parse::{self, TypeExt as _},
-        ScalarValueType,
-    },
+    common::parse::{self, TypeExt as _},
     result::GraphQLScope,
     util::{path_eq_single, span_container::SpanContainer, to_camel_case},
 };
@@ -68,28 +65,6 @@ pub fn expand_on_trait(
         );
     }
 
-    let scalar = meta
-        .scalar
-        .as_ref()
-        .map(|sc| {
-            ast.generics
-                .params
-                .iter()
-                .find_map(|p| {
-                    if let syn::GenericParam::Type(tp) = p {
-                        let ident = &tp.ident;
-                        let ty: syn::Type = parse_quote! { #ident };
-                        if &ty == sc.as_ref() {
-                            return Some(&tp.ident);
-                        }
-                    }
-                    None
-                })
-                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
-                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
-        })
-        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
-
     let mut implementers: Vec<_> = meta
         .implementers
         .iter()
@@ -97,7 +72,6 @@ pub fn expand_on_trait(
             ty: ty.as_ref().clone(),
             downcast: None,
             context_ty: None,
-            scalar: scalar.clone(),
         })
         .collect();
     for (ty, downcast) in &meta.external_downcasts {
@@ -184,19 +158,9 @@ pub fn expand_on_trait(
     });
 
     let ty = if is_trait_object {
-        Type::TraitObject(Box::new(TraitObjectType::new(
-            &ast,
-            &meta,
-            scalar.clone(),
-            context.clone(),
-        )))
+        Type::TraitObject(Box::new(TraitObjectType::new(&ast, &meta, context.clone())))
     } else {
-        Type::Enum(Box::new(EnumType::new(
-            &ast,
-            &meta,
-            &implementers,
-            scalar.clone(),
-        )))
+        Type::Enum(Box::new(EnumType::new(&ast, &meta, &implementers)))
     };
 
     let generated_code = Definition {
@@ -206,7 +170,6 @@ pub fn expand_on_trait(
         description: meta.description.map(SpanContainer::into_inner),
 
         context,
-        scalar: scalar.clone(),
 
         fields,
         implementers,
@@ -218,19 +181,9 @@ pub fn expand_on_trait(
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
         });
 
-        let scalar_ty = scalar.generic_ty();
-        if !scalar.is_explicit_generic() {
-            let default_ty = scalar.default_ty();
-            ast.generics
-                .params
-                .push(parse_quote! { #scalar_ty = #default_ty });
-        }
-        ast.generics
-            .make_where_clause()
-            .predicates
-            .push(parse_quote! { #scalar_ty: ::juniper::ScalarValue });
+        ast.generics.make_where_clause();
         ast.supertraits
-            .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar_ty> });
+            .push(parse_quote! { ::juniper::AsDynGraphQLValue });
     }
 
     if is_async_trait {
@@ -278,52 +231,9 @@ pub fn expand_on_impl(
     let is_trait_object = meta.r#dyn.is_some();
 
     if is_trait_object {
-        let scalar = meta
-            .scalar
-            .as_ref()
-            .map(|sc| {
-                ast.generics
-                    .params
-                    .iter()
-                    .find_map(|p| {
-                        if let syn::GenericParam::Type(tp) = p {
-                            let ident = &tp.ident;
-                            let ty: syn::Type = parse_quote! { #ident };
-                            if &ty == sc.as_ref() {
-                                return Some(&tp.ident);
-                            }
-                        }
-                        None
-                    })
-                    .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
-                    .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
-            })
-            .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
-
         ast.attrs.push(parse_quote! {
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
         });
-
-        if scalar.is_implicit_generic() {
-            ast.generics.params.push(parse_quote! { #scalar });
-        }
-        if scalar.is_generic() {
-            ast.generics
-                .make_where_clause()
-                .predicates
-                .push(parse_quote! { #scalar: ::juniper::ScalarValue + Send + Sync });
-        }
-
-        if !scalar.is_explicit_generic() {
-            let (_, trait_path, _) = ast.trait_.as_mut().unwrap();
-            let trait_params = &mut trait_path.segments.last_mut().unwrap().arguments;
-            if let syn::PathArguments::None = trait_params {
-                *trait_params = syn::PathArguments::AngleBracketed(parse_quote! { <> });
-            }
-            if let syn::PathArguments::AngleBracketed(a) = trait_params {
-                a.args.push(parse_quote! { #scalar });
-            }
-        }
     }
 
     if is_async_trait {
@@ -427,7 +337,6 @@ impl TraitMethod {
             ty,
             downcast: Some(downcast),
             context_ty,
-            scalar: ScalarValueType::ImplicitGeneric,
         })
     }
 

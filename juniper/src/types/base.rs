@@ -5,8 +5,8 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
-    value::{DefaultScalarValue, Object, ScalarValue, Value},
-    GraphQLEnum,
+    value::{Object, Value},
+    DefaultScalarValue, GraphQLEnum,
 };
 
 /// GraphQL type kind
@@ -69,18 +69,15 @@ pub enum TypeKind {
 
 /// Field argument container
 #[derive(Debug)]
-pub struct Arguments<'a, S = DefaultScalarValue> {
-    args: Option<IndexMap<&'a str, InputValue<S>>>,
+pub struct Arguments<'a> {
+    args: Option<IndexMap<&'a str, InputValue>>,
 }
 
-impl<'a, S> Arguments<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a> Arguments<'a> {
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<IndexMap<&'a str, InputValue<S>>>,
-        meta_args: &'a Option<Vec<Argument<S>>>,
+        mut args: Option<IndexMap<&'a str, InputValue>>,
+        meta_args: &'a Option<Vec<Argument>>,
     ) -> Self {
         if meta_args.is_some() && args.is_none() {
             args = Some(IndexMap::new());
@@ -110,7 +107,7 @@ where
     /// succeeeds.
     pub fn get<T>(&self, key: &str) -> Option<T>
     where
-        T: FromInputValue<S>,
+        T: FromInputValue,
     {
         self.args
             .as_ref()
@@ -154,10 +151,7 @@ where
 /// [8]: https://spec.graphql.org/June2018/#sec-Input-Objects
 /// [11]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 /// [12]: https://doc.rust-lang.org/reference/types/trait-object.html
-pub trait GraphQLValue<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
+pub trait GraphQLValue {
     /// Context type for this [`GraphQLValue`].
     ///
     /// It's threaded through a query execution to all affected nodes, and can be used to hold
@@ -195,9 +189,9 @@ where
         &self,
         _info: &Self::TypeInfo,
         _field_name: &str,
-        _arguments: &Arguments<S>,
-        _executor: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
+        _arguments: &Arguments,
+        _executor: &Executor<Self::Context>,
+    ) -> ExecutionResult {
         panic!("GraphQLValue::resolve_field() must be implemented by objects and interfaces");
     }
 
@@ -218,9 +212,9 @@ where
         &self,
         info: &Self::TypeInfo,
         type_name: &str,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<Self::Context>,
+    ) -> ExecutionResult {
         if self.type_name(info).unwrap() == type_name {
             self.resolve(info, selection_set, executor)
         } else {
@@ -270,9 +264,9 @@ where
     fn resolve(
         &self,
         info: &Self::TypeInfo,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<Self::Context>,
+    ) -> ExecutionResult {
         if let Some(sel) = selection_set {
             let mut res = Object::with_capacity(sel.len());
             Ok(
@@ -293,8 +287,8 @@ crate::sa::assert_obj_safe!(GraphQLValue<Context = (), TypeInfo = ()>);
 /// Helper alias for naming [trait objects][1] of [`GraphQLValue`].
 ///
 /// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
-pub type DynGraphQLValue<S, C, TI> =
-    dyn GraphQLValue<S, Context = C, TypeInfo = TI> + Send + Sync + 'static;
+pub type DynGraphQLValue<C, TI> =
+    dyn GraphQLValue<Context = C, TypeInfo = TI> + Send + Sync + 'static;
 
 /// Primary trait used to expose Rust types in a GraphQL schema.
 ///
@@ -386,10 +380,7 @@ pub type DynGraphQLValue<S, C, TI> =
 ///     }
 /// }
 /// ```
-pub trait GraphQLType<S = DefaultScalarValue>: GraphQLValue<S>
-where
-    S: ScalarValue,
-{
+pub trait GraphQLType: GraphQLValue {
     /// Returns name of this [`GraphQLType`] to expose.
     ///
     /// This function will be called multiple times during schema construction. It must _not_
@@ -397,9 +388,7 @@ where
     fn name(info: &Self::TypeInfo) -> Option<&str>;
 
     /// Returns [`MetaType`] representing this [`GraphQLType`].
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r;
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r>;
 }
 
 /// Resolver logic for queries'/mutations' selection set.
@@ -408,16 +397,15 @@ where
 /// field's/fragment's sub executor.
 ///
 /// Returns false if any errors occurred and true otherwise.
-pub(crate) fn resolve_selection_set_into<T, S>(
+pub(crate) fn resolve_selection_set_into<T>(
     instance: &T,
     info: &T::TypeInfo,
-    selection_set: &[Selection<S>],
-    executor: &Executor<T::Context, S>,
-    result: &mut Object<S>,
+    selection_set: &[Selection],
+    executor: &Executor<T::Context>,
+    result: &mut Object<DefaultScalarValue>,
 ) -> bool
 where
-    T: GraphQLValue<S> + ?Sized,
-    S: ScalarValue,
+    T: GraphQLValue + ?Sized,
 {
     let meta_type = executor
         .schema()
@@ -564,13 +552,7 @@ where
     true
 }
 
-pub(super) fn is_excluded<S>(
-    directives: &Option<Vec<Spanning<Directive<S>>>>,
-    vars: &Variables<S>,
-) -> bool
-where
-    S: ScalarValue,
-{
+pub(super) fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) -> bool {
     if let Some(ref directives) = *directives {
         for &Spanning {
             item: ref directive,

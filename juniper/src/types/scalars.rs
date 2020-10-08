@@ -12,7 +12,8 @@ use crate::{
         base::{GraphQLType, GraphQLValue},
         subscriptions::GraphQLSubscriptionValue,
     },
-    value::{ParseScalarResult, ScalarValue, Value},
+    value::{ParseScalarResult, Value},
+    DefaultScalarValue,
 };
 
 /// An ID as defined by the GraphQL specification
@@ -43,49 +44,43 @@ impl Deref for ID {
 }
 
 #[crate::graphql_scalar(name = "ID")]
-impl<S> GraphQLScalar for ID
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for ID {
     fn resolve(&self) -> Value {
-        Value::scalar(self.0.clone())
+        Value::<DefaultScalarValue>::scalar(self.0.clone())
     }
 
     fn from_input_value(v: &InputValue) -> Option<ID> {
         match *v {
-            InputValue::Scalar(ref s) => s
-                .as_string()
-                .or_else(|| s.as_int().map(|i| i.to_string()))
-                .map(ID),
+            InputValue::Scalar(DefaultScalarValue::String(ref s)) => Some(ID(s.to_owned())),
+            InputValue::Scalar(DefaultScalarValue::Int(s)) => Some(ID(s.to_string())),
             _ => None,
         }
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         match value {
-            ScalarToken::String(value) | ScalarToken::Int(value) => Ok(S::from(value.to_owned())),
+            ScalarToken::String(value) | ScalarToken::Int(value) => {
+                Ok(DefaultScalarValue::from(value.to_owned()))
+            }
             _ => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
         }
     }
 }
 
 #[crate::graphql_scalar(name = "String")]
-impl<S> GraphQLScalar for String
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for String {
     fn resolve(&self) -> Value {
-        Value::scalar(self.clone())
+        Value::<DefaultScalarValue>::scalar(self.clone())
     }
 
     fn from_input_value(v: &InputValue) -> Option<String> {
         match *v {
-            InputValue::Scalar(ref s) => s.as_string(),
+            InputValue::Scalar(DefaultScalarValue::String(ref s)) => Some(s.to_owned()),
             _ => None,
         }
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
@@ -197,106 +192,85 @@ where
     })
 }
 
-impl<S> GraphQLType<S> for str
-where
-    S: ScalarValue,
-{
+impl GraphQLType for str {
     fn name(_: &()) -> Option<&'static str> {
         Some("String")
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_scalar_type::<String>(&()).into_meta()
     }
 }
 
-impl<S> GraphQLValue<S> for str
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for str {
     type Context = ();
     type TypeInfo = ();
 
     fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
-        <Self as GraphQLType<S>>::name(info)
+        <Self as GraphQLType>::name(info)
     }
 
     fn resolve(
         &self,
         _: &(),
-        _: Option<&[Selection<S>]>,
-        _: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
+        _: Option<&[Selection]>,
+        _: &Executor<Self::Context>,
+    ) -> ExecutionResult {
         Ok(Value::scalar(String::from(self)))
     }
 }
 
-impl<S> GraphQLValueAsync<S> for str
-where
-    S: ScalarValue + Send + Sync,
-{
+impl GraphQLValueAsync for str {
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+        selection_set: Option<&'a [Selection]>,
+        executor: &'a Executor<Self::Context>,
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult> {
         use futures::future;
         Box::pin(future::ready(self.resolve(info, selection_set, executor)))
     }
 }
 
-impl<'a, S> ToInputValue<S> for &'a str
-where
-    S: ScalarValue,
-{
-    fn to_input_value(&self) -> InputValue<S> {
+impl<'a> ToInputValue for &'a str {
+    fn to_input_value(&self) -> InputValue {
         InputValue::scalar(String::from(*self))
     }
 }
 
 #[crate::graphql_scalar(name = "Boolean")]
-impl<S> GraphQLScalar for bool
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for bool {
     fn resolve(&self) -> Value {
-        Value::scalar(*self)
+        Value::<DefaultScalarValue>::scalar(*self)
     }
 
     fn from_input_value(v: &InputValue) -> Option<bool> {
         match *v {
-            InputValue::Scalar(ref b) => b.as_boolean(),
+            InputValue::Scalar(DefaultScalarValue::Boolean(b)) => Some(b),
             _ => None,
         }
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         // Bools are parsed separately - they shouldn't reach this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
 }
 
 #[crate::graphql_scalar(name = "Int")]
-impl<S> GraphQLScalar for i32
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for i32 {
     fn resolve(&self) -> Value {
-        Value::scalar(*self)
+        Value::<DefaultScalarValue>::scalar(*self)
     }
 
     fn from_input_value(v: &InputValue) -> Option<i32> {
         match *v {
-            InputValue::Scalar(ref i) => i.as_int(),
+            InputValue::Scalar(DefaultScalarValue::Int(i)) => Some(i),
             _ => None,
         }
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::Int(v) = value {
             v.parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
@@ -308,22 +282,19 @@ where
 }
 
 #[crate::graphql_scalar(name = "Float")]
-impl<S> GraphQLScalar for f64
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for f64 {
     fn resolve(&self) -> Value {
-        Value::scalar(*self)
+        Value::<DefaultScalarValue>::scalar(*self)
     }
 
     fn from_input_value(v: &InputValue) -> Option<f64> {
         match *v {
-            InputValue::Scalar(ref s) => s.as_float(),
+            InputValue::Scalar(DefaultScalarValue::Float(s)) => Some(s),
             _ => None,
         }
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         match value {
             ScalarToken::Int(v) | ScalarToken::Float(v) => v
                 .parse()
@@ -352,39 +323,29 @@ impl<T: ?Sized> EmptyMutation<T> {
     }
 }
 
-impl<S, T> GraphQLType<S> for EmptyMutation<T>
-where
-    S: ScalarValue,
-{
+impl<T> GraphQLType for EmptyMutation<T> {
     fn name(_: &()) -> Option<&'static str> {
         Some("_EmptyMutation")
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
 }
 
-impl<S, T> GraphQLValue<S> for EmptyMutation<T>
-where
-    S: ScalarValue,
-{
+impl<T> GraphQLValue for EmptyMutation<T> {
     type Context = T;
     type TypeInfo = ();
 
     fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
-        <Self as GraphQLType<S>>::name(info)
+        <Self as GraphQLType>::name(info)
     }
 }
 
-impl<S, T> GraphQLValueAsync<S> for EmptyMutation<T>
+impl<T> GraphQLValueAsync for EmptyMutation<T>
 where
     Self::TypeInfo: Sync,
     Self::Context: Sync,
-    S: ScalarValue + Send + Sync,
 {
 }
 
@@ -412,39 +373,29 @@ impl<T: ?Sized> EmptySubscription<T> {
     }
 }
 
-impl<S, T> GraphQLType<S> for EmptySubscription<T>
-where
-    S: ScalarValue,
-{
+impl<T> GraphQLType for EmptySubscription<T> {
     fn name(_: &()) -> Option<&'static str> {
         Some("_EmptySubscription")
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
 }
 
-impl<S, T> GraphQLValue<S> for EmptySubscription<T>
-where
-    S: ScalarValue,
-{
+impl<T> GraphQLValue for EmptySubscription<T> {
     type Context = T;
     type TypeInfo = ();
 
     fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
-        <Self as GraphQLType<S>>::name(info)
+        <Self as GraphQLType>::name(info)
     }
 }
 
-impl<T, S> GraphQLSubscriptionValue<S> for EmptySubscription<T>
+impl<T> GraphQLSubscriptionValue for EmptySubscription<T>
 where
     Self::TypeInfo: Sync,
     Self::Context: Sync,
-    S: ScalarValue + Send + Sync + 'static,
 {
 }
 
@@ -458,10 +409,7 @@ impl<T> Default for EmptySubscription<T> {
 #[cfg(test)]
 mod tests {
     use super::{EmptyMutation, EmptySubscription, ID};
-    use crate::{
-        parser::ScalarToken,
-        value::{DefaultScalarValue, ParseScalarValue},
-    };
+    use crate::{parser::ScalarToken, value::ParseScalarValue};
 
     #[test]
     fn test_id_from_string() {
@@ -486,8 +434,7 @@ mod tests {
     #[test]
     fn parse_strings() {
         fn parse_string(s: &str, expected: &str) {
-            let s =
-                <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
+            let s = <String as ParseScalarValue>::from_str(ScalarToken::String(s));
             assert!(s.is_ok(), "A parsing error occurred: {:?}", s);
             let s: Option<String> = s.unwrap().into();
             assert!(s.is_some(), "No string returned");

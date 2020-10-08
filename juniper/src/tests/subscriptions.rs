@@ -29,8 +29,7 @@ impl MyQuery {
     }
 }
 
-type Schema =
-    RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
+type Schema = RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription>;
 
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {
     let mut rt = tokio::runtime::Runtime::new().unwrap();
@@ -91,9 +90,9 @@ fn create_and_execute(
 ) -> Result<
     (
         Vec<String>,
-        Vec<Vec<Result<Value<DefaultScalarValue>, ExecutionError<DefaultScalarValue>>>>,
+        Vec<Vec<Result<Value<DefaultScalarValue>, ExecutionError>>>,
     ),
-    Vec<ExecutionError<DefaultScalarValue>>,
+    Vec<ExecutionError>,
 > {
     let request = GraphQLRequest::new(query, None, None);
 

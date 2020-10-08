@@ -6,18 +6,14 @@ use crate::{
         meta::{InputObjectMeta, MetaType},
         model::SchemaType,
     },
-    value::ScalarValue,
 };
 
-pub fn parse_value_literal<'a, 'b, S>(
+pub fn parse_value_literal<'a, 'b>(
     parser: &mut Parser<'a>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    tpe: Option<&MetaType<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+    tpe: Option<&MetaType<'b>>,
+) -> ParseResult<'a, InputValue> {
     match (parser.peek(), tpe) {
         (
             &Spanning {
@@ -119,15 +115,12 @@ where
     }
 }
 
-fn parse_list_literal<'a, 'b, S>(
+fn parse_list_literal<'a, 'b>(
     parser: &mut Parser<'a>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    tpe: Option<&MetaType<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+    tpe: Option<&MetaType<'b>>,
+) -> ParseResult<'a, InputValue> {
     Ok(parser
         .delimited_list(
             &Token::BracketOpen,
@@ -137,15 +130,12 @@ where
         .map(InputValue::parsed_list))
 }
 
-fn parse_object_literal<'a, 'b, S>(
+fn parse_object_literal<'a, 'b>(
     parser: &mut Parser<'a>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    object_tpe: Option<&InputObjectMeta<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+    object_tpe: Option<&InputObjectMeta<'b>>,
+) -> ParseResult<'a, InputValue> {
     Ok(parser
         .delimited_list(
             &Token::CurlyOpen,
@@ -155,15 +145,12 @@ where
         .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
-fn parse_object_field<'a, 'b, S>(
+fn parse_object_field<'a, 'b>(
     parser: &mut Parser<'a>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    object_meta: Option<&InputObjectMeta<'b, S>>,
-) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue<S>>)>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+    object_meta: Option<&InputObjectMeta<'b>>,
+) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue>)> {
     let key = parser.expect_name()?;
 
     let tpe = object_meta
@@ -181,9 +168,8 @@ where
     ))
 }
 
-fn parse_variable_literal<'a, S>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue<S>>
+fn parse_variable_literal<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue>
 where
-    S: ScalarValue,
 {
     let Spanning {
         start: start_pos, ..
@@ -201,14 +187,13 @@ where
     ))
 }
 
-fn parse_scalar_literal_by_infered_type<'a, 'b, S>(
+fn parse_scalar_literal_by_infered_type<'a, 'b>(
     token: ScalarToken<'a>,
     start: &SourcePosition,
     end: &SourcePosition,
-    schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, InputValue<S>>
+    schema: &'b SchemaType<'b>,
+) -> ParseResult<'a, InputValue>
 where
-    S: ScalarValue,
 {
     let result = match token {
         ScalarToken::String(_) => {

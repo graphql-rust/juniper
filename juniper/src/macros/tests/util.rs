@@ -1,13 +1,11 @@
-use crate::{DefaultScalarValue, GraphQLType, GraphQLTypeAsync, RootNode, Value, Variables};
+use crate::{GraphQLType, GraphQLTypeAsync, RootNode, Value, Variables};
 
 pub async fn run_query<Query, Mutation, Subscription>(query: &str) -> Value
 where
-    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = ()> + Default,
+    Query: GraphQLTypeAsync<TypeInfo = ()> + Default,
     Query::Context: Default + Sync,
-    Mutation:
-        GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Query::Context> + Default,
-    Subscription:
-        GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Query::Context> + Default + Sync,
+    Mutation: GraphQLTypeAsync<TypeInfo = (), Context = Query::Context> + Default,
+    Subscription: GraphQLType<TypeInfo = (), Context = Query::Context> + Default + Sync,
 {
     let schema = RootNode::new(
         Query::default(),
@@ -30,12 +28,10 @@ where
 
 pub async fn run_info_query<Query, Mutation, Subscription>(type_name: &str) -> Value
 where
-    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = ()> + Default,
+    Query: GraphQLTypeAsync<TypeInfo = ()> + Default,
     Query::Context: Default + Sync,
-    Mutation:
-        GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Query::Context> + Default,
-    Subscription:
-        GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Query::Context> + Default + Sync,
+    Mutation: GraphQLTypeAsync<TypeInfo = (), Context = Query::Context> + Default,
+    Subscription: GraphQLType<TypeInfo = (), Context = Query::Context> + Default + Sync,
 {
     let query = format!(
         r#"

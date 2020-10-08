@@ -45,12 +45,8 @@ use actix_web::{
     http::{header::CONTENT_TYPE, Method},
     web, Error, FromRequest, HttpRequest, HttpResponse,
 };
-use juniper::{
-    http::{
-        graphiql::graphiql_source, playground::playground_source, GraphQLBatchRequest,
-        GraphQLRequest,
-    },
-    ScalarValue,
+use juniper::http::{
+    graphiql::graphiql_source, playground::playground_source, GraphQLBatchRequest, GraphQLRequest,
 };
 use serde::Deserialize;
 
@@ -63,10 +59,7 @@ struct GetGraphQLRequest {
     variables: Option<String>,
 }
 
-impl<S> From<GetGraphQLRequest> for GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
+impl From<GetGraphQLRequest> for GraphQLRequest {
     fn from(get_req: GetGraphQLRequest) -> Self {
         let GetGraphQLRequest {
             query,
@@ -82,21 +75,20 @@ where
 }
 
 /// Actix Web GraphQL Handler for GET and POST requests
-pub async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
-    schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+pub async fn graphql_handler<Query, Mutation, Subscription, CtxT>(
+    schema: &juniper::RootNode<'static, Query, Mutation, Subscription>,
     context: &CtxT,
     req: HttpRequest,
     payload: actix_web::web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Query: juniper::GraphQLTypeAsync<Context = CtxT>,
     Query::TypeInfo: Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Mutation: juniper::GraphQLTypeAsync<Context = CtxT>,
     Mutation::TypeInfo: Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
+    Subscription: juniper::GraphQLSubscriptionType<Context = CtxT>,
     Subscription::TypeInfo: Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     match *req.method() {
         Method::POST => post_graphql_handler(schema, context, req, payload).await,
@@ -107,20 +99,19 @@ where
     }
 }
 /// Actix GraphQL Handler for GET requests
-pub async fn get_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
-    schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+pub async fn get_graphql_handler<Query, Mutation, Subscription, CtxT>(
+    schema: &juniper::RootNode<'static, Query, Mutation, Subscription>,
     context: &CtxT,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error>
 where
-    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Query: juniper::GraphQLTypeAsync<Context = CtxT>,
     Query::TypeInfo: Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Mutation: juniper::GraphQLTypeAsync<Context = CtxT>,
     Mutation::TypeInfo: Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
+    Subscription: juniper::GraphQLSubscriptionType<Context = CtxT>,
     Subscription::TypeInfo: Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     let get_req = web::Query::<GetGraphQLRequest>::from_query(req.query_string())?;
     let req = GraphQLRequest::from(get_req.into_inner());
@@ -136,21 +127,20 @@ where
 }
 
 /// Actix GraphQL Handler for POST requests
-pub async fn post_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
-    schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+pub async fn post_graphql_handler<Query, Mutation, Subscription, CtxT>(
+    schema: &juniper::RootNode<'static, Query, Mutation, Subscription>,
     context: &CtxT,
     req: HttpRequest,
     payload: actix_web::web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Query: juniper::GraphQLTypeAsync<Context = CtxT>,
     Query::TypeInfo: Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
+    Mutation: juniper::GraphQLTypeAsync<Context = CtxT>,
     Mutation::TypeInfo: Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
+    Subscription: juniper::GraphQLSubscriptionType<Context = CtxT>,
     Subscription::TypeInfo: Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     let content_type_header = req
         .headers()
@@ -159,7 +149,7 @@ where
     let req = match content_type_header {
         Some("application/json") => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
-            serde_json::from_str::<GraphQLBatchRequest<S>>(&body).map_err(ErrorBadRequest)
+            serde_json::from_str::<GraphQLBatchRequest>(&body).map_err(ErrorBadRequest)
         }
         Some("application/graphql") => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
@@ -241,7 +231,7 @@ pub mod subscriptions {
             stream::{SplitSink, SplitStream, StreamExt},
             SinkExt,
         },
-        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode,
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
 
@@ -252,22 +242,21 @@ pub mod subscriptions {
     /// configuration are already known, or it can be a closure that gets executed asynchronously
     /// when the client sends the ConnectionInit message. Using a closure allows you to perform
     /// authentication based on the parameters provided by the client.
-    pub async fn subscriptions_handler<Query, Mutation, Subscription, CtxT, S, I>(
+    pub async fn subscriptions_handler<Query, Mutation, Subscription, CtxT, I>(
         req: HttpRequest,
         stream: web::Payload,
-        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        root_node: Arc<RootNode<'static, Query, Mutation, Subscription>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<CtxT> + Send,
     {
         let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split::<Message>();
 
@@ -288,47 +277,45 @@ pub mod subscriptions {
         Ok(resp)
     }
 
-    type ConnectionSplitSink<Query, Mutation, Subscription, CtxT, S, I> = Arc<
-        Mutex<SplitSink<Connection<ArcSchema<Query, Mutation, Subscription, CtxT, S>, I>, Message>>,
+    type ConnectionSplitSink<Query, Mutation, Subscription, CtxT, I> = Arc<
+        Mutex<SplitSink<Connection<ArcSchema<Query, Mutation, Subscription, CtxT>, I>, Message>>,
     >;
 
-    type ConnectionSplitStream<Query, Mutation, Subscription, CtxT, S, I> =
-        Arc<Mutex<SplitStream<Connection<ArcSchema<Query, Mutation, Subscription, CtxT, S>, I>>>>;
+    type ConnectionSplitStream<Query, Mutation, Subscription, CtxT, I> =
+        Arc<Mutex<SplitStream<Connection<ArcSchema<Query, Mutation, Subscription, CtxT>, I>>>>;
 
     /// Subscription Actor
     /// coordinates messages between actix_web and juniper_graphql_ws
     /// ws message -> actor -> juniper
     /// juniper -> actor -> ws response
-    struct SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    struct SubscriptionActor<Query, Mutation, Subscription, CtxT, I>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<CtxT> + Send,
     {
-        graphql_tx: ConnectionSplitSink<Query, Mutation, Subscription, CtxT, S, I>,
-        graphql_rx: ConnectionSplitStream<Query, Mutation, Subscription, CtxT, S, I>,
+        graphql_tx: ConnectionSplitSink<Query, Mutation, Subscription, CtxT, I>,
+        graphql_rx: ConnectionSplitStream<Query, Mutation, Subscription, CtxT, I>,
     }
 
     /// ws message -> actor -> juniper
-    impl<Query, Mutation, Subscription, CtxT, S, I>
+    impl<Query, Mutation, Subscription, CtxT, I>
         StreamHandler<Result<ws::Message, ws::ProtocolError>>
-        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, I>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<CtxT> + Send,
     {
         fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
             let msg = msg.map(|r| Message(r));
@@ -355,18 +342,17 @@ pub mod subscriptions {
     }
 
     /// juniper -> actor
-    impl<Query, Mutation, Subscription, CtxT, S, I> Actor
-        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    impl<Query, Mutation, Subscription, CtxT, I> Actor
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, I>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<CtxT> + Send,
     {
         type Context = ws::WebsocketContext<Self>;
 
@@ -393,24 +379,23 @@ pub mod subscriptions {
     }
 
     /// actor -> websocket response
-    impl<Query, Mutation, Subscription, CtxT, S, I> Handler<ServerMessageWrapper<S>>
-        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    impl<Query, Mutation, Subscription, CtxT, I> Handler<ServerMessageWrapper>
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, I>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<CtxT> + Send,
     {
         type Result = ();
 
         fn handle(
             &mut self,
-            msg: ServerMessageWrapper<S>,
+            msg: ServerMessageWrapper,
             ctx: &mut ws::WebsocketContext<Self>,
         ) -> Self::Result {
             let msg = serde_json::to_string(&msg.message);
@@ -434,17 +419,14 @@ pub mod subscriptions {
 
     #[derive(Message)]
     #[rtype(result = "()")]
-    struct ServerMessageWrapper<S>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-    {
-        message: ServerMessage<S>,
+    struct ServerMessageWrapper {
+        message: ServerMessage,
     }
 
     #[derive(Debug)]
     struct Message(ws::Message);
 
-    impl<S: ScalarValue> std::convert::TryFrom<Message> for ClientMessage<S> {
+    impl std::convert::TryFrom<Message> for ClientMessage {
         type Error = Error;
 
         fn try_from(msg: Message) -> Result<Self, Self::Error> {

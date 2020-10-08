@@ -31,13 +31,13 @@ impl Concrete {
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(name = "ACustomNamedUnion", scalar = DefaultScalarValue)]
+#[graphql(name = "ACustomNamedUnion")]
 enum CustomName {
     Concrete(Concrete),
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(on Concrete = WithLifetime::resolve, scalar = DefaultScalarValue)]
+#[graphql(on Concrete = WithLifetime::resolve )]
 enum WithLifetime<'a> {
     #[graphql(ignore)]
     Int(PhantomData<&'a i32>),
@@ -54,7 +54,7 @@ impl<'a> WithLifetime<'a> {
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(on Concrete = WithGenerics::resolve, scalar = DefaultScalarValue)]
+#[graphql(on Concrete = WithGenerics::resolve)]
 enum WithGenerics<T> {
     #[graphql(ignore)]
     Generic(T),
@@ -71,7 +71,7 @@ impl<T> WithGenerics<T> {
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(description = "A description", scalar = DefaultScalarValue)]
+#[graphql(description = "A description")]
 enum DescriptionFirst {
     Concrete(Concrete),
 }
@@ -97,7 +97,7 @@ impl<'a> Root {
 
 async fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
+    F: Fn(&Object<DefaultScalarValue>, &Vec<Value>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {

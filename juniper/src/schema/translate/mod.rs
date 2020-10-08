@@ -1,7 +1,7 @@
-use crate::{ScalarValue, SchemaType};
+use crate::SchemaType;
 
 pub trait SchemaTranslator<'a, T> {
-    fn translate_schema<S: 'a + ScalarValue>(s: &'a SchemaType<S>) -> T;
+    fn translate_schema(s: &'a SchemaType) -> T;
 }
 
 #[cfg(feature = "graphql-parser-integration")]

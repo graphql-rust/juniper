@@ -3,7 +3,6 @@ use crate::{
     parser::Spanning,
     types::utilities::is_valid_literal_value,
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 pub struct DefaultValuesOfCorrectType;
@@ -12,14 +11,11 @@ pub fn factory() -> DefaultValuesOfCorrectType {
     DefaultValuesOfCorrectType
 }
 
-impl<'a, S> Visitor<'a, S> for DefaultValuesOfCorrectType
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        ctx: &mut ValidatorContext<'a>,
+        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition),
     ) {
         if let Some(Spanning {
             item: ref var_value,
@@ -67,12 +63,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn variables_with_no_default_values() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query NullableValues($a: Int, $b: String, $c: ComplexInput) {
@@ -84,7 +79,7 @@ mod tests {
 
     #[test]
     fn required_variables_without_default_values() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query RequiredValues($a: Int!, $b: String!) {
@@ -96,7 +91,7 @@ mod tests {
 
     #[test]
     fn variables_with_valid_default_values() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query WithDefaultValues(
@@ -112,7 +107,7 @@ mod tests {
 
     #[test]
     fn no_required_variables_with_default_values() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query UnreachableDefaultValues($a: Int! = 3, $b: String! = "default") {
@@ -134,7 +129,7 @@ mod tests {
 
     #[test]
     fn variables_with_invalid_default_values() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query InvalidDefaultValues(
@@ -164,7 +159,7 @@ mod tests {
 
     #[test]
     fn complex_variables_missing_required_field() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query MissingRequiredField($a: ComplexInput = {intField: 3}) {
@@ -180,7 +175,7 @@ mod tests {
 
     #[test]
     fn list_variables_with_invalid_item() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query InvalidItem($a: [String] = ["one", 2]) {

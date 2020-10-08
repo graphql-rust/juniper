@@ -12,7 +12,8 @@ use crate::{
     executor::ExecutionError,
     parser::{ParseError, SourcePosition, Spanning},
     validation::RuleError,
-    GraphQLError, Object, ScalarValue, Value,
+    value::scalar::DefaultScalarValueVisitor,
+    DefaultScalarValue, GraphQLError, Object, ScalarValue, Value,
 };
 
 #[derive(Serialize)]
@@ -20,10 +21,7 @@ struct SerializeHelper {
     message: &'static str,
 }
 
-impl<T> ser::Serialize for ExecutionError<T>
-where
-    T: ScalarValue,
-{
+impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -82,61 +80,55 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
     }
 }
 
-impl<'de, S> de::Deserialize<'de> for InputValue<S>
-where
-    S: ScalarValue,
-{
-    fn deserialize<D>(deserializer: D) -> Result<InputValue<S>, D::Error>
+impl<'de> de::Deserialize<'de> for InputValue {
+    fn deserialize<D>(deserializer: D) -> Result<InputValue, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        struct InputValueVisitor<S: ScalarValue>(S::Visitor);
+        struct InputValueVisitor(DefaultScalarValueVisitor);
 
-        impl<S: ScalarValue> Default for InputValueVisitor<S> {
+        impl Default for InputValueVisitor {
             fn default() -> Self {
-                InputValueVisitor(S::Visitor::default())
+                InputValueVisitor(DefaultScalarValueVisitor::default())
             }
         }
 
-        impl<'de, S> de::Visitor<'de> for InputValueVisitor<S>
-        where
-            S: ScalarValue,
-        {
-            type Value = InputValue<S>;
+        impl<'de> de::Visitor<'de> for InputValueVisitor {
+            type Value = InputValue;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a valid input value")
             }
 
-            fn visit_bool<E>(self, value: bool) -> Result<InputValue<S>, E>
+            fn visit_bool<E>(self, value: bool) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_bool(value).map(InputValue::Scalar)
             }
 
-            fn visit_i8<E>(self, value: i8) -> Result<InputValue<S>, E>
+            fn visit_i8<E>(self, value: i8) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_i8(value).map(InputValue::Scalar)
             }
 
-            fn visit_i16<E>(self, value: i16) -> Result<InputValue<S>, E>
+            fn visit_i16<E>(self, value: i16) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_i16(value).map(InputValue::Scalar)
             }
 
-            fn visit_i32<E>(self, value: i32) -> Result<InputValue<S>, E>
+            fn visit_i32<E>(self, value: i32) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_i32(value).map(InputValue::Scalar)
             }
 
-            fn visit_i64<E>(self, value: i64) -> Result<InputValue<S>, E>
+            fn visit_i64<E>(self, value: i64) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
@@ -144,7 +136,7 @@ where
             }
 
             serde::serde_if_integer128! {
-                fn visit_i128<E>(self, value: i128) -> Result<InputValue<S>, E>
+                fn visit_i128<E>(self, value: i128) -> Result<InputValue, E>
                 where
                     E: de::Error,
                 {
@@ -152,28 +144,28 @@ where
                 }
             }
 
-            fn visit_u8<E>(self, value: u8) -> Result<InputValue<S>, E>
+            fn visit_u8<E>(self, value: u8) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_u8(value).map(InputValue::Scalar)
             }
 
-            fn visit_u16<E>(self, value: u16) -> Result<InputValue<S>, E>
+            fn visit_u16<E>(self, value: u16) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_u16(value).map(InputValue::Scalar)
             }
 
-            fn visit_u32<E>(self, value: u32) -> Result<InputValue<S>, E>
+            fn visit_u32<E>(self, value: u32) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_u32(value).map(InputValue::Scalar)
             }
 
-            fn visit_u64<E>(self, value: u64) -> Result<InputValue<S>, E>
+            fn visit_u64<E>(self, value: u64) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
@@ -181,7 +173,7 @@ where
             }
 
             serde::serde_if_integer128! {
-                fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
+                fn visit_u128<E>(self, value: u128) -> Result<InputValue, E>
                 where
                     E: de::Error,
                 {
@@ -189,70 +181,70 @@ where
                 }
             }
 
-            fn visit_f32<E>(self, value: f32) -> Result<InputValue<S>, E>
+            fn visit_f32<E>(self, value: f32) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_f32(value).map(InputValue::Scalar)
             }
 
-            fn visit_f64<E>(self, value: f64) -> Result<InputValue<S>, E>
+            fn visit_f64<E>(self, value: f64) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_f64(value).map(InputValue::Scalar)
             }
 
-            fn visit_char<E>(self, value: char) -> Result<InputValue<S>, E>
+            fn visit_char<E>(self, value: char) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_char(value).map(InputValue::Scalar)
             }
 
-            fn visit_str<E>(self, value: &str) -> Result<InputValue<S>, E>
+            fn visit_str<E>(self, value: &str) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_str(value).map(InputValue::Scalar)
             }
 
-            fn visit_string<E>(self, value: String) -> Result<InputValue<S>, E>
+            fn visit_string<E>(self, value: String) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_string(value).map(InputValue::Scalar)
             }
 
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<InputValue<S>, E>
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_bytes(bytes).map(InputValue::Scalar)
             }
 
-            fn visit_byte_buf<E>(self, bytes: Vec<u8>) -> Result<InputValue<S>, E>
+            fn visit_byte_buf<E>(self, bytes: Vec<u8>) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 self.0.visit_byte_buf(bytes).map(InputValue::Scalar)
             }
 
-            fn visit_none<E>(self) -> Result<InputValue<S>, E>
+            fn visit_none<E>(self) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 Ok(InputValue::null())
             }
 
-            fn visit_unit<E>(self) -> Result<InputValue<S>, E>
+            fn visit_unit<E>(self) -> Result<InputValue, E>
             where
                 E: de::Error,
             {
                 Ok(InputValue::null())
             }
 
-            fn visit_seq<V>(self, mut visitor: V) -> Result<InputValue<S>, V::Error>
+            fn visit_seq<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
             where
                 V: de::SeqAccess<'de>,
             {
@@ -265,13 +257,12 @@ where
                 Ok(InputValue::list(values))
             }
 
-            fn visit_map<V>(self, mut visitor: V) -> Result<InputValue<S>, V::Error>
+            fn visit_map<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
             where
                 V: de::MapAccess<'de>,
             {
-                let mut object = IndexMap::<String, InputValue<S>>::with_capacity(
-                    visitor.size_hint().unwrap_or(0),
-                );
+                let mut object =
+                    IndexMap::<String, InputValue>::with_capacity(visitor.size_hint().unwrap_or(0));
 
                 while let Some((key, value)) = visitor.next_entry()? {
                     object.insert(key, value);
@@ -371,10 +362,7 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
     }
 }
 
-impl<T> ser::Serialize for Object<T>
-where
-    T: ser::Serialize,
-{
+impl ser::Serialize for Object<DefaultScalarValue> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -390,19 +378,16 @@ where
     }
 }
 
-impl<T> ser::Serialize for Value<T>
-where
-    T: ser::Serialize,
-{
+impl ser::Serialize for Value<DefaultScalarValue> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
         match *self {
-            Value::Null => serializer.serialize_unit(),
-            Value::Scalar(ref s) => s.serialize(serializer),
-            Value::List(ref v) => v.serialize(serializer),
-            Value::Object(ref v) => v.serialize(serializer),
+            Value::<DefaultScalarValue>::Null => serializer.serialize_unit(),
+            Value::<DefaultScalarValue>::Scalar(ref s) => s.serialize(serializer),
+            Value::<DefaultScalarValue>::List(ref v) => v.serialize(serializer),
+            Value::<DefaultScalarValue>::Object(ref v) => v.serialize(serializer),
         }
     }
 }

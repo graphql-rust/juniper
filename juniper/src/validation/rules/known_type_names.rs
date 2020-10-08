@@ -2,9 +2,7 @@ use crate::{
     ast::{Fragment, InlineFragment, VariableDefinition},
     parser::{SourcePosition, Spanning},
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
-use std::fmt::Debug;
 
 pub struct KnownTypeNames;
 
@@ -12,14 +10,11 @@ pub fn factory() -> KnownTypeNames {
     KnownTypeNames
 }
 
-impl<'a, S> Visitor<'a, S> for KnownTypeNames
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for KnownTypeNames {
     fn enter_inline_fragment(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        fragment: &'a Spanning<InlineFragment<S>>,
+        ctx: &mut ValidatorContext<'a>,
+        fragment: &'a Spanning<InlineFragment>,
     ) {
         if let Some(ref type_cond) = fragment.item.type_condition {
             validate_type(ctx, type_cond.item, &type_cond.start);
@@ -28,8 +23,8 @@ where
 
     fn enter_fragment_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        fragment: &'a Spanning<Fragment<S>>,
+        ctx: &mut ValidatorContext<'a>,
+        fragment: &'a Spanning<Fragment>,
     ) {
         let type_cond = &fragment.item.type_condition;
         validate_type(ctx, type_cond.item, &type_cond.start);
@@ -37,19 +32,15 @@ where
 
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        ctx: &mut ValidatorContext<'a>,
+        &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition),
     ) {
         let type_name = var_def.var_type.item.innermost_name();
         validate_type(ctx, type_name, &var_def.var_type.start);
     }
 }
 
-fn validate_type<'a, S: Debug>(
-    ctx: &mut ValidatorContext<'a, S>,
-    type_name: &str,
-    location: &SourcePosition,
-) {
+fn validate_type<'a>(ctx: &mut ValidatorContext<'a>, type_name: &str, location: &SourcePosition) {
     if ctx.schema.type_by_name(type_name).is_none() {
         ctx.report_error(&error_message(type_name), &[*location]);
     }
@@ -66,12 +57,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn known_type_names_are_valid() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($var: String, $required: [String!]!) {
@@ -88,7 +78,7 @@ mod tests {
 
     #[test]
     fn unknown_type_names_are_invalid() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($var: JumbledUpLetters) {

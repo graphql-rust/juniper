@@ -5,26 +5,25 @@ use crate::{
     http::GraphQLRequest,
     parser::Spanning,
     types::base::{is_excluded, merge_key_into, GraphQLType, GraphQLValue},
-    Arguments, BoxFuture, DefaultScalarValue, ExecutionError, Executor, FieldError, Object,
-    ScalarValue, Selection, Value, ValuesStream,
+    Arguments, BoxFuture, ExecutionError, Executor, FieldError, Object, Selection, Value,
+    ValuesStream,
 };
 
 /// Represents the result of executing a GraphQL operation (after parsing and validating has been
 /// done).
 #[derive(Debug, Serialize)]
-pub struct ExecutionOutput<S> {
+pub struct ExecutionOutput {
     /// The output data.
-    pub data: Value<S>,
+    pub data: Value,
 
     /// The errors that occurred. Note that the presence of errors does not mean there is no data.
     /// The output can have both data and errors.
-    #[serde(bound(serialize = "S: ScalarValue"))]
-    pub errors: Vec<ExecutionError<S>>,
+    pub errors: Vec<ExecutionError>,
 }
 
-impl<S> ExecutionOutput<S> {
+impl ExecutionOutput {
     /// Creates execution output from data, with no errors.
-    pub fn from_data(data: Value<S>) -> Self {
+    pub fn from_data(data: Value) -> Self {
         Self {
             data,
             errors: vec![],
@@ -51,13 +50,10 @@ impl<S> ExecutionOutput<S> {
 ///
 ///
 /// `'a` is how long spawned connections live for.
-pub trait SubscriptionCoordinator<'a, CtxT, S>
-where
-    S: ScalarValue,
-{
+pub trait SubscriptionCoordinator<'a, CtxT> {
     /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`]
     /// returns
-    type Connection: SubscriptionConnection<S>;
+    type Connection: SubscriptionConnection;
 
     /// Type of error while trying to spawn [`SubscriptionConnection`]
     type Error;
@@ -65,7 +61,7 @@ where
     /// Return [`SubscriptionConnection`] based on given [`GraphQLRequest`]
     fn subscribe(
         &'a self,
-        _: &'a GraphQLRequest<S>,
+        _: &'a GraphQLRequest,
         _: &'a CtxT,
     ) -> BoxFuture<'a, Result<Self::Connection, Self::Error>>;
 }
@@ -82,7 +78,7 @@ where
 ///
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
-pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> {}
+pub trait SubscriptionConnection: futures::Stream<Item = ExecutionOutput> {}
 
 /// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.
 /// It should be used with [`GraphQLValue`] in order to implement [subscription][1] resolvers on
@@ -95,11 +91,10 @@ pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> 
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Subscription
 /// [2]: https://spec.graphql.org/June2018/#sec-Objects
-pub trait GraphQLSubscriptionValue<S = DefaultScalarValue>: GraphQLValue<S> + Sync
+pub trait GraphQLSubscriptionValue: GraphQLValue + Sync
 where
     Self::TypeInfo: Sync,
     Self::Context: Sync,
-    S: ScalarValue + Send + Sync,
 {
     /// Resolves into `Value<ValuesStream>`.
     ///
@@ -115,8 +110,8 @@ where
     fn resolve_into_stream<'s, 'i, 'ref_e, 'e, 'res, 'f>(
         &'s self,
         info: &'i Self::TypeInfo,
-        executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
-    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res, S>>, FieldError<S>>>
+        executor: &'ref_e Executor<'ref_e, 'e, Self::Context>,
+    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res>>, FieldError>>
     where
         'e: 'res,
         'i: 'res,
@@ -138,18 +133,18 @@ where
     ///
     /// It replaces `GraphQLValue::resolve_field`.
     /// Unlike `resolve_field`, which resolves each field into a single
-    /// `Value<S>`, this method resolves each field into
-    /// `Value<ValuesStream<S>>`.
+    /// `Value`, this method resolves each field into
+    /// `Value<ValuesStream>`.
     ///
     /// The default implementation panics.
     fn resolve_field_into_stream<'s, 'i, 'ft, 'args, 'e, 'ref_e, 'res, 'f>(
         &'s self,
-        _: &'i Self::TypeInfo,  // this subscription's type info
-        _: &'ft str,            // field's type name
-        _: Arguments<'args, S>, // field's arguments
-        _: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // field's executor (subscription's sub-executor
-                                                           // with current field's selection set)
-    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res, S>>, FieldError<S>>>
+        _: &'i Self::TypeInfo, // this subscription's type info
+        _: &'ft str,           // field's type name
+        _: Arguments<'args>,   // field's arguments
+        _: &'ref_e Executor<'ref_e, 'e, Self::Context>, // field's executor (subscription's sub-executor
+                                                        // with current field's selection set)
+    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res>>, FieldError>>
     where
         's: 'f,
         'i: 'res,
@@ -167,17 +162,17 @@ where
     ///
     /// It replaces `GraphQLValue::resolve_into_type`.
     /// Unlike `resolve_into_type`, which resolves each fragment
-    /// a single `Value<S>`, this method resolves each fragment into
-    /// `Value<ValuesStream<S>>`.
+    /// a single `Value`, this method resolves each fragment into
+    /// `Value<ValuesStream>`.
     ///
     /// The default implementation panics.
     fn resolve_into_type_stream<'s, 'i, 'tn, 'e, 'ref_e, 'res, 'f>(
         &'s self,
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
-        executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
-                                                                  // with current field's selection set)
-    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res, S>>, FieldError<S>>>
+        executor: &'ref_e Executor<'ref_e, 'e, Self::Context>, // fragment's executor (subscription's sub-executor
+                                                               // with current field's selection set)
+    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res>>, FieldError>>
     where
         'i: 'res,
         'e: 'res,
@@ -204,32 +199,29 @@ crate::sa::assert_obj_safe!(GraphQLSubscriptionValue<Context = (), TypeInfo = ()
 /// implementers, so doesn't require manual or code-generated implementation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Subscription
-pub trait GraphQLSubscriptionType<S = DefaultScalarValue>:
-    GraphQLSubscriptionValue<S> + GraphQLType<S>
+pub trait GraphQLSubscriptionType: GraphQLSubscriptionValue + GraphQLType
 where
     Self::Context: Sync,
     Self::TypeInfo: Sync,
-    S: ScalarValue + Send + Sync,
 {
 }
 
-impl<S, T> GraphQLSubscriptionType<S> for T
+impl<T> GraphQLSubscriptionType for T
 where
-    T: GraphQLSubscriptionValue<S> + GraphQLType<S> + ?Sized,
+    T: GraphQLSubscriptionValue + GraphQLType + ?Sized,
     T::Context: Sync,
     T::TypeInfo: Sync,
-    S: ScalarValue + Send + Sync,
 {
 }
 
 /// Wrapper function around `resolve_selection_set_into_stream_recursive`.
 /// This wrapper is necessary because async fns can not be recursive.
 /// Panics if executor's current selection set is None.
-pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, S>(
+pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    executor: &'ref_e Executor<'ref_e, 'e, T::Context, S>,
-) -> BoxFuture<'fut, Value<ValuesStream<'res, S>>>
+    executor: &'ref_e Executor<'ref_e, 'e, T::Context>,
+) -> BoxFuture<'fut, Value<ValuesStream<'res>>>
 where
     'inf: 'res,
     'e: 'res,
@@ -237,10 +229,9 @@ where
     'e: 'fut,
     'ref_e: 'fut,
     'res: 'fut,
-    T: GraphQLSubscriptionValue<S> + ?Sized,
+    T: GraphQLSubscriptionValue + ?Sized,
     T::TypeInfo: Sync,
     T::Context: Sync,
-    S: ScalarValue + Send + Sync,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance, info, executor,
@@ -250,16 +241,15 @@ where
 /// Selection set default resolver logic.
 /// Returns `Value::Null` if cannot keep resolving. Otherwise pushes errors to
 /// `Executor`.
-async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T, S>(
+async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    executor: &'ref_e Executor<'ref_e, 'e, T::Context, S>,
-) -> Value<ValuesStream<'res, S>>
+    executor: &'ref_e Executor<'ref_e, 'e, T::Context>,
+) -> Value<ValuesStream<'res>>
 where
-    T: GraphQLSubscriptionValue<S> + ?Sized,
+    T: GraphQLSubscriptionValue + ?Sized,
     T::TypeInfo: Sync,
     T::Context: Sync,
-    S: ScalarValue + Send + Sync,
     'inf: 'res,
     'e: 'res,
 {
@@ -267,7 +257,7 @@ where
         .current_selection_set()
         .expect("Executor's selection set is none");
 
-    let mut object: Object<ValuesStream<'res, S>> = Object::with_capacity(selection_set.len());
+    let mut object: Object<ValuesStream<'res>> = Object::with_capacity(selection_set.len());
     let meta_type = executor
         .schema()
         .concrete_type_by_name(

@@ -22,7 +22,6 @@ use crate::{
             attr::{err, OptionExt as _},
             GenericsExt as _, ParseBufferExt as _,
         },
-        ScalarValueType,
     },
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
@@ -734,14 +733,6 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     context: Option<syn::Type>,
 
-    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation with for this
-    /// [GraphQL interface][1].
-    ///
-    /// [`GraphQLType`]: juniper::GraphQLType
-    /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    scalar: ScalarValueType,
-
     /// Defined [`Field`]s of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -760,13 +751,11 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn panic_no_field_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
         quote! {
             panic!(
                 "Field `{}` not found on type `{}`",
                 field,
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
+                <Self as ::juniper::GraphQLType>::name(info).unwrap(),
             )
         }
     }
@@ -777,8 +766,6 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_type_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -801,7 +788,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
+            impl#impl_generics ::juniper::GraphQLType for #ty #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
@@ -809,9 +796,8 @@ impl Definition {
 
                 fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut ::juniper::Registry<'r, #scalar>
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
-                where #scalar: 'r,
+                    registry: &mut ::juniper::Registry<'r>
+                ) -> ::juniper::meta::MetaType<'r>
                 {
                     // Ensure all implementer types are registered.
                     #( let _ = registry.get_type::<#impler_tys>(info); )*
@@ -833,8 +819,6 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -865,7 +849,7 @@ impl Definition {
                     #( #names )|* => panic!(
                         "Tried to resolve async field `{}` on type `{}` with a sync resolver",
                         field,
-                        <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
+                        <Self as ::juniper::GraphQLType>::name(info).unwrap(),
                     ),
                 })
             }
@@ -886,22 +870,22 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
+            impl#impl_generics ::juniper::GraphQLValue for #ty #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
 
                 fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    <Self as ::juniper::GraphQLType>::name(info)
                 }
 
                 fn resolve_field(
                     &self,
                     info: &Self::TypeInfo,
                     field: &str,
-                    args: &::juniper::Arguments<#scalar>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::ExecutionResult<#scalar> {
+                    args: &::juniper::Arguments,
+                    executor: &::juniper::Executor<Self::Context>,
+                ) -> ::juniper::ExecutionResult {
                     match field {
                         #( #fields_resolvers )*
                         #async_fields_panic
@@ -922,9 +906,9 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[::juniper::Selection<#scalar>]>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::ExecutionResult<#scalar> {
+                    _: Option<&[::juniper::Selection]>,
+                    executor: &::juniper::Executor<Self::Context>,
+                ) -> ::juniper::ExecutionResult {
                     #( #custom_downcasts )*
                     #regular_downcast
                 }
@@ -939,19 +923,12 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let mut where_clause = where_clause
             .cloned()
             .unwrap_or_else(|| parse_quote! { where });
         where_clause.predicates.push(parse_quote! { Self: Sync });
-        if self.scalar.is_generic() {
-            where_clause
-                .predicates
-                .push(parse_quote! { #scalar: Send + Sync });
-        }
 
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
@@ -970,15 +947,15 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
+            impl#impl_generics ::juniper::GraphQLValueAsync for #ty #where_clause
             {
                 fn resolve_field_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
                     field: &'b str,
-                    args: &'b ::juniper::Arguments<#scalar>,
-                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    args: &'b ::juniper::Arguments,
+                    executor: &'b ::juniper::Executor<Self::Context>,
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult> {
                     match field {
                         #( #fields_resolvers )*
                         _ => #no_field_panic,
@@ -989,9 +966,9 @@ impl Definition {
                     &'b self,
                     info: &'b Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
-                    executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
-                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    _: Option<&'b [::juniper::Selection<'b>]>,
+                    executor: &'b ::juniper::Executor<'b, 'b, Self::Context>
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult> {
                     #( #custom_downcasts )*
                     #regular_downcast
                 }
@@ -1006,8 +983,6 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_interface_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -1023,12 +998,12 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar> for #ty #where_clause
+            impl#impl_generics ::juniper::marker::GraphQLInterface for #ty #where_clause
             {
                 fn mark() {
                     #all_implers_unique
 
-                    #( <#impler_tys as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
+                    #( <#impler_tys as ::juniper::marker::GraphQLObjectType>::mark(); )*
                 }
             }
         }
@@ -1041,8 +1016,6 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_output_type_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -1051,19 +1024,19 @@ impl Definition {
         let fields_marks = self.fields.iter().map(|field| {
             let arguments_marks = field.arguments.iter().filter_map(|arg| {
                 let arg_ty = &arg.as_regular()?.ty;
-                Some(quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); })
+                Some(quote! { <#arg_ty as ::juniper::marker::IsInputType>::mark(); })
             });
 
             let field_ty = &field.ty;
             let resolved_ty = quote! {
                 <#field_ty as ::juniper::IntoResolvable<
-                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
+                    '_, _, <Self as ::juniper::GraphQLValue>::Context,
                 >>::Type
             };
 
             quote! {
                 #( #arguments_marks )*
-                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+                <#resolved_ty as ::juniper::marker::IsOutputType>::mark();
             }
         });
 
@@ -1071,11 +1044,11 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
+            impl#impl_generics ::juniper::marker::IsOutputType for #ty #where_clause
             {
                 fn mark() {
                     #( #fields_marks )*
-                    #( <#impler_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                    #( <#impler_tys as ::juniper::marker::IsOutputType>::mark(); )*
                 }
             }
         }
@@ -1418,11 +1391,6 @@ struct Implementer {
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     context_ty: Option<syn::Type>,
-
-    /// [`ScalarValue`] parametrization of this [`Implementer`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
-    scalar: ScalarValueType,
 }
 
 impl Implementer {
@@ -1467,7 +1435,6 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
-        let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, Some(parse_quote! { context }));
 
@@ -1476,7 +1443,7 @@ impl Implementer {
         // until the `juniper::GraphQLType` itself will allow to do it in some cleverer way.
         Some(quote! {
             if (#downcast as ::std::option::Option<&#ty>).is_some() {
-                return <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap().to_string();
+                return <#ty as ::juniper::GraphQLType>::name(info).unwrap().to_string();
             }
         })
     }
@@ -1493,14 +1460,13 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
-        let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
 
         let resolving_code = gen::sync_resolving_code();
 
         Some(quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
+            if type_name == <#ty as ::juniper::GraphQLType>::name(info).unwrap() {
                 let res = #downcast;
                 return #resolving_code;
             }
@@ -1519,14 +1485,13 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
-        let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
 
         let resolving_code = gen::async_resolving_code(None);
 
         Some(quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
+            if type_name == <#ty as ::juniper::GraphQLType>::name(info).unwrap() {
                 let fut = ::juniper::futures::future::ready(#downcast);
                 return #resolving_code;
             }
@@ -1575,24 +1540,12 @@ struct EnumType {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_methods: Vec<syn::Signature>,
-
-    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation with for this
-    /// [`EnumType`].
-    ///
-    /// [`GraphQLType`]: juniper::GraphQLType
-    /// [`ScalarValue`]: juniper::ScalarValue
-    scalar: ScalarValueType,
 }
 
 impl EnumType {
     /// Constructs new [`EnumType`] out of the given parameters.
     #[must_use]
-    fn new(
-        r#trait: &syn::ItemTrait,
-        meta: &TraitMeta,
-        implers: &[Implementer],
-        scalar: ScalarValueType,
-    ) -> Self {
+    fn new(r#trait: &syn::ItemTrait, meta: &TraitMeta, implers: &[Implementer]) -> Self {
         Self {
             ident: meta
                 .r#enum
@@ -1637,7 +1590,6 @@ impl EnumType {
                     }
                 })
                 .collect(),
-            scalar,
         }
     }
 
@@ -1674,18 +1626,7 @@ impl EnumType {
     /// [`GraphQLType`]: juniper::GraphQLType
     #[must_use]
     fn impl_generics(&self) -> syn::Generics {
-        let mut generics = self.trait_generics.clone();
-
-        let scalar = &self.scalar;
-        if self.scalar.is_implicit_generic() {
-            generics.params.push(parse_quote! { #scalar });
-        }
-        if self.scalar.is_generic() {
-            generics
-                .make_where_clause()
-                .predicates
-                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
-        }
+        let generics = self.trait_generics.clone();
 
         generics
     }
@@ -1896,14 +1837,12 @@ impl EnumType {
     /// [`GraphQLValue::concrete_type_name`]: juniper::GraphQLValue::concrete_type_name
     #[must_use]
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
         let match_arms = self.variants.iter().enumerate().map(|(n, ty)| {
             let variant = Self::variant_ident(n);
 
             quote! {
                 Self::#variant(v) => <
-                    #ty as ::juniper::GraphQLValue<#scalar>
+                    #ty as ::juniper::GraphQLValue
                 >::concrete_type_name(v, context, info),
             }
         });
@@ -2003,11 +1942,6 @@ struct TraitObjectType {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_generics: syn::Generics,
 
-    /// [`ScalarValue`] parametrization of this [`TraitObjectType`] to generate it with.
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
-    scalar: ScalarValueType,
-
     /// Rust type of [`Context`] to generate this [`TraitObjectType`] with.
     ///
     /// If [`None`] then generated code will use unit type `()` as [`Context`].
@@ -2019,18 +1953,12 @@ struct TraitObjectType {
 impl TraitObjectType {
     /// Constructs new [`TraitObjectType`] out of the given parameters.
     #[must_use]
-    fn new(
-        r#trait: &syn::ItemTrait,
-        meta: &TraitMeta,
-        scalar: ScalarValueType,
-        context: Option<syn::Type>,
-    ) -> Self {
+    fn new(r#trait: &syn::ItemTrait, meta: &TraitMeta, context: Option<syn::Type>) -> Self {
         Self {
             ident: meta.r#dyn.as_ref().unwrap().as_ref().clone(),
             visibility: r#trait.vis.clone(),
             trait_ident: r#trait.ident.clone(),
             trait_generics: r#trait.generics.clone(),
-            scalar,
             context,
         }
     }
@@ -2045,17 +1973,6 @@ impl TraitObjectType {
 
         generics.params.push(parse_quote! { '__obj });
 
-        let scalar = &self.scalar;
-        if scalar.is_implicit_generic() {
-            generics.params.push(parse_quote! { #scalar });
-        }
-        if scalar.is_generic() {
-            generics
-                .make_where_clause()
-                .predicates
-                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
-        }
-
         generics
     }
 
@@ -2067,11 +1984,7 @@ impl TraitObjectType {
     fn trait_ty(&self) -> syn::Type {
         let ty = &self.trait_ident;
 
-        let mut generics = self.trait_generics.clone();
-        if !self.scalar.is_explicit_generic() {
-            let scalar = &self.scalar;
-            generics.params.push(parse_quote! { #scalar });
-        }
+        let generics = self.trait_generics.clone();
         let (_, generics, _) = generics.split_for_impl();
 
         parse_quote! { #ty#generics }
@@ -2085,10 +1998,6 @@ impl TraitObjectType {
         let mut generics = self.trait_generics.clone();
         generics.remove_defaults();
         generics.move_bounds_to_where_clause();
-        if !self.scalar.is_explicit_generic() {
-            let scalar = &self.scalar;
-            generics.params.push(parse_quote! { #scalar });
-        }
         let ty_params = &generics.params;
 
         let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
@@ -2155,13 +2064,6 @@ impl ToTokens for TraitObjectType {
         let trait_ident = &self.trait_ident;
 
         let mut generics = self.trait_generics.clone();
-        if !self.scalar.is_explicit_generic() {
-            let scalar_ty = self.scalar.generic_ty();
-            let default_ty = self.scalar.default_ty();
-            generics
-                .params
-                .push(parse_quote! { #scalar_ty = #default_ty });
-        }
 
         let (mut ty_params_left, mut ty_params_right) = (None, None);
         if !generics.params.is_empty() {

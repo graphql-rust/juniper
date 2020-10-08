@@ -21,19 +21,16 @@ use chrono::prelude::*;
 use crate::{
     parser::{ParseError, ScalarToken, Token},
     value::{ParseScalarResult, ParseScalarValue},
-    Value,
+    DefaultScalarValue, Value,
 };
 
 #[doc(hidden)]
 pub static RFC3339_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.f%:z";
 
 #[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime")]
-impl<S> GraphQLScalar for DateTime<FixedOffset>
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for DateTime<FixedOffset> {
     fn resolve(&self) -> Value {
-        Value::scalar(self.to_rfc3339())
+        Value::<DefaultScalarValue>::scalar(self.to_rfc3339())
     }
 
     fn from_input_value(v: &InputValue) -> Option<DateTime<FixedOffset>> {
@@ -41,9 +38,9 @@ where
             .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+            Ok(DefaultScalarValue::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -51,12 +48,9 @@ where
 }
 
 #[crate::graphql_scalar(name = "DateTimeUtc", description = "DateTime")]
-impl<S> GraphQLScalar for DateTime<Utc>
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for DateTime<Utc> {
     fn resolve(&self) -> Value {
-        Value::scalar(self.to_rfc3339())
+        Value::<DefaultScalarValue>::scalar(self.to_rfc3339())
     }
 
     fn from_input_value(v: &InputValue) -> Option<DateTime<Utc>> {
@@ -64,9 +58,9 @@ where
             .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+            Ok(DefaultScalarValue::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -79,12 +73,9 @@ where
 // For serialization and deserialization uses, it is best to use
 // `NaiveDate` instead."
 #[crate::graphql_scalar(description = "NaiveDate")]
-impl<S> GraphQLScalar for NaiveDate
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for NaiveDate {
     fn resolve(&self) -> Value {
-        Value::scalar(self.format("%Y-%m-%d").to_string())
+        Value::<DefaultScalarValue>::scalar(self.format("%Y-%m-%d").to_string())
     }
 
     fn from_input_value(v: &InputValue) -> Option<NaiveDate> {
@@ -92,9 +83,9 @@ where
             .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+            Ok(DefaultScalarValue::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -103,12 +94,9 @@ where
 
 #[cfg(feature = "scalar-naivetime")]
 #[crate::graphql_scalar(description = "NaiveTime")]
-impl<S> GraphQLScalar for NaiveTime
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for NaiveTime {
     fn resolve(&self) -> Value {
-        Value::scalar(self.format("%H:%M:%S").to_string())
+        Value::<DefaultScalarValue>::scalar(self.format("%H:%M:%S").to_string())
     }
 
     fn from_input_value(v: &InputValue) -> Option<NaiveTime> {
@@ -116,9 +104,9 @@ where
             .and_then(|s| NaiveTime::parse_from_str(s, "%H:%M:%S").ok())
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+            Ok(DefaultScalarValue::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -128,12 +116,9 @@ where
 // JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
 // datetimes. Values will be truncated to microsecond resolution.
 #[crate::graphql_scalar(description = "NaiveDateTime")]
-impl<S> GraphQLScalar for NaiveDateTime
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for NaiveDateTime {
     fn resolve(&self) -> Value {
-        Value::scalar(self.timestamp() as f64)
+        Value::<DefaultScalarValue>::scalar(self.timestamp() as f64)
     }
 
     fn from_input_value(v: &InputValue) -> Option<NaiveDateTime> {
@@ -141,8 +126,8 @@ where
             .and_then(|f| NaiveDateTime::from_timestamp_opt(f as i64, 0))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <f64 as ParseScalarValue<S>>::from_str(value)
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+        <f64 as ParseScalarValue>::from_str(value)
     }
 }
 

@@ -9,26 +9,25 @@ use hyper::{
 };
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest, GraphQLRequest},
-    GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
+    GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode,
 };
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use url::form_urlencoded;
 
-pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT>>,
     context: Arc<CtxT>,
     req: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
 where
-    QueryT: GraphQLType<S, Context = CtxT>,
+    QueryT: GraphQLType<Context = CtxT>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     Ok(match parse_req(req).await {
         Ok(req) => execute_request_sync(root_node, context, req).await,
@@ -36,20 +35,19 @@ where
     })
 }
 
-pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT>>,
     context: Arc<CtxT>,
     req: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
 where
-    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT: GraphQLTypeAsync<Context = CtxT>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT: GraphQLTypeAsync<Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: GraphQLSubscriptionType<Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     Ok(match parse_req(req).await {
         Ok(req) => execute_request(root_node, context, req).await,
@@ -57,9 +55,7 @@ where
     })
 }
 
-async fn parse_req<S: ScalarValue>(
-    req: Request<Body>,
-) -> Result<GraphQLBatchRequest<S>, Response<Body>> {
+async fn parse_req(req: Request<Body>) -> Result<GraphQLBatchRequest, Response<Body>> {
     match *req.method() {
         Method::GET => parse_get_req(req),
         Method::POST => {
@@ -78,9 +74,7 @@ async fn parse_req<S: ScalarValue>(
     .map_err(|e| render_error(e))
 }
 
-fn parse_get_req<S: ScalarValue>(
-    req: Request<Body>,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+fn parse_get_req(req: Request<Body>) -> Result<GraphQLBatchRequest, GraphQLRequestError> {
     req.uri()
         .query()
         .map(|q| gql_request_from_get(q).map(GraphQLBatchRequest::Single))
@@ -91,9 +85,7 @@ fn parse_get_req<S: ScalarValue>(
         })
 }
 
-async fn parse_post_json_req<S: ScalarValue>(
-    body: Body,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+async fn parse_post_json_req(body: Body) -> Result<GraphQLBatchRequest, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
         .await
         .map_err(GraphQLRequestError::BodyHyper)?;
@@ -101,13 +93,10 @@ async fn parse_post_json_req<S: ScalarValue>(
     let input = String::from_utf8(chunk.iter().cloned().collect())
         .map_err(GraphQLRequestError::BodyUtf8)?;
 
-    serde_json::from_str::<GraphQLBatchRequest<S>>(&input)
-        .map_err(GraphQLRequestError::BodyJSONError)
+    serde_json::from_str::<GraphQLBatchRequest>(&input).map_err(GraphQLRequestError::BodyJSONError)
 }
 
-async fn parse_post_graphql_req<S: ScalarValue>(
-    body: Body,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+async fn parse_post_graphql_req(body: Body) -> Result<GraphQLBatchRequest, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
         .await
         .map_err(GraphQLRequestError::BodyHyper)?;
@@ -152,20 +141,19 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT>>,
     context: Arc<CtxT>,
-    request: GraphQLBatchRequest<S>,
+    request: GraphQLBatchRequest,
 ) -> Response<Body>
 where
-    QueryT: GraphQLType<S, Context = CtxT>,
+    QueryT: GraphQLType<Context = CtxT>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     let res = request.execute_sync(&*root_node, &context);
     let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
@@ -183,20 +171,19 @@ where
     resp
 }
 
-async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT>>,
     context: Arc<CtxT>,
-    request: GraphQLBatchRequest<S>,
+    request: GraphQLBatchRequest,
 ) -> Response<Body>
 where
-    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT: GraphQLTypeAsync<Context = CtxT>,
     QueryT::TypeInfo: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT: GraphQLTypeAsync<Context = CtxT>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: GraphQLSubscriptionType<Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     let res = request.execute(&*root_node, &context).await;
     let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
@@ -214,10 +201,7 @@ where
     resp
 }
 
-fn gql_request_from_get<S>(input: &str) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError>
-where
-    S: ScalarValue,
-{
+fn gql_request_from_get(input: &str) -> Result<JuniperGraphQLRequest, GraphQLRequestError> {
     let mut query = None;
     let operation_name = None;
     let mut variables = None;
@@ -238,7 +222,7 @@ where
                 if variables.is_some() {
                     return Err(invalid_err("variables"));
                 }
-                match serde_json::from_str::<InputValue<S>>(&value)
+                match serde_json::from_str::<InputValue>(&value)
                     .map_err(GraphQLRequestError::Variables)
                 {
                     Ok(parsed_variables) => variables = Some(parsed_variables),

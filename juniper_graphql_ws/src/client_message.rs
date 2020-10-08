@@ -1,18 +1,17 @@
 use crate::utils::default_for_null;
-use juniper::{ScalarValue, Variables};
+use juniper::Variables;
 
 /// The payload for a client's "start" message. This triggers execution of a query, mutation, or
 /// subscription.
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(bound(deserialize = "S: ScalarValue"))]
 #[serde(rename_all = "camelCase")]
-pub struct StartPayload<S: ScalarValue> {
+pub struct StartPayload {
     /// The document body.
     pub query: String,
 
     /// The optional variables.
     #[serde(default, deserialize_with = "default_for_null")]
-    pub variables: Variables<S>,
+    pub variables: Variables,
 
     /// The optional operation name (required if the document contains multiple operations).
     pub operation_name: Option<String>,
@@ -20,16 +19,15 @@ pub struct StartPayload<S: ScalarValue> {
 
 /// ClientMessage defines the message types that clients can send.
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(bound(deserialize = "S: ScalarValue"))]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
-pub enum ClientMessage<S: ScalarValue> {
+pub enum ClientMessage {
     /// ConnectionInit is sent by the client upon connecting.
     ConnectionInit {
         /// Optional parameters of any type sent from the client. These are often used for
         /// authentication.
         #[serde(default, deserialize_with = "default_for_null")]
-        payload: Variables<S>,
+        payload: Variables,
     },
     /// Start messages are used to execute a GraphQL operation.
     Start {
@@ -38,7 +36,7 @@ pub enum ClientMessage<S: ScalarValue> {
         id: String,
 
         /// The query, variables, and operation name.
-        payload: StartPayload<S>,
+        payload: StartPayload,
     },
     /// Stop messages are used to unsubscribe from a subscription.
     Stop {

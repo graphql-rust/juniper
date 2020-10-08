@@ -4,16 +4,13 @@ use chrono::prelude::*;
 use crate::{
     parser::{ParseError, ScalarToken, Token},
     value::ParseScalarResult,
-    Value,
+    DefaultScalarValue, Value,
 };
 
 #[crate::graphql_scalar(description = "ObjectId")]
-impl<S> GraphQLScalar for ObjectId
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for ObjectId {
     fn resolve(&self) -> Value {
-        Value::scalar(self.to_hex())
+        Value::<DefaultScalarValue>::scalar(self.to_hex())
     }
 
     fn from_input_value(v: &InputValue) -> Option<ObjectId> {
@@ -21,9 +18,9 @@ where
             .and_then(|s| ObjectId::with_string(s).ok())
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+            Ok(DefaultScalarValue::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -31,12 +28,9 @@ where
 }
 
 #[crate::graphql_scalar(description = "UtcDateTime")]
-impl<S> GraphQLScalar for UtcDateTime
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for UtcDateTime {
     fn resolve(&self) -> Value {
-        Value::scalar((*self).to_rfc3339())
+        Value::<DefaultScalarValue>::scalar((*self).to_rfc3339())
     }
 
     fn from_input_value(v: &InputValue) -> Option<UtcDateTime> {
@@ -45,9 +39,9 @@ where
             .map(UtcDateTime)
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+            Ok(DefaultScalarValue::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }

@@ -3,13 +3,7 @@ use juniper::{
     FieldError, GraphQLEnum, Value, Variables,
 };
 
-pub type QueryResult = Result<
-    (
-        Value<DefaultScalarValue>,
-        Vec<ExecutionError<DefaultScalarValue>>,
-    ),
-    String,
->;
+pub type QueryResult = Result<(Value<DefaultScalarValue>, Vec<ExecutionError>), String>;
 
 pub struct Context {}
 

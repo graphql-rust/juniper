@@ -2,7 +2,6 @@ use crate::{
     ast::VariableDefinition,
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 pub struct UniqueVariableNames;
@@ -11,14 +10,11 @@ pub fn factory() -> UniqueVariableNames {
     UniqueVariableNames
 }
 
-impl<'a, S> Visitor<'a, S> for UniqueVariableNames
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for UniqueVariableNames {
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        ctx: &mut ValidatorContext<'a>,
+        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition),
     ) {
         if let Some(var_type) = ctx
             .schema
@@ -48,12 +44,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn input_types_are_valid() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: [Boolean!]!, $c: ComplexInput) {
@@ -65,7 +60,7 @@ mod tests {
 
     #[test]
     fn output_types_are_invalid() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($a: Dog, $b: [[CatOrDog!]]!, $c: Pet) {

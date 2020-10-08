@@ -12,7 +12,6 @@ use serde::{
 use crate::{
     ast::InputValue,
     executor::{ExecutionError, ValuesStream},
-    value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
     Value, Variables,
 };
@@ -25,27 +24,21 @@ use crate::{
 /// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
 #[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
-pub struct GraphQLRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
+pub struct GraphQLRequest {
     query: String,
     #[serde(rename = "operationName")]
     operation_name: Option<String>,
-    #[serde(bound(deserialize = "InputValue<S>: Deserialize<'de> + Serialize"))]
-    variables: Option<InputValue<S>>,
+    #[serde(bound(deserialize = "InputValue: Deserialize<'de> + Serialize"))]
+    variables: Option<InputValue>,
 }
 
-impl<S> GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
+impl GraphQLRequest {
     /// Returns the `operation_name` associated with this request.
     pub fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_deref()
     }
 
-    fn variables(&self) -> Variables<S> {
+    fn variables(&self) -> Variables {
         self.variables
             .as_ref()
             .and_then(|iv| {
@@ -62,7 +55,7 @@ where
     pub fn new(
         query: String,
         operation_name: Option<String>,
-        variables: Option<InputValue<S>>,
+        variables: Option<InputValue>,
     ) -> Self {
         GraphQLRequest {
             query,
@@ -77,14 +70,13 @@ where
     /// top level of this crate.
     pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT>,
         context: &QueryT::Context,
-    ) -> GraphQLResponse<'a, S>
+    ) -> GraphQLResponse<'a>
     where
-        S: ScalarValue,
-        QueryT: GraphQLType<S>,
-        MutationT: GraphQLType<S, Context = QueryT::Context>,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+        QueryT: GraphQLType,
+        MutationT: GraphQLType<Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<Context = QueryT::Context>,
     {
         GraphQLResponse(crate::execute_sync(
             &self.query,
@@ -101,18 +93,17 @@ where
     /// top level of this crate.
     pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT>,
         context: &'a QueryT::Context,
-    ) -> GraphQLResponse<'a, S>
+    ) -> GraphQLResponse<'a>
     where
-        QueryT: GraphQLTypeAsync<S>,
+        QueryT: GraphQLTypeAsync,
         QueryT::TypeInfo: Sync,
         QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
+        MutationT: GraphQLTypeAsync<Context = QueryT::Context>,
         MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
+        SubscriptionT: GraphQLType<Context = QueryT::Context> + Sync,
         SubscriptionT::TypeInfo: Sync,
-        S: ScalarValue + Send + Sync,
     {
         let op = self.operation_name();
         let vars = &self.variables();
@@ -121,27 +112,26 @@ where
     }
 }
 
-/// Resolve a GraphQL subscription into `Value<ValuesStream<S>` using the
+/// Resolve a GraphQL subscription into `Value<ValuesStream` using the
 /// specified schema and context.
 /// This is a wrapper around the `resolve_into_stream` function exposed at the top
 /// level of this crate.
-pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, QueryT, MutationT, SubscriptionT, S>(
-    req: &'req GraphQLRequest<S>,
-    root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, QueryT, MutationT, SubscriptionT>(
+    req: &'req GraphQLRequest,
+    root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT>,
     context: &'ctx QueryT::Context,
-) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<ValuesStream<'a>>, Vec<ExecutionError>), GraphQLError<'a>>
 where
     'req: 'a,
     'rn: 'a,
     'ctx: 'a,
-    QueryT: GraphQLTypeAsync<S>,
+    QueryT: GraphQLTypeAsync,
     QueryT::TypeInfo: Sync,
     QueryT::Context: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
+    MutationT: GraphQLTypeAsync<Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLSubscriptionType<Context = QueryT::Context>,
     SubscriptionT::TypeInfo: Sync,
-    S: ScalarValue + Send + Sync,
 {
     let op = req.operation_name();
     let vars = req.variables();
@@ -155,21 +145,16 @@ where
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
 #[derive(Debug)]
-pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
-);
+pub struct GraphQLResponse<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
 
-impl<'a, S> GraphQLResponse<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a> GraphQLResponse<'a> {
     /// Constructs new `GraphQLResponse` using the given result
-    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
+    pub fn from_result(r: Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>) -> Self {
         Self(r)
     }
 
     /// Constructs an error response outside of the normal execution flow
-    pub fn error(error: FieldError<S>) -> Self {
+    pub fn error(error: FieldError) -> Self {
         GraphQLResponse(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))
     }
 
@@ -182,11 +167,10 @@ where
     }
 }
 
-impl<'a, T> Serialize for GraphQLResponse<'a, T>
+impl<'a> Serialize for GraphQLResponse<'a>
 where
-    T: Serialize + ScalarValue,
-    Value<T>: Serialize,
-    ExecutionError<T>: Serialize,
+    Value: Serialize,
+    ExecutionError: Serialize,
     GraphQLError<'a>: Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -220,19 +204,16 @@ where
 /// Simple wrapper around GraphQLRequest to allow the handling of Batch requests.
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-pub enum GraphQLBatchRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
+#[serde(bound = "InputValue: Deserialize<'de>")]
+pub enum GraphQLBatchRequest {
     /// A single operation request.
-    Single(GraphQLRequest<S>),
+    Single(GraphQLRequest),
 
     /// A batch operation request.
     ///
     /// Empty batch is considered as invalid value, so cannot be deserialized.
     #[serde(deserialize_with = "deserialize_non_empty_vec")]
-    Batch(Vec<GraphQLRequest<S>>),
+    Batch(Vec<GraphQLRequest>),
 }
 
 fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
@@ -250,22 +231,19 @@ where
     }
 }
 
-impl<S> GraphQLBatchRequest<S>
-where
-    S: ScalarValue,
-{
+impl GraphQLBatchRequest {
     /// Execute a GraphQL batch request synchronously using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute_sync` function exposed in GraphQLRequest.
     pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT>,
         context: &QueryT::Context,
-    ) -> GraphQLBatchResponse<'a, S>
+    ) -> GraphQLBatchResponse<'a>
     where
-        QueryT: GraphQLType<S>,
-        MutationT: GraphQLType<S, Context = QueryT::Context>,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+        QueryT: GraphQLType,
+        MutationT: GraphQLType<Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<Context = QueryT::Context>,
     {
         match *self {
             Self::Single(ref req) => {
@@ -285,18 +263,17 @@ where
     /// GraphQLRequest
     pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT>,
         context: &'a QueryT::Context,
-    ) -> GraphQLBatchResponse<'a, S>
+    ) -> GraphQLBatchResponse<'a>
     where
-        QueryT: GraphQLTypeAsync<S>,
+        QueryT: GraphQLTypeAsync,
         QueryT::TypeInfo: Sync,
         QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
+        MutationT: GraphQLTypeAsync<Context = QueryT::Context>,
         MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
+        SubscriptionT: GraphQLSubscriptionType<Context = QueryT::Context>,
         SubscriptionT::TypeInfo: Sync,
-        S: Send + Sync,
     {
         match self {
             Self::Single(req) => {
@@ -329,20 +306,14 @@ where
 /// wheter to send a 200 or 400 HTTP status code.
 #[derive(Serialize)]
 #[serde(untagged)]
-pub enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
+pub enum GraphQLBatchResponse<'a> {
     /// Result of a single operation in a GraphQL request.
-    Single(GraphQLResponse<'a, S>),
+    Single(GraphQLResponse<'a>),
     /// Result of a batch operation in a GraphQL request.
-    Batch(Vec<GraphQLResponse<'a, S>>),
+    Batch(Vec<GraphQLResponse<'a>>),
 }
 
-impl<'a, S> GraphQLBatchResponse<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a> GraphQLBatchResponse<'a> {
     /// Returns if all the GraphQLResponse in this operation are ok,
     /// you can use it to determine wheter to send a 200 or 400 HTTP status code.
     pub fn is_ok(&self) -> bool {

@@ -29,7 +29,7 @@ impl TestType {
     }
 }
 
-async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
+async fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {

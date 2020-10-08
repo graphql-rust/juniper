@@ -3,7 +3,6 @@ use crate::{
     parser::Spanning,
     schema::meta::Argument,
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 use std::fmt::Debug;
 
@@ -13,22 +12,19 @@ enum ArgumentPosition<'a> {
     Field(&'a str, &'a str),
 }
 
-pub struct KnownArgumentNames<'a, S: Debug + 'a> {
-    current_args: Option<(ArgumentPosition<'a>, &'a Vec<Argument<'a, S>>)>,
+pub struct KnownArgumentNames<'a> {
+    current_args: Option<(ArgumentPosition<'a>, &'a Vec<Argument<'a>>)>,
 }
 
-pub fn factory<'a, S: Debug>() -> KnownArgumentNames<'a, S> {
+pub fn factory<'a>() -> KnownArgumentNames<'a> {
     KnownArgumentNames { current_args: None }
 }
 
-impl<'a, S> Visitor<'a, S> for KnownArgumentNames<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     fn enter_directive(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        directive: &'a Spanning<Directive<S>>,
+        ctx: &mut ValidatorContext<'a>,
+        directive: &'a Spanning<Directive>,
     ) {
         self.current_args = ctx
             .schema
@@ -41,11 +37,11 @@ where
             });
     }
 
-    fn exit_directive(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Directive<S>>) {
+    fn exit_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {
         self.current_args = None;
     }
 
-    fn enter_field(&mut self, ctx: &mut ValidatorContext<'a, S>, field: &'a Spanning<Field<S>>) {
+    fn enter_field(&mut self, ctx: &mut ValidatorContext<'a>, field: &'a Spanning<Field>) {
         self.current_args = ctx
             .parent_type()
             .and_then(|t| t.field_by_name(field.item.name.item))
@@ -64,14 +60,14 @@ where
             });
     }
 
-    fn exit_field(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Field<S>>) {
+    fn exit_field(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Field>) {
         self.current_args = None;
     }
 
     fn enter_argument(
         &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        ctx: &mut ValidatorContext<'a>,
+        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>),
     ) {
         if let Some((ref pos, args)) = self.current_args {
             if args.iter().find(|a| a.name == arg_name.item).is_none() {
@@ -111,12 +107,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn single_arg_is_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment argOnRequiredArg on Dog {
@@ -128,7 +123,7 @@ mod tests {
 
     #[test]
     fn multiple_args_are_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment multipleArgs on ComplicatedArgs {
@@ -140,7 +135,7 @@ mod tests {
 
     #[test]
     fn ignores_args_of_unknown_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment argOnUnknownField on Dog {
@@ -152,7 +147,7 @@ mod tests {
 
     #[test]
     fn multiple_args_in_reverse_order_are_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment multipleArgsReverseOrder on ComplicatedArgs {
@@ -164,7 +159,7 @@ mod tests {
 
     #[test]
     fn no_args_on_optional_arg() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment noArgOnOptionalArg on Dog {
@@ -176,7 +171,7 @@ mod tests {
 
     #[test]
     fn args_are_known_deeply() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -197,7 +192,7 @@ mod tests {
 
     #[test]
     fn directive_args_are_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -209,7 +204,7 @@ mod tests {
 
     #[test]
     fn undirective_args_are_invalid() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           {
@@ -225,7 +220,7 @@ mod tests {
 
     #[test]
     fn invalid_arg_name() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment invalidArgName on Dog {
@@ -241,7 +236,7 @@ mod tests {
 
     #[test]
     fn unknown_args_amongst_known_args() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment oneGoodArgOneInvalidArg on Dog {
@@ -263,7 +258,7 @@ mod tests {
 
     #[test]
     fn unknown_args_deeply() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           {

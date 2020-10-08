@@ -2,7 +2,6 @@ use crate::{
     ast::FragmentSpread,
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 pub struct KnownFragmentNames;
@@ -11,14 +10,11 @@ pub fn factory() -> KnownFragmentNames {
     KnownFragmentNames
 }
 
-impl<'a, S> Visitor<'a, S> for KnownFragmentNames
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for KnownFragmentNames {
     fn enter_fragment_spread(
         &mut self,
-        context: &mut ValidatorContext<'a, S>,
-        spread: &'a Spanning<FragmentSpread<S>>,
+        context: &mut ValidatorContext<'a>,
+        spread: &'a Spanning<FragmentSpread>,
     ) {
         let spread_name = &spread.item.name;
         if !context.is_known_fragment(spread_name.item) {
@@ -38,12 +34,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -73,7 +68,7 @@ mod tests {
 
     #[test]
     fn unknown() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           {

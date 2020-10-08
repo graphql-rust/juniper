@@ -134,13 +134,11 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),
-        scalar: attrs.scalar.map(SpanContainer::into_inner),
         description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
         interfaces: vec![],
         include_type_generics: true,
-        generic_scalar: true,
         no_async: attrs.no_async.is_some(),
     };
 

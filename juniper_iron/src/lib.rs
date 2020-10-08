@@ -128,10 +128,7 @@ use std::{error::Error, fmt, io::Read, ops::Deref as _};
 
 use serde_json::error::Error as SerdeError;
 
-use juniper::{
-    http, http::GraphQLBatchRequest, DefaultScalarValue, GraphQLType, InputValue, RootNode,
-    ScalarValue,
-};
+use juniper::{http, http::GraphQLBatchRequest, GraphQLType, InputValue, RootNode};
 
 /// Handler that executes `GraphQL` queries in the given schema
 ///
@@ -143,24 +140,16 @@ use juniper::{
 /// this endpoint containing the field `"query"` and optionally `"variables"`.
 /// The variables should be a JSON object containing the variable to value
 /// mapping.
-pub struct GraphQLHandler<
-    'a,
-    CtxFactory,
-    Query,
-    Mutation,
-    Subscription,
-    CtxT,
-    S = DefaultScalarValue,
-> where
-    S: ScalarValue,
+pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT>
+where
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
-    Query: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    Mutation: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    Subscription: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Query: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    Subscription: GraphQLType<Context = CtxT> + Send + Sync + 'static,
 {
     context_factory: CtxFactory,
-    root_node: RootNode<'a, Query, Mutation, Subscription, S>,
+    root_node: RootNode<'a, Query, Mutation, Subscription>,
 }
 
 /// Handler that renders `GraphiQL` - a graphical query editor interface
@@ -191,13 +180,10 @@ fn parse_url_param(params: Option<Vec<String>>) -> IronResult<Option<String>> {
     }
 }
 
-fn parse_variable_param<S>(params: Option<Vec<String>>) -> IronResult<Option<InputValue<S>>>
-where
-    S: ScalarValue,
-{
+fn parse_variable_param(params: Option<Vec<String>>) -> IronResult<Option<InputValue>> {
     if let Some(values) = params {
         Ok(
-            serde_json::from_str::<InputValue<S>>(get_single_value(values)?.as_ref())
+            serde_json::from_str::<InputValue>(get_single_value(values)?.as_ref())
                 .map(Some)
                 .map_err(GraphQLIronError::Serde)?,
         )
@@ -206,15 +192,14 @@ where
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
-    GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
+impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT>
+    GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT>
 where
-    S: ScalarValue + Send + Sync + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: Send + Sync + 'static,
-    Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Query: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
 {
     /// Build a new GraphQL handler
     ///
@@ -234,7 +219,7 @@ where
         }
     }
 
-    fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest<S>> {
+    fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest> {
         let url_query = req
             .get_mut::<UrlEncodedQuery>()
             .map_err(GraphQLIronError::Url)?;
@@ -251,17 +236,17 @@ where
         )))
     }
 
-    fn handle_post_json(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest<S>> {
+    fn handle_post_json(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest> {
         let mut payload = String::new();
         itry!(req.body.read_to_string(&mut payload));
 
         Ok(
-            serde_json::from_str::<GraphQLBatchRequest<S>>(payload.as_str())
+            serde_json::from_str::<GraphQLBatchRequest>(payload.as_str())
                 .map_err(GraphQLIronError::Serde)?,
         )
     }
 
-    fn handle_post_graphql(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest<S>> {
+    fn handle_post_graphql(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest> {
         let mut payload = String::new();
         itry!(req.body.read_to_string(&mut payload));
 
@@ -270,11 +255,7 @@ where
         )))
     }
 
-    fn execute_sync(
-        &self,
-        context: &CtxT,
-        request: GraphQLBatchRequest<S>,
-    ) -> IronResult<Response> {
+    fn execute_sync(&self, context: &CtxT, request: GraphQLBatchRequest) -> IronResult<Response> {
         let response = request.execute_sync(&self.root_node, context);
         let content_type = "application/json".parse::<Mime>().unwrap();
         let json = serde_json::to_string_pretty(&response).unwrap();
@@ -313,15 +294,14 @@ impl PlaygroundHandler {
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S> Handler
-    for GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
+impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT> Handler
+    for GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT>
 where
-    S: ScalarValue + Sync + Send + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: Send + Sync + 'static,
-    Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Query: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {

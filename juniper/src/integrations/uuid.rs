@@ -5,25 +5,22 @@ use uuid::Uuid;
 use crate::{
     parser::{ParseError, ScalarToken, Token},
     value::ParseScalarResult,
-    Value,
+    DefaultScalarValue, Value,
 };
 
 #[crate::graphql_scalar(description = "Uuid")]
-impl<S> GraphQLScalar for Uuid
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for Uuid {
     fn resolve(&self) -> Value {
-        Value::scalar(self.to_string())
+        Value::<DefaultScalarValue>::scalar(self.to_string())
     }
 
     fn from_input_value(v: &InputValue) -> Option<Uuid> {
         v.as_string_value().and_then(|s| Uuid::parse_str(s).ok())
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+            Ok(DefaultScalarValue::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }

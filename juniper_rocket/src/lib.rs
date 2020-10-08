@@ -43,7 +43,7 @@ use std::io::{Cursor, Read};
 
 use juniper::{
     http::{self, GraphQLBatchRequest},
-    DefaultScalarValue, FieldError, GraphQLType, InputValue, RootNode, ScalarValue,
+    FieldError, GraphQLType, InputValue, RootNode,
 };
 use rocket::{
     data::{FromDataSimple, Outcome as FromDataOutcome},
@@ -61,9 +61,7 @@ use rocket::{
 /// automatically from both GET and POST routes by implementing the `FromForm`
 /// and `FromData` traits.
 #[derive(Debug, PartialEq)]
-pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
-where
-    S: ScalarValue;
+pub struct GraphQLRequest(GraphQLBatchRequest);
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);
@@ -90,20 +88,17 @@ pub fn playground_source(
     ))
 }
 
-impl<S> GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
+impl GraphQLRequest {
     /// Execute an incoming GraphQL query
     pub fn execute_sync<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
+        QueryT: GraphQLType<Context = CtxT>,
+        MutationT: GraphQLType<Context = CtxT>,
+        SubscriptionT: GraphQLType<Context = CtxT>,
     {
         let response = self.0.execute_sync(root_node, context);
         let status = if response.is_ok() {
@@ -178,10 +173,7 @@ impl GraphQLResponse {
     }
 }
 
-impl<'f, S> FromForm<'f> for GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
+impl<'f> FromForm<'f> for GraphQLRequest {
     type Error = String;
 
     fn from_form(form_items: &mut FormItems<'f>, strict: bool) -> Result<Self, String> {
@@ -249,10 +241,7 @@ where
     }
 }
 
-impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
+impl<'v> FromFormValue<'v> for GraphQLRequest {
     type Error = String;
 
     fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
@@ -262,10 +251,7 @@ where
     }
 }
 
-impl<S> FromDataSimple for GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
+impl FromDataSimple for GraphQLRequest {
     type Error = String;
 
     fn from_data(req: &Request, data: Data) -> FromDataOutcome<Self, Self::Error> {

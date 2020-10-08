@@ -2,7 +2,6 @@ use crate::{
     ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition},
     parser::{SourcePosition, Spanning},
     validation::{RuleError, ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -58,11 +57,8 @@ impl<'a> NoUndefinedVariables<'a> {
     }
 }
 
-impl<'a, S> Visitor<'a, S> for NoUndefinedVariables<'a>
-where
-    S: ScalarValue,
-{
-    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
+impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
+    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, _: &'a Document) {
         for (op_name, &(ref pos, ref def_vars)) in &self.defined_variables {
             let mut unused = Vec::new();
             let mut visited = HashSet::new();
@@ -86,8 +82,8 @@ where
 
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        op: &'a Spanning<Operation<S>>,
+        _: &mut ValidatorContext<'a>,
+        op: &'a Spanning<Operation>,
     ) {
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -97,16 +93,16 @@ where
 
     fn enter_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        f: &'a Spanning<Fragment<S>>,
+        _: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
     }
 
     fn enter_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        spread: &'a Spanning<FragmentSpread<S>>,
+        _: &mut ValidatorContext<'a>,
+        spread: &'a Spanning<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
@@ -118,8 +114,8 @@ where
 
     fn enter_variable_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        _: &mut ValidatorContext<'a>,
+        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition),
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(&mut (_, ref mut vars)) = self.defined_variables.get_mut(name) {
@@ -130,8 +126,8 @@ where
 
     fn enter_argument(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        _: &mut ValidatorContext<'a>,
+        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>),
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
@@ -167,12 +163,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn all_variables_defined() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -184,7 +179,7 @@ mod tests {
 
     #[test]
     fn all_variables_deeply_defined() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -200,7 +195,7 @@ mod tests {
 
     #[test]
     fn all_variables_deeply_defined_in_inline_fragments_defined() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -220,7 +215,7 @@ mod tests {
 
     #[test]
     fn all_variables_in_fragments_deeply_defined() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -245,7 +240,7 @@ mod tests {
 
     #[test]
     fn variable_within_single_fragment_defined_in_multiple_operations() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String) {
@@ -263,7 +258,7 @@ mod tests {
 
     #[test]
     fn variable_within_fragments_defined_in_operations() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String) {
@@ -284,7 +279,7 @@ mod tests {
 
     #[test]
     fn variable_within_recursive_fragment_defined() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String) {
@@ -301,7 +296,7 @@ mod tests {
 
     #[test]
     fn variable_not_defined() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -320,7 +315,7 @@ mod tests {
 
     #[test]
     fn variable_not_defined_by_unnamed_query() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           {
@@ -339,7 +334,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_defined() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($b: String) {
@@ -367,7 +362,7 @@ mod tests {
 
     #[test]
     fn variable_in_fragment_not_defined_by_unnamed_query() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           {
@@ -389,7 +384,7 @@ mod tests {
 
     #[test]
     fn variable_in_fragment_not_defined_by_operation() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String, $b: String) {
@@ -421,7 +416,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_in_fragments_not_defined() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($b: String) {
@@ -462,7 +457,7 @@ mod tests {
 
     #[test]
     fn single_variable_in_fragment_not_defined_by_multiple_operations() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($a: String) {
@@ -496,7 +491,7 @@ mod tests {
 
     #[test]
     fn variables_in_fragment_not_defined_by_multiple_operations() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($b: String) {
@@ -530,7 +525,7 @@ mod tests {
 
     #[test]
     fn variable_in_fragment_used_by_other_operation() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($b: String) {
@@ -567,7 +562,7 @@ mod tests {
 
     #[test]
     fn multiple_undefined_variables_produce_multiple_errors() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo($b: String) {

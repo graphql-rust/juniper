@@ -41,46 +41,46 @@ pub enum InputValue<S = DefaultScalarValue> {
     Scalar(S),
     Enum(String),
     Variable(String),
-    List(Vec<Spanning<InputValue<S>>>),
-    Object(Vec<(Spanning<String>, Spanning<InputValue<S>>)>),
+    List(Vec<Spanning<InputValue>>),
+    Object(Vec<(Spanning<String>, Spanning<InputValue>)>),
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct VariableDefinition<'a, S> {
+pub struct VariableDefinition<'a> {
     pub var_type: Spanning<Type<'a>>,
-    pub default_value: Option<Spanning<InputValue<S>>>,
+    pub default_value: Option<Spanning<InputValue>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Arguments<'a, S> {
-    pub items: Vec<(Spanning<&'a str>, Spanning<InputValue<S>>)>,
+pub struct Arguments<'a> {
+    pub items: Vec<(Spanning<&'a str>, Spanning<InputValue>)>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct VariableDefinitions<'a, S> {
-    pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
+pub struct VariableDefinitions<'a> {
+    pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a>)>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Field<'a, S> {
+pub struct Field<'a> {
     pub alias: Option<Spanning<&'a str>>,
     pub name: Spanning<&'a str>,
-    pub arguments: Option<Spanning<Arguments<'a, S>>>,
-    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
-    pub selection_set: Option<Vec<Selection<'a, S>>>,
+    pub arguments: Option<Spanning<Arguments<'a>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Option<Vec<Selection<'a>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct FragmentSpread<'a, S> {
+pub struct FragmentSpread<'a> {
     pub name: Spanning<&'a str>,
-    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct InlineFragment<'a, S> {
+pub struct InlineFragment<'a> {
     pub type_condition: Option<Spanning<&'a str>>,
-    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
-    pub selection_set: Vec<Selection<'a, S>>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Vec<Selection<'a>>,
 }
 
 /// Entry in a GraphQL selection set
@@ -100,16 +100,16 @@ pub struct InlineFragment<'a, S> {
 /// ```
 #[derive(Clone, PartialEq, Debug)]
 #[allow(missing_docs)]
-pub enum Selection<'a, S = DefaultScalarValue> {
-    Field(Spanning<Field<'a, S>>),
-    FragmentSpread(Spanning<FragmentSpread<'a, S>>),
-    InlineFragment(Spanning<InlineFragment<'a, S>>),
+pub enum Selection<'a> {
+    Field(Spanning<Field<'a>>),
+    FragmentSpread(Spanning<FragmentSpread<'a>>),
+    InlineFragment(Spanning<InlineFragment<'a>>),
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Directive<'a, S> {
+pub struct Directive<'a> {
     pub name: Spanning<&'a str>,
-    pub arguments: Option<Spanning<Arguments<'a, S>>>,
+    pub arguments: Option<Spanning<Arguments<'a>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -120,29 +120,33 @@ pub enum OperationType {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Operation<'a, S> {
+pub struct Operation<'a> {
     pub operation_type: OperationType,
     pub name: Option<Spanning<&'a str>>,
-    pub variable_definitions: Option<Spanning<VariableDefinitions<'a, S>>>,
-    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
-    pub selection_set: Vec<Selection<'a, S>>,
+    pub variable_definitions: Option<Spanning<VariableDefinitions<'a>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Vec<Selection<'a>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Fragment<'a, S> {
+pub struct Fragment<'a> {
     pub name: Spanning<&'a str>,
     pub type_condition: Spanning<&'a str>,
-    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
-    pub selection_set: Vec<Selection<'a, S>>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Vec<Selection<'a>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum Definition<'a, S> {
-    Operation(Spanning<Operation<'a, S>>),
-    Fragment(Spanning<Fragment<'a, S>>),
+pub enum Definition<'a> {
+    Operation(Spanning<Operation<'a>>),
+    Fragment(Spanning<Fragment<'a>>),
 }
 
-pub type Document<'a, S> = Vec<Definition<'a, S>>;
+/// Parsed GraphQL request.
+///
+/// `S` is an instance of [ScalarValue]
+/// By default [DefaultScalarValue]
+pub type Document<'a> = Vec<Definition<'a>>;
 
 /// Parse an unstructured input value into a Rust data type.
 ///
@@ -150,15 +154,15 @@ pub type Document<'a, S> = Vec<Definition<'a, S>>;
 /// automatically by the convenience proc macro `graphql_scalar` or by deriving GraphQLEnum.
 ///
 /// Must be implemented manually when manually exposing new enums or scalars.
-pub trait FromInputValue<S = DefaultScalarValue>: Sized {
+pub trait FromInputValue: Sized {
     /// Performs the conversion.
-    fn from_input_value(v: &InputValue<S>) -> Option<Self>;
+    fn from_input_value(v: &InputValue) -> Option<Self>;
 }
 
 /// Losslessly clones a Rust data type into an InputValue.
-pub trait ToInputValue<S = DefaultScalarValue>: Sized {
+pub trait ToInputValue: Sized {
     /// Performs the conversion.
-    fn to_input_value(&self) -> InputValue<S>;
+    fn to_input_value(&self) -> InputValue;
 }
 
 impl<'a> Type<'a> {
@@ -202,10 +206,7 @@ impl<'a> fmt::Display for Type<'a> {
     }
 }
 
-impl<S> InputValue<S>
-where
-    S: ScalarValue,
-{
+impl InputValue {
     /// Construct a null value.
     pub fn null() -> Self {
         InputValue::Null
@@ -238,7 +239,7 @@ where
     /// Construct a scalar value
     pub fn scalar<T>(v: T) -> Self
     where
-        T: Into<S>,
+        T: Into<DefaultScalarValue>,
     {
         InputValue::Scalar(v.into())
     }
@@ -293,7 +294,7 @@ where
     }
 
     /// Resolve all variables to their values.
-    pub fn into_const(self, vars: &Variables<S>) -> Self {
+    pub fn into_const(self, vars: &Variables) -> Self {
         match self {
             InputValue::Variable(v) => vars.get(&v).map_or_else(InputValue::null, Clone::clone),
             InputValue::List(l) => InputValue::List(
@@ -313,9 +314,9 @@ where
     /// Shorthand form of invoking `FromInputValue::from()`.
     pub fn convert<T>(&self) -> Option<T>
     where
-        T: FromInputValue<S>,
+        T: FromInputValue,
     {
-        <T as FromInputValue<S>>::from_input_value(self)
+        <T as FromInputValue>::from_input_value(self)
     }
 
     /// Does the value represent null?
@@ -344,21 +345,24 @@ where
 
     /// View the underlying int value, if present.
     pub fn as_int_value(&self) -> Option<i32> {
-        self.as_scalar_value().and_then(|s| s.as_int())
+        self.as_scalar_value::<DefaultScalarValue>()
+            .and_then(|s| s.as_int())
     }
 
     /// View the underlying float value, if present.
     pub fn as_float_value(&self) -> Option<f64> {
-        self.as_scalar_value().and_then(|s| s.as_float())
+        self.as_scalar_value::<DefaultScalarValue>()
+            .and_then(|s| s.as_float())
     }
 
     /// View the underlying string value, if present.
     pub fn as_string_value(&self) -> Option<&str> {
-        self.as_scalar_value().and_then(|s| s.as_str())
+        self.as_scalar_value::<DefaultScalarValue>()
+            .and_then(|s| s.as_str())
     }
 
     /// View the underlying scalar value, if present.
-    pub fn as_scalar(&self) -> Option<&S> {
+    pub fn as_scalar(&self) -> Option<&DefaultScalarValue> {
         match *self {
             InputValue::Scalar(ref s) => Some(s),
             _ => None,
@@ -369,7 +373,7 @@ where
     pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
     where
         T: 'a,
-        &'a S: Into<Option<&'a T>>,
+        &'a DefaultScalarValue: Into<Option<&'a T>>,
     {
         self.as_scalar().and_then(Into::into)
     }
@@ -441,10 +445,7 @@ where
     }
 }
 
-impl<S> fmt::Display for InputValue<S>
-where
-    S: ScalarValue,
-{
+impl fmt::Display for InputValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             InputValue::Null => write!(f, "null"),
@@ -486,16 +487,16 @@ where
     }
 }
 
-impl<'a, S> Arguments<'a, S> {
-    pub fn into_iter(self) -> vec::IntoIter<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
+impl<'a> Arguments<'a> {
+    pub fn into_iter(self) -> vec::IntoIter<(Spanning<&'a str>, Spanning<InputValue>)> {
         self.items.into_iter()
     }
 
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, Spanning<InputValue>)> {
         self.items.iter()
     }
 
-    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
+    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<&'a str>, Spanning<InputValue>)> {
         self.items.iter_mut()
     }
 
@@ -503,7 +504,7 @@ impl<'a, S> Arguments<'a, S> {
         self.items.len()
     }
 
-    pub fn get(&self, key: &str) -> Option<&Spanning<InputValue<S>>> {
+    pub fn get(&self, key: &str) -> Option<&Spanning<InputValue>> {
         self.items
             .iter()
             .filter(|&&(ref k, _)| k.item == key)
@@ -512,8 +513,8 @@ impl<'a, S> Arguments<'a, S> {
     }
 }
 
-impl<'a, S> VariableDefinitions<'a, S> {
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<S>)> {
+impl<'a> VariableDefinitions<'a> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition)> {
         self.items.iter()
     }
 }

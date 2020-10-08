@@ -10,7 +10,7 @@ use crate::{
     graphql_interface, graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, Value},
+    value::{ParseScalarResult, ParseScalarValue, Value},
     GraphQLEnum,
 };
 
@@ -33,7 +33,7 @@ impl GraphQLScalar for Scalar {
         v.as_scalar_value().map(|i: &i32| Scalar(*i))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }

@@ -196,7 +196,6 @@ fn create(
     let definition = util::GraphQLTypeDefiniton {
         name,
         _type: *_impl.target_type.clone(),
-        scalar: _impl.attrs.scalar.map(SpanContainer::into_inner),
         context: _impl.attrs.context.map(SpanContainer::into_inner),
         description: _impl.description,
         fields,
@@ -208,7 +207,6 @@ fn create(
             .map(SpanContainer::into_inner)
             .collect(),
         include_type_generics: false,
-        generic_scalar: false,
         no_async: _impl.attrs.no_async.is_some(),
     };
 

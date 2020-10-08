@@ -4,7 +4,6 @@ use crate::{
     ast::{Definition, Document, Fragment, FragmentSpread, Operation},
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -45,11 +44,8 @@ impl<'a> NoUnusedFragments<'a> {
     }
 }
 
-impl<'a, S> Visitor<'a, S> for NoUnusedFragments<'a>
-where
-    S: ScalarValue,
-{
-    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, defs: &'a Document<S>) {
+impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
+    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, defs: &'a Document) {
         let mut reachable = HashSet::new();
 
         for def in defs {
@@ -72,8 +68,8 @@ where
 
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        op: &'a Spanning<Operation<S>>,
+        _: &mut ValidatorContext<'a>,
+        op: &'a Spanning<Operation>,
     ) {
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -81,8 +77,8 @@ where
 
     fn enter_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        f: &'a Spanning<Fragment<S>>,
+        _: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
         self.defined_fragments
@@ -91,8 +87,8 @@ where
 
     fn enter_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        spread: &'a Spanning<FragmentSpread<S>>,
+        _: &mut ValidatorContext<'a>,
+        spread: &'a Spanning<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
@@ -114,12 +110,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn all_fragment_names_are_used() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           {
@@ -146,7 +141,7 @@ mod tests {
 
     #[test]
     fn all_fragment_names_are_used_by_multiple_operations() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           query Foo {
@@ -175,7 +170,7 @@ mod tests {
 
     #[test]
     fn contains_unknown_fragments() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo {
@@ -220,7 +215,7 @@ mod tests {
 
     #[test]
     fn contains_unknown_fragments_with_ref_cycle() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo {
@@ -267,7 +262,7 @@ mod tests {
 
     #[test]
     fn contains_unknown_and_undef_fragments() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           query Foo {

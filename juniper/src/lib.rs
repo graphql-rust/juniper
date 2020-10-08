@@ -232,18 +232,17 @@ impl<'a> fmt::Display for GraphQLError<'a> {
 impl<'a> std::error::Error for GraphQLError<'a> {}
 
 /// Execute a query synchronously in a provided schema
-pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
+pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT>,
+    variables: &Variables,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
 where
-    S: ScalarValue,
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S, Context = QueryT::Context>,
-    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT: GraphQLType,
+    MutationT: GraphQLType<Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<Context = QueryT::Context>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
 
@@ -271,22 +270,21 @@ where
 }
 
 /// Execute a query in a provided schema
-pub async fn execute<'a, S, QueryT, MutationT, SubscriptionT>(
+pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT>,
+    variables: &Variables,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
 where
-    QueryT: GraphQLTypeAsync<S>,
+    QueryT: GraphQLTypeAsync,
     QueryT::TypeInfo: Sync,
     QueryT::Context: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
+    MutationT: GraphQLTypeAsync<Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
+    SubscriptionT: GraphQLType<Context = QueryT::Context> + Sync,
     SubscriptionT::TypeInfo: Sync,
-    S: ScalarValue + Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
 
@@ -315,24 +313,23 @@ where
 }
 
 /// Resolve subscription into `ValuesStream`
-pub async fn resolve_into_stream<'a, S, QueryT, MutationT, SubscriptionT>(
+pub async fn resolve_into_stream<'a, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT>,
+    variables: &Variables,
     context: &'a QueryT::Context,
-) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<ValuesStream<'a>>, Vec<ExecutionError>), GraphQLError<'a>>
 where
-    QueryT: GraphQLTypeAsync<S>,
+    QueryT: GraphQLTypeAsync,
     QueryT::TypeInfo: Sync,
     QueryT::Context: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
+    MutationT: GraphQLTypeAsync<Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLSubscriptionType<Context = QueryT::Context>,
     SubscriptionT::TypeInfo: Sync,
-    S: ScalarValue + Send + Sync,
 {
-    let document: crate::ast::Document<'a, S> =
+    let document: crate::ast::Document<'a> =
         parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -360,16 +357,15 @@ where
 }
 
 /// Execute the reference introspection query in the provided schema
-pub fn introspect<'a, S, QueryT, MutationT, SubscriptionT>(
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+pub fn introspect<'a, QueryT, MutationT, SubscriptionT>(
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT>,
     context: &QueryT::Context,
     format: IntrospectionFormat,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
 where
-    S: ScalarValue,
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S, Context = QueryT::Context>,
-    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT: GraphQLType,
+    MutationT: GraphQLType<Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<Context = QueryT::Context>,
 {
     execute_sync(
         match format {

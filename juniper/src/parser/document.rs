@@ -14,29 +14,22 @@ use crate::{
         meta::{Argument, Field as MetaField},
         model::SchemaType,
     },
-    value::ScalarValue,
 };
 
 #[doc(hidden)]
-pub fn parse_document_source<'a, 'b, S>(
+pub fn parse_document_source<'a, 'b>(
     s: &'a str,
-    schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, Document<'a, S>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+) -> UnlocatedParseResult<'a, Document<'a>> {
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).map_err(|s| s.map(ParseError::LexerError))?;
     parse_document(&mut parser, schema)
 }
 
-fn parse_document<'a, 'b, S>(
+fn parse_document<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, Document<'a, S>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+) -> UnlocatedParseResult<'a, Document<'a>> {
     let mut defs = Vec::new();
 
     loop {
@@ -48,13 +41,10 @@ where
     }
 }
 
-fn parse_definition<'a, 'b, S>(
+fn parse_definition<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, Definition<'a, S>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+) -> UnlocatedParseResult<'a, Definition<'a>> {
     match parser.peek().item {
         Token::CurlyOpen
         | Token::Name("query")
@@ -69,12 +59,11 @@ where
     }
 }
 
-fn parse_operation_definition<'a, 'b, S>(
+fn parse_operation_definition<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, Operation<'a, S>>
+    schema: &'b SchemaType<'b>,
+) -> ParseResult<'a, Operation<'a>>
 where
-    S: ScalarValue,
 {
     if parser.peek().item == Token::CurlyOpen {
         let fields = schema.concrete_query_type().fields(schema);
@@ -125,12 +114,11 @@ where
     }
 }
 
-fn parse_fragment_definition<'a, 'b, S>(
+fn parse_fragment_definition<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, Fragment<'a, S>>
+    schema: &'b SchemaType<'b>,
+) -> ParseResult<'a, Fragment<'a>>
 where
-    S: ScalarValue,
 {
     let Spanning {
         start: start_pos, ..
@@ -169,14 +157,11 @@ where
     ))
 }
 
-fn parse_optional_selection_set<'a, 'b, S>(
+fn parse_optional_selection_set<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
-) -> OptionParseResult<'a, Vec<Selection<'a, S>>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+    fields: Option<&[&MetaField<'b>]>,
+) -> OptionParseResult<'a, Vec<Selection<'a>>> {
     if parser.peek().item == Token::CurlyOpen {
         Ok(Some(parse_selection_set(parser, schema, fields)?))
     } else {
@@ -184,13 +169,12 @@ where
     }
 }
 
-fn parse_selection_set<'a, 'b, S>(
+fn parse_selection_set<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
-) -> ParseResult<'a, Vec<Selection<'a, S>>>
+    schema: &'b SchemaType<'b>,
+    fields: Option<&[&MetaField<'b>]>,
+) -> ParseResult<'a, Vec<Selection<'a>>>
 where
-    S: ScalarValue,
 {
     parser.unlocated_delimited_nonempty_list(
         &Token::CurlyOpen,
@@ -199,13 +183,12 @@ where
     )
 }
 
-fn parse_selection<'a, 'b, S>(
+fn parse_selection<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
-) -> UnlocatedParseResult<'a, Selection<'a, S>>
+    schema: &'b SchemaType<'b>,
+    fields: Option<&[&MetaField<'b>]>,
+) -> UnlocatedParseResult<'a, Selection<'a>>
 where
-    S: ScalarValue,
 {
     match parser.peek().item {
         Token::Ellipsis => parse_fragment(parser, schema, fields),
@@ -213,13 +196,12 @@ where
     }
 }
 
-fn parse_fragment<'a, 'b, S>(
+fn parse_fragment<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
-) -> UnlocatedParseResult<'a, Selection<'a, S>>
+    schema: &'b SchemaType<'b>,
+    fields: Option<&[&MetaField<'b>]>,
+) -> UnlocatedParseResult<'a, Selection<'a>>
 where
-    S: ScalarValue,
 {
     let Spanning {
         start: ref start_pos,
@@ -295,13 +277,12 @@ where
     }
 }
 
-fn parse_field<'a, 'b, S>(
+fn parse_field<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
-) -> ParseResult<'a, Field<'a, S>>
+    schema: &'b SchemaType<'b>,
+    fields: Option<&[&MetaField<'b>]>,
+) -> ParseResult<'a, Field<'a>>
 where
-    S: ScalarValue,
 {
     let mut alias = Some(parser.expect_name()?);
 
@@ -346,13 +327,12 @@ where
     ))
 }
 
-fn parse_arguments<'a, 'b, S>(
+fn parse_arguments<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    arguments: Option<&[Argument<'b, S>]>,
-) -> OptionParseResult<'a, Arguments<'a, S>>
+    schema: &'b SchemaType<'b>,
+    arguments: Option<&[Argument<'b>]>,
+) -> OptionParseResult<'a, Arguments<'a>>
 where
-    S: ScalarValue,
 {
     if parser.peek().item != Token::ParenOpen {
         Ok(None)
@@ -371,13 +351,12 @@ where
     }
 }
 
-fn parse_argument<'a, 'b, S>(
+fn parse_argument<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    arguments: Option<&[Argument<'b, S>]>,
-) -> ParseResult<'a, (Spanning<&'a str>, Spanning<InputValue<S>>)>
+    schema: &'b SchemaType<'b>,
+    arguments: Option<&[Argument<'b>]>,
+) -> ParseResult<'a, (Spanning<&'a str>, Spanning<InputValue>)>
 where
-    S: ScalarValue,
 {
     let name = parser.expect_name()?;
     let tpe = arguments
@@ -405,12 +384,11 @@ fn parse_operation_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Operatio
     }
 }
 
-fn parse_variable_definitions<'a, 'b, S>(
+fn parse_variable_definitions<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> OptionParseResult<'a, VariableDefinitions<'a, S>>
+    schema: &'b SchemaType<'b>,
+) -> OptionParseResult<'a, VariableDefinitions<'a>>
 where
-    S: ScalarValue,
 {
     if parser.peek().item != Token::ParenOpen {
         Ok(None)
@@ -429,13 +407,10 @@ where
     }
 }
 
-fn parse_variable_definition<'a, 'b, S>(
+fn parse_variable_definition<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, (Spanning<&'a str>, VariableDefinition<'a, S>)>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+) -> ParseResult<'a, (Spanning<&'a str>, VariableDefinition<'a>)> {
     let Spanning {
         start: start_pos, ..
     } = parser.expect(&Token::Dollar)?;
@@ -466,13 +441,10 @@ where
     ))
 }
 
-fn parse_directives<'a, 'b, S>(
+fn parse_directives<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> OptionParseResult<'a, Vec<Spanning<Directive<'a, S>>>>
-where
-    S: ScalarValue,
-{
+    schema: &'b SchemaType<'b>,
+) -> OptionParseResult<'a, Vec<Spanning<Directive<'a>>>> {
     if parser.peek().item != Token::At {
         Ok(None)
     } else {
@@ -485,12 +457,11 @@ where
     }
 }
 
-fn parse_directive<'a, 'b, S>(
+fn parse_directive<'a, 'b>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, Directive<'a, S>>
+    schema: &'b SchemaType<'b>,
+) -> ParseResult<'a, Directive<'a>>
 where
-    S: ScalarValue,
 {
     let Spanning {
         start: start_pos, ..

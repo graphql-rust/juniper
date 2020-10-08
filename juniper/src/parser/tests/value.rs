@@ -1,5 +1,3 @@
-use indexmap::IndexMap;
-
 use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
@@ -8,9 +6,10 @@ use crate::{
         model::SchemaType,
     },
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
+    value::ParseScalarValue,
     GraphQLEnum, GraphQLInputObject,
 };
+use indexmap::IndexMap;
 
 #[derive(GraphQLEnum)]
 enum Enum {
@@ -30,11 +29,8 @@ struct Foo {
 
 struct Query;
 
-#[crate::graphql_object(Scalar = S)]
-impl<'a, S> Query
-where
-    S: crate::ScalarValue + 'a,
-{
+#[crate::graphql_object]
+impl<'a> Query {
     fn int_field() -> i32 {
         42
     }
@@ -56,16 +52,15 @@ where
     }
 }
 
-fn scalar_meta<T>(name: &'static str) -> MetaType<DefaultScalarValue>
+fn scalar_meta<T>(name: &'static str) -> MetaType
 where
-    T: FromInputValue<DefaultScalarValue> + ParseScalarValue<DefaultScalarValue> + 'static,
+    T: FromInputValue + ParseScalarValue + 'static,
 {
     MetaType::Scalar(ScalarMeta::new::<T>(name.into()))
 }
 
-fn parse_value<S>(s: &str, meta: &MetaType<S>) -> Spanning<InputValue<S>>
+fn parse_value(s: &str, meta: &MetaType) -> Spanning<InputValue>
 where
-    S: ScalarValue,
 {
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {:#?}", s));
@@ -78,7 +73,7 @@ where
 #[test]
 fn input_value_literals() {
     assert_eq!(
-        parse_value::<DefaultScalarValue>("123", &scalar_meta::<i32>("Int")),
+        parse_value("123", &scalar_meta::<i32>("Int")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(3, 0, 3),
@@ -86,7 +81,7 @@ fn input_value_literals() {
         )
     );
     assert_eq!(
-        parse_value::<DefaultScalarValue>("123.45", &scalar_meta::<f64>("Float")),
+        parse_value("123.45", &scalar_meta::<f64>("Float")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(6, 0, 6),
@@ -94,7 +89,7 @@ fn input_value_literals() {
         )
     );
     assert_eq!(
-        parse_value::<DefaultScalarValue>("true", &scalar_meta::<bool>("Bool")),
+        parse_value("true", &scalar_meta::<bool>("Bool")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(4, 0, 4),
@@ -102,7 +97,7 @@ fn input_value_literals() {
         )
     );
     assert_eq!(
-        parse_value::<DefaultScalarValue>("false", &scalar_meta::<bool>("Bool")),
+        parse_value("false", &scalar_meta::<bool>("Bool")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(5, 0, 5),
@@ -110,7 +105,7 @@ fn input_value_literals() {
         )
     );
     assert_eq!(
-        parse_value::<DefaultScalarValue>(r#""test""#, &scalar_meta::<String>("String")),
+        parse_value(r#""test""#, &scalar_meta::<String>("String")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(6, 0, 6),
@@ -118,10 +113,10 @@ fn input_value_literals() {
         )
     );
     let values = &[EnumValue::new("enum_value")];
-    let e: EnumMeta<DefaultScalarValue> = EnumMeta::new::<Enum>("TestEnum".into(), values);
+    let e: EnumMeta = EnumMeta::new::<Enum>("TestEnum".into(), values);
 
     assert_eq!(
-        parse_value::<DefaultScalarValue>("enum_value", &MetaType::Enum(e)),
+        parse_value("enum_value", &MetaType::Enum(e)),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(10, 0, 10),
@@ -129,7 +124,7 @@ fn input_value_literals() {
         )
     );
     assert_eq!(
-        parse_value::<DefaultScalarValue>("$variable", &scalar_meta::<i32>("Int")),
+        parse_value("$variable", &scalar_meta::<i32>("Int")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(9, 0, 9),
@@ -137,7 +132,7 @@ fn input_value_literals() {
         )
     );
     assert_eq!(
-        parse_value::<DefaultScalarValue>("[]", &scalar_meta::<i32>("Int")),
+        parse_value("[]", &scalar_meta::<i32>("Int")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
@@ -145,7 +140,7 @@ fn input_value_literals() {
         )
     );
     assert_eq!(
-        parse_value::<DefaultScalarValue>("[1, [2, 3]]", &scalar_meta::<i32>("Int")),
+        parse_value("[1, [2, 3]]", &scalar_meta::<i32>("Int")),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(11, 0, 11),
@@ -180,16 +175,16 @@ fn input_value_literals() {
     ];
     let meta = &MetaType::InputObject(InputObjectMeta::new::<Foo>("foo".into(), &fields));
     assert_eq!(
-        parse_value::<DefaultScalarValue>("{}", meta),
+        parse_value("{}", meta),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
-            InputValue::object(IndexMap::<String, InputValue<DefaultScalarValue>>::new())
+            InputValue::object(IndexMap::<String, InputValue>::new())
         )
     );
 
     assert_eq!(
-        parse_value::<DefaultScalarValue>(r#"{key: 123, other: {foo: "bar"}}"#, meta),
+        parse_value(r#"{key: 123, other: {foo: "bar"}}"#, meta),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(31, 0, 31),

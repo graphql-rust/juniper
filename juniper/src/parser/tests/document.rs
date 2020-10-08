@@ -6,13 +6,9 @@ use crate::{
     schema::model::SchemaType,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
-    value::{DefaultScalarValue, ScalarValue},
 };
 
-fn parse_document<S>(s: &str) -> Document<S>
-where
-    S: ScalarValue,
-{
+fn parse_document(s: &str) -> Document {
     parse_document_source(
         s,
         &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
@@ -20,11 +16,8 @@ where
     .expect(&format!("Parse error on input {:#?}", s))
 }
 
-fn parse_document_error<'a, S>(s: &'a str) -> Spanning<ParseError<'a>>
-where
-    S: ScalarValue,
-{
-    match parse_document_source::<S>(
+fn parse_document_error<'a>(s: &'a str) -> Spanning<ParseError<'a>> {
+    match parse_document_source(
         s,
         &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
     ) {
@@ -36,7 +29,7 @@ where
 #[test]
 fn simple_ast() {
     assert_eq!(
-        parse_document::<DefaultScalarValue>(
+        parse_document(
             r#"
             {
                 node(id: 4) {
@@ -125,7 +118,7 @@ fn simple_ast() {
 #[test]
 fn errors() {
     assert_eq!(
-        parse_document_error::<DefaultScalarValue>("{"),
+        parse_document_error("{"),
         Spanning::zero_width(
             &SourcePosition::new(1, 0, 1),
             ParseError::UnexpectedEndOfFile
@@ -133,7 +126,7 @@ fn errors() {
     );
 
     assert_eq!(
-        parse_document_error::<DefaultScalarValue>("{ ...MissingOn }\nfragment MissingOn Type"),
+        parse_document_error("{ ...MissingOn }\nfragment MissingOn Type"),
         Spanning::start_end(
             &SourcePosition::new(36, 1, 19),
             &SourcePosition::new(40, 1, 23),
@@ -142,7 +135,7 @@ fn errors() {
     );
 
     assert_eq!(
-        parse_document_error::<DefaultScalarValue>("{ ...on }"),
+        parse_document_error("{ ...on }"),
         Spanning::start_end(
             &SourcePosition::new(8, 0, 8),
             &SourcePosition::new(9, 0, 9),

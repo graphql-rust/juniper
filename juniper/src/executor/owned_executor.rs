@@ -13,22 +13,19 @@ use crate::{
 
 /// [`Executor`] owning all its variables. Can be used after [`Executor`] was
 /// destroyed.
-pub struct OwnedExecutor<'a, CtxT, S> {
-    pub(super) fragments: HashMap<&'a str, Fragment<'a, S>>,
-    pub(super) variables: Variables<S>,
-    pub(super) current_selection_set: Option<Vec<Selection<'a, S>>>,
-    pub(super) parent_selection_set: Option<Vec<Selection<'a, S>>>,
-    pub(super) current_type: TypeType<'a, S>,
-    pub(super) schema: &'a SchemaType<'a, S>,
+pub struct OwnedExecutor<'a, CtxT> {
+    pub(super) fragments: HashMap<&'a str, Fragment<'a>>,
+    pub(super) variables: Variables,
+    pub(super) current_selection_set: Option<Vec<Selection<'a>>>,
+    pub(super) parent_selection_set: Option<Vec<Selection<'a>>>,
+    pub(super) current_type: TypeType<'a>,
+    pub(super) schema: &'a SchemaType<'a>,
     pub(super) context: &'a CtxT,
-    pub(super) errors: RwLock<Vec<ExecutionError<S>>>,
+    pub(super) errors: RwLock<Vec<ExecutionError>>,
     pub(super) field_path: Arc<FieldPath<'a>>,
 }
 
-impl<'a, CtxT, S> Clone for OwnedExecutor<'a, CtxT, S>
-where
-    S: Clone,
-{
+impl<'a, CtxT> Clone for OwnedExecutor<'a, CtxT> {
     fn clone(&self) -> Self {
         Self {
             fragments: self.fragments.clone(),
@@ -44,16 +41,13 @@ where
     }
 }
 
-impl<'a, CtxT, S> OwnedExecutor<'a, CtxT, S>
-where
-    S: Clone,
-{
+impl<'a, CtxT> OwnedExecutor<'a, CtxT> {
     #[doc(hidden)]
     pub fn type_sub_executor(
         &self,
         type_name: Option<&str>,
-        selection_set: Option<Vec<Selection<'a, S>>>,
-    ) -> OwnedExecutor<'a, CtxT, S> {
+        selection_set: Option<Vec<Selection<'a>>>,
+    ) -> OwnedExecutor<'a, CtxT> {
         OwnedExecutor {
             fragments: self.fragments.clone(),
             variables: self.variables.clone(),
@@ -71,7 +65,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn variables(&self) -> Variables<S> {
+    pub fn variables(&self) -> Variables {
         self.variables.clone()
     }
 
@@ -81,8 +75,8 @@ where
         field_alias: &'a str,
         field_name: &'a str,
         location: SourcePosition,
-        selection_set: Option<Vec<Selection<'a, S>>>,
-    ) -> OwnedExecutor<'a, CtxT, S> {
+        selection_set: Option<Vec<Selection<'a>>>,
+    ) -> OwnedExecutor<'a, CtxT> {
         OwnedExecutor {
             fragments: self.fragments.clone(),
             variables: self.variables.clone(),
@@ -108,7 +102,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn as_executor(&self) -> Executor<'_, '_, CtxT, S> {
+    pub fn as_executor(&self) -> Executor<'_, '_, CtxT> {
         Executor {
             fragments: &self.fragments,
             variables: &self.variables,
@@ -131,9 +125,9 @@ where
     }
 }
 
-impl<'a, CtxT, S> OwnedExecutor<'a, CtxT, S> {
+impl<'a, CtxT> OwnedExecutor<'a, CtxT> {
     #[doc(hidden)]
-    pub fn fragment_by_name<'b>(&'b self, name: &str) -> Option<&'b Fragment<'a, S>> {
+    pub fn fragment_by_name<'b>(&'b self, name: &str) -> Option<&'b Fragment<'a>> {
         self.fragments.get(name)
     }
 
@@ -143,7 +137,7 @@ impl<'a, CtxT, S> OwnedExecutor<'a, CtxT, S> {
     }
 
     #[doc(hidden)]
-    pub fn schema(&self) -> &'a SchemaType<S> {
+    pub fn schema(&self) -> &'a SchemaType {
         self.schema
     }
 

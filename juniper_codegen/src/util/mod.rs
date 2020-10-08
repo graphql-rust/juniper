@@ -658,7 +658,6 @@ pub struct GraphQLTypeDefiniton {
     pub name: String,
     pub _type: syn::Type,
     pub context: Option<syn::Type>,
-    pub scalar: Option<syn::Type>,
     pub description: Option<String>,
     pub fields: Vec<GraphQLTypeDefinitionField>,
     pub generics: syn::Generics,
@@ -670,11 +669,6 @@ pub struct GraphQLTypeDefiniton {
     // This flag signifies if the type generics need to be
     // included manually.
     pub include_type_generics: bool,
-    // This flag indicates if the generated code should always be
-    // generic over the ScalarValue.
-    // If false, the scalar is only generic if a generic parameter
-    // is specified manually.
-    pub generic_scalar: bool,
     // FIXME: make this redundant.
     pub no_async: bool,
 }
@@ -749,20 +743,6 @@ impl GraphQLTypeDefiniton {
             }
         });
 
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(::juniper::DefaultScalarValue)
-                }
-            });
-
         let resolve_matches = self.fields.iter().map(|field| {
             let name = &field.name;
             let code = &field.resolver_code;
@@ -772,7 +752,7 @@ impl GraphQLTypeDefiniton {
                     #name => {
                         panic!("Tried to resolve async field {} on type {:?} with a sync resolver",
                             #name,
-                            <Self as ::juniper::GraphQLType<#scalar>>::name(_info)
+                            <Self as ::juniper::GraphQLType>::name(_info)
                         );
                     },
                 )
@@ -823,17 +803,7 @@ impl GraphQLTypeDefiniton {
         // is specified.
         let (_, type_generics, _) = self.generics.split_for_impl();
 
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-            generics.params.push(parse_quote!(__S));
-            generics
-                .make_where_clause()
-                .predicates
-                .push(parse_quote!(__S: ::juniper::ScalarValue));
-        }
+        let generics = self.generics.clone();
 
         let type_generics_tokens = if self.include_type_generics {
             Some(type_generics)
@@ -920,27 +890,24 @@ impl GraphQLTypeDefiniton {
 
             let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
 
-            where_async
-                .predicates
-                .push(parse_quote!( #scalar: Send + Sync ));
             where_async.predicates.push(parse_quote!(Self: Sync));
 
             let as_dyn_value = if !self.interfaces.is_empty() {
                 Some(quote! {
                     #[automatically_derived]
-                    impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #type_generics_tokens
+                    impl#impl_generics ::juniper::AsDynGraphQLValue for #ty #type_generics_tokens
                     #where_async
                     {
-                        type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
-                        type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;
+                        type Context = <Self as ::juniper::GraphQLValue>::Context;
+                        type TypeInfo = <Self as ::juniper::GraphQLValue>::TypeInfo;
 
                         #[inline]
-                        fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue<#scalar, Self::Context, Self::TypeInfo> {
+                        fn as_dyn_graphql_value(&self) -> &::juniper::DynGraphQLValue< Self::Context, Self::TypeInfo> {
                             self
                         }
 
                         #[inline]
-                        fn as_dyn_graphql_value_async(&self) -> &::juniper::DynGraphQLValueAsync<#scalar, Self::Context, Self::TypeInfo> {
+                        fn as_dyn_graphql_value_async(&self) -> &::juniper::DynGraphQLValueAsync< Self::Context, Self::TypeInfo> {
                             self
                         }
                     }
@@ -950,17 +917,16 @@ impl GraphQLTypeDefiniton {
             };
 
             quote!(
-                impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #type_generics_tokens
+                impl#impl_generics ::juniper::GraphQLValueAsync for #ty #type_generics_tokens
                     #where_async
                 {
                     fn resolve_field_async<'b>(
                         &'b self,
                         info: &'b Self::TypeInfo,
                         field: &'b str,
-                        args: &'b ::juniper::Arguments<#scalar>,
-                        executor: &'b ::juniper::Executor<Self::Context, #scalar>,
-                    ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>>
-                        where #scalar: Send + Sync,
+                        args: &'b ::juniper::Arguments,
+                        executor: &'b ::juniper::Executor<Self::Context>,
+                    ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult>
                     {
                         use ::juniper::futures::future;
                         use ::juniper::GraphQLType;
@@ -969,7 +935,7 @@ impl GraphQLTypeDefiniton {
                             _ => {
                                 panic!("Field {} not found on type {:?}",
                                     field,
-                                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                                    <Self as ::juniper::GraphQLType>::name(info)
                                 );
                             }
                         }
@@ -983,33 +949,33 @@ impl GraphQLTypeDefiniton {
         let marks = self.fields.iter().map(|field| {
             let field_marks = field.args.iter().map(|arg| {
                 let arg_ty = &arg._type;
-                quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+                quote! { <#arg_ty as ::juniper::marker::IsInputType>::mark(); }
             });
 
             let field_ty = &field._type;
             let resolved_ty = quote! {
                 <#field_ty as ::juniper::IntoResolvable<
-                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
+                    '_,  _, <Self as ::juniper::GraphQLValue>::Context,
                 >>::Type
             };
 
             quote! {
                 #( #field_marks )*
-                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+                <#resolved_ty as ::juniper::marker::IsOutputType>::mark();
             }
         });
 
         let output = quote!(
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #type_generics_tokens #where_clause {
+            impl#impl_generics ::juniper::marker::IsOutputType for #ty #type_generics_tokens #where_clause {
                 fn mark() {
                     #( #marks )*
                 }
             }
 
-            impl#impl_generics ::juniper::marker::GraphQLObjectType<#scalar> for #ty #type_generics_tokens #where_clause
+            impl#impl_generics ::juniper::marker::GraphQLObjectType for #ty #type_generics_tokens #where_clause
             { }
 
-        impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #type_generics_tokens
+        impl#impl_generics ::juniper::GraphQLType for #ty #type_generics_tokens
             #where_clause
         {
                 fn name(_: &Self::TypeInfo) -> Option<&'static str> {
@@ -1018,9 +984,8 @@ impl GraphQLTypeDefiniton {
 
                 fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut ::juniper::Registry<'r, #scalar>
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
-                    where #scalar : 'r,
+                    registry: &mut ::juniper::Registry<'r>
+                ) -> ::juniper::meta::MetaType<'r>
                 {
                     let fields = [
                         #( #field_definitions ),*
@@ -1032,14 +997,14 @@ impl GraphQLTypeDefiniton {
                 }
         }
 
-        impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #type_generics_tokens
+        impl#impl_generics ::juniper::GraphQLValue for #ty #type_generics_tokens
             #where_clause
         {
                 type Context = #context;
                 type TypeInfo = ();
 
                 fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    <Self as ::juniper::GraphQLType>::name(info)
                 }
 
                 #[allow(unused_variables)]
@@ -1048,15 +1013,15 @@ impl GraphQLTypeDefiniton {
                     &self,
                     _info: &(),
                     field: &str,
-                    args: &::juniper::Arguments<#scalar>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::ExecutionResult<#scalar> {
+                    args: &::juniper::Arguments,
+                    executor: &::juniper::Executor<Self::Context>,
+                ) -> ::juniper::ExecutionResult {
                     match field {
                         #( #resolve_matches )*
                         _ => {
                             panic!("Field {} not found on type {:?}",
                                 field,
-                                <Self as ::juniper::GraphQLType<#scalar>>::name(_info)
+                                <Self as ::juniper::GraphQLType>::name(_info)
                             );
                         }
                     }
@@ -1082,20 +1047,6 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|ctx| quote!( #ctx ))
             .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(::juniper::DefaultScalarValue)
-                }
-            });
 
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
@@ -1146,7 +1097,7 @@ impl GraphQLTypeDefiniton {
             let _type;
 
             if field.is_async {
-                _type = quote!(<#type_name as ::juniper::ExtractTypeFromStream<_, #scalar>>::Item);
+                _type = quote!(<#type_name as ::juniper::ExtractTypeFromStream<_>>::Item);
             } else {
                 panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
             }
@@ -1182,20 +1133,7 @@ impl GraphQLTypeDefiniton {
         // is specified.
         let (_, type_generics, _) = self.generics.split_for_impl();
 
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: ::juniper::ScalarValue));
-        }
+        let generics = self.generics.clone();
 
         let type_generics_tokens = if self.include_type_generics {
             Some(type_generics)
@@ -1204,77 +1142,79 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        let resolve_matches_async = self.fields.iter().filter(|field| field.is_async).map(
-            |field| {
-                let name = &field.name;
-                let code = &field.resolver_code;
+        let resolve_matches_async =
+            self.fields
+                .iter()
+                .filter(|field| field.is_async)
+                .map(|field| {
+                    let name = &field.name;
+                    let code = &field.resolver_code;
 
-                let _type;
-                if field.is_type_inferred {
-                    _type = quote!();
-                } else {
-                    let _type_name = &field._type;
-                    _type = quote!(: #_type_name);
-                };
-                quote!(
-                    #name => {
-                        ::juniper::futures::FutureExt::boxed(async move {
-                            let res #_type = { #code };
-                            let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
-                            let executor= executor.as_owned_executor();
-                            let f = res.then(move |res| {
-                                let executor = executor.clone();
-                                let res2: ::juniper::FieldResult<_, #scalar> =
-                                    ::juniper::IntoResolvable::into(res, executor.context());
-                                async move {
-                                    let ex = executor.as_executor();
-                                    match res2 {
-                                        Ok(Some((ctx, r))) => {
-                                            let sub = ex.replaced_context(ctx);
-                                            sub.resolve_with_ctx_async(&(), &r)
-                                                .await
-                                                .map_err(|e| ex.new_error(e))
+                    let _type;
+                    if field.is_type_inferred {
+                        _type = quote!();
+                    } else {
+                        let _type_name = &field._type;
+                        _type = quote!(: #_type_name);
+                    };
+                    quote!(
+                        #name => {
+                            ::juniper::futures::FutureExt::boxed(async move {
+                                let res #_type = { #code };
+                                let res = ::juniper::IntoFieldResult::<_>::into_result(res)?;
+                                let executor= executor.as_owned_executor();
+                                let f = res.then(move |res| {
+                                    let executor = executor.clone();
+                                    let res2: ::juniper::FieldResult<_> =
+                                        ::juniper::IntoResolvable::into(res, executor.context());
+                                    async move {
+                                        let ex = executor.as_executor();
+                                        match res2 {
+                                            Ok(Some((ctx, r))) => {
+                                                let sub = ex.replaced_context(ctx);
+                                                sub.resolve_with_ctx_async(&(), &r)
+                                                    .await
+                                                    .map_err(|e| ex.new_error(e))
+                                            }
+                                            Ok(None) => Ok(Value::null()),
+                                            Err(e) => Err(ex.new_error(e)),
                                         }
-                                        Ok(None) => Ok(Value::null()),
-                                        Err(e) => Err(ex.new_error(e)),
                                     }
-                                }
-                            });
-                            Ok(
-                                ::juniper::Value::Scalar::<
-                                    ::juniper::ValuesStream::<#scalar>
-                                >(Box::pin(f))
-                            )
-                        })
-                    }
-                )
-            },
-        );
+                                });
+                                Ok(
+                                    ::juniper::Value::Scalar::<
+                                        ::juniper::ValuesStream
+                                    >(Box::pin(f))
+                                )
+                            })
+                        }
+                    )
+                });
 
         let marks = self.fields.iter().map(|field| {
             let field_marks = field.args.iter().map(|arg| {
                 let arg_ty = &arg._type;
-                quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+                quote! { <#arg_ty as ::juniper::marker::IsInputType>::mark(); }
             });
 
             let field_ty = &field._type;
             let stream_item_ty = quote! {
-                <#field_ty as ::juniper::IntoFieldResult::<_, #scalar>>::Item
+                <#field_ty as ::juniper::IntoFieldResult::<_>>::Item
             };
             let resolved_ty = quote! {
                 <#stream_item_ty as ::juniper::IntoResolvable<
-                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
+                    '_,  _, <Self as ::juniper::GraphQLValue>::Context,
                 >>::Type
             };
 
             quote! {
                 #( #field_marks )*
-                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+                <#resolved_ty as ::juniper::marker::IsOutputType>::mark();
             }
         });
 
         let graphql_implementation = quote!(
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::marker::IsOutputType for #ty #type_generics_tokens
                 #where_clause
             {
                 fn mark() {
@@ -1282,7 +1222,7 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::GraphQLType for #ty #type_generics_tokens
                 #where_clause
             {
                     fn name(_: &Self::TypeInfo) -> Option<&'static str> {
@@ -1291,9 +1231,8 @@ impl GraphQLTypeDefiniton {
 
                     fn meta<'r>(
                         info: &Self::TypeInfo,
-                        registry: &mut ::juniper::Registry<'r, #scalar>
-                    ) -> ::juniper::meta::MetaType<'r, #scalar>
-                        where #scalar : 'r,
+                        registry: &mut ::juniper::Registry<'r>
+                    ) -> ::juniper::meta::MetaType<'r>
                     {
                         let fields = [
                             #( #field_definitions ),*
@@ -1305,23 +1244,23 @@ impl GraphQLTypeDefiniton {
                     }
             }
 
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::GraphQLValue for #ty #type_generics_tokens
                 #where_clause
             {
                     type Context = #context;
                     type TypeInfo = ();
 
                     fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                        <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                        <Self as ::juniper::GraphQLType>::name(info)
                     }
 
                     fn resolve_field(
                         &self,
                         _: &(),
                         _: &str,
-                        _: &::juniper::Arguments<#scalar>,
-                        _: &::juniper::Executor<Self::Context, #scalar>,
-                    ) -> ::juniper::ExecutionResult<#scalar> {
+                        _: &::juniper::Arguments,
+                        _: &::juniper::Executor<Self::Context>,
+                    ) -> ::juniper::ExecutionResult {
                         panic!("Called `resolve_field` on subscription object");
                     }
 
@@ -1333,7 +1272,7 @@ impl GraphQLTypeDefiniton {
         );
 
         let subscription_implementation = quote!(
-            impl#impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::GraphQLSubscriptionValue for #ty #type_generics_tokens
             #where_clause
             {
                 #[allow(unused_variables)]
@@ -1343,13 +1282,13 @@ impl GraphQLTypeDefiniton {
                     &'s self,
                     info: &'i Self::TypeInfo,
                     field_name: &'fi str,
-                    args: ::juniper::Arguments<'args, #scalar>,
-                    executor: &'ref_e ::juniper::Executor<'ref_e, 'e, Self::Context, #scalar>,
+                    args: ::juniper::Arguments<'args>,
+                    executor: &'ref_e ::juniper::Executor<'ref_e, 'e, Self::Context>,
                 ) -> std::pin::Pin<Box<
                         dyn ::juniper::futures::future::Future<
                             Output = Result<
-                                ::juniper::Value<::juniper::ValuesStream<'res, #scalar>>,
-                                ::juniper::FieldError<#scalar>
+                                ::juniper::Value<::juniper::ValuesStream<'res>>,
+                                ::juniper::FieldError
                             >
                         > + Send + 'f
                     >>
@@ -1389,20 +1328,6 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|ctx| quote!( #ctx ))
             .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(::juniper::DefaultScalarValue)
-                }
-            });
 
         let description = self
             .description
@@ -1464,39 +1389,23 @@ impl GraphQLTypeDefiniton {
             )
         });
 
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: ::juniper::ScalarValue));
-        }
+        let generics = self.generics.clone();
 
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
         let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
-        where_async
-            .predicates
-            .push(parse_quote!( #scalar: Send + Sync ));
         where_async.predicates.push(parse_quote!(Self: Sync));
 
         let _async = quote!(
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty
+            impl#impl_generics ::juniper::GraphQLValueAsync for #ty
                 #where_async
             {
                 fn resolve_async<'a>(
                     &'a self,
                     info: &'a Self::TypeInfo,
-                    selection_set: Option<&'a [::juniper::Selection<#scalar>]>,
-                    executor: &'a ::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#scalar>> {
+                    selection_set: Option<&'a [::juniper::Selection]>,
+                    executor: &'a ::juniper::Executor<Self::Context>,
+                ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult> {
                     use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
                     Box::pin(future::ready(v))
@@ -1505,13 +1414,13 @@ impl GraphQLTypeDefiniton {
         );
 
         let mut body = quote!(
-            impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ty
+            impl#impl_generics ::juniper::marker::IsInputType for #ty
                 #where_clause { }
 
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty
+            impl#impl_generics ::juniper::marker::IsOutputType for #ty
                 #where_clause { }
 
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty
+            impl#impl_generics ::juniper::GraphQLType for #ty
                 #where_clause
             {
                 fn name(_: &()) -> Option<&'static str> {
@@ -1520,9 +1429,8 @@ impl GraphQLTypeDefiniton {
 
                 fn meta<'r>(
                     _: &(),
-                    registry: &mut ::juniper::Registry<'r, #scalar>
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
-                    where #scalar: 'r,
+                    registry: &mut ::juniper::Registry<'r>
+                ) -> ::juniper::meta::MetaType<'r>
                 {
                     registry.build_enum_type::<#ty>(&(), &[
                         #( #values )*
@@ -1532,22 +1440,22 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty
+            impl#impl_generics ::juniper::GraphQLValue for #ty
                 #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
 
                 fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    <Self as ::juniper::GraphQLType>::name(info)
                 }
 
                 fn resolve(
                     &self,
                     _: &(),
-                    _: Option<&[::juniper::Selection<#scalar>]>,
-                    _: &::juniper::Executor<Self::Context, #scalar>
-                ) -> ::juniper::ExecutionResult<#scalar> {
+                    _: Option<&[::juniper::Selection]>,
+                    _: &::juniper::Executor<Self::Context>
+                ) -> ::juniper::ExecutionResult {
                     let v = match self {
                         #( #resolves )*
                     };
@@ -1555,10 +1463,10 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::FromInputValue<#scalar> for #ty
+            impl#impl_generics ::juniper::FromInputValue for #ty
                 #where_clause
             {
-                fn from_input_value(v: &::juniper::InputValue<#scalar>) -> Option<#ty>
+                fn from_input_value(v: &::juniper::InputValue) -> Option<#ty>
                 {
                     match v.as_enum_value().or_else(|| {
                         v.as_string_value()
@@ -1569,10 +1477,10 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::ToInputValue<#scalar> for #ty
+            impl#impl_generics ::juniper::ToInputValue for #ty
                 #where_clause
             {
-                fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
+                fn to_input_value(&self) -> ::juniper::InputValue {
                     match self {
                         #( #to_inputs )*
                     }
@@ -1595,20 +1503,6 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|ctx| quote!( #ctx ))
             .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(::juniper::DefaultScalarValue)
-                }
-            });
 
         let meta_fields = self
             .fields
@@ -1678,7 +1572,7 @@ impl GraphQLTypeDefiniton {
                         #from_input_default
                         Some(ref v) => ::juniper::FromInputValue::from_input_value(v).unwrap(),
                         None => {
-                            ::juniper::FromInputValue::from_input_value(&::juniper::InputValue::<#scalar>::null())
+                            ::juniper::FromInputValue::from_input_value(&::juniper::InputValue::null())
                             .unwrap()
                         },
                     }
@@ -1709,20 +1603,7 @@ impl GraphQLTypeDefiniton {
         // is specified.
         let (_, type_generics, _) = self.generics.split_for_impl();
 
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: ::juniper::ScalarValue));
-        }
+        let generics = self.generics.clone();
 
         let type_generics_tokens = if self.include_type_generics {
             Some(type_generics)
@@ -1734,31 +1615,28 @@ impl GraphQLTypeDefiniton {
 
         let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
 
-        where_async
-            .predicates
-            .push(parse_quote!( #scalar: Send + Sync ));
         where_async.predicates.push(parse_quote!(Self: Sync));
 
         let async_type = quote!(
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::GraphQLValueAsync for #ty #type_generics_tokens
                 #where_async
             {}
         );
 
         let marks = self.fields.iter().map(|field| {
             let field_ty = &field._type;
-            quote! { <#field_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+            quote! { <#field_ty as ::juniper::marker::IsInputType>::mark(); }
         });
 
         let mut body = quote!(
-            impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::marker::IsInputType for #ty #type_generics_tokens
                 #where_clause {
                     fn mark() {
                         #( #marks )*
                     }
                 }
 
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::GraphQLType for #ty #type_generics_tokens
                 #where_clause
             {
                 fn name(_: &()) -> Option<&'static str> {
@@ -1767,9 +1645,8 @@ impl GraphQLTypeDefiniton {
 
                 fn meta<'r>(
                     _: &(),
-                    registry: &mut ::juniper::Registry<'r, #scalar>
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
-                where #scalar: 'r
+                    registry: &mut ::juniper::Registry<'r>
+                ) -> ::juniper::meta::MetaType<'r>
                 {
                     let fields = &[
                         #( #meta_fields )*
@@ -1780,21 +1657,21 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::GraphQLValue for #ty #type_generics_tokens
                 #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
 
                 fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    <Self as ::juniper::GraphQLType>::name(info)
                 }
             }
 
-            impl#impl_generics ::juniper::FromInputValue<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::FromInputValue for #ty #type_generics_tokens
                 #where_clause
             {
-                fn from_input_value(value: &::juniper::InputValue<#scalar>) -> Option<Self>
+                fn from_input_value(value: &::juniper::InputValue) -> Option<Self>
                 {
                     if let Some(obj) = value.to_object_value() {
                         let item = #ty {
@@ -1808,10 +1685,10 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::ToInputValue<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics ::juniper::ToInputValue for #ty #type_generics_tokens
                 #where_clause
             {
-                fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
+                fn to_input_value(&self) -> ::juniper::InputValue {
                     ::juniper::InputValue::object(vec![
                         #( #to_inputs )*
                     ].into_iter().collect())

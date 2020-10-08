@@ -5,7 +5,7 @@
 //! traits are used. Encountering an error where one of these traits
 //! is involved implies that the construct is not valid in GraphQL.
 
-use crate::{GraphQLType, ScalarValue};
+use crate::GraphQLType;
 
 /// Maker object for GraphQL objects.
 ///
@@ -15,7 +15,7 @@ use crate::{GraphQLType, ScalarValue};
 /// trait instead of the GraphQLType, then it explicitly requires an
 /// GraphQL objects. Other types (scalars, enums, and input objects)
 /// are not allowed.
-pub trait GraphQLObjectType<S: ScalarValue>: GraphQLType<S> {
+pub trait GraphQLObjectType: GraphQLType {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types
@@ -37,7 +37,7 @@ pub trait GraphQLObjectType<S: ScalarValue>: GraphQLType<S> {
 /// [4]: https://spec.graphql.org/June2018/#sec-Objects
 /// [5]: https://spec.graphql.org/June2018/#sec-Input-Objects
 /// [6]: https://spec.graphql.org/June2018/#sec-Unions
-pub trait GraphQLInterface<S: ScalarValue>: GraphQLType<S> {
+pub trait GraphQLInterface: GraphQLType {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types are used correctly according
@@ -61,7 +61,7 @@ pub trait GraphQLInterface<S: ScalarValue>: GraphQLType<S> {
 /// [4]: https://spec.graphql.org/June2018/#sec-Objects
 /// [5]: https://spec.graphql.org/June2018/#sec-Input-Objects
 /// [6]: https://spec.graphql.org/June2018/#sec-Interfaces
-pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
+pub trait GraphQLUnion: GraphQLType {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types are used correctly according
@@ -78,7 +78,7 @@ pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
 /// implement this trait. The specification defines enum, scalar,
 /// object, union, and interface as output types.
 // TODO: Re-enable GraphQLType requirement in #682
-pub trait IsOutputType<S: ScalarValue> /*: GraphQLType<S>*/ {
+pub trait IsOutputType /*: GraphQLType*/ {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types
@@ -92,7 +92,7 @@ pub trait IsOutputType<S: ScalarValue> /*: GraphQLType<S>*/ {
 /// types. Each type which can be used as an input type should
 /// implement this trait. The specification defines enum, scalar, and
 /// input object input types.
-pub trait IsInputType<S: ScalarValue>: GraphQLType<S> {
+pub trait IsInputType: GraphQLType {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types
@@ -100,73 +100,23 @@ pub trait IsInputType<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<S, T> IsInputType<S> for Option<T>
-where
-    T: IsInputType<S>,
-    S: ScalarValue,
-{
-}
+impl<T> IsInputType for Option<T> where T: IsInputType {}
 
-impl<S, T> IsOutputType<S> for Option<T>
-where
-    T: IsOutputType<S>,
-    S: ScalarValue,
-{
-}
+impl<T> IsOutputType for Option<T> where T: IsOutputType {}
 
-impl<S, T> IsOutputType<S> for Vec<T>
-where
-    T: IsOutputType<S>,
-    S: ScalarValue,
-{
-}
+impl<T> IsOutputType for Vec<T> where T: IsOutputType {}
 
-impl<S, T> IsOutputType<S> for [T]
-where
-    T: IsOutputType<S>,
-    S: ScalarValue,
-{
-}
+impl<T> IsOutputType for [T] where T: IsOutputType {}
 
-impl<S, T> IsInputType<S> for Vec<T>
-where
-    T: IsInputType<S>,
-    S: ScalarValue,
-{
-}
+impl<T> IsInputType for Vec<T> where T: IsInputType {}
 
-impl<S, T> IsInputType<S> for [T]
-where
-    T: IsInputType<S>,
-    S: ScalarValue,
-{
-}
+impl<T> IsInputType for [T] where T: IsInputType {}
 
-impl<'a, S, T> IsInputType<S> for &T
-where
-    T: IsInputType<S> + ?Sized,
-    S: ScalarValue,
-{
-}
-impl<'a, S, T> IsOutputType<S> for &T
-where
-    T: IsOutputType<S> + ?Sized,
-    S: ScalarValue,
-{
-}
+impl<'a, T> IsInputType for &T where T: IsInputType + ?Sized {}
+impl<'a, T> IsOutputType for &T where T: IsOutputType + ?Sized {}
 
-impl<S, T> IsInputType<S> for Box<T>
-where
-    T: IsInputType<S> + ?Sized,
-    S: ScalarValue,
-{
-}
-impl<S, T> IsOutputType<S> for Box<T>
-where
-    T: IsOutputType<S> + ?Sized,
-    S: ScalarValue,
-{
-}
+impl<T> IsInputType for Box<T> where T: IsInputType + ?Sized {}
+impl<T> IsOutputType for Box<T> where T: IsOutputType + ?Sized {}
 
-impl<'a, S> IsInputType<S> for str where S: ScalarValue {}
-impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}
+impl<'a> IsInputType for str {}
+impl<'a> IsOutputType for str {}

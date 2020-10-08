@@ -2,6 +2,7 @@ use crate::{
     ast::{Directive, Fragment, InputValue, Selection},
     parser::Spanning,
     value::ScalarValue,
+    DefaultScalarValue,
 };
 
 use std::collections::HashMap;
@@ -24,19 +25,16 @@ pub enum Applies<'a> {
 /// meaning that variables are already resolved.
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
-pub enum LookAheadValue<'a, S: 'a> {
+pub enum LookAheadValue<'a> {
     Null,
-    Scalar(&'a S),
+    Scalar(&'a DefaultScalarValue),
     Enum(&'a str),
-    List(Vec<LookAheadValue<'a, S>>),
-    Object(Vec<(&'a str, LookAheadValue<'a, S>)>),
+    List(Vec<LookAheadValue<'a>>),
+    Object(Vec<(&'a str, LookAheadValue<'a>)>),
 }
 
-impl<'a, S> LookAheadValue<'a, S>
-where
-    S: ScalarValue,
-{
-    fn from_input_value(input_value: &'a InputValue<S>, vars: &'a Variables<S>) -> Self {
+impl<'a> LookAheadValue<'a> {
+    fn from_input_value(input_value: &'a InputValue, vars: &'a Variables) -> Self {
         match *input_value {
             InputValue::Null => LookAheadValue::Null,
             InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
@@ -66,18 +64,15 @@ where
 
 /// An argument passed into the query
 #[derive(Debug, Clone, PartialEq)]
-pub struct LookAheadArgument<'a, S: 'a> {
+pub struct LookAheadArgument<'a> {
     name: &'a str,
-    value: LookAheadValue<'a, S>,
+    value: LookAheadValue<'a>,
 }
 
-impl<'a, S> LookAheadArgument<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a> LookAheadArgument<'a> {
     pub(super) fn new(
-        &(ref name, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
-        vars: &'a Variables<S>,
+        &(ref name, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>),
+        vars: &'a Variables,
     ) -> Self {
         LookAheadArgument {
             name: name.item,
@@ -91,30 +86,27 @@ where
     }
 
     /// The value of the argument
-    pub fn value(&'a self) -> &LookAheadValue<'a, S> {
+    pub fn value(&'a self) -> &LookAheadValue<'a> {
         &self.value
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ChildSelection<'a, S: 'a> {
-    pub(super) inner: LookAheadSelection<'a, S>,
+pub struct ChildSelection<'a> {
+    pub(super) inner: LookAheadSelection<'a>,
     pub(super) applies_for: Applies<'a>,
 }
 
 /// A selection performed by a query
 #[derive(Debug, Clone, PartialEq)]
-pub struct LookAheadSelection<'a, S: 'a> {
+pub struct LookAheadSelection<'a> {
     pub(super) name: &'a str,
     pub(super) alias: Option<&'a str>,
-    pub(super) arguments: Vec<LookAheadArgument<'a, S>>,
-    pub(super) children: Vec<ChildSelection<'a, S>>,
+    pub(super) arguments: Vec<LookAheadArgument<'a>>,
+    pub(super) children: Vec<ChildSelection<'a>>,
 }
 
-impl<'a, S> Default for LookAheadSelection<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a> Default for LookAheadSelection<'a> {
     fn default() -> Self {
         LookAheadSelection {
             name: "",
@@ -125,13 +117,10 @@ where
     }
 }
 
-impl<'a, S> LookAheadSelection<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a> LookAheadSelection<'a> {
     fn should_include<'b, 'c>(
-        directives: Option<&'b Vec<Spanning<Directive<S>>>>,
-        vars: &'c Variables<S>,
+        directives: Option<&'b Vec<Spanning<Directive>>>,
+        vars: &'c Variables,
     ) -> bool
     where
         'b: 'a,
@@ -183,20 +172,20 @@ where
     }
 
     pub(super) fn build_from_selection(
-        s: &'a Selection<'a, S>,
-        vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
-    ) -> Option<LookAheadSelection<'a, S>> {
+        s: &'a Selection<'a>,
+        vars: &'a Variables,
+        fragments: &'a HashMap<&'a str, Fragment<'a>>,
+    ) -> Option<LookAheadSelection<'a>> {
         Self::build_from_selection_with_parent(s, None, vars, fragments)
     }
 
     fn build_from_selection_with_parent(
-        s: &'a Selection<'a, S>,
+        s: &'a Selection<'a>,
         parent: Option<&mut Self>,
-        vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
-    ) -> Option<LookAheadSelection<'a, S>> {
-        let empty: &[Selection<S>] = &[];
+        vars: &'a Variables,
+        fragments: &'a HashMap<&'a str, Fragment<'a>>,
+    ) -> Option<LookAheadSelection<'a>> {
+        let empty: &[Selection] = &[];
         match *s {
             Selection::Field(ref field) => {
                 let field = &field.item;
@@ -301,7 +290,7 @@ where
     }
 
     /// Convert a eventually type independent selection into one for a concrete type
-    pub fn for_explicit_type(&self, type_name: &str) -> ConcreteLookAheadSelection<'a, S> {
+    pub fn for_explicit_type(&self, type_name: &str) -> ConcreteLookAheadSelection<'a> {
         ConcreteLookAheadSelection {
             children: self
                 .children
@@ -323,18 +312,18 @@ where
 
 /// A selection performed by a query on a concrete type
 #[derive(Debug, PartialEq)]
-pub struct ConcreteLookAheadSelection<'a, S: 'a> {
+pub struct ConcreteLookAheadSelection<'a> {
     name: &'a str,
     alias: Option<&'a str>,
-    arguments: Vec<LookAheadArgument<'a, S>>,
-    children: Vec<ConcreteLookAheadSelection<'a, S>>,
+    arguments: Vec<LookAheadArgument<'a>>,
+    children: Vec<ConcreteLookAheadSelection<'a>>,
 }
 
 /// Set of common methods for `ConcreteLookAheadSelection` and `LookAheadSelection`.
 ///
 /// `'sel` lifetime is intended to point to the data that this `LookAheadSelection` (or
 /// `ConcreteLookAheadSelection`) points to.
-pub trait LookAheadMethods<'sel, S> {
+pub trait LookAheadMethods<'sel> {
     /// Get the (potentially aliased) name of the field represented by the current selection
     fn field_name(&self) -> &'sel str;
 
@@ -358,10 +347,10 @@ pub trait LookAheadMethods<'sel, S> {
     fn has_children(&self) -> bool;
 
     /// Get the top level arguments for the current selection
-    fn arguments(&self) -> &[LookAheadArgument<S>];
+    fn arguments(&self) -> &[LookAheadArgument];
 
     /// Get the top level argument with a given name from the current selection
-    fn argument(&self, name: &str) -> Option<&LookAheadArgument<S>> {
+    fn argument(&self, name: &str) -> Option<&LookAheadArgument> {
         self.arguments().iter().find(|a| a.name == name)
     }
 
@@ -373,7 +362,7 @@ pub trait LookAheadMethods<'sel, S> {
     fn children(&self) -> Vec<&Self>;
 }
 
-impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
+impl<'a> LookAheadMethods<'a> for ConcreteLookAheadSelection<'a> {
     fn field_name(&self) -> &'a str {
         self.alias.unwrap_or(self.name)
     }
@@ -382,7 +371,7 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
         self.children.iter().find(|c| c.field_name() == name)
     }
 
-    fn arguments(&self) -> &[LookAheadArgument<S>] {
+    fn arguments(&self) -> &[LookAheadArgument] {
         &self.arguments
     }
 
@@ -403,7 +392,7 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
     }
 }
 
-impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
+impl<'a> LookAheadMethods<'a> for LookAheadSelection<'a> {
     fn field_name(&self) -> &'a str {
         self.alias.unwrap_or(self.name)
     }
@@ -415,7 +404,7 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
             .map(|s| &s.inner)
     }
 
-    fn arguments(&self) -> &[LookAheadArgument<S>] {
+    fn arguments(&self) -> &[LookAheadArgument] {
         &self.arguments
     }
 
@@ -447,24 +436,19 @@ mod tests {
         parser::UnlocatedParseResult,
         schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
-        value::{DefaultScalarValue, ScalarValue},
+        value::DefaultScalarValue,
     };
     use std::collections::HashMap;
 
-    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
-    where
-        S: ScalarValue,
-    {
+    fn parse_document_source(q: &str) -> UnlocatedParseResult<Document>
+where {
         crate::parse_document_source(
             q,
             &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
         )
     }
 
-    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, Fragment<'a, S>>
-    where
-        S: Clone,
-    {
+    fn extract_fragments<'a>(doc: &'a Document) -> HashMap<&'a str, Fragment<'a>> {
         let mut fragments = HashMap::new();
         for d in doc {
             if let crate::ast::Definition::Fragment(ref f) = *d {
@@ -477,7 +461,7 @@ mod tests {
 
     #[test]
     fn check_simple_query() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero {
@@ -531,7 +515,7 @@ query Hero {
 
     #[test]
     fn check_query_with_alias() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     custom_hero: hero {
@@ -585,7 +569,7 @@ query Hero {
 
     #[test]
     fn check_query_with_child() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero {
@@ -731,7 +715,7 @@ query Hero {
 
     #[test]
     fn check_query_with_variable() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero($episode: Episode) {
     hero(episode: $episode) {
@@ -789,7 +773,7 @@ query Hero($episode: Episode) {
 
     #[test]
     fn check_query_with_optional_variable() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero($episode: Episode) {
     hero(episode: $episode) {
@@ -833,7 +817,7 @@ query Hero($episode: Episode) {
     }
     #[test]
     fn check_query_with_fragment() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero {
@@ -901,7 +885,7 @@ fragment commonFields on Character {
 
     #[test]
     fn check_query_with_directives() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero {
@@ -956,7 +940,7 @@ query Hero {
 
     #[test]
     fn check_query_with_inline_fragments() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero {
@@ -1023,7 +1007,7 @@ query Hero {
 
     #[test]
     fn check_query_with_multiple() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query HeroAndHuman {
     hero {
@@ -1255,7 +1239,7 @@ fragment comparisonFields on Character {
 
     #[test]
     fn check_resolve_concrete_type() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero {
@@ -1309,7 +1293,7 @@ query Hero {
     #[test]
     #[allow(deprecated)]
     fn check_select_child() {
-        let lookahead: LookAheadSelection<DefaultScalarValue> = LookAheadSelection {
+        let lookahead: LookAheadSelection = LookAheadSelection {
             name: "hero",
             alias: None,
             arguments: Vec::new(),
@@ -1406,7 +1390,7 @@ query Hero {
     #[test]
     // https://github.com/graphql-rust/juniper/issues/335
     fn check_fragment_with_nesting() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero {
@@ -1461,7 +1445,7 @@ fragment heroFriendNames on Hero {
     #[test]
     #[allow(deprecated)]
     fn check_visitability() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query Hero {
     hero(episode: EMPIRE) {

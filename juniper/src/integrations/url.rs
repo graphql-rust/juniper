@@ -2,24 +2,21 @@ use url::Url;
 
 use crate::{
     value::{ParseScalarResult, ParseScalarValue},
-    Value,
+    DefaultScalarValue, Value,
 };
 
 #[crate::graphql_scalar(description = "Url")]
-impl<S> GraphQLScalar for Url
-where
-    S: ScalarValue,
-{
+impl GraphQLScalar for Url {
     fn resolve(&self) -> Value {
-        Value::scalar(self.as_str().to_owned())
+        Value::<DefaultScalarValue>::scalar(self.as_str().to_owned())
     }
 
     fn from_input_value(v: &InputValue) -> Option<Url> {
         v.as_string_value().and_then(|s| Url::parse(s).ok())
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+        <String as ParseScalarValue>::from_str(value)
     }
 }
 

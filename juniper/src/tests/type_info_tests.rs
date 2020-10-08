@@ -7,7 +7,7 @@ use crate::{
         base::{Arguments, GraphQLType, GraphQLValue},
         scalars::{EmptyMutation, EmptySubscription},
     },
-    value::{ScalarValue, Value},
+    value::Value,
 };
 
 pub struct NodeTypeInfo {
@@ -19,18 +19,12 @@ pub struct Node {
     attributes: IndexMap<String, String>,
 }
 
-impl<S> GraphQLType<S> for Node
-where
-    S: ScalarValue,
-{
+impl GraphQLType for Node {
     fn name(info: &Self::TypeInfo) -> Option<&str> {
         Some(&info.name)
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = info
             .attribute_names
             .iter()
@@ -43,24 +37,21 @@ where
     }
 }
 
-impl<S> GraphQLValue<S> for Node
-where
-    S: ScalarValue,
-{
+impl GraphQLValue for Node {
     type Context = ();
     type TypeInfo = NodeTypeInfo;
 
     fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
-        <Self as GraphQLType<S>>::name(info)
+        <Self as GraphQLType>::name(info)
     }
 
     fn resolve_field(
         &self,
         _: &Self::TypeInfo,
         field_name: &str,
-        _: &Arguments<S>,
-        executor: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
+        _: &Arguments,
+        executor: &Executor<Self::Context>,
+    ) -> ExecutionResult {
         executor.resolve(&(), &self.attributes.get(field_name).unwrap())
     }
 }

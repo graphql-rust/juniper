@@ -31,7 +31,7 @@ impl GraphQLScalar for TestComplexScalar {
         None
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         <String as ParseScalarValue>::from_str(value)
     }
 }
@@ -126,7 +126,7 @@ impl TestType {
     }
 }
 
-async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
+async fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {

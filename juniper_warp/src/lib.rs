@@ -43,10 +43,7 @@ Check the LICENSE file for details.
 use anyhow::anyhow;
 use bytes::Bytes;
 use futures::{FutureExt as _, TryFutureExt};
-use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest},
-    ScalarValue,
-};
+use juniper::http::{GraphQLBatchRequest, GraphQLRequest};
 use std::{collections::HashMap, str, sync::Arc};
 use tokio::task;
 use warp::{body, filters::BoxedFilter, http, query, Filter};
@@ -111,25 +108,24 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 ///     .and(warp::post())
 ///     .and(graphql_filter);
 /// ```
-pub fn make_graphql_filter<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+pub fn make_graphql_filter<Query, Mutation, Subscription, CtxT>(
+    schema: juniper::RootNode<'static, Query, Mutation, Subscription>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
-    Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+    Query: juniper::GraphQLTypeAsync<Context = CtxT> + Send + 'static,
     Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+    Mutation: juniper::GraphQLTypeAsync<Context = CtxT> + Send + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<Context = CtxT> + Send + 'static,
     Subscription::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'static,
-    S: ScalarValue + Send + Sync + 'static,
 {
     let schema = Arc::new(schema);
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
-    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest<S>| {
+    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest| {
         let schema = post_json_schema.clone();
         async move {
             let resp = req.execute(&schema, &context).await;
@@ -196,22 +192,21 @@ where
 }
 
 /// Make a synchronous filter for graphql endpoint.
-pub fn make_graphql_filter_sync<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+pub fn make_graphql_filter_sync<Query, Mutation, Subscription, CtxT>(
+    schema: juniper::RootNode<'static, Query, Mutation, Subscription>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
-    Query: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Query: juniper::GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     CtxT: Send + Sync + 'static,
-    S: ScalarValue + Send + Sync + 'static,
 {
     let schema = Arc::new(schema);
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
-    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest<S>| {
+    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest| {
         let schema = post_json_schema.clone();
         async move {
             let res = task::spawn_blocking(move || {
@@ -399,14 +394,14 @@ pub mod subscriptions {
             sink::SinkExt,
             stream::StreamExt,
         },
-        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode,
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
     use std::{convert::Infallible, fmt, sync::Arc};
 
     struct Message(warp::ws::Message);
 
-    impl<S: ScalarValue> std::convert::TryFrom<Message> for ClientMessage<S> {
+    impl std::convert::TryFrom<Message> for ClientMessage {
         type Error = serde_json::Error;
 
         fn try_from(msg: Message) -> serde_json::Result<Self> {
@@ -455,21 +450,20 @@ pub mod subscriptions {
     /// configuration are already known, or it can be a closure that gets executed asynchronously
     /// when the client sends the ConnectionInit message. Using a closure allows you to perform
     /// authentication based on the parameters provided by the client.
-    pub async fn serve_graphql_ws<Query, Mutation, Subscription, CtxT, S, I>(
+    pub async fn serve_graphql_ws<Query, Mutation, Subscription, CtxT, I>(
         websocket: warp::ws::WebSocket,
-        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        root_node: Arc<RootNode<'static, Query, Mutation, Subscription>>,
         init: I,
     ) -> Result<(), Error>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation: GraphQLTypeAsync<Context = CtxT> + Send + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<CtxT> + Send,
     {
         let (ws_tx, ws_rx) = websocket.split();
         let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split();

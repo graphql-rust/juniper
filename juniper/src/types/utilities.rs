@@ -4,18 +4,14 @@ use crate::{
         meta::{EnumMeta, InputObjectMeta, MetaType},
         model::{SchemaType, TypeType},
     },
-    value::ScalarValue,
 };
 use std::collections::HashSet;
 
-pub fn is_valid_literal_value<S>(
-    schema: &SchemaType<S>,
-    arg_type: &TypeType<S>,
-    arg_value: &InputValue<S>,
-) -> bool
-where
-    S: ScalarValue,
-{
+pub fn is_valid_literal_value(
+    schema: &SchemaType,
+    arg_type: &TypeType,
+    arg_value: &InputValue,
+) -> bool {
     match *arg_type {
         TypeType::NonNull(ref inner) => {
             if arg_value.is_null() {

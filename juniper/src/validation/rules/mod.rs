@@ -26,14 +26,9 @@ mod variables_in_allowed_position;
 use crate::{
     ast::Document,
     validation::{visit, MultiVisitorNil, ValidatorContext},
-    value::ScalarValue,
 };
-use std::fmt::Debug;
 
-pub(crate) fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
-where
-    S: ScalarValue,
-{
+pub(crate) fn visit_all_rules<'a>(ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
     let mut mv = MultiVisitorNil
         .with(self::arguments_of_correct_type::factory())
         .with(self::default_values_of_correct_type::factory())

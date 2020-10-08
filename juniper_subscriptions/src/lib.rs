@@ -20,64 +20,61 @@ use std::{
 use futures::{future, stream, FutureExt as _, Stream, StreamExt as _, TryFutureExt as _};
 use juniper::{
     http::GraphQLRequest, BoxFuture, ExecutionError, ExecutionOutput, GraphQLError,
-    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection,
+    GraphQLSubscriptionType, GraphQLTypeAsync, Object, SubscriptionConnection,
     SubscriptionCoordinator, Value, ValuesStream,
 };
 
 /// Simple [`SubscriptionCoordinator`] implementation:
 /// - contains the schema
 /// - handles subscription start
-pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT>
 where
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
+    QueryT: GraphQLTypeAsync<Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send,
+    MutationT: GraphQLTypeAsync<Context = CtxT> + Send,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
+    SubscriptionT: GraphQLSubscriptionType<Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
-    root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT>,
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
-    Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+impl<'a, QueryT, MutationT, SubscriptionT, CtxT>
+    Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT>
 where
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
+    QueryT: GraphQLTypeAsync<Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send,
+    MutationT: GraphQLTypeAsync<Context = CtxT> + Send,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
+    SubscriptionT: GraphQLSubscriptionType<Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync,
 {
     /// Builds new [`Coordinator`] with specified `root_node`
-    pub fn new(root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>) -> Self {
+    pub fn new(root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT>) -> Self {
         Self { root_node }
     }
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S> SubscriptionCoordinator<'a, CtxT, S>
-    for Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+impl<'a, QueryT, MutationT, SubscriptionT, CtxT> SubscriptionCoordinator<'a, CtxT>
+    for Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT>
 where
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
+    QueryT: GraphQLTypeAsync<Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send,
+    MutationT: GraphQLTypeAsync<Context = CtxT> + Send,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
+    SubscriptionT: GraphQLSubscriptionType<Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Sync,
-    S: ScalarValue + Send + Sync + 'a,
 {
-    type Connection = Connection<'a, S>;
+    type Connection = Connection<'a>;
 
     type Error = GraphQLError<'a>;
 
     fn subscribe(
         &'a self,
-        req: &'a GraphQLRequest<S>,
+        req: &'a GraphQLRequest,
         context: &'a CtxT,
     ) -> BoxFuture<'a, Result<Self::Connection, Self::Error>> {
         juniper::http::resolve_into_stream(req, &self.root_node, context)
@@ -88,7 +85,7 @@ where
 
 /// Simple [`SubscriptionConnection`] implementation.
 ///
-/// Resolves `Value<ValuesStream>` into `Stream<Item = ExecutionOutput<S>>` using
+/// Resolves `Value<ValuesStream>` into `Stream<Item = ExecutionOutput>` using
 /// the following logic:
 ///
 /// [`Value::Null`] - returns [`Value::Null`] once
@@ -97,29 +94,23 @@ where
 ///                   values in the order received
 /// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
 /// `Value::Object<Value::Object<_>>` - returns [`Value::Null`] if [`Value::Object`] consists of sub-objects
-pub struct Connection<'a, S> {
-    stream: Pin<Box<dyn Stream<Item = ExecutionOutput<S>> + Send + 'a>>,
+pub struct Connection<'a> {
+    stream: Pin<Box<dyn Stream<Item = ExecutionOutput> + Send + 'a>>,
 }
 
-impl<'a, S> Connection<'a, S>
-where
-    S: ScalarValue + Send + Sync + 'a,
-{
+impl<'a> Connection<'a> {
     /// Creates new [`Connection`] from values stream and errors
-    pub fn from_stream(stream: Value<ValuesStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
+    pub fn from_stream(stream: Value<ValuesStream<'a>>, errors: Vec<ExecutionError>) -> Self {
         Self {
             stream: whole_responses_stream(stream, errors),
         }
     }
 }
 
-impl<'a, S> SubscriptionConnection<S> for Connection<'a, S> where S: ScalarValue + Send + Sync + 'a {}
+impl<'a> SubscriptionConnection for Connection<'a> {}
 
-impl<'a, S> Stream for Connection<'a, S>
-where
-    S: ScalarValue + Send + Sync + 'a,
-{
-    type Item = ExecutionOutput<S>;
+impl<'a> Stream for Connection<'a> {
+    type Item = ExecutionOutput;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Option<Self::Item>> {
         // this is safe as stream is only mutated here and is not moved anywhere
@@ -129,7 +120,7 @@ where
     }
 }
 
-/// Creates [`futures::Stream`] that yields `ExecutionOutput<S>`s depending on the given [`Value`]:
+/// Creates [`futures::Stream`] that yields `ExecutionOutput`s depending on the given [`Value`]:
 ///
 /// [`Value::Null`] - returns [`Value::Null`] once
 /// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
@@ -137,12 +128,11 @@ where
 ///                   values in the order received
 /// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
 /// `Value::Object<Value::Object<_>>` - returns [`Value::Null`] if [`Value::Object`] consists of sub-objects
-fn whole_responses_stream<'a, S>(
-    stream: Value<ValuesStream<'a, S>>,
-    errors: Vec<ExecutionError<S>>,
-) -> Pin<Box<dyn Stream<Item = ExecutionOutput<S>> + Send + 'a>>
+fn whole_responses_stream<'a>(
+    stream: Value<ValuesStream<'a>>,
+    errors: Vec<ExecutionError>,
+) -> Pin<Box<dyn Stream<Item = ExecutionOutput> + Send + 'a>>
 where
-    S: ScalarValue + Send + Sync + 'a,
 {
     if !errors.is_empty() {
         return stream::once(future::ready(ExecutionOutput {
@@ -183,7 +173,7 @@ where
                 ready_vec.push(None);
             }
 
-            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<ExecutionOutput<S>>> {
+            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<ExecutionOutput>> {
                 let mut obj_iterator = object.iter_mut();
 
                 // Due to having to modify `ready_vec` contents (by-move pattern)

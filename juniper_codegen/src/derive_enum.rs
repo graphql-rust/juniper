@@ -115,10 +115,6 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
         });
     }
 
-    if let Some(scalar) = attrs.scalar {
-        error.unsupported_attribute(scalar.span_ident(), UnsupportedAttribute::Scalar);
-    }
-
     if !attrs.is_internal && name.starts_with("__") {
         error.no_double_underscore(if let Some(name) = attrs.name {
             name.span_ident()
@@ -133,14 +129,12 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),
-        scalar: None,
         description: attrs.description.map(SpanContainer::into_inner),
         fields,
         // NOTICE: only unit variants allow -> no generics possible
         generics: syn::Generics::default(),
         interfaces: vec![],
         include_type_generics: true,
-        generic_scalar: true,
         no_async: attrs.no_async.is_some(),
     };
 

@@ -19,13 +19,12 @@ enum Path<'a> {
     ObjectField(&'a str, &'a Path<'a>),
 }
 
-pub fn validate_input_values<S>(
-    values: &Variables<S>,
-    operation: &Spanning<Operation<S>>,
-    schema: &SchemaType<S>,
+pub fn validate_input_values(
+    values: &Variables,
+    operation: &Spanning<Operation>,
+    schema: &SchemaType,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
 {
     let mut errs = vec![];
 
@@ -37,14 +36,12 @@ where
     errs
 }
 
-fn validate_var_defs<S>(
-    values: &Variables<S>,
-    var_defs: &VariableDefinitions<S>,
-    schema: &SchemaType<S>,
+fn validate_var_defs(
+    values: &Variables,
+    var_defs: &VariableDefinitions,
+    schema: &SchemaType,
     errors: &mut Vec<RuleError>,
-) where
-    S: ScalarValue,
-{
+) {
     for &(ref name, ref def) in var_defs.iter() {
         let raw_type_name = def.var_type.item.innermost_name();
         match schema.concrete_type_by_name(raw_type_name) {
@@ -78,16 +75,15 @@ fn validate_var_defs<S>(
     }
 }
 
-fn unify_value<'a, S>(
+fn unify_value<'a>(
     var_name: &str,
     var_pos: &SourcePosition,
-    value: &InputValue<S>,
-    meta_type: &TypeType<'a, S>,
-    schema: &SchemaType<S>,
+    value: &InputValue,
+    meta_type: &TypeType<'a>,
+    schema: &SchemaType,
     path: Path<'a>,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
 {
     let mut errors: Vec<RuleError> = vec![];
 
@@ -170,16 +166,13 @@ where
     errors
 }
 
-fn unify_scalar<'a, S>(
+fn unify_scalar<'a>(
     var_name: &str,
     var_pos: &SourcePosition,
-    value: &InputValue<S>,
-    meta: &ScalarMeta<S>,
+    value: &InputValue,
+    meta: &ScalarMeta,
     path: &Path<'a>,
-) -> Vec<RuleError>
-where
-    S: fmt::Debug,
-{
+) -> Vec<RuleError> {
     let mut errors: Vec<RuleError> = vec![];
 
     if !(meta.try_parse_fn)(value) {
@@ -209,15 +202,14 @@ where
     errors
 }
 
-fn unify_enum<'a, S>(
+fn unify_enum<'a>(
     var_name: &str,
     var_pos: &SourcePosition,
-    value: &InputValue<S>,
-    meta: &EnumMeta<S>,
+    value: &InputValue,
+    meta: &EnumMeta,
     path: &Path<'a>,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
 {
     let mut errors: Vec<RuleError> = vec![];
 
@@ -255,16 +247,15 @@ where
     errors
 }
 
-fn unify_input_object<'a, S>(
+fn unify_input_object<'a>(
     var_name: &str,
     var_pos: &SourcePosition,
-    value: &InputValue<S>,
-    meta: &InputObjectMeta<S>,
-    schema: &SchemaType<S>,
+    value: &InputValue,
+    meta: &InputObjectMeta,
+    schema: &SchemaType,
     path: &Path<'a>,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
 {
     let mut errors: Vec<RuleError> = vec![];
 
@@ -319,9 +310,8 @@ where
     errors
 }
 
-fn is_absent_or_null<S>(v: Option<&InputValue<S>>) -> bool
+fn is_absent_or_null(v: Option<&InputValue>) -> bool
 where
-    S: ScalarValue,
 {
     v.map_or(true, InputValue::is_null)
 }

@@ -2,7 +2,6 @@ use crate::{
     ast::{Fragment, InlineFragment},
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
-    value::ScalarValue,
 };
 
 pub struct FragmentsOnCompositeTypes;
@@ -11,14 +10,11 @@ pub fn factory() -> FragmentsOnCompositeTypes {
     FragmentsOnCompositeTypes
 }
 
-impl<'a, S> Visitor<'a, S> for FragmentsOnCompositeTypes
-where
-    S: ScalarValue,
-{
+impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
     fn enter_fragment_definition(
         &mut self,
-        context: &mut ValidatorContext<'a, S>,
-        f: &'a Spanning<Fragment<S>>,
+        context: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
     ) {
         {
             if let Some(current_type) = context.current_type() {
@@ -37,8 +33,8 @@ where
 
     fn enter_inline_fragment(
         &mut self,
-        context: &mut ValidatorContext<'a, S>,
-        f: &'a Spanning<InlineFragment<S>>,
+        context: &mut ValidatorContext<'a>,
+        f: &'a Spanning<InlineFragment>,
     ) {
         {
             if let Some(ref type_cond) = f.item.type_condition {
@@ -78,12 +74,11 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn on_object() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment validFragment on Dog {
@@ -95,7 +90,7 @@ mod tests {
 
     #[test]
     fn on_interface() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment validFragment on Pet {
@@ -107,7 +102,7 @@ mod tests {
 
     #[test]
     fn on_object_inline() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment validFragment on Pet {
@@ -121,7 +116,7 @@ mod tests {
 
     #[test]
     fn on_inline_without_type_cond() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment validFragment on Pet {
@@ -135,7 +130,7 @@ mod tests {
 
     #[test]
     fn on_union() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _>(
             factory,
             r#"
           fragment validFragment on CatOrDog {
@@ -147,7 +142,7 @@ mod tests {
 
     #[test]
     fn not_on_scalar() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment scalarFragment on Boolean {
@@ -163,7 +158,7 @@ mod tests {
 
     #[test]
     fn not_on_enum() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment scalarFragment on FurColor {
@@ -179,7 +174,7 @@ mod tests {
 
     #[test]
     fn not_on_input_object() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment inputFragment on ComplexInput {
@@ -195,7 +190,7 @@ mod tests {
 
     #[test]
     fn not_on_scalar_inline() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _>(
             factory,
             r#"
           fragment invalidFragment on Pet {

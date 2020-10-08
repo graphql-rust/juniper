@@ -56,17 +56,6 @@ struct UnionMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub context: Option<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified type of `juniper::ScalarValue` to use for resolving this
-    /// [GraphQL union][1] type with.
-    ///
-    /// If absent, then generated code will be generic over any `juniper::ScalarValue` type, which,
-    /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
-    /// too. That's why this type should be specified only if one of the variants implements
-    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub scalar: Option<SpanContainer<syn::Type>>,
-
     /// Explicitly specified external resolver functions for [GraphQL union][1] variants.
     ///
     /// If absent, then macro will try to auto-infer all the possible variants from the type
@@ -121,14 +110,6 @@ impl Parse for UnionMeta {
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "scalar" | "Scalar" | "ScalarValue" => {
-                    input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Type>()?;
-                    output
-                        .scalar
-                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
-                        .none_or_else(|_| err::dup_arg(&ident))?
-                }
                 "on" => {
                     let ty = input.parse::<syn::Type>()?;
                     input.parse::<token::Eq>()?;
@@ -161,7 +142,6 @@ impl UnionMeta {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
-            scalar: try_merge_opt!(scalar: self, another),
             external_resolvers: try_merge_hashmap!(
                 external_resolvers: self, another => span_joined
             ),
@@ -332,17 +312,6 @@ struct UnionDefinition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub context: Option<syn::Type>,
 
-    /// Rust type of `juniper::ScalarValue` to generate `juniper::GraphQLType` implementation with
-    /// for this [GraphQL union][1].
-    ///
-    /// If [`None`] then generated code will be generic over any `juniper::ScalarValue` type, which,
-    /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
-    /// too. That's why this type should be specified only if one of the variants implements
-    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub scalar: Option<syn::Type>,
-
     /// Variants definitions of this [GraphQL union][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
@@ -359,12 +328,6 @@ impl ToTokens for UnionDefinition {
             .as_ref()
             .map(|ctx| quote! { #ctx })
             .unwrap_or_else(|| quote! { () });
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|scl| quote! { #scl })
-            .unwrap_or_else(|| quote! { __S });
 
         let description = self
             .description
@@ -384,7 +347,7 @@ impl ToTokens for UnionDefinition {
             let var_check = &var.resolver_check;
             quote! {
                 if #var_check {
-                    return <#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)
+                    return <#var_ty as ::juniper::GraphQLType>::name(info)
                         .unwrap().to_string();
                 }
             }
@@ -394,7 +357,7 @@ impl ToTokens for UnionDefinition {
         let resolve_into_type = self.variants.iter().zip(match_resolves.iter()).map(|(var, expr)| {
             let var_ty = &var.ty;
 
-            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)) };
+            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType>::name(info)) };
             quote! {
                 if type_name == #get_name.unwrap() {
                     return ::juniper::IntoResolvable::into(
@@ -416,7 +379,7 @@ impl ToTokens for UnionDefinition {
                     let var_ty = &var.ty;
 
                     let get_name = quote! {
-                        (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info))
+                        (<#var_ty as ::juniper::GraphQLType>::name(info))
                     };
                     quote! {
                         if type_name == #get_name.unwrap() {
@@ -443,24 +406,12 @@ impl ToTokens for UnionDefinition {
         if self.is_trait_object {
             ext_generics.params.push(parse_quote! { '__obj });
         }
-        if self.scalar.is_none() {
-            ext_generics.params.push(parse_quote! { #scalar });
-            ext_generics
-                .make_where_clause()
-                .predicates
-                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
-        }
         let (ext_impl_generics, _, where_clause) = ext_generics.split_for_impl();
 
         let mut where_async = where_clause
             .cloned()
             .unwrap_or_else(|| parse_quote! { where });
         where_async.predicates.push(parse_quote! { Self: Sync });
-        if self.scalar.is_none() {
-            where_async
-                .predicates
-                .push(parse_quote! { #scalar: Send + Sync });
-        }
 
         let mut ty_full = quote! { #ty#ty_generics };
         if self.is_trait_object {
@@ -469,7 +420,7 @@ impl ToTokens for UnionDefinition {
 
         let type_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::GraphQLType<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::GraphQLType for #ty_full
                 #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
@@ -478,9 +429,8 @@ impl ToTokens for UnionDefinition {
 
                 fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut ::juniper::Registry<'r, #scalar>
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
-                where #scalar: 'r,
+                    registry: &mut ::juniper::Registry<'r>
+                ) -> ::juniper::meta::MetaType<'r>
                 {
                     let types = [
                         #( registry.get_type::<#var_types>(info), )*
@@ -494,14 +444,14 @@ impl ToTokens for UnionDefinition {
 
         let value_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::GraphQLValue<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::GraphQLValue for #ty_full
                 #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
 
                 fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    <Self as ::juniper::GraphQLType>::name(info)
                 }
 
                 fn concrete_type_name(
@@ -521,9 +471,9 @@ impl ToTokens for UnionDefinition {
                     &self,
                     info: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[::juniper::Selection<#scalar>]>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::ExecutionResult<#scalar> {
+                    _: Option<&[::juniper::Selection]>,
+                    executor: &::juniper::Executor<Self::Context>,
+                ) -> ::juniper::ExecutionResult {
                     let context = executor.context();
                     #( #resolve_into_type )*
                     panic!(
@@ -536,16 +486,16 @@ impl ToTokens for UnionDefinition {
 
         let value_async_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::GraphQLValueAsync for #ty_full
                 #where_async
             {
                 fn resolve_into_type_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
-                    executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
-                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    _: Option<&'b [::juniper::Selection<'b>]>,
+                    executor: &'b ::juniper::Executor<'b, 'b, Self::Context>
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult> {
                     let context = executor.context();
                     #( #resolve_into_type_async )*
                     panic!(
@@ -558,24 +508,24 @@ impl ToTokens for UnionDefinition {
 
         let output_type_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::marker::IsOutputType for #ty_full
                 #where_clause
             {
                 fn mark() {
-                    #( <#var_types as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                    #( <#var_types as ::juniper::marker::IsOutputType>::mark(); )*
                 }
             }
         };
 
         let union_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::marker::GraphQLUnion<#scalar> for #ty_full
+            impl#ext_impl_generics ::juniper::marker::GraphQLUnion for #ty_full
                 #where_clause
             {
                 fn mark() {
                     #all_variants_unique
 
-                    #( <#var_types as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
+                    #( <#var_types as ::juniper::marker::GraphQLObjectType>::mark(); )*
                 }
             }
         };

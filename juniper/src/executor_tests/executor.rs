@@ -58,7 +58,7 @@ mod field_execution {
 
     #[tokio::test]
     async fn test() {
-        let schema = RootNode::<_, _, _, crate::DefaultScalarValue>::new(
+        let schema = RootNode::<_, _, _>::new(
             DataType,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),
@@ -831,7 +831,7 @@ mod propagates_errors_to_nullable_fields {
         parser::SourcePosition,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::{ScalarValue, Value},
+        value::Value,
     };
 
     struct Schema;
@@ -841,14 +841,11 @@ mod propagates_errors_to_nullable_fields {
         NotFound,
     }
 
-    impl<S> IntoFieldError<S> for CustomError
-    where
-        S: ScalarValue,
-    {
-        fn into_field_error(self) -> FieldError<S> {
+    impl IntoFieldError for CustomError {
+        fn into_field_error(self) -> FieldError {
             match self {
                 CustomError::NotFound => {
-                    let v: Value<S> = graphql_value!({
+                    let v: Value = graphql_value!({
                         "type": "NOT_FOUND"
                     });
                     FieldError::new("Not Found", v)
@@ -1176,7 +1173,7 @@ mod named_operations {
 
     #[tokio::test]
     async fn uses_inline_operation_if_no_name_provided() {
-        let schema = RootNode::<_, _, _, crate::DefaultScalarValue>::new(
+        let schema = RootNode::<_, _, _>::new(
             Schema,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),
