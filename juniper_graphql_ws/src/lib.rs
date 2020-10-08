@@ -645,6 +645,7 @@ mod test {
     use super::*;
     use juniper::{
         futures::sink::SinkExt,
+        graphql_object, graphql_subscription,
         parser::{ParseError, Spanning, Token},
         DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode, Value,
     };
@@ -654,7 +655,7 @@ mod test {
 
     struct Query;
 
-    #[juniper::graphql_object(Context=Context)]
+    #[graphql_object(context = Context, scalar = DefaultScalarValue)]
     impl Query {
         /// context just resolves to the current context.
         async fn context(context: &Context) -> i32 {
@@ -664,7 +665,7 @@ mod test {
 
     struct Subscription;
 
-    #[juniper::graphql_subscription(Context=Context)]
+    #[graphql_subscription(context = Context, scalar = DefaultScalarValue)]
     impl Subscription {
         /// never never emits anything.
         async fn never(context: &Context) -> BoxStream<'static, FieldResult<i32>> {

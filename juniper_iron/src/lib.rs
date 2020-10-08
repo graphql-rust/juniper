@@ -30,14 +30,14 @@ extern crate iron;
 use iron::prelude::*;
 use juniper_iron::GraphQLHandler;
 use juniper::{Context, EmptyMutation, EmptySubscription};
-
+#
 # use juniper::FieldResult;
 #
 # struct User { id: String, name: String, friend_ids: Vec<String>  }
 # struct QueryRoot;
 # struct Database { users: HashMap<String, User> }
 #
-# #[juniper::graphql_object( Context = Database )]
+# #[juniper::graphql_object(context = Database, scalar = juniper::DefaultScalarValue)]
 # impl User {
 #     fn id(&self) -> FieldResult<&String> {
 #         Ok(&self.id)
@@ -54,7 +54,7 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 #     }
 # }
 #
-# #[juniper::graphql_object( Context = Database )]
+# #[juniper::graphql_object(context = Database, scalar = juniper::DefaultScalarValue)]
 # impl QueryRoot {
 #     fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))
@@ -422,7 +422,7 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::fixtures::starwars::schema::{Database, Query},
-        EmptyMutation, EmptySubscription,
+        DefaultScalarValue, EmptyMutation, EmptySubscription,
     };
 
     use super::GraphQLHandler;
@@ -521,7 +521,7 @@ mod tests {
     }
 
     fn make_handler() -> Box<dyn Handler> {
-        Box::new(GraphQLHandler::new(
+        Box::new(<GraphQLHandler<_, _, _, _, _, DefaultScalarValue>>::new(
             context_factory,
             Query,
             EmptyMutation::<Database>::new(),

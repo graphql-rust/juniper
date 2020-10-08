@@ -9,6 +9,8 @@ use juniper::{
     EmptyMutation, EmptySubscription, RootNode,
 };
 
+type Schema<'a> = RootNode<'a, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
@@ -16,7 +18,7 @@ async fn main() {
     let addr = ([127, 0, 0, 1], 3000).into();
 
     let db = Arc::new(Database::new());
-    let root_node = Arc::new(RootNode::new(
+    let root_node = Arc::new(Schema::new(
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),

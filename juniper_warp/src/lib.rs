@@ -68,7 +68,7 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 /// #
 /// # use std::sync::Arc;
 /// # use warp::Filter;
-/// # use juniper::{EmptyMutation, EmptySubscription, RootNode};
+/// # use juniper::{graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
 /// type UserId = String;
@@ -78,9 +78,7 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::graphql_object(
-///    Context = ExampleContext
-/// )]
+/// #[graphql_object(context = ExampleContext)]
 /// impl QueryRoot {
 ///     fn say_hello(context: &ExampleContext) -> String {
 ///         format!(
@@ -91,7 +89,11 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 ///     }
 /// }
 ///
-/// let schema = RootNode::new(QueryRoot, EmptyMutation::new(), EmptySubscription::new());
+/// let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+///     QueryRoot,
+///     EmptyMutation::new(),
+///     EmptySubscription::new(),
+/// );
 ///
 /// let app_state = Arc::new(AppState(vec![3, 4, 5]));
 /// let app_state = warp::any().map(move || app_state.clone());
@@ -693,17 +695,17 @@ mod tests {
 
 #[cfg(test)]
 mod tests_http_harness {
-    use super::*;
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::fixtures::starwars::schema::{Database, Query},
-        EmptyMutation, EmptySubscription, RootNode,
+        DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode,
     };
     use warp::{
-        self,
         filters::{path, BoxedFilter},
         Filter,
     };
+
+    use super::*;
 
     struct TestWarpIntegration {
         filter: BoxedFilter<(http::Response<Vec<u8>>,)>,
@@ -711,7 +713,7 @@ mod tests_http_harness {
 
     impl TestWarpIntegration {
         fn new(is_sync: bool) -> Self {
-            let schema = RootNode::new(
+            let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
                 Query,
                 EmptyMutation::<Database>::new(),
                 EmptySubscription::<Database>::new(),
