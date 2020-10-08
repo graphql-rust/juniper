@@ -5,6 +5,8 @@ pub const STATIC_GRAPHQL_SCHEMA_DEFINITION: &str = include_str!("starwars.graphq
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use crate::{
         schema::model::RootNode,
         tests::fixtures::starwars::{
@@ -12,12 +14,12 @@ mod tests {
             schema_language::STATIC_GRAPHQL_SCHEMA_DEFINITION,
         },
         types::scalars::{EmptyMutation, EmptySubscription},
+        value::DefaultScalarValue,
     };
-    use pretty_assertions::assert_eq;
 
     #[test]
     fn dynamic_schema_language_matches_static() {
-        let schema = RootNode::new(
+        let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
             Query,
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),

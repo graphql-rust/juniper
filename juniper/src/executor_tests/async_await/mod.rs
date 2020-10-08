@@ -1,6 +1,6 @@
-use crate::{EmptyMutation, RootNode, Value};
+use crate::{graphql_object, DefaultScalarValue, EmptyMutation, GraphQLEnum, RootNode, Value};
 
-#[derive(crate::GraphQLEnum)]
+#[derive(GraphQLEnum)]
 enum UserKind {
     Admin,
     User,
@@ -14,7 +14,7 @@ struct User {
     kind: UserKind,
 }
 
-#[crate::graphql_object]
+#[graphql_object]
 impl User {
     async fn id(&self) -> i32 {
         self.id
@@ -46,7 +46,7 @@ impl User {
 
 struct Query;
 
-#[crate::graphql_object]
+#[graphql_object]
 impl Query {
     fn field_sync(&self) -> &'static str {
         "field_sync"
@@ -72,7 +72,11 @@ impl Query {
 
 #[tokio::test]
 async fn async_simple() {
-    let schema = RootNode::new(Query, EmptyMutation::new(), crate::EmptySubscription::new());
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+        Query,
+        EmptyMutation::new(),
+        crate::EmptySubscription::new(),
+    );
     let doc = r#"
         query { 
             fieldSync

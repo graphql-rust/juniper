@@ -560,19 +560,18 @@ mod test {
 
     #[cfg(feature = "graphql-parser-integration")]
     mod graphql_parser_integration {
-        use crate as juniper;
-        use crate::{EmptyMutation, EmptySubscription};
+        use crate::{graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription};
 
         #[test]
         fn graphql_parser_doc() {
             struct Query;
-            #[juniper::graphql_object]
+            #[graphql_object]
             impl Query {
                 fn blah() -> bool {
                     true
                 }
             };
-            let schema = crate::RootNode::new(
+            let schema = <crate::RootNode<_, _, _, DefaultScalarValue>>::new(
                 Query,
                 EmptyMutation::<()>::new(),
                 EmptySubscription::<()>::new(),
@@ -598,10 +597,9 @@ mod test {
 
     #[cfg(feature = "schema-language")]
     mod schema_language {
-        use crate as juniper;
         use crate::{
-            EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
-            GraphQLUnion,
+            graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, GraphQLEnum,
+            GraphQLInputObject, GraphQLObject, GraphQLUnion,
         };
 
         #[test]
@@ -630,7 +628,7 @@ mod test {
                 longitude: f64,
             }
             struct Query;
-            #[juniper::graphql_object]
+            #[graphql_object]
             impl Query {
                 fn blah() -> bool {
                     true
@@ -666,7 +664,7 @@ mod test {
                 }
             };
 
-            let schema = crate::RootNode::new(
+            let schema = <crate::RootNode<_, _, _, DefaultScalarValue>>::new(
                 Query,
                 EmptyMutation::<()>::new(),
                 EmptySubscription::<()>::new(),

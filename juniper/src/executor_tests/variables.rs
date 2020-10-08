@@ -1,11 +1,12 @@
 use crate::{
     ast::InputValue,
     executor::Variables,
+    graphql_object, graphql_scalar,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
     GraphQLError::ValidationError,
     GraphQLInputObject,
 };
@@ -13,17 +14,15 @@ use crate::{
 #[derive(Debug)]
 struct TestComplexScalar;
 
-struct TestType;
-
-#[crate::graphql_scalar]
-impl GraphQLScalar for TestComplexScalar {
+#[graphql_scalar]
+impl<S: ScalarValue> GraphQLScalar for TestComplexScalar {
     fn resolve(&self) -> Value {
         Value::scalar(String::from("SerializedValue"))
     }
 
     fn from_input_value(v: &InputValue) -> Option<TestComplexScalar> {
-        if let Some(s) = v.as_scalar_value::<String>() {
-            if *s == "SerializedValue" {
+        if let Some(s) = v.as_scalar().and_then(ScalarValue::as_str) {
+            if s == "SerializedValue" {
                 return Some(TestComplexScalar);
             }
         }
@@ -31,13 +30,12 @@ impl GraphQLScalar for TestComplexScalar {
         None
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
-        <String as ParseScalarValue>::from_str(value)
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(scalar = DefaultScalarValue)]
 struct TestInputObject {
     a: Option<String>,
     b: Option<Vec<Option<String>>>,
@@ -46,7 +44,6 @@ struct TestInputObject {
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(scalar = DefaultScalarValue)]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,
@@ -64,7 +61,9 @@ struct InputWithDefaults {
     a: i32,
 }
 
-#[crate::graphql_object]
+struct TestType;
+
+#[graphql_object]
 impl TestType {
     fn field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)
@@ -130,7 +129,7 @@ async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>,
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -289,7 +288,7 @@ async fn variable_runs_from_input_value_on_scalar() {
 
 #[tokio::test]
 async fn variable_error_on_nested_non_null() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -326,7 +325,7 @@ async fn variable_error_on_nested_non_null() {
 
 #[tokio::test]
 async fn variable_error_on_incorrect_type() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -352,7 +351,7 @@ async fn variable_error_on_incorrect_type() {
 
 #[tokio::test]
 async fn variable_error_on_omit_non_null() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -388,7 +387,7 @@ async fn variable_error_on_omit_non_null() {
 
 #[tokio::test]
 async fn variable_multiple_errors_with_nesting() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -431,7 +430,7 @@ async fn variable_multiple_errors_with_nesting() {
 
 #[tokio::test]
 async fn variable_error_on_additional_field() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -559,7 +558,7 @@ async fn allow_nullable_inputs_to_be_set_to_value_directly() {
 
 #[tokio::test]
 async fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -583,7 +582,7 @@ async fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
 
 #[tokio::test]
 async fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -701,7 +700,7 @@ async fn allow_lists_to_contain_null() {
 
 #[tokio::test]
 async fn does_not_allow_non_null_lists_to_be_null() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -807,7 +806,7 @@ async fn allow_lists_of_non_null_to_contain_values() {
 
 #[tokio::test]
 async fn does_not_allow_lists_of_non_null_to_contain_null() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -840,7 +839,7 @@ async fn does_not_allow_lists_of_non_null_to_contain_null() {
 
 #[tokio::test]
 async fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -873,7 +872,7 @@ async fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
 
 #[tokio::test]
 async fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -1023,7 +1022,7 @@ async fn nullable_input_object_arguments_successful_with_variables() {
 
 #[tokio::test]
 async fn does_not_allow_missing_required_field() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -1047,7 +1046,7 @@ async fn does_not_allow_missing_required_field() {
 
 #[tokio::test]
 async fn does_not_allow_null_in_required_field() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -1071,7 +1070,7 @@ async fn does_not_allow_null_in_required_field() {
 
 #[tokio::test]
 async fn does_not_allow_missing_variable_for_required_field() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -1095,7 +1094,7 @@ async fn does_not_allow_missing_variable_for_required_field() {
 
 #[tokio::test]
 async fn does_not_allow_null_variable_for_required_field() {
-    let schema = RootNode::new(
+    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -1206,7 +1205,7 @@ mod integers {
 
     #[tokio::test]
     async fn does_not_coerce_from_float() {
-        let schema = RootNode::new(
+        let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
             TestType,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),
@@ -1232,7 +1231,7 @@ mod integers {
 
     #[tokio::test]
     async fn does_not_coerce_from_string() {
-        let schema = RootNode::new(
+        let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
             TestType,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),
@@ -1296,7 +1295,7 @@ mod floats {
 
     #[tokio::test]
     async fn does_not_coerce_from_string() {
-        let schema = RootNode::new(
+        let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
             TestType,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),
