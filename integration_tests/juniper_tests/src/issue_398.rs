@@ -1,9 +1,10 @@
 // Original author of this test is <https://github.com/davidpdrsn>.
-use juniper::*;
+
+use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode, Variables};
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
     fn users(executor: &Executor) -> Vec<User> {
         // This doesn't cause a panic
@@ -19,7 +20,7 @@ struct User {
     country: Country,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl User {
     fn country(&self, executor: &Executor) -> &Country {
         // This panics!
@@ -33,14 +34,14 @@ struct Country {
     id: i32,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Country {
     fn id(&self) -> i32 {
         self.id
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
 
 #[tokio::test]
 async fn test_lookahead_from_fragment_with_nested_type() {

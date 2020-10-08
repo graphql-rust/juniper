@@ -1,6 +1,6 @@
 use juniper::{
-    DefaultScalarValue, EmptyMutation, EmptySubscription, Object, ParseScalarResult,
-    ParseScalarValue, RootNode, Value, Variables,
+    graphql_object, graphql_scalar, DefaultScalarValue, EmptyMutation, EmptySubscription, Object,
+    ParseScalarResult, ParseScalarValue, RootNode, Value, Variables,
 };
 
 struct DefaultName(i32);
@@ -19,7 +19,7 @@ Syntax to validate:
 
 */
 
-#[juniper::graphql_scalar]
+#[graphql_scalar]
 impl<S> GraphQLScalar for DefaultName
 where
     S: juniper::ScalarValue,
@@ -39,7 +39,7 @@ where
     }
 }
 
-#[juniper::graphql_scalar]
+#[graphql_scalar]
 impl GraphQLScalar for OtherOrder {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
@@ -54,7 +54,7 @@ impl GraphQLScalar for OtherOrder {
     }
 }
 
-#[juniper::graphql_scalar(name = "ANamedScalar")]
+#[graphql_scalar(name = "ANamedScalar")]
 impl GraphQLScalar for Named {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
@@ -69,7 +69,7 @@ impl GraphQLScalar for Named {
     }
 }
 
-#[juniper::graphql_scalar(description = "A sample scalar, represented as an integer")]
+#[graphql_scalar(description = "A sample scalar, represented as an integer")]
 impl GraphQLScalar for ScalarDescription {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
@@ -84,7 +84,7 @@ impl GraphQLScalar for ScalarDescription {
     }
 }
 
-#[juniper::graphql_object]
+#[graphql_object(scalar = DefaultScalarValue)]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName(0)
@@ -133,7 +133,7 @@ where
 fn path_in_resolve_return_type() {
     struct ResolvePath(i32);
 
-    #[juniper::graphql_scalar]
+    #[graphql_scalar]
     impl GraphQLScalar for ResolvePath {
         fn resolve(&self) -> self::Value {
             Value::scalar(self.0)

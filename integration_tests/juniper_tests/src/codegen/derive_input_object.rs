@@ -1,8 +1,7 @@
 use fnv::FnvHashMap;
-
 use juniper::{
     marker, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue,
-    InputValue, ToInputValue,
+    InputValue, Registry, ToInputValue,
 };
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -68,7 +67,7 @@ impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
     fn name(_: &()) -> Option<&'static str> {
         None
     }
-    fn meta<'r>(_: &(), registry: &mut juniper::Registry<'r>) -> juniper::meta::MetaType<'r>
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> juniper::meta::MetaType<'r>
     where
         DefaultScalarValue: 'r,
     {
@@ -107,7 +106,7 @@ fn test_derived_input_object() {
     );
 
     // Validate meta info.
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = Input::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyInput"));
     assert_eq!(meta.description(), Some(&"input descr".to_string()));
@@ -151,14 +150,14 @@ fn test_derived_input_object() {
 
 #[test]
 fn test_doc_comment() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
 }
 
 #[test]
 fn test_multi_doc_comment() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(
         meta.description(),
@@ -168,7 +167,7 @@ fn test_multi_doc_comment() {
 
 #[test]
 fn test_doc_comment_override() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"obj override".to_string()));
 }

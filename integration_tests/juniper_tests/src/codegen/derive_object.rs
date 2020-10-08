@@ -1,12 +1,7 @@
-#[cfg(test)]
 use fnv::FnvHashMap;
-#[cfg(test)]
-use juniper::Object;
-use juniper::{DefaultScalarValue, GraphQLObject};
-
-#[cfg(test)]
 use juniper::{
-    self, execute, EmptyMutation, EmptySubscription, GraphQLType, RootNode, Value, Variables,
+    execute, graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, GraphQLObject,
+    GraphQLType, Object, Registry, RootNode, Value, Variables,
 };
 
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -30,8 +25,6 @@ struct Obj {
 struct Nested {
     obj: Obj,
 }
-
-struct Query;
 
 /// Object comment.
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -76,12 +69,14 @@ struct Context;
 impl juniper::Context for Context {}
 
 #[derive(GraphQLObject, Debug)]
-#[graphql(Context = Context)]
+#[graphql(context = Context)]
 struct WithCustomContext {
     a: bool,
 }
 
-#[juniper::graphql_object]
+struct Query;
+
+#[graphql_object(scalar = DefaultScalarValue)]
 impl Query {
     fn obj() -> Obj {
         Obj {
@@ -127,7 +122,7 @@ impl Query {
 
 #[tokio::test]
 async fn test_doc_comment_simple() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
 
@@ -142,7 +137,7 @@ async fn test_doc_comment_simple() {
 
 #[tokio::test]
 async fn test_multi_doc_comment() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(
         meta.description(),
@@ -160,7 +155,7 @@ async fn test_multi_doc_comment() {
 
 #[tokio::test]
 async fn test_doc_comment_override() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"obj override".to_string()));
 
@@ -181,7 +176,7 @@ async fn test_derived_object() {
     );
 
     // Verify meta info.
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = Obj::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("MyObj"));
@@ -309,7 +304,6 @@ async fn test_derived_object_nested() {
     );
 }
 
-#[cfg(test)]
 async fn check_descriptions(
     object_name: &str,
     object_description: &Value,
@@ -352,7 +346,6 @@ async fn check_descriptions(
     .await;
 }
 
-#[cfg(test)]
 async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn((&Object<DefaultScalarValue>, &Vec<Value>)) -> (),

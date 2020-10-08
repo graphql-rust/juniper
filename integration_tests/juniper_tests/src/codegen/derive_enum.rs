@@ -1,14 +1,14 @@
-#[cfg(test)]
 use fnv::FnvHashMap;
-
-#[cfg(test)]
-use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
+use juniper::{
+    DefaultScalarValue, FromInputValue, GraphQLEnum, GraphQLType, InputValue, Registry,
+    ToInputValue,
+};
 
 pub struct CustomContext {}
 
 impl juniper::Context for CustomContext {}
 
-#[derive(juniper::GraphQLEnum, Debug, PartialEq)]
+#[derive(GraphQLEnum, Debug, PartialEq)]
 #[graphql(name = "Some", description = "enum descr")]
 enum SomeEnum {
     Regular,
@@ -17,7 +17,7 @@ enum SomeEnum {
 }
 
 /// Enum doc.
-#[derive(juniper::GraphQLEnum)]
+#[derive(GraphQLEnum)]
 enum DocEnum {
     /// Variant doc.
     Foo,
@@ -27,7 +27,7 @@ enum DocEnum {
 /// Doc 2.
 ///
 /// Doc 4.
-#[derive(juniper::GraphQLEnum, Debug, PartialEq)]
+#[derive(GraphQLEnum, Debug, PartialEq)]
 enum MultiDocEnum {
     /// Variant 1.
     /// Variant 2.
@@ -35,7 +35,7 @@ enum MultiDocEnum {
 }
 
 /// This is not used as the description.
-#[derive(juniper::GraphQLEnum, Debug, PartialEq)]
+#[derive(GraphQLEnum, Debug, PartialEq)]
 #[graphql(description = "enum override")]
 enum OverrideDocEnum {
     /// This is not used as the description.
@@ -43,7 +43,7 @@ enum OverrideDocEnum {
     Foo,
 }
 
-#[derive(juniper::GraphQLEnum)]
+#[derive(GraphQLEnum)]
 #[graphql(context = CustomContext, noasync)]
 enum ContextEnum {
     A,
@@ -58,7 +58,7 @@ fn test_derived_enum() {
     );
 
     // Ensure validity of meta info.
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = SomeEnum::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("Some"));
@@ -87,14 +87,14 @@ fn test_derived_enum() {
 
 #[test]
 fn test_doc_comment() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = DocEnum::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"Enum doc.".to_string()));
 }
 
 #[test]
 fn test_multi_doc_comment() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = MultiDocEnum::meta(&(), &mut registry);
     assert_eq!(
         meta.description(),
@@ -104,7 +104,7 @@ fn test_multi_doc_comment() {
 
 #[test]
 fn test_doc_comment_override() {
-    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = OverrideDocEnum::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"enum override".to_string()));
 }
