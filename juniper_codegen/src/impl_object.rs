@@ -208,7 +208,7 @@ fn create(
             .map(SpanContainer::into_inner)
             .collect(),
         include_type_generics: false,
-        generic_scalar: false,
+        generic_scalar: true,
         no_async: _impl.attrs.no_async.is_some(),
     };
 
