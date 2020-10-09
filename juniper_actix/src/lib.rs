@@ -40,7 +40,6 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_actix/0.1.0")]
 
-// use futures::{FutureExt as _};
 use actix_web::{
     error::{ErrorBadRequest, ErrorMethodNotAllowed, ErrorUnsupportedMediaType},
     http::{header::CONTENT_TYPE, Method},
@@ -228,17 +227,22 @@ pub async fn playground_handler(
 pub mod subscriptions {
     use std::{fmt, sync::Arc};
 
-    use actix::prelude::*;
-    use actix::{Actor, StreamHandler};
-    use actix_web::http::header::{HeaderName, HeaderValue};
-    use actix_web::{web, HttpRequest, HttpResponse};
+    use actix::{prelude::*, Actor, StreamHandler};
+    use actix_web::{
+        http::header::{HeaderName, HeaderValue},
+        web, HttpRequest, HttpResponse,
+    };
     use actix_web_actors::ws;
 
-    use futures::SinkExt;
     use tokio::sync::Mutex;
 
-    use juniper::futures::stream::{SplitSink, SplitStream, StreamExt};
-    use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
+    use juniper::{
+        futures::{
+            stream::{SplitSink, SplitStream, StreamExt},
+            SinkExt,
+        },
+        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+    };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
 
     /// Serves the graphql-ws protocol over a WebSocket connection.
@@ -482,10 +486,10 @@ pub mod subscriptions {
 mod tests {
     use super::*;
     use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, App};
-    use futures::StreamExt;
     use juniper::{
+        futures::stream::StreamExt,
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-        tests::fixtures::starwars::{model::Database, schema::Query},
+        tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
 
@@ -513,13 +517,13 @@ mod tests {
         graphql_handler(&schema, &context, req, payload).await
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphiql_response_does_not_panic() {
         let result = graphiql_handler("/abcd", None).await;
         assert!(result.is_ok())
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphiql_endpoint_matches() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/abcd", None).await
@@ -535,7 +539,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphiql_endpoint_returns_graphiql_source() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
@@ -560,7 +564,7 @@ mod tests {
         ))
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn playground_endpoint_matches() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/abcd", None).await
@@ -576,7 +580,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn playground_endpoint_returns_playground_source() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
@@ -598,7 +602,7 @@ mod tests {
         assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphql_post_works_json_post() {
         let schema: Schema = RootNode::new(
             Query,
@@ -630,7 +634,7 @@ mod tests {
         );
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphql_get_works() {
         let schema: Schema = RootNode::new(
             Query,
@@ -659,10 +663,10 @@ mod tests {
         );
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn batch_request_works() {
         use juniper::{
-            tests::fixtures::starwars::{model::Database, schema::Query},
+            tests::fixtures::starwars::schema::{Database, Query},
             EmptyMutation, EmptySubscription, RootNode,
         };
 
@@ -711,7 +715,7 @@ mod tests {
 
     impl TestActixWebIntegration {
         fn make_request(&self, req: test::TestRequest) -> TestResponse {
-            actix_rt::System::new("request").block_on(async move {
+            actix_web::rt::System::new("request").block_on(async move {
                 let schema = RootNode::new(
                     Query,
                     EmptyMutation::<Database>::new(),
@@ -765,5 +769,116 @@ mod tests {
     #[test]
     fn test_actix_web_integration() {
         run_http_test_suite(&TestActixWebIntegration);
+    }
+}
+
+#[cfg(feature = "subscriptions")]
+#[cfg(test)]
+mod subscription_tests {
+    use std::time::Duration;
+
+    use actix_web::{test, web, App, Error, HttpRequest, HttpResponse};
+    use actix_web_actors::ws;
+    use tokio::time::timeout;
+
+    use super::subscriptions::subscriptions_handler;
+    use juniper::{
+        futures::{SinkExt, StreamExt},
+        http::tests::{run_ws_test_suite, WsIntegration, WsIntegrationMessage},
+        tests::fixtures::starwars::{
+            model::Database,
+            schema::{Query, Subscription},
+        },
+        EmptyMutation, LocalBoxFuture,
+    };
+    use juniper_graphql_ws::ConnectionConfig;
+
+    #[derive(Default)]
+    struct TestActixWsIntegration;
+
+    impl TestActixWsIntegration {
+        async fn run_async(
+            &self,
+            messages: Vec<WsIntegrationMessage>,
+        ) -> Result<(), anyhow::Error> {
+            let mut server = test::start(|| {
+                App::new()
+                    .data(Schema::new(
+                        Query,
+                        EmptyMutation::<Database>::new(),
+                        Subscription,
+                    ))
+                    .service(web::resource("/subscriptions").to(subscriptions))
+            });
+            let mut framed = server.ws_at("/subscriptions").await.unwrap();
+
+            for message in &messages {
+                match message {
+                    WsIntegrationMessage::Send(body) => {
+                        framed
+                            .send(ws::Message::Text(body.to_owned()))
+                            .await
+                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+                    }
+                    WsIntegrationMessage::Expect(body, message_timeout) => {
+                        let frame = timeout(Duration::from_millis(*message_timeout), framed.next())
+                            .await
+                            .map_err(|_| anyhow::anyhow!("Timed-out waiting for message"))?
+                            .ok_or_else(|| anyhow::anyhow!("Empty message received"))?
+                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+
+                        match frame {
+                            ws::Frame::Text(ref bytes) => {
+                                let expected_value =
+                                    serde_json::from_str::<serde_json::Value>(body)
+                                        .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+
+                                let value: serde_json::Value = serde_json::from_slice(bytes)
+                                    .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+
+                                if value != expected_value {
+                                    return Err(anyhow::anyhow!(
+                                        "Expected message: {}. Received message: {}",
+                                        expected_value,
+                                        value,
+                                    ));
+                                }
+                            }
+                            _ => return Err(anyhow::anyhow!("Received non-text frame")),
+                        }
+                    }
+                }
+            }
+
+            Ok(())
+        }
+    }
+
+    impl WsIntegration for TestActixWsIntegration {
+        fn run(
+            &self,
+            messages: Vec<WsIntegrationMessage>,
+        ) -> LocalBoxFuture<Result<(), anyhow::Error>> {
+            Box::pin(self.run_async(messages))
+        }
+    }
+
+    type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+
+    async fn subscriptions(
+        req: HttpRequest,
+        stream: web::Payload,
+        schema: web::Data<Schema>,
+    ) -> Result<HttpResponse, Error> {
+        let context = Database::new();
+        let schema = schema.into_inner();
+        let config = ConnectionConfig::new(context);
+
+        subscriptions_handler(req, stream, schema, config).await
+    }
+
+    #[actix_web::rt::test]
+    async fn test_actix_ws_integration() {
+        run_ws_test_suite(&mut TestActixWsIntegration::default()).await;
     }
 }

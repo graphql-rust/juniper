@@ -2,10 +2,9 @@ use std::{env, pin::Pin, time::Duration};
 
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
-use futures::Stream;
 
 use juniper::{
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Character as _, Database, Query},
     DefaultScalarValue, EmptyMutation, FieldError, RootNode,
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
@@ -49,14 +48,15 @@ impl RandomHuman {
     }
 }
 
+type RandomHumanStream =
+    Pin<Box<dyn futures::Stream<Item = Result<RandomHuman, FieldError>> + Send>>;
+
 #[juniper::graphql_subscription(Context = Database)]
 impl Subscription {
     #[graphql(
         description = "A random humanoid creature in the Star Wars universe every 3 seconds. Second result will be an error."
     )]
-    async fn random_human(
-        context: &Database,
-    ) -> Pin<Box<dyn Stream<Item = Result<RandomHuman, FieldError>> + Send>> {
+    async fn random_human(context: &Database) -> RandomHumanStream {
         let mut counter = 0;
 
         let context = (*context).clone();
@@ -76,11 +76,11 @@ impl Subscription {
                 ))
             } else {
                 let random_id = rng.gen_range(1000, 1005).to_string();
-                let human = context.get_human(&random_id).unwrap();
+                let human = context.get_human(&random_id).unwrap().clone();
 
                 Ok(RandomHuman {
                     id: human.id().to_owned(),
-                    name: human.name().to_owned(),
+                    name: human.name().unwrap().to_owned(),
                 })
             }
         });
@@ -104,7 +104,7 @@ async fn subscriptions(
     subscriptions_handler(req, stream, schema, config).await
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();

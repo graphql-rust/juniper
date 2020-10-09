@@ -21,7 +21,7 @@ proc-macro = true
 proc-macro-error = "1.0.2"
 proc-macro2 = "1.0.1"
 quote = "1.0.3"
-syn = { version = "1.0.3", features = ["full", "extra-traits", "parsing"] }
+syn = { default-features = false, version = "1.0.3", features = ["full", "extra-traits", "parsing"] }
 
 [dev-dependencies]
 derive_more = "0.99.7"

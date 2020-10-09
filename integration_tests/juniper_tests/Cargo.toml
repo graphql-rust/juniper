@@ -10,6 +10,7 @@ futures = "0.3.1"
 juniper = { path = "../../juniper" }
 
 [dev-dependencies]
+async-trait = "0.1.39"
 serde_json = { version = "1" }
 fnv = "1.0.3"
 tokio = { version = "0.2", features = ["rt-core", "time", "macros"] }

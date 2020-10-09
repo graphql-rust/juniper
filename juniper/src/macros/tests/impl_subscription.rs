@@ -17,7 +17,7 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[crate::graphql_object(Context=Context)]
+#[crate::graphql_object(Context = Context)]
 impl<'a> WithLifetime<'a> {
     fn value(&'a self) -> &'a str {
         self.value
@@ -26,7 +26,7 @@ impl<'a> WithLifetime<'a> {
 
 struct WithContext;
 
-#[crate::graphql_object(Context=Context)]
+#[crate::graphql_object(Context = Context)]
 impl WithContext {
     fn ctx(ctx: &Context) -> bool {
         ctx.flag1
