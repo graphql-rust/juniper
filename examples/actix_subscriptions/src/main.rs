@@ -4,6 +4,7 @@ use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 
 use juniper::{
+    graphql_object, graphql_subscription,
     tests::fixtures::starwars::schema::{Character as _, Database, Query},
     DefaultScalarValue, EmptyMutation, FieldError, RootNode,
 };
@@ -37,7 +38,7 @@ struct RandomHuman {
 }
 
 // TODO: remove this when async interfaces are merged
-#[juniper::graphql_object(Context = Database)]
+#[graphql_object(context = Database)]
 impl RandomHuman {
     fn id(&self) -> &str {
         &self.id
@@ -51,7 +52,7 @@ impl RandomHuman {
 type RandomHumanStream =
     Pin<Box<dyn futures::Stream<Item = Result<RandomHuman, FieldError>> + Send>>;
 
-#[juniper::graphql_subscription(Context = Database)]
+#[graphql_subscription(scalar = DefaultScalarValue, context = Database)]
 impl Subscription {
     #[graphql(
         description = "A random humanoid creature in the Star Wars universe every 3 seconds. Second result will be an error."
