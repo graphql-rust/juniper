@@ -1,4 +1,6 @@
-use std::{char, convert::From, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32};
+use std::{
+    char, convert::From, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +41,12 @@ impl Deref for ID {
 
     fn deref(&self) -> &str {
         &self.0
+    }
+}
+
+impl Display for ID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 
@@ -486,6 +494,12 @@ mod tests {
     fn test_id_deref() {
         let id = ID(String::from("foo"));
         assert_eq!(id.len(), 3);
+    }
+
+    #[test]
+    fn test_id_display() {
+        let id = ID(String::from("foo"));
+        assert_eq!(format!("{}", id), "foo");
     }
 
     #[test]
