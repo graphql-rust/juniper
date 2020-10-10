@@ -20,10 +20,7 @@ Syntax to validate:
 */
 
 #[juniper::graphql_scalar]
-impl<S> GraphQLScalar for DefaultName
-where
-    S: juniper::ScalarValue,
-{
+impl GraphQLScalar for DefaultName {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
@@ -34,8 +31,8 @@ where
             .map(|i| DefaultName(i))
     }
 
-    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a> {
+        <i32 as ParseScalarValue>::from_str(value)
     }
 }
 
@@ -49,7 +46,7 @@ impl GraphQLScalar for OtherOrder {
         v.as_scalar_value::<i32>().map(|i| OtherOrder(*i))
     }
 
-    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }
@@ -64,7 +61,7 @@ impl GraphQLScalar for Named {
         v.as_scalar_value::<i32>().map(|i| Named(*i))
     }
 
-    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }
@@ -79,7 +76,7 @@ impl GraphQLScalar for ScalarDescription {
         v.as_scalar_value::<i32>().map(|i| ScalarDescription(*i))
     }
 
-    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }
@@ -143,9 +140,7 @@ fn path_in_resolve_return_type() {
             v.as_scalar_value::<i32>().map(|i| ResolvePath(*i))
         }
 
-        fn from_str<'a>(
-            value: juniper::ScalarToken<'a>,
-        ) -> ParseScalarResult<'a, DefaultScalarValue> {
+        fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a> {
             <i32 as ParseScalarValue>::from_str(value)
         }
     }

@@ -146,7 +146,7 @@ impl GraphQLScalar for i64 {
         }
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         if let ScalarToken::Int(v) = value {
             v.parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
@@ -185,7 +185,7 @@ impl TestSubscriptionType {
     }
 }
 
-async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)
+async fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {

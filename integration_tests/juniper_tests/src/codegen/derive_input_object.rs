@@ -50,7 +50,7 @@ struct OverrideDocComment {
 #[derive(Debug, PartialEq)]
 struct Fake;
 
-impl<'a> marker::IsInputType<DefaultScalarValue> for &'a Fake {}
+impl<'a> marker::IsInputType for &'a Fake {}
 
 impl<'a> FromInputValue for &'a Fake {
     fn from_input_value(_v: &InputValue) -> Option<&'a Fake> {
@@ -64,7 +64,7 @@ impl<'a> ToInputValue for &'a Fake {
     }
 }
 
-impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
+impl<'a> GraphQLType for &'a Fake {
     fn name(_: &()) -> Option<&'static str> {
         None
     }
@@ -84,7 +84,7 @@ impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
     }
 }
 
-impl<'a> GraphQLValue<DefaultScalarValue> for &'a Fake {
+impl<'a> GraphQLValue for &'a Fake {
     type Context = ();
     type TypeInfo = ();
 
@@ -101,10 +101,7 @@ struct WithLifetime<'a> {
 
 #[test]
 fn test_derived_input_object() {
-    assert_eq!(
-        <Input as GraphQLType<DefaultScalarValue>>::name(&()),
-        Some("MyInput")
-    );
+    assert_eq!(<Input as GraphQLType>::name(&()), Some("MyInput"));
 
     // Validate meta info.
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());

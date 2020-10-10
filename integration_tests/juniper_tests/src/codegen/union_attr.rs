@@ -51,10 +51,9 @@ struct EwokCustomContext {
     funny: bool,
 }
 
-fn schema<'q, C, S, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
+fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
 where
-    Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-    S: ScalarValue + 'q,
+    Q: GraphQLType<Context = C, TypeInfo = ()> + 'q,
 {
     RootNode::new(
         query_root,

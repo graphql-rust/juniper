@@ -111,7 +111,7 @@ fn test_doc_comment_override() {
 
 fn test_context<T>(_t: T)
 where
-    T: GraphQLType<DefaultScalarValue, Context = CustomContext>,
+    T: GraphQLType<Context = CustomContext>,
 {
     // empty
 }

@@ -259,7 +259,7 @@ mod whole_responses_stream {
         }];
         let expected = serde_json::to_string(&expected).unwrap();
 
-        let result = whole_responses_stream::<DefaultScalarValue>(
+        let result = whole_responses_stream(
             Value::Null,
             vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
@@ -280,7 +280,7 @@ mod whole_responses_stream {
         )];
         let expected = serde_json::to_string(&expected).unwrap();
 
-        let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![])
+        let result = whole_responses_stream(Value::Null, vec![])
             .collect::<Vec<_>>()
             .await;
         let result = serde_json::to_string(&result).unwrap();
@@ -288,7 +288,7 @@ mod whole_responses_stream {
         assert_eq!(result, expected);
     }
 
-    type PollResult = Result<Value<DefaultScalarValue>, ExecutionError<DefaultScalarValue>>;
+    type PollResult = Result<Value<DefaultScalarValue>, ExecutionError>;
 
     #[tokio::test]
     async fn value_scalar() {
@@ -310,10 +310,9 @@ mod whole_responses_stream {
             Poll::Ready(Some(Ok(Value::Scalar(DefaultScalarValue::Int(counter)))))
         });
 
-        let result =
-            whole_responses_stream::<DefaultScalarValue>(Value::Scalar(Box::pin(stream)), vec![])
-                .collect::<Vec<_>>()
-                .await;
+        let result = whole_responses_stream(Value::Scalar(Box::pin(stream)), vec![])
+            .collect::<Vec<_>>()
+            .await;
         let result = serde_json::to_string(&result).unwrap();
 
         assert_eq!(result, expected);
@@ -342,7 +341,7 @@ mod whole_responses_stream {
             }))),
         ];
 
-        let result = whole_responses_stream::<DefaultScalarValue>(Value::List(streams), vec![])
+        let result = whole_responses_stream(Value::List(streams), vec![])
             .collect::<Vec<_>>()
             .await;
         let result = serde_json::to_string(&result).unwrap();
@@ -393,12 +392,10 @@ mod whole_responses_stream {
             ("two", Value::Scalar(Box::pin(small_stream))),
         ];
 
-        let result = whole_responses_stream::<DefaultScalarValue>(
-            Value::Object(Object::from_iter(vals.into_iter())),
-            vec![],
-        )
-        .collect::<Vec<_>>()
-        .await;
+        let result =
+            whole_responses_stream(Value::Object(Object::from_iter(vals.into_iter())), vec![])
+                .collect::<Vec<_>>()
+                .await;
         let result = serde_json::to_string(&result).unwrap();
 
         assert_eq!(result, expected);
