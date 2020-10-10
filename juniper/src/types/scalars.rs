@@ -44,7 +44,7 @@ impl Deref for ID {
     }
 }
 
-impl Display for ID {
+impl fmt::Display for ID {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
