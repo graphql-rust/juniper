@@ -22,6 +22,7 @@ use crate::{
             attr::{err, OptionExt as _},
             GenericsExt as _, ParseBufferExt as _,
         },
+        ScalarValueType,
     },
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
@@ -733,6 +734,14 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     context: Option<syn::Type>,
 
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation with for this
+    /// [GraphQL interface][1].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    scalar: ScalarValueType,
+
     /// Defined [`Field`]s of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -766,6 +775,8 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -819,6 +830,8 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -923,6 +936,8 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let mut where_clause = where_clause
@@ -983,6 +998,8 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_interface_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -1016,6 +1033,8 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_output_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
         let generics = self.ty.impl_generics();
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -1391,6 +1410,11 @@ struct Implementer {
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     context_ty: Option<syn::Type>,
+
+    /// [`ScalarValue`] parametrization of this [`Implementer`].
+    ///
+    /// [`ScalarValue`]: juniper::ScalarValue
+    scalar: ScalarValueType,
 }
 
 impl Implementer {
@@ -1435,6 +1459,7 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
+        let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, Some(parse_quote! { context }));
 
@@ -1460,6 +1485,7 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
+        let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
 
@@ -1485,6 +1511,7 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
+        let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
 
@@ -1540,12 +1567,24 @@ struct EnumType {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_methods: Vec<syn::Signature>,
+
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation with for this
+    /// [`EnumType`].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
+    scalar: ScalarValueType,
 }
 
 impl EnumType {
     /// Constructs new [`EnumType`] out of the given parameters.
     #[must_use]
-    fn new(r#trait: &syn::ItemTrait, meta: &TraitMeta, implers: &[Implementer]) -> Self {
+    fn new(
+        r#trait: &syn::ItemTrait,
+        meta: &TraitMeta,
+        implers: &[Implementer],
+        scalar: ScalarValueType,
+    ) -> Self {
         Self {
             ident: meta
                 .r#enum
@@ -1590,6 +1629,7 @@ impl EnumType {
                     }
                 })
                 .collect(),
+            scalar,
         }
     }
 
@@ -1837,6 +1877,8 @@ impl EnumType {
     /// [`GraphQLValue::concrete_type_name`]: juniper::GraphQLValue::concrete_type_name
     #[must_use]
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
         let match_arms = self.variants.iter().enumerate().map(|(n, ty)| {
             let variant = Self::variant_ident(n);
 
@@ -1942,6 +1984,11 @@ struct TraitObjectType {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_generics: syn::Generics,
 
+    /// [`ScalarValue`] parametrization of this [`TraitObjectType`] to generate it with.
+    ///
+    /// [`ScalarValue`]: juniper::ScalarValue
+    scalar: ScalarValueType,
+
     /// Rust type of [`Context`] to generate this [`TraitObjectType`] with.
     ///
     /// If [`None`] then generated code will use unit type `()` as [`Context`].
@@ -1953,12 +2000,18 @@ struct TraitObjectType {
 impl TraitObjectType {
     /// Constructs new [`TraitObjectType`] out of the given parameters.
     #[must_use]
-    fn new(r#trait: &syn::ItemTrait, meta: &TraitMeta, context: Option<syn::Type>) -> Self {
+    fn new(
+        r#trait: &syn::ItemTrait,
+        meta: &TraitMeta,
+        scalar: ScalarValueType,
+        context: Option<syn::Type>,
+    ) -> Self {
         Self {
             ident: meta.r#dyn.as_ref().unwrap().as_ref().clone(),
             visibility: r#trait.vis.clone(),
             trait_ident: r#trait.ident.clone(),
             trait_generics: r#trait.generics.clone(),
+            scalar,
             context,
         }
     }

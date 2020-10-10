@@ -81,6 +81,7 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         is_trait_object: false,
         description: meta.description.map(SpanContainer::into_inner),
         context: meta.context.map(SpanContainer::into_inner),
+        scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics,
         variants,
     })
@@ -208,6 +209,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         is_trait_object: false,
         description: meta.description.map(SpanContainer::into_inner),
         context: meta.context.map(SpanContainer::into_inner),
+        scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics,
         variants,
     })

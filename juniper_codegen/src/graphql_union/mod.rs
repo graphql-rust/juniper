@@ -56,6 +56,17 @@ struct UnionMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub context: Option<SpanContainer<syn::Type>>,
 
+    /// Explicitly specified type of `juniper::ScalarValue` to use for resolving this
+    /// [GraphQL union][1] type with.
+    ///
+    /// If absent, then generated code will be generic over any `juniper::ScalarValue` type, which,
+    /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
+    /// too. That's why this type should be specified only if one of the variants implements
+    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub scalar: Option<SpanContainer<syn::Type>>,
+
     /// Explicitly specified external resolver functions for [GraphQL union][1] variants.
     ///
     /// If absent, then macro will try to auto-infer all the possible variants from the type
@@ -110,6 +121,14 @@ impl Parse for UnionMeta {
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "scalar" | "Scalar" | "ScalarValue" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::Type>()?;
+                    output
+                        .scalar
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "on" => {
                     let ty = input.parse::<syn::Type>()?;
                     input.parse::<token::Eq>()?;
@@ -142,6 +161,7 @@ impl UnionMeta {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
+            scalar: try_merge_opt!(scalar: self, another),
             external_resolvers: try_merge_hashmap!(
                 external_resolvers: self, another => span_joined
             ),
@@ -311,6 +331,17 @@ struct UnionDefinition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub context: Option<syn::Type>,
+
+    /// Rust type of `juniper::ScalarValue` to generate `juniper::GraphQLType` implementation with
+    /// for this [GraphQL union][1].
+    ///
+    /// If [`None`] then generated code will be generic over any `juniper::ScalarValue` type, which,
+    /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
+    /// too. That's why this type should be specified only if one of the variants implements
+    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub scalar: Option<syn::Type>,
 
     /// Variants definitions of this [GraphQL union][1].
     ///

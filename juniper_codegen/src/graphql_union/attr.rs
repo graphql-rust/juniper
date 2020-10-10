@@ -87,6 +87,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
         is_trait_object: true,
         description: meta.description.map(SpanContainer::into_inner),
         context,
+        scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
         variants,
     };

@@ -114,6 +114,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),
+        scalar: attrs.scalar.map(SpanContainer::into_inner),
         description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
@@ -123,6 +124,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
             .map(SpanContainer::into_inner)
             .collect(),
         include_type_generics: true,
+        generic_scalar: true,
         no_async: attrs.no_async.is_some(),
     };
 

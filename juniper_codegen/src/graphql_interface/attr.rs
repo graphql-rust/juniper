@@ -7,7 +7,10 @@ use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
-    common::parse::{self, TypeExt as _},
+    common::{
+        parse::{self, TypeExt as _},
+        ScalarValueType,
+    },
     result::GraphQLScope,
     util::{path_eq_single, span_container::SpanContainer, to_camel_case},
 };
@@ -65,6 +68,28 @@ pub fn expand_on_trait(
         );
     }
 
+    let scalar = meta
+        .scalar
+        .as_ref()
+        .map(|sc| {
+            ast.generics
+                .params
+                .iter()
+                .find_map(|p| {
+                    if let syn::GenericParam::Type(tp) = p {
+                        let ident = &tp.ident;
+                        let ty: syn::Type = parse_quote! { #ident };
+                        if &ty == sc.as_ref() {
+                            return Some(&tp.ident);
+                        }
+                    }
+                    None
+                })
+                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
+                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
+        })
+        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
+
     let mut implementers: Vec<_> = meta
         .implementers
         .iter()
@@ -72,6 +97,7 @@ pub fn expand_on_trait(
             ty: ty.as_ref().clone(),
             downcast: None,
             context_ty: None,
+            scalar: scalar.clone(),
         })
         .collect();
     for (ty, downcast) in &meta.external_downcasts {
@@ -158,9 +184,19 @@ pub fn expand_on_trait(
     });
 
     let ty = if is_trait_object {
-        Type::TraitObject(Box::new(TraitObjectType::new(&ast, &meta, context.clone())))
+        Type::TraitObject(Box::new(TraitObjectType::new(
+            &ast,
+            &meta,
+            scalar.clone(),
+            context.clone(),
+        )))
     } else {
-        Type::Enum(Box::new(EnumType::new(&ast, &meta, &implementers)))
+        Type::Enum(Box::new(EnumType::new(
+            &ast,
+            &meta,
+            &implementers,
+            scalar.clone(),
+        )))
     };
 
     let generated_code = Definition {
@@ -170,6 +206,7 @@ pub fn expand_on_trait(
         description: meta.description.map(SpanContainer::into_inner),
 
         context,
+        scalar: scalar.clone(),
 
         fields,
         implementers,
@@ -231,9 +268,32 @@ pub fn expand_on_impl(
     let is_trait_object = meta.r#dyn.is_some();
 
     if is_trait_object {
+        let scalar = meta
+            .scalar
+            .as_ref()
+            .map(|sc| {
+                ast.generics
+                    .params
+                    .iter()
+                    .find_map(|p| {
+                        if let syn::GenericParam::Type(tp) = p {
+                            let ident = &tp.ident;
+                            let ty: syn::Type = parse_quote! { #ident };
+                            if &ty == sc.as_ref() {
+                                return Some(&tp.ident);
+                            }
+                        }
+                        None
+                    })
+                    .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
+                    .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
+            })
+            .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
+
         ast.attrs.push(parse_quote! {
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
         });
+
     }
 
     if is_async_trait {
@@ -337,6 +397,7 @@ impl TraitMethod {
             ty,
             downcast: Some(downcast),
             context_ty,
+            scalar: ScalarValueType::ImplicitGeneric,
         })
     }
 

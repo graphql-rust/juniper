@@ -121,7 +121,7 @@ where
 
 #[crate::graphql_object(
     name = "__Schema"
-    Context = SchemaType<'a, >,
+    Context = SchemaType<'a>,
     internal,
     // FIXME: make this redundant.
     noasync,

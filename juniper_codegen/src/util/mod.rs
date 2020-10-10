@@ -658,6 +658,7 @@ pub struct GraphQLTypeDefiniton {
     pub name: String,
     pub _type: syn::Type,
     pub context: Option<syn::Type>,
+    pub scalar: Option<syn::Type>,
     pub description: Option<String>,
     pub fields: Vec<GraphQLTypeDefinitionField>,
     pub generics: syn::Generics,
@@ -669,6 +670,11 @@ pub struct GraphQLTypeDefiniton {
     // This flag signifies if the type generics need to be
     // included manually.
     pub include_type_generics: bool,
+    // This flag indicates if the generated code should always be
+    // generic over the ScalarValue.
+    // If false, the scalar is only generic if a generic parameter
+    // is specified manually.
+    pub generic_scalar: bool,
     // FIXME: make this redundant.
     pub no_async: bool,
 }
