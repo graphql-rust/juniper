@@ -167,7 +167,7 @@ fn impl_scalar_struct(
 
         impl ::juniper::FromInputValue for #ident
         {
-            fn from_input_value(v: &::juniper::InputValue<S>) -> Option<#ident> {
+            fn from_input_value(v: &::juniper::InputValue) -> Option<#ident> {
                 let inner: #inner_ty = ::juniper::FromInputValue::from_input_value(v)?;
                 Some(#ident(inner))
             }

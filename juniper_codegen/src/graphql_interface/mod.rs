@@ -2051,12 +2051,16 @@ impl TraitObjectType {
         let mut generics = self.trait_generics.clone();
         generics.remove_defaults();
         generics.move_bounds_to_where_clause();
-        let ty_params = &generics.params;
+        let params = &generics.params;
+        let mut ty_params = None;
+        if !params.is_empty() {
+            ty_params = Some(quote! { #params, });
+        }
 
         let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
 
         quote! {
-            dyn #ty<#ty_params, Context = #context, TypeInfo = ()> + '__obj + Send + Sync
+            dyn #ty<#ty_params Context = #context, TypeInfo = ()> + '__obj + Send + Sync
         }
     }
 
