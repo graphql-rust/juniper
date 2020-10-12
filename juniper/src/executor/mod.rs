@@ -168,11 +168,10 @@ impl FieldError {
     /// ```rust
     /// # extern crate juniper;
     /// use juniper::FieldError;
-    /// # use juniper::DefaultScalarValue;
     /// use juniper::graphql_value;
     ///
     /// # fn sample() {
-    /// # let _: FieldError<DefaultScalarValue> =
+    /// # let _: FieldError =
     /// FieldError::new(
     ///     "Could not open connection to the database",
     ///     graphql_value!({ "internal_error": "Connection refused" })

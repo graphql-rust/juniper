@@ -502,10 +502,7 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     // You can also specify a description here.
 ///     // If present, doc comments will be ignored.
 ///     description = "An opaque identifier, represented as a string")]
-/// impl<S> GraphQLScalar for UserID
-/// where
-///     S: juniper::ScalarValue
-///  {
+/// impl GraphQLScalar for UserID {
 ///     fn resolve(&self) -> juniper::Value {
 ///         juniper::Value::scalar(self.0.to_owned())
 ///     }
@@ -514,8 +511,8 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 ///         value.as_string_value().map(|s| UserID(s.to_owned()))
 ///     }
 ///
-///     fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {
-///         <String as juniper::ParseScalarValue<S>>::from_str(value)
+///     fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a> {
+///         <String as juniper::ParseScalarValue>::from_str(value)
 ///     }
 /// }
 ///
@@ -713,7 +710,6 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// > returned from resolvers, otherwise resolving the GraphQL query will __panic at runtime__.
 ///
 /// ```
-/// # use std::marker::PhantomData;
 /// use derive_more::From;
 /// use juniper::{GraphQLObject, GraphQLUnion};
 ///
@@ -730,12 +726,9 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// }
 ///
 /// #[derive(From, GraphQLUnion)]
-/// enum Character<S> {
+/// enum Character {
 ///     Human(Human),
 ///     Droid(Droid),
-///     #[from(ignore)]
-///     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
-///     _State(PhantomData<S>),
 /// }
 /// ```
 ///

@@ -49,7 +49,7 @@ pub struct SchemaType<'a> {
 
 impl<'a> Context for SchemaType<'a> {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TypeType<'a> {
     Concrete(&'a MetaType<'a>),
     NonNull(Box<TypeType<'a>>),

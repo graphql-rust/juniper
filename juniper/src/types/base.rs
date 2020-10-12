@@ -302,7 +302,7 @@ pub type DynGraphQLValue<C, TI> =
 /// ```
 /// # use std::collections::HashMap;
 /// use juniper::{
-///     meta::MetaType, Arguments, Context, DefaultScalarValue, Executor, ExecutionResult,
+///     meta::MetaType, Arguments, Context, Executor, ExecutionResult,
 ///     FieldResult, GraphQLType, GraphQLValue, Registry,
 /// };
 ///
@@ -313,13 +313,12 @@ pub type DynGraphQLValue<C, TI> =
 /// #[derive(Debug)]
 /// struct User { id: String, name: String, friend_ids: Vec<String> }
 ///
-/// impl GraphQLType<DefaultScalarValue> for User {
+/// impl GraphQLType for User {
 ///    fn name(_: &()) -> Option<&'static str> {
 ///        Some("User")
 ///    }
 ///
 ///    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r>
-///    where DefaultScalarValue: 'r,
 ///    {
 ///        // First, we need to define all fields and their types on this type.
 ///        //
@@ -334,7 +333,7 @@ pub type DynGraphQLValue<C, TI> =
 ///    }
 /// }
 ///
-/// impl GraphQLValue<DefaultScalarValue> for User {
+/// impl GraphQLValue for User {
 ///     type Context = Database;
 ///     type TypeInfo = ();
 ///
