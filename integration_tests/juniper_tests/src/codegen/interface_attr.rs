@@ -1,9 +1,9 @@
 //! Tests for `#[graphql_interface]` macro.
 
 use juniper::{
-    execute, graphql_interface, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, Executor, FieldError, FieldResult, GraphQLObject, GraphQLType,
-    IntoFieldError, RootNode, ScalarValue, Variables,
+    execute, graphql_interface, graphql_object, graphql_value, EmptyMutation, EmptySubscription,
+    Executor, FieldError, FieldResult, GraphQLObject, GraphQLType, IntoFieldError, RootNode,
+    ScalarValue, Variables,
 };
 
 fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -3010,7 +3010,7 @@ mod explicit_scalar {
             }
         }"#;
 
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Human);
+        let schema = schema::<_, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3032,7 +3032,7 @@ mod explicit_scalar {
             }
         }"#;
 
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Droid);
+        let schema = schema::<_, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3054,7 +3054,7 @@ mod explicit_scalar {
             }
         }"#;
 
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Human);
+        let schema = schema::<_, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3076,7 +3076,7 @@ mod explicit_scalar {
             }
         }"#;
 
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Droid);
+        let schema = schema::<_, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3099,7 +3099,7 @@ mod explicit_scalar {
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema::<_, DefaultScalarValue, _>(*root);
+            let schema = schema::<_, _>(*root);
 
             let expected_id: &str = *expected_id;
             assert_eq!(
@@ -3118,7 +3118,7 @@ mod explicit_scalar {
         }"#;
 
         for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
-            let schema = schema::<_, DefaultScalarValue, _>(*root);
+            let schema = schema::<_, _>(*root);
 
             let expected_info: &str = *expected_info;
             assert_eq!(
@@ -3236,7 +3236,7 @@ mod custom_scalar {
             }
         }"#;
 
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Human);
+        let schema = schema::<_, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3258,7 +3258,7 @@ mod custom_scalar {
             }
         }"#;
 
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Droid);
+        let schema = schema::<_, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3280,7 +3280,7 @@ mod custom_scalar {
             }
         }"#;
 
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Human);
+        let schema = schema::<_, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3302,7 +3302,7 @@ mod custom_scalar {
             }
         }"#;
 
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Droid);
+        let schema = schema::<_, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -3325,7 +3325,7 @@ mod custom_scalar {
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema::<_, MyScalarValue, _>(*root);
+            let schema = schema::<_, _>(*root);
 
             let expected_id: &str = *expected_id;
             assert_eq!(
@@ -3344,7 +3344,7 @@ mod custom_scalar {
         }"#;
 
         for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
-            let schema = schema::<_, MyScalarValue, _>(*root);
+            let schema = schema::<_, _>(*root);
 
             let expected_info: &str = *expected_info;
             assert_eq!(
@@ -3359,12 +3359,12 @@ mod explicit_generic_scalar {
     use super::*;
 
     #[graphql_interface(for = [Human, Droid], scalar = S)]
-    trait Character<S: ScalarValue = DefaultScalarValue> {
+    trait Character {
         fn id(&self) -> FieldResult<&str>;
     }
 
     #[graphql_interface(dyn = DynHero, for = [Human, Droid], scalar = S)]
-    trait Hero<S: ScalarValue = DefaultScalarValue> {
+    trait Hero {
         async fn info(&self) -> FieldResult<&str>;
     }
 
@@ -4439,7 +4439,7 @@ mod executor {
 
     #[graphql_object(scalar = DefaultScalarValue)]
     impl QueryRoot {
-        fn character(&self) -> CharacterValue<DefaultScalarValue> {
+        fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
                     id: "human-32".to_string(),
@@ -4454,8 +4454,8 @@ mod executor {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_, DefaultScalarValue>> {
-            let ch: Box<DynHero<'_, _>> = match self {
+        fn hero(&self) -> Box<DynHero<'_>> {
+            let ch: Box<DynHero<'_>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),

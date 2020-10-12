@@ -1,8 +1,8 @@
 //! Tests for `#[graphql_union]` macro.
 
 use juniper::{
-    execute, graphql_object, graphql_union, graphql_value, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, GraphQLObject, GraphQLType, RootNode, ScalarValue, Variables,
+    execute, graphql_object, graphql_union, graphql_value, EmptyMutation, EmptySubscription,
+    GraphQLObject, GraphQLType, RootNode, ScalarValue, Variables,
 };
 
 #[derive(GraphQLObject)]
@@ -530,7 +530,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Human);
+        let schema = schema::<_, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -543,7 +543,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Droid);
+        let schema = schema::<_, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -621,7 +621,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Human);
+        let schema = schema::<_, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -634,7 +634,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Droid);
+        let schema = schema::<_, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,

@@ -68,10 +68,7 @@ impl<'a> GraphQLType for &'a Fake {
     fn name(_: &()) -> Option<&'static str> {
         None
     }
-    fn meta<'r>(_: &(), registry: &mut juniper::Registry<'r>) -> juniper::meta::MetaType<'r>
-    where
-        DefaultScalarValue: 'r,
-    {
+    fn meta<'r>(_: &(), registry: &mut juniper::Registry<'r>) -> juniper::meta::MetaType<'r> {
         let meta = registry.build_enum_type::<&'a Fake>(
             &(),
             &[juniper::meta::EnumValue {

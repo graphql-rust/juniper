@@ -52,10 +52,7 @@ enum ContextEnum {
 #[test]
 fn test_derived_enum() {
     // Ensure that rename works.
-    assert_eq!(
-        <SomeEnum as GraphQLType<DefaultScalarValue>>::name(&()),
-        Some("Some")
-    );
+    assert_eq!(<SomeEnum as GraphQLType>::name(&()), Some("Some"));
 
     // Ensure validity of meta info.
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
@@ -70,7 +67,7 @@ fn test_derived_enum() {
         InputValue::scalar("REGULAR")
     );
     assert_eq!(
-        FromInputValue::<DefaultScalarValue>::from_input_value(&InputValue::scalar("REGULAR")),
+        FromInputValue::from_input_value(&InputValue::scalar("REGULAR")),
         Some(SomeEnum::Regular)
     );
 
@@ -80,7 +77,7 @@ fn test_derived_enum() {
         InputValue::scalar("FULL")
     );
     assert_eq!(
-        FromInputValue::<DefaultScalarValue>::from_input_value(&InputValue::scalar("FULL")),
+        FromInputValue::from_input_value(&InputValue::scalar("FULL")),
         Some(SomeEnum::Full)
     );
 }
