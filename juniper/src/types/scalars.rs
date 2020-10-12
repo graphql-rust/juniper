@@ -13,7 +13,7 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{ParseScalarResult, Value},
-    DefaultScalarValue,
+    DefaultScalarValue, ScalarValue,
 };
 
 /// An ID as defined by the GraphQL specification
@@ -265,7 +265,7 @@ impl GraphQLScalar for i32 {
 
     fn from_input_value(v: &InputValue) -> Option<i32> {
         match *v {
-            InputValue::Scalar(DefaultScalarValue::Int(i)) => Some(i),
+            InputValue::Scalar(ref s) => s.as_int(),
             _ => None,
         }
     }
@@ -289,7 +289,7 @@ impl GraphQLScalar for f64 {
 
     fn from_input_value(v: &InputValue) -> Option<f64> {
         match *v {
-            InputValue::Scalar(DefaultScalarValue::Float(s)) => Some(s),
+            InputValue::Scalar(ref s) => s.as_float(),
             _ => None,
         }
     }
