@@ -32,6 +32,7 @@ struct Nested {
 }
 
 struct Query;
+struct NoRenameQuery;
 
 /// Object comment.
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -72,6 +73,12 @@ struct SkippedFieldObj {
     skipped: i32,
 }
 
+#[derive(GraphQLObject, Debug, PartialEq)]
+#[graphql(rename = "none")]
+struct NoRenameObj {
+    one_field: bool,
+    another_field: i32,
+}
 struct Context;
 impl juniper::Context for Context {}
 
@@ -123,6 +130,30 @@ impl Query {
             skipped: 42,
         }
     }
+
+    fn no_rename_obj() -> NoRenameObj {
+        NoRenameObj {
+            one_field: true,
+            another_field: 146,
+        }
+    }
+}
+
+#[juniper::graphql_object(rename = "none")]
+impl NoRenameQuery {
+    fn obj() -> Obj {
+        Obj {
+            regular_field: false,
+            c: 22,
+        }
+    }
+
+    fn no_rename_obj() -> NoRenameObj {
+        NoRenameObj {
+            one_field: true,
+            another_field: 146,
+        }
+    }
 }
 
 #[tokio::test]
@@ -171,6 +202,98 @@ async fn test_doc_comment_override() {
         &Value::scalar("field override"),
     )
     .await;
+}
+
+#[tokio::test]
+async fn test_no_rename_root() {
+    let doc = r#"
+        {
+            no_rename_obj {
+                one_field
+                another_field
+            }
+
+            obj {
+                regularField
+            }
+        }"#;
+
+    let schema = RootNode::new(
+        NoRenameQuery,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+
+    assert_eq!(
+        execute(doc, None, &schema, &Variables::new(), &()).await,
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "no_rename_obj",
+                        Value::object(
+                            vec![
+                                ("one_field", Value::scalar(true)),
+                                ("another_field", Value::scalar(146)),
+                            ]
+                            .into_iter()
+                            .collect(),
+                        ),
+                    ),
+                    (
+                        "obj",
+                        Value::object(
+                            vec![("regularField", Value::scalar(false)),]
+                                .into_iter()
+                                .collect(),
+                        ),
+                    )
+                ]
+                .into_iter()
+                .collect()
+            ),
+            vec![]
+        ))
+    );
+}
+
+#[tokio::test]
+async fn test_no_rename_obj() {
+    let doc = r#"
+        {
+            noRenameObj {
+                one_field
+                another_field
+            }
+        }"#;
+
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+
+    assert_eq!(
+        execute(doc, None, &schema, &Variables::new(), &()).await,
+        Ok((
+            Value::object(
+                vec![(
+                    "noRenameObj",
+                    Value::object(
+                        vec![
+                            ("one_field", Value::scalar(true)),
+                            ("another_field", Value::scalar(146)),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                )]
+                .into_iter()
+                .collect()
+            ),
+            vec![]
+        ))
+    );
 }
 
 #[tokio::test]
