@@ -19,6 +19,12 @@ struct Input {
     other: Option<bool>,
 }
 
+#[derive(GraphQLInputObject, Debug, PartialEq)]
+#[graphql(rename = "none")]
+struct NoRenameInput {
+    regular_field: String,
+}
+
 /// Object comment.
 #[derive(GraphQLInputObject, Debug, PartialEq)]
 struct DocComment {
@@ -144,6 +150,21 @@ fn test_derived_input_object() {
             regular_field: "a".into(),
             c: 55,
             other: Some(true),
+        }
+    );
+
+    // Test disable renaming
+
+    let input: InputValue = ::serde_json::from_value(serde_json::json!({
+        "regular_field": "hello",
+    }))
+    .unwrap();
+
+    let output: NoRenameInput = FromInputValue::from_input_value(&input).unwrap();
+    assert_eq!(
+        output,
+        NoRenameInput {
+            regular_field: "hello".into(),
         }
     );
 }
