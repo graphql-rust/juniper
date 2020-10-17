@@ -24,11 +24,11 @@ object in Juniper, most commonly using the `graphql_object` proc macro:
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-# use juniper::FieldResult;
-# #[derive(juniper::GraphQLObject)] struct User { name: String }
+# use juniper::{graphql_object, DefaultScalarValue, FieldResult, GraphQLObject};
+# #[derive(GraphQLObject)] struct User { name: String }
 struct Root;
 
-#[juniper::graphql_object]
+#[graphql_object(scalar = DefaultScalarValue)]
 impl Root {
     fn userWithUsername(username: String) -> FieldResult<Option<User>> {
         // Look up user in database...
@@ -47,13 +47,13 @@ that performs some mutating side-effect such as updating a database.
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-# use juniper::FieldResult;
-# #[derive(juniper::GraphQLObject)] struct User { name: String }
+# use juniper::{graphql_object, FieldResult, GraphQLObject, ScalarValue};
+# #[derive(GraphQLObject)] struct User { name: String }
 struct Mutations;
 
-#[juniper::graphql_object]
-impl Mutations {
-    fn signUpUser(name: String, email: String) -> FieldResult<User> {
+#[graphql_object(scalar = S)]
+impl<S: ScalarValue> Mutations {
+    fn signUpUser(name: String, email: String) -> FieldResult<User, S> {
         // Validate inputs and save user in database...
 # unimplemented!()
     }
@@ -68,11 +68,13 @@ Many tools in the GraphQL ecosystem require the schema to be defined in the [Gra
 
 ```rust
 # extern crate juniper;
-use juniper::{FieldResult, EmptyMutation, EmptySubscription, RootNode};
+use juniper::{
+    graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, FieldResult, RootNode,
+};
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object(scalar = DefaultScalarValue)]
 impl Query {
     fn hello(&self) -> FieldResult<&str> {
         Ok("hello world")
