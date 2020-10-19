@@ -33,6 +33,8 @@
   - `ParseError`
   - `RuleError`
   
+- Support `chrono-tz::Tz` scalar behind a `chrono-tz` feature flag. ([#519](https://github.com/graphql-rust/juniper/pull/519))
+  
 ## Fixes
 
 - Massively improved the `#[graphql_union]` proc macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
