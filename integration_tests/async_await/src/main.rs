@@ -1,4 +1,3 @@
-#[cfg(test)]
 use juniper::{
     graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
     GraphQLEnum, GraphQLError, RootNode, Value,
