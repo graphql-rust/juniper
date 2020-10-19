@@ -1,8 +1,8 @@
 [package]
 name = "juniper_book_tests"
 version = "0.1.0"
-authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 edition = "2018"
+authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 build = "build.rs"
 
 [dependencies]
@@ -10,14 +10,13 @@ juniper = { path = "../../../juniper" }
 juniper_iron = { path = "../../../juniper_iron" }
 juniper_subscriptions = { path = "../../../juniper_subscriptions" }
 
-derive_more = "0.99.7"
+derive_more = "0.99"
 futures = "0.3"
-tokio = { version = "0.2", features = ["blocking", "macros", "rt-core", "rt-util", "stream"] }
-iron = "0.5.0"
-mount = "0.4.0"
-
+iron = "0.5"
+mount = "0.4"
 skeptic = "0.13"
-serde_json = "1.0.39"
+serde_json = "1.0"
+tokio = { version = "0.2", features = ["blocking", "macros", "rt-core", "rt-util", "stream"] }
 uuid = "0.8"
 
 [build-dependencies]

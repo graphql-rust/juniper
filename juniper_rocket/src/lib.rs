@@ -132,10 +132,6 @@ impl GraphQLResponse {
     /// ```
     /// # #![feature(decl_macro, proc_macro_hygiene)]
     /// #
-    /// # extern crate juniper;
-    /// # extern crate juniper_rocket;
-    /// # extern crate rocket;
-    /// #
     /// # use rocket::http::Cookies;
     /// # use rocket::request::Form;
     /// # use rocket::response::content;

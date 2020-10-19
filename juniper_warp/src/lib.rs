@@ -62,10 +62,6 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 /// Example:
 ///
 /// ```
-/// # extern crate juniper_warp;
-/// # extern crate juniper;
-/// # extern crate warp;
-/// #
 /// # use std::sync::Arc;
 /// # use warp::Filter;
 /// # use juniper::{EmptyMutation, EmptySubscription, RootNode};
@@ -314,9 +310,6 @@ fn build_response(response: Result<(Vec<u8>, bool), anyhow::Error>) -> http::Res
 /// For example:
 ///
 /// ```
-/// # extern crate warp;
-/// # extern crate juniper_warp;
-/// #
 /// # use warp::Filter;
 /// # use juniper_warp::graphiql_filter;
 /// #
@@ -327,9 +320,6 @@ fn build_response(response: Result<(Vec<u8>, bool), anyhow::Error>) -> http::Res
 /// Or with subscriptions support, provide the subscriptions endpoint URL:
 ///
 /// ```
-/// # extern crate warp;
-/// # extern crate juniper_warp;
-/// #
 /// # use warp::Filter;
 /// # use juniper_warp::graphiql_filter;
 /// #

@@ -22,15 +22,12 @@ For example, continuing from the schema created above and using Iron to expose
 the schema on an HTTP endpoint supporting both GET and POST requests:
 
 ```rust,no_run
-extern crate iron;
-# extern crate juniper;
-# extern crate juniper_iron;
 # use std::collections::HashMap;
-
+#
 use iron::prelude::*;
 use juniper_iron::GraphQLHandler;
 use juniper::{Context, EmptyMutation, EmptySubscription};
-
+#
 # use juniper::FieldResult;
 #
 # struct User { id: String, name: String, friend_ids: Vec<String>  }
@@ -109,10 +106,7 @@ supported.
 
 #![doc(html_root_url = "https://docs.rs/juniper_iron/0.3.0")]
 
-#[cfg(test)]
-extern crate iron_test;
-#[cfg(test)]
-extern crate url;
+use std::{error::Error, fmt, io::Read, ops::Deref as _};
 
 use iron::{
     headers::ContentType,
@@ -122,16 +116,12 @@ use iron::{
     prelude::*,
     status,
 };
-use urlencoded::{UrlDecodingError, UrlEncodedQuery};
-
-use std::{error::Error, fmt, io::Read, ops::Deref as _};
-
-use serde_json::error::Error as SerdeError;
-
 use juniper::{
     http, http::GraphQLBatchRequest, DefaultScalarValue, GraphQLType, InputValue, RootNode,
     ScalarValue,
 };
+use serde_json::error::Error as SerdeError;
+use urlencoded::{UrlDecodingError, UrlEncodedQuery};
 
 /// Handler that executes `GraphQL` queries in the given schema
 ///

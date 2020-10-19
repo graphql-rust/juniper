@@ -1,7 +1,6 @@
 #![doc(html_root_url = "https://docs.rs/juniper_hyper/0.2.0")]
 
-#[cfg(test)]
-extern crate reqwest;
+use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 
 use hyper::{
     header::{self, HeaderValue},
@@ -12,7 +11,6 @@ use juniper::{
     GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
 };
 use serde_json::error::Error as SerdeError;
-use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use url::form_urlencoded;
 
 pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(

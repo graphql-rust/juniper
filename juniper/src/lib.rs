@@ -99,27 +99,9 @@ extern crate self as juniper;
 
 use std::fmt;
 
-#[doc(hidden)]
-pub extern crate serde;
-
-#[cfg(any(test, feature = "expose-test-schema"))]
-extern crate serde_json;
-
-#[cfg(any(test, feature = "chrono"))]
-extern crate chrono;
-
-#[cfg(any(test, feature = "url"))]
-extern crate url;
-
-#[cfg(any(test, feature = "uuid"))]
-extern crate uuid;
-
-#[cfg(any(test, feature = "bson"))]
-extern crate bson;
-
 // These are required by the code generated via the `juniper_codegen` macros.
 #[doc(hidden)]
-pub use {async_trait::async_trait, futures, static_assertions as sa};
+pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};

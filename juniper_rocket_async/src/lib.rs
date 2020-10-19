@@ -151,10 +151,6 @@ impl GraphQLResponse {
     /// # Examples
     ///
     /// ```
-    /// # extern crate juniper;
-    /// # extern crate juniper_rocket_async;
-    /// # extern crate rocket;
-    /// #
     /// # use rocket::http::CookieJar;
     /// # use rocket::request::Form;
     /// # use rocket::response::content;
@@ -518,7 +514,7 @@ mod tests {
     #[tokio::test]
     async fn test_rocket_integration() {
         let rocket = make_rocket();
-        let client = Client::new(rocket).await.expect("valid rocket");
+        let client = Client::untracked(rocket).await.expect("valid rocket");
         let integration = TestRocketIntegration { client };
 
         http_tests::run_http_test_suite(&integration);
@@ -538,7 +534,7 @@ mod tests {
 
         let rocket = make_rocket_without_routes()
             .mount("/", routes![post_graphql_assert_operation_name_handler]);
-        let client = Client::new(rocket).await.expect("valid rocket");
+        let client = Client::untracked(rocket).await.expect("valid rocket");
 
         let resp = client
             .post("/")

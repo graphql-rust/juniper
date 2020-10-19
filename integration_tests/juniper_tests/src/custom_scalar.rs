@@ -1,4 +1,4 @@
-extern crate serde_json;
+use std::fmt;
 
 use juniper::{
     execute,
@@ -7,7 +7,6 @@ use juniper::{
     EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
     Value, Variables,
 };
-use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
 pub(crate) enum MyScalarValue {
