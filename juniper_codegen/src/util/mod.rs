@@ -4,8 +4,7 @@ pub mod duplicate;
 pub mod parse_impl;
 pub mod span_container;
 
-use std::collections::HashMap;
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
