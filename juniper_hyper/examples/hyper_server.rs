@@ -5,7 +5,7 @@ use hyper::{
     Body, Method, Response, Server, StatusCode,
 };
 use juniper::{
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
 
@@ -26,11 +26,11 @@ async fn main() {
         let root_node = root_node.clone();
         let ctx = db.clone();
 
-        async move {
+        async {
             Ok::<_, hyper::Error>(service_fn(move |req| {
                 let root_node = root_node.clone();
                 let ctx = ctx.clone();
-                async move {
+                async {
                     match (req.method(), req.uri().path()) {
                         (&Method::GET, "/") => juniper_hyper::graphiql("/graphql", None).await,
                         (&Method::GET, "/graphql") | (&Method::POST, "/graphql") => {

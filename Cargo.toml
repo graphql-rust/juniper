@@ -7,6 +7,7 @@ members = [
   "examples/basic_subscriptions",
   "examples/warp_async",
   "examples/warp_subscriptions",
+  "examples/actix_subscriptions",
   "integration_tests/juniper_tests",
   "integration_tests/async_await",
   "integration_tests/codegen_fail",
@@ -15,6 +16,7 @@ members = [
   "juniper_rocket",
   "juniper_rocket_async",
   "juniper_subscriptions",
+  "juniper_graphql_ws",
   "juniper_warp",
   "juniper_actix",
 ]

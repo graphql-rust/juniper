@@ -5,7 +5,7 @@ use std::env;
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
 use juniper::{
-    tests::fixtures::starwars::{model::Database, schema::Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
 use juniper_actix::{
@@ -37,7 +37,7 @@ async fn graphql(
     graphql_handler(&schema, &context, req, payload).await
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();

@@ -18,5 +18,5 @@ rocket = { version = "0.4.2", default-features = false }
 
 [dev-dependencies.juniper]
 version = "0.14.2"
-features = ["expose-test-schema", "serde_json"]
+features = ["expose-test-schema"]
 path = "../juniper"

@@ -1,7 +1,7 @@
 #![allow(clippy::match_wild_err_arm)]
 use crate::{
     result::{GraphQLScope, UnsupportedAttribute},
-    util::{self, span_container::SpanContainer},
+    util::{self, span_container::SpanContainer, RenameRule},
 };
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
@@ -50,7 +50,10 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
             let field_ident = field.ident.as_ref().unwrap();
             let name = match field_attrs.name {
                 Some(ref name) => name.to_string(),
-                None => crate::util::to_camel_case(&field_ident.unraw().to_string()),
+                None => attrs
+                    .rename
+                    .unwrap_or(RenameRule::CamelCase)
+                    .apply(&field_ident.unraw().to_string()),
             };
 
             if let Some(span) = field_attrs.skip {
@@ -138,7 +141,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
         description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
-        interfaces: None,
+        interfaces: vec![],
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),

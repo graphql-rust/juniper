@@ -30,6 +30,7 @@ result can then be converted to JSON for use with tools and libraries such as
 [graphql-client](https://github.com/graphql-rust/graphql-client):
 
 ```rust
+# #![allow(unused_variables)]
 # extern crate juniper;
 # extern crate serde_json;
 use juniper::{EmptyMutation, EmptySubscription, FieldResult, IntrospectionFormat};

@@ -10,7 +10,7 @@ Juniper follows a [code-first approach][schema_approach] to defining GraphQL sch
 
 ```toml
 [dependencies]
-juniper = "0.14.2"
+juniper = { git = "https://github.com/graphql-rust/juniper" }
 ```
 
 ## Schema example
@@ -26,6 +26,7 @@ types to a GraphQL schema. The most important one is the
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
 ```rust
+# #![allow(unused_variables)]
 # extern crate juniper;
 use juniper::{FieldResult, EmptySubscription};
 
@@ -114,7 +115,7 @@ struct Mutation;
 impl Mutation {
 
     fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human> {
-        let db = executor.context().pool.get_connection()?;
+        let db = context.pool.get_connection()?;
         let human: Human = db.insert_human(&new_human)?;
         Ok(human)
     }

@@ -1,4 +1,6 @@
-use std::{char, convert::From, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32};
+use std::{
+    char, convert::From, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +41,12 @@ impl Deref for ID {
 
     fn deref(&self) -> &str {
         &self.0
+    }
+}
+
+impl fmt::Display for ID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 
@@ -245,7 +253,7 @@ where
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
         use futures::future;
-        future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
+        Box::pin(future::ready(self.resolve(info, selection_set, executor)))
     }
 }
 
@@ -325,7 +333,11 @@ where
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         match value {
-            ScalarToken::Int(v) | ScalarToken::Float(v) => v
+            ScalarToken::Int(v) => v
+                .parse()
+                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map(|s: i32| f64::from(s).into()),
+            ScalarToken::Float(v) => v
                 .parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
                 .map(|s: f64| s.into()),
@@ -334,7 +346,7 @@ where
     }
 }
 
-/// Utillity type to define read-only schemas
+/// Utility type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
@@ -457,11 +469,12 @@ impl<T> Default for EmptySubscription<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::{EmptyMutation, EmptySubscription, ID};
     use crate::{
         parser::ScalarToken,
         value::{DefaultScalarValue, ParseScalarValue},
     };
+
+    use super::{EmptyMutation, EmptySubscription, ID};
 
     #[test]
     fn test_id_from_string() {
@@ -484,6 +497,12 @@ mod tests {
     }
 
     #[test]
+    fn test_id_display() {
+        let id = ID(String::from("foo"));
+        assert_eq!(format!("{}", id), "foo");
+    }
+
+    #[test]
     fn parse_strings() {
         fn parse_string(s: &str, expected: &str) {
             let s =
@@ -503,6 +522,42 @@ mod tests {
             r#"unicode \u1234\u5678\u90AB\uCDEF"#,
             "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
         );
+    }
+
+    #[test]
+    fn parse_f64_from_int() {
+        for (v, expected) in &[
+            ("0", 0),
+            ("128", 128),
+            ("1601942400", 1601942400),
+            ("1696550400", 1696550400),
+            ("-1", -1),
+        ] {
+            let n = <f64 as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::Int(v));
+            assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
+
+            let n: Option<f64> = n.unwrap().into();
+            assert!(n.is_some(), "No f64 returned");
+            assert_eq!(n.unwrap(), f64::from(*expected));
+        }
+    }
+
+    #[test]
+    fn parse_f64_from_float() {
+        for (v, expected) in &[
+            ("0.", 0.),
+            ("1.2", 1.2),
+            ("1601942400.", 1601942400.),
+            ("1696550400.", 1696550400.),
+            ("-1.2", -1.2),
+        ] {
+            let n = <f64 as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::Float(v));
+            assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
+
+            let n: Option<f64> = n.unwrap().into();
+            assert!(n.is_some(), "No f64 returned");
+            assert_eq!(n.unwrap(), *expected);
+        }
     }
 
     #[test]

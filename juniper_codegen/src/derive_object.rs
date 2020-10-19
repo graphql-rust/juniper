@@ -1,6 +1,6 @@
 use crate::{
     result::{GraphQLScope, UnsupportedAttribute},
-    util::{self, span_container::SpanContainer},
+    util::{self, span_container::SpanContainer, RenameRule},
 };
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -50,7 +50,12 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
                 .name
                 .clone()
                 .map(SpanContainer::into_inner)
-                .unwrap_or_else(|| util::to_camel_case(&field_name.unraw().to_string()));
+                .unwrap_or_else(|| {
+                    attrs
+                        .rename
+                        .unwrap_or(RenameRule::CamelCase)
+                        .apply(&field_name.unraw().to_string())
+                });
 
             if name.starts_with("__") {
                 error.no_double_underscore(if let Some(name) = field_attrs.name {
@@ -89,12 +94,6 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
     // Early abort after checking all fields
     proc_macro_error::abort_if_dirty();
 
-    if !attrs.interfaces.is_empty() {
-        attrs.interfaces.iter().for_each(|elm| {
-            error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
-        });
-    }
-
     if let Some(duplicates) =
         crate::util::duplicate::Duplicate::find_by_key(&fields, |field| field.name.as_str())
     {
@@ -124,7 +123,11 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
         description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
-        interfaces: None,
+        interfaces: attrs
+            .interfaces
+            .into_iter()
+            .map(SpanContainer::into_inner)
+            .collect(),
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),

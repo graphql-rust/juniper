@@ -40,7 +40,6 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_actix/0.1.0")]
 
-// use futures::{FutureExt as _};
 use actix_web::{
     error::{ErrorBadRequest, ErrorMethodNotAllowed, ErrorUnsupportedMediaType},
     http::{header::CONTENT_TYPE, Method},
@@ -217,14 +216,280 @@ pub async fn playground_handler(
         .body(html))
 }
 
+/// `juniper_actix` subscriptions handler implementation.
+/// Cannot be merged to `juniper_actix` yet as GraphQL over WS[1]
+/// is not fully supported in current implementation.
+///
+/// *Note: this implementation is in an alpha state.*
+///
+/// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
+#[cfg(feature = "subscriptions")]
+pub mod subscriptions {
+    use std::{fmt, sync::Arc};
+
+    use actix::{prelude::*, Actor, StreamHandler};
+    use actix_web::{
+        http::header::{HeaderName, HeaderValue},
+        web, HttpRequest, HttpResponse,
+    };
+    use actix_web_actors::ws;
+
+    use tokio::sync::Mutex;
+
+    use juniper::{
+        futures::{
+            stream::{SplitSink, SplitStream, StreamExt},
+            SinkExt,
+        },
+        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+    };
+    use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
+
+    /// Serves the graphql-ws protocol over a WebSocket connection.
+    ///
+    /// The `init` argument is used to provide the context and additional configuration for
+    /// connections. This can be a `juniper_graphql_ws::ConnectionConfig` if the context and
+    /// configuration are already known, or it can be a closure that gets executed asynchronously
+    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
+    /// authentication based on the parameters provided by the client.
+    pub async fn subscriptions_handler<Query, Mutation, Subscription, CtxT, S, I>(
+        req: HttpRequest,
+        stream: web::Payload,
+        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+    ) -> Result<HttpResponse, actix_web::Error>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split::<Message>();
+
+        let mut resp = ws::start(
+            SubscriptionActor {
+                graphql_tx: Arc::new(Mutex::new(s_tx)),
+                graphql_rx: Arc::new(Mutex::new(s_rx)),
+            },
+            &req,
+            stream,
+        )?;
+
+        resp.headers_mut().insert(
+            HeaderName::from_static("sec-websocket-protocol"),
+            HeaderValue::from_static("graphql-ws"),
+        );
+
+        Ok(resp)
+    }
+
+    type ConnectionSplitSink<Query, Mutation, Subscription, CtxT, S, I> = Arc<
+        Mutex<SplitSink<Connection<ArcSchema<Query, Mutation, Subscription, CtxT, S>, I>, Message>>,
+    >;
+
+    type ConnectionSplitStream<Query, Mutation, Subscription, CtxT, S, I> =
+        Arc<Mutex<SplitStream<Connection<ArcSchema<Query, Mutation, Subscription, CtxT, S>, I>>>>;
+
+    /// Subscription Actor
+    /// coordinates messages between actix_web and juniper_graphql_ws
+    /// ws message -> actor -> juniper
+    /// juniper -> actor -> ws response
+    struct SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        graphql_tx: ConnectionSplitSink<Query, Mutation, Subscription, CtxT, S, I>,
+        graphql_rx: ConnectionSplitStream<Query, Mutation, Subscription, CtxT, S, I>,
+    }
+
+    /// ws message -> actor -> juniper
+    impl<Query, Mutation, Subscription, CtxT, S, I>
+        StreamHandler<Result<ws::Message, ws::ProtocolError>>
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+            let msg = msg.map(|r| Message(r));
+
+            match msg {
+                Ok(msg) => {
+                    let tx = self.graphql_tx.clone();
+
+                    async move {
+                        let mut tx = tx.lock().await;
+                        tx.send(msg)
+                            .await
+                            .expect("Infallible: this should not happen");
+                    }
+                    .into_actor(self)
+                    .wait(ctx);
+                }
+                Err(_) => {
+                    // TODO: trace
+                    // ignore the message if there's a transport error
+                }
+            }
+        }
+    }
+
+    /// juniper -> actor
+    impl<Query, Mutation, Subscription, CtxT, S, I> Actor
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        type Context = ws::WebsocketContext<Self>;
+
+        fn started(&mut self, ctx: &mut Self::Context) {
+            let stream = self.graphql_rx.clone();
+            let addr = ctx.address();
+
+            let fut = async move {
+                let mut stream = stream.lock().await;
+                while let Some(message) = stream.next().await {
+                    // sending the message to self so that it can be forwarded back to the client
+                    addr.do_send(ServerMessageWrapper { message });
+                }
+            }
+            .into_actor(self);
+
+            // TODO: trace
+            ctx.spawn(fut);
+        }
+
+        fn stopped(&mut self, _: &mut Self::Context) {
+            // TODO: trace
+        }
+    }
+
+    /// actor -> websocket response
+    impl<Query, Mutation, Subscription, CtxT, S, I> Handler<ServerMessageWrapper<S>>
+        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        type Result = ();
+
+        fn handle(
+            &mut self,
+            msg: ServerMessageWrapper<S>,
+            ctx: &mut ws::WebsocketContext<Self>,
+        ) -> Self::Result {
+            let msg = serde_json::to_string(&msg.message);
+
+            match msg {
+                Ok(msg) => {
+                    ctx.text(msg);
+                }
+                Err(e) => {
+                    let reason = ws::CloseReason {
+                        code: ws::CloseCode::Error,
+                        description: Some(format!("error serializing response: {}", e)),
+                    };
+
+                    // TODO: trace
+                    ctx.close(Some(reason));
+                }
+            }
+        }
+    }
+
+    #[derive(Message)]
+    #[rtype(result = "()")]
+    struct ServerMessageWrapper<S>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        message: ServerMessage<S>,
+    }
+
+    #[derive(Debug)]
+    struct Message(ws::Message);
+
+    impl<S: ScalarValue> std::convert::TryFrom<Message> for ClientMessage<S> {
+        type Error = Error;
+
+        fn try_from(msg: Message) -> Result<Self, Self::Error> {
+            match msg.0 {
+                ws::Message::Text(text) => {
+                    serde_json::from_slice(text.as_bytes()).map_err(|e| Error::Serde(e))
+                }
+                ws::Message::Close(_) => Ok(ClientMessage::ConnectionTerminate),
+                _ => Err(Error::UnexpectedClientMessage),
+            }
+        }
+    }
+
+    /// Errors that can happen while handling client messages
+    #[derive(Debug)]
+    enum Error {
+        /// Errors that can happen while deserializing client messages
+        Serde(serde_json::Error),
+
+        /// Error for unexpected client messages
+        UnexpectedClientMessage,
+    }
+
+    impl fmt::Display for Error {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::Serde(e) => write!(f, "serde error: {}", e),
+                Self::UnexpectedClientMessage => {
+                    write!(f, "unexpected message received from client")
+                }
+            }
+        }
+    }
+
+    impl std::error::Error for Error {}
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, App};
-    use futures::StreamExt;
     use juniper::{
+        futures::stream::StreamExt,
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-        tests::fixtures::starwars::{model::Database, schema::Query},
+        tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
 
@@ -252,13 +517,13 @@ mod tests {
         graphql_handler(&schema, &context, req, payload).await
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphiql_response_does_not_panic() {
         let result = graphiql_handler("/abcd", None).await;
         assert!(result.is_ok())
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphiql_endpoint_matches() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/abcd", None).await
@@ -274,7 +539,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphiql_endpoint_returns_graphiql_source() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
@@ -299,7 +564,7 @@ mod tests {
         ))
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn playground_endpoint_matches() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/abcd", None).await
@@ -315,7 +580,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn playground_endpoint_returns_playground_source() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
@@ -337,7 +602,7 @@ mod tests {
         assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphql_post_works_json_post() {
         let schema: Schema = RootNode::new(
             Query,
@@ -369,7 +634,7 @@ mod tests {
         );
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn graphql_get_works() {
         let schema: Schema = RootNode::new(
             Query,
@@ -398,10 +663,10 @@ mod tests {
         );
     }
 
-    #[actix_rt::test]
+    #[actix_web::rt::test]
     async fn batch_request_works() {
         use juniper::{
-            tests::fixtures::starwars::{model::Database, schema::Query},
+            tests::fixtures::starwars::schema::{Database, Query},
             EmptyMutation, EmptySubscription, RootNode,
         };
 
@@ -450,7 +715,7 @@ mod tests {
 
     impl TestActixWebIntegration {
         fn make_request(&self, req: test::TestRequest) -> TestResponse {
-            actix_rt::System::new("request").block_on(async move {
+            actix_web::rt::System::new("request").block_on(async move {
                 let schema = RootNode::new(
                     Query,
                     EmptyMutation::<Database>::new(),
@@ -504,5 +769,116 @@ mod tests {
     #[test]
     fn test_actix_web_integration() {
         run_http_test_suite(&TestActixWebIntegration);
+    }
+}
+
+#[cfg(feature = "subscriptions")]
+#[cfg(test)]
+mod subscription_tests {
+    use std::time::Duration;
+
+    use actix_web::{test, web, App, Error, HttpRequest, HttpResponse};
+    use actix_web_actors::ws;
+    use tokio::time::timeout;
+
+    use super::subscriptions::subscriptions_handler;
+    use juniper::{
+        futures::{SinkExt, StreamExt},
+        http::tests::{run_ws_test_suite, WsIntegration, WsIntegrationMessage},
+        tests::fixtures::starwars::{
+            model::Database,
+            schema::{Query, Subscription},
+        },
+        EmptyMutation, LocalBoxFuture,
+    };
+    use juniper_graphql_ws::ConnectionConfig;
+
+    #[derive(Default)]
+    struct TestActixWsIntegration;
+
+    impl TestActixWsIntegration {
+        async fn run_async(
+            &self,
+            messages: Vec<WsIntegrationMessage>,
+        ) -> Result<(), anyhow::Error> {
+            let mut server = test::start(|| {
+                App::new()
+                    .data(Schema::new(
+                        Query,
+                        EmptyMutation::<Database>::new(),
+                        Subscription,
+                    ))
+                    .service(web::resource("/subscriptions").to(subscriptions))
+            });
+            let mut framed = server.ws_at("/subscriptions").await.unwrap();
+
+            for message in &messages {
+                match message {
+                    WsIntegrationMessage::Send(body) => {
+                        framed
+                            .send(ws::Message::Text(body.to_owned()))
+                            .await
+                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+                    }
+                    WsIntegrationMessage::Expect(body, message_timeout) => {
+                        let frame = timeout(Duration::from_millis(*message_timeout), framed.next())
+                            .await
+                            .map_err(|_| anyhow::anyhow!("Timed-out waiting for message"))?
+                            .ok_or_else(|| anyhow::anyhow!("Empty message received"))?
+                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+
+                        match frame {
+                            ws::Frame::Text(ref bytes) => {
+                                let expected_value =
+                                    serde_json::from_str::<serde_json::Value>(body)
+                                        .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+
+                                let value: serde_json::Value = serde_json::from_slice(bytes)
+                                    .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+
+                                if value != expected_value {
+                                    return Err(anyhow::anyhow!(
+                                        "Expected message: {}. Received message: {}",
+                                        expected_value,
+                                        value,
+                                    ));
+                                }
+                            }
+                            _ => return Err(anyhow::anyhow!("Received non-text frame")),
+                        }
+                    }
+                }
+            }
+
+            Ok(())
+        }
+    }
+
+    impl WsIntegration for TestActixWsIntegration {
+        fn run(
+            &self,
+            messages: Vec<WsIntegrationMessage>,
+        ) -> LocalBoxFuture<Result<(), anyhow::Error>> {
+            Box::pin(self.run_async(messages))
+        }
+    }
+
+    type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+
+    async fn subscriptions(
+        req: HttpRequest,
+        stream: web::Payload,
+        schema: web::Data<Schema>,
+    ) -> Result<HttpResponse, Error> {
+        let context = Database::new();
+        let schema = schema.into_inner();
+        let config = ConnectionConfig::new(context);
+
+        subscriptions_handler(req, stream, schema, config).await
+    }
+
+    #[actix_web::rt::test]
+    async fn test_actix_ws_integration() {
+        run_ws_test_suite(&mut TestActixWsIntegration::default()).await;
     }
 }

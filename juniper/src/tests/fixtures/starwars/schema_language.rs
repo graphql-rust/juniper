@@ -8,7 +8,8 @@ mod tests {
     use crate::{
         schema::model::RootNode,
         tests::fixtures::starwars::{
-            model::Database, schema::Query, schema_language::STATIC_GRAPHQL_SCHEMA_DEFINITION,
+            schema::{Database, Query},
+            schema_language::STATIC_GRAPHQL_SCHEMA_DEFINITION,
         },
         types::scalars::{EmptyMutation, EmptySubscription},
     };

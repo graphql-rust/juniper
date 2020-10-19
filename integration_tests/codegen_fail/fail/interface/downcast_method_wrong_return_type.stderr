@@ -1,0 +1,19 @@
+error: GraphQL interface expects trait method return type to be `Option<&ImplementerType>` only
+  --> $DIR/downcast_method_wrong_return_type.rs:10:40
+   |
+10 |     fn a(&self, ctx: &(), rand: u8) -> &Human {
+   |                                        ^^^^^^
+   |
+   = note: https://spec.graphql.org/June2018/#sec-Interfaces
+
+error[E0412]: cannot find type `CharacterValue` in this scope
+  --> $DIR/downcast_method_wrong_return_type.rs:16:18
+   |
+16 | #[graphql(impl = CharacterValue)]
+   |                  ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0405]: cannot find trait `Character` in this scope
+  --> $DIR/downcast_method_wrong_return_type.rs:22:6
+   |
+22 | impl Character for Human {}
+   |      ^^^^^^^^^ not found in this scope

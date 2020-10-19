@@ -1,8 +1,8 @@
 use fnv::FnvHashMap;
 
 use juniper::{
-    DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue, InputValue,
-    ToInputValue,
+    marker, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue,
+    InputValue, ToInputValue,
 };
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -18,6 +18,12 @@ struct Input {
 
     #[graphql(default)]
     other: Option<bool>,
+}
+
+#[derive(GraphQLInputObject, Debug, PartialEq)]
+#[graphql(rename = "none")]
+struct NoRenameInput {
+    regular_field: String,
 }
 
 /// Object comment.
@@ -49,6 +55,8 @@ struct OverrideDocComment {
 
 #[derive(Debug, PartialEq)]
 struct Fake;
+
+impl<'a> marker::IsInputType<DefaultScalarValue> for &'a Fake {}
 
 impl<'a> FromInputValue for &'a Fake {
     fn from_input_value(_v: &InputValue) -> Option<&'a Fake> {
@@ -143,6 +151,21 @@ fn test_derived_input_object() {
             regular_field: "a".into(),
             c: 55,
             other: Some(true),
+        }
+    );
+
+    // Test disable renaming
+
+    let input: InputValue = ::serde_json::from_value(serde_json::json!({
+        "regular_field": "hello",
+    }))
+    .unwrap();
+
+    let output: NoRenameInput = FromInputValue::from_input_value(&input).unwrap();
+    assert_eq!(
+        output,
+        NoRenameInput {
+            regular_field: "hello".into(),
         }
     );
 }

@@ -78,6 +78,7 @@ operation returns a [`Future`][Future] with an `Item` value of a `Result<Connect
 where [`Connection`][Connection] is a `Stream` of values returned by the operation and [`GraphQLError`][GraphQLError] is the error when the subscription fails.
 
 ```rust
+# #![allow(dead_code)]
 # extern crate futures;
 # extern crate juniper;
 # extern crate juniper_subscriptions;
@@ -88,8 +89,6 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # use juniper_subscriptions::Coordinator;
 # use futures::{Stream, StreamExt};
 # use std::pin::Pin;
-# use tokio::runtime::Runtime;
-# use tokio::task;
 # 
 # #[derive(Clone)]
 # pub struct Database;

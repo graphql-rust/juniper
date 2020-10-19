@@ -4,7 +4,7 @@ use syn::{ext::IdentExt, spanned::Spanned, Data, Fields};
 
 use crate::{
     result::{GraphQLScope, UnsupportedAttribute},
-    util::{self, span_container::SpanContainer},
+    util::{self, span_container::SpanContainer, RenameRule},
 };
 
 pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
@@ -48,7 +48,12 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
                 .name
                 .clone()
                 .map(SpanContainer::into_inner)
-                .unwrap_or_else(|| util::to_upper_snake_case(&field_name.unraw().to_string()));
+                .unwrap_or_else(|| {
+                    attrs
+                        .rename
+                        .unwrap_or(RenameRule::ScreamingSnakeCase)
+                        .apply(&field_name.unraw().to_string())
+                });
 
             let resolver_code = quote!( #ident::#field_name );
 
@@ -138,7 +143,7 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
         fields,
         // NOTICE: only unit variants allow -> no generics possible
         generics: syn::Generics::default(),
-        interfaces: None,
+        interfaces: vec![],
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),

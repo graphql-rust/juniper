@@ -10,8 +10,9 @@ example from the last chapter, this is how you would define `Person` using the
 macro:
 
 ```rust
+# #![allow(dead_code)]
 # extern crate juniper;
-
+#
 struct Person {
     name: String,
     age: i32,

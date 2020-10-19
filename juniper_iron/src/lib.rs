@@ -47,7 +47,7 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 #         Ok(&self.name)
 #     }
 #
-#     fn friends(context: &Database) -> FieldResult<Vec<&User>> {
+#     fn friends(&self, context: &Database) -> FieldResult<Vec<&User>> {
 #         Ok(self.friend_ids.iter()
 #             .filter_map(|id| executor.context().users.get(id))
 #             .collect())
@@ -421,7 +421,7 @@ mod tests {
 
     use juniper::{
         http::tests as http_tests,
-        tests::fixtures::starwars::{model::Database, schema::Query},
+        tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription,
     };
 

@@ -6,8 +6,7 @@ use quote::{quote, ToTokens};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{
-    result::GraphQLScope,
-    util::{span_container::SpanContainer, unparenthesize},
+    common::parse::TypeExt as _, result::GraphQLScope, util::span_container::SpanContainer,
 };
 
 use super::{
@@ -85,7 +84,6 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics,
         variants,
-        span: enum_span,
     })
 }
 
@@ -115,7 +113,7 @@ fn parse_variant_from_enum_variant(
             let mut iter = fields.unnamed.iter();
             let first = iter.next().unwrap();
             if iter.next().is_none() {
-                Ok(unparenthesize(&first.ty).clone())
+                Ok(first.ty.unparenthesized().clone())
             } else {
                 Err(fields.span())
             }
@@ -214,6 +212,5 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics,
         variants,
-        span: struct_span,
     })
 }
