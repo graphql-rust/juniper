@@ -1,6 +1,3 @@
-extern crate juniper_rocket;
-extern crate rocket;
-
 use rocket::http::Status;
 
 use juniper_rocket::GraphQLResponse;

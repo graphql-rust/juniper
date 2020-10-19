@@ -7,8 +7,6 @@
 #![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.2")]
 #![recursion_limit = "1024"]
 
-extern crate proc_macro;
-
 mod result;
 mod util;
 

@@ -9,9 +9,6 @@ This crate contains an implementation of the [graphql-ws protocol](https://githu
 #![deny(missing_docs)]
 #![deny(warnings)]
 
-#[macro_use]
-extern crate serde;
-
 mod client_message;
 pub use client_message::*;
 
@@ -23,6 +20,16 @@ pub use schema::*;
 
 mod utils;
 
+use std::{
+    collections::HashMap,
+    convert::{Infallible, TryInto},
+    error::Error,
+    marker::PhantomPinned,
+    pin::Pin,
+    sync::Arc,
+    time::Duration,
+};
+
 use juniper::{
     futures::{
         channel::oneshot,
@@ -32,15 +39,6 @@ use juniper::{
         Sink, Stream,
     },
     GraphQLError, RuleError, ScalarValue, Variables,
-};
-use std::{
-    collections::HashMap,
-    convert::{Infallible, TryInto},
-    error::Error,
-    marker::PhantomPinned,
-    pin::Pin,
-    sync::Arc,
-    time::Duration,
 };
 
 struct ExecutionParams<S: Schema> {
@@ -642,20 +640,22 @@ where
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::{convert::Infallible, io};
+
     use juniper::{
         futures::sink::SinkExt,
         graphql_object, graphql_subscription,
         parser::{ParseError, Spanning, Token},
         DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode, Value,
     };
-    use std::{convert::Infallible, io};
+
+    use super::*;
 
     struct Context(i32);
 
     struct Query;
 
-    #[graphql_object(context = Context, scalar = DefaultScalarValue)]
+    #[graphql_object(context = Context)]
     impl Query {
         /// context just resolves to the current context.
         async fn context(context: &Context) -> i32 {
@@ -665,7 +665,7 @@ mod test {
 
     struct Subscription;
 
-    #[graphql_subscription(context = Context, scalar = DefaultScalarValue)]
+    #[graphql_subscription(context = Context)]
     impl Subscription {
         /// never never emits anything.
         async fn never(context: &Context) -> BoxStream<'static, FieldResult<i32>> {

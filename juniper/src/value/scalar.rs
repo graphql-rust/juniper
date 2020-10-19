@@ -35,11 +35,9 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The following example introduces an new variant that is able to store 64 bit integers.
 ///
 /// ```
-/// # extern crate juniper;
-/// # extern crate serde;
+/// # use std::fmt;
 /// # use serde::{de, Deserialize, Deserializer};
 /// # use juniper::ScalarValue;
-/// # use std::fmt;
 /// #
 /// #[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
 /// enum MyScalarValue {

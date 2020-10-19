@@ -1,23 +1,19 @@
-#[macro_use]
-extern crate bencher;
-extern crate juniper;
-
-use bencher::Bencher;
-
+use bencher::{benchmark_group, benchmark_main, Bencher};
 use juniper::{
-    execute_sync, tests::fixtures::starwars::model::Database, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, RootNode, Variables,
+    execute_sync,
+    tests::fixtures::starwars::schema::{Database, Query},
+    DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode, Variables,
 };
 
 fn query_type_name(b: &mut Bencher) {
     let database = Database::new();
     let schema: RootNode<
-        &Database,
+        Query,
         EmptyMutation<Database>,
         EmptySubscription<Database>,
         DefaultScalarValue,
     > = RootNode::new(
-        &database,
+        Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
     );
@@ -37,12 +33,12 @@ fn query_type_name(b: &mut Bencher) {
 fn introspection_query(b: &mut Bencher) {
     let database = Database::new();
     let schema: RootNode<
-        &Database,
+        Query,
         EmptyMutation<Database>,
         EmptySubscription<Database>,
         DefaultScalarValue,
     > = RootNode::new(
-        &database,
+        Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
     );

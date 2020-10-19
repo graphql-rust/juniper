@@ -1,19 +1,19 @@
 [package]
 name = "juniper_graphql_ws"
 version = "0.1.0"
+edition = "2018"
 authors = ["Christopher Brown <ccbrown112@gmail.com>"]
 license = "BSD-2-Clause"
-description = "Graphql-ws protocol implementation for Juniper"
+description = "GraphQL over WebSocket protocol implementation for Juniper"
 documentation = "https://docs.rs/juniper_graphql_ws"
 repository = "https://github.com/graphql-rust/juniper"
-keywords = ["graphql-ws", "juniper", "graphql", "apollo"]
-edition = "2018"
+keywords = ["apollo", "graphql", "graphql-ws", "juniper"]
 
 [dependencies]
 juniper = { version = "0.14.2", path = "../juniper", default-features = false }
 juniper_subscriptions = { path = "../juniper_subscriptions" }
-serde = { version = "1.0.8", features = ["derive"] }
-tokio = { version = "0.2", features = ["macros", "rt-core", "time"] }
+serde = { version = "1.0.8", features = ["derive"], default-features = false }
+tokio = { version = "0.2", features = ["macros", "rt-core", "time"], default-features = false }
 
 [dev-dependencies]
-serde_json = { version = "1.0.2" }
+serde_json = "1.0"

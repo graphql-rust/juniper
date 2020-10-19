@@ -664,9 +664,9 @@ pub mod tests {
                     "payload":{
                         "data":{
                             "asyncHuman":{
-                                "id":"stream id",
-                                "name":"stream name",
-                                "homePlanet":"stream home planet"
+                                "id":"1000",
+                                "name":"Luke Skywalker",
+                                "homePlanet":"Tatooine"
                             }
                         }
                     }
@@ -738,7 +738,7 @@ pub mod tests {
                     "type":"error",
                     "id":"1",
                     "payload":[{
-                        "message":"Field \"asyncHuman\" of type \"HumanSubscription!\" must have a selection of subfields. Did you mean \"asyncHuman { ... }\"?",
+                        "message":"Field \"asyncHuman\" of type \"Human!\" must have a selection of subfields. Did you mean \"asyncHuman { ... }\"?",
                         "locations":[{
                             "line":1,
                             "column":16

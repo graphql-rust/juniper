@@ -185,9 +185,6 @@ where
 /// For example:
 ///
 /// ```
-/// # extern crate actix;
-/// # extern crate juniper_actix;
-/// #
 /// # use juniper_actix::graphiql_handler;
 /// # use actix_web::{web, App};
 ///
@@ -780,19 +777,16 @@ mod subscription_tests {
 
     use actix_web::{test, web, App, Error, HttpRequest, HttpResponse};
     use actix_web_actors::ws;
-    use tokio::time::timeout;
-
-    use super::subscriptions::subscriptions_handler;
     use juniper::{
         futures::{SinkExt, StreamExt},
         http::tests::{run_ws_test_suite, WsIntegration, WsIntegrationMessage},
-        tests::fixtures::starwars::{
-            model::Database,
-            schema::{Query, Subscription},
-        },
+        tests::fixtures::starwars::schema::{Database, Query, Subscription},
         EmptyMutation, LocalBoxFuture,
     };
     use juniper_graphql_ws::ConnectionConfig;
+    use tokio::time::timeout;
+
+    use super::subscriptions::subscriptions_handler;
 
     #[derive(Default)]
     struct TestActixWsIntegration;
