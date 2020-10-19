@@ -262,7 +262,7 @@ async fn querying_long_variable() {
 fn deserialize_variable() {
     let json = format!("{{\"field\": {}}}", (::std::i32::MAX as i64) + 42);
 
-    let input_value: InputValue<MyScalarValue> = self::serde_json::from_str(&json).unwrap();
+    let input_value: InputValue<MyScalarValue> = serde_json::from_str(&json).unwrap();
     assert_eq!(
         input_value,
         InputValue::Object(vec![(
