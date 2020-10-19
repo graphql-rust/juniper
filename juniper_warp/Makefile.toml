@@ -1,4 +1,3 @@
-
 [env]
 CARGO_MAKE_CARGO_ALL_FEATURES = ""
 
@@ -10,9 +9,11 @@ condition = { rust_version = { min = "1.29.0" }, env = { "TARGET" = "x86_64-pc-w
 
 [tasks.test-verbose]
 condition = { rust_version = { min = "1.29.0" } }
+args = ["test", "--all-features"]
 
 [tasks.test-verbose.windows]
 condition = { rust_version = { min = "1.29.0" }, env = { "TARGET" = "x86_64-pc-windows-msvc" } }
+args = ["test", "--all-features"]
 
 [tasks.ci-coverage-flow]
 condition = { rust_version = { min = "1.29.0" } }

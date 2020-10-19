@@ -1,9 +1,9 @@
 [package]
 name = "async_await"
 version = "0.1.0"
+edition = "2018"
 authors = ["Christoph Herzog <chris@theduke.at>"]
 publish = false
-edition = "2018"
 
 [dependencies]
 juniper = { path = "../../juniper" }

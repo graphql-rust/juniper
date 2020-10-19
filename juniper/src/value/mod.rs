@@ -292,10 +292,9 @@ where
 /// Here are some examples; the resulting JSON will look just like what you
 /// passed in.
 /// ```rust
-/// extern crate juniper;
 /// # use juniper::{Value, DefaultScalarValue, graphql_value};
 /// # type V = Value<DefaultScalarValue>;
-///
+/// #
 /// # fn main() {
 /// # let _: V =
 /// graphql_value!(None);

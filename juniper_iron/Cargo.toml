@@ -1,6 +1,7 @@
 [package]
 name = "juniper_iron"
 version = "0.6.2"
+edition = "2018"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -9,25 +10,19 @@ description = "Iron integration for juniper"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper_iron"
 repository = "https://github.com/graphql-rust/juniper"
-edition = "2018"
 
 [dependencies]
-serde_json = { version = "1.0.2" }
-juniper = { version = "0.14.2", path = "../juniper" }
 futures = "0.3.1"
-
-urlencoded = { version = ">= 0.5, < 0.7" }
+juniper = { version = "0.14.2", path = "../juniper" }
 iron = ">= 0.5, < 0.7"
+serde_json = "1.0.2"
+urlencoded = ">= 0.5, < 0.7"
 
 [dev-dependencies]
+juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema"] }
 iron-test = "0.6"
-router = "0.6"
-mount = "0.4"
 logger = "0.4"
-url = "2"
+mount = "0.4"
 percent-encoding = "2"
-
-[dev-dependencies.juniper]
-version = "0.14.2"
-features = ["expose-test-schema"]
-path = "../juniper"
+router = "0.6"
+url = "2"
