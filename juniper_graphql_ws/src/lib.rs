@@ -665,7 +665,7 @@ mod test {
 
     struct Subscription;
 
-    #[graphql_subscription(context = Context)]
+    #[graphql_subscription(context = Context, scalar = DefaultScalarValue)]
     impl Subscription {
         /// never never emits anything.
         async fn never(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
