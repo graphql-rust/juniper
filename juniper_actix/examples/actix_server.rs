@@ -48,11 +48,10 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .wrap(
-                Cors::new()
+                Cors::default()
                     .allowed_methods(vec!["POST", "GET"])
                     .supports_credentials()
-                    .max_age(3600)
-                    .finish(),
+                    .max_age(3600),
             )
             .service(
                 web::resource("/")
