@@ -2,7 +2,7 @@
 
 If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
-the `object` procedural macro. This macro lets you define GraphQL object
+the `#[graphql_object]` procedural macro. This macro lets you define GraphQL object
 fields in a Rust `impl` block for a type. Note that only GraphQL fields
 can be specified in this `impl` block. If you want to define normal methods on the struct,
 you have to do so in a separate, normal `impl` block. Continuing with the
@@ -12,13 +12,14 @@ macro:
 ```rust
 # #![allow(dead_code)]
 # extern crate juniper;
+# use juniper::graphql_object;
 #
 struct Person {
     name: String,
     age: i32,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Person {
     fn name(&self) -> &str {
         self.name.as_str()
@@ -36,7 +37,7 @@ impl Person {
         // [...]
     }
 }
-
+#
 # fn main() { }
 ```
 
@@ -46,7 +47,9 @@ field resolver. With this syntax, fields can also take arguments:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject};
+#
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -56,14 +59,14 @@ struct House {
     inhabitants: Vec<Person>,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
     fn inhabitant_with_name(&self, name: String) -> Option<&Person> {
         self.inhabitants.iter().find(|p| p.name == name)
     }
 }
-
+#
 # fn main() {}
 ```
 
@@ -79,20 +82,20 @@ the field. Also, the type name can be changed with an alias:
 
 ```rust
 # extern crate juniper;
-
-struct Person {
-}
+# use juniper::graphql_object;
+#
+struct Person;
 
 /// Doc comments are used as descriptions for GraphQL.
-#[juniper::graphql_object(
+#[graphql_object(
     // With this attribute you can change the public GraphQL name of the type.
     name = "PersonObject",
+
     // You can also specify a description here, which will overwrite 
     // a doc comment description.
     description = "...",
 )]
 impl Person {
-
     /// A doc comment on the field will also be used for GraphQL.
     #[graphql(
         // Or provide a description here.
@@ -103,9 +106,7 @@ impl Person {
     }
 
     // Fields can also be renamed if required.
-    #[graphql(
-        name = "myCustomFieldName",
-    )]
+    #[graphql(name = "myCustomFieldName")]
     fn renamed_field() -> bool {
         true
     }
@@ -122,7 +123,7 @@ impl Person {
         true
     }
 }
-
+#
 # fn main() { }
 ```
 
@@ -137,10 +138,11 @@ This will become better once the [Rust RFC 2565](https://github.com/rust-lang/ru
 
 ```rust
 # extern crate juniper;
-
+# use juniper::graphql_object;
+#
 struct Person {}
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Person {
     #[graphql(
         arguments(
@@ -160,7 +162,7 @@ impl Person {
         format!("{} {}", arg1, arg2)
     }
 }
-
+#
 # fn main() { }
 ```
 
@@ -172,5 +174,5 @@ GraphQL fields expose more features than Rust's standard method syntax gives us:
 * Per-argument default values
 * Per-argument descriptions
 
-These, and more features, are described more thorougly in [the reference
+These, and more features, are described more thoroughly in [the reference
 documentation](https://docs.rs/juniper/latest/juniper/macro.object.html).

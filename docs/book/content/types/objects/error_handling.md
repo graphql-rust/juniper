@@ -169,21 +169,21 @@ impl Example {
       Err(CustomError::WhateverNotSet)
     }
 }
-
+#
 # fn main() {}
 ```
 
 The specified structured error information is included in the [`extensions`](https://facebook.github.io/graphql/June2018/#sec-Errors) key:
 
-```js
+```json
 {
-  "errors": [
+  "errors": [{
     "message": "Whatever does not exist",
-    "locations": [{ "line": 2, "column": 4 }]),
+    "locations": [{"line": 2, "column": 4}],
     "extensions": {
       "type": "NO_WHATEVER"
     }
-  ]
+  }]
 }
 ```
 
@@ -213,24 +213,26 @@ possible to return a unique string identifier and have the client present a loca
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+#
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationError {
     field: String,
     message: String,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationErrors {
     errors: Vec<ValidationError>,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationErrors),
@@ -238,7 +240,7 @@ pub enum GraphQLResult {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
         let mut errors = Vec::new();
@@ -264,7 +266,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 ```
 
@@ -310,19 +312,21 @@ contains only fields provided by the function.
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+#
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationError {
     name: Option<String>,
     quantity: Option<String>,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationError),
@@ -330,7 +334,7 @@ pub enum GraphQLResult {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
         let mut error = ValidationError {
@@ -353,7 +357,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 ```
 
