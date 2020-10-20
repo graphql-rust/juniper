@@ -90,6 +90,7 @@
   
 - Renamed the `object` proc macro to `graphql_object`.
 - Removed the `graphql_object!` macro. Use the `#[graphql_object]` proc macro instead.
+- Made `#[graphql_object]` macro to generate code generic over `ScalarValue` by default. ([#779](https://github.com/graphql-rust/juniper/pull/779))
 
 - Renamed the `scalar` proc macro to `graphql_scalar`.
 - Removed the `graphql_scalar!` macro. Use the `#[graphql_scalar]` proc macro instead.
