@@ -232,16 +232,33 @@ pub trait ScalarValue:
     fn as_boolean(&self) -> Option<bool>;
 }
 
+/// [`ScalarValue`] allowing transparent converions.
+///
+/// It's used inside `#[derive(GraphQLScalarValue)]` macro expansion.
+pub trait TransparentScalarValue: ScalarValue {}
+
 /// The default scalar value representation in juniper
 ///
 /// This types closely follows the graphql specification.
 #[derive(Debug, PartialEq, Clone, GraphQLScalarValue)]
+#[graphql(not(transparent))]
 #[allow(missing_docs)]
 pub enum DefaultScalarValue {
     Int(i32),
     Float(f64),
     String(String),
     Boolean(bool),
+}
+
+impl DefaultScalarValue {
+    pub(crate) fn into_generic<S: ScalarValue>(self) -> S {
+        match self {
+            Self::Int(i) => S::from(i),
+            Self::Float(f) => S::from(f),
+            Self::String(s) => S::from(s),
+            Self::Boolean(b) => S::from(b),
+        }
+    }
 }
 
 impl ScalarValue for DefaultScalarValue {

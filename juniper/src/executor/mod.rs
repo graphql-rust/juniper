@@ -29,7 +29,7 @@ use crate::{
         name::Name,
         subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
     },
-    value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue, TransparentScalarValue, Value},
     GraphQLError,
 };
 
@@ -240,9 +240,18 @@ pub trait IntoFieldError<S = DefaultScalarValue> {
     fn into_field_error(self) -> FieldError<S>;
 }
 
-impl<S> IntoFieldError<S> for FieldError<S> {
+impl<S: TransparentScalarValue> IntoFieldError<S> for FieldError<S> {
     fn into_field_error(self) -> FieldError<S> {
         self
+    }
+}
+
+impl<S: ScalarValue> IntoFieldError<S> for FieldError<DefaultScalarValue> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError {
+            message: self.message,
+            extensions: self.extensions.into_generic(),
+        }
     }
 }
 

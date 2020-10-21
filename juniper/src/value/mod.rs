@@ -6,9 +6,13 @@ use std::fmt::{self, Display, Formatter};
 mod object;
 mod scalar;
 
-pub use self::object::Object;
-
-pub use self::scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue};
+pub use self::{
+    object::Object,
+    scalar::{
+        DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue,
+        TransparentScalarValue,
+    },
+};
 
 /// Serializable value returned from query and field execution.
 ///
@@ -103,8 +107,7 @@ where
     }
 
     /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64>
-where {
+    pub fn as_float_value(&self) -> Option<f64> {
         match self {
             Value::Scalar(ref s) => s.as_float(),
             _ => None,
@@ -159,6 +162,19 @@ where {
         Option<&'a String>: From<&'a S>,
     {
         self.as_scalar_value::<String>().map(|s| s as &str)
+    }
+}
+
+impl Value<DefaultScalarValue> {
+    pub(crate) fn into_generic<S: ScalarValue>(self) -> Value<S> {
+        match self {
+            Self::Null => Value::Null,
+            Self::Scalar(s) => Value::Scalar(s.into_generic()),
+            Self::List(l) => Value::List(l.into_iter().map(Value::into_generic).collect()),
+            Self::Object(o) => {
+                Value::Object(o.into_iter().map(|(k, v)| (k, v.into_generic())).collect())
+            }
+        }
     }
 }
 
