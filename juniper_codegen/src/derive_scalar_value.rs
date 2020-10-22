@@ -1,19 +1,11 @@
+use crate::{
+    common::parse::ParseBufferExt as _,
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{
-    parse::{Parse, ParseStream},
-    spanned::Spanned,
-    token, Data, Fields, Ident, Variant,
-};
-
-use crate::{
-    common::parse::{
-        attr::{err, OptionExt as _},
-        ParseBufferExt as _,
-    },
-    result::GraphQLScope,
-    util::{self, filter_attrs, span_container::SpanContainer},
-};
+use syn::{spanned::Spanned, token, Data, Fields, Ident, Variant};
 
 #[derive(Debug, Default)]
 struct TransparentAttributes {
@@ -72,8 +64,10 @@ impl TransparentAttributes {
 }
 
 pub fn impl_scalar_value(ast: &syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
+    let ident = &ast.ident;
+
     match ast.data {
-        Data::Enum(ref enum_data) => impl_scalar_enum(ast, enum_data, error),
+        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, error),
         Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, error),
         Data::Union(_) => Err(error.custom_error(ast.span(), "may not be applied to unions")),
     }
@@ -209,26 +203,10 @@ fn impl_scalar_struct(
 }
 
 fn impl_scalar_enum(
-    ast: &syn::DeriveInput,
+    ident: &syn::Ident,
     data: &syn::DataEnum,
     error: GraphQLScope,
 ) -> syn::Result<TokenStream> {
-    let ident = &ast.ident;
-    let attrs = ScalarValueMeta::from_attrs("graphql", &ast.attrs)?;
-
-    let transparent_impl = if attrs
-        .transparent
-        .map(SpanContainer::into_inner)
-        .unwrap_or(true)
-    {
-        Some(quote! {
-            #[automatically_derived]
-            impl ::juniper::TransparentScalarValue for #ident {}
-        })
-    } else {
-        None
-    };
-
     let froms = data
         .variants
         .iter()
@@ -240,8 +218,6 @@ fn impl_scalar_enum(
     let display = derive_display(data.variants.iter(), ident);
 
     Ok(quote! {
-        #transparent_impl
-
         #(#froms)*
 
         #serialize
@@ -334,75 +310,4 @@ fn derive_from_variant(
             }
         }
     })
-}
-
-/// Available metadata (arguments) behind `#[graphql]` attribute when generating code for
-/// `#[derive(GraphQLScalarValue)]` macro placed on enum.
-#[derive(Debug, Default)]
-struct ScalarValueMeta {
-    /// Explicitly specified whether this [`ScalarValue`] allows transparent conversions of
-    /// [`FieldError`] type.
-    ///
-    /// If absent, then it's assumed "yes" by default.
-    ///
-    /// [`FieldError`]: juniper::FieldError
-    /// [`ScalarValue`]: juniper::ScalarValue
-    pub transparent: Option<SpanContainer<bool>>,
-}
-
-impl Parse for ScalarValueMeta {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut output = Self::default();
-
-        while !input.is_empty() {
-            let ident = input.parse::<syn::Ident>()?;
-            match ident.to_string().as_str() {
-                "transparent" => output
-                    .transparent
-                    .replace(SpanContainer::new(ident.span(), None, true))
-                    .none_or_else(|_| err::dup_arg(&ident))?,
-                "not" => {
-                    if !input.is_next::<token::Paren>() {
-                        return Err(err::unknown_arg(&ident, "not"));
-                    }
-                    let inner;
-                    let _ = syn::parenthesized!(inner in input);
-                    let inner_ident = inner.parse::<syn::Ident>()?;
-                    match inner_ident.to_string().as_str() {
-                        "transparent" => output
-                            .transparent
-                            .replace(SpanContainer::new(inner_ident.span(), None, false))
-                            .none_or_else(|_| err::dup_arg(&inner_ident))?,
-                        name => {
-                            return Err(err::unknown_arg(&inner_ident, name));
-                        }
-                    }
-                }
-                name => {
-                    return Err(err::unknown_arg(&ident, name));
-                }
-            }
-            input.try_parse::<token::Comma>()?;
-        }
-
-        Ok(output)
-    }
-}
-
-impl ScalarValueMeta {
-    /// Tries to merge two [`ScalarValueMeta`]s into a single one, reporting about duplicates, if
-    /// any.
-    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
-        Ok(Self {
-            transparent: try_merge_opt!(transparent: self, another),
-        })
-    }
-
-    /// Parses [`ScalarValueMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
-    /// type definition.
-    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        filter_attrs(name, attrs)
-            .map(|attr| attr.parse_args())
-            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
-    }
 }

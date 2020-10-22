@@ -29,7 +29,7 @@ use crate::{
         name::Name,
         subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
     },
-    value::{DefaultScalarValue, ParseScalarValue, ScalarValue, TransparentScalarValue, Value},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
     GraphQLError,
 };
 
@@ -216,6 +216,18 @@ impl<S> FieldError<S> {
     pub fn extensions(&self) -> &Value<S> {
         &self.extensions
     }
+
+    /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified one.
+    pub fn map_scalar_value<Into>(self) -> FieldError<Into>
+    where
+        S: ScalarValue,
+        Into: ScalarValue,
+    {
+        FieldError {
+            message: self.message,
+            extensions: self.extensions.map_scalar_value(),
+        }
+    }
 }
 
 /// The result of resolving the value of a field of type `T`
@@ -240,18 +252,10 @@ pub trait IntoFieldError<S = DefaultScalarValue> {
     fn into_field_error(self) -> FieldError<S>;
 }
 
-impl<S: TransparentScalarValue> IntoFieldError<S> for FieldError<S> {
-    fn into_field_error(self) -> FieldError<S> {
-        self
-    }
-}
-
-impl<S: ScalarValue> IntoFieldError<S> for FieldError<DefaultScalarValue> {
-    fn into_field_error(self) -> FieldError<S> {
-        FieldError {
-            message: self.message,
-            extensions: self.extensions.into_generic(),
-        }
+impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
+    #[inline]
+    fn into_field_error(self) -> FieldError<S2> {
+        self.map_scalar_value()
     }
 }
 

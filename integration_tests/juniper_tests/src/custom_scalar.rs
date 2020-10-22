@@ -23,36 +23,43 @@ impl ScalarValue for MyScalarValue {
 
     fn as_int(&self) -> Option<i32> {
         match *self {
-            MyScalarValue::Int(ref i) => Some(*i),
+            Self::Int(ref i) => Some(*i),
             _ => None,
         }
     }
 
     fn as_string(&self) -> Option<String> {
         match *self {
-            MyScalarValue::String(ref s) => Some(s.clone()),
+            Self::String(ref s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    fn into_string(self) -> Option<String> {
+        match self {
+            Self::String(s) => Some(s),
             _ => None,
         }
     }
 
     fn as_str(&self) -> Option<&str> {
         match *self {
-            MyScalarValue::String(ref s) => Some(s.as_str()),
+            Self::String(ref s) => Some(s.as_str()),
             _ => None,
         }
     }
 
     fn as_float(&self) -> Option<f64> {
         match *self {
-            MyScalarValue::Int(ref i) => Some(f64::from(*i)),
-            MyScalarValue::Float(ref f) => Some(*f),
+            Self::Int(ref i) => Some(f64::from(*i)),
+            Self::Float(ref f) => Some(*f),
             _ => None,
         }
     }
 
     fn as_boolean(&self) -> Option<bool> {
         match *self {
-            MyScalarValue::Boolean(ref b) => Some(*b),
+            Self::Boolean(ref b) => Some(*b),
             _ => None,
         }
     }

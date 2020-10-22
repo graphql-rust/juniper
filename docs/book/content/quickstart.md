@@ -30,15 +30,15 @@ resolvers, which you will use for the `Query` and `Mutation` roots.
 # extern crate juniper;
 # use std::fmt::Display;
 use juniper::{
-    graphql_object, DefaultScalarValue, EmptySubscription, FieldResult, GraphQLEnum, 
+    graphql_object, EmptySubscription, FieldResult, GraphQLEnum, 
     GraphQLInputObject, GraphQLObject, ScalarValue,
 };
 #
 # struct DatabasePool;
 # impl DatabasePool {
-#     fn get_connection<S: ScalarValue>(&self) -> FieldResult<DatabasePool, S> { Ok(DatabasePool) }
-#     fn find_human<S: ScalarValue>(&self, _id: &str) -> FieldResult<Human, S> { Err("")? }
-#     fn insert_human<S: ScalarValue>(&self, _human: &NewHuman) -> FieldResult<Human, S> { Err("")? }
+#     fn get_connection(&self) -> FieldResult<DatabasePool> { Ok(DatabasePool) }
+#     fn find_human(&self, _id: &str) -> FieldResult<Human> { Err("")? }
+#     fn insert_human(&self, _human: &NewHuman) -> FieldResult<Human> { Err("")? }
 # }
 
 #[derive(GraphQLEnum)]
@@ -87,11 +87,6 @@ struct Query;
     // We need to do this in every type that
     // needs access to the context.
     context = Context,
-    
-    // Here we specify the `ScalarValue` type for the object.
-    // We need to do this if we don't want the implementation
-    // to generic over `ScalarValue` (which is default).
-    scalar = DefaultScalarValue,
 )]
 impl Query {
     fn apiVersion() -> &str {
@@ -126,10 +121,9 @@ struct Mutation;
     scalar = S,
 )]
 impl<S: ScalarValue + Display> Mutation {
-
     fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human, S> {
-        let db = context.pool.get_connection()?;
-        let human: Human = db.insert_human(&new_human)?;
+        let db = context.pool.get_connection().map_err(|e| e.map_scalar_value())?;
+        let human: Human = db.insert_human(&new_human).map_err(|e| e.map_scalar_value())?;
         Ok(human)
     }
 }
