@@ -322,28 +322,31 @@ where
     }
 }
 
-impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T), S>
+impl<'a, S1, S2, T, C> IntoResolvable<'a, S2, T, C> for FieldResult<(&'a T::Context, T), S1>
 where
-    S: ScalarValue,
-    T: GraphQLValue<S>,
+    S1: ScalarValue,
+    S2: ScalarValue,
+    T: GraphQLValue<S2>,
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
-        self.map(Some)
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S2> {
+        self.map(Some).map_err(FieldError::map_scalar_value)
     }
 }
 
-impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
-    for FieldResult<Option<(&'a T::Context, T)>, S>
+impl<'a, S1, S2, T, C> IntoResolvable<'a, S2, Option<T>, C>
+    for FieldResult<Option<(&'a T::Context, T)>, S1>
 where
-    S: ScalarValue,
-    T: GraphQLValue<S>,
+    S1: ScalarValue,
+    S2: ScalarValue,
+    T: GraphQLValue<S2>,
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
+            .map_err(FieldError::map_scalar_value)
     }
 }
 

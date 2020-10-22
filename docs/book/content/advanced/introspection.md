@@ -34,7 +34,7 @@ result can then be converted to JSON for use with tools and libraries such as
 # extern crate juniper;
 # extern crate serde_json;
 use juniper::{
-    graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, FieldResult, 
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
     GraphQLObject, IntrospectionFormat,
 };
 
@@ -50,7 +50,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[graphql_object(context = Context, scalar = DefaultScalarValue)]
+#[graphql_object(context = Context)]
 impl Query {
    fn example(id: String) -> FieldResult<Example> {
        unimplemented!()

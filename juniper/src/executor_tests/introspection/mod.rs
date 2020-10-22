@@ -10,7 +10,7 @@ use crate::{
     graphql_interface, graphql_object, graphql_scalar,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    value::{ParseScalarResult, ParseScalarValue, ScalarValue, Value},
     GraphQLEnum,
 };
 
@@ -79,7 +79,7 @@ async fn test_execution() {
         second: sampleScalar(first: 10 second: 20)
     }
     "#;
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Root,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -128,7 +128,7 @@ async fn enum_introspection() {
         }
     }
     "#;
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Root,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -242,7 +242,7 @@ async fn interface_introspection() {
         }
     }
     "#;
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Root,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -394,7 +394,7 @@ async fn object_introspection() {
         }
     }
     "#;
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Root,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -606,7 +606,7 @@ async fn scalar_introspection() {
         }
     }
     "#;
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Root,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),

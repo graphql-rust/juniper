@@ -60,7 +60,7 @@ impl User {
 
 pub struct Query;
 
-#[graphql_object(context = Context, scalar = DefaultScalarValue)]
+#[graphql_object(context = Context)]
 impl Query {
     fn user_sync_instant(id: i32) -> Result<User, FieldError> {
         Ok(User::new(id))

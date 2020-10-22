@@ -318,7 +318,7 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::fixtures::starwars::schema::{Database, Query},
-        DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode,
+        EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::{self, blocking::Response as ReqwestResponse};
     use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
@@ -380,7 +380,7 @@ mod tests {
         let addr: SocketAddr = ([127, 0, 0, 1], port).into();
 
         let db = Arc::new(Database::new());
-        let root_node = Arc::new(<RootNode<_, _, _, DefaultScalarValue>>::new(
+        let root_node = Arc::new(RootNode::new(
             Query,
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),

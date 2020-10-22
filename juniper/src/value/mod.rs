@@ -167,7 +167,7 @@ impl<S: ScalarValue> Value<S> {
     /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.
     pub fn map_scalar_value<Into: ScalarValue>(self) -> Value<Into> {
         if TypeId::of::<Into>() == TypeId::of::<S>() {
-            // This is totally safe, because we're transmuting the into itself,
+            // This is totally safe, because we're transmuting the value into itself,
             // so no invariants may change and we're just satisfying the type checker.
             let val = mem::ManuallyDrop::new(self);
             unsafe { mem::transmute_copy(&*val) }

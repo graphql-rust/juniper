@@ -33,7 +33,7 @@ async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>,
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -83,7 +83,7 @@ async fn serializes_as_output() {
 
 #[tokio::test]
 async fn does_not_accept_string_literals() {
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -124,7 +124,7 @@ async fn accepts_strings_in_variables() {
 
 #[tokio::test]
 async fn does_not_accept_incorrect_enum_name_in_variables() {
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
@@ -150,7 +150,7 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
 
 #[tokio::test]
 async fn does_not_accept_incorrect_type_in_variables() {
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         TestType,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),

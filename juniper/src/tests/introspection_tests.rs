@@ -6,7 +6,6 @@ use crate::{
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::DefaultScalarValue,
 };
 
 use super::schema_introspection::*;
@@ -22,7 +21,7 @@ async fn test_introspection_query_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
@@ -53,7 +52,7 @@ async fn test_introspection_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
@@ -83,7 +82,7 @@ async fn test_introspection_specific_object_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
@@ -114,7 +113,7 @@ async fn test_introspection_specific_interface_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
@@ -145,7 +144,7 @@ async fn test_introspection_documentation() {
         }
         "#;
     let database = Database::new();
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
@@ -229,7 +228,7 @@ async fn test_introspection_possible_types() {
         }
         "#;
     let database = Database::new();
-    let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+    let schema = RootNode::new(
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),

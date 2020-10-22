@@ -1,6 +1,6 @@
 use juniper::{
-    graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
-    GraphQLEnum, GraphQLError, RootNode, Value,
+    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLError,
+    RootNode, Value,
 };
 
 #[derive(GraphQLEnum)]
@@ -49,7 +49,7 @@ impl User {
 
 struct Query;
 
-#[graphql_object(scalar = DefaultScalarValue)]
+#[graphql_object]
 impl Query {
     fn field_sync(&self) -> &'static str {
         "field_sync"

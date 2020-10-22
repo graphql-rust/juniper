@@ -18,14 +18,14 @@ use crate::{
     graphql_interface, graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, Object, ScalarValue, Value},
+    value::{DefaultScalarValue, Object, Value},
 };
 
 #[derive(Debug)]
 struct Root;
 
-#[graphql_object(impl = InterfaceValue, scalar = S)]
-impl<S: ScalarValue> Root {
+#[graphql_object(impl = InterfaceValue)]
+impl Root {
     fn simple() -> i32 {
         0
     }
@@ -91,7 +91,7 @@ impl<S: ScalarValue> Root {
         0
     }
 
-    fn with_field_result() -> FieldResult<i32, S> {
+    fn with_field_result() -> FieldResult<i32> {
         Ok(0)
     }
 
@@ -99,7 +99,7 @@ impl<S: ScalarValue> Root {
         0
     }
 
-    fn with_return_field_result() -> FieldResult<i32, S> {
+    fn with_return_field_result() -> FieldResult<i32> {
         Ok(0)
     }
 }

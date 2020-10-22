@@ -14,12 +14,11 @@ mod tests {
             schema_language::STATIC_GRAPHQL_SCHEMA_DEFINITION,
         },
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::DefaultScalarValue,
     };
 
     #[test]
     fn dynamic_schema_language_matches_static() {
-        let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+        let schema = RootNode::new(
             Query,
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),

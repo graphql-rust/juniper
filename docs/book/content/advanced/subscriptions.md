@@ -58,8 +58,9 @@ impl Subscription {
         Box::pin(stream)
     }
 }
+#
 # fn main () {}
-```         
+```
 
 
 
@@ -135,11 +136,9 @@ async fn run_subscription() {
     let schema = schema();
     let coordinator = Coordinator::new(schema);
     let req: GraphQLRequest<DefaultScalarValue> = serde_json::from_str(
-        r#"
-        {
+        r#"{
             "query": "subscription { helloWorld }"
-        }
-    "#,
+        }"#,
     )
         .unwrap();
     let ctx = Database::new();
@@ -148,7 +147,7 @@ async fn run_subscription() {
         println!("{}", serde_json::to_string(&result).unwrap());
     }
 }
-
+#
 # fn main() { }
 ```     
 

@@ -34,7 +34,7 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 # struct QueryRoot;
 # struct Database { users: HashMap<String, User> }
 #
-# #[juniper::graphql_object(context = Database, scalar = juniper::DefaultScalarValue)]
+# #[juniper::graphql_object(context = Database)]
 # impl User {
 #     fn id(&self) -> FieldResult<&String> {
 #         Ok(&self.id)
@@ -220,7 +220,7 @@ where
     ) -> Self {
         GraphQLHandler {
             context_factory,
-            root_node: RootNode::new(query, mutation, subscription),
+            root_node: RootNode::new_with_scalar_value(query, mutation, subscription),
         }
     }
 

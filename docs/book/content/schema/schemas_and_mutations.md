@@ -35,7 +35,7 @@ impl Root {
 # unimplemented!()
     }
 }
-
+#
 # fn main() { }
 ```
 
@@ -47,18 +47,18 @@ that performs some mutating side-effect such as updating a database.
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-# use juniper::{graphql_object, FieldResult, GraphQLObject, ScalarValue};
+# use juniper::{graphql_object, FieldResult, GraphQLObject};
 # #[derive(GraphQLObject)] struct User { name: String }
 struct Mutations;
 
-#[graphql_object(scalar = S)]
-impl<S: ScalarValue> Mutations {
-    fn signUpUser(name: String, email: String) -> FieldResult<User, S> {
+#[graphql_object]
+impl Mutations {
+    fn signUpUser(name: String, email: String) -> FieldResult<User> {
         // Validate inputs and save user in database...
-# unimplemented!()
+#       unimplemented!()
     }
 }
-
+#
 # fn main() { }
 ```
 
@@ -74,7 +74,7 @@ use juniper::{
 
 struct Query;
 
-#[graphql_object(scalar = DefaultScalarValue)]
+#[graphql_object]
 impl Query {
     fn hello(&self) -> FieldResult<&str> {
         Ok("hello world")

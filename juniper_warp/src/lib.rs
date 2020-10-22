@@ -64,7 +64,7 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 /// ```
 /// # use std::sync::Arc;
 /// # use warp::Filter;
-/// # use juniper::{graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode};
+/// # use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
 /// type UserId = String;
@@ -85,11 +85,7 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 ///     }
 /// }
 ///
-/// let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
-///     QueryRoot,
-///     EmptyMutation::new(),
-///     EmptySubscription::new(),
-/// );
+/// let schema = RootNode::new(QueryRoot, EmptyMutation::new(), EmptySubscription::new());
 ///
 /// let app_state = Arc::new(AppState(vec![3, 4, 5]));
 /// let app_state = warp::any().map(move || app_state.clone());
@@ -688,7 +684,7 @@ mod tests_http_harness {
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::fixtures::starwars::schema::{Database, Query},
-        DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode,
+        EmptyMutation, EmptySubscription, RootNode,
     };
     use warp::{
         filters::{path, BoxedFilter},
@@ -703,7 +699,7 @@ mod tests_http_harness {
 
     impl TestWarpIntegration {
         fn new(is_sync: bool) -> Self {
-            let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+            let schema = RootNode::new(
                 Query,
                 EmptyMutation::<Database>::new(),
                 EmptySubscription::<Database>::new(),

@@ -256,7 +256,6 @@ mod integration_test {
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
         value::Value,
-        DefaultScalarValue,
     };
 
     #[tokio::test]
@@ -321,7 +320,7 @@ mod integration_test {
         }
         "#;
 
-        let schema = <RootNode<_, _, _, DefaultScalarValue>>::new(
+        let schema = RootNode::new(
             Root,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),

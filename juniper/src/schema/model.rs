@@ -88,6 +88,20 @@ pub enum DirectiveLocation {
     InlineFragment,
 }
 
+impl<'a, QueryT, MutationT, SubscriptionT>
+    RootNode<'a, QueryT, MutationT, SubscriptionT, DefaultScalarValue>
+where
+    QueryT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
+    MutationT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
+    SubscriptionT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
+{
+    /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
+    /// parametrizing it with a [`DefaultScalarValue`].
+    pub fn new(query: QueryT, mutation: MutationT, subscription: SubscriptionT) -> Self {
+        Self::new_with_info(query, mutation, subscription, (), (), ())
+    }
+}
+
 impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue + 'a,
@@ -95,16 +109,14 @@ where
     MutationT: GraphQLType<S, TypeInfo = ()>,
     SubscriptionT: GraphQLType<S, TypeInfo = ()>,
 {
-    /// Construct a new root node from query, mutation, and subscription nodes
-    ///
-    /// If the schema should not support mutations, use the
-    /// `new` constructor instead.
-    pub fn new(
-        query_obj: QueryT,
-        mutation_obj: MutationT,
-        subscription_obj: SubscriptionT,
+    /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
+    /// parametrizing it with the provided [`ScalarValue`].
+    pub fn new_with_scalar_value(
+        query: QueryT,
+        mutation: MutationT,
+        subscription: SubscriptionT,
     ) -> Self {
-        RootNode::new_with_info(query_obj, mutation_obj, subscription_obj, (), (), ())
+        RootNode::new_with_info(query, mutation, subscription, (), (), ())
     }
 
     #[cfg(feature = "schema-language")]
@@ -560,7 +572,7 @@ mod test {
 
     #[cfg(feature = "graphql-parser-integration")]
     mod graphql_parser_integration {
-        use crate::{graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription};
+        use crate::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 
         #[test]
         fn graphql_parser_doc() {
@@ -571,7 +583,7 @@ mod test {
                     true
                 }
             };
-            let schema = <crate::RootNode<_, _, _, DefaultScalarValue>>::new(
+            let schema = RootNode::new(
                 Query,
                 EmptyMutation::<()>::new(),
                 EmptySubscription::<()>::new(),
@@ -598,8 +610,8 @@ mod test {
     #[cfg(feature = "schema-language")]
     mod schema_language {
         use crate::{
-            graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, GraphQLEnum,
-            GraphQLInputObject, GraphQLObject, GraphQLUnion,
+            graphql_object, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject,
+            GraphQLObject, GraphQLUnion, RootNode,
         };
 
         #[test]
@@ -664,7 +676,7 @@ mod test {
                 }
             };
 
-            let schema = <crate::RootNode<_, _, _, DefaultScalarValue>>::new(
+            let schema = RootNode::new(
                 Query,
                 EmptyMutation::<()>::new(),
                 EmptySubscription::<()>::new(),

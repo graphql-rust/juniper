@@ -827,7 +827,7 @@ where
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let mut root = RootNode::new(r, m, s);
+    let mut root = RootNode::new_with_scalar_value(r, m, s);
 
     root.schema.add_directive(DirectiveType::new(
         "onQuery",
