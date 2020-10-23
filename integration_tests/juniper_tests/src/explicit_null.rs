@@ -51,22 +51,31 @@ async fn explicit_null() {
         ),
         &[
             ("emptyObj".to_string(), InputValue::Object(vec![])),
-            ("literalNullObj".to_string(), InputValue::object(vec![("field", InputValue::null())].into_iter().collect())),
-        ].iter().cloned().collect(),
+            (
+                "literalNullObj".to_string(),
+                InputValue::object(vec![("field", InputValue::null())].into_iter().collect()),
+            ),
+        ]
+        .iter()
+        .cloned()
+        .collect(),
         &ctx,
     )
     .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
-    assert_eq!(data, graphql_value!({
-        "literalOneIsExplicitNull": false,
-        "literalNullIsExplicitNull": true,
-        "noArgIsExplicitNull": false,
-        "literalOneFieldIsExplicitNull": false,
-        "literalNullFieldIsExplicitNull": true,
-        "noFieldIsExplicitNull": false,
-        "emptyVariableObjectFieldIsExplicitNull": false,
-        "literalNullVariableObjectFieldIsExplicitNull": true,
-    }));
+    assert_eq!(
+        data,
+        graphql_value!({
+            "literalOneIsExplicitNull": false,
+            "literalNullIsExplicitNull": true,
+            "noArgIsExplicitNull": false,
+            "literalOneFieldIsExplicitNull": false,
+            "literalNullFieldIsExplicitNull": true,
+            "noFieldIsExplicitNull": false,
+            "emptyVariableObjectFieldIsExplicitNull": false,
+            "literalNullVariableObjectFieldIsExplicitNull": true,
+        })
+    );
 }

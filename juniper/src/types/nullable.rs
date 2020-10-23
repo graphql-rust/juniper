@@ -98,7 +98,7 @@ impl<T> Nullable<T> {
     /// Panics if the value is not a `Some` with a custom panic message provided by `msg`.
     #[inline]
     #[track_caller]
-    pub fn expect(self, msg:&str) -> T {
+    pub fn expect(self, msg: &str) -> T {
         self.some().expect(msg)
     }
 
