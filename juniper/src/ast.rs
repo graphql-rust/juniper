@@ -153,6 +153,13 @@ pub type Document<'a, S> = Vec<Definition<'a, S>>;
 pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn from_input_value(v: &InputValue<S>) -> Option<Self>;
+
+    /// Performs the conversion from an absent value (e.g. to distinguish between implicit and
+    /// explicit null). The default implementation just uses `from_input_value` as if an explicit
+    /// null were provided. This conversion must not fail.
+    fn from_implicit_null() -> Self {
+        Self::from_input_value(&InputValue::<S>::Null).unwrap()
+    }
 }
 
 /// Losslessly clones a Rust data type into an InputValue.

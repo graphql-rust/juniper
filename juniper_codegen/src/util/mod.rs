@@ -1701,34 +1701,35 @@ impl GraphQLTypeDefiniton {
             })
             .collect::<Vec<_>>();
 
-        let from_inputs = self.fields.iter().map(|field| {
-            let field_ident = &field.resolver_code;
-            let field_name = &field.name;
+        let from_inputs = self
+            .fields
+            .iter()
+            .map(|field| {
+                let field_ident = &field.resolver_code;
+                let field_name = &field.name;
 
-            // Build from_input clause.
-            let from_input_default = match field.default {
-                Some(ref def) => {
-                    quote! {
-                        Some(&&::juniper::InputValue::Null) | None if true => #def,
+                // Build from_input clause.
+                let from_input_default = match field.default {
+                    Some(ref def) => {
+                        quote! {
+                            Some(&&::juniper::InputValue::Null) | None if true => #def,
+                        }
                     }
-                }
-                None => quote! {},
-            };
+                    None => quote! {},
+                };
 
-            quote!(
-                #field_ident: {
-                    // TODO: investigate the unwraps here, they seem dangerous!
-                    match obj.get(#field_name) {
-                        #from_input_default
-                        Some(ref v) => ::juniper::FromInputValue::from_input_value(v).unwrap(),
-                        None => {
-                            ::juniper::FromInputValue::from_input_value(&::juniper::InputValue::<#scalar>::null())
-                            .unwrap()
-                        },
-                    }
-                },
-            )
-        }).collect::<Vec<_>>();
+                quote!(
+                    #field_ident: {
+                        // TODO: investigate the unwraps here, they seem dangerous!
+                        match obj.get(#field_name) {
+                            #from_input_default
+                            Some(ref v) => ::juniper::FromInputValue::from_input_value(v).unwrap(),
+                            None => ::juniper::FromInputValue::<#scalar>::from_implicit_null(),
+                        }
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
 
         let to_inputs = self
             .fields

@@ -91,8 +91,6 @@ where
                 if !args.contains_key(arg.name.as_str()) || args[arg.name.as_str()].is_null() {
                     if let Some(ref default_value) = arg.default_value {
                         args.insert(arg.name.as_str(), default_value.clone());
-                    } else {
-                        args.insert(arg.name.as_str(), InputValue::null());
                     }
                 }
             }
