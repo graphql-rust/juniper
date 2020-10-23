@@ -158,7 +158,8 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// explicit null). The default implementation just uses `from_input_value` as if an explicit
     /// null were provided. This conversion must not fail.
     fn from_implicit_null() -> Self {
-        Self::from_input_value(&InputValue::<S>::Null).unwrap()
+        Self::from_input_value(&InputValue::<S>::Null)
+            .expect("input value conversion from null must not fail")
     }
 }
 
