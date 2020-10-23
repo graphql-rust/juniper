@@ -169,6 +169,7 @@ pub use crate::{
         async_await::{DynGraphQLValueAsync, GraphQLTypeAsync, GraphQLValueAsync},
         base::{Arguments, DynGraphQLValue, GraphQLType, GraphQLValue, TypeKind},
         marker::{self, GraphQLInterface, GraphQLUnion},
+        nullable::Nullable,
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{
             ExecutionOutput, GraphQLSubscriptionType, GraphQLSubscriptionValue,

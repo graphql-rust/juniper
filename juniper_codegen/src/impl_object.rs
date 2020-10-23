@@ -46,6 +46,13 @@ fn create(
 
     let top_attrs = &_impl.attrs;
 
+    let scalar = _impl
+        .attrs
+        .scalar
+        .as_ref()
+        .map(|s| quote!( #s ))
+        .unwrap_or_else(|| quote!(::juniper::DefaultScalarValue));
+
     let fields = _impl
         .methods
         .iter()
@@ -87,10 +94,6 @@ fn create(
                                 .apply(&arg_name)
                         });
 
-                    let expect_text = format!(
-                        "Internal error: missing argument {} - validation must have failed",
-                        &final_name
-                    );
                     let mut_modifier = if is_mut { quote!(mut) } else { quote!() };
 
                     if final_name.starts_with("__") {
@@ -109,7 +112,7 @@ fn create(
                     let resolver = quote!(
                         let #mut_modifier #arg_ident = args
                             .get::<#ty>(#final_name)
-                            .expect(#expect_text);
+                            .unwrap_or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null);
                     );
 
                     let field_type = util::GraphQLTypeDefinitionFieldArg {
