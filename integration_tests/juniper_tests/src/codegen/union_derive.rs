@@ -58,7 +58,7 @@ where
     Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
     S: ScalarValue + 'q,
 {
-    RootNode::new(
+    RootNode::new_with_scalar_value(
         query_root,
         EmptyMutation::<C>::new(),
         EmptySubscription::<C>::new(),

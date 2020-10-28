@@ -190,7 +190,8 @@ async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new(), TestSubscriptionType);
+    let schema =
+        RootNode::new_with_scalar_value(TestType, EmptyMutation::<()>::new(), TestSubscriptionType);
 
     let (result, errs) = execute(query, None, &schema, &vars, &())
         .await
