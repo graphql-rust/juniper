@@ -34,6 +34,8 @@
   - `RuleError`
   
 - Support `chrono-tz::Tz` scalar behind a `chrono-tz` feature flag. ([#519](https://github.com/graphql-rust/juniper/pull/519))
+
+- Added support for distinguishing between between implicit and explicit null. ([#795](https://github.com/graphql-rust/juniper/pull/795))
   
 ## Fixes
 
