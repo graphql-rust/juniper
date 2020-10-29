@@ -246,6 +246,12 @@ impl<S> IntoFieldError<S> for FieldError<S> {
     }
 }
 
+impl<S> IntoFieldError<S> for std::convert::Infallible {
+    fn into_field_error(self) -> FieldError<S> {
+        match self {}
+    }
+}
+
 #[doc(hidden)]
 pub trait IntoResolvable<'a, S, T, C>
 where
