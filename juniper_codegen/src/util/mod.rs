@@ -1232,11 +1232,10 @@ impl GraphQLTypeDefiniton {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
 
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
             // Insert ScalarValue constraint.
-            where_clause
+            generics.params.push(parse_quote!(__S));
+            generics
+                .make_where_clause()
                 .predicates
                 .push(parse_quote!(__S: ::juniper::ScalarValue));
         }
@@ -1247,6 +1246,15 @@ impl GraphQLTypeDefiniton {
             None
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let mut generics_with_send_sync = generics.clone();
+        if self.scalar.is_none() && self.generic_scalar {
+            generics_with_send_sync
+                .make_where_clause()
+                .predicates
+                .push(parse_quote!(__S: Send + Sync));
+        }
+        let (_, _, where_clause_with_send_sync) = generics_with_send_sync.split_for_impl();
 
         let resolve_matches_async = self.fields.iter().filter(|field| field.is_async).map(
             |field| {
@@ -1378,7 +1386,7 @@ impl GraphQLTypeDefiniton {
 
         let subscription_implementation = quote!(
             impl#impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty #type_generics_tokens
-            #where_clause
+            #where_clause_with_send_sync
             {
                 #[allow(unused_variables)]
                 fn resolve_field_into_stream<

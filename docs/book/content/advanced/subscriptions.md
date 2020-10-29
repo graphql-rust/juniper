@@ -29,7 +29,7 @@ sequentially:
 # extern crate juniper;
 # extern crate juniper_subscriptions;
 # extern crate tokio;
-# use juniper::{graphql_object, graphql_subscription, DefaultScalarValue, FieldError};
+# use juniper::{graphql_object, graphql_subscription, FieldError};
 # use futures::Stream;
 # use std::pin::Pin;
 #
@@ -48,7 +48,7 @@ pub struct Subscription;
 
 type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 
-#[graphql_subscription(context = Database, scalar = DefaultScalarValue)]
+#[graphql_subscription(context = Database)]
 impl Subscription {
     async fn hello_world() -> StringStream {
         let stream = tokio::stream::iter(vec![
@@ -87,7 +87,8 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # extern crate tokio;
 # use juniper::{
 #     http::GraphQLRequest,
-#     graphql_object, graphql_subscription, DefaultScalarValue, EmptyMutation, FieldError, 
+#     graphql_object, graphql_subscription, 
+#     DefaultScalarValue, EmptyMutation, FieldError, 
 #     RootNode, SubscriptionCoordinator,
 # };
 # use juniper_subscriptions::Coordinator;
@@ -118,7 +119,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # 
 # type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 # 
-# #[graphql_subscription(context = Database, scalar = DefaultScalarValue)]
+# #[graphql_subscription(context = Database)]
 # impl Subscription {
 #     async fn hello_world() -> StringStream {
 #         let stream =

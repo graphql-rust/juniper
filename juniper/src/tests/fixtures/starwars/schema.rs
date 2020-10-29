@@ -2,9 +2,7 @@
 
 use std::{collections::HashMap, pin::Pin};
 
-use crate::{
-    graphql_interface, graphql_object, graphql_subscription, Context, GraphQLEnum, ScalarValue,
-};
+use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLEnum};
 
 pub struct Query;
 
@@ -34,9 +32,9 @@ pub struct Subscription;
 
 type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
+#[graphql_subscription(context = Database)]
 /// Super basic subscription fixture
-#[graphql_subscription(context = Database, scalar = S)]
-impl<S: ScalarValue + Send + Sync> Subscription {
+impl Subscription {
     async fn async_human(context: &Database) -> HumanStream {
         let human = context.get_human("1000").unwrap().clone();
         Box::pin(futures::stream::once(futures::future::ready(human)))

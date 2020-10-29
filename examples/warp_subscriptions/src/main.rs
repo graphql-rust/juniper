@@ -105,7 +105,7 @@ type UsersStream = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
 
 struct Subscription;
 
-#[graphql_subscription(context = Context, scalar = DefaultScalarValue)]
+#[graphql_subscription(context = Context)]
 impl Subscription {
     async fn users() -> UsersStream {
         let mut counter = 0;

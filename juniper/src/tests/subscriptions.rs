@@ -42,7 +42,7 @@ type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
 struct MySubscription;
 
-#[crate::graphql_subscription(context = MyContext, scalar = DefaultScalarValue)]
+#[crate::graphql_subscription(context = MyContext)]
 impl MySubscription {
     async fn async_human() -> HumanStream {
         Box::pin(futures::stream::once(async {

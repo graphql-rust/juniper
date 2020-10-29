@@ -52,7 +52,7 @@ impl RandomHuman {
 type RandomHumanStream =
     Pin<Box<dyn futures::Stream<Item = Result<RandomHuman, FieldError>> + Send>>;
 
-#[graphql_subscription(context = Database, scalar = DefaultScalarValue)]
+#[graphql_subscription(context = Database)]
 impl Subscription {
     #[graphql(
         description = "A random humanoid creature in the Star Wars universe every 3 seconds. Second result will be an error."
