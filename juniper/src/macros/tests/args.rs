@@ -74,16 +74,17 @@ impl Root {
         arg1 + arg2
     }
 
-    fn attr_arg_descr(
-       #[graphql(description = "The arg")]
-       arg: i32) -> i32
-    { 0 }
+    fn attr_arg_descr(#[graphql(description = "The arg")] arg: i32) -> i32 {
+        0
+    }
 
     fn attr_arg_descr_collapse(
-       #[graphql(description = "The first arg")]
-       #[graphql(description = "and more details")]
+        #[graphql(description = "The first arg")]
+        #[graphql(description = "and more details")]
         arg: i32,
-    ) -> i32 { 0 }
+    ) -> i32 {
+        0
+    }
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {
@@ -579,71 +580,71 @@ async fn introspect_field_multi_args_descr_trailing_comma() {
     .await;
 }
 
- #[tokio::test]
- async fn introspect_field_attr_arg_descr() {
-     run_args_info_query("attrArgDescr", |args| {
-         assert_eq!(args.len(), 1);
+#[tokio::test]
+async fn introspect_field_attr_arg_descr() {
+    run_args_info_query("attrArgDescr", |args| {
+        assert_eq!(args.len(), 1);
 
-         assert!(args.contains(&Value::object(
-             vec![
-                 ("name", Value::scalar("arg")),
-                 ("description", Value::scalar("The arg")),
-                 ("defaultValue", Value::null()),
-                 (
-                     "type",
-                     Value::object(
-                         vec![
-                             ("name", Value::null()),
-                             (
-                                 "ofType",
-                                 Value::object(
-                                     vec![("name", Value::scalar("Int"))].into_iter().collect(),
-                                 ),
-                             ),
-                         ]
-                         .into_iter()
-                         .collect(),
-                     ),
-                 ),
-             ]
-             .into_iter()
-             .collect(),
-         )));
-     });
- }
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg")),
+                ("description", Value::scalar("The arg")),
+                ("defaultValue", Value::null()),
+                (
+                    "type",
+                    Value::object(
+                        vec![
+                            ("name", Value::null()),
+                            (
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+                                ),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    });
+}
 
- #[tokio::test]
- async fn introspect_field_attr_arg_descr_collapse() {
-     run_args_info_query("attrArgDescrCollapse", |args| {
-         assert_eq!(args.len(), 1);
+#[tokio::test]
+async fn introspect_field_attr_arg_descr_collapse() {
+    run_args_info_query("attrArgDescrCollapse", |args| {
+        assert_eq!(args.len(), 1);
 
-         assert!(args.contains(&Value::object(
-             vec![
-                 ("name", Value::scalar("arg")),
-                 ("description", Value::scalar("The arg\nand more details")),
-                 ("defaultValue", Value::null()),
-                 (
-                     "type",
-                     Value::object(
-                         vec![
-                             ("name", Value::null()),
-                             (
-                                 "ofType",
-                                 Value::object(
-                                     vec![("name", Value::scalar("Int"))].into_iter().collect(),
-                                 ),
-                             ),
-                         ]
-                         .into_iter()
-                         .collect(),
-                     ),
-                 ),
-             ]
-             .into_iter()
-             .collect(),
-         )));
-     });
- }
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg")),
+                ("description", Value::scalar("The arg\nand more details")),
+                ("defaultValue", Value::null()),
+                (
+                    "type",
+                    Value::object(
+                        vec![
+                            ("name", Value::null()),
+                            (
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+                                ),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    });
+}
 
 #[tokio::test]
 async fn introspect_field_arg_with_default() {
