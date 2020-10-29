@@ -373,7 +373,7 @@ where
         let errors = ctx.into_errors();
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
-            __juniper_trace!("GraphQLError: {:?}", gql_error);
+            __juniper_trace!("validation_error: {:?}", gql_error);
 
             return Err(gql_error);
         }
@@ -386,7 +386,7 @@ where
 
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
-            __juniper_trace!("GraphQLError: {:?}", gql_error);
+            __juniper_trace!("validation_error: {:?}", gql_error);
 
             return Err(gql_error);
         }
