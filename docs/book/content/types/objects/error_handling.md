@@ -28,13 +28,13 @@ use std::{
     fs::{File},
     io::{Read},
 };
-use juniper::{graphql_object, DefaultScalarValue, FieldResult};
+use juniper::{graphql_object, FieldResult};
 
 struct Example {
     filename: PathBuf,
 }
 
-#[graphql_object(scalar = DefaultScalarValue)]
+#[graphql_object]
 impl Example {
     fn contents() -> FieldResult<String> {
         let mut file = File::open(&self.filename)?;

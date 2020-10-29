@@ -24,15 +24,15 @@ object in Juniper, most commonly using the `graphql_object` proc macro:
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-# use juniper::{graphql_object, DefaultScalarValue, FieldResult, GraphQLObject};
+# use juniper::{graphql_object, FieldResult, GraphQLObject};
 # #[derive(GraphQLObject)] struct User { name: String }
 struct Root;
 
-#[graphql_object(scalar = DefaultScalarValue)]
+#[graphql_object]
 impl Root {
     fn userWithUsername(username: String) -> FieldResult<Option<User>> {
         // Look up user in database...
-# unimplemented!()
+#       unimplemented!()
     }
 }
 #
@@ -69,7 +69,7 @@ Many tools in the GraphQL ecosystem require the schema to be defined in the [Gra
 ```rust
 # extern crate juniper;
 use juniper::{
-    graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, FieldResult, RootNode,
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode,
 };
 
 struct Query;

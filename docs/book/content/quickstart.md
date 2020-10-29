@@ -151,7 +151,7 @@ You can invoke `juniper::execute` directly to run a GraphQL query:
 # // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
 use juniper::{
-    graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, FieldResult, 
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
     GraphQLEnum, Variables,
 };
 
@@ -169,13 +169,12 @@ impl juniper::Context for Ctx {}
 
 struct Query;
 
-#[graphql_object(context = Ctx, scalar = DefaultScalarValue)]
+#[graphql_object(context = Ctx)]
 impl Query {
     fn favoriteEpisode(context: &Ctx) -> FieldResult<Episode> {
         Ok(context.0)
     }
 }
-
 
 // A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.

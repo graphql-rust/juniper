@@ -544,7 +544,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -557,7 +557,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Droid);
+        let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -1067,7 +1067,7 @@ mod full_featured {
 
     struct QueryRoot;
 
-    #[graphql_object(context = CustomContext)]
+    #[graphql_object(context = CustomContext, scalar = DefaultScalarValue)]
     impl QueryRoot {
         fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_, ()>> {
             let ch: Box<DynCharacter<'_, ()>> = match ctx {

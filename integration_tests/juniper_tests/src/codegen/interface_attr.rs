@@ -52,7 +52,7 @@ mod no_implers {
             unimplemented!()
         }
 
-        fn hero(&self) -> Box<DynHero<'_, _>> {
+        fn hero(&self) -> Box<DynHero<'_, __S>> {
             unimplemented!()
         }
     }
@@ -183,8 +183,8 @@ mod trivial {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -200,8 +200,8 @@ mod trivial {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -705,8 +705,8 @@ mod trivial_async {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -722,8 +722,8 @@ mod trivial_async {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -1068,8 +1068,8 @@ mod explicit_async {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -1085,8 +1085,8 @@ mod explicit_async {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -1318,8 +1318,8 @@ mod fallible_field {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -1335,8 +1335,8 @@ mod fallible_field {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -1584,8 +1584,8 @@ mod generic {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -1601,8 +1601,8 @@ mod generic {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_, u8, ()>> {
-            let ch: Box<DynHero<'_, u8, ()>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, u8, (), S>> {
+            let ch: Box<DynHero<'_, u8, (), _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -1828,8 +1828,8 @@ mod generic_async {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -1845,8 +1845,8 @@ mod generic_async {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_, u8, ()>> {
-            let ch: Box<DynHero<'_, u8, ()>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, u8, (), S>> {
+            let ch: Box<DynHero<'_, u8, (), _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -2072,8 +2072,8 @@ mod generic_lifetime_async {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue<'_, ()> {
             match self {
                 Self::Human => Human {
@@ -2089,8 +2089,8 @@ mod generic_lifetime_async {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_, '_, ()>> {
-            let ch: Box<DynHero<'_, '_, ()>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, '_, (), S>> {
+            let ch: Box<DynHero<'_, '_, (), _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -2299,8 +2299,8 @@ mod argument {
 
     struct QueryRoot;
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
                 id: "human-32".to_string(),
@@ -2309,7 +2309,7 @@ mod argument {
             .into()
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
             Box::new(Human {
                 id: "human-32".to_string(),
                 home_planet: "earth".to_string(),
@@ -3430,9 +3430,9 @@ mod explicit_generic_scalar {
         Droid,
     }
 
-    #[graphql_object(scalar = DefaultScalarValue)]
-    impl QueryRoot {
-        fn character(&self) -> CharacterValue {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
+        fn character(&self) -> CharacterValue<S> {
             match self {
                 Self::Human => Human {
                     id: "human-32".to_string(),
@@ -3447,8 +3447,8 @@ mod explicit_generic_scalar {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -3698,8 +3698,8 @@ mod explicit_custom_context {
         Droid,
     }
 
-    #[graphql_object(context = CustomContext)]
-    impl QueryRoot {
+    #[graphql_object(context = CustomContext, scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -3715,8 +3715,8 @@ mod explicit_custom_context {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -3944,8 +3944,8 @@ mod inferred_custom_context_from_field {
         Droid,
     }
 
-    #[graphql_object(context = CustomContext)]
-    impl QueryRoot {
+    #[graphql_object(context = CustomContext, scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -3961,8 +3961,8 @@ mod inferred_custom_context_from_field {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -4196,8 +4196,8 @@ mod inferred_custom_context_from_downcast {
         Droid,
     }
 
-    #[graphql_object(context = Database)]
-    impl QueryRoot {
+    #[graphql_object(context = Database, scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -4213,8 +4213,8 @@ mod inferred_custom_context_from_downcast {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -4806,8 +4806,8 @@ mod downcast_method {
         Droid,
     }
 
-    #[graphql_object]
-    impl QueryRoot {
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -4823,8 +4823,8 @@ mod downcast_method {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
@@ -5071,8 +5071,8 @@ mod external_downcast {
         Droid,
     }
 
-    #[graphql_object(context = Database)]
-    impl QueryRoot {
+    #[graphql_object(context = Database, scalar = S)]
+    impl<S: ScalarValue + Send + Sync> QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
@@ -5088,8 +5088,8 @@ mod external_downcast {
             }
         }
 
-        fn hero(&self) -> Box<DynHero<'_>> {
-            let ch: Box<DynHero<'_>> = match self {
+        fn hero(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
