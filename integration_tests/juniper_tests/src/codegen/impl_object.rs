@@ -83,13 +83,13 @@ where
 }
 
 mod fallible {
-    use juniper::{graphql_object, FieldError, ScalarValue};
+    use juniper::{graphql_object, FieldError};
 
     struct Obj;
 
-    #[graphql_object(scalar = S)]
-    impl<S: ScalarValue> Obj {
-        fn test(&self, arg: String) -> Result<String, FieldError<S>> {
+    #[graphql_object]
+    impl Obj {
+        fn test(&self, arg: String) -> Result<String, FieldError> {
             Ok(arg)
         }
     }

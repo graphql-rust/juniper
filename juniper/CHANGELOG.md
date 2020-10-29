@@ -125,6 +125,8 @@
 - Integration tests:
   - Renamed `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`.
   - Added support for `application/graphql` POST request.
+  
+- `RootNode::new()` now returns `RootNode` parametrized with `DefaultScalarValue`. For custom `ScalarValue` use `RootNode::new_with_scalar_value()` instead. ([#779](https://github.com/graphql-rust/juniper/pull/779))
 
 - When using `LookAheadMethods` to access child selections, children are always found using their alias if it exists rather than their name. ([#662](https://github.com/graphql-rust/juniper/pull/662))
   - These methods are also deprecated in favor of the new `LookAheadMethods::children()` method.

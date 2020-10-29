@@ -5,11 +5,7 @@ use juniper::{
 };
 
 #[derive(GraphQLObject, Debug, PartialEq)]
-#[graphql(
-    name = "MyObj",
-    description = "obj descr",
-    scalar = DefaultScalarValue
-)]
+#[graphql(name = "MyObj", description = "obj descr")]
 struct Obj {
     regular_field: bool,
     #[graphql(
@@ -21,7 +17,6 @@ struct Obj {
 }
 
 #[derive(GraphQLObject, Debug, PartialEq)]
-#[graphql(scalar = DefaultScalarValue)]
 struct Nested {
     obj: Obj,
 }
@@ -83,7 +78,7 @@ struct WithCustomContext {
 
 struct Query;
 
-#[graphql_object(scalar = DefaultScalarValue)]
+#[graphql_object]
 impl Query {
     fn obj() -> Obj {
         Obj {
@@ -136,7 +131,7 @@ impl Query {
 
 struct NoRenameQuery;
 
-#[graphql_object(rename = "none", scalar = DefaultScalarValue)]
+#[graphql_object(rename = "none")]
 impl NoRenameQuery {
     fn obj() -> Obj {
         Obj {

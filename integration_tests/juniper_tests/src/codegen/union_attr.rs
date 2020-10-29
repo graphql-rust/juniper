@@ -51,12 +51,25 @@ struct EwokCustomContext {
     funny: bool,
 }
 
-fn schema<'q, S, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
+fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
+where
+    Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
+{
+    RootNode::new(
+        query_root,
+        EmptyMutation::<C>::new(),
+        EmptySubscription::<C>::new(),
+    )
+}
+
+fn schema_with_scalar<'q, S, C, Q>(
+    query_root: Q,
+) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
 where
     Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
     S: ScalarValue + 'q,
 {
-    RootNode::new(
+    RootNode::new_with_scalar_value(
         query_root,
         EmptyMutation::<C>::new(),
         EmptySubscription::<C>::new(),
@@ -127,7 +140,7 @@ mod trivial {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -140,7 +153,7 @@ mod trivial {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Droid);
+        let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -159,7 +172,7 @@ mod trivial {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -175,7 +188,7 @@ mod trivial {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -191,7 +204,7 @@ mod trivial {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -264,7 +277,7 @@ mod generic {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -277,7 +290,7 @@ mod generic {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Droid);
+        let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -296,7 +309,7 @@ mod generic {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -347,7 +360,7 @@ mod description_from_doc_comment {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -366,7 +379,7 @@ mod description_from_doc_comment {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -420,7 +433,7 @@ mod explicit_name_and_description {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -439,7 +452,7 @@ mod explicit_name_and_description {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -455,7 +468,7 @@ mod explicit_name_and_description {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -531,7 +544,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -544,7 +557,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Droid);
+        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -622,7 +635,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<MyScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -635,7 +648,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<MyScalarValue, _, _>(QueryRoot::Droid);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -709,7 +722,7 @@ mod explicit_custom_context {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
@@ -722,7 +735,7 @@ mod explicit_custom_context {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
@@ -796,7 +809,7 @@ mod inferred_custom_context {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
@@ -809,7 +822,7 @@ mod inferred_custom_context {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
@@ -868,7 +881,7 @@ mod ignored_method {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -889,7 +902,7 @@ mod ignored_method {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -970,7 +983,7 @@ mod external_resolver {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
         let db = Database { droid: None };
 
         assert_eq!(
@@ -984,7 +997,7 @@ mod external_resolver {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot::Droid);
+        let schema = schema(QueryRoot::Droid);
         let db = Database {
             droid: Some(Droid {
                 id: "droid-99".to_string(),
@@ -1054,7 +1067,7 @@ mod full_featured {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue, context = CustomContext)]
+    #[graphql_object(context = CustomContext)]
     impl QueryRoot {
         fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_, ()>> {
             let ch: Box<DynCharacter<'_, ()>> = match ctx {
@@ -1094,7 +1107,7 @@ mod full_featured {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
@@ -1107,7 +1120,7 @@ mod full_featured {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
@@ -1120,7 +1133,7 @@ mod full_featured {
 
     #[tokio::test]
     async fn resolves_ewok() {
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Ewok).await,
@@ -1139,7 +1152,7 @@ mod full_featured {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Ewok).await,
@@ -1155,7 +1168,7 @@ mod full_featured {
             }
         }"#;
 
-        let schema = schema::<DefaultScalarValue, _, _>(QueryRoot);
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &CustomContext::Ewok).await,

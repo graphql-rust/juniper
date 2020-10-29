@@ -14,3 +14,16 @@ error[E0277]: the trait bound `Obj: FromInputValue<__S>` is not satisfied
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `Obj`
   |
   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `Obj: FromInputValue` is not satisfied
+   --> $DIR/impl_argument_no_object.rs:8:1
+    |
+8   | #[juniper::graphql_object]
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue` is not implemented for `Obj`
+    |
+   ::: $WORKSPACE/juniper/src/ast.rs
+    |
+    | pub trait FromInputValue<S = DefaultScalarValue>: Sized {
+    | ------------------------------------------------------- required by this bound in `FromInputValue`
+    |
+    = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -714,7 +714,7 @@ mod tests {
     impl TestActixWebIntegration {
         fn make_request(&self, req: test::TestRequest) -> TestResponse {
             actix_web::rt::System::new("request").block_on(async move {
-                let schema: Schema = RootNode::new(
+                let schema = Schema::new(
                     Query,
                     EmptyMutation::<Database>::new(),
                     EmptySubscription::<Database>::new(),
