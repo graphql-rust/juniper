@@ -32,11 +32,10 @@
   - `LexerError`
   - `ParseError`
   - `RuleError`
-  
+
 - Support `chrono-tz::Tz` scalar behind a `chrono-tz` feature flag. ([#519](https://github.com/graphql-rust/juniper/pull/519))
 
 - Added support for distinguishing between between implicit and explicit null. ([#795](https://github.com/graphql-rust/juniper/pull/795))
-  
 
 - Implement `IntoFieldError` for `std::convert::Infallible`. ([#796](https://github.com/graphql-rust/juniper/pull/796))
 
@@ -76,7 +75,7 @@
   ```rust
     #[graphql(arguments(argA(name = "test")))]
   ```
-  
+
 - `SchemaType` is now public.
   - This is helpful when using `context.getSchema()` inside of your field resolvers.
 
@@ -92,7 +91,7 @@
 
 - `juniper::graphiql` has moved to `juniper::http::graphiql`.
   - `juniper::http::graphiql::graphiql_source()` now requires a second parameter for subscriptions.
-  
+
 - Renamed the `object` proc macro to `graphql_object`.
 - Removed the `graphql_object!` macro. Use the `#[graphql_object]` proc macro instead.
 - Made `#[graphql_object]` macro to generate code generic over `ScalarValue` by default. ([#779](https://github.com/graphql-rust/juniper/pull/779))
@@ -116,7 +115,7 @@
 - The return type of `GraphQLType::resolve()` has been changed to `ExecutionResult`.
   - This was done to unify the return type of all resolver methods. The previous `Value` return type was just an internal artifact of 
   error handling.
-  
+
 - Subscription-related: 
   - Add subscription type to `RootNode`.
   - Add subscription endpoint to `playground_source()`.
@@ -128,7 +127,7 @@
 - Integration tests:
   - Renamed `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`.
   - Added support for `application/graphql` POST request.
-  
+
 - `RootNode::new()` now returns `RootNode` parametrized with `DefaultScalarValue`. For custom `ScalarValue` use `RootNode::new_with_scalar_value()` instead. ([#779](https://github.com/graphql-rust/juniper/pull/779))
 
 - When using `LookAheadMethods` to access child selections, children are always found using their alias if it exists rather than their name. ([#662](https://github.com/graphql-rust/juniper/pull/662))
