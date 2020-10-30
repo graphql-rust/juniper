@@ -37,6 +37,9 @@
 
 - Added support for distinguishing between between implicit and explicit null. ([#795](https://github.com/graphql-rust/juniper/pull/795))
   
+
+- Implement `IntoFieldError` for `std::convert::Infallible`. ([#796](https://github.com/graphql-rust/juniper/pull/796))
+
 ## Fixes
 
 - Massively improved the `#[graphql_union]` proc macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):

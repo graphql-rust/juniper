@@ -259,6 +259,12 @@ impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
     }
 }
 
+impl<S> IntoFieldError<S> for std::convert::Infallible {
+    fn into_field_error(self) -> FieldError<S> {
+        match self {}
+    }
+}
+
 #[doc(hidden)]
 pub trait IntoResolvable<'a, S, T, C>
 where
