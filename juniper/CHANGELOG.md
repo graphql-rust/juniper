@@ -84,6 +84,8 @@
 
 - When enabled, the optional `bson` integration now requires `bson-1.0.0`. ([#678](https://github.com/graphql-rust/juniper/pull/678))
 
+- Fixed panic on `executor.look_ahead()` for nested fragments ([#500](https://github.com/graphql-rust/juniper/issues/500))
+
 ## Breaking Changes
 
 - `GraphQLType` trait was split into 2 traits: ([#685](https://github.com/graphql-rust/juniper/pull/685))
