@@ -670,6 +670,7 @@ where
         };
         self.parent_selection_set
             .map(|p| {
+                // Search the parent's fields to find this field within the set
                 let found_field = p.iter().find(|&x| {
                     match *x {
                         Selection::Field(ref field) => {
@@ -688,31 +689,30 @@ where
                     None
                 }
             })
-            .filter(|s| s.is_some())
+            .flatten()
             .unwrap_or_else(|| {
-                Some(LookAheadSelection {
-                    name: self.current_type.innermost_concrete().name().unwrap_or(""),
+                // We didn't find a field in the parent's selection matching
+                // this field, which means we're inside a FragmentSpread
+                let mut ret = LookAheadSelection {
+                    name: field_name,
                     alias: None,
                     arguments: Vec::new(),
-                    children: self
-                        .current_selection_set
-                        .map(|s| {
-                            s.iter()
-                                .map(|s| ChildSelection {
-                                    inner: LookAheadSelection::build_from_selection(
-                                        &s,
-                                        self.variables,
-                                        self.fragments,
-                                    )
-                                    .expect("a child selection"),
-                                    applies_for: Applies::All,
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_else(Vec::new),
-                })
+                    children: Vec::new(),
+                };
+
+                // Add in all the children - this will mutate `ret`
+                if let Some(selection_set) = self.current_selection_set {
+                    for c in selection_set {
+                        LookAheadSelection::build_from_selection_with_parent(
+                            c,
+                            Some(&mut ret),
+                            self.variables,
+                            self.fragments,
+                        );
+                    }
+                }
+                ret
             })
-            .unwrap_or_default()
     }
 
     /// Create new `OwnedExecutor` and clone all current data
