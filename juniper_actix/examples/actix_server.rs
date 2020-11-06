@@ -3,7 +3,7 @@
 use std::env;
 
 use actix_cors::Cors;
-use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{http::header, middleware, web, App, Error, HttpResponse, HttpServer};
 use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
@@ -49,7 +49,10 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(
                 Cors::default()
+                    .allowed_origin("http://127.0.0.1:8080")
                     .allowed_methods(vec!["POST", "GET"])
+                    .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+                    .allowed_header(header::CONTENT_TYPE)
                     .supports_credentials()
                     .max_age(3600),
             )
