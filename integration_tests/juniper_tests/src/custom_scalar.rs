@@ -1,14 +1,15 @@
-use std::fmt;
+use std::{fmt, pin::Pin};
 
+use futures::{stream, Stream};
 use juniper::{
-    execute,
+    execute, graphql_object, graphql_scalar, graphql_subscription,
     parser::{ParseError, ScalarToken, Spanning, Token},
     serde::de,
-    EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
-    Value, Variables,
+    EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
+    RootNode, ScalarValue, Value, Variables,
 };
 
-#[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
+#[derive(GraphQLScalarValue, Clone, Debug, PartialEq)]
 pub(crate) enum MyScalarValue {
     Int(i32),
     Long(i64),
@@ -22,42 +23,49 @@ impl ScalarValue for MyScalarValue {
 
     fn as_int(&self) -> Option<i32> {
         match *self {
-            MyScalarValue::Int(ref i) => Some(*i),
+            Self::Int(ref i) => Some(*i),
             _ => None,
         }
     }
 
     fn as_string(&self) -> Option<String> {
         match *self {
-            MyScalarValue::String(ref s) => Some(s.clone()),
+            Self::String(ref s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    fn into_string(self) -> Option<String> {
+        match self {
+            Self::String(s) => Some(s),
             _ => None,
         }
     }
 
     fn as_str(&self) -> Option<&str> {
         match *self {
-            MyScalarValue::String(ref s) => Some(s.as_str()),
+            Self::String(ref s) => Some(s.as_str()),
             _ => None,
         }
     }
 
     fn as_float(&self) -> Option<f64> {
         match *self {
-            MyScalarValue::Int(ref i) => Some(*i as f64),
-            MyScalarValue::Float(ref f) => Some(*f),
+            Self::Int(ref i) => Some(f64::from(*i)),
+            Self::Float(ref f) => Some(*f),
             _ => None,
         }
     }
 
     fn as_boolean(&self) -> Option<bool> {
         match *self {
-            MyScalarValue::Boolean(ref b) => Some(*b),
+            Self::Boolean(ref b) => Some(*b),
             _ => None,
         }
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct MyScalarValueVisitor;
 
 impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
@@ -82,7 +90,7 @@ impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
     where
         E: de::Error,
     {
-        if value <= i32::max_value() as i64 {
+        if value <= i64::from(i32::max_value()) {
             self.visit_i32(value as i32)
         } else {
             Ok(MyScalarValue::Long(value))
@@ -132,7 +140,7 @@ impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
     }
 }
 
-#[juniper::graphql_scalar(name = "Long")]
+#[graphql_scalar(name = "Long")]
 impl GraphQLScalar for i64 {
     fn resolve(&self) -> Value {
         Value::scalar(*self)
@@ -158,12 +166,10 @@ impl GraphQLScalar for i64 {
 
 struct TestType;
 
-#[juniper::graphql_object(
-    Scalar = MyScalarValue
-)]
+#[graphql_object(scalar = MyScalarValue)]
 impl TestType {
     fn long_field() -> i64 {
-        (::std::i32::MAX as i64) + 1
+        i64::from(i32::max_value()) + 1
     }
 
     fn long_with_arg(long_arg: i64) -> i64 {
@@ -173,14 +179,10 @@ impl TestType {
 
 struct TestSubscriptionType;
 
-#[juniper::graphql_subscription(
-    Scalar = MyScalarValue
-)]
+#[graphql_subscription(scalar = MyScalarValue)]
 impl TestSubscriptionType {
-    async fn foo(
-    ) -> std::pin::Pin<Box<dyn futures::Stream<Item = FieldResult<i32, MyScalarValue>> + Send>>
-    {
-        Box::pin(futures::stream::empty())
+    async fn foo() -> Pin<Box<dyn Stream<Item = FieldResult<i32, MyScalarValue>> + Send>> {
+        Box::pin(stream::empty())
     }
 }
 
@@ -188,7 +190,8 @@ async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new(), TestSubscriptionType);
+    let schema =
+        RootNode::new_with_scalar_value(TestType, EmptyMutation::<()>::new(), TestSubscriptionType);
 
     let (result, errs) = execute(query, None, &schema, &vars, &())
         .await
@@ -215,7 +218,7 @@ async fn querying_long() {
     run_query("{ longField }", |result| {
         assert_eq!(
             result.get_field_value("longField"),
-            Some(&Value::scalar((::std::i32::MAX as i64) + 1))
+            Some(&Value::scalar(i64::from(i32::max_value()) + 1))
         );
     })
     .await;
@@ -226,12 +229,12 @@ async fn querying_long_arg() {
     run_query(
         &format!(
             "{{ longWithArg(longArg: {}) }}",
-            (::std::i32::MAX as i64) + 3
+            i64::from(i32::max_value()) + 3
         ),
         |result| {
             assert_eq!(
                 result.get_field_value("longWithArg"),
-                Some(&Value::scalar((::std::i32::MAX as i64) + 3))
+                Some(&Value::scalar(i64::from(i32::max_value()) + 3))
             );
         },
     )
@@ -244,14 +247,14 @@ async fn querying_long_variable() {
         "query q($test: Long!){ longWithArg(longArg: $test) }",
         vec![(
             "test".to_owned(),
-            InputValue::Scalar(MyScalarValue::Long((::std::i32::MAX as i64) + 42)),
+            InputValue::Scalar(MyScalarValue::Long(i64::from(i32::max_value()) + 42)),
         )]
         .into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("longWithArg"),
-                Some(&Value::scalar((::std::i32::MAX as i64) + 42))
+                Some(&Value::scalar(i64::from(i32::max_value()) + 42))
             );
         },
     )
@@ -260,7 +263,7 @@ async fn querying_long_variable() {
 
 #[test]
 fn deserialize_variable() {
-    let json = format!("{{\"field\": {}}}", (::std::i32::MAX as i64) + 42);
+    let json = format!("{{\"field\": {}}}", i64::from(i32::max_value()) + 42);
 
     let input_value: InputValue<MyScalarValue> = serde_json::from_str(&json).unwrap();
     assert_eq!(
@@ -268,7 +271,7 @@ fn deserialize_variable() {
         InputValue::Object(vec![(
             Spanning::unlocated("field".into()),
             Spanning::unlocated(InputValue::Scalar(MyScalarValue::Long(
-                (::std::i32::MAX as i64) + 42
+                i64::from(i32::max_value()) + 42
             )))
         )])
     );

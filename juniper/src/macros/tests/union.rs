@@ -31,13 +31,13 @@ impl Concrete {
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(name = "ACustomNamedUnion", scalar = DefaultScalarValue)]
+#[graphql(name = "ACustomNamedUnion")]
 enum CustomName {
     Concrete(Concrete),
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(on Concrete = WithLifetime::resolve, scalar = DefaultScalarValue)]
+#[graphql(on Concrete = WithLifetime::resolve)]
 enum WithLifetime<'a> {
     #[graphql(ignore)]
     Int(PhantomData<&'a i32>),
@@ -54,7 +54,7 @@ impl<'a> WithLifetime<'a> {
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(on Concrete = WithGenerics::resolve, scalar = DefaultScalarValue)]
+#[graphql(on Concrete = WithGenerics::resolve)]
 enum WithGenerics<T> {
     #[graphql(ignore)]
     Generic(T),
@@ -71,20 +71,19 @@ impl<T> WithGenerics<T> {
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(description = "A description", scalar = DefaultScalarValue)]
+#[graphql(description = "A description")]
 enum DescriptionFirst {
     Concrete(Concrete),
 }
 
 struct Root;
 
-// FIXME: make async work
-#[crate::graphql_object(noasync)]
-impl<'a> Root {
+#[graphql_object]
+impl Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)
     }
-    fn with_lifetime() -> WithLifetime<'a> {
+    fn with_lifetime() -> WithLifetime<'_> {
         WithLifetime::Int(PhantomData)
     }
     fn with_generics() -> WithGenerics<i32> {

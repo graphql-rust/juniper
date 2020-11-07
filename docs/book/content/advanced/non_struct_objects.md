@@ -10,9 +10,10 @@ errors from a mutation:
 
 ```rust
 # extern crate juniper;
+# use juniper::{graphql_object, GraphQLObject};
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
-
-#[derive(juniper::GraphQLObject)]
+#
+#[derive(GraphQLObject)]
 struct ValidationError {
     field: String,
     message: String,
@@ -24,7 +25,7 @@ enum SignUpResult {
     Error(Vec<ValidationError>),
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl SignUpResult {
     fn user(&self) -> Option<&User> {
         match *self {
@@ -40,7 +41,7 @@ impl SignUpResult {
         }
     }
 }
-
+#
 # fn main() {}
 ```
 

@@ -3,7 +3,7 @@ use std::env;
 use iron::prelude::*;
 use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
-    EmptyMutation, EmptySubscription,
+    DefaultScalarValue, EmptyMutation, EmptySubscription,
 };
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use logger::Logger;
@@ -16,7 +16,7 @@ fn context_factory(_: &mut Request) -> IronResult<Database> {
 fn main() {
     let mut mount = Mount::new();
 
-    let graphql_endpoint = GraphQLHandler::new(
+    let graphql_endpoint = <GraphQLHandler<_, _, _, _, _, DefaultScalarValue>>::new(
         context_factory,
         Query,
         EmptyMutation::<Database>::new(),

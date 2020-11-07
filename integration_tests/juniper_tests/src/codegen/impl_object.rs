@@ -1,13 +1,11 @@
-use juniper::DefaultScalarValue;
-#[cfg(test)]
-use juniper::Object;
-
-#[cfg(test)]
-use juniper::{execute, EmptyMutation, EmptySubscription, FieldError, RootNode, Value, Variables};
+use juniper::{
+    execute, graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, Object,
+    RootNode, Value, Variables,
+};
 
 pub struct MyObject;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl MyObject {
     #[graphql(arguments(arg(name = "test")))]
     fn test(&self, arg: String) -> String {
@@ -49,7 +47,6 @@ async fn check_argument_rename() {
     .await;
 }
 
-#[cfg(test)]
 async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn((&Object<DefaultScalarValue>, &Vec<Value>)) -> (),
@@ -86,11 +83,11 @@ where
 }
 
 mod fallible {
-    use super::*;
+    use juniper::{graphql_object, FieldError};
 
     struct Obj;
 
-    #[juniper::graphql_object]
+    #[graphql_object]
     impl Obj {
         fn test(&self, arg: String) -> Result<String, FieldError> {
             Ok(arg)

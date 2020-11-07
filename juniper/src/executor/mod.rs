@@ -216,6 +216,18 @@ impl<S> FieldError<S> {
     pub fn extensions(&self) -> &Value<S> {
         &self.extensions
     }
+
+    /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified one.
+    pub fn map_scalar_value<Into>(self) -> FieldError<Into>
+    where
+        S: ScalarValue,
+        Into: ScalarValue,
+    {
+        FieldError {
+            message: self.message,
+            extensions: self.extensions.map_scalar_value(),
+        }
+    }
 }
 
 /// The result of resolving the value of a field of type `T`
@@ -240,9 +252,10 @@ pub trait IntoFieldError<S = DefaultScalarValue> {
     fn into_field_error(self) -> FieldError<S>;
 }
 
-impl<S> IntoFieldError<S> for FieldError<S> {
-    fn into_field_error(self) -> FieldError<S> {
-        self
+impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
+    #[inline]
+    fn into_field_error(self) -> FieldError<S2> {
+        self.map_scalar_value()
     }
 }
 
@@ -315,28 +328,31 @@ where
     }
 }
 
-impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T), S>
+impl<'a, S1, S2, T, C> IntoResolvable<'a, S2, T, C> for FieldResult<(&'a T::Context, T), S1>
 where
-    S: ScalarValue,
-    T: GraphQLValue<S>,
+    S1: ScalarValue,
+    S2: ScalarValue,
+    T: GraphQLValue<S2>,
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
-        self.map(Some)
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S2> {
+        self.map(Some).map_err(FieldError::map_scalar_value)
     }
 }
 
-impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
-    for FieldResult<Option<(&'a T::Context, T)>, S>
+impl<'a, S1, S2, T, C> IntoResolvable<'a, S2, Option<T>, C>
+    for FieldResult<Option<(&'a T::Context, T)>, S1>
 where
-    S: ScalarValue,
-    T: GraphQLValue<S>,
+    S1: ScalarValue,
+    S2: ScalarValue,
+    T: GraphQLValue<S2>,
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
+            .map_err(FieldError::map_scalar_value)
     }
 }
 

@@ -29,7 +29,7 @@ sequentially:
 # extern crate juniper;
 # extern crate juniper_subscriptions;
 # extern crate tokio;
-# use juniper::FieldError;
+# use juniper::{graphql_object, graphql_subscription, FieldError};
 # use futures::Stream;
 # use std::pin::Pin;
 #
@@ -38,7 +38,7 @@ sequentially:
 # impl juniper::Context for Database {}
 
 # pub struct Query;
-# #[juniper::graphql_object(Context = Database)]
+# #[graphql_object(context = Database)]
 # impl Query {
 #    fn hello_world() -> &str {
 #        "Hello World!"
@@ -48,7 +48,7 @@ pub struct Subscription;
 
 type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 
-#[juniper::graphql_subscription(Context = Database)]
+#[graphql_subscription(context = Database)]
 impl Subscription {
     async fn hello_world() -> StringStream {
         let stream = tokio::stream::iter(vec![
@@ -58,8 +58,9 @@ impl Subscription {
         Box::pin(stream)
     }
 }
+#
 # fn main () {}
-```         
+```
 
 
 
@@ -84,8 +85,12 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # extern crate juniper_subscriptions;
 # extern crate serde_json;
 # extern crate tokio;
-# use juniper::http::GraphQLRequest;
-# use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
+# use juniper::{
+#     http::GraphQLRequest,
+#     graphql_object, graphql_subscription, 
+#     DefaultScalarValue, EmptyMutation, FieldError, 
+#     RootNode, SubscriptionCoordinator,
+# };
 # use juniper_subscriptions::Coordinator;
 # use futures::{Stream, StreamExt};
 # use std::pin::Pin;
@@ -103,7 +108,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # 
 # pub struct Query;
 # 
-# #[juniper::graphql_object(Context = Database)]
+# #[graphql_object(context = Database)]
 # impl Query {
 #     fn hello_world() -> &str {
 #         "Hello World!"
@@ -114,7 +119,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # 
 # type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 # 
-# #[juniper::graphql_subscription(Context = Database)]
+# #[graphql_subscription(context = Database)]
 # impl Subscription {
 #     async fn hello_world() -> StringStream {
 #         let stream =
@@ -132,11 +137,9 @@ async fn run_subscription() {
     let schema = schema();
     let coordinator = Coordinator::new(schema);
     let req: GraphQLRequest<DefaultScalarValue> = serde_json::from_str(
-        r#"
-        {
+        r#"{
             "query": "subscription { helloWorld }"
-        }
-    "#,
+        }"#,
     )
         .unwrap();
     let ctx = Database::new();
@@ -145,7 +148,7 @@ async fn run_subscription() {
         println!("{}", serde_json::to_string(&result).unwrap());
     }
 }
-
+#
 # fn main() { }
 ```     
 

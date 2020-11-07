@@ -3,7 +3,10 @@
 use std::{env, pin::Pin, sync::Arc, time::Duration};
 
 use futures::{FutureExt as _, Stream};
-use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
+use juniper::{
+    graphql_object, graphql_subscription, DefaultScalarValue, EmptyMutation, FieldError,
+    GraphQLEnum, RootNode,
+};
 use juniper_graphql_ws::ConnectionConfig;
 use juniper_warp::{playground_filter, subscriptions::serve_graphql_ws};
 use warp::{http::Response, Filter};
@@ -13,7 +16,7 @@ struct Context {}
 
 impl juniper::Context for Context {}
 
-#[derive(Clone, Copy, juniper::GraphQLEnum)]
+#[derive(Clone, Copy, GraphQLEnum)]
 enum UserKind {
     Admin,
     User,
@@ -27,7 +30,7 @@ struct User {
 }
 
 // Field resolvers implementation
-#[juniper::graphql_object(Context = Context)]
+#[graphql_object(context = Context)]
 impl User {
     fn id(&self) -> i32 {
         self.id
@@ -87,7 +90,7 @@ impl User {
 
 struct Query;
 
-#[juniper::graphql_object(Context = Context)]
+#[graphql_object(context = Context)]
 impl Query {
     async fn users(id: i32) -> Vec<User> {
         vec![User {
@@ -102,7 +105,7 @@ type UsersStream = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
 
 struct Subscription;
 
-#[juniper::graphql_subscription(Context = Context)]
+#[graphql_subscription(context = Context)]
 impl Subscription {
     async fn users() -> UsersStream {
         let mut counter = 0;

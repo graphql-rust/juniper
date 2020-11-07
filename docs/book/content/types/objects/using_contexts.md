@@ -13,7 +13,7 @@ resolvers. Let's say that we have a simple user database in a `HashMap`:
 ```rust
 # #![allow(dead_code)]
 # use std::collections::HashMap;
-
+#
 struct Database {
     users: HashMap<i32, User>,
 }
@@ -23,7 +23,7 @@ struct User {
     name: String,
     friend_ids: Vec<i32>,
 }
-
+#
 # fn main() { }
 ```
 
@@ -38,9 +38,10 @@ type as the specified `Context` for the type:
 
 
 ```rust
+# extern crate juniper;
 # use std::collections::HashMap;
-extern crate juniper;
-
+# use juniper::graphql_object;
+#
 // This struct represents our context.
 struct Database {
     users: HashMap<i32, User>,
@@ -55,11 +56,8 @@ struct User {
     friend_ids: Vec<i32>,
 }
 
-
 // Assign Database as the context type for User
-#[juniper::graphql_object(
-    Context = Database,
-)]
+#[graphql_object(context = Database)]
 impl User {
     // 3. Inject the context by specifying an argument
     //    with the context type.
@@ -82,7 +80,7 @@ impl User {
         self.id 
     }
 }
-
+#
 # fn main() { }
 ```
 

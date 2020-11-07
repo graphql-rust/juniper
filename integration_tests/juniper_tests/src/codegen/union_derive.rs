@@ -53,12 +53,25 @@ struct EwokCustomContext {
     funny: bool,
 }
 
-fn schema<'q, C, S, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
+fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
+where
+    Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
+{
+    RootNode::new(
+        query_root,
+        EmptyMutation::<C>::new(),
+        EmptySubscription::<C>::new(),
+    )
+}
+
+fn schema_with_scalar<'q, S, C, Q>(
+    query_root: Q,
+) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
 where
     Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
     S: ScalarValue + 'q,
 {
-    RootNode::new(
+    RootNode::new_with_scalar_value(
         query_root,
         EmptyMutation::<C>::new(),
         EmptySubscription::<C>::new(),
@@ -429,7 +442,7 @@ mod explicit_scalar {
         Droid,
     }
 
-    #[graphql_object]
+    #[graphql_object(scalar = DefaultScalarValue)]
     impl QueryRoot {
         fn character(&self) -> Character {
             match self {
@@ -460,7 +473,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Human);
+        let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -473,7 +486,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<_, DefaultScalarValue, _>(QueryRoot::Droid);
+        let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -533,7 +546,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Human);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -546,7 +559,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
-        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Droid);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot::Droid);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -993,7 +1006,7 @@ mod full_featured_enum {
 
     struct QueryRoot;
 
-    #[graphql_object(context = CustomContext)]
+    #[graphql_object(context = CustomContext, scalar = DefaultScalarValue)]
     impl QueryRoot {
         fn character(&self, ctx: &CustomContext) -> Character<()> {
             match ctx {
@@ -1349,7 +1362,7 @@ mod full_featured_struct {
         Droid,
     }
 
-    #[graphql_object(context = Database)]
+    #[graphql_object(context = Database, scalar = DefaultScalarValue)]
     impl QueryRoot {
         fn character(&self) -> Character<()> {
             Character {

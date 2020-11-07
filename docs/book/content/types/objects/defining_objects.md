@@ -10,12 +10,13 @@ chapter.
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
 }
-
+#
 # fn main() {}
 ```
 
@@ -33,7 +34,8 @@ descriptions:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 /// Information about a person
 struct Person {
     /// The person's full name, including both first and last names
@@ -41,7 +43,7 @@ struct Person {
     /// The person's age in years, rounded down
     age: i32,
 }
-
+#
 # fn main() {}
 ```
 
@@ -52,15 +54,16 @@ via the `graphql` attribute. The following example is equivalent to the above:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
-#[graphql(description="Information about a person")]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
+#[graphql(description = "Information about a person")]
 struct Person {
-    #[graphql(description="The person's full name, including both first and last names")]
+    #[graphql(description = "The person's full name, including both first and last names")]
     name: String,
-    #[graphql(description="The person's age in years, rounded down")]
+    #[graphql(description = "The person's age in years, rounded down")]
     age: i32,
 }
-
+#
 # fn main() {}
 ```
 
@@ -70,17 +73,18 @@ documentation to differ:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
-#[graphql(description="This description shows up in GraphQL")]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
+#[graphql(description = "This description shows up in GraphQL")]
 /// This description shows up in RustDoc
 struct Person {
-    #[graphql(description="This description shows up in GraphQL")]
+    #[graphql(description = "This description shows up in GraphQL")]
     /// This description shows up in RustDoc
     name: String,
     /// This description shows up in both RustDoc and GraphQL
     age: i32,
 }
-
+#
 # fn main() {}
 ```
 
@@ -100,18 +104,19 @@ Let's see what that means for building relationships between objects:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 struct House {
     address: Option<String>, // Converted into String (nullable)
     inhabitants: Vec<Person>, // Converted into [Person!]!
 }
-
+#
 # fn main() {}
 ```
 
@@ -126,12 +131,13 @@ convention into GraphQL's `camelCase` convention:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     first_name: String, // Would be exposed as firstName in the GraphQL schema
     last_name: String, // Exposed as lastName
 }
-
+#
 # fn main() {}
 ```
 
@@ -140,14 +146,15 @@ fields:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
-    #[graphql(name="websiteURL")]
+    #[graphql(name = "websiteURL")]
     website_url: Option<String>, // Now exposed as websiteURL in the schema
 }
-
+#
 # fn main() {}
 ```
 
@@ -158,14 +165,15 @@ attribute:
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
     #[graphql(deprecated = "Please use the name field instead")]
     first_name: String,
 }
-
+#
 # fn main() {}
 ```
 
@@ -179,7 +187,8 @@ By default all fields in a `GraphQLObject` are included in the generated GraphQL
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -187,6 +196,6 @@ struct Person {
     # #[allow(dead_code)]
     password_hash: String, // This cannot be queried or modified from GraphQL
 }
-
+#
 # fn main() {}
 ```

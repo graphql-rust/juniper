@@ -481,7 +481,6 @@ pub mod subscriptions {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, App};
     use juniper::{
         futures::stream::StreamExt,
@@ -489,6 +488,8 @@ mod tests {
         tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
+
+    use super::*;
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -713,7 +714,7 @@ mod tests {
     impl TestActixWebIntegration {
         fn make_request(&self, req: test::TestRequest) -> TestResponse {
             actix_web::rt::System::new("request").block_on(async move {
-                let schema = RootNode::new(
+                let schema = Schema::new(
                     Query,
                     EmptyMutation::<Database>::new(),
                     EmptySubscription::<Database>::new(),

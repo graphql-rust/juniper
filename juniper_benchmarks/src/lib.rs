@@ -1,6 +1,6 @@
 use juniper::{
     graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError,
-    FieldError, GraphQLEnum, Value, Variables,
+    FieldError, GraphQLEnum, GraphQLObject, RootNode, Value, Variables,
 };
 
 pub type QueryResult = Result<
@@ -37,7 +37,7 @@ pub enum UserKind {
     Guest,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct User {
     pub id: i32,
     pub kind: UserKind,
@@ -60,7 +60,7 @@ impl User {
 
 pub struct Query;
 
-#[graphql_object(Context = Context)]
+#[graphql_object(context = Context)]
 impl Query {
     fn user_sync_instant(id: i32) -> Result<User, FieldError> {
         Ok(User::new(id))
@@ -89,9 +89,9 @@ impl Query {
     }
 }
 
-pub fn new_schema(
-) -> juniper::RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>> {
-    juniper::RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new())
+pub fn new_schema() -> RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>
+{
+    RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new())
 }
 
 pub fn execute_sync(query: &str, vars: Variables) -> QueryResult {

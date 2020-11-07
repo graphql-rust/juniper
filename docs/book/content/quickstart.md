@@ -28,8 +28,12 @@ resolvers, which you will use for the `Query` and `Mutation` roots.
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-use juniper::{FieldResult, EmptySubscription};
-
+# use std::fmt::Display;
+use juniper::{
+    graphql_object, EmptySubscription, FieldResult, GraphQLEnum, 
+    GraphQLInputObject, GraphQLObject, ScalarValue,
+};
+#
 # struct DatabasePool;
 # impl DatabasePool {
 #     fn get_connection(&self) -> FieldResult<DatabasePool> { Ok(DatabasePool) }
@@ -37,15 +41,15 @@ use juniper::{FieldResult, EmptySubscription};
 #     fn insert_human(&self, _human: &NewHuman) -> FieldResult<Human> { Err("")? }
 # }
 
-#[derive(juniper::GraphQLEnum)]
+#[derive(GraphQLEnum)]
 enum Episode {
     NewHope,
     Empire,
     Jedi,
 }
 
-#[derive(juniper::GraphQLObject)]
-#[graphql(description="A humanoid creature in the Star Wars universe")]
+#[derive(GraphQLObject)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct Human {
     id: String,
     name: String,
@@ -55,8 +59,8 @@ struct Human {
 
 // There is also a custom derive for mapping GraphQL input objects.
 
-#[derive(juniper::GraphQLInputObject)]
-#[graphql(description="A humanoid creature in the Star Wars universe")]
+#[derive(GraphQLInputObject)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct NewHuman {
     name: String,
     appears_in: Vec<Episode>,
@@ -78,14 +82,13 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::graphql_object(
+#[graphql_object(
     // Here we specify the context type for the object.
     // We need to do this in every type that
     // needs access to the context.
-    Context = Context,
+    context = Context,
 )]
 impl Query {
-
     fn apiVersion() -> &str {
         "1.0"
     }
@@ -109,14 +112,18 @@ impl Query {
 
 struct Mutation;
 
-#[juniper::graphql_object(
-    Context = Context,
-)]
-impl Mutation {
+#[graphql_object(
+    context = Context,
 
-    fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human> {
-        let db = context.pool.get_connection()?;
-        let human: Human = db.insert_human(&new_human)?;
+    // If we need to use `ScalarValue` parametrization explicitly somewhere
+    // in the object definition (like here in `FieldResult`), we should
+    // declare an explicit type parameter for that, and specify it.
+    scalar = S,
+)]
+impl<S: ScalarValue + Display> Mutation {
+    fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human, S> {
+        let db = context.pool.get_connection().map_err(|e| e.map_scalar_value())?;
+        let human: Human = db.insert_human(&new_human).map_err(|e| e.map_scalar_value())?;
         Ok(human)
     }
 }
@@ -124,7 +131,7 @@ impl Mutation {
 // A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
-
+#
 # fn main() {
 #   let _ = Schema::new(Query, Mutation{}, EmptySubscription::new());
 # }
@@ -143,10 +150,12 @@ You can invoke `juniper::execute` directly to run a GraphQL query:
 ```rust
 # // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
-use juniper::{FieldResult, Variables, EmptyMutation, EmptySubscription};
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
+    GraphQLEnum, Variables,
+};
 
-
-#[derive(juniper::GraphQLEnum, Clone, Copy)]
+#[derive(GraphQLEnum, Clone, Copy)]
 enum Episode {
     NewHope,
     Empire,
@@ -160,15 +169,12 @@ impl juniper::Context for Ctx {}
 
 struct Query;
 
-#[juniper::graphql_object(
-    Context = Ctx,
-)]
+#[graphql_object(context = Ctx)]
 impl Query {
     fn favoriteEpisode(context: &Ctx) -> FieldResult<Episode> {
         Ok(context.0)
     }
 }
-
 
 // A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.

@@ -53,36 +53,43 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///
 ///      fn as_int(&self) -> Option<i32> {
 ///        match *self {
-///            MyScalarValue::Int(ref i) => Some(*i),
+///            Self::Int(ref i) => Some(*i),
 ///            _ => None,
 ///        }
 ///    }
 ///
 ///    fn as_string(&self) -> Option<String> {
 ///        match *self {
-///            MyScalarValue::String(ref s) => Some(s.clone()),
+///            Self::String(ref s) => Some(s.clone()),
+///            _ => None,
+///        }
+///    }
+///
+///    fn into_string(self) -> Option<String> {
+///        match self {
+///            Self::String(s) => Some(s),
 ///            _ => None,
 ///        }
 ///    }
 ///
 ///    fn as_str(&self) -> Option<&str> {
 ///        match *self {
-///            MyScalarValue::String(ref s) => Some(s.as_str()),
+///            Self::String(ref s) => Some(s.as_str()),
 ///            _ => None,
 ///        }
 ///    }
 ///
 ///    fn as_float(&self) -> Option<f64> {
 ///        match *self {
-///            MyScalarValue::Int(ref i) => Some(*i as f64),
-///            MyScalarValue::Float(ref f) => Some(*f),
+///            Self::Int(ref i) => Some(*i as f64),
+///            Self::Float(ref f) => Some(*f),
 ///            _ => None,
 ///        }
 ///    }
 ///
 ///    fn as_boolean(&self) -> Option<bool> {
 ///        match *self {
-///            MyScalarValue::Boolean(ref b) => Some(*b),
+///            Self::Boolean(ref b) => Some(*b),
 ///            _ => None,
 ///        }
 ///    }
@@ -175,6 +182,7 @@ pub trait ScalarValue:
     + From<bool>
     + From<i32>
     + From<f64>
+    + 'static
 {
     /// Serde visitor used to deserialize this scalar value
     type Visitor: for<'de> de::Visitor<'de, Value = Self> + Default;
@@ -205,11 +213,17 @@ pub trait ScalarValue:
     /// types with 32 bit or less to an integer if requested.
     fn as_int(&self) -> Option<i32>;
 
-    /// Convert the given scalar value into a string value
+    /// Represents this [`ScalarValue`] a [`String`] value.
     ///
     /// This function is used for implementing `GraphQLValue` for `String` for all
     /// scalar values
     fn as_string(&self) -> Option<String>;
+
+    /// Converts this [`ScalarValue`] into a [`String`] value.
+    ///
+    /// Same as [`ScalarValue::as_string`], but takes ownership, so allows to omit redundant
+    /// cloning.
+    fn into_string(self) -> Option<String>;
 
     /// Convert the given scalar value into a string value
     ///
@@ -230,6 +244,21 @@ pub trait ScalarValue:
     /// This function is used for implementing `GraphQLValue` for `bool` for all
     /// scalar values.
     fn as_boolean(&self) -> Option<bool>;
+
+    /// Converts this [`ScalarValue`] into another one.
+    fn into_another<S: ScalarValue>(self) -> S {
+        if let Some(i) = self.as_int() {
+            S::from(i)
+        } else if let Some(f) = self.as_float() {
+            S::from(f)
+        } else if let Some(b) = self.as_boolean() {
+            S::from(b)
+        } else if let Some(s) = self.into_string() {
+            S::from(s)
+        } else {
+            unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
+        }
+    }
 }
 
 /// The default scalar value representation in juniper
@@ -249,44 +278,60 @@ impl ScalarValue for DefaultScalarValue {
 
     fn as_int(&self) -> Option<i32> {
         match *self {
-            DefaultScalarValue::Int(ref i) => Some(*i),
+            Self::Int(ref i) => Some(*i),
             _ => None,
         }
     }
 
     fn as_float(&self) -> Option<f64> {
         match *self {
-            DefaultScalarValue::Int(ref i) => Some(*i as f64),
-            DefaultScalarValue::Float(ref f) => Some(*f),
+            Self::Int(ref i) => Some(*i as f64),
+            Self::Float(ref f) => Some(*f),
             _ => None,
         }
     }
 
     fn as_str(&self) -> Option<&str> {
         match *self {
-            DefaultScalarValue::String(ref s) => Some(s.as_str()),
+            Self::String(ref s) => Some(s.as_str()),
             _ => None,
         }
     }
 
     fn as_string(&self) -> Option<String> {
         match *self {
-            DefaultScalarValue::String(ref s) => Some(s.clone()),
+            Self::String(ref s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    fn into_string(self) -> Option<String> {
+        match self {
+            Self::String(s) => Some(s),
             _ => None,
         }
     }
 
     fn as_boolean(&self) -> Option<bool> {
         match *self {
-            DefaultScalarValue::Boolean(ref b) => Some(*b),
+            Self::Boolean(ref b) => Some(*b),
             _ => None,
+        }
+    }
+
+    fn into_another<S: ScalarValue>(self) -> S {
+        match self {
+            Self::Int(i) => S::from(i),
+            Self::Float(f) => S::from(f),
+            Self::String(s) => S::from(s),
+            Self::Boolean(b) => S::from(b),
         }
     }
 }
 
 impl<'a> From<&'a str> for DefaultScalarValue {
     fn from(s: &'a str) -> Self {
-        DefaultScalarValue::String(s.into())
+        Self::String(s.into())
     }
 }
 

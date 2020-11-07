@@ -1,12 +1,11 @@
-#[cfg(test)]
 use juniper::{
-    self, execute, graphql_value, EmptyMutation, EmptySubscription, GraphQLInputObject, RootNode,
-    Value, Variables,
+    execute, graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLInputObject,
+    RootNode, Value, Variables,
 };
 
 pub struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
     fn r#type(r#fn: MyInputType) -> Vec<String> {
         let _ = r#fn;
@@ -87,7 +86,6 @@ async fn supports_raw_idents_in_fields_of_input_types() {
     );
 }
 
-#[cfg(test)]
 async fn run_type_info_query(doc: &str) -> Value {
     let schema = RootNode::new(
         Query,
