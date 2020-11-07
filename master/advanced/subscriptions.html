@@ -159,7 +159,7 @@ sequentially:</p>
 # extern crate juniper;
 # extern crate juniper_subscriptions;
 # extern crate tokio;
-# use juniper::FieldError;
+# use juniper::{graphql_object, graphql_subscription, FieldError};
 # use futures::Stream;
 # use std::pin::Pin;
 #
@@ -168,7 +168,7 @@ sequentially:</p>
 # impl juniper::Context for Database {}
 
 # pub struct Query;
-# #[juniper::graphql_object(Context = Database)]
+# #[graphql_object(context = Database)]
 # impl Query {
 #    fn hello_world() -&gt; &amp;str {
 #        &quot;Hello World!&quot;
@@ -178,7 +178,7 @@ pub struct Subscription;
 
 type StringStream = Pin&lt;Box&lt;dyn Stream&lt;Item = Result&lt;String, FieldError&gt;&gt; + Send&gt;&gt;;
 
-#[juniper::graphql_subscription(Context = Database)]
+#[graphql_subscription(context = Database)]
 impl Subscription {
     async fn hello_world() -&gt; StringStream {
         let stream = tokio::stream::iter(vec![
@@ -188,6 +188,7 @@ impl Subscription {
         Box::pin(stream)
     }
 }
+#
 # fn main () {}
 </code></pre></pre>
 <a class="header" href="#coordinator" id="coordinator"><h3>Coordinator</h3></a>
@@ -205,8 +206,12 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # extern crate juniper_subscriptions;
 # extern crate serde_json;
 # extern crate tokio;
-# use juniper::http::GraphQLRequest;
-# use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
+# use juniper::{
+#     http::GraphQLRequest,
+#     graphql_object, graphql_subscription, 
+#     DefaultScalarValue, EmptyMutation, FieldError, 
+#     RootNode, SubscriptionCoordinator,
+# };
 # use juniper_subscriptions::Coordinator;
 # use futures::{Stream, StreamExt};
 # use std::pin::Pin;
@@ -224,7 +229,7 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # 
 # pub struct Query;
 # 
-# #[juniper::graphql_object(Context = Database)]
+# #[graphql_object(context = Database)]
 # impl Query {
 #     fn hello_world() -&gt; &amp;str {
 #         &quot;Hello World!&quot;
@@ -235,7 +240,7 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # 
 # type StringStream = Pin&lt;Box&lt;dyn Stream&lt;Item = Result&lt;String, FieldError&gt;&gt; + Send&gt;&gt;;
 # 
-# #[juniper::graphql_subscription(Context = Database)]
+# #[graphql_subscription(context = Database)]
 # impl Subscription {
 #     async fn hello_world() -&gt; StringStream {
 #         let stream =
@@ -253,11 +258,9 @@ async fn run_subscription() {
     let schema = schema();
     let coordinator = Coordinator::new(schema);
     let req: GraphQLRequest&lt;DefaultScalarValue&gt; = serde_json::from_str(
-        r#&quot;
-        {
+        r#&quot;{
             &quot;query&quot;: &quot;subscription { helloWorld }&quot;
-        }
-    &quot;#,
+        }&quot;#,
     )
         .unwrap();
     let ctx = Database::new();
@@ -266,7 +269,7 @@ async fn run_subscription() {
         println!(&quot;{}&quot;, serde_json::to_string(&amp;result).unwrap());
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#web-integration-and-examples" id="web-integration-and-examples"><h3>Web Integration and Examples</h3></a>

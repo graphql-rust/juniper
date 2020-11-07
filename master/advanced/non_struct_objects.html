@@ -144,9 +144,10 @@ interfaces.</p>
 <p>Using <code>Result</code>-like enums can be a useful way of reporting e.g. validation
 errors from a mutation:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use juniper::{graphql_object, GraphQLObject};
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
-
-#[derive(juniper::GraphQLObject)]
+#
+#[derive(GraphQLObject)]
 struct ValidationError {
     field: String,
     message: String,
@@ -158,7 +159,7 @@ enum SignUpResult {
     Error(Vec&lt;ValidationError&gt;),
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl SignUpResult {
     fn user(&amp;self) -&gt; Option&lt;&amp;User&gt; {
         match *self {
@@ -174,7 +175,7 @@ impl SignUpResult {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Here, we use an enum to decide whether a user's input data was valid or not, and

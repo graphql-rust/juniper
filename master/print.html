@@ -200,8 +200,12 @@ types to a GraphQL schema. The most important one is the
 resolvers, which you will use for the <code>Query</code> and <code>Mutation</code> roots.</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
 # extern crate juniper;
-use juniper::{FieldResult, EmptySubscription};
-
+# use std::fmt::Display;
+use juniper::{
+    graphql_object, EmptySubscription, FieldResult, GraphQLEnum, 
+    GraphQLInputObject, GraphQLObject, ScalarValue,
+};
+#
 # struct DatabasePool;
 # impl DatabasePool {
 #     fn get_connection(&amp;self) -&gt; FieldResult&lt;DatabasePool&gt; { Ok(DatabasePool) }
@@ -209,15 +213,15 @@ use juniper::{FieldResult, EmptySubscription};
 #     fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
 # }
 
-#[derive(juniper::GraphQLEnum)]
+#[derive(GraphQLEnum)]
 enum Episode {
     NewHope,
     Empire,
     Jedi,
 }
 
-#[derive(juniper::GraphQLObject)]
-#[graphql(description=&quot;A humanoid creature in the Star Wars universe&quot;)]
+#[derive(GraphQLObject)]
+#[graphql(description = &quot;A humanoid creature in the Star Wars universe&quot;)]
 struct Human {
     id: String,
     name: String,
@@ -227,8 +231,8 @@ struct Human {
 
 // There is also a custom derive for mapping GraphQL input objects.
 
-#[derive(juniper::GraphQLInputObject)]
-#[graphql(description=&quot;A humanoid creature in the Star Wars universe&quot;)]
+#[derive(GraphQLInputObject)]
+#[graphql(description = &quot;A humanoid creature in the Star Wars universe&quot;)]
 struct NewHuman {
     name: String,
     appears_in: Vec&lt;Episode&gt;,
@@ -250,14 +254,13 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::graphql_object(
+#[graphql_object(
     // Here we specify the context type for the object.
     // We need to do this in every type that
     // needs access to the context.
-    Context = Context,
+    context = Context,
 )]
 impl Query {
-
     fn apiVersion() -&gt; &amp;str {
         &quot;1.0&quot;
     }
@@ -281,14 +284,18 @@ impl Query {
 
 struct Mutation;
 
-#[juniper::graphql_object(
-    Context = Context,
-)]
-impl Mutation {
+#[graphql_object(
+    context = Context,
 
-    fn createHuman(context: &amp;Context, new_human: NewHuman) -&gt; FieldResult&lt;Human&gt; {
-        let db = context.pool.get_connection()?;
-        let human: Human = db.insert_human(&amp;new_human)?;
+    // If we need to use `ScalarValue` parametrization explicitly somewhere
+    // in the object definition (like here in `FieldResult`), we should
+    // declare an explicit type parameter for that, and specify it.
+    scalar = S,
+)]
+impl&lt;S: ScalarValue + Display&gt; Mutation {
+    fn createHuman(context: &amp;Context, new_human: NewHuman) -&gt; FieldResult&lt;Human, S&gt; {
+        let db = context.pool.get_connection().map_err(|e| e.map_scalar_value())?;
+        let human: Human = db.insert_human(&amp;new_human).map_err(|e| e.map_scalar_value())?;
         Ok(human)
     }
 }
@@ -296,7 +303,7 @@ impl Mutation {
 // A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&lt;Context&gt;&gt;;
-
+#
 # fn main() {
 #   let _ = Schema::new(Query, Mutation{}, EmptySubscription::new());
 # }
@@ -308,10 +315,12 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&l
 <p>You can invoke <code>juniper::execute</code> directly to run a GraphQL query:</p>
 <pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
-use juniper::{FieldResult, Variables, EmptyMutation, EmptySubscription};
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
+    GraphQLEnum, Variables,
+};
 
-
-#[derive(juniper::GraphQLEnum, Clone, Copy)]
+#[derive(GraphQLEnum, Clone, Copy)]
 enum Episode {
     NewHope,
     Empire,
@@ -325,15 +334,12 @@ impl juniper::Context for Ctx {}
 
 struct Query;
 
-#[juniper::graphql_object(
-    Context = Ctx,
-)]
+#[graphql_object(context = Ctx)]
 impl Query {
     fn favoriteEpisode(context: &amp;Ctx) -&gt; FieldResult&lt;Episode&gt; {
         Ok(context.0)
     }
 }
-
 
 // A root schema consists of a query, a mutation, and a subscription.
 // Request queries can be executed against a RootNode.
@@ -393,12 +399,13 @@ struct you want to expose, the easiest way is to use the custom derive
 attribute. The other way is described in the <a href="complex_fields.html">Complex fields</a>
 chapter.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>This will create a GraphQL object type called <code>Person</code>, with two fields: <code>name</code>
@@ -411,7 +418,8 @@ fields. Juniper will automatically use associated doc comments as GraphQL
 descriptions:</p>
 <p>!FILENAME GraphQL descriptions via Rust doc comments</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 /// Information about a person
 struct Person {
     /// The person's full name, including both first and last names
@@ -419,39 +427,41 @@ struct Person {
     /// The person's age in years, rounded down
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Objects and fields without doc comments can instead set a <code>description</code>
 via the <code>graphql</code> attribute. The following example is equivalent to the above:</p>
 <p>!FILENAME GraphQL descriptions via attribute</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
-#[graphql(description=&quot;Information about a person&quot;)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
+#[graphql(description = &quot;Information about a person&quot;)]
 struct Person {
-    #[graphql(description=&quot;The person's full name, including both first and last names&quot;)]
+    #[graphql(description = &quot;The person's full name, including both first and last names&quot;)]
     name: String,
-    #[graphql(description=&quot;The person's age in years, rounded down&quot;)]
+    #[graphql(description = &quot;The person's age in years, rounded down&quot;)]
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Descriptions set via the <code>graphql</code> attribute take precedence over Rust
 doc comments. This enables internal Rust documentation and external GraphQL
 documentation to differ:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
-#[graphql(description=&quot;This description shows up in GraphQL&quot;)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
+#[graphql(description = &quot;This description shows up in GraphQL&quot;)]
 /// This description shows up in RustDoc
 struct Person {
-    #[graphql(description=&quot;This description shows up in GraphQL&quot;)]
+    #[graphql(description = &quot;This description shows up in GraphQL&quot;)]
     /// This description shows up in RustDoc
     name: String,
     /// This description shows up in both RustDoc and GraphQL
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#relationships" id="relationships"><h2>Relationships</h2></a>
@@ -470,18 +480,19 @@ or</li>
 </ul>
 <p>Let's see what that means for building relationships between objects:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 struct House {
     address: Option&lt;String&gt;, // Converted into String (nullable)
     inhabitants: Vec&lt;Person&gt;, // Converted into [Person!]!
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Because <code>Person</code> is a valid GraphQL type, you can have a <code>Vec&lt;Person&gt;</code> in a
@@ -491,39 +502,42 @@ objects.</p>
 <p>By default, struct fields are converted from Rust's standard <code>snake_case</code> naming
 convention into GraphQL's <code>camelCase</code> convention:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     first_name: String, // Would be exposed as firstName in the GraphQL schema
     last_name: String, // Exposed as lastName
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>You can override the name by using the <code>graphql</code> attribute on individual struct
 fields:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
-    #[graphql(name=&quot;websiteURL&quot;)]
+    #[graphql(name = &quot;websiteURL&quot;)]
     website_url: Option&lt;String&gt;, // Now exposed as websiteURL in the schema
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#deprecating-fields" id="deprecating-fields"><h2>Deprecating fields</h2></a>
 <p>To deprecate a field, you specify a deprecation reason using the <code>graphql</code>
 attribute:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
     #[graphql(deprecated = &quot;Please use the name field instead&quot;)]
     first_name: String,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>The <code>name</code>, <code>description</code>, and <code>deprecation</code> arguments can of course be
@@ -532,7 +546,8 @@ only deprecate object fields and enum values.</p>
 <a class="header" href="#skipping-fields" id="skipping-fields"><h2>Skipping fields</h2></a>
 <p>By default all fields in a <code>GraphQLObject</code> are included in the generated GraphQL type. To prevent including a specific field, annotate the field with <code>#[graphql(skip)]</code>:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -540,13 +555,13 @@ struct Person {
     # #[allow(dead_code)]
     password_hash: String, // This cannot be queried or modified from GraphQL
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#complex-fields" id="complex-fields"><h1>Complex fields</h1></a>
 <p>If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
-the <code>object</code> procedural macro. This macro lets you define GraphQL object
+the <code>#[graphql_object]</code> procedural macro. This macro lets you define GraphQL object
 fields in a Rust <code>impl</code> block for a type. Note that only GraphQL fields
 can be specified in this <code>impl</code> block. If you want to define normal methods on the struct,
 you have to do so in a separate, normal <code>impl</code> block. Continuing with the
@@ -554,13 +569,14 @@ example from the last chapter, this is how you would define <code>Person</code> 
 macro:</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
 # extern crate juniper;
+# use juniper::graphql_object;
 #
 struct Person {
     name: String,
     age: i32,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Person {
     fn name(&amp;self) -&gt; &amp;str {
         self.name.as_str()
@@ -578,13 +594,15 @@ impl Person {
         // [...]
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <p>While this is a bit more verbose, it lets you write any kind of function in the
 field resolver. With this syntax, fields can also take arguments:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject};
+#
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -594,14 +612,14 @@ struct House {
     inhabitants: Vec&lt;Person&gt;,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
     fn inhabitant_with_name(&amp;self, name: String) -&gt; Option&lt;&amp;Person&gt; {
         self.inhabitants.iter().find(|p| p.name == name)
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>To access global data such as database connections or authentication
@@ -612,20 +630,20 @@ chapter: <a href="using_contexts.html">Using contexts</a>.</p>
 to <code>camelCase</code>. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-
-struct Person {
-}
+# use juniper::graphql_object;
+#
+struct Person;
 
 /// Doc comments are used as descriptions for GraphQL.
-#[juniper::graphql_object(
+#[graphql_object(
     // With this attribute you can change the public GraphQL name of the type.
     name = &quot;PersonObject&quot;,
+
     // You can also specify a description here, which will overwrite 
     // a doc comment description.
     description = &quot;...&quot;,
 )]
 impl Person {
-
     /// A doc comment on the field will also be used for GraphQL.
     #[graphql(
         // Or provide a description here.
@@ -636,9 +654,7 @@ impl Person {
     }
 
     // Fields can also be renamed if required.
-    #[graphql(
-        name = &quot;myCustomFieldName&quot;,
-    )]
+    #[graphql(name = &quot;myCustomFieldName&quot;)]
     fn renamed_field() -&gt; bool {
         true
     }
@@ -655,7 +671,7 @@ impl Person {
         true
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#customizing-arguments" id="customizing-arguments"><h2>Customizing arguments</h2></a>
@@ -664,10 +680,11 @@ impl Person {
 <p><strong>Note</strong>: The syntax for this is currently a little awkward.
 This will become better once the <a href="https://github.com/rust-lang/rust/issues/60406">Rust RFC 2565</a> is implemented.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-
+# use juniper::graphql_object;
+#
 struct Person {}
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Person {
     #[graphql(
         arguments(
@@ -687,7 +704,7 @@ impl Person {
         format!(&quot;{} {}&quot;, arg1, arg2)
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#more-features" id="more-features"><h2>More features</h2></a>
@@ -697,7 +714,7 @@ impl Person {
 <li>Per-argument default values</li>
 <li>Per-argument descriptions</li>
 </ul>
-<p>These, and more features, are described more thorougly in <a href="https://docs.rs/juniper/latest/juniper/macro.object.html">the reference
+<p>These, and more features, are described more thoroughly in <a href="https://docs.rs/juniper/latest/juniper/macro.object.html">the reference
 documentation</a>.</p>
 <a class="header" href="#using-contexts" id="using-contexts"><h1>Using contexts</h1></a>
 <p>The context type is a feature in Juniper that lets field resolvers access global
@@ -710,7 +727,7 @@ integration.</p>
 resolvers. Let's say that we have a simple user database in a <code>HashMap</code>:</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
 # use std::collections::HashMap;
-
+#
 struct Database {
     users: HashMap&lt;i32, User&gt;,
 }
@@ -720,7 +737,7 @@ struct User {
     name: String,
     friend_ids: Vec&lt;i32&gt;,
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <p>We would like a <code>friends</code> field on <code>User</code> that returns a list of <code>User</code> objects.
@@ -729,9 +746,10 @@ In order to write such a field though, the database must be queried.</p>
 the user object.</p>
 <p>To gain access to the context, we need to specify an argument with the same
 type as the specified <code>Context</code> for the type:</p>
-<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
-extern crate juniper;
-
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use std::collections::HashMap;
+# use juniper::graphql_object;
+#
 // This struct represents our context.
 struct Database {
     users: HashMap&lt;i32, User&gt;,
@@ -746,11 +764,8 @@ struct User {
     friend_ids: Vec&lt;i32&gt;,
 }
 
-
 // Assign Database as the context type for User
-#[juniper::graphql_object(
-    Context = Database,
-)]
+#[graphql_object(context = Database)]
 impl User {
     // 3. Inject the context by specifying an argument
     //    with the context type.
@@ -773,7 +788,7 @@ impl User {
         self.id 
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <p>You only get an immutable reference to the context, so if you want to affect
@@ -804,13 +819,13 @@ use std::{
     fs::{File},
     io::{Read},
 };
-use juniper::FieldResult;
+use juniper::{graphql_object, FieldResult};
 
 struct Example {
     filename: PathBuf,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Example {
     fn contents() -&gt; FieldResult&lt;String&gt; {
         let mut file = File::open(&amp;self.filename)?;
@@ -829,7 +844,7 @@ impl Example {
       }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p><code>FieldResult&lt;T&gt;</code> is an alias for <code>Result&lt;T, FieldError&gt;</code>, which is the error
@@ -889,14 +904,16 @@ following would be returned:</p>
 <p>Sometimes it is desirable to return additional structured error information
 to clients. This can be accomplished by implementing <a href="https://docs.rs/juniper/latest/juniper/trait.IntoFieldError.html"><code>IntoFieldError</code></a>:</p>
 <pre><pre class="playpen"><code class="language-rust"># #[macro_use] extern crate juniper;
+# use juniper::{graphql_object, FieldError, IntoFieldError, ScalarValue};
+#
 enum CustomError {
     WhateverNotSet,
 }
 
-impl juniper::IntoFieldError for CustomError {
-    fn into_field_error(self) -&gt; juniper::FieldError {
+impl&lt;S: ScalarValue&gt; IntoFieldError&lt;S&gt; for CustomError {
+    fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
-            CustomError::WhateverNotSet =&gt; juniper::FieldError::new(
+            CustomError::WhateverNotSet =&gt; FieldError::new(
                 &quot;Whatever does not exist&quot;,
                 graphql_value!({
                     &quot;type&quot;: &quot;NO_WHATEVER&quot;
@@ -910,7 +927,7 @@ struct Example {
     whatever: Option&lt;bool&gt;,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Example {
     fn whatever() -&gt; Result&lt;bool, CustomError&gt; {
       if let Some(value) = self.whatever {
@@ -919,18 +936,18 @@ impl Example {
       Err(CustomError::WhateverNotSet)
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>The specified structured error information is included in the <a href="https://facebook.github.io/graphql/June2018/#sec-Errors"><code>extensions</code></a> key:</p>
-<pre><code class="language-js">{
-  &quot;errors&quot;: [
+<pre><code class="language-json">{
+  &quot;errors&quot;: [{
     &quot;message&quot;: &quot;Whatever does not exist&quot;,
-    &quot;locations&quot;: [{ &quot;line&quot;: 2, &quot;column&quot;: 4 }]),
+    &quot;locations&quot;: [{&quot;line&quot;: 2, &quot;column&quot;: 4}],
     &quot;extensions&quot;: {
       &quot;type&quot;: &quot;NO_WHATEVER&quot;
     }
-  ]
+  }]
 }
 </code></pre>
 <a class="header" href="#errors-backed-by-graphqls-schema" id="errors-backed-by-graphqls-schema"><h2>Errors Backed by GraphQL's Schema</h2></a>
@@ -952,24 +969,26 @@ for a particular field are also returned as a string. In this example
 the string contains a server-side localized error message. However, it is also
 possible to return a unique string identifier and have the client present a localized string to the user.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+#
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationError {
     field: String,
     message: String,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationErrors {
     errors: Vec&lt;ValidationError&gt;,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationErrors),
@@ -977,7 +996,7 @@ pub enum GraphQLResult {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&amp;self, name: String, quantity: i32) -&gt; GraphQLResult {
         let mut errors = Vec::new();
@@ -1003,7 +1022,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Each function may have a different return type and depending on the input
@@ -1039,19 +1058,21 @@ field is set if the validation for that particular field fails. You will likely 
 before. Each resolver function has a custom <code>ValidationResult</code> which
 contains only fields provided by the function.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+#
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationError {
     name: Option&lt;String&gt;,
     quantity: Option&lt;String&gt;,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationError),
@@ -1059,7 +1080,7 @@ pub enum GraphQLResult {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&amp;self, name: String, quantity: i32) -&gt; GraphQLResult {
         let mut error = ValidationError {
@@ -1082,7 +1103,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <pre><code class="language-graphql">{
@@ -1108,22 +1129,23 @@ errors when they occur.</p>
 <p>In the following example, a theoretical database could fail
 and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:</p>
-<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
-# #[macro_use] extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#
+use juniper::{graphql_object, graphql_value, FieldError, GraphQLObject, GraphQLUnion, ScalarValue};
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationErrorItem {
     name: Option&lt;String&gt;,
     quantity: Option&lt;String&gt;,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationErrorItem),
@@ -1133,10 +1155,10 @@ pub enum ApiError {
     Database,
 }
 
-impl juniper::IntoFieldError for ApiError {
-    fn into_field_error(self) -&gt; juniper::FieldError {
+impl&lt;S: ScalarValue&gt; juniper::IntoFieldError&lt;S&gt; for ApiError {
+    fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
-            ApiError::Database =&gt; juniper::FieldError::new(
+            ApiError::Database =&gt; FieldError::new(
                 &quot;Internal database error&quot;,
                 graphql_value!({
                     &quot;type&quot;: &quot;DATABASE&quot;
@@ -1148,7 +1170,7 @@ impl juniper::IntoFieldError for ApiError {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&amp;self, name: String, quantity: i32) -&gt; Result&lt;GraphQLResult, ApiError&gt; {
         let mut error = ValidationErrorItem {
@@ -1171,7 +1193,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#additional-material" id="additional-material"><h2>Additional Material</h2></a>
@@ -2265,18 +2287,18 @@ object somewhere but never reference it, it will not be exposed in a schema.</p>
 object in Juniper, most commonly using the <code>graphql_object</code> proc macro:</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
 # extern crate juniper;
-# use juniper::FieldResult;
-# #[derive(juniper::GraphQLObject)] struct User { name: String }
+# use juniper::{graphql_object, FieldResult, GraphQLObject};
+# #[derive(GraphQLObject)] struct User { name: String }
 struct Root;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Root {
     fn userWithUsername(username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
         // Look up user in database...
-# unimplemented!()
+#       unimplemented!()
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#mutations" id="mutations"><h2>Mutations</h2></a>
@@ -2284,28 +2306,30 @@ impl Root {
 that performs some mutating side-effect such as updating a database.</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
 # extern crate juniper;
-# use juniper::FieldResult;
-# #[derive(juniper::GraphQLObject)] struct User { name: String }
+# use juniper::{graphql_object, FieldResult, GraphQLObject};
+# #[derive(GraphQLObject)] struct User { name: String }
 struct Mutations;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutations {
     fn signUpUser(name: String, email: String) -&gt; FieldResult&lt;User&gt; {
         // Validate inputs and save user in database...
-# unimplemented!()
+#       unimplemented!()
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea" id="converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea"><h1>Converting a Rust schema to the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a></h1></a>
 <p>Many tools in the GraphQL ecosystem require the schema to be defined in the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a>. You can generate a <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a> representation of your schema defined in Rust using the <code>schema-language</code> feature (on by default):</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-use juniper::{FieldResult, EmptyMutation, EmptySubscription, RootNode};
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode,
+};
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
     fn hello(&amp;self) -&gt; FieldResult&lt;&amp;str&gt; {
         Ok(&quot;hello world&quot;)
@@ -2553,11 +2577,14 @@ result can then be converted to JSON for use with tools and libraries such as
 <pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
 # extern crate juniper;
 # extern crate serde_json;
-use juniper::{EmptyMutation, EmptySubscription, FieldResult, IntrospectionFormat};
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
+    GraphQLObject, IntrospectionFormat,
+};
 
 // Define our schema.
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 struct Example {
   id: String,
 }
@@ -2567,9 +2594,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::graphql_object(
-  Context = Context,
-)]
+#[graphql_object(context = Context)]
 impl Query {
    fn example(id: String) -&gt; FieldResult&lt;Example&gt; {
        unimplemented!()
@@ -2607,9 +2632,10 @@ interfaces.</p>
 <p>Using <code>Result</code>-like enums can be a useful way of reporting e.g. validation
 errors from a mutation:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use juniper::{graphql_object, GraphQLObject};
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
-
-#[derive(juniper::GraphQLObject)]
+#
+#[derive(GraphQLObject)]
 struct ValidationError {
     field: String,
     message: String,
@@ -2621,7 +2647,7 @@ enum SignUpResult {
     Error(Vec&lt;ValidationError&gt;),
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl SignUpResult {
     fn user(&amp;self) -&gt; Option&lt;&amp;User&gt; {
         match *self {
@@ -2637,7 +2663,7 @@ impl SignUpResult {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Here, we use an enum to decide whether a user's input data was valid or not, and
@@ -3042,7 +3068,7 @@ sequentially:</p>
 # extern crate juniper;
 # extern crate juniper_subscriptions;
 # extern crate tokio;
-# use juniper::FieldError;
+# use juniper::{graphql_object, graphql_subscription, FieldError};
 # use futures::Stream;
 # use std::pin::Pin;
 #
@@ -3051,7 +3077,7 @@ sequentially:</p>
 # impl juniper::Context for Database {}
 
 # pub struct Query;
-# #[juniper::graphql_object(Context = Database)]
+# #[graphql_object(context = Database)]
 # impl Query {
 #    fn hello_world() -&gt; &amp;str {
 #        &quot;Hello World!&quot;
@@ -3061,7 +3087,7 @@ pub struct Subscription;
 
 type StringStream = Pin&lt;Box&lt;dyn Stream&lt;Item = Result&lt;String, FieldError&gt;&gt; + Send&gt;&gt;;
 
-#[juniper::graphql_subscription(Context = Database)]
+#[graphql_subscription(context = Database)]
 impl Subscription {
     async fn hello_world() -&gt; StringStream {
         let stream = tokio::stream::iter(vec![
@@ -3071,6 +3097,7 @@ impl Subscription {
         Box::pin(stream)
     }
 }
+#
 # fn main () {}
 </code></pre></pre>
 <a class="header" href="#coordinator" id="coordinator"><h3>Coordinator</h3></a>
@@ -3088,8 +3115,12 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # extern crate juniper_subscriptions;
 # extern crate serde_json;
 # extern crate tokio;
-# use juniper::http::GraphQLRequest;
-# use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator};
+# use juniper::{
+#     http::GraphQLRequest,
+#     graphql_object, graphql_subscription, 
+#     DefaultScalarValue, EmptyMutation, FieldError, 
+#     RootNode, SubscriptionCoordinator,
+# };
 # use juniper_subscriptions::Coordinator;
 # use futures::{Stream, StreamExt};
 # use std::pin::Pin;
@@ -3107,7 +3138,7 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # 
 # pub struct Query;
 # 
-# #[juniper::graphql_object(Context = Database)]
+# #[graphql_object(context = Database)]
 # impl Query {
 #     fn hello_world() -&gt; &amp;str {
 #         &quot;Hello World!&quot;
@@ -3118,7 +3149,7 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # 
 # type StringStream = Pin&lt;Box&lt;dyn Stream&lt;Item = Result&lt;String, FieldError&gt;&gt; + Send&gt;&gt;;
 # 
-# #[juniper::graphql_subscription(Context = Database)]
+# #[graphql_subscription(context = Database)]
 # impl Subscription {
 #     async fn hello_world() -&gt; StringStream {
 #         let stream =
@@ -3136,11 +3167,9 @@ async fn run_subscription() {
     let schema = schema();
     let coordinator = Coordinator::new(schema);
     let req: GraphQLRequest&lt;DefaultScalarValue&gt; = serde_json::from_str(
-        r#&quot;
-        {
+        r#&quot;{
             &quot;query&quot;: &quot;subscription { helloWorld }&quot;
-        }
-    &quot;#,
+        }&quot;#,
     )
         .unwrap();
     let ctx = Database::new();
@@ -3149,7 +3178,7 @@ async fn run_subscription() {
         println!(&quot;{}&quot;, serde_json::to_string(&amp;result).unwrap());
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#web-integration-and-examples" id="web-integration-and-examples"><h3>Web Integration and Examples</h3></a>

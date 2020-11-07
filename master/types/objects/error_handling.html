@@ -160,13 +160,13 @@ use std::{
     fs::{File},
     io::{Read},
 };
-use juniper::FieldResult;
+use juniper::{graphql_object, FieldResult};
 
 struct Example {
     filename: PathBuf,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Example {
     fn contents() -&gt; FieldResult&lt;String&gt; {
         let mut file = File::open(&amp;self.filename)?;
@@ -185,7 +185,7 @@ impl Example {
       }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p><code>FieldResult&lt;T&gt;</code> is an alias for <code>Result&lt;T, FieldError&gt;</code>, which is the error
@@ -245,14 +245,16 @@ following would be returned:</p>
 <p>Sometimes it is desirable to return additional structured error information
 to clients. This can be accomplished by implementing <a href="https://docs.rs/juniper/latest/juniper/trait.IntoFieldError.html"><code>IntoFieldError</code></a>:</p>
 <pre><pre class="playpen"><code class="language-rust"># #[macro_use] extern crate juniper;
+# use juniper::{graphql_object, FieldError, IntoFieldError, ScalarValue};
+#
 enum CustomError {
     WhateverNotSet,
 }
 
-impl juniper::IntoFieldError for CustomError {
-    fn into_field_error(self) -&gt; juniper::FieldError {
+impl&lt;S: ScalarValue&gt; IntoFieldError&lt;S&gt; for CustomError {
+    fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
-            CustomError::WhateverNotSet =&gt; juniper::FieldError::new(
+            CustomError::WhateverNotSet =&gt; FieldError::new(
                 &quot;Whatever does not exist&quot;,
                 graphql_value!({
                     &quot;type&quot;: &quot;NO_WHATEVER&quot;
@@ -266,7 +268,7 @@ struct Example {
     whatever: Option&lt;bool&gt;,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Example {
     fn whatever() -&gt; Result&lt;bool, CustomError&gt; {
       if let Some(value) = self.whatever {
@@ -275,18 +277,18 @@ impl Example {
       Err(CustomError::WhateverNotSet)
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>The specified structured error information is included in the <a href="https://facebook.github.io/graphql/June2018/#sec-Errors"><code>extensions</code></a> key:</p>
-<pre><code class="language-js">{
-  &quot;errors&quot;: [
+<pre><code class="language-json">{
+  &quot;errors&quot;: [{
     &quot;message&quot;: &quot;Whatever does not exist&quot;,
-    &quot;locations&quot;: [{ &quot;line&quot;: 2, &quot;column&quot;: 4 }]),
+    &quot;locations&quot;: [{&quot;line&quot;: 2, &quot;column&quot;: 4}],
     &quot;extensions&quot;: {
       &quot;type&quot;: &quot;NO_WHATEVER&quot;
     }
-  ]
+  }]
 }
 </code></pre>
 <a class="header" href="#errors-backed-by-graphqls-schema" id="errors-backed-by-graphqls-schema"><h2>Errors Backed by GraphQL's Schema</h2></a>
@@ -308,24 +310,26 @@ for a particular field are also returned as a string. In this example
 the string contains a server-side localized error message. However, it is also
 possible to return a unique string identifier and have the client present a localized string to the user.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+#
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationError {
     field: String,
     message: String,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationErrors {
     errors: Vec&lt;ValidationError&gt;,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationErrors),
@@ -333,7 +337,7 @@ pub enum GraphQLResult {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&amp;self, name: String, quantity: i32) -&gt; GraphQLResult {
         let mut errors = Vec::new();
@@ -359,7 +363,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Each function may have a different return type and depending on the input
@@ -395,19 +399,21 @@ field is set if the validation for that particular field fails. You will likely 
 before. Each resolver function has a custom <code>ValidationResult</code> which
 contains only fields provided by the function.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+#
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationError {
     name: Option&lt;String&gt;,
     quantity: Option&lt;String&gt;,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationError),
@@ -415,7 +421,7 @@ pub enum GraphQLResult {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&amp;self, name: String, quantity: i32) -&gt; GraphQLResult {
         let mut error = ValidationError {
@@ -438,7 +444,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <pre><code class="language-graphql">{
@@ -464,22 +470,23 @@ errors when they occur.</p>
 <p>In the following example, a theoretical database could fail
 and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:</p>
-<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
-# #[macro_use] extern crate juniper;
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+#
+use juniper::{graphql_object, graphql_value, FieldError, GraphQLObject, GraphQLUnion, ScalarValue};
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct Item {
     name: String,
     quantity: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct ValidationErrorItem {
     name: Option&lt;String&gt;,
     quantity: Option&lt;String&gt;,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
     Err(ValidationErrorItem),
@@ -489,10 +496,10 @@ pub enum ApiError {
     Database,
 }
 
-impl juniper::IntoFieldError for ApiError {
-    fn into_field_error(self) -&gt; juniper::FieldError {
+impl&lt;S: ScalarValue&gt; juniper::IntoFieldError&lt;S&gt; for ApiError {
+    fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
-            ApiError::Database =&gt; juniper::FieldError::new(
+            ApiError::Database =&gt; FieldError::new(
                 &quot;Internal database error&quot;,
                 graphql_value!({
                     &quot;type&quot;: &quot;DATABASE&quot;
@@ -504,7 +511,7 @@ impl juniper::IntoFieldError for ApiError {
 
 pub struct Mutation;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Mutation {
     fn addItem(&amp;self, name: String, quantity: i32) -&gt; Result&lt;GraphQLResult, ApiError&gt; {
         let mut error = ValidationErrorItem {
@@ -527,7 +534,7 @@ impl Mutation {
         }
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#additional-material" id="additional-material"><h2>Additional Material</h2></a>

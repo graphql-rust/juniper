@@ -139,7 +139,7 @@
                         <a class="header" href="#complex-fields" id="complex-fields"><h1>Complex fields</h1></a>
 <p>If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
-the <code>object</code> procedural macro. This macro lets you define GraphQL object
+the <code>#[graphql_object]</code> procedural macro. This macro lets you define GraphQL object
 fields in a Rust <code>impl</code> block for a type. Note that only GraphQL fields
 can be specified in this <code>impl</code> block. If you want to define normal methods on the struct,
 you have to do so in a separate, normal <code>impl</code> block. Continuing with the
@@ -147,13 +147,14 @@ example from the last chapter, this is how you would define <code>Person</code> 
 macro:</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
 # extern crate juniper;
+# use juniper::graphql_object;
 #
 struct Person {
     name: String,
     age: i32,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Person {
     fn name(&amp;self) -&gt; &amp;str {
         self.name.as_str()
@@ -171,13 +172,15 @@ impl Person {
         // [...]
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <p>While this is a bit more verbose, it lets you write any kind of function in the
 field resolver. With this syntax, fields can also take arguments:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::{graphql_object, GraphQLObject};
+#
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -187,14 +190,14 @@ struct House {
     inhabitants: Vec&lt;Person&gt;,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
     fn inhabitant_with_name(&amp;self, name: String) -&gt; Option&lt;&amp;Person&gt; {
         self.inhabitants.iter().find(|p| p.name == name)
     }
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>To access global data such as database connections or authentication
@@ -205,20 +208,20 @@ chapter: <a href="using_contexts.html">Using contexts</a>.</p>
 to <code>camelCase</code>. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-
-struct Person {
-}
+# use juniper::graphql_object;
+#
+struct Person;
 
 /// Doc comments are used as descriptions for GraphQL.
-#[juniper::graphql_object(
+#[graphql_object(
     // With this attribute you can change the public GraphQL name of the type.
     name = &quot;PersonObject&quot;,
+
     // You can also specify a description here, which will overwrite 
     // a doc comment description.
     description = &quot;...&quot;,
 )]
 impl Person {
-
     /// A doc comment on the field will also be used for GraphQL.
     #[graphql(
         // Or provide a description here.
@@ -229,9 +232,7 @@ impl Person {
     }
 
     // Fields can also be renamed if required.
-    #[graphql(
-        name = &quot;myCustomFieldName&quot;,
-    )]
+    #[graphql(name = &quot;myCustomFieldName&quot;)]
     fn renamed_field() -&gt; bool {
         true
     }
@@ -248,7 +249,7 @@ impl Person {
         true
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#customizing-arguments" id="customizing-arguments"><h2>Customizing arguments</h2></a>
@@ -257,10 +258,11 @@ impl Person {
 <p><strong>Note</strong>: The syntax for this is currently a little awkward.
 This will become better once the <a href="https://github.com/rust-lang/rust/issues/60406">Rust RFC 2565</a> is implemented.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-
+# use juniper::graphql_object;
+#
 struct Person {}
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Person {
     #[graphql(
         arguments(
@@ -280,7 +282,7 @@ impl Person {
         format!(&quot;{} {}&quot;, arg1, arg2)
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <a class="header" href="#more-features" id="more-features"><h2>More features</h2></a>
@@ -290,7 +292,7 @@ impl Person {
 <li>Per-argument default values</li>
 <li>Per-argument descriptions</li>
 </ul>
-<p>These, and more features, are described more thorougly in <a href="https://docs.rs/juniper/latest/juniper/macro.object.html">the reference
+<p>These, and more features, are described more thoroughly in <a href="https://docs.rs/juniper/latest/juniper/macro.object.html">the reference
 documentation</a>.</p>
 
                     </main>

@@ -147,7 +147,7 @@ integration.</p>
 resolvers. Let's say that we have a simple user database in a <code>HashMap</code>:</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
 # use std::collections::HashMap;
-
+#
 struct Database {
     users: HashMap&lt;i32, User&gt;,
 }
@@ -157,7 +157,7 @@ struct User {
     name: String,
     friend_ids: Vec&lt;i32&gt;,
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <p>We would like a <code>friends</code> field on <code>User</code> that returns a list of <code>User</code> objects.
@@ -166,9 +166,10 @@ In order to write such a field though, the database must be queried.</p>
 the user object.</p>
 <p>To gain access to the context, we need to specify an argument with the same
 type as the specified <code>Context</code> for the type:</p>
-<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
-extern crate juniper;
-
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+# use std::collections::HashMap;
+# use juniper::graphql_object;
+#
 // This struct represents our context.
 struct Database {
     users: HashMap&lt;i32, User&gt;,
@@ -183,11 +184,8 @@ struct User {
     friend_ids: Vec&lt;i32&gt;,
 }
 
-
 // Assign Database as the context type for User
-#[juniper::graphql_object(
-    Context = Database,
-)]
+#[graphql_object(context = Database)]
 impl User {
     // 3. Inject the context by specifying an argument
     //    with the context type.
@@ -210,7 +208,7 @@ impl User {
         self.id 
     }
 }
-
+#
 # fn main() { }
 </code></pre></pre>
 <p>You only get an immutable reference to the context, so if you want to affect

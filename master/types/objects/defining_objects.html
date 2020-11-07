@@ -144,12 +144,13 @@ struct you want to expose, the easiest way is to use the custom derive
 attribute. The other way is described in the <a href="complex_fields.html">Complex fields</a>
 chapter.</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>This will create a GraphQL object type called <code>Person</code>, with two fields: <code>name</code>
@@ -162,7 +163,8 @@ fields. Juniper will automatically use associated doc comments as GraphQL
 descriptions:</p>
 <p>!FILENAME GraphQL descriptions via Rust doc comments</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 /// Information about a person
 struct Person {
     /// The person's full name, including both first and last names
@@ -170,39 +172,41 @@ struct Person {
     /// The person's age in years, rounded down
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Objects and fields without doc comments can instead set a <code>description</code>
 via the <code>graphql</code> attribute. The following example is equivalent to the above:</p>
 <p>!FILENAME GraphQL descriptions via attribute</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
-#[graphql(description=&quot;Information about a person&quot;)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
+#[graphql(description = &quot;Information about a person&quot;)]
 struct Person {
-    #[graphql(description=&quot;The person's full name, including both first and last names&quot;)]
+    #[graphql(description = &quot;The person's full name, including both first and last names&quot;)]
     name: String,
-    #[graphql(description=&quot;The person's age in years, rounded down&quot;)]
+    #[graphql(description = &quot;The person's age in years, rounded down&quot;)]
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Descriptions set via the <code>graphql</code> attribute take precedence over Rust
 doc comments. This enables internal Rust documentation and external GraphQL
 documentation to differ:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
-#[graphql(description=&quot;This description shows up in GraphQL&quot;)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
+#[graphql(description = &quot;This description shows up in GraphQL&quot;)]
 /// This description shows up in RustDoc
 struct Person {
-    #[graphql(description=&quot;This description shows up in GraphQL&quot;)]
+    #[graphql(description = &quot;This description shows up in GraphQL&quot;)]
     /// This description shows up in RustDoc
     name: String,
     /// This description shows up in both RustDoc and GraphQL
     age: i32,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#relationships" id="relationships"><h2>Relationships</h2></a>
@@ -221,18 +225,19 @@ or</li>
 </ul>
 <p>Let's see what that means for building relationships between objects:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 struct House {
     address: Option&lt;String&gt;, // Converted into String (nullable)
     inhabitants: Vec&lt;Person&gt;, // Converted into [Person!]!
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>Because <code>Person</code> is a valid GraphQL type, you can have a <code>Vec&lt;Person&gt;</code> in a
@@ -242,39 +247,42 @@ objects.</p>
 <p>By default, struct fields are converted from Rust's standard <code>snake_case</code> naming
 convention into GraphQL's <code>camelCase</code> convention:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     first_name: String, // Would be exposed as firstName in the GraphQL schema
     last_name: String, // Exposed as lastName
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>You can override the name by using the <code>graphql</code> attribute on individual struct
 fields:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
-    #[graphql(name=&quot;websiteURL&quot;)]
+    #[graphql(name = &quot;websiteURL&quot;)]
     website_url: Option&lt;String&gt;, // Now exposed as websiteURL in the schema
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#deprecating-fields" id="deprecating-fields"><h2>Deprecating fields</h2></a>
 <p>To deprecate a field, you specify a deprecation reason using the <code>graphql</code>
 attribute:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
     #[graphql(deprecated = &quot;Please use the name field instead&quot;)]
     first_name: String,
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 <p>The <code>name</code>, <code>description</code>, and <code>deprecation</code> arguments can of course be
@@ -283,7 +291,8 @@ only deprecate object fields and enum values.</p>
 <a class="header" href="#skipping-fields" id="skipping-fields"><h2>Skipping fields</h2></a>
 <p>By default all fields in a <code>GraphQLObject</code> are included in the generated GraphQL type. To prevent including a specific field, annotate the field with <code>#[graphql(skip)]</code>:</p>
 <pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLObject)]
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -291,7 +300,7 @@ struct Person {
     # #[allow(dead_code)]
     password_hash: String, // This cannot be queried or modified from GraphQL
 }
-
+#
 # fn main() {}
 </code></pre></pre>
 
