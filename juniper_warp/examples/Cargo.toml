@@ -1,0 +1,18 @@
+[package]
+name = "juniper_warp_examples"
+version = "0.1.0"
+edition = "2018"
+
+[[bin]]
+name = "warp_server"
+path = "warp_server.rs"
+
+[dependencies]
+juniper_warp = { path = "../" }
+juniper = { version = "0.14.2", path = "../../juniper", features = ["expose-test-schema"] }
+tokio = { version = "0.2", features = ["blocking", "rt-core", "macros"] }
+warp = "0.2"
+log = "0.4"
+env_logger = "0.8"
+
+[workspace]
