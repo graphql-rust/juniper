@@ -1730,8 +1730,15 @@ impl EnumType {
 
         let variants = self.variants.iter().enumerate().map(|(n, ty)| {
             let variant = Self::variant_ident(n);
+            let doc = format!(
+                "`{}` implementer of this GraphQL interface.",
+                quote! { #ty },
+            );
 
-            quote! { #variant(#ty), }
+            quote! {
+                #[doc = #doc]
+                #variant(#ty),
+            }
         });
 
         let phantom_variant = if self.has_phantom_variant() {
