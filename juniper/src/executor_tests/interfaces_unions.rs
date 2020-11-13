@@ -1,35 +1,31 @@
 mod interface {
     use crate::{
+        graphql_interface, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
         value::Value,
     };
 
+    #[graphql_interface(for = [Cat, Dog])]
     trait Pet {
         fn name(&self) -> &str;
 
+        #[graphql(downcast)]
         fn as_dog(&self) -> Option<&Dog> {
             None
         }
+        #[graphql(downcast)]
         fn as_cat(&self) -> Option<&Cat> {
             None
         }
     }
-
-    graphql_interface!(<'a> &'a dyn Pet: () as "Pet" |&self| {
-        field name() -> &str { self.name() }
-
-        instance_resolvers: |&_| {
-            &Dog => self.as_dog(),
-            &Cat => self.as_cat(),
-        }
-    });
 
     struct Dog {
         name: String,
         woofs: bool,
     }
 
+    #[graphql_interface]
     impl Pet for Dog {
         fn name(&self) -> &str {
             &self.name
@@ -39,9 +35,7 @@ mod interface {
         }
     }
 
-    #[crate::graphql_object(
-        interfaces = [&dyn Pet]
-    )]
+    #[graphql_object(impl = PetValue)]
     impl Dog {
         fn name(&self) -> &str {
             &self.name
@@ -56,6 +50,7 @@ mod interface {
         meows: bool,
     }
 
+    #[graphql_interface]
     impl Pet for Cat {
         fn name(&self) -> &str {
             &self.name
@@ -65,9 +60,7 @@ mod interface {
         }
     }
 
-    #[crate::graphql_object(
-        interfaces = [&dyn Pet]
-    )]
+    #[graphql_object(impl = PetValue)]
     impl Cat {
         fn name(&self) -> &str {
             &self.name
@@ -78,13 +71,13 @@ mod interface {
     }
 
     struct Schema {
-        pets: Vec<Box<dyn Pet>>,
+        pets: Vec<PetValue>,
     }
 
-    #[crate::graphql_object]
+    #[graphql_object]
     impl Schema {
-        fn pets(&self) -> Vec<&dyn Pet> {
-            self.pets.iter().map(|p| p.as_ref()).collect()
+        fn pets(&self) -> &Vec<PetValue> {
+            &self.pets
         }
     }
 
@@ -93,14 +86,16 @@ mod interface {
         let schema = RootNode::new(
             Schema {
                 pets: vec![
-                    Box::new(Dog {
+                    Dog {
                         name: "Odie".to_owned(),
                         woofs: true,
-                    }),
-                    Box::new(Cat {
+                    }
+                    .into(),
+                    Cat {
                         name: "Garfield".to_owned(),
                         meows: false,
-                    }),
+                    }
+                    .into(),
                 ],
             },
             EmptyMutation::<()>::new(),
@@ -162,12 +157,13 @@ mod interface {
 
 mod union {
     use crate::{
+        graphql_object, graphql_union,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
         value::Value,
     };
 
-    #[crate::graphql_union]
+    #[graphql_union]
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> {
             None
@@ -188,7 +184,7 @@ mod union {
         }
     }
 
-    #[crate::graphql_object]
+    #[graphql_object]
     impl Dog {
         fn name(&self) -> &str {
             &self.name
@@ -209,7 +205,7 @@ mod union {
         }
     }
 
-    #[crate::graphql_object]
+    #[graphql_object]
     impl Cat {
         fn name(&self) -> &str {
             &self.name
@@ -220,12 +216,12 @@ mod union {
     }
 
     struct Schema {
-        pets: Vec<Box<dyn Pet>>,
+        pets: Vec<Box<dyn Pet + Send + Sync>>,
     }
 
-    #[crate::graphql_object]
+    #[graphql_object]
     impl Schema {
-        fn pets(&self) -> Vec<&dyn Pet> {
+        fn pets(&self) -> Vec<&(dyn Pet + Send + Sync)> {
             self.pets.iter().map(|p| p.as_ref()).collect()
         }
     }
