@@ -63,7 +63,7 @@ pub trait Character {
     /// Which movies they appear in
     fn appears_in(&self) -> &[Episode];
 
-    #[graphql_interface(ignore)]
+    #[graphql(ignore)]
     fn friends_ids(&self) -> &[String];
 }
 
