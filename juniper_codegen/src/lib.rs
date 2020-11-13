@@ -638,12 +638,12 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
 /// #
 /// #[graphql_interface(name = "Character", desc = "Possible episode characters.")]
 /// trait Chrctr {
-///     #[graphql_interface(name = "id", desc = "ID of the character.")]
-///     #[graphql_interface(deprecated = "Don't use it")]
+///     #[graphql(name = "id", desc = "ID of the character.")]
+///     #[graphql(deprecated = "Don't use it")]
 ///     fn some_id(
 ///         &self,
-///         #[graphql_interface(name = "number", desc = "Arbitrary number.")]
-///         #[graphql_interface(default = 5)]
+///         #[graphql(name = "number", desc = "Arbitrary number.")]
+///         #[graphql(default = 5)]
 ///         num: i32,
 ///     ) -> &str;
 /// }
@@ -654,7 +654,7 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
 /// trait CharacterWithDocs {
 ///     /// ID of the character.
 ///     #[deprecated]
-///     fn id(&self, #[graphql_interface(default)] num: i32) -> &str;
+///     fn id(&self, #[graphql(default)] num: i32) -> &str;
 /// }
 /// ```
 ///
@@ -683,7 +683,7 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
 /// #[graphql_interface(for = [Human, Droid], Context = Database)]
 /// trait Character {
 ///     fn id<'db>(&self, ctx: &'db Database) -> Option<&'db str>;
-///     fn info<'db>(&self, #[graphql_interface(context)] db: &'db Database) -> Option<&'db str>;
+///     fn info<'db>(&self, #[graphql(context)] db: &'db Database) -> Option<&'db str>;
 /// }
 ///
 /// #[derive(GraphQLObject)]
@@ -739,7 +739,7 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
 ///
 ///     async fn name<'b>(
 ///         &'b self,
-///         #[graphql_interface(executor)] another: &Executor<'_, '_, (), S>,
+///         #[graphql(executor)] another: &Executor<'_, '_, (), S>,
 ///     ) -> &'b str
 ///     where
 ///         S: Send + Sync;
@@ -825,7 +825,7 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
 /// trait Character {
 ///     fn id(&self) -> &str;
 ///
-///     #[graphql_interface(ignore)]  // or `#[graphql_interface(skip)]`, your choice
+///     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
 ///     fn kaboom(&mut self);
 /// }
 /// ```
@@ -856,7 +856,7 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
 /// trait Character {
 ///     fn id(&self) -> &str;
 ///
-///     #[graphql_interface(downcast)] // makes method a downcast to `Human`, not a field
+///     #[graphql(downcast)] // makes method a downcast to `Human`, not a field
 ///     // NOTICE: The method signature may optionally contain `&Database` context argument.
 ///     fn as_human(&self) -> Option<&Human> {
 ///         None
@@ -1423,7 +1423,7 @@ pub fn derive_union(input: TokenStream) -> TokenStream {
 /// trait Character {
 ///     fn as_human(&self) -> Option<&Human> { None }
 ///     fn as_droid(&self) -> Option<&Droid> { None }
-///     #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
+///     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
 ///     fn id(&self) -> &str;
 /// }
 /// #
@@ -1471,7 +1471,7 @@ pub fn derive_union(input: TokenStream) -> TokenStream {
 ///     on Droid = get_droid,
 /// )]
 /// trait Character {
-///     #[graphql_union(ignore)]
+///     #[graphql(ignore)]
 ///     fn id(&self) -> &str;
 /// }
 ///

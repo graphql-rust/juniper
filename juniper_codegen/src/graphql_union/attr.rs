@@ -115,21 +115,21 @@ fn parse_variant_from_trait_method(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql_union"))
+        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
         .collect();
 
-    let meta = UnionVariantMeta::from_attrs("graphql_union", &method_attrs)
+    let meta = UnionVariantMeta::from_attrs("graphql", &method_attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
 
     if let Some(rslvr) = meta.external_resolver {
         ERR.custom(
             rslvr.span_ident(),
-            "cannot use #[graphql_union(with = ...)] attribute on a trait method",
+            "cannot use #[graphql(with = ...)] attribute on a trait method",
         )
         .note(String::from(
-            "instead use #[graphql_union(ignore)] on the method with \
-             #[graphql_union(on ... = ...)] on the trait itself",
+            "instead use #[graphql(ignore)] on the method with #[graphql_union(on ... = ...)] on \
+             the trait itself",
         ))
         .emit()
     }
@@ -178,7 +178,7 @@ fn parse_variant_from_trait_method(
                 ),
             )
             .note(String::from(
-                "use `#[graphql_union(ignore)]` attribute to ignore this trait method for union \
+                "use `#[graphql(ignore)]` attribute to ignore this trait method for union \
                  variants resolution",
             ))
             .emit();
