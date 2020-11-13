@@ -1,11 +1,12 @@
 use crate::{
     ast::InputValue,
     executor::Variables,
+    graphql_object, graphql_scalar,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
     GraphQLError::ValidationError,
     GraphQLInputObject,
 };
@@ -13,17 +14,15 @@ use crate::{
 #[derive(Debug)]
 struct TestComplexScalar;
 
-struct TestType;
-
-#[crate::graphql_scalar]
-impl GraphQLScalar for TestComplexScalar {
+#[graphql_scalar]
+impl<S: ScalarValue> GraphQLScalar for TestComplexScalar {
     fn resolve(&self) -> Value {
         Value::scalar(String::from("SerializedValue"))
     }
 
     fn from_input_value(v: &InputValue) -> Option<TestComplexScalar> {
-        if let Some(s) = v.as_scalar_value::<String>() {
-            if *s == "SerializedValue" {
+        if let Some(s) = v.as_scalar().and_then(ScalarValue::as_str) {
+            if s == "SerializedValue" {
                 return Some(TestComplexScalar);
             }
         }
@@ -31,13 +30,12 @@ impl GraphQLScalar for TestComplexScalar {
         None
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
-        <String as ParseScalarValue>::from_str(value)
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(scalar = DefaultScalarValue)]
 struct TestInputObject {
     a: Option<String>,
     b: Option<Vec<Option<String>>>,
@@ -46,7 +44,6 @@ struct TestInputObject {
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(scalar = DefaultScalarValue)]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,
@@ -64,7 +61,9 @@ struct InputWithDefaults {
     a: i32,
 }
 
-#[crate::graphql_object]
+struct TestType;
+
+#[graphql_object]
 impl TestType {
     fn field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)

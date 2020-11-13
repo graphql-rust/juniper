@@ -23,7 +23,7 @@ struct User {
     name: String,
 }
 
-#[graphql_object(Context = Context)]
+#[graphql_object(context = Context)]
 impl User {
     fn id(&self) -> i32 {
         self.id
@@ -45,7 +45,7 @@ impl User {
 #[derive(Clone, Copy, Debug)]
 struct Query;
 
-#[graphql_object(Context = Context)]
+#[graphql_object(context = Context)]
 impl Query {
     async fn users() -> Vec<User> {
         vec![User {

@@ -58,7 +58,7 @@ mod field_execution {
 
     #[tokio::test]
     async fn test() {
-        let schema = RootNode::<_, _, _, crate::DefaultScalarValue>::new(
+        let schema = RootNode::new(
             DataType,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),
@@ -470,6 +470,7 @@ mod dynamic_context_switching {
 
     use crate::{
         executor::{Context, ExecutionError, FieldError, FieldResult},
+        graphql_object,
         parser::SourcePosition,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
@@ -491,7 +492,7 @@ mod dynamic_context_switching {
 
     struct ItemRef;
 
-    #[crate::graphql_object(Context = OuterContext)]
+    #[graphql_object(context = OuterContext)]
     impl Schema {
         fn item_opt(_context: &OuterContext, key: i32) -> Option<(&InnerContext, ItemRef)> {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
@@ -521,7 +522,7 @@ mod dynamic_context_switching {
         }
     }
 
-    #[crate::graphql_object(Context = InnerContext)]
+    #[graphql_object(context = InnerContext)]
     impl ItemRef {
         fn value(context: &InnerContext) -> String {
             context.value.clone()
@@ -828,6 +829,7 @@ mod dynamic_context_switching {
 mod propagates_errors_to_nullable_fields {
     use crate::{
         executor::{ExecutionError, FieldError, FieldResult, IntoFieldError},
+        graphql_object,
         parser::SourcePosition,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
@@ -857,7 +859,7 @@ mod propagates_errors_to_nullable_fields {
         }
     }
 
-    #[crate::graphql_object]
+    #[graphql_object]
     impl Schema {
         fn inner() -> Inner {
             Inner
@@ -870,7 +872,7 @@ mod propagates_errors_to_nullable_fields {
         }
     }
 
-    #[crate::graphql_object]
+    #[graphql_object]
     impl Inner {
         fn nullable_field() -> Option<Inner> {
             Some(Inner)
@@ -1176,7 +1178,7 @@ mod named_operations {
 
     #[tokio::test]
     async fn uses_inline_operation_if_no_name_provided() {
-        let schema = RootNode::<_, _, _, crate::DefaultScalarValue>::new(
+        let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
             EmptySubscription::<()>::new(),

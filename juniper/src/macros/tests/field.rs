@@ -24,7 +24,7 @@ use crate::{
 #[derive(Debug)]
 struct Root;
 
-#[graphql_object(interfaces = [InterfaceValue])]
+#[graphql_object(impl = InterfaceValue)]
 impl Root {
     fn simple() -> i32 {
         0
@@ -104,7 +104,7 @@ impl Root {
     }
 }
 
-#[graphql_interface(scalar = DefaultScalarValue)]
+#[graphql_interface]
 impl Interface for Root {
     fn simple(&self) -> i32 {
         0
@@ -147,7 +147,7 @@ impl Interface for Root {
     }
 }
 
-#[graphql_interface(for = Root, scalar = DefaultScalarValue)]
+#[graphql_interface(for = Root)]
 trait Interface {
     fn simple(&self) -> i32;
 

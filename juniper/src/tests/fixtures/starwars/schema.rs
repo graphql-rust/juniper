@@ -2,14 +2,11 @@
 
 use std::{collections::HashMap, pin::Pin};
 
-use crate::{
-    graphql_interface, graphql_object, graphql_subscription, Context, DefaultScalarValue,
-    GraphQLEnum,
-};
+use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLEnum};
 
 pub struct Query;
 
-#[graphql_object(context = Database, scalar = DefaultScalarValue)]
+#[graphql_object(context = Database)]
 /// The root query object of the schema
 impl Query {
     #[graphql(arguments(id(description = "id of the human")))]
@@ -51,7 +48,7 @@ pub enum Episode {
     Jedi,
 }
 
-#[graphql_interface(for = [Human, Droid], context = Database, scalar = DefaultScalarValue)]
+#[graphql_interface(for = [Human, Droid], context = Database)]
 /// A character in the Star Wars Trilogy
 pub trait Character {
     /// The id of the character
@@ -105,11 +102,7 @@ impl Human {
 }
 
 /// A humanoid creature in the Star Wars universe.
-#[graphql_object(
-    context = Database,
-    scalar = DefaultScalarValue,
-    interfaces = CharacterValue,
-)]
+#[graphql_object(context = Database, impl = CharacterValue)]
 impl Human {
     /// The id of the human
     fn id(&self) -> &str {
@@ -137,7 +130,7 @@ impl Human {
     }
 }
 
-#[graphql_interface(scalar = DefaultScalarValue)]
+#[graphql_interface]
 impl Character for Human {
     fn id(&self) -> &str {
         &self.id
@@ -195,11 +188,7 @@ impl Droid {
 }
 
 /// A mechanical creature in the Star Wars universe.
-#[graphql_object(
-    context = Database,
-    scalar = DefaultScalarValue,
-    interfaces = CharacterValue,
-)]
+#[graphql_object(context = Database, impl = CharacterValue)]
 impl Droid {
     /// The id of the droid
     fn id(&self) -> &str {
@@ -227,7 +216,7 @@ impl Droid {
     }
 }
 
-#[graphql_interface(scalar = DefaultScalarValue)]
+#[graphql_interface]
 impl Character for Droid {
     fn id(&self) -> &str {
         &self.id

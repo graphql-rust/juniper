@@ -1,5 +1,8 @@
 // Original author of this test is <https://github.com/davidpdrsn>.
-use juniper::*;
+
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, LookAheadMethods as _, RootNode, Variables,
+};
 
 pub struct Context;
 
@@ -7,9 +10,7 @@ impl juniper::Context for Context {}
 
 pub struct Query;
 
-#[graphql_object(
-    Context = Context
-)]
+#[graphql_object(context = Context)]
 impl Query {
     fn users(exec: &Executor) -> Vec<User> {
         let lh = exec.look_ahead();
@@ -27,9 +28,7 @@ impl Query {
 #[derive(Clone)]
 pub struct User;
 
-#[graphql_object(
-    Context = Context
-)]
+#[graphql_object(context = Context)]
 impl User {
     fn id() -> i32 {
         1
@@ -46,7 +45,7 @@ impl Country {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
+type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 
 #[tokio::test]
 async fn users() {
@@ -109,7 +108,7 @@ async fn both() {
             EmptyMutation::<Context>::new(),
             EmptySubscription::<Context>::new(),
         ),
-        &juniper::Variables::new(),
+        &Variables::new(),
         &ctx,
     )
     .await
@@ -137,7 +136,7 @@ async fn both_in_different_order() {
             EmptyMutation::<Context>::new(),
             EmptySubscription::<Context>::new(),
         ),
-        &juniper::Variables::new(),
+        &Variables::new(),
         &ctx,
     )
     .await

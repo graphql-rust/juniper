@@ -1,14 +1,21 @@
+mod object;
+mod scalar;
+
+use std::{
+    any::TypeId,
+    fmt::{self, Display, Formatter},
+    mem,
+};
+
 use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
 };
-use std::fmt::{self, Display, Formatter};
-mod object;
-mod scalar;
 
-pub use self::object::Object;
-
-pub use self::scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue};
+pub use self::{
+    object::Object,
+    scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue},
+};
 
 /// Serializable value returned from query and field execution.
 ///
@@ -28,15 +35,12 @@ pub enum Value<S = DefaultScalarValue> {
     Object(Object<S>),
 }
 
-impl<S> Value<S>
-where
-    S: ScalarValue,
-{
+impl<S: ScalarValue> Value<S> {
     // CONSTRUCTORS
 
     /// Construct a null value.
     pub fn null() -> Self {
-        Value::Null
+        Self::Null
     }
 
     /// Construct an integer value.
@@ -65,12 +69,12 @@ where
 
     /// Construct a list value.
     pub fn list(l: Vec<Self>) -> Self {
-        Value::List(l)
+        Self::List(l)
     }
 
     /// Construct an object value.
     pub fn object(o: Object<S>) -> Self {
-        Value::Object(o)
+        Self::Object(o)
     }
 
     /// Construct a scalar value
@@ -78,7 +82,7 @@ where
     where
         T: Into<S>,
     {
-        Value::Scalar(s.into())
+        Self::Scalar(s.into())
     }
 
     // DISCRIMINATORS
@@ -86,7 +90,7 @@ where
     /// Does this value represent null?
     pub fn is_null(&self) -> bool {
         match *self {
-            Value::Null => true,
+            Self::Null => true,
             _ => false,
         }
     }
@@ -97,16 +101,15 @@ where
         &'a S: Into<Option<&'a T>>,
     {
         match *self {
-            Value::Scalar(ref s) => s.into(),
+            Self::Scalar(ref s) => s.into(),
             _ => None,
         }
     }
 
     /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64>
-where {
+    pub fn as_float_value(&self) -> Option<f64> {
         match self {
-            Value::Scalar(ref s) => s.as_float(),
+            Self::Scalar(ref s) => s.as_float(),
             _ => None,
         }
     }
@@ -114,7 +117,7 @@ where {
     /// View the underlying object value, if present.
     pub fn as_object_value(&self) -> Option<&Object<S>> {
         match *self {
-            Value::Object(ref o) => Some(o),
+            Self::Object(ref o) => Some(o),
             _ => None,
         }
     }
@@ -124,7 +127,7 @@ where {
     /// Returns None if value is not an Object.
     pub fn into_object(self) -> Option<Object<S>> {
         match self {
-            Value::Object(o) => Some(o),
+            Self::Object(o) => Some(o),
             _ => None,
         }
     }
@@ -132,7 +135,7 @@ where {
     /// Mutable view into the underlying object value, if present.
     pub fn as_mut_object_value(&mut self) -> Option<&mut Object<S>> {
         match *self {
-            Value::Object(ref mut o) => Some(o),
+            Self::Object(ref mut o) => Some(o),
             _ => None,
         }
     }
@@ -140,7 +143,7 @@ where {
     /// View the underlying list value, if present.
     pub fn as_list_value(&self) -> Option<&Vec<Self>> {
         match *self {
-            Value::List(ref l) => Some(l),
+            Self::List(ref l) => Some(l),
             _ => None,
         }
     }
@@ -148,7 +151,7 @@ where {
     /// View the underlying scalar value, if present
     pub fn as_scalar(&self) -> Option<&S> {
         match *self {
-            Value::Scalar(ref s) => Some(s),
+            Self::Scalar(ref s) => Some(s),
             _ => None,
         }
     }
@@ -159,6 +162,27 @@ where {
         Option<&'a String>: From<&'a S>,
     {
         self.as_scalar_value::<String>().map(|s| s as &str)
+    }
+
+    /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.
+    pub fn map_scalar_value<Into: ScalarValue>(self) -> Value<Into> {
+        if TypeId::of::<Into>() == TypeId::of::<S>() {
+            // This is totally safe, because we're transmuting the value into itself,
+            // so no invariants may change and we're just satisfying the type checker.
+            let val = mem::ManuallyDrop::new(self);
+            unsafe { mem::transmute_copy(&*val) }
+        } else {
+            match self {
+                Self::Null => Value::Null,
+                Self::Scalar(s) => Value::Scalar(s.into_another()),
+                Self::List(l) => Value::List(l.into_iter().map(Value::map_scalar_value).collect()),
+                Self::Object(o) => Value::Object(
+                    o.into_iter()
+                        .map(|(k, v)| (k, v.map_scalar_value()))
+                        .collect(),
+                ),
+            }
+        }
     }
 }
 

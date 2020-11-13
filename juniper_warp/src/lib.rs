@@ -64,7 +64,7 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 /// ```
 /// # use std::sync::Arc;
 /// # use warp::Filter;
-/// # use juniper::{EmptyMutation, EmptySubscription, RootNode};
+/// # use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
 /// type UserId = String;
@@ -74,9 +74,7 @@ use warp::{body, filters::BoxedFilter, http, query, Filter};
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::graphql_object(
-///    Context = ExampleContext
-/// )]
+/// #[graphql_object(context = ExampleContext)]
 /// impl QueryRoot {
 ///     fn say_hello(context: &ExampleContext) -> String {
 ///         format!(
@@ -683,17 +681,17 @@ mod tests {
 
 #[cfg(test)]
 mod tests_http_harness {
-    use super::*;
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
     use warp::{
-        self,
         filters::{path, BoxedFilter},
         Filter,
     };
+
+    use super::*;
 
     struct TestWarpIntegration {
         filter: BoxedFilter<(http::Response<Vec<u8>>,)>,

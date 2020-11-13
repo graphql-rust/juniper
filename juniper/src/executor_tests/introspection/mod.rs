@@ -7,10 +7,10 @@ use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
     executor::Variables,
-    graphql_interface, graphql_object,
+    graphql_interface, graphql_object, graphql_scalar,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, Value},
+    value::{ParseScalarResult, ParseScalarValue, ScalarValue, Value},
     GraphQLEnum,
 };
 
@@ -23,23 +23,23 @@ enum Sample {
 
 struct Scalar(i32);
 
-#[crate::graphql_scalar(name = "SampleScalar")]
-impl GraphQLScalar for Scalar {
+#[graphql_scalar(name = "SampleScalar")]
+impl<S: ScalarValue> GraphQLScalar for Scalar {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
     fn from_input_value(v: &InputValue) -> Option<Scalar> {
-        v.as_scalar_value().map(|i: &i32| Scalar(*i))
+        v.as_scalar().and_then(ScalarValue::as_int).map(Scalar)
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
-        <i32 as ParseScalarValue>::from_str(value)
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
     }
 }
 
 /// A sample interface
-#[graphql_interface(name = "SampleInterface", for = Root, scalar = DefaultScalarValue)]
+#[graphql_interface(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface
     fn sample_enum(&self) -> Sample {
@@ -50,7 +50,7 @@ trait Interface {
 struct Root;
 
 /// The root query object in the schema
-#[graphql_object(interfaces = InterfaceValue)]
+#[graphql_object(impl = InterfaceValue)]
 impl Root {
     fn sample_enum() -> Sample {
         Sample::One

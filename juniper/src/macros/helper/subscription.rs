@@ -5,7 +5,7 @@
 
 use futures::Stream;
 
-use crate::{FieldError, GraphQLValue, ScalarValue};
+use crate::{FieldError, GraphQLValue, IntoFieldError, ScalarValue};
 
 /// Trait for wrapping [`Stream`] into [`Ok`] if it's not [`Result`].
 ///
@@ -22,12 +22,12 @@ pub trait IntoFieldResult<T, S> {
 impl<T, E, S> IntoFieldResult<T, S> for Result<T, E>
 where
     T: IntoFieldResult<T, S>,
-    E: Into<FieldError<S>>,
+    E: IntoFieldError<S>,
 {
     type Item = T::Item;
 
     fn into_result(self) -> Result<T, FieldError<S>> {
-        self.map_err(|e| e.into())
+        self.map_err(E::into_field_error)
     }
 }
 

@@ -216,6 +216,18 @@ impl<S> FieldError<S> {
     pub fn extensions(&self) -> &Value<S> {
         &self.extensions
     }
+
+    /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified one.
+    pub fn map_scalar_value<Into>(self) -> FieldError<Into>
+    where
+        S: ScalarValue,
+        Into: ScalarValue,
+    {
+        FieldError {
+            message: self.message,
+            extensions: self.extensions.map_scalar_value(),
+        }
+    }
 }
 
 /// The result of resolving the value of a field of type `T`
@@ -240,9 +252,16 @@ pub trait IntoFieldError<S = DefaultScalarValue> {
     fn into_field_error(self) -> FieldError<S>;
 }
 
-impl<S> IntoFieldError<S> for FieldError<S> {
+impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
+    #[inline]
+    fn into_field_error(self) -> FieldError<S2> {
+        self.map_scalar_value()
+    }
+}
+
+impl<S> IntoFieldError<S> for std::convert::Infallible {
     fn into_field_error(self) -> FieldError<S> {
-        self
+        match self {}
     }
 }
 
@@ -309,28 +328,31 @@ where
     }
 }
 
-impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T), S>
+impl<'a, S1, S2, T, C> IntoResolvable<'a, S2, T, C> for FieldResult<(&'a T::Context, T), S1>
 where
-    S: ScalarValue,
-    T: GraphQLValue<S>,
+    S1: ScalarValue,
+    S2: ScalarValue,
+    T: GraphQLValue<S2>,
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
-        self.map(Some)
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S2> {
+        self.map(Some).map_err(FieldError::map_scalar_value)
     }
 }
 
-impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
-    for FieldResult<Option<(&'a T::Context, T)>, S>
+impl<'a, S1, S2, T, C> IntoResolvable<'a, S2, Option<T>, C>
+    for FieldResult<Option<(&'a T::Context, T)>, S1>
 where
-    S: ScalarValue,
-    T: GraphQLValue<S>,
+    S1: ScalarValue,
+    S2: ScalarValue,
+    T: GraphQLValue<S2>,
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
+            .map_err(FieldError::map_scalar_value)
     }
 }
 
@@ -648,6 +670,7 @@ where
         };
         self.parent_selection_set
             .map(|p| {
+                // Search the parent's fields to find this field within the set
                 let found_field = p.iter().find(|&x| {
                     match *x {
                         Selection::Field(ref field) => {
@@ -666,31 +689,30 @@ where
                     None
                 }
             })
-            .filter(|s| s.is_some())
+            .flatten()
             .unwrap_or_else(|| {
-                Some(LookAheadSelection {
-                    name: self.current_type.innermost_concrete().name().unwrap_or(""),
+                // We didn't find a field in the parent's selection matching
+                // this field, which means we're inside a FragmentSpread
+                let mut ret = LookAheadSelection {
+                    name: field_name,
                     alias: None,
                     arguments: Vec::new(),
-                    children: self
-                        .current_selection_set
-                        .map(|s| {
-                            s.iter()
-                                .map(|s| ChildSelection {
-                                    inner: LookAheadSelection::build_from_selection(
-                                        &s,
-                                        self.variables,
-                                        self.fragments,
-                                    )
-                                    .expect("a child selection"),
-                                    applies_for: Applies::All,
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_else(Vec::new),
-                })
+                    children: Vec::new(),
+                };
+
+                // Add in all the children - this will mutate `ret`
+                if let Some(selection_set) = self.current_selection_set {
+                    for c in selection_set {
+                        LookAheadSelection::build_from_selection_with_parent(
+                            c,
+                            Some(&mut ret),
+                            self.variables,
+                            self.fragments,
+                        );
+                    }
+                }
+                ret
             })
-            .unwrap_or_default()
     }
 
     /// Create new `OwnedExecutor` and clone all current data

@@ -1,7 +1,9 @@
-#[cfg(test)]
-use juniper::{graphql_value, EmptyMutation, EmptySubscription, GraphQLError, RootNode, Value};
+use juniper::{
+    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLError,
+    RootNode, Value,
+};
 
-#[derive(juniper::GraphQLEnum)]
+#[derive(GraphQLEnum)]
 enum UserKind {
     Admin,
     User,
@@ -15,7 +17,7 @@ struct User {
     kind: UserKind,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl User {
     async fn id(&self) -> i32 {
         self.id
@@ -47,7 +49,7 @@ impl User {
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
     fn field_sync(&self) -> &'static str {
         "field_sync"

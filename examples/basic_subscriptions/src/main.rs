@@ -4,8 +4,8 @@ use std::pin::Pin;
 
 use futures::{Stream, StreamExt};
 use juniper::{
-    http::GraphQLRequest, DefaultScalarValue, EmptyMutation, FieldError, RootNode,
-    SubscriptionCoordinator,
+    graphql_object, graphql_subscription, http::GraphQLRequest, DefaultScalarValue, EmptyMutation,
+    FieldError, RootNode, SubscriptionCoordinator,
 };
 use juniper_subscriptions::Coordinator;
 
@@ -22,7 +22,7 @@ impl Database {
 
 pub struct Query;
 
-#[juniper::graphql_object(Context = Database)]
+#[graphql_object(context = Database)]
 impl Query {
     fn hello_world() -> &str {
         "Hello World!"
@@ -33,7 +33,7 @@ pub struct Subscription;
 
 type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 
-#[juniper::graphql_subscription(Context = Database)]
+#[graphql_subscription(context = Database)]
 impl Subscription {
     async fn hello_world() -> StringStream {
         let stream =

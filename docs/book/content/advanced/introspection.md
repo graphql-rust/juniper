@@ -33,11 +33,14 @@ result can then be converted to JSON for use with tools and libraries such as
 # #![allow(unused_variables)]
 # extern crate juniper;
 # extern crate serde_json;
-use juniper::{EmptyMutation, EmptySubscription, FieldResult, IntrospectionFormat};
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
+    GraphQLObject, IntrospectionFormat,
+};
 
 // Define our schema.
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 struct Example {
   id: String,
 }
@@ -47,9 +50,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::graphql_object(
-  Context = Context,
-)]
+#[graphql_object(context = Context)]
 impl Query {
    fn example(id: String) -> FieldResult<Example> {
        unimplemented!()

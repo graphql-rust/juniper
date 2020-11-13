@@ -86,7 +86,7 @@ impl GraphQLScalar for ScalarDescription {
     }
 }
 
-#[graphql_object]
+#[graphql_object(scalar = DefaultScalarValue)]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName(0)
@@ -278,7 +278,7 @@ async fn scalar_description_introspection() {
 async fn resolves_with_custom_scalar_value() {
     const DOC: &str = r#"{ withCustomScalarValue }"#;
 
-    let schema = RootNode::<_, _, _, MyScalarValue>::new(
+    let schema = RootNode::<_, _, _, MyScalarValue>::new_with_scalar_value(
         RootWithCustomScalarValue,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
