@@ -15,7 +15,7 @@ trait Character {
         "funA"
     }
 
-    #[graphql_interface(name = "id")]
+    #[graphql(name = "id")]
     fn id2(&self) -> &str {
         "funB"
     }
