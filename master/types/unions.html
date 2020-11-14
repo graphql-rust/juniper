@@ -415,7 +415,7 @@ struct Database {
 }
 impl juniper::Context for Database {}
 
-#[graphql_union(Context = Database)]
+#[graphql_union(context = Database)]
 trait Character {
     // NOTICE: The method signature may optionally contain `&amp;Context`.
     fn as_human&lt;'db&gt;(&amp;self, ctx: &amp;'db Database) -&gt; Option&lt;&amp;'db Human&gt; { None }
@@ -457,7 +457,7 @@ struct Droid {
 trait Character {
     fn as_human(&amp;self) -&gt; Option&lt;&amp;Human&gt; { None }
     fn as_droid(&amp;self) -&gt; Option&lt;&amp;Droid&gt; { None }
-    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
+    #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
     fn id(&amp;self) -&gt; &amp;str;
 }
 
@@ -499,13 +499,13 @@ struct Database {
 }
 impl juniper::Context for Database {}
 
-#[graphql_union(Context = Database)]
+#[graphql_union(context = Database)]
 #[graphql_union(
     on Human = DynCharacter::get_human,
     on Droid = get_droid,
 )]
 trait Character {
-    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
+    #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
     fn id(&amp;self) -&gt; &amp;str;
 }
 

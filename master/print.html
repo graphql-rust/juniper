@@ -1414,7 +1414,7 @@ use juniper::{graphql_interface, GraphQLObject};
 trait Character {
     fn id(&amp;self) -&gt; &amp;str;
 
-    #[graphql_interface(ignore)] // or `#[graphql_interface(skip)]`, your choice
+    #[graphql(ignore)] // or `#[graphql(skip)]`, your choice
     fn ignored(&amp;self) -&gt; u32 { 0 }
 }
 
@@ -1447,26 +1447,26 @@ use juniper::graphql_interface;
 /// This doc is absent in GraphQL schema.  
 trait Character {
     // Renames the field in GraphQL schema.
-    #[graphql_interface(name = &quot;myId&quot;)]
+    #[graphql(name = &quot;myId&quot;)]
     // Deprecates the field in GraphQL schema.
     // Usual Rust `#[deprecated]` attribute is supported too as field deprecation,
     // but `deprecated` attribute argument takes precedence over it, if specified.
-    #[graphql_interface(deprecated = &quot;Do not use it.&quot;)]
+    #[graphql(deprecated = &quot;Do not use it.&quot;)]
     // Describes the field in GraphQL schema.
-    #[graphql_interface(description = &quot;ID of my own character.&quot;)]
+    #[graphql(description = &quot;ID of my own character.&quot;)]
     // Usual Rust docs are supported too as field description, 
     // but `description` attribute argument takes precedence over them, if specified.
     /// This description is absent in GraphQL schema.  
     fn id(
         &amp;self,
         // Renames the argument in GraphQL schema.
-        #[graphql_interface(name = &quot;myNum&quot;)]
+        #[graphql(name = &quot;myNum&quot;)]
         // Describes the argument in GraphQL schema.
-        #[graphql_interface(description = &quot;ID number of my own character.&quot;)]
+        #[graphql(description = &quot;ID number of my own character.&quot;)]
         // Specifies the default value for the argument.
         // The concrete value may be omitted, and the `Default::default` one 
         // will be used in such case.
-        #[graphql_interface(default = 5)]
+        #[graphql(default = 5)]
         num: i32,
     ) -&gt; &amp;str;
 }
@@ -1491,7 +1491,7 @@ trait Character {                 // while still can be specified via `Context =
     fn id(&amp;self, context: &amp;Database) -&gt; Option&lt;&amp;str&gt;;
 
     // Otherwise, you may mark it explicitly as a context argument.
-    fn name(&amp;self, #[graphql_interface(context)] db: &amp;Database) -&gt; Option&lt;&amp;str&gt;;
+    fn name(&amp;self, #[graphql(context)] db: &amp;Database) -&gt; Option&lt;&amp;str&gt;;
 }
 
 #[derive(GraphQLObject)]
@@ -1538,7 +1538,7 @@ trait Character&lt;S: ScalarValue&gt; {
     // Otherwise, you may mark it explicitly as an executor argument.
     async fn name&lt;'b&gt;(
         &amp;'b self,
-        #[graphql_interface(executor)] another: &amp;Executor&lt;'_, '_, (), S&gt;,
+        #[graphql(executor)] another: &amp;Executor&lt;'_, '_, (), S&gt;,
     ) -&gt; &amp;'b str
     where
         S: Send + Sync;
@@ -1550,7 +1550,7 @@ struct Human {
     id: String,
     name: String,
 }
-#[graphql_interface(Scalar = S)]
+#[graphql_interface(scalar = S)]
 impl&lt;S: ScalarValue&gt; Character&lt;S&gt; for Human {
     async fn id&lt;'a&gt;(&amp;self, executor: &amp;'a Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'a str
     where
@@ -1581,12 +1581,12 @@ struct Database {
 }
 impl juniper::Context for Database {}
 
-#[graphql_interface(for = [Human, Droid], Context = Database)]
+#[graphql_interface(for = [Human, Droid], context = Database)]
 #[graphql_interface(on Droid = get_droid)] // enables downcasting `Droid` via `get_droid()` function
 trait Character {
     fn id(&amp;self) -&gt; &amp;str;
 
-    #[graphql_interface(downcast)] // makes method a downcast to `Human`, not a field 
+    #[graphql(downcast)] // makes method a downcast to `Human`, not a field 
     // NOTICE: The method signature may optionally contain `&amp;Database` context argument.
     fn as_human(&amp;self) -&gt; Option&lt;&amp;Human&gt; {
         None
@@ -1636,7 +1636,7 @@ fn get_droid&lt;'db&gt;(ch: &amp;CharacterValue, db: &amp;'db Database) -&gt; Op
 use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
 
 #[graphql_interface(for = [Human, Droid])]
-#[graphql_interface(Scalar = DefaultScalarValue)] // removing this line will fail compilation
+#[graphql_interface(scalar = DefaultScalarValue)] // removing this line will fail compilation
 trait Character {
     fn id(&amp;self) -&gt; &amp;str;
 }
@@ -1647,7 +1647,7 @@ struct Human {
     id: String,
     home_planet: String,
 }
-#[graphql_interface(Scalar = DefaultScalarValue)]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl Character for Human {
     fn id(&amp;self) -&gt; &amp;str {
         &amp;self.id
@@ -1660,7 +1660,7 @@ struct Droid {
     id: String,
     primary_function: String,
 }
-#[graphql_interface(Scalar = DefaultScalarValue)]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl Character for Droid {
     fn id(&amp;self) -&gt; &amp;str {
         &amp;self.id
@@ -2123,7 +2123,7 @@ struct Database {
 }
 impl juniper::Context for Database {}
 
-#[graphql_union(Context = Database)]
+#[graphql_union(context = Database)]
 trait Character {
     // NOTICE: The method signature may optionally contain `&amp;Context`.
     fn as_human&lt;'db&gt;(&amp;self, ctx: &amp;'db Database) -&gt; Option&lt;&amp;'db Human&gt; { None }
@@ -2165,7 +2165,7 @@ struct Droid {
 trait Character {
     fn as_human(&amp;self) -&gt; Option&lt;&amp;Human&gt; { None }
     fn as_droid(&amp;self) -&gt; Option&lt;&amp;Droid&gt; { None }
-    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
+    #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
     fn id(&amp;self) -&gt; &amp;str;
 }
 
@@ -2207,13 +2207,13 @@ struct Database {
 }
 impl juniper::Context for Database {}
 
-#[graphql_union(Context = Database)]
+#[graphql_union(context = Database)]
 #[graphql_union(
     on Human = DynCharacter::get_human,
     on Droid = get_droid,
 )]
 trait Character {
-    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
+    #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
     fn id(&amp;self) -&gt; &amp;str;
 }
 
