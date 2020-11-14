@@ -54,7 +54,7 @@
   - Supports multiple `#[graphql]` attributes.
 
 - Massively improved the `#[graphql_interface]` macro. ([#682](https://github.com/graphql-rust/juniper/pull/682)):
-  - Applicable to traits and generates enum or trait object to represent a GraphQL interface.
+  - Applicable to traits and generates enum or trait object to represent a GraphQL interface (see the [example of migration from `graphql_interface!` macro](https://github.com/graphql-rust/juniper/commit/3472fe6d10d23472752b1a4cd26c6f3da767ae0e#diff-3506bce1e02051ceed41963a86ef59d660ee7d0cd26df1e9c87372918e3b01f0)).
   - Supports passing context and executor to a field resolver. 
   - Supports custom downcast functions and methods.
   - Supports generics.
