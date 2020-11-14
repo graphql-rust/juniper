@@ -367,7 +367,7 @@ impl ImplMeta {
     }
 }
 
-/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait method
+/// Available metadata (arguments) behind `#[graphql]` attribute placed on a trait method
 /// definition, when generating code for [GraphQL interface][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -534,8 +534,8 @@ impl MethodMeta {
     }
 }
 
-/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait method
-/// argument, when generating code for [GraphQL interface][1] type.
+/// Available metadata (arguments) behind `#[graphql]` attribute placed on a trait method argument,
+/// when generating code for [GraphQL interface][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
