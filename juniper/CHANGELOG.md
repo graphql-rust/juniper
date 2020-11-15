@@ -39,6 +39,8 @@
 
 - Implement `IntoFieldError` for `std::convert::Infallible`. ([#796](https://github.com/graphql-rust/juniper/pull/796))
 
+- Allow using `#[graphql(Scalar = DefaultScalarValue)]` for derive macro `GraphQLScalarValue` ([#807](https://github.com/graphql-rust/juniper/pull/807))
+
 ## Fixes
 
 - Massively improved the `#[graphql_union]` proc macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
