@@ -110,17 +110,13 @@ fn impl_scalar_struct(
         .scalar
         .as_ref()
         .map(|s| quote!( #s ))
-        .unwrap_or_else(|| {
-            quote!(__S)
-        });
+        .unwrap_or_else(|| quote!(__S));
 
     let impl_generics = attrs
         .scalar
         .as_ref()
-        .map(|_| quote!( ))
-        .unwrap_or_else(|| {
-            quote!(<__S>)
-        });
+        .map(|_| quote!())
+        .unwrap_or_else(|| quote!(<__S>));
 
     let _async = quote!(
         impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ident
