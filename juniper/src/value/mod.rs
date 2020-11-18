@@ -89,10 +89,7 @@ impl<S: ScalarValue> Value<S> {
 
     /// Does this value represent null?
     pub fn is_null(&self) -> bool {
-        match *self {
-            Self::Null => true,
-            _ => false,
-        }
+        matches!(*self, Self::Null)
     }
 
     /// View the underlying scalar value if present

@@ -73,7 +73,7 @@ async fn parse_req<S: ScalarValue>(
         }
         _ => return Err(new_response(StatusCode::METHOD_NOT_ALLOWED)),
     }
-    .map_err(|e| render_error(e))
+    .map_err(render_error)
 }
 
 fn parse_get_req<S: ScalarValue>(

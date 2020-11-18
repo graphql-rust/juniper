@@ -97,7 +97,7 @@ enum Reaction<S: Schema> {
 
 impl<S: Schema> Reaction<S> {
     /// Converts the reaction into a one-item stream.
-    fn to_stream(self) -> BoxStream<'static, Self> {
+    fn into_stream(self) -> BoxStream<'static, Self> {
         stream::once(future::ready(self)).boxed()
     }
 }
@@ -153,7 +153,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         msg: ClientMessage<S::ScalarValue>,
     ) -> (Self, BoxStream<'static, Reaction<S>>) {
         if let ClientMessage::ConnectionTerminate = msg {
-            return (self, Reaction::EndStream.to_stream());
+            return (self, Reaction::EndStream.into_stream());
         }
 
         match self {
@@ -171,7 +171,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                             s = s
                                 .chain(
                                     Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
-                                        .to_stream(),
+                                        .into_stream(),
                                 )
                                 .boxed();
                             s = s
@@ -270,7 +270,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 // Once the stream ends, send the Complete message.
                                 let s = s.chain(
                                     Reaction::ServerMessage(ServerMessage::Complete { id })
-                                        .to_stream(),
+                                        .into_stream(),
                                 );
 
                                 s.boxed()
@@ -306,11 +306,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         // Try to execute this as a query or mutation.
         match juniper::execute(
             &params.start_payload.query,
-            params
-                .start_payload
-                .operation_name
-                .as_ref()
-                .map(|s| s.as_str()),
+            params.start_payload.operation_name.as_deref(),
             params.schema.root_node(),
             &params.start_payload.variables,
             &params.config.context,
@@ -322,7 +318,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     id: id.clone(),
                     payload: DataPayload { data, errors },
                 })
-                .to_stream();
+                .into_stream();
             }
             Err(GraphQLError::IsSubscription) => {}
             Err(e) => {
@@ -331,7 +327,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     // e only references data owned by params. The new ErrorPayload will continue to keep that data alive.
                     payload: unsafe { ErrorPayload::new_unchecked(Box::new(params.clone()), e) },
                 })
-                .to_stream();
+                .into_stream();
             }
         }
 
@@ -423,11 +419,7 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                         future: unsafe {
                             juniper::resolve_into_stream(
                                 &(*params).start_payload.query,
-                                (*params)
-                                    .start_payload
-                                    .operation_name
-                                    .as_ref()
-                                    .map(|s| s.as_str()),
+                                (*params).start_payload.operation_name.as_deref(),
                                 (*params).schema.root_node(),
                                 &(*params).start_payload.variables,
                                 &(*params).config.context,
@@ -575,7 +567,7 @@ where
                                     message: e.to_string(),
                                 },
                             })
-                            .to_stream(),
+                            .into_stream(),
                         );
                         ConnectionSinkState::Ready { state }
                     }

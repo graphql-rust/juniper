@@ -9,11 +9,11 @@ use std::{
 // stabilise (https://github.com/rust-lang/rust/issues/39658).
 
 fn is_ascii_alphabetic(c: char) -> bool {
-    c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+    ('a'..='z').contains(&c) || ('A'..='Z').contains(&c)
 }
 
 fn is_ascii_digit(c: char) -> bool {
-    c >= '0' && c <= '9'
+    ('0'..='9').contains(&c)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
