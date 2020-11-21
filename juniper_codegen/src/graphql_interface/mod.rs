@@ -367,7 +367,7 @@ impl ImplMeta {
     }
 }
 
-/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait method
+/// Available metadata (arguments) behind `#[graphql]` attribute placed on a trait method
 /// definition, when generating code for [GraphQL interface][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -534,8 +534,8 @@ impl MethodMeta {
     }
 }
 
-/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait method
-/// argument, when generating code for [GraphQL interface][1] type.
+/// Available metadata (arguments) behind `#[graphql]` attribute placed on a trait method argument,
+/// when generating code for [GraphQL interface][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
@@ -1641,11 +1641,15 @@ impl EnumType {
         }
     }
 
-    /// Returns name of a single variant of this [`EnumType`] by the given positional `num` in the
-    /// enum type definition.
+    /// Returns name of a single variant of this [`EnumType`] by the given underlying [`syn::Type`]
+    /// of the variant.
     #[must_use]
-    fn variant_ident(num: usize) -> syn::Ident {
-        format_ident!("Impl{}", num)
+    fn variant_ident(ty: &syn::Type) -> &syn::Ident {
+        if let syn::Type::Path(p) = ty {
+            &p.path.segments.last().unwrap().ident
+        } else {
+            unreachable!("GraphQL object has unexpected type `{}`", quote! { #ty })
+        }
     }
 
     /// Indicates whether this [`EnumType`] has non-exhaustive phantom variant to hold type
@@ -1728,10 +1732,17 @@ impl EnumType {
             self.trait_ident,
         );
 
-        let variants = self.variants.iter().enumerate().map(|(n, ty)| {
-            let variant = Self::variant_ident(n);
+        let variants = self.variants.iter().map(|ty| {
+            let variant = Self::variant_ident(ty);
+            let doc = format!(
+                "`{}` implementer of this GraphQL interface.",
+                quote! { #ty },
+            );
 
-            quote! { #variant(#ty), }
+            quote! {
+                #[doc = #doc]
+                #variant(#ty),
+            }
         });
 
         let phantom_variant = if self.has_phantom_variant() {
@@ -1776,8 +1787,8 @@ impl EnumType {
         let enum_ty = &self.ident;
         let (impl_generics, generics, where_clause) = self.trait_generics.split_for_impl();
 
-        self.variants.iter().enumerate().map(move |(n, ty)| {
-            let variant = Self::variant_ident(n);
+        self.variants.iter().map(move |ty| {
+            let variant = Self::variant_ident(ty);
 
             quote! {
                 #[automatically_derived]
@@ -1839,8 +1850,8 @@ impl EnumType {
                 None
             };
 
-            let match_arms = self.variants.iter().enumerate().map(|(n, ty)| {
-                let variant = Self::variant_ident(n);
+            let match_arms = self.variants.iter().map(|ty| {
+                let variant = Self::variant_ident(ty);
                 let args = args.clone();
 
                 quote! {
@@ -1898,8 +1909,8 @@ impl EnumType {
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let match_arms = self.variants.iter().enumerate().map(|(n, ty)| {
-            let variant = Self::variant_ident(n);
+        let match_arms = self.variants.iter().map(|ty| {
+            let variant = Self::variant_ident(ty);
 
             quote! {
                 Self::#variant(v) => <
@@ -1925,8 +1936,8 @@ impl EnumType {
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         let resolving_code = gen::sync_resolving_code();
 
-        let match_arms = self.variants.iter().enumerate().map(|(n, _)| {
-            let variant = Self::variant_ident(n);
+        let match_arms = self.variants.iter().map(|ty| {
+            let variant = Self::variant_ident(ty);
 
             quote! {
                 Self::#variant(res) => #resolving_code,
@@ -1950,8 +1961,8 @@ impl EnumType {
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
         let resolving_code = gen::async_resolving_code(None);
 
-        let match_arms = self.variants.iter().enumerate().map(|(n, _)| {
-            let variant = Self::variant_ident(n);
+        let match_arms = self.variants.iter().map(|ty| {
+            let variant = Self::variant_ident(ty);
 
             quote! {
                 Self::#variant(v) => {

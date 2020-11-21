@@ -842,11 +842,11 @@ mod ignored_method {
         fn as_human(&self) -> Option<&Human> {
             None
         }
-        #[graphql_union(ignore)]
+        #[graphql(ignore)]
         fn ignored(&self) -> Option<&Ewok> {
             None
         }
-        #[graphql_union(skip)]
+        #[graphql(skip)]
         fn skipped(&self) {}
     }
 
@@ -1030,11 +1030,11 @@ mod full_featured {
         fn as_droid(&self) -> Option<&DroidCustomContext> {
             None
         }
-        #[graphql_union(ignore)]
+        #[graphql(ignore)]
         fn as_ewok(&self) -> Option<&EwokCustomContext> {
             None
         }
-        #[graphql_union(ignore)]
+        #[graphql(ignore)]
         fn ignored(&self) {}
     }
 

@@ -2451,9 +2451,9 @@ mod default_argument {
     trait Character {
         async fn id(
             &self,
-            #[graphql_interface(default)] first: String,
-            #[graphql_interface(default = "second".to_string())] second: String,
-            #[graphql_interface(default = "t")] third: String,
+            #[graphql(default)] first: String,
+            #[graphql(default = "second".to_string())] second: String,
+            #[graphql(default = "t")] third: String,
         ) -> String;
     }
 
@@ -2741,14 +2741,14 @@ mod explicit_name_description_and_deprecation {
     #[graphql_interface(name = "MyChar", desc = "My character.", for = Human)]
     trait Character {
         /// Rust `id` docs.
-        #[graphql_interface(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
+        #[graphql(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
         #[deprecated(note = "Should be omitted.")]
         fn id(
             &self,
-            #[graphql_interface(name = "myName", desc = "My argument.", default)] n: Option<String>,
+            #[graphql(name = "myName", desc = "My argument.", default)] n: Option<String>,
         ) -> &str;
 
-        #[graphql_interface(deprecated)]
+        #[graphql(deprecated)]
         #[deprecated(note = "Should be omitted.")]
         fn a(&self) -> &str {
             "a"
@@ -3605,7 +3605,7 @@ mod explicit_custom_context {
 
         async fn info<'b>(&'b self, ctx: &()) -> &'b str;
 
-        fn more<'c>(&'c self, #[graphql_interface(context)] custom: &CustomContext) -> &'c str;
+        fn more<'c>(&'c self, #[graphql(context)] custom: &CustomContext) -> &'c str;
     }
 
     #[graphql_interface(dyn = DynHero, for = [Human, Droid])]
@@ -3615,7 +3615,7 @@ mod explicit_custom_context {
 
         async fn info<'b>(&'b self, ctx: &()) -> &'b str;
 
-        fn more<'c>(&'c self, #[graphql_interface(context)] custom: &CustomContext) -> &'c str;
+        fn more<'c>(&'c self, #[graphql(context)] custom: &CustomContext) -> &'c str;
     }
 
     #[derive(GraphQLObject)]
@@ -4118,7 +4118,7 @@ mod inferred_custom_context_from_downcast {
 
     #[graphql_interface(for = [Human, Droid])]
     trait Character {
-        #[graphql_interface(downcast)]
+        #[graphql(downcast)]
         fn as_human<'s>(&'s self, _: &Database) -> Option<&'s Human>;
 
         async fn id(&self) -> &str;
@@ -4126,7 +4126,7 @@ mod inferred_custom_context_from_downcast {
 
     #[graphql_interface(dyn = DynHero, for = [Human, Droid])]
     trait Hero {
-        #[graphql_interface(downcast)]
+        #[graphql(downcast)]
         fn as_droid<'db>(&self, db: &'db Database) -> Option<&'db Droid>;
 
         async fn info(&self) -> &str;
@@ -4390,7 +4390,7 @@ mod executor {
 
         async fn info<'b>(
             &'b self,
-            #[graphql_interface(executor)] another: &Executor<'_, '_, (), S>,
+            #[graphql(executor)] another: &Executor<'_, '_, (), S>,
         ) -> &'b str
         where
             S: Send + Sync;
@@ -4407,7 +4407,7 @@ mod executor {
 
         async fn info<'b>(
             &'b self,
-            #[graphql_interface(executor)] another: &Executor<'_, '_, (), S>,
+            #[graphql(executor)] another: &Executor<'_, '_, (), S>,
         ) -> &'b str
         where
             S: Send + Sync;
@@ -4631,12 +4631,12 @@ mod ignored_method {
     trait Character {
         fn id(&self) -> &str;
 
-        #[graphql_interface(ignore)]
+        #[graphql(ignore)]
         fn ignored(&self) -> Option<&Human> {
             None
         }
 
-        #[graphql_interface(skip)]
+        #[graphql(skip)]
         fn skipped(&self) {}
     }
 
@@ -4734,7 +4734,7 @@ mod downcast_method {
     trait Character {
         fn id(&self) -> &str;
 
-        #[graphql_interface(downcast)]
+        #[graphql(downcast)]
         fn as_human(&self) -> Option<&Human> {
             None
         }
@@ -4744,7 +4744,7 @@ mod downcast_method {
     trait Hero {
         fn info(&self) -> &str;
 
-        #[graphql_interface(downcast)]
+        #[graphql(downcast)]
         fn as_droid(&self) -> Option<&Droid> {
             None
         }

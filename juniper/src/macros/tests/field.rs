@@ -151,13 +151,13 @@ impl Interface for Root {
 trait Interface {
     fn simple(&self) -> i32;
 
-    #[graphql_interface(desc = "Field description")]
+    #[graphql(desc = "Field description")]
     fn description(&self) -> i32;
 
-    #[graphql_interface(deprecated = "Deprecation reason")]
+    #[graphql(deprecated = "Deprecation reason")]
     fn deprecated(&self) -> i32;
 
-    #[graphql_interface(desc = "Field description", deprecated = "Deprecation reason")]
+    #[graphql(desc = "Field description", deprecated = "Deprecation reason")]
     fn deprecated_descr(&self) -> i32;
 
     /// Field description

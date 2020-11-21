@@ -167,7 +167,7 @@ use juniper::{graphql_interface, GraphQLObject};
 trait Character {
     fn id(&self) -> &str;
 
-    #[graphql_interface(ignore)] // or `#[graphql_interface(skip)]`, your choice
+    #[graphql(ignore)] // or `#[graphql(skip)]`, your choice
     fn ignored(&self) -> u32 { 0 }
 }
 
@@ -205,26 +205,26 @@ use juniper::graphql_interface;
 /// This doc is absent in GraphQL schema.  
 trait Character {
     // Renames the field in GraphQL schema.
-    #[graphql_interface(name = "myId")]
+    #[graphql(name = "myId")]
     // Deprecates the field in GraphQL schema.
     // Usual Rust `#[deprecated]` attribute is supported too as field deprecation,
     // but `deprecated` attribute argument takes precedence over it, if specified.
-    #[graphql_interface(deprecated = "Do not use it.")]
+    #[graphql(deprecated = "Do not use it.")]
     // Describes the field in GraphQL schema.
-    #[graphql_interface(description = "ID of my own character.")]
+    #[graphql(description = "ID of my own character.")]
     // Usual Rust docs are supported too as field description, 
     // but `description` attribute argument takes precedence over them, if specified.
     /// This description is absent in GraphQL schema.  
     fn id(
         &self,
         // Renames the argument in GraphQL schema.
-        #[graphql_interface(name = "myNum")]
+        #[graphql(name = "myNum")]
         // Describes the argument in GraphQL schema.
-        #[graphql_interface(description = "ID number of my own character.")]
+        #[graphql(description = "ID number of my own character.")]
         // Specifies the default value for the argument.
         // The concrete value may be omitted, and the `Default::default` one 
         // will be used in such case.
-        #[graphql_interface(default = 5)]
+        #[graphql(default = 5)]
         num: i32,
     ) -> &str;
 }
@@ -254,7 +254,7 @@ trait Character {                 // while still can be specified via `Context =
     fn id(&self, context: &Database) -> Option<&str>;
 
     // Otherwise, you may mark it explicitly as a context argument.
-    fn name(&self, #[graphql_interface(context)] db: &Database) -> Option<&str>;
+    fn name(&self, #[graphql(context)] db: &Database) -> Option<&str>;
 }
 
 #[derive(GraphQLObject)]
@@ -307,7 +307,7 @@ trait Character<S: ScalarValue> {
     // Otherwise, you may mark it explicitly as an executor argument.
     async fn name<'b>(
         &'b self,
-        #[graphql_interface(executor)] another: &Executor<'_, '_, (), S>,
+        #[graphql(executor)] another: &Executor<'_, '_, (), S>,
     ) -> &'b str
     where
         S: Send + Sync;
@@ -319,7 +319,7 @@ struct Human {
     id: String,
     name: String,
 }
-#[graphql_interface(Scalar = S)]
+#[graphql_interface(scalar = S)]
 impl<S: ScalarValue> Character<S> for Human {
     async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
     where
@@ -356,12 +356,12 @@ struct Database {
 }
 impl juniper::Context for Database {}
 
-#[graphql_interface(for = [Human, Droid], Context = Database)]
+#[graphql_interface(for = [Human, Droid], context = Database)]
 #[graphql_interface(on Droid = get_droid)] // enables downcasting `Droid` via `get_droid()` function
 trait Character {
     fn id(&self) -> &str;
 
-    #[graphql_interface(downcast)] // makes method a downcast to `Human`, not a field 
+    #[graphql(downcast)] // makes method a downcast to `Human`, not a field 
     // NOTICE: The method signature may optionally contain `&Database` context argument.
     fn as_human(&self) -> Option<&Human> {
         None
@@ -419,7 +419,7 @@ By default, `#[graphql_interface]` macro generates code, which is generic over a
 use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
 
 #[graphql_interface(for = [Human, Droid])]
-#[graphql_interface(Scalar = DefaultScalarValue)] // removing this line will fail compilation
+#[graphql_interface(scalar = DefaultScalarValue)] // removing this line will fail compilation
 trait Character {
     fn id(&self) -> &str;
 }
@@ -430,7 +430,7 @@ struct Human {
     id: String,
     home_planet: String,
 }
-#[graphql_interface(Scalar = DefaultScalarValue)]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl Character for Human {
     fn id(&self) -> &str {
         &self.id
@@ -443,7 +443,7 @@ struct Droid {
     id: String,
     primary_function: String,
 }
-#[graphql_interface(Scalar = DefaultScalarValue)]
+#[graphql_interface(scalar = DefaultScalarValue)]
 impl Character for Droid {
     fn id(&self) -> &str {
         &self.id

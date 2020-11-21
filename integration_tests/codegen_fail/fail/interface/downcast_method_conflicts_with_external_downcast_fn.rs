@@ -22,7 +22,7 @@ impl Character for ObjA {
 trait Character {
     fn id(&self, num: i32) -> &str;
 
-    #[graphql_interface(downcast)]
+    #[graphql(downcast)]
     fn as_obja(&self) -> Option<&ObjA>;
 }
 

@@ -12,6 +12,7 @@ struct TransparentAttributes {
     transparent: Option<bool>,
     name: Option<String>,
     description: Option<String>,
+    scalar: Option<syn::Type>,
 }
 
 impl syn::parse::Parse for TransparentAttributes {
@@ -20,6 +21,7 @@ impl syn::parse::Parse for TransparentAttributes {
             transparent: None,
             name: None,
             description: None,
+            scalar: None,
         };
 
         while !input.is_empty() {
@@ -37,6 +39,11 @@ impl syn::parse::Parse for TransparentAttributes {
                 }
                 "transparent" => {
                     output.transparent = Some(true);
+                }
+                "scalar" | "Scalar" => {
+                    input.parse::<token::Eq>()?;
+                    let val = input.parse::<syn::Type>()?;
+                    output.scalar = Some(val);
                 }
                 _ => return Err(syn::Error::new(ident.span(), "unknown attribute")),
             }
@@ -99,22 +106,34 @@ fn impl_scalar_struct(
         None => quote!(),
     };
 
+    let scalar = attrs
+        .scalar
+        .as_ref()
+        .map(|s| quote!( #s ))
+        .unwrap_or_else(|| quote!(__S));
+
+    let impl_generics = attrs
+        .scalar
+        .as_ref()
+        .map(|_| quote!())
+        .unwrap_or_else(|| quote!(<__S>));
+
     let _async = quote!(
-        impl<__S> ::juniper::GraphQLValueAsync<__S> for #ident
+        impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ident
         where
             Self: Sync,
             Self::TypeInfo: Sync,
             Self::Context: Sync,
-            __S: ::juniper::ScalarValue + Send + Sync,
+            #scalar: ::juniper::ScalarValue + Send + Sync,
         {
             fn resolve_async<'a>(
                 &'a self,
                 info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [::juniper::Selection<__S>]>,
-                executor: &'a ::juniper::Executor<Self::Context, __S>,
-            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<__S>> {
+                selection_set: Option<&'a [::juniper::Selection<#scalar>]>,
+                executor: &'a ::juniper::Executor<Self::Context, #scalar>,
+            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#scalar>> {
                 use ::juniper::futures::future;
-                let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
+                let v = ::juniper::GraphQLValue::<#scalar>::resolve(self, info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
@@ -123,9 +142,9 @@ fn impl_scalar_struct(
     let content = quote!(
         #_async
 
-        impl<S> ::juniper::GraphQLType<S> for #ident
+        impl#impl_generics ::juniper::GraphQLType<#scalar> for #ident
         where
-            S: ::juniper::ScalarValue,
+            #scalar: ::juniper::ScalarValue,
         {
             fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
@@ -133,10 +152,10 @@ fn impl_scalar_struct(
 
             fn meta<'r>(
                 info: &Self::TypeInfo,
-                registry: &mut ::juniper::Registry<'r, S>,
-            ) -> ::juniper::meta::MetaType<'r, S>
+                registry: &mut ::juniper::Registry<'r, #scalar>,
+            ) -> ::juniper::meta::MetaType<'r, #scalar>
             where
-                S: 'r,
+                #scalar: 'r,
             {
                 registry.build_scalar_type::<Self>(info)
                     #description
@@ -144,59 +163,63 @@ fn impl_scalar_struct(
             }
         }
 
-        impl<S> ::juniper::GraphQLValue<S> for #ident
+        impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ident
         where
-            S: ::juniper::ScalarValue,
+            #scalar: ::juniper::ScalarValue,
         {
             type Context = ();
             type TypeInfo = ();
 
             fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                <Self as ::juniper::GraphQLType<S>>::name(info)
+                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
             }
 
             fn resolve(
                 &self,
                 info: &(),
-                selection: Option<&[::juniper::Selection<S>]>,
-                executor: &::juniper::Executor<Self::Context, S>,
-            ) -> ::juniper::ExecutionResult<S> {
-                ::juniper::GraphQLValue::resolve(&self.0, info, selection, executor)
+                selection: Option<&[::juniper::Selection<#scalar>]>,
+                executor: &::juniper::Executor<Self::Context, #scalar>,
+            ) -> ::juniper::ExecutionResult<#scalar> {
+                ::juniper::GraphQLValue::<#scalar>::resolve(&self.0, info, selection, executor)
             }
         }
 
-        impl<S> ::juniper::ToInputValue<S> for #ident
+        impl#impl_generics ::juniper::ToInputValue<#scalar> for #ident
         where
-            S: ::juniper::ScalarValue,
+            #scalar: ::juniper::ScalarValue,
         {
-            fn to_input_value(&self) -> ::juniper::InputValue<S> {
-                ::juniper::ToInputValue::to_input_value(&self.0)
+            fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
+                ::juniper::ToInputValue::<#scalar>::to_input_value(&self.0)
             }
         }
 
-        impl<S> ::juniper::FromInputValue<S> for #ident
+        impl#impl_generics ::juniper::FromInputValue<#scalar> for #ident
         where
-            S: ::juniper::ScalarValue,
+            #scalar: ::juniper::ScalarValue,
         {
-            fn from_input_value(v: &::juniper::InputValue<S>) -> Option<#ident> {
-                let inner: #inner_ty = ::juniper::FromInputValue::from_input_value(v)?;
+            fn from_input_value(v: &::juniper::InputValue<#scalar>) -> Option<#ident> {
+                let inner: #inner_ty = ::juniper::FromInputValue::<#scalar>::from_input_value(v)?;
                 Some(#ident(inner))
             }
         }
 
-        impl<S> ::juniper::ParseScalarValue<S> for #ident
+        impl#impl_generics ::juniper::ParseScalarValue<#scalar> for #ident
         where
-            S: ::juniper::ScalarValue,
+            #scalar: ::juniper::ScalarValue,
         {
             fn from_str<'a>(
                 value: ::juniper::parser::ScalarToken<'a>,
-            ) -> ::juniper::ParseScalarResult<'a, S> {
-                <#inner_ty as ::juniper::ParseScalarValue<S>>::from_str(value)
+            ) -> ::juniper::ParseScalarResult<'a, #scalar> {
+                <#inner_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(value)
             }
         }
 
-        impl<S: ::juniper::ScalarValue> ::juniper::marker::IsOutputType<S> for #ident { }
-        impl<S: ::juniper::ScalarValue> ::juniper::marker::IsInputType<S> for #ident { }
+        impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        { }
+        impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        { }
     );
 
     Ok(content)

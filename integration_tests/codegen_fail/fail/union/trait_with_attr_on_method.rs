@@ -2,7 +2,7 @@ use juniper::{graphql_union, GraphQLObject};
 
 #[graphql_union]
 trait Character {
-    #[graphql_union(with = something)]
+    #[graphql(with = something)]
     fn a(&self) -> Option<&Human>;
 }
 

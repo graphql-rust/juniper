@@ -360,7 +360,7 @@ enum TraitMethod {
 impl TraitMethod {
     /// Parses this [`TraitMethod`] from the given trait method definition.
     ///
-    /// Returns [`None`] if the trait method marked with `#[graphql_interface(ignore)]` attribute,
+    /// Returns [`None`] if the trait method marked with `#[graphql(ignore)]` attribute,
     /// or parsing fails.
     #[must_use]
     fn parse(method: &mut syn::TraitItemMethod) -> Option<Self> {
@@ -369,10 +369,10 @@ impl TraitMethod {
         // Remove repeated attributes from the method, to omit incorrect expansion.
         method.attrs = mem::take(&mut method.attrs)
             .into_iter()
-            .filter(|attr| !path_eq_single(&attr.path, "graphql_interface"))
+            .filter(|attr| !path_eq_single(&attr.path, "graphql"))
             .collect();
 
-        let meta = MethodMeta::from_attrs("graphql_interface", &method_attrs)
+        let meta = MethodMeta::from_attrs("graphql", &method_attrs)
             .map_err(|e| proc_macro_error::emit_error!(e))
             .ok()?;
 
@@ -514,10 +514,10 @@ impl TraitMethod {
         // Remove repeated attributes from the method, to omit incorrect expansion.
         argument.attrs = mem::take(&mut argument.attrs)
             .into_iter()
-            .filter(|attr| !path_eq_single(&attr.path, "graphql_interface"))
+            .filter(|attr| !path_eq_single(&attr.path, "graphql"))
             .collect();
 
-        let meta = ArgumentMeta::from_attrs("graphql_interface", &argument_attrs)
+        let meta = ArgumentMeta::from_attrs("graphql", &argument_attrs)
             .map_err(|e| proc_macro_error::emit_error!(e))
             .ok()?;
 
@@ -551,8 +551,8 @@ impl TraitMethod {
                 "trait method argument should be declared as a single identifier",
             )
             .note(String::from(
-                "use `#[graphql_interface(name = ...)]` attribute to specify custom argument's \
-                 name without requiring it being a single identifier",
+                "use `#[graphql(name = ...)]` attribute to specify custom argument's name without \
+                 requiring it being a single identifier",
             ))
             .emit();
             return None;
@@ -598,7 +598,7 @@ fn err_disallowed_attr<T, S: Spanned>(span: &S, arg: &str) -> Option<T> {
     ERR.custom(
         span.span(),
         format!(
-            "attribute argument `#[graphql_interface({} = ...)]` is not allowed here",
+            "attribute argument `#[graphql({} = ...)]` is not allowed here",
             arg,
         ),
     )
@@ -663,8 +663,8 @@ fn err_duplicate_downcast(
         ),
     )
     .note(String::from(
-        "use `#[graphql_interface(ignore)]` attribute argument to ignore this trait method for \
-         interface implementers downcasting",
+        "use `#[graphql(ignore)]` attribute argument to ignore this trait method for interface \
+         implementers downcasting",
     ))
     .emit()
 }

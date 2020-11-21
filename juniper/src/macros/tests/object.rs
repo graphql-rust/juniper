@@ -1,18 +1,4 @@
-// TODO: make sure proc macro tests cover all
-//       variants of the below
-
 /*
-use std::marker::PhantomData;
-
-use crate::{
-    ast::InputValue,
-    executor::{Context, FieldResult},
-    schema::model::RootNode,
-    types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, Object, Value},
-};
-
-
 Syntax to validate:
 
 * Order of items: fields, description, interfaces
@@ -20,125 +6,125 @@ Syntax to validate:
 * Custom name vs. default name
 * Optional commas between items
 * Nullable/fallible context switching
+*/
 
- */
+#![allow(dead_code)]
 
-/*
+use std::marker::PhantomData;
+
+use crate::{
+    ast::InputValue,
+    executor::{Context, FieldResult},
+    graphql_interface, graphql_object,
+    schema::model::RootNode,
+    types::scalars::{EmptyMutation, EmptySubscription},
+    value::{DefaultScalarValue, Object, Value},
+    GraphQLObject,
+};
+
 struct CustomName;
-graphql_object!(CustomName: () as "ACustomNamedType" |&self| {
-    field simple() -> i32 { 0 }
-});
 
-#[allow(dead_code)]
+#[graphql_object(name = "ACustomNamedType")]
+impl CustomName {
+    fn simple() -> i32 {
+        0
+    }
+}
+
 struct WithLifetime<'a> {
     data: PhantomData<&'a i32>,
 }
-graphql_object!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
-    field simple() -> i32 { 0 }
-});
 
-#[allow(dead_code)]
+#[graphql_object]
+impl<'a> WithLifetime<'a> {
+    fn simple() -> i32 {
+        0
+    }
+}
+
 struct WithGenerics<T> {
     data: T,
 }
-graphql_object!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
-    field simple() -> i32 { 0 }
-});
 
-struct Interface;
-struct DescriptionFirst;
-graphql_interface!(Interface: () |&self| {
-    field simple() -> i32 { 0 }
-
-    instance_resolvers: |_| {
-        DescriptionFirst => Some(DescriptionFirst {}),
+#[graphql_object]
+impl<T> WithGenerics<T> {
+    fn simple() -> i32 {
+        0
     }
-});
-graphql_object!(DescriptionFirst: () |&self| {
-    description: "A description"
+}
 
-    field simple() -> i32 { 0 }
+#[graphql_interface(for = SimpleObject)]
+trait Interface {
+    fn simple(&self) -> i32 {
+        0
+    }
+}
 
-    interfaces: [Interface]
-});
+#[derive(GraphQLObject)]
+#[graphql(impl = InterfaceValue, description = "A description")]
+struct SimpleObject {
+    simple: i32,
+}
 
-struct FieldsFirst;
-graphql_object!(FieldsFirst: () |&self| {
-    field simple() -> i32 { 0 }
-
-    description: "A description"
-
-    interfaces: [Interface]
-});
-
-struct InterfacesFirst;
-graphql_object!(InterfacesFirst: ()|&self| {
-    interfaces: [Interface]
-
-    field simple() -> i32 { 0 }
-
-    description: "A description"
-});
-
-struct CommasWithTrailing;
-graphql_object!(CommasWithTrailing: () |&self| {
-    interfaces: [Interface],
-
-    field simple() -> i32 { 0 },
-
-    description: "A description",
-});
-
-struct CommasOnMeta;
-graphql_object!(CommasOnMeta: () |&self| {
-    interfaces: [Interface],
-    description: "A description",
-
-    field simple() -> i32 { 0 }
-});
-
-struct Root;
+#[graphql_interface]
+impl Interface for SimpleObject {}
 
 struct InnerContext;
 impl Context for InnerContext {}
 
-struct InnerType;
-graphql_object!(InnerType: InnerContext | &self | {});
+#[derive(GraphQLObject)]
+#[graphql(context = InnerContext)]
+struct InnerType {
+    a: i32,
+}
 
 struct CtxSwitcher;
-graphql_object!(CtxSwitcher: InnerContext |&self| {
-    field ctx_switch_always(&executor) -> (&InnerContext, InnerType) {
-        (executor.context(), InnerType)
+
+#[graphql_object(context = InnerContext)]
+impl CtxSwitcher {
+    fn ctx_switch_always() -> (&InnerContext, InnerType) {
+        (executor.context(), InnerType { a: 0 })
     }
 
-    field ctx_switch_opt(&executor) -> Option<(&InnerContext, InnerType)> {
-        Some((executor.context(), InnerType))
+    fn ctx_switch_opt() -> Option<(&InnerContext, InnerType)> {
+        Some((executor.context(), InnerType { a: 0 }))
     }
 
-    field ctx_switch_res(&executor) -> FieldResult<(&InnerContext, InnerType)> {
-        Ok((executor.context(), InnerType))
+    fn ctx_switch_res() -> FieldResult<(&InnerContext, InnerType)> {
+        Ok((executor.context(), InnerType { a: 0 }))
     }
 
-    field ctx_switch_res_opt(&executor) -> FieldResult<Option<(&InnerContext, InnerType)>> {
-        Ok(Some((executor.context(), InnerType)))
+    fn ctx_switch_res_opt() -> FieldResult<Option<(&InnerContext, InnerType)>> {
+        Ok(Some((executor.context(), InnerType { a: 0 })))
     }
-});
+}
 
-graphql_object!(<'a> Root: InnerContext as "Root" |&self| {
-    field custom_name() -> CustomName { CustomName {} }
+struct Root;
 
-    field with_lifetime() -> WithLifetime<'a> { WithLifetime { data: PhantomData } }
-    field with_generics() -> WithGenerics<i32> { WithGenerics { data: 123 } }
+#[graphql_object(context = InnerContext)]
+impl Root {
+    fn custom_name() -> CustomName {
+        CustomName {}
+    }
 
-    field description_first() -> DescriptionFirst { DescriptionFirst {} }
-    field fields_first() -> FieldsFirst { FieldsFirst {} }
-    field interfaces_first() -> InterfacesFirst { InterfacesFirst {} }
+    fn with_lifetime() -> WithLifetime<'static> {
+        WithLifetime { data: PhantomData }
+    }
+    fn with_generics() -> WithGenerics<i32> {
+        WithGenerics { data: 123 }
+    }
 
-    field commas_with_trailing() -> CommasWithTrailing { CommasWithTrailing {} }
-    field commas_on_meta() -> CommasOnMeta { CommasOnMeta {} }
+    fn description_first() -> SimpleObject {
+        SimpleObject { simple: 0 }
+    }
+    fn interface() -> InterfaceValue {
+        SimpleObject { simple: 0 }.into()
+    }
 
-    field ctx_switcher() -> CtxSwitcher { CtxSwitcher {} }
-});
+    fn ctx_switcher() -> CtxSwitcher {
+        CtxSwitcher {}
+    }
+}
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
@@ -170,7 +156,7 @@ where
     let schema = RootNode::new(
         Root {},
         EmptyMutation::<InnerContext>::new(),
-        EmptySubscription::<()>::new(),
+        EmptySubscription::<InnerContext>::new(),
     );
     let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
@@ -215,7 +201,11 @@ fn introspect_custom_name() {
 
         assert!(fields.contains(&graphql_value!({
             "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+            "type": {
+                "kind": "NON_NULL",
+                "name": None,
+                "ofType": { "kind": "SCALAR", "name": "Int" }
+            }
         })));
     });
 }
@@ -235,7 +225,9 @@ fn introspect_with_lifetime() {
 
         assert!(fields.contains(&graphql_value!({
             "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+            "type": {
+                "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" }
+            }
         })));
     });
 }
@@ -255,17 +247,19 @@ fn introspect_with_generics() {
 
         assert!(fields.contains(&graphql_value!({
             "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+            "type": {
+                "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" }
+            }
         })));
     });
 }
 
 #[test]
-fn introspect_description_first() {
-    run_type_info_query("DescriptionFirst", |object, fields| {
+fn introspect_simple_object() {
+    run_type_info_query("SimpleObject", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::scalar("DescriptionFirst"))
+            Some(&Value::scalar("SimpleObject"))
         );
         assert_eq!(
             object.get_field_value("description"),
@@ -285,127 +279,9 @@ fn introspect_description_first() {
 
         assert!(fields.contains(&graphql_value!({
             "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
-        })));
-    });
-}
-
-#[test]
-fn introspect_fields_first() {
-    run_type_info_query("FieldsFirst", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("FieldsFirst"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-        assert_eq!(
-            object.get_field_value("interfaces"),
-            Some(&Value::list(vec![Value::object(
-                vec![
-                    ("name", Value::scalar("Interface")),
-                    ("kind", Value::scalar("INTERFACE")),
-                ]
-                .into_iter()
-                .collect(),
-            )]))
-        );
-
-        assert!(fields.contains(&graphql_value!({
-            "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
-        })));
-    });
-}
-
-#[test]
-fn introspect_interfaces_first() {
-    run_type_info_query("InterfacesFirst", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("InterfacesFirst"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-        assert_eq!(
-            object.get_field_value("interfaces"),
-            Some(&Value::list(vec![Value::object(
-                vec![
-                    ("name", Value::scalar("Interface")),
-                    ("kind", Value::scalar("INTERFACE")),
-                ]
-                .into_iter()
-                .collect(),
-            )]))
-        );
-
-        assert!(fields.contains(&graphql_value!({
-            "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
-        })));
-    });
-}
-
-#[test]
-fn introspect_commas_with_trailing() {
-    run_type_info_query("CommasWithTrailing", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("CommasWithTrailing"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-        assert_eq!(
-            object.get_field_value("interfaces"),
-            Some(&Value::list(vec![Value::object(
-                vec![
-                    ("name", Value::scalar("Interface")),
-                    ("kind", Value::scalar("INTERFACE")),
-                ]
-                .into_iter()
-                .collect(),
-            )]))
-        );
-
-        assert!(fields.contains(&graphql_value!({
-            "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
-        })));
-    });
-}
-
-#[test]
-fn introspect_commas_on_meta() {
-    run_type_info_query("CommasOnMeta", |object, fields| {
-        assert_eq!(
-            object.get_field_value("name"),
-            Some(&Value::scalar("CommasOnMeta"))
-        );
-        assert_eq!(
-            object.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-        assert_eq!(
-            object.get_field_value("interfaces"),
-            Some(&Value::list(vec![Value::object(
-                vec![
-                    ("name", Value::scalar("Interface")),
-                    ("kind", Value::scalar("INTERFACE")),
-                ]
-                .into_iter()
-                .collect(),
-            )]))
-        );
-
-        assert!(fields.contains(&graphql_value!({
-            "name": "simple",
-            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+            "type": {
+                "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" }
+            }
         })));
     });
 }
@@ -456,4 +332,3 @@ fn introspect_ctx_switch() {
         })));
     });
 }
-*/

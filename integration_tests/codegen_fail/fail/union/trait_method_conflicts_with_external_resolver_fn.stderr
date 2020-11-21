@@ -5,4 +5,4 @@ error: GraphQL union trait method `a` conflicts with the external resolver funct
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
   = note: https://spec.graphql.org/June2018/#sec-Unions
-  = note: use `#[graphql_union(ignore)]` attribute to ignore this trait method for union variants resolution
+  = note: use `#[graphql(ignore)]` attribute to ignore this trait method for union variants resolution
