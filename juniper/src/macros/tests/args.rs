@@ -81,7 +81,7 @@ impl Root {
 
     #[graphql(arguments(
         arg1(description = "The first arg",),
-        arg2(description = "The second arg")
+        arg2(description = "The second arg",)
     ))]
     fn multi_args_descr_trailing_comma(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
