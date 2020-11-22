@@ -11,11 +11,12 @@ use proc_macro_error::abort;
 use quote::quote;
 use span_container::SpanContainer;
 use syn::{
+    ext::IdentExt,
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
-    token, Attribute, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
+    token, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
 
 use crate::common::parse::ParseBufferExt as _;
@@ -450,7 +451,7 @@ pub struct FieldAttributeArgument {
 
 impl Parse for FieldAttributeArgument {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let name = input.parse()?;
+        let name = input.parse::<Ident>()?.unraw();
 
         let mut arg = Self {
             name,

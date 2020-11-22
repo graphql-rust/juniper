@@ -58,11 +58,24 @@ impl Root {
         arg
     }
 
+    #[graphql(arguments(r#arg(description = "The arg")))]
+    fn single_arg_descr_raw_idents(arg: i32) -> i32 {
+        arg
+    }
+
     #[graphql(arguments(
         arg1(description = "The first arg",),
         arg2(description = "The second arg")
     ))]
     fn multi_args_descr(arg1: i32, arg2: i32) -> i32 {
+        arg1 + arg2
+    }
+
+    #[graphql(arguments(
+        r#arg1(description = "The first arg",),
+        r#arg2(description = "The second arg")
+    ))]
+    fn multi_args_descr_raw_idents(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
@@ -106,6 +119,11 @@ impl Root {
         arg
     }
 
+    #[graphql(arguments(r#arg(default = 123, description = "The arg")))]
+    fn arg_with_default_descr_raw_ident(arg: i32) -> i32 {
+        arg
+    }
+
     #[graphql(arguments(
         arg1(default = 123, description = "The first arg"),
         arg2(default = 456, description = "The second arg")
@@ -115,10 +133,26 @@ impl Root {
     }
 
     #[graphql(arguments(
+        r#arg1(default = 123, description = "The first arg"),
+        r#arg2(default = 456, description = "The second arg")
+    ))]
+    fn multi_args_with_default_descr_raw_ident(arg1: i32, arg2: i32) -> i32 {
+        arg1 + arg2
+    }
+
+    #[graphql(arguments(
         arg1(default = 123, description = "The first arg",),
         arg2(default = 456, description = "The second arg",)
     ))]
     fn multi_args_with_default_trailing_comma_descr(arg1: i32, arg2: i32) -> i32 {
+        arg1 + arg2
+    }
+
+    #[graphql(arguments(
+        r#arg1(default = 123, description = "The first arg",),
+        r#arg2(default = 456, description = "The second arg",)
+    ))]
+    fn multi_args_with_default_trailing_comma_descr_raw_ident(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
@@ -461,8 +495,102 @@ async fn introspect_field_single_arg_descr() {
 }
 
 #[tokio::test]
+async fn introspect_field_single_arg_descr_raw_idents() {
+    run_args_info_query("singleArgDescrRawIdents", |args| {
+        assert_eq!(args.len(), 1);
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg")),
+                ("description", Value::scalar("The arg")),
+                ("defaultValue", Value::null()),
+                (
+                    "type",
+                    Value::object(
+                        vec![
+                            ("name", Value::null()),
+                            (
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+                                ),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    })
+    .await;
+}
+
+#[tokio::test]
 async fn introspect_field_multi_args_descr() {
     run_args_info_query("multiArgsDescr", |args| {
+        assert_eq!(args.len(), 2);
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg1")),
+                ("description", Value::scalar("The first arg")),
+                ("defaultValue", Value::null()),
+                (
+                    "type",
+                    Value::object(
+                        vec![
+                            ("name", Value::null()),
+                            (
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+                                ),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg2")),
+                ("description", Value::scalar("The second arg")),
+                ("defaultValue", Value::null()),
+                (
+                    "type",
+                    Value::object(
+                        vec![
+                            ("name", Value::null()),
+                            (
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+                                ),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn introspect_field_multi_args_descr_raw_idents() {
+    run_args_info_query("multiArgsDescrRawIdents", |args| {
         assert_eq!(args.len(), 2);
 
         assert!(args.contains(&Value::object(
@@ -787,6 +915,32 @@ async fn introspect_field_arg_with_default_descr() {
 }
 
 #[tokio::test]
+async fn introspect_field_arg_with_default_descr_raw_ident() {
+    run_args_info_query("argWithDefaultDescrRawIdent", |args| {
+        assert_eq!(args.len(), 1);
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg")),
+                ("description", Value::scalar("The arg")),
+                ("defaultValue", Value::scalar("123")),
+                (
+                    "type",
+                    Value::object(
+                        vec![("name", Value::scalar("Int")), ("ofType", Value::null())]
+                            .into_iter()
+                            .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    })
+    .await;
+}
+
+#[tokio::test]
 async fn introspect_field_multi_args_with_default_descr() {
     run_args_info_query("multiArgsWithDefaultDescr", |args| {
         assert_eq!(args.len(), 2);
@@ -831,8 +985,96 @@ async fn introspect_field_multi_args_with_default_descr() {
 }
 
 #[tokio::test]
+async fn introspect_field_multi_args_with_default_descr_raw_ident() {
+    run_args_info_query("multiArgsWithDefaultDescrRawIdent", |args| {
+        assert_eq!(args.len(), 2);
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg1")),
+                ("description", Value::scalar("The first arg")),
+                ("defaultValue", Value::scalar("123")),
+                (
+                    "type",
+                    Value::object(
+                        vec![("name", Value::scalar("Int")), ("ofType", Value::null())]
+                            .into_iter()
+                            .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg2")),
+                ("description", Value::scalar("The second arg")),
+                ("defaultValue", Value::scalar("456")),
+                (
+                    "type",
+                    Value::object(
+                        vec![("name", Value::scalar("Int")), ("ofType", Value::null())]
+                            .into_iter()
+                            .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    })
+    .await;
+}
+
+#[tokio::test]
 async fn introspect_field_multi_args_with_default_trailing_comma_descr() {
     run_args_info_query("multiArgsWithDefaultTrailingCommaDescr", |args| {
+        assert_eq!(args.len(), 2);
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg1")),
+                ("description", Value::scalar("The first arg")),
+                ("defaultValue", Value::scalar("123")),
+                (
+                    "type",
+                    Value::object(
+                        vec![("name", Value::scalar("Int")), ("ofType", Value::null())]
+                            .into_iter()
+                            .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg2")),
+                ("description", Value::scalar("The second arg")),
+                ("defaultValue", Value::scalar("456")),
+                (
+                    "type",
+                    Value::object(
+                        vec![("name", Value::scalar("Int")), ("ofType", Value::null())]
+                            .into_iter()
+                            .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn introspect_field_multi_args_with_default_trailing_comma_descr_raw_ident() {
+    run_args_info_query("multiArgsWithDefaultTrailingCommaDescrRawIdent", |args| {
         assert_eq!(args.len(), 2);
 
         assert!(args.contains(&Value::object(
