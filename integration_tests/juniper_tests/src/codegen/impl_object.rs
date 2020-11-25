@@ -94,3 +94,17 @@ mod fallible {
         }
     }
 }
+
+mod raw_arguments {
+    use juniper::graphql_object;
+
+    struct Obj;
+
+    #[graphql_object]
+    impl Obj {
+        #[graphql(arguments(r#arg(description = "The only argument")))]
+        fn test(&self, arg: String) -> String {
+            arg
+        }
+    }
+}
