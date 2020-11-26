@@ -11,7 +11,7 @@ use proc_macro_error::abort;
 use quote::quote;
 use span_container::SpanContainer;
 use syn::{
-    ext::IdentExt,
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,

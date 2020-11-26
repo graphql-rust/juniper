@@ -95,8 +95,10 @@ mod fallible {
     }
 }
 
-mod raw_arguments {
-    use juniper::graphql_object;
+mod raw_argument {
+    use juniper::{
+        graphql_object, graphql_value, EmptyMutation, EmptySubscription, RootNode, Variables,
+    };
 
     struct Obj;
 
@@ -106,5 +108,32 @@ mod raw_arguments {
         fn test(&self, arg: String) -> String {
             arg
         }
+    }
+
+    #[tokio::test]
+    async fn named_correctly() {
+        let doc = r#"{
+            __type(name: "Obj") {
+                fields {
+                    args {
+                        name
+                    }
+                }
+            }
+        }"#;
+
+        let schema = RootNode::new(
+            Obj,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
+
+        assert_eq!(
+            juniper::execute(&doc, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [{"args": [{"name": "arg"}]}]}}),
+                vec![],
+            )),
+        );
     }
 }
