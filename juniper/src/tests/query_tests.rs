@@ -731,3 +731,69 @@ async fn test_object_typename() {
         ))
     );
 }
+
+#[tokio::test]
+async fn interface_inline_fragment_friends() {
+    let doc = r#"{
+        human(id: "1002") {
+            friends {
+                name
+                ... on Human { homePlanet }
+                ... on Droid { primaryFunction }
+            }
+        }
+    }"#;
+    let database = Database::new();
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
+
+    assert_eq!(
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        Ok((
+            Value::object(
+                vec![(
+                    "human",
+                    Value::object(
+                        vec![(
+                            "friends",
+                            Value::list(vec![
+                                Value::object(
+                                    vec![
+                                        ("name", Value::scalar("Luke Skywalker")),
+                                        ("homePlanet", Value::scalar("Tatooine")),
+                                    ]
+                                    .into_iter()
+                                    .collect(),
+                                ),
+                                Value::object(
+                                    vec![
+                                        ("name", Value::scalar("Leia Organa")),
+                                        ("homePlanet", Value::scalar("Alderaan")),
+                                    ]
+                                    .into_iter()
+                                    .collect(),
+                                ),
+                                Value::object(
+                                    vec![
+                                        ("name", Value::scalar("R2-D2")),
+                                        ("primaryFunction", Value::scalar("Astromech")),
+                                    ]
+                                    .into_iter()
+                                    .collect(),
+                                ),
+                            ]),
+                        )]
+                        .into_iter()
+                        .collect(),
+                    ),
+                )]
+                .into_iter()
+                .collect()
+            ),
+            vec![]
+        ))
+    );
+}
