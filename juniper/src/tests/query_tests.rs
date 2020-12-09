@@ -1,6 +1,7 @@
 use crate::{
     ast::InputValue,
     executor::Variables,
+    graphql_value,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
@@ -728,6 +729,39 @@ async fn test_object_typename() {
                 .collect()
             ),
             vec![]
+        ))
+    );
+}
+
+#[tokio::test]
+async fn interface_inline_fragment_friends() {
+    let doc = r#"{
+        human(id: "1002") {
+            friends {
+                name
+                ... on Human { homePlanet }
+                ... on Droid { primaryFunction }
+            }
+        }
+    }"#;
+    let database = Database::new();
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
+
+    assert_eq!(
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        Ok((
+            graphql_value!({"human": {
+                "friends": [
+                    {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
+                    {"name": "Leia Organa", "homePlanet": "Alderaan"},
+                    {"name": "R2-D2", "primaryFunction": "Astromech"},
+                ],
+            }}),
+            vec![],
         ))
     );
 }
