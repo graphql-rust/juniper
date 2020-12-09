@@ -323,26 +323,30 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance
-                        .resolve_into_type_async(
-                            info,
-                            type_condition.item,
-                            Some(&fragment.selection_set[..]),
-                            &sub_exec,
-                        )
-                        .await;
+                    // Check whether the type matches the type condition.
+                    let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
+                    if type_condition.item == concrete_type_name {
+                        let sub_result = instance
+                            .resolve_into_type_async(
+                                info,
+                                type_condition.item,
+                                Some(&fragment.selection_set[..]),
+                                &sub_exec,
+                            )
+                            .await;
 
-                    if let Ok(Value::Object(obj)) = sub_result {
-                        for (k, v) in obj {
-                            async_values.push(AsyncValueFuture::InlineFragment1(async move {
-                                AsyncValue::Field(AsyncField {
-                                    name: k,
-                                    value: Some(v),
-                                })
-                            }));
+                        if let Ok(Value::Object(obj)) = sub_result {
+                            for (k, v) in obj {
+                                async_values.push(AsyncValueFuture::InlineFragment1(async move {
+                                    AsyncValue::Field(AsyncField {
+                                        name: k,
+                                        value: Some(v),
+                                    })
+                                }));
+                            }
+                        } else if let Err(e) = sub_result {
+                            sub_exec.push_error_at(e, *start_pos);
                         }
-                    } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else {
                     async_values.push(AsyncValueFuture::InlineFragment2(async move {
