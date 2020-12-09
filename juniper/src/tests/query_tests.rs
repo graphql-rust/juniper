@@ -1,6 +1,7 @@
 use crate::{
     ast::InputValue,
     executor::Variables,
+    graphql_value,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
@@ -753,47 +754,14 @@ async fn interface_inline_fragment_friends() {
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
-            Value::object(
-                vec![(
-                    "human",
-                    Value::object(
-                        vec![(
-                            "friends",
-                            Value::list(vec![
-                                Value::object(
-                                    vec![
-                                        ("name", Value::scalar("Luke Skywalker")),
-                                        ("homePlanet", Value::scalar("Tatooine")),
-                                    ]
-                                    .into_iter()
-                                    .collect(),
-                                ),
-                                Value::object(
-                                    vec![
-                                        ("name", Value::scalar("Leia Organa")),
-                                        ("homePlanet", Value::scalar("Alderaan")),
-                                    ]
-                                    .into_iter()
-                                    .collect(),
-                                ),
-                                Value::object(
-                                    vec![
-                                        ("name", Value::scalar("R2-D2")),
-                                        ("primaryFunction", Value::scalar("Astromech")),
-                                    ]
-                                    .into_iter()
-                                    .collect(),
-                                ),
-                            ]),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
+            graphql_value!({"human": {
+                "friends": [
+                    {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
+                    {"name": "Leia Organa", "homePlanet": "Alderaan"},
+                    {"name": "R2-D2", "primaryFunction": "Astromech"},
+                ],
+            }}),
+            vec![],
         ))
     );
 }
