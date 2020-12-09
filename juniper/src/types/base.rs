@@ -532,19 +532,23 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance.resolve_into_type(
-                        info,
-                        type_condition.item,
-                        Some(&fragment.selection_set[..]),
-                        &sub_exec,
-                    );
+                    // Check whether the type matches the type condition.
+                    let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
+                    if type_condition.item == concrete_type_name {
+                        let sub_result = instance.resolve_into_type(
+                            info,
+                            type_condition.item,
+                            Some(&fragment.selection_set[..]),
+                            &sub_exec,
+                        );
 
-                    if let Ok(Value::Object(object)) = sub_result {
-                        for (k, v) in object {
-                            merge_key_into(result, &k, v);
+                        if let Ok(Value::Object(object)) = sub_result {
+                            for (k, v) in object {
+                                merge_key_into(result, &k, v);
+                            }
+                        } else if let Err(e) = sub_result {
+                            sub_exec.push_error_at(e, *start_pos);
                         }
-                    } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
                     }
                 } else if !resolve_selection_set_into(
                     instance,
