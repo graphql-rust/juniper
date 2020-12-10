@@ -8,7 +8,9 @@
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar);
 }
-
+html {
+    scrollbar-color: var(--scrollbar) var(--bg);
+}
 #searchresults a,
 .content a:link,
 a:visited,
@@ -18,14 +20,13 @@ a > .hljs {
 
 /* Menu Bar */
 
-#menu-bar {
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;
+#menu-bar,
+#menu-bar-hover-placeholder {
     z-index: 101;
     margin: auto calc(0px - var(--page-padding));
 }
-#menu-bar > #menu-bar-sticky-container {
+#menu-bar {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     background-color: var(--bg);
@@ -33,17 +34,28 @@ a > .hljs {
     border-bottom-width: 1px;
     border-bottom-style: solid;
 }
-.js #menu-bar > #menu-bar-sticky-container {
-    transition: transform 0.3s;
+#menu-bar.sticky,
+.js #menu-bar-hover-placeholder:hover + #menu-bar,
+.js #menu-bar:hover,
+.js.sidebar-visible #menu-bar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0 !important;
 }
-#menu-bar.bordered > #menu-bar-sticky-container  {
+#menu-bar-hover-placeholder {
+    position: sticky;
+    position: -webkit-sticky;
+    top: 0;
+    height: var(--menu-bar-height);
+}
+#menu-bar.bordered {
     border-bottom-color: var(--table-border-color);
 }
 #menu-bar i, #menu-bar .icon-button {
     position: relative;
     padding: 0 8px;
     z-index: 10;
-    line-height: 50px;
+    line-height: var(--menu-bar-height);
     cursor: pointer;
     transition: color 0.5s;
 }
@@ -63,27 +75,26 @@ a > .hljs {
     margin: 0;
 }
 
-#print-button {
+.right-buttons {
     margin: 0 15px;
 }
-
-html:not(.sidebar-visible) #menu-bar:not(:hover).folded > #menu-bar-sticky-container {
-    transform: translateY(-60px);
+.right-buttons a {
+    text-decoration: none;
 }
 
 .left-buttons {
     display: flex;
     margin: 0 5px;
 }
-.no-js .left-buttons { 
+.no-js .left-buttons {
     display: none;
 }
 
 .menu-title {
     display: inline-block;
     font-weight: 200;
-    font-size: 20px;
-    line-height: 50px;
+    font-size: 2rem;
+    line-height: var(--menu-bar-height);
     text-align: center;
     margin: 0;
     flex: 1;
@@ -121,7 +132,7 @@ html:not(.sidebar-visible) #menu-bar:not(:hover).folded > #menu-bar-sticky-conta
     text-decoration: none;
 
     position: fixed;
-    top: 50px; /* Height of menu-bar */
+    top: 0;
     bottom: 0;
     margin: 0;
     max-width: 150px;
@@ -132,17 +143,21 @@ html:not(.sidebar-visible) #menu-bar:not(:hover).folded > #menu-bar-sticky-conta
     align-content: center;
     flex-direction: column;
 
-    transition: color 0.5s;
+    transition: color 0.5s, background-color 0.5s;
 }
 
-.nav-chapters:hover { text-decoration: none; }
+.nav-chapters:hover {
+    text-decoration: none;
+    background-color: var(--theme-hover);
+    transition: background-color 0.15s, color 0.15s;
+}
 
 .nav-wrapper {
     margin-top: 50px;
     display: none;
 }
 
-.mobile-nav-chapters { 
+.mobile-nav-chapters {
     font-size: 2.5em;
     text-align: center;
     text-decoration: none;
@@ -173,11 +188,14 @@ html:not(.sidebar-visible) #menu-bar:not(:hover).folded > #menu-bar-sticky-conta
 /* Inline code */
 
 :not(pre) > .hljs {
-    display: inline-block;
-    vertical-align: middle;
+    display: inline;
     padding: 0.1em 0.3em;
     border-radius: 3px;
+}
+
+:not(pre):not(a) > .hljs {
     color: var(--inline-code-color);
+    overflow-x: initial;
 }
 
 a:hover > .hljs {
@@ -298,8 +316,6 @@ ul#searchresults span.teaser em {
     top: 0;
     bottom: 0;
     width: var(--sidebar-width);
-    overflow-y: auto;
-    padding: 10px 10px;
     font-size: 0.875em;
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
@@ -307,11 +323,38 @@ ul#searchresults span.teaser em {
     background-color: var(--sidebar-bg);
     color: var(--sidebar-fg);
 }
-.js .sidebar {
+.sidebar-resizing {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.js:not(.sidebar-resizing) .sidebar {
     transition: transform 0.3s; /* Animation: slide away */
 }
 .sidebar code {
     line-height: 2em;
+}
+.sidebar .sidebar-scrollbox {
+    overflow-y: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 10px;
+}
+.sidebar .sidebar-resize-handle {
+    position: absolute;
+    cursor: col-resize;
+    width: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+.js .sidebar .sidebar-resize-handle {
+    cursor: col-resize;
+    width: 5px;
 }
 .sidebar-hidden .sidebar {
     transform: translateX(calc(0px - var(--sidebar-width)));
@@ -338,20 +381,55 @@ ul#searchresults span.teaser em {
     padding-left: 0;
     line-height: 2.2em;
 }
+
+.chapter ol {
+    width: 100%;
+}
+
 .chapter li {
+    display: flex;
     color: var(--sidebar-non-existant);
 }
 .chapter li a {
-    color: var(--sidebar-fg);
     display: block;
     padding: 0;
     text-decoration: none;
+    color: var(--sidebar-fg);
 }
-.chapter li a:hover { text-decoration: none }
-.chapter li .active,
-a:hover {
-    /* Animate color change */
+
+.chapter li a:hover {
     color: var(--sidebar-active);
+}
+
+.chapter li a.active {
+    color: var(--sidebar-active);
+}
+
+.chapter li > a.toggle {
+    cursor: pointer;
+    display: block;
+    margin-left: auto;
+    padding: 0 10px;
+    user-select: none;
+    opacity: 0.68;
+}
+
+.chapter li > a.toggle div {
+    transition: transform 0.5s;
+}
+
+/* collapse the section */
+.chapter li:not(.expanded) + li > ol {
+    display: none;
+}
+
+.chapter li.chapter-item {
+    line-height: 1.5em;
+    margin-top: 0.6em;
+}
+
+.chapter li.expanded > a.toggle div {
+    transform: rotate(90deg);
 }
 
 .spacer {
@@ -363,7 +441,7 @@ a:hover {
     background-color: var(--sidebar-spacer);
 }
 
-@media (-moz-touch-enabled: 1), (pointer: coarse) { 
+@media (-moz-touch-enabled: 1), (pointer: coarse) {
     .chapter li a { padding: 5px 0; }
     .spacer { margin: 10px 0; }
 }
@@ -379,7 +457,7 @@ a:hover {
 .theme-popup {
     position: absolute;
     left: 10px;
-    top: 50px;
+    top: var(--menu-bar-height);
     z-index: 1000;
     border-radius: 4px;
     font-size: 0.7em;
