@@ -76,7 +76,7 @@ run_task = { name = "release-local-test-INTERNAL", fork = true }
 [tasks.release-some-local-test]
 condition = { env_set = [ "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS", "RELEASE_LEVEL" ] }
 workspace = false
-run_task = { name = "release-some-local-test-INTERNAL", fork = true }
+run_task = { name = "release-local-test-INTERNAL", fork = true }
 
 
 # Hack to filter out crates we do not want to release.
