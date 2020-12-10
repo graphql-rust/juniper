@@ -12,14 +12,14 @@ CARGO_MAKE_CARGO_ALL_FEATURES = ""
 [tasks.release]
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 workspace = false
-env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks" }
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks;juniper_rocket_async" }
 run_task = { name = "release-INTERNAL", fork = true }
 
 
 [tasks.release-some]
 condition = { env_set = [ "RELEASE_LEVEL", "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" ] }
 workspace = false
-env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks" }
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks;juniper_rocket_async" }
 run_task = { name = "release-some-INTERNAL", fork = true }
 
 # Hack to filter out crates we do not want to release.
@@ -40,7 +40,7 @@ args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/releas
 [tasks.release-dry-run]
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 workspace = false
-env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks" }
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks;juniper_rocket_async" }
 run_task = { name = "release-dry-run-INTERNAL", fork = true }
 
 [tasks.release-some-dry-run]
@@ -54,7 +54,7 @@ run_task = { name = "release-some-dry-run-INTERNAL", fork = true }
 [tasks.release-dry-run-INTERNAL]
 private = true
 condition = { env_set = [ "RELEASE_LEVEL" ] }
-env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks" }
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks;juniper_rocket_async" }
 description = "Run `cargo-release --dry-run` for every crate"
 command = "cargo-release"
 args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "--dry-run", "${RELEASE_LEVEL}"]
@@ -69,7 +69,7 @@ args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/releas
 [tasks.release-local-test]
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 workspace = false
-env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks" }
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks;juniper_rocket_async" }
 run_task = { name = "release-local-test-INTERNAL", fork = true }
 
 
