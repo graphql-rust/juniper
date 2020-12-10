@@ -20,7 +20,7 @@ run_task = { name = "release-INTERNAL", fork = true }
 condition = { env_set = [ "RELEASE_LEVEL", "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" ] }
 workspace = false
 env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*;examples/*;juniper_benchmarks;juniper_rocket_async" }
-run_task = { name = "release-some-INTERNAL", fork = true }
+run_task = { name = "release-INTERNAL", fork = true }
 
 # Hack to filter out crates we do not want to release.
 # See <https://github.com/sagiegurari/cargo-make/issues/212#issuecomment-481123564>
