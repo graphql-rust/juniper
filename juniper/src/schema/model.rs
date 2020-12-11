@@ -367,7 +367,7 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Determine if there is an overlap between types.
     pub fn type_overlap(&self, t1: &MetaType<S>, t2: &MetaType<S>) -> bool {
-        if (t1 as *const MetaType<S>) == (t2 as *const MetaType<S>) {
+        if std::ptr::eq(t1, t2) {
             return true;
         }
 
@@ -414,7 +414,7 @@ impl<'a, S> SchemaType<'a, S> {
     ) -> bool {
         self.possible_types(abstract_type)
             .into_iter()
-            .any(|t| (t as *const MetaType<S>) == (possible_type as *const MetaType<S>))
+            .any(|t| (std::ptr::eq(t, possible_type)))
     }
 
     /// If the type is a subtype of another type.
@@ -483,10 +483,7 @@ impl<'a, S> TypeType<'a, S> {
 
     #[inline]
     pub fn is_non_null(&self) -> bool {
-        match *self {
-            TypeType::NonNull(_) => true,
-            _ => false,
-        }
+        matches!(*self, TypeType::NonNull(_))
     }
 }
 

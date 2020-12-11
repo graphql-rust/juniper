@@ -62,10 +62,7 @@ fn get_enum_type(return_type: &Option<syn::Type>) -> Option<syn::PathSegment> {
                         syn::PathArguments::AngleBracketed(generic_args) => {
                             let generic_type_arg =
                                 generic_args.args.iter().find(|generic_type_arg| {
-                                    match generic_type_arg {
-                                        syn::GenericArgument::Type(_) => true,
-                                        _ => false,
-                                    }
+                                    matches!(generic_type_arg, syn::GenericArgument::Type(_))
                                 });
 
                             if let Some(syn::GenericArgument::Type(syn::Type::Path(type_path))) =

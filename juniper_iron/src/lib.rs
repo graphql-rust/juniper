@@ -230,7 +230,7 @@ where
             .map_err(GraphQLIronError::Url)?;
 
         let query = parse_url_param(url_query.remove("query"))?
-            .ok_or_else(|| GraphQLIronError::InvalidData("No query provided"))?;
+            .ok_or(GraphQLIronError::InvalidData("No query provided"))?;
         let operation_name = parse_url_param(url_query.remove("operationName"))?;
         let variables = parse_variable_param(url_query.remove("variables"))?;
 

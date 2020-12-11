@@ -48,37 +48,25 @@ impl<T> Nullable<T> {
     /// Returns `true` if the nullable is a `ExplicitNull` value.
     #[inline]
     pub fn is_explicit_null(&self) -> bool {
-        match self {
-            Self::ExplicitNull => true,
-            _ => false,
-        }
+        matches!(self, Self::ExplicitNull)
     }
 
     /// Returns `true` if the nullable is a `ImplicitNull` value.
     #[inline]
     pub fn is_implicit_null(&self) -> bool {
-        match self {
-            Self::ImplicitNull => true,
-            _ => false,
-        }
+        matches!(self, Self::ImplicitNull)
     }
 
     /// Returns `true` if the nullable is a `Some` value.
     #[inline]
     pub fn is_some(&self) -> bool {
-        match self {
-            Self::Some(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Some(_))
     }
 
     /// Returns `true` if the nullable is not a `Some` value.
     #[inline]
     pub fn is_null(&self) -> bool {
-        match self {
-            Self::Some(_) => false,
-            _ => true,
-        }
+        !matches!(self, Self::Some(_))
     }
 
     /// Converts from `&mut Nullable<T>` to `Nullable<&mut T>`.

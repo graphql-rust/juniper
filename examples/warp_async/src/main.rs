@@ -81,9 +81,9 @@ async fn main() {
     let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body(format!(
-                "<html><h1>juniper_warp</h1><div>visit <a href=\"/graphiql\">/graphiql</a></html>"
-            ))
+            .body(
+                "<html><h1>juniper_warp</h1><div>visit <a href=\"/graphiql\">/graphiql</a></html>",
+            )
     });
 
     log::info!("Listening on 127.0.0.1:8080");

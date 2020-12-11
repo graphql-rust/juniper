@@ -587,10 +587,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     }
 
     fn is_object_type(&self, ctx: &ValidatorContext<'a, S>, type_name: Option<&str>) -> bool {
-        match type_name.and_then(|n| ctx.schema.concrete_type_by_name(n)) {
-            Some(&MetaType::Object(_)) => true,
-            _ => false,
-        }
+        let meta = type_name.and_then(|n| ctx.schema.concrete_type_by_name(n));
+        matches!(meta, Some(&MetaType::Object(_)))
     }
 
     fn get_referenced_fields_and_fragment_names(

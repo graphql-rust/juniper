@@ -9,9 +9,13 @@ pub fn to_camel_case(s: &'_ str) -> Cow<'_, str> {
 
     // handle '_' to be more friendly with the
     // _var convention for unused variables
-    let s_iter = if s.starts_with('_') { &s[1..] } else { s }
-        .split('_')
-        .enumerate();
+    let s_iter = if let Some(stripped) = s.strip_prefix('_') {
+        stripped
+    } else {
+        s
+    }
+    .split('_')
+    .enumerate();
 
     for (i, part) in s_iter {
         if i > 0 && part.len() == 1 {
