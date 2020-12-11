@@ -14,6 +14,7 @@ subscriptions = ["juniper_graphql_ws"]
 [dependencies]
 actix = "0.10"
 actix-web = "3.3"
+actix-web-actors = "3.0"
 
 juniper = { version = "0.15.0", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.2.0", path = "../juniper_graphql_ws", optional = true }
