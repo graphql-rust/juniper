@@ -13,10 +13,10 @@ subscriptions = ["juniper_graphql_ws"]
 
 [dependencies]
 actix = "0.10"
-actix-web = { version = "3.0", features = ["rustls"] }
+actix-web = "3.3"
 actix-web-actors = "3.0"
 
-juniper = { version = "0.15.0", path = "../juniper", default-features = false  }
+juniper = { version = "0.15.0", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.2.0", path = "../juniper_graphql_ws", optional = true }
 
 anyhow = "1.0"
@@ -33,6 +33,6 @@ actix-identity = "0.3"
 
 juniper = { version = "0.15.0", path = "../juniper", features = ["expose-test-schema"] }
 
-bytes = "0.5"
+bytes = "0.6"
 env_logger = "0.8"
 log = "0.4"

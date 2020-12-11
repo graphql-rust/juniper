@@ -6,7 +6,7 @@ authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 publish = false
 
 [dependencies]
-actix-web = "3.0"
+actix-web = "3.3"
 actix-cors = "0.5"
 futures = "0.3"
 tokio = { version = "0.2", features = ["macros", "rt-core"] }
