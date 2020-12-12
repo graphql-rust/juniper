@@ -2,7 +2,6 @@ no-dev-version = true
 pre-release-commit-message = "Release {{crate_name}} {{version}}"
 pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
-upload-doc = false
 pre-release-replacements = [
   {file="src/lib.rs", search="docs.rs/juniper_graphql_ws/[a-z0-9\\.-]+", replace="docs.rs/juniper_graphql_ws/{{version}}"},
 {file="../juniper_warp/Cargo.toml", search="juniper_graphql_ws = \\{ version = \"[^\"]+\"", replace="juniper_graphql_ws = { version = \"{{version}}\""},
