@@ -1,5 +1,9 @@
 # master
 
+- Compatibility with the latest `juniper`.
+
+# [[0.2.1] 2020-12-12](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.1)
+
 - Actix package updated to 3.3.
 
 # [[0.2.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.0)
