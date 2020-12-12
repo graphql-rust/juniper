@@ -51,6 +51,10 @@ where
         QueryT::name(info)
     }
 
+    fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
+        self.query_type.concrete_type_name(context, info)
+    }
+
     fn resolve_field(
         &self,
         info: &Self::TypeInfo,

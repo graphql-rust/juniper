@@ -2,7 +2,6 @@ no-dev-version = true
 pre-release-commit-message = "Release {{crate_name}} {{version}}"
 pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
-upload-doc = false
 pre-release-replacements = [
   # Juniper's changelog
   {file="CHANGELOG.md", search="# master", replace="# master\n\n- No changes yet\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-{{version}})"},

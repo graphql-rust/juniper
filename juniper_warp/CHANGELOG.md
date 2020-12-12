@@ -1,6 +1,10 @@
 # master
 
 - Compatibility with the latest `juniper`.
+
+# [[0.6.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.0)
+
+- Compatibility with the latest `juniper`.
 - Changed the implementation place of GraphQLBatchRequest and GraphQLBatchResponse in `juniper_warp`
 to `juniper` to be reused in other http integrations, since this implementation was private.
 

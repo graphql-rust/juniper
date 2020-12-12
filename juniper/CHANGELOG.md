@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.15.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.0)
+
 ## Features
 
 - Added async support. ([#2](https://github.com/graphql-rust/juniper/issues/2))

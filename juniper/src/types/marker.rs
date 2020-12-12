@@ -168,5 +168,18 @@ where
 {
 }
 
+impl<S, T> IsInputType<S> for std::sync::Arc<T>
+where
+    T: IsInputType<S> + ?Sized,
+    S: ScalarValue,
+{
+}
+impl<S, T> IsOutputType<S> for std::sync::Arc<T>
+where
+    T: IsOutputType<S> + ?Sized,
+    S: ScalarValue,
+{
+}
+
 impl<'a, S> IsInputType<S> for str where S: ScalarValue {}
 impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}

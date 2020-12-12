@@ -192,10 +192,7 @@ impl<'a> Type<'a> {
 
     /// Determines if a type only can represent non-null values.
     pub fn is_non_null(&self) -> bool {
-        match *self {
-            Type::NonNullNamed(_) | Type::NonNullList(_) => true,
-            _ => false,
-        }
+        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(_))
     }
 }
 
@@ -328,18 +325,12 @@ where
 
     /// Does the value represent null?
     pub fn is_null(&self) -> bool {
-        match *self {
-            InputValue::Null => true,
-            _ => false,
-        }
+        matches!(*self, InputValue::Null)
     }
 
     /// Does the value represent a variable?
     pub fn is_variable(&self) -> bool {
-        match *self {
-            InputValue::Variable(_) => true,
-            _ => false,
-        }
+        matches!(*self, InputValue::Variable(_))
     }
 
     /// View the underlying enum value, if present.

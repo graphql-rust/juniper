@@ -348,40 +348,28 @@ impl<'a, S> MetaType<'a, S> {
     ///
     /// Objects, interfaces, and unions are composite.
     pub fn is_composite(&self) -> bool {
-        match *self {
-            MetaType::Object(_) | MetaType::Interface(_) | MetaType::Union(_) => true,
-            _ => false,
-        }
+        matches!(*self, MetaType::Object(_) | MetaType::Interface(_) | MetaType::Union(_))
     }
 
     /// Returns true if the type can occur in leaf positions in queries
     ///
     /// Only enums and scalars are leaf types.
     pub fn is_leaf(&self) -> bool {
-        match *self {
-            MetaType::Enum(_) | MetaType::Scalar(_) => true,
-            _ => false,
-        }
+        matches!(*self, MetaType::Enum(_) | MetaType::Scalar(_))
     }
 
     /// Returns true if the type is abstract
     ///
     /// Only interfaces and unions are abstract types.
     pub fn is_abstract(&self) -> bool {
-        match *self {
-            MetaType::Interface(_) | MetaType::Union(_) => true,
-            _ => false,
-        }
+        matches!(*self, MetaType::Interface(_) | MetaType::Union(_))
     }
 
     /// Returns true if the type can be used in input positions, e.g. arguments or variables
     ///
     /// Only scalars, enums, and input objects are input types.
     pub fn is_input(&self) -> bool {
-        match *self {
-            MetaType::Scalar(_) | MetaType::Enum(_) | MetaType::InputObject(_) => true,
-            _ => false,
-        }
+        matches!(*self, MetaType::Scalar(_) | MetaType::Enum(_) | MetaType::InputObject(_))
     }
 
     /// Returns true if the type is built-in to GraphQL.

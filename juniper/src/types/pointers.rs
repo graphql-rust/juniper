@@ -283,6 +283,19 @@ where
     }
 }
 
+impl<T, S> FromInputValue<S> for Arc<T>
+where
+    S: ScalarValue,
+    T: FromInputValue<S>,
+{
+    fn from_input_value(v: &InputValue<S>) -> Option<Arc<T>> {
+        match <T as FromInputValue<S>>::from_input_value(v) {
+            Some(v) => Some(Arc::new(v)),
+            None => None,
+        }
+    }
+}
+
 impl<T, S> ToInputValue<S> for Arc<T>
 where
     S: fmt::Debug,
