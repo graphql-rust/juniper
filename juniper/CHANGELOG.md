@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.15.1] 2020-12-12](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.1)
+
 - Support `Arc` in input and output objects. ([#822](https://github.com/graphql-rust/juniper/pull/822))
 
 # [[0.15.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.0)
