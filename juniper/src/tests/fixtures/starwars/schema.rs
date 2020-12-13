@@ -28,6 +28,23 @@ impl Query {
     }
 }
 
+pub struct Mutation;
+
+#[graphql_object(context = Database)]
+/// The root mutation object of the schema
+impl Mutation {
+    #[graphql(arguments(
+        id(description = "id of the human"),
+        name(description = "the new name of the human")
+    ))]
+    fn set_human_name(database: &Database, id: String, name: String) -> bool {
+        database.get_human(&id).map_or_else(false, |mut human| {
+            human.set_name(name);
+            true
+        })
+    }
+}
+
 pub struct Subscription;
 
 type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
@@ -98,6 +115,10 @@ impl Human {
             secret_backstory: secret_backstory.map(ToOwned::to_owned),
             home_planet: home_planet.map(|p| p.to_owned()),
         }
+    }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
     }
 }
 

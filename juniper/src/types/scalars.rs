@@ -407,6 +407,67 @@ impl<T> Default for EmptyMutation<T> {
     }
 }
 
+/// Utility type to define read-only schemas
+///
+/// If you instantiate `RootNode` with this as the query, no query will be
+/// generated for the schema.
+#[derive(Debug)]
+pub struct EmptyQuery<T: ?Sized = ()>(PhantomData<JoinHandle<Box<T>>>);
+
+// `EmptyQuery` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
+crate::sa::assert_impl_all!(EmptyQuery<Rc<String>>: Send, Sync);
+
+impl<T: ?Sized> EmptyQuery<T> {
+    /// Construct a new empty mutation
+    #[inline]
+    pub fn new() -> Self {
+        Self(PhantomData)
+    }
+}
+
+impl<S, T> GraphQLType<S> for EmptyQuery<T>
+where
+    S: ScalarValue,
+{
+    fn name(_: &()) -> Option<&'static str> {
+        Some("_EmptyQuery")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_object_type::<Self>(&(), &[]).into_meta()
+    }
+}
+
+impl<S, T> GraphQLValue<S> for EmptyQuery<T>
+where
+    S: ScalarValue,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+}
+
+impl<S, T> GraphQLValueAsync<S> for EmptyQuery<T>
+where
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
+    S: ScalarValue + Send + Sync,
+{
+}
+
+impl<T> Default for EmptyQuery<T> {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Utillity type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the subscription,

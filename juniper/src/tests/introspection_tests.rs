@@ -4,8 +4,8 @@ use crate::{
     executor::Variables,
     introspection::IntrospectionFormat,
     schema::model::RootNode,
-    tests::fixtures::starwars::schema::{Database, Query},
-    types::scalars::{EmptyMutation, EmptySubscription},
+    tests::fixtures::starwars::schema::{Database, Mutation, Query},
+    types::scalars::{EmptyMutation, EmptyQuery, EmptySubscription},
 };
 
 use super::schema_introspection::*;
@@ -24,6 +24,39 @@ async fn test_introspection_query_type_name() {
     let schema = RootNode::new(
         Query,
         EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
+
+    assert_eq!(
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        Ok((
+            graphql_value!({
+                "__schema": {
+                    "queryType": {
+                        "name": "Query"
+                    }
+                }
+
+            }),
+            vec![]
+        ))
+    );
+}
+
+#[tokio::test]
+async fn test_introspection_empty_query_with_mutation() {
+    let doc = r#"
+        mutation IntrospectionMutationTypeQuery {
+          __schema {
+            mutationType {
+              name
+            }
+          }
+        }"#;
+    let database = Database::new();
+    let schema = RootNode::new(
+        EmptyQuery::<Database>::new(),
+        Mutation,
         EmptySubscription::<Database>::new(),
     );
 
