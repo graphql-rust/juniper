@@ -37,10 +37,10 @@ impl Mutation {
         id(description = "id of the human"),
         name(description = "the new name of the human")
     ))]
-    fn set_human_name(database: &Database, id: String, name: String) -> bool {
-        database.get_human(&id).map_or_else(
+    fn set_human_name(database: &mut Database, id: String, name: String) -> bool {
+        database.get_mut_human(&id).map_or_else(
             || false,
-            |mut human| {
+            |human| {
                 human.set_name(name);
                 true
             },
@@ -373,6 +373,10 @@ impl Database {
 
     pub fn get_human(&self, id: &str) -> Option<&Human> {
         self.humans.get(id)
+    }
+
+    pub fn get_mut_human(&mut self, id: &str) -> Option<&mut Human> {
+        self.humans.get_mut(id)
     }
 
     pub fn get_droid(&self, id: &str) -> Option<&Droid> {

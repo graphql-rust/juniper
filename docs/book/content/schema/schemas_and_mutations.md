@@ -9,7 +9,7 @@ The usage of subscriptions is a little different from the mutation and query obj
 
 Both query and mutation objects are regular GraphQL objects, defined like any
 other object in Juniper. The mutation and subscription objects, however, are optional since schemas
-can be read-only and do not require subscriptions. If mutation/subscription functionality is not needed, consider using [EmptyMutation][EmptyMutation]/[EmptySubscription][EmptySubscription].
+can be read-only and do not require subscriptions. If mutation, subscription or query functionality is not needed, consider using [EmptyMutation][EmptyMutation]/[EmptySubscription][EmptySubscription]/[EmptyQuery][EmptyQuery].
 
 In Juniper, the `RootNode` type represents a schema. When the schema is first created,
 Juniper will traverse the entire object graph
@@ -113,6 +113,6 @@ compile times.
 [juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
 [schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
 [section]: ../advanced/subscriptions.md
-[EmptyMutation]: https://docs.rs/juniper/0.14.2/juniper/struct.EmptyMutation.html
-<!--TODO: Fix This URL when the EmptySubscription become available in the Documentation  -->
-[EmptySubscription]: https://docs.rs/juniper/0.14.2/juniper/struct.EmptySubscription.html
+[EmptyMutation]: https://docs.rs/juniper/0.15.2/juniper/struct.EmptyMutation.html
+[EmptySubscription]: https://docs.rs/juniper/0.15.2/juniper/struct.EmptySubscription.html
+[EmptyQuery]: https://docs.rs/juniper/0.15.2/juniper/struct.EmptyQuery.html

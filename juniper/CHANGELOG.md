@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Added `EmptyQuery` helper ([#826](https://github.com/graphql-rust/juniper/pull/826))
 
 # [[0.15.1] 2020-12-12](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.1)
 
