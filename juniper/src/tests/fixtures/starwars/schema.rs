@@ -38,10 +38,13 @@ impl Mutation {
         name(description = "the new name of the human")
     ))]
     fn set_human_name(database: &Database, id: String, name: String) -> bool {
-        database.get_human(&id).map_or_else(false, |mut human| {
-            human.set_name(name);
-            true
-        })
+        database.get_human(&id).map_or_else(
+            || false,
+            |mut human| {
+                human.set_name(name);
+                true
+            },
+        )
     }
 }
 
