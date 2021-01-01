@@ -319,6 +319,7 @@ mod tests {
     };
     use reqwest::{self, blocking::Response as ReqwestResponse};
     use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
+    use tokio::task::LocalSet;
 
     struct TestHyperIntegration {
         port: u16,
@@ -424,6 +425,7 @@ mod tests {
         });
 
         let server = Server::bind(&addr)
+            .executor(LocalExec)
             .serve(new_service)
             .with_graceful_shutdown(async {
                 shutdown_fut.await.unwrap_err();
@@ -443,11 +445,29 @@ mod tests {
 
     #[tokio::test]
     async fn test_hyper_integration() {
-        run_hyper_integration(false).await
+        LocalSet::new()
+            .run_until(run_hyper_integration(false))
+            .await
     }
 
     #[tokio::test]
     async fn test_sync_hyper_integration() {
-        run_hyper_integration(true).await
+        LocalSet::new().run_until(run_hyper_integration(true)).await
+    }
+
+    // Taken from https://github.com/hyperium/hyper/blob/8861f9a7867216c81ea14ac6224c11a1303e7761/examples/single_threaded.rs
+    // Since the Server needs to spawn some background tasks, we needed
+    // to configure an Executor that can spawn !Send futures...
+    #[derive(Clone, Copy, Debug)]
+    struct LocalExec;
+
+    impl<F> hyper::rt::Executor<F> for LocalExec
+    where
+        F: std::future::Future + 'static, // not requiring `Send`
+    {
+        fn execute(&self, fut: F) {
+            // This will spawn into the currently running `LocalSet`.
+            tokio::task::spawn_local(fut);
+        }
     }
 }
