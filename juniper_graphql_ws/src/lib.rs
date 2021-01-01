@@ -652,7 +652,7 @@ mod test {
     use std::{convert::Infallible, io};
 
     use juniper::{
-        futures::sink::SinkExt,
+        futures::{sink::SinkExt, stream::BoxStream},
         graphql_object, graphql_subscription,
         parser::{ParseError, Spanning, Token},
         DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode, Value,
