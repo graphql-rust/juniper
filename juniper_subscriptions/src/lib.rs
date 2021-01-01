@@ -35,7 +35,6 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
@@ -50,7 +49,6 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     /// Builds new [`Coordinator`] with specified `root_node`
@@ -68,7 +66,6 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync + 'a,
 {
     type Connection = Connection<'a, S>;

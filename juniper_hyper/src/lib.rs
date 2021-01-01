@@ -25,11 +25,10 @@ where
     MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLType<S, Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     Ok(match parse_req(req).await {
-        Ok(req) => execute_request_sync(root_node, context, req).await,
+        Ok(req) => execute_request_sync(root_node, context, req),
         Err(resp) => resp,
     })
 }
@@ -46,7 +45,6 @@ where
     MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     Ok(match parse_req(req).await {
@@ -150,7 +148,7 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
+fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
@@ -162,7 +160,6 @@ where
     MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLType<S, Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     let res = request.execute_sync(&*root_node, &context);
@@ -193,7 +190,6 @@ where
     MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
     SubscriptionT::TypeInfo: Sync,
-    CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
     let res = request.execute(&*root_node, &context).await;
@@ -311,6 +307,7 @@ impl Error for GraphQLRequestError {
 
 #[cfg(test)]
 mod tests {
+    use futures::TryFutureExt;
     use hyper::{
         service::{make_service_fn, service_fn},
         Body, Method, Response, Server, StatusCode,
@@ -406,10 +403,12 @@ mod tests {
                     async move {
                         if matches {
                             if is_sync {
-                                super::graphql_sync(root_node, ctx, req).await
+                                tokio::task::spawn_local(super::graphql_sync(root_node, ctx, req))
                             } else {
-                                super::graphql(root_node, ctx, req).await
+                                tokio::task::spawn_local(super::graphql(root_node, ctx, req))
                             }
+                            .unwrap_or_else(|e| panic!("Join error: {}", e))
+                            .await
                         } else {
                             let mut resp = Response::new(Body::empty());
                             *resp.status_mut() = StatusCode::NOT_FOUND;
