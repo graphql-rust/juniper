@@ -13,7 +13,7 @@ subscriptions = ["juniper_graphql_ws"]
 
 [dependencies]
 anyhow = "1.0"
-bytes = "0.5"
+bytes = "1.0"
 futures = "0.3.1"
 juniper = { version = "0.15.1", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.2.1", path = "../juniper_graphql_ws", optional = true }
