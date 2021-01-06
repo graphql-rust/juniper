@@ -152,7 +152,7 @@ You can invoke `juniper::execute` directly to run a GraphQL query:
 # #[macro_use] extern crate juniper;
 use juniper::{
     graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
-    GraphQLEnum, Variables,
+    GraphQLEnum, Variables, graphql_value,
 };
 
 #[derive(GraphQLEnum, Clone, Copy)]
