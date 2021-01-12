@@ -1472,3 +1472,93 @@ mod full_featured_struct {
         );
     }
 }
+
+mod issue_845 {
+    use std::sync::Arc;
+
+    use juniper::graphql_interface;
+
+    use super::*;
+
+    #[derive(GraphQLUnion)]
+    enum Character {
+        A(Box<Human>),
+        B(Arc<Droid>),
+    }
+
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Character {
+            match self {
+                Self::Human => Character::A(Box::new(Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                })),
+                Self::Droid => Character::B(Arc::new(Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                })),
+            }
+        }
+    }
+
+    const DOC: &str = r#"{
+        character {
+            ... on Human {
+                humanId: id
+                homePlanet
+            }
+            ... on Droid {
+                droidId: id
+                primaryFunction
+            }
+        }
+    }"#;
+
+    #[tokio::test]
+    async fn resolves_human() {
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn is_graphql_union() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"__type": {"kind": "UNION"}}), vec![])),
+        );
+    }
+}
