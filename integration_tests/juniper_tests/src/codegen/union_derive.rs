@@ -1476,8 +1476,6 @@ mod full_featured_struct {
 mod issue_845 {
     use std::sync::Arc;
 
-    use juniper::graphql_interface;
-
     use super::*;
 
     #[derive(GraphQLUnion)]
