@@ -287,7 +287,7 @@ where
     type Error = String;
 
     async fn from_data(req: &Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
-        use tokio::io::AsyncReadExt as _;
+        use rocket::tokio::io::AsyncReadExt as _;
 
         let content_type = req
             .content_type()
