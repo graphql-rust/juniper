@@ -2,6 +2,10 @@
 
 - Compatibility with the latest `juniper`.
 
+# [[0.7.1] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.1)
+
+- Compatibility with the latest `juniper`.
+
 # [[0.7.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.0)
 
 - Compatibility with the latest `juniper`.
