@@ -717,7 +717,7 @@ mod tests_http_harness {
         }
 
         fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
-            let mut rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
+            let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
             make_test_response(rt.block_on(async move {
                 req.filter(&self.filter).await.unwrap_or_else(|rejection| {
                     let code = if rejection.is_not_found() {

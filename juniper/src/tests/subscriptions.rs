@@ -33,7 +33,7 @@ type Schema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {
-    let mut rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = tokio::runtime::Runtime::new().unwrap();
 
     rt.block_on(f)
 }

@@ -176,7 +176,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 .boxed();
                             s = s
                                 .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::delay_for(keep_alive_interval).await;
+                                    tokio::time::sleep(keep_alive_interval).await;
                                     Some((
                                         Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
                                         (),
@@ -661,7 +661,7 @@ mod test {
     impl Subscription {
         /// never never emits anything.
         async fn never(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
-            tokio::time::delay_for(Duration::from_secs(10000))
+            tokio::time::sleep(Duration::from_secs(10000))
                 .map(|_| unreachable!())
                 .into_stream()
                 .boxed()
@@ -671,7 +671,7 @@ mod test {
         async fn context(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             stream::once(future::ready(Ok(context.0)))
                 .chain(
-                    tokio::time::delay_for(Duration::from_secs(10000))
+                    tokio::time::sleep(Duration::from_secs(10000))
                         .map(|_| unreachable!())
                         .into_stream(),
                 )
@@ -685,7 +685,7 @@ mod test {
                 Value::null(),
             ))))
             .chain(
-                tokio::time::delay_for(Duration::from_secs(10000))
+                tokio::time::sleep(Duration::from_secs(10000))
                     .map(|_| unreachable!())
                     .into_stream(),
             )
