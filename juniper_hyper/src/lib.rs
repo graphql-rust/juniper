@@ -421,7 +421,7 @@ mod tests {
         });
 
         let (shutdown_fut, shutdown) = futures::future::abortable(async {
-            tokio::time::delay_for(Duration::from_secs(60)).await;
+            tokio::time::sleep(Duration::from_secs(60)).await;
         });
 
         let server = Server::bind(&addr)

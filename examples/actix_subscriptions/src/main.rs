@@ -10,6 +10,7 @@ use juniper::{
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
 use juniper_graphql_ws::ConnectionConfig;
+use tokio_stream::wrappers::IntervalStream;
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 
@@ -65,7 +66,9 @@ impl Subscription {
         use rand::{rngs::StdRng, Rng, SeedableRng};
         let mut rng = StdRng::from_entropy();
 
-        let stream = tokio::time::interval(Duration::from_secs(3)).map(move |_| {
+        println!("found it");
+        let interval = tokio::time::interval(Duration::from_secs(3));
+        let stream = IntervalStream::new(interval).map(move |_| {
             counter += 1;
 
             if counter == 2 {
