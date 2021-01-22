@@ -23,7 +23,7 @@ pub fn playground_source(
   <title>GraphQL Playground</title>
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/graphql-playground-react/build/static/css/index.css" />
   <link rel="shortcut icon" href="//cdn.jsdelivr.net/npm/graphql-playground-react/build/favicon.png" />
-  <script src="//cdn.jsdelivr.net/npm/graphql-playground-react@1.7.27/build/static/js/middleware.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/graphql-playground-react/build/static/js/middleware.js"></script>
 
 </head>
 
