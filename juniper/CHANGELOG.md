@@ -2,6 +2,11 @@
 
 - No changes yet
 
+# [[0.15.2] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.2)
+
+- Update GraphQL Playground to v1.7.27.
+- Add marker GraphQL trait implementations for Rust container types like `Box`([#847](https://github.com/graphql-rust/juniper/pull/847))
+
 # [[0.15.1] 2020-12-12](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.1)
 
 - Support `Arc` in input and output objects. ([#822](https://github.com/graphql-rust/juniper/pull/822))
