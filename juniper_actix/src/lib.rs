@@ -42,8 +42,8 @@ Check the LICENSE file for details.
 
 use actix_web::{
     error::{ErrorBadRequest, ErrorMethodNotAllowed, ErrorUnsupportedMediaType},
-    http::{header::CONTENT_TYPE, Method},
-    web, Error, FromRequest, HttpRequest, HttpResponse,
+    http::Method,
+    web, Error, FromRequest, HttpMessage, HttpRequest, HttpResponse,
 };
 use juniper::{
     http::{
@@ -152,16 +152,13 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let content_type_header = req
-        .headers()
-        .get(CONTENT_TYPE)
-        .and_then(|hv| hv.to_str().ok());
+    let content_type_header = req.content_type();
     let req = match content_type_header {
-        Some("application/json") => {
+        "application/json" => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
             serde_json::from_str::<GraphQLBatchRequest<S>>(&body).map_err(ErrorBadRequest)
         }
-        Some("application/graphql") => {
+        "application/graphql" => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
             Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
                 body, None, None,
@@ -609,7 +606,7 @@ mod tests {
         );
 
         let req = test::TestRequest::post()
-            .header("content-type", "application/json")
+            .header("content-type", "application/json; charset=utf-8")
             .set_payload(
                 r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##,
             )
