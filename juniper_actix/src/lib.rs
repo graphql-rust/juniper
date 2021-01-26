@@ -152,8 +152,7 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let content_type_header = req.content_type();
-    let req = match content_type_header {
+    let req = match req.content_type() {
         "application/json" => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
             serde_json::from_str::<GraphQLBatchRequest<S>>(&body).map_err(ErrorBadRequest)
