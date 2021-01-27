@@ -1,6 +1,7 @@
 # master
 
-- No changes yet
+- Compatibility with the latest `syn` ([#861](https://github.com/graphql-rust/juniper/pull/861))
+- Fixed a regression in GraphQL Playground ([#856](https://github.com/graphql-rust/juniper/pull/856))
 
 # [[0.15.2] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.2)
 
