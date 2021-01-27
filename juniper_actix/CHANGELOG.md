@@ -1,6 +1,7 @@
 # master
 
 - Compatibility with the latest `juniper`.
+- Fix Content-Type charset parsing ([#863](https://github.com/graphql-rust/juniper/pull/863))
 
 # [[0.2.2] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.2)
 
