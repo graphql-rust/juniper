@@ -13,4 +13,4 @@ juniper = { path = "../../juniper" }
 async-trait = "0.1.39"
 serde_json = "1.0"
 fnv = "1.0"
-tokio = { version = "0.2", features = ["macros", "rt-core", "time"] }
+tokio = { version = "1.1", features = ["macros", "rt-core", "time"] }

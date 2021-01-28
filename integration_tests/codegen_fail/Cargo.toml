@@ -10,5 +10,5 @@ futures = "0.3.1"
 
 [dev-dependencies]
 serde_json = { version = "1" }
-tokio = { version = "0.2", features = ["rt-core", "time", "macros"] }
+tokio = { version = "1.1", features = ["rt-core", "time", "macros"] }
 trybuild = "1.0.25"

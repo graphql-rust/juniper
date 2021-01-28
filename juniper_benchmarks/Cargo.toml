@@ -10,7 +10,7 @@ juniper = { path = "../juniper" }
 
 [dev-dependencies]
 criterion = "0.3"
-tokio = { version = "0.2", features = ["rt-core", "rt-threaded"] }
+tokio = { version = "1.1", features = ["rt-core", "rt-threaded"] }
 
 [[bench]]
 name = "benchmark"
