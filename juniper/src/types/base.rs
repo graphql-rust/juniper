@@ -599,44 +599,5 @@ where
 
 /// Merges `response_name`/`value` pair into `result`
 pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
-    if let Some(&mut (_, ref mut e)) = result
-        .iter_mut()
-        .find(|&&mut (ref key, _)| key == response_name)
-    {
-        match *e {
-            Value::Object(ref mut dest_obj) => {
-                if let Value::Object(src_obj) = value {
-                    merge_maps(dest_obj, src_obj);
-                }
-            }
-            Value::List(ref mut dest_list) => {
-                if let Value::List(src_list) = value {
-                    dest_list
-                        .iter_mut()
-                        .zip(src_list.into_iter())
-                        .for_each(|(d, s)| {
-                            if let Value::Object(ref mut d_obj) = *d {
-                                if let Value::Object(s_obj) = s {
-                                    merge_maps(d_obj, s_obj);
-                                }
-                            }
-                        });
-                }
-            }
-            _ => {}
-        }
-        return;
-    }
     result.add_field(response_name, value);
-}
-
-/// Merges `src` object's fields into `dest`
-fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
-    for (key, value) in src {
-        if dest.contains_field(&key) {
-            merge_key_into(dest, &key, value);
-        } else {
-            dest.add_field(key, value);
-        }
-    }
 }

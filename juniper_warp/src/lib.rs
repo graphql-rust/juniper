@@ -658,12 +658,12 @@ mod tests {
             )
             .reply(&filter)
             .await;
-
-        assert_eq!(response.status(), http::StatusCode::OK);
-        assert_eq!(
-            String::from_utf8(response.body().to_vec()).unwrap(),
+        let result = serde_json::json!(std::str::from_utf8(response.body()).unwrap());
+        let expected = serde_json::json!(
             r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#
         );
+        assert_eq!(response.status(), http::StatusCode::OK);
+        assert_eq!(result.as_object(), expected.as_object());
         assert_eq!(
             response.headers().get("content-type").unwrap(),
             "application/json",

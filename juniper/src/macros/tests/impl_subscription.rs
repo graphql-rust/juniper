@@ -325,31 +325,31 @@ async fn object_query() {
     } else {
         panic!("Expected to get Value::Object ")
     };
-
+    let expected: Vec<(String, Value)> = vec![
+        ("withSelf".to_string(), graphql_value!(true)),
+        ("independent".to_string(), graphql_value!(100)),
+        ("withExecutor".to_string(), graphql_value!(true)),
+        ("withExecutorAndSelf".to_string(), graphql_value!(true)),
+        ("withContext".to_string(), graphql_value!(true)),
+        ("withContextAndSelf".to_string(), graphql_value!(true)),
+        ("renamed".to_string(), graphql_value!(true)),
+        ("hasArgument".to_string(), graphql_value!(true)),
+        ("defaultArgument".to_string(), graphql_value!(true)),
+        ("argWithDescription".to_string(), graphql_value!(true)),
+        (
+            "withContextChild".to_string(),
+            graphql_value!({"ctx": true}),
+        ),
+        (
+            "withImplicitLifetimeChild".to_string(),
+            graphql_value!({ "value": "blub" }),
+        ),
+        ("withMutArg".to_string(), graphql_value!(false)),
+        ("withoutTypeAlias".to_string(), graphql_value!("abc")),
+    ];
     assert_eq!(errs, []);
     assert_eq!(
-        result,
-        vec![
-            ("withSelf".to_string(), graphql_value!(true)),
-            ("independent".to_string(), graphql_value!(100)),
-            ("withExecutor".to_string(), graphql_value!(true)),
-            ("withExecutorAndSelf".to_string(), graphql_value!(true)),
-            ("withContext".to_string(), graphql_value!(true)),
-            ("withContextAndSelf".to_string(), graphql_value!(true)),
-            ("renamed".to_string(), graphql_value!(true)),
-            ("hasArgument".to_string(), graphql_value!(true)),
-            ("defaultArgument".to_string(), graphql_value!(true)),
-            ("argWithDescription".to_string(), graphql_value!(true)),
-            (
-                "withContextChild".to_string(),
-                graphql_value!({"ctx": true})
-            ),
-            (
-                "withImplicitLifetimeChild".to_string(),
-                graphql_value!({ "value": "blub" })
-            ),
-            ("withMutArg".to_string(), graphql_value!(false)),
-            ("withoutTypeAlias".to_string(), graphql_value!("abc")),
-        ]
+        serde_json::json!(result).as_object(),
+        serde_json::json!(expected).as_object()
     );
 }

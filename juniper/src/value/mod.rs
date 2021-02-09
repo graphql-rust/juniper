@@ -195,7 +195,7 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
             ),
             Value::Object(ref o) => InputValue::Object(
                 o.iter()
-                    .map(|&(ref k, ref v)| {
+                    .map(|(k, v)| {
                         (
                             Spanning::unlocated(k.clone()),
                             Spanning::unlocated(v.to_input_value()),
@@ -475,8 +475,8 @@ mod tests {
             "string": "foo",
         });
         assert_eq!(
-            r#"{"int": 1, "null": null, "string": "foo"}"#,
-            format!("{}", s)
+            serde_json::json!(r#"{"int": 1, "null": null, "string": "foo"}"#).as_object(),
+            serde_json::json!(format!("{}", s)).as_object()
         );
     }
 
