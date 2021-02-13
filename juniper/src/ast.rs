@@ -119,6 +119,7 @@ pub enum OperationType {
     Subscription,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, PartialEq, Debug)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,
@@ -142,6 +143,7 @@ pub enum Definition<'a, S> {
     Fragment(Spanning<Fragment<'a, S>>),
 }
 
+#[doc(hidden)]
 pub type Document<'a, S> = Vec<Definition<'a, S>>;
 
 /// Parse an unstructured input value into a Rust data type.

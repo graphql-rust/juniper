@@ -1,3 +1,5 @@
+//! Resolve the document to values
+
 use std::{
     borrow::Cow,
     cmp::Ordering,
@@ -54,6 +56,7 @@ pub struct Registry<'r, S = DefaultScalarValue> {
     pub types: FnvHashMap<Name, MetaType<'r, S>>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone)]
 pub enum FieldPath<'a> {
     Root(SourcePosition),
@@ -979,6 +982,7 @@ where
     Ok((value, errors))
 }
 
+#[doc(hidden)]
 pub fn get_operation<'b, 'd, 'e, S>(
     document: &'b Document<'d, S>,
     operation_name: Option<&str>,
