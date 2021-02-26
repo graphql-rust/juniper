@@ -801,8 +801,6 @@ mod subscription_tests {
             let mut framed = server.ws_at("/subscriptions").await.unwrap();
 
 
-            println!("wooowe");
-
             for message in &messages {
                 match message {
                     WsIntegrationMessage::Send(body) => {
@@ -812,14 +810,12 @@ mod subscription_tests {
                             .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
                     }
                     WsIntegrationMessage::Expect(body, message_timeout) => {
-                        println!("right???");
                         let frame = timeout(Duration::from_millis(*message_timeout), framed.next())
                             .await
                             .map_err(|_| anyhow::anyhow!("Timed-out waiting for message"))?
                             .ok_or_else(|| anyhow::anyhow!("Empty message received"))?
                             .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
 
-                        println!("dead...");
                         match frame {
                             ws::Frame::Text(ref bytes) => {
                                 let expected_value =

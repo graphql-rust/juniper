@@ -66,7 +66,6 @@ impl Subscription {
         use rand::{rngs::StdRng, Rng, SeedableRng};
         let mut rng = StdRng::from_entropy();
 
-        println!("found it");
         let interval = tokio::time::interval(Duration::from_secs(3));
         let stream = IntervalStream::new(interval).map(move |_| {
             counter += 1;
