@@ -449,11 +449,11 @@ where
                 }
 
                 let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
-                    panic!(format!(
+                    panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
                         meta_type.name()
-                    ))
+                    )
                 });
 
                 let exec_vars = executor.variables();

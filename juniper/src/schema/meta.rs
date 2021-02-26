@@ -348,7 +348,10 @@ impl<'a, S> MetaType<'a, S> {
     ///
     /// Objects, interfaces, and unions are composite.
     pub fn is_composite(&self) -> bool {
-        matches!(*self, MetaType::Object(_) | MetaType::Interface(_) | MetaType::Union(_))
+        matches!(
+            *self,
+            MetaType::Object(_) | MetaType::Interface(_) | MetaType::Union(_)
+        )
     }
 
     /// Returns true if the type can occur in leaf positions in queries
@@ -369,7 +372,10 @@ impl<'a, S> MetaType<'a, S> {
     ///
     /// Only scalars, enums, and input objects are input types.
     pub fn is_input(&self) -> bool {
-        matches!(*self, MetaType::Scalar(_) | MetaType::Enum(_) | MetaType::InputObject(_))
+        matches!(
+            *self,
+            MetaType::Scalar(_) | MetaType::Enum(_) | MetaType::InputObject(_)
+        )
     }
 
     /// Returns true if the type is built-in to GraphQL.
