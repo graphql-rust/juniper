@@ -81,7 +81,7 @@ your Schemas automatically.
 
 ## Guides & Examples
 
-- [Juniper + actix-web example](https://github.com/actix/examples/tree/master/juniper)
+- [Juniper + actix-web example](https://github.com/actix/examples/tree/master/graphql/juniper)
 
 ## API Stability
 
