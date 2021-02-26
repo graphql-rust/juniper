@@ -55,7 +55,7 @@ fn type_error_message(arg_name: &str, type_name: &str) -> String {
 
 fn non_null_error_message(arg_name: &str, type_name: &str) -> String {
     format!(
-        "Argument \"{}\" has type \"{}\" and is not nullable, so it't can't have a default value",
+        "Argument \"{}\" has type \"{}\" and is not nullable, so it can't have a default value",
         arg_name, type_name
     )
 }

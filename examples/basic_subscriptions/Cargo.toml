@@ -13,5 +13,5 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0.2", features = ["rt", "macros"] }
 
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-juniper_subscriptions = { git = "https://github.com/graphql-rust/juniper" }
+juniper = { path = "../../juniper" }
+juniper_subscriptions = { path = "../../juniper_subscriptions" }

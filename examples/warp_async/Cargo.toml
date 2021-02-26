@@ -6,8 +6,8 @@ publish = false
 authors = ["Christoph Herzog <chris@theduke.at>"]
 
 [dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-juniper_warp = { git = "https://github.com/graphql-rust/juniper" }
+juniper = { path = "../../juniper" }
+juniper_warp = { path = "../../juniper_warp" }
 
 env_logger = "0.8.1"
 futures = "0.3.1"
