@@ -41,7 +41,6 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use anyhow::anyhow;
-use bytes::Bytes;
 use futures::{FutureExt as _, TryFutureExt};
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
@@ -49,7 +48,7 @@ use juniper::{
 };
 use std::{collections::HashMap, str, sync::Arc};
 use tokio::task;
-use warp::{body, filters::BoxedFilter, http, query, Filter};
+use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 
 /// Make a filter for graphql queries/mutations.
 ///
