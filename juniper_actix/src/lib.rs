@@ -508,13 +508,13 @@ mod tests {
         graphql_handler(&schema, &context, req, payload).await
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn graphiql_response_does_not_panic() {
         let result = graphiql_handler("/abcd", None).await;
         assert!(result.is_ok())
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn graphiql_endpoint_matches() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/abcd", None).await
@@ -530,7 +530,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn graphiql_endpoint_returns_graphiql_source() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
@@ -555,7 +555,7 @@ mod tests {
         ))
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn playground_endpoint_matches() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/abcd", None).await
@@ -571,7 +571,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn playground_endpoint_returns_playground_source() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
@@ -593,7 +593,7 @@ mod tests {
         assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn graphql_post_works_json_post() {
         let schema: Schema = RootNode::new(
             Query,
@@ -625,7 +625,7 @@ mod tests {
         );
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn graphql_get_works() {
         let schema: Schema = RootNode::new(
             Query,
@@ -654,7 +654,7 @@ mod tests {
         );
     }
 
-    #[actix_web::rt::test]
+    #[actix_rt::test]
     async fn batch_request_works() {
         use juniper::{
             tests::fixtures::starwars::schema::{Database, Query},
