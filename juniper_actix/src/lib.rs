@@ -768,6 +768,7 @@ mod tests {
 mod subscription_tests {
     use std::time::Duration;
 
+    use actix_rt::time::timeout;
     use actix_web::{test, web, App, Error, HttpRequest, HttpResponse};
     use actix_web_actors::ws;
     use juniper::{
@@ -777,7 +778,6 @@ mod subscription_tests {
         EmptyMutation, LocalBoxFuture,
     };
     use juniper_graphql_ws::ConnectionConfig;
-    use actix_rt::time::timeout;
 
     use super::subscriptions::subscriptions_handler;
 
@@ -799,7 +799,6 @@ mod subscription_tests {
                     .service(web::resource("/subscriptions").to(subscriptions))
             });
             let mut framed = server.ws_at("/subscriptions").await.unwrap();
-
 
             for message in &messages {
                 match message {
