@@ -475,8 +475,8 @@ mod tests {
             "string": "foo",
         });
         assert_eq!(
-            serde_json::json!(r#"{"int": 1, "null": null, "string": "foo"}"#).as_object(),
-            serde_json::json!(format!("{}", s)).as_object()
+            r#"{"int": 1, "null": null, "string": "foo"}"#,
+            format!("{}", s)
         );
     }
 

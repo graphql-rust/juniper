@@ -688,8 +688,8 @@ mod tests {
 
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
-            serde_json::json!(take_response_body_string(&mut resp).await).as_object(),
-            serde_json::json!(r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#).as_object()
+            take_response_body_string(&mut resp).await,
+            r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#
         );
         assert_eq!(
             resp.headers().get("content-type").unwrap(),

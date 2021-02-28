@@ -1,14 +1,12 @@
-use std::{
-    collections::{hash_map::IntoIter, HashMap},
-    iter::FromIterator,
-};
+use std::iter::FromIterator;
 
 use super::Value;
+use indexmap::map::{IndexMap, IntoIter};
 
 /// A Object value
 #[derive(Debug, Clone)]
 pub struct Object<S> {
-    key_value_list: HashMap<String, Value<S>>,
+    key_value_list: IndexMap<String, Value<S>>,
 }
 
 impl<S: PartialEq> PartialEq for Object<S> {
@@ -24,7 +22,7 @@ impl<S> Object<S> {
     /// preallocated slots for field-value pairs
     pub fn with_capacity(size: usize) -> Self {
         Object {
-            key_value_list: HashMap::with_capacity(size),
+            key_value_list: IndexMap::with_capacity(size),
         }
     }
 
@@ -100,7 +98,7 @@ where
     {
         let iter = iter.into_iter();
         let mut ret = Self {
-            key_value_list: HashMap::with_capacity(iter.size_hint().0),
+            key_value_list: IndexMap::with_capacity(iter.size_hint().0),
         };
         for (k, v) in iter {
             ret.add_field(k, v);

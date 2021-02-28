@@ -378,7 +378,7 @@ mod whole_responses_stream {
                 .into_iter(),
             ))),
         ];
-        let expected = serde_json::json!(&expected);
+        let expected = serde_json::to_string(&expected).unwrap();
 
         let mut counter = 0;
         let big_stream = stream::poll_fn(move |_| -> Poll<Option<PollResult>> {
@@ -409,7 +409,7 @@ mod whole_responses_stream {
         )
         .collect::<Vec<_>>()
         .await;
-        let result = serde_json::json!(&result);
+        let result = serde_json::to_string(&result).unwrap();
 
         assert_eq!(result, expected);
     }
