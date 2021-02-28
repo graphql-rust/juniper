@@ -13,7 +13,7 @@ A basic usage example can also be found in the [Api documentation][documentation
 
 ## Examples
 
-Check [examples/warp_server][example] for example code of a working warp
+Check [examples/warp_server.rs][example] for example code of a working warp
 server with GraphQL handlers.
 
 ## Links
@@ -32,7 +32,7 @@ Check the LICENSE file for details.
 [Juniper]: https://github.com/graphql-rust/juniper
 [GraphQL]: http://graphql.org
 [documentation]: https://docs.rs/juniper_warp
-[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server
+[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs
 
 */
 
