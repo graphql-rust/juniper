@@ -17,7 +17,7 @@ pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<Body>,
-) -> Result<Response<Body>, hyper::Error>
+) -> Response<Body>
 where
     QueryT: GraphQLType<S, Context = CtxT>,
     QueryT::TypeInfo: Sync,
@@ -28,10 +28,10 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    Ok(match parse_req(req).await {
+    match parse_req(req).await {
         Ok(req) => execute_request_sync(root_node, context, req).await,
         Err(resp) => resp,
-    })
+    }
 }
 
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
