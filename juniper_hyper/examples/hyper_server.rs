@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{convert::Infallible, sync::Arc};
 
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -31,7 +31,7 @@ async fn main() {
                 let root_node = root_node.clone();
                 let ctx = ctx.clone();
                 async {
-                    match (req.method(), req.uri().path()) {
+                    Ok::<_, Infallible>(match (req.method(), req.uri().path()) {
                         (&Method::GET, "/") => juniper_hyper::graphiql("/graphql", None).await,
                         (&Method::GET, "/graphql") | (&Method::POST, "/graphql") => {
                             juniper_hyper::graphql(root_node, ctx, req).await
@@ -39,9 +39,9 @@ async fn main() {
                         _ => {
                             let mut response = Response::new(Body::empty());
                             *response.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(response)
+                            response
                         }
-                    }
+                    })
                 }
             }))
         }

@@ -321,7 +321,7 @@ mod tests {
         EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::{self, blocking::Response as ReqwestResponse};
-    use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
+    use std::{convert::Infallible, net::SocketAddr, sync::Arc, thread, time::Duration};
 
     struct TestHyperIntegration {
         port: u16,
@@ -404,7 +404,7 @@ mod tests {
                         }
                     };
                     async move {
-                        if matches {
+                        Ok::<_, Infallible>(if matches {
                             if is_sync {
                                 super::graphql_sync(root_node, ctx, req).await
                             } else {
@@ -413,8 +413,8 @@ mod tests {
                         } else {
                             let mut resp = Response::new(Body::empty());
                             *resp.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(resp)
-                        }
+                            resp
+                        })
                     }
                 }))
             }
