@@ -117,6 +117,6 @@ impl Root {
 # }
 ```
 
-[iron]: http://ironframework.io
+[iron]: https://github.com/iron/iron
 [graphiql]: https://github.com/graphql/graphiql
 [mount]: https://github.com/iron/mount
