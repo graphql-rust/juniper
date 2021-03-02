@@ -150,7 +150,9 @@ use crate::{
 };
 
 pub use crate::{
-    ast::{Document, FromInputValue, InputValue, Operation, Selection, ToInputValue, Type},
+    ast::{
+        Definition, Document, FromInputValue, InputValue, Operation, Selection, ToInputValue, Type,
+    },
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,

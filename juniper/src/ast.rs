@@ -137,6 +137,7 @@ pub struct Fragment<'a, S> {
     pub selection_set: Vec<Selection<'a, S>>,
 }
 
+#[doc(hidden)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum Definition<'a, S> {
     Operation(Spanning<Operation<'a, S>>),
