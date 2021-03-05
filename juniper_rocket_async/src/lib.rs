@@ -69,18 +69,24 @@ where
 pub struct GraphQLResponse(pub Status, pub String);
 
 /// Generate an HTML page containing GraphiQL
-pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
+pub fn graphiql_source(
+    graphql_endpoint_url: &str,
+    subscriptions_endpoint_url: Option<&str>,
+) -> content::Html<String> {
     content::Html(juniper::http::graphiql::graphiql_source(
         graphql_endpoint_url,
-        None,
+        subscriptions_endpoint_url,
     ))
 }
 
 /// Generate an HTML page containing GraphQL Playground
-pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
+pub fn playground_source(
+    graphql_endpoint_url: &str,
+    subscriptions_endpoint_url: Option<&str>,
+) -> content::Html<String> {
     content::Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
-        None,
+        subscriptions_endpoint_url,
     ))
 }
 

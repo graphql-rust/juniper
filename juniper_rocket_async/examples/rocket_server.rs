@@ -8,7 +8,7 @@ type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscriptio
 
 #[rocket::get("/")]
 fn graphiql() -> content::Html<String> {
-    juniper_rocket_async::graphiql_source("/graphql")
+    juniper_rocket_async::graphiql_source("/graphql", None)
 }
 
 #[rocket::get("/graphql?<request>")]

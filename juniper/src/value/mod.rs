@@ -195,7 +195,7 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
             ),
             Value::Object(ref o) => InputValue::Object(
                 o.iter()
-                    .map(|&(ref k, ref v)| {
+                    .map(|(k, v)| {
                         (
                             Spanning::unlocated(k.clone()),
                             Spanning::unlocated(v.to_input_value()),
