@@ -381,7 +381,7 @@ where
     {
         let mut map = serializer.serialize_map(Some(self.field_count()))?;
 
-        for &(ref f, ref v) in self.iter() {
+        for (ref f, ref v) in self.iter() {
             map.serialize_key(f)?;
             map.serialize_value(v)?;
         }
