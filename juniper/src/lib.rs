@@ -151,7 +151,8 @@ use crate::{
 
 pub use crate::{
     ast::{
-        Definition, Document, FromInputValue, InputValue, Operation, Selection, ToInputValue, Type,
+        Definition, Document, FromInputValue, InputValue, Operation, OperationType, Selection,
+        ToInputValue, Type,
     },
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,

@@ -112,6 +112,7 @@ pub struct Directive<'a, S> {
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum OperationType {
     Query,
