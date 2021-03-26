@@ -231,8 +231,7 @@ impl<'f, S: ScalarValue> GraphQLContext<'f, S> {
 
     fn variables(&mut self, value: String) {
         if self.variables.is_some() {
-            let error = Error::from(ErrorKind::Duplicate)
-                .with_name("variables");
+            let error = Error::from(ErrorKind::Duplicate).with_name("variables");
 
             self.errors.push(error)
         } else {
@@ -241,10 +240,8 @@ impl<'f, S: ScalarValue> GraphQLContext<'f, S> {
             match parse_result {
                 Ok(variables) => self.variables = Some(variables),
                 Err(e) => {
-                    let error = Error::from(
-                        ErrorKind::Validation(Cow::Owned(e.to_string())),
-                    )
-                    .with_name("variables");
+                    let error = Error::from(ErrorKind::Validation(Cow::Owned(e.to_string())))
+                        .with_name("variables");
 
                     self.errors.push(error);
                 }
@@ -277,16 +274,14 @@ where
             Some("variables") => ctx.variables(field.value.to_owned()),
             Some(key) => {
                 if ctx.opts.strict {
-                    let error = Error::from(ErrorKind::Unknown)
-                        .with_name(key);
+                    let error = Error::from(ErrorKind::Unknown).with_name(key);
 
                     ctx.errors.push(error)
                 }
             }
             None => {
                 if ctx.opts.strict {
-                    let error =
-                        Error::from(ErrorKind::Unexpected);
+                    let error = Error::from(ErrorKind::Unexpected);
 
                     ctx.errors.push(error)
                 }
@@ -296,8 +291,7 @@ where
 
     async fn push_data(ctx: &mut Self::Context, field: DataField<'f, '_>) {
         if ctx.opts.strict {
-            let error = Error::from(ErrorKind::Unexpected)
-                .with_name(field.name);
+            let error = Error::from(ErrorKind::Unexpected).with_name(field.name);
 
             ctx.errors.push(error)
         }
@@ -305,8 +299,7 @@ where
 
     fn finalize(mut ctx: Self::Context) -> rocket::form::Result<'f, Self> {
         if ctx.query.is_none() {
-            let error = Error::from(ErrorKind::Missing)
-                .with_name("query");
+            let error = Error::from(ErrorKind::Missing).with_name("query");
 
             ctx.errors.push(error)
         }
