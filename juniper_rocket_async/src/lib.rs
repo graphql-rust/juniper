@@ -371,39 +371,37 @@ mod fromform_tests {
     use super::*;
     use juniper::InputValue;
     use rocket::{
-        form::{error::ErrorKind, Error, Form, FromForm, ValueField},
+        form::{error::ErrorKind, Error, Form, Strict},
         http::RawStr,
     };
     use std::borrow::Cow;
 
-    fn check_error(
-        input: Box<dyn Iterator<Item = ValueField>>,
-        expected_errors: Vec<Error>,
-        strict: bool,
-    ) {
-        let mut ctxt: GraphQLContext<DefaultScalarValue> = GraphQLRequest::init(Options { strict });
-
-        for field in input {
-            GraphQLRequest::push_value(&mut ctxt, field);
-        }
-
-        let result = GraphQLRequest::finalize(ctxt);
-        assert!(result.is_err());
-        let errors = result.unwrap_err();
+    fn check_error(input: &str, expected_errors: Vec<Error>, strict: bool) {
+        let errors = if strict {
+            let result = Form::<Strict<GraphQLRequest>>::parse_encoded(RawStr::new(input));
+            assert!(result.is_err());
+            result.unwrap_err()
+        } else {
+            let result = Form::<GraphQLRequest>::parse_encoded(RawStr::new(input));
+            assert!(result.is_err());
+            result.unwrap_err()
+        };
         assert_eq!(errors.len(), expected_errors.len());
         for i in 0..errors.len() {
-            assert_eq!(
-                format!("{:?}", errors[i].kind),
-                format!("{:?}", expected_errors[i].kind)
-            );
+            match (&errors[i].kind, &expected_errors[i].kind) {
+                (ErrorKind::Unknown, ErrorKind::Unknown) => (),
+                (kind_a, kind_b) => assert_eq!(kind_a, kind_b),
+            };
             assert_eq!(errors[i].name, expected_errors[i].name);
+            assert_eq!(errors[i].value, expected_errors[i].value);
+            assert_eq!(errors[i].entity, expected_errors[i].entity);
         }
     }
 
     #[test]
     fn test_empty_form() {
         check_error(
-            Box::new(Form::values("")),
+            "",
             vec![Error::from(ErrorKind::Missing).with_name("query")],
             false,
         );
@@ -412,7 +410,7 @@ mod fromform_tests {
     #[test]
     fn test_no_query() {
         check_error(
-            Box::new(Form::values("operation_name=foo&variables={}")),
+            "operation_name=foo&variables={}",
             vec![Error::from(ErrorKind::Missing).with_name("query")],
             false,
         );
@@ -421,7 +419,7 @@ mod fromform_tests {
     #[test]
     fn test_strict() {
         check_error(
-            Box::new(Form::values("query=test&foo=bar")),
+            "query=test&foo=bar",
             vec![Error::from(ErrorKind::Unknown).with_name("foo")],
             true,
         );
@@ -430,7 +428,7 @@ mod fromform_tests {
     #[test]
     fn test_duplicate_query() {
         check_error(
-            Box::new(Form::values("query=foo&query=bar")),
+            "query=foo&query=bar",
             vec![Error::from(ErrorKind::Duplicate).with_name("query")],
             false,
         );
@@ -439,9 +437,7 @@ mod fromform_tests {
     #[test]
     fn test_duplicate_operation_name() {
         check_error(
-            Box::new(Form::values(
-                "query=test&operation_name=op1&operation_name=op2",
-            )),
+            "query=test&operation_name=op1&operation_name=op2",
             vec![Error::from(ErrorKind::Duplicate).with_name("operation_name")],
             false,
         );
@@ -450,7 +446,7 @@ mod fromform_tests {
     #[test]
     fn test_duplicate_variables() {
         check_error(
-            Box::new(Form::values("query=test&variables={}&variables={}")),
+            "query=test&variables={}&variables={}",
             vec![Error::from(ErrorKind::Duplicate).with_name("variables")],
             false,
         );
@@ -459,7 +455,7 @@ mod fromform_tests {
     #[test]
     fn test_variables_invalid_json() {
         check_error(
-            Box::new(Form::values("query=test&variables=NOT_JSON")),
+            "query=test&variables=NOT_JSON",
             vec![Error::from(ErrorKind::Validation(Cow::Owned(
                 "expected value at line 1 column 1".to_owned(),
             )))
