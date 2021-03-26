@@ -387,14 +387,14 @@ mod fromform_tests {
             result.unwrap_err()
         };
         assert_eq!(errors.len(), expected_errors.len());
-        for i in 0..errors.len() {
-            match (&errors[i].kind, &expected_errors[i].kind) {
+        for (error, expected) in errors.iter().zip(&expected_errors) {
+            match (&error.kind, &expected.kind) {
                 (ErrorKind::Unknown, ErrorKind::Unknown) => (),
                 (kind_a, kind_b) => assert_eq!(kind_a, kind_b),
             };
-            assert_eq!(errors[i].name, expected_errors[i].name);
-            assert_eq!(errors[i].value, expected_errors[i].value);
-            assert_eq!(errors[i].entity, expected_errors[i].entity);
+            assert_eq!(error.name, expected.name);
+            assert_eq!(error.value, expected.value);
+            assert_eq!(error.entity, expected.entity);
         }
     }
 
