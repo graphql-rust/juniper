@@ -1,11 +1,20 @@
-use std::{iter::FromIterator, vec::IntoIter};
+use std::iter::FromIterator;
 
 use super::Value;
+use indexmap::map::{IndexMap, IntoIter};
 
 /// A Object value
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Object<S> {
-    key_value_list: Vec<(String, Value<S>)>,
+    key_value_list: IndexMap<String, Value<S>>,
+}
+
+impl<S: PartialEq> PartialEq for Object<S> {
+    fn eq(&self, _: &Object<S>) -> bool {
+        match self {
+            Object { key_value_list } => self.key_value_list == *key_value_list,
+        }
+    }
 }
 
 impl<S> Object<S> {
@@ -13,7 +22,7 @@ impl<S> Object<S> {
     /// preallocated slots for field-value pairs
     pub fn with_capacity(size: usize) -> Self {
         Object {
-            key_value_list: Vec::with_capacity(size),
+            key_value_list: IndexMap::with_capacity(size),
         }
     }
 
@@ -26,39 +35,26 @@ impl<S> Object<S> {
         K: Into<String>,
         for<'a> &'a str: PartialEq<K>,
     {
-        if let Some(item) = self
-            .key_value_list
-            .iter_mut()
-            .find(|&&mut (ref key, _)| (key as &str) == k)
-        {
-            return Some(::std::mem::replace(&mut item.1, value));
-        }
-        self.key_value_list.push((k.into(), value));
-        None
+        self.key_value_list.insert(k.into(), value)
     }
 
     /// Check if the object already contains a field with the given name
     pub fn contains_field<K>(&self, f: K) -> bool
     where
+        K: Into<String>,
         for<'a> &'a str: PartialEq<K>,
     {
-        self.key_value_list
-            .iter()
-            .any(|&(ref key, _)| (key as &str) == f)
+        self.key_value_list.contains_key(&f.into())
     }
 
     /// Get a iterator over all field value pairs
-    pub fn iter(&self) -> impl Iterator<Item = &(String, Value<S>)> {
-        FieldIter {
-            inner: self.key_value_list.iter(),
-        }
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Value<S>)> {
+        self.key_value_list.iter()
     }
 
     /// Get a iterator over all mutable field value pairs
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, Value<S>)> {
-        FieldIterMut {
-            inner: self.key_value_list.iter_mut(),
-        }
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&String, &mut Value<S>)> {
+        self.key_value_list.iter_mut()
     }
 
     /// Get the current number of fields
@@ -69,29 +65,16 @@ impl<S> Object<S> {
     /// Get the value for a given field
     pub fn get_field_value<K>(&self, key: K) -> Option<&Value<S>>
     where
+        K: Into<String>,
         for<'a> &'a str: PartialEq<K>,
     {
-        self.key_value_list
-            .iter()
-            .find(|&&(ref k, _)| (k as &str) == key)
-            .map(|&(_, ref value)| value)
-    }
-
-    /// Recursively sort all keys by field.
-    pub fn sort_by_field(&mut self) {
-        self.key_value_list
-            .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
-        for (_, ref mut value) in &mut self.key_value_list {
-            if let Value::Object(ref mut o) = value {
-                o.sort_by_field();
-            }
-        }
+        self.key_value_list.get(&key.into())
     }
 }
 
 impl<S> IntoIterator for Object<S> {
     type Item = (String, Value<S>);
-    type IntoIter = IntoIter<Self::Item>;
+    type IntoIter = IntoIter<String, Value<S>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.key_value_list.into_iter()
@@ -115,37 +98,11 @@ where
     {
         let iter = iter.into_iter();
         let mut ret = Self {
-            key_value_list: Vec::with_capacity(iter.size_hint().0),
+            key_value_list: IndexMap::with_capacity(iter.size_hint().0),
         };
         for (k, v) in iter {
             ret.add_field(k, v);
         }
         ret
-    }
-}
-
-#[doc(hidden)]
-pub struct FieldIter<'a, S: 'a> {
-    inner: ::std::slice::Iter<'a, (String, Value<S>)>,
-}
-
-impl<'a, S> Iterator for FieldIter<'a, S> {
-    type Item = &'a (String, Value<S>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-    }
-}
-
-#[doc(hidden)]
-pub struct FieldIterMut<'a, S: 'a> {
-    inner: ::std::slice::IterMut<'a, (String, Value<S>)>,
-}
-
-impl<'a, S> Iterator for FieldIterMut<'a, S> {
-    type Item = &'a mut (String, Value<S>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
     }
 }

@@ -60,7 +60,6 @@ jobs:
 
       - name: Build and run tests
         env:
-          RUSTFLAGS: "-C link-dead-code"
           CARGO_MAKE_RUN_CODECOV: true
         run: |
           cargo make workspace-ci-flow --no-workspace

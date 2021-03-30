@@ -56,7 +56,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
-[iron]: http://ironframework.io
+[iron]: https://github.com/iron/iron
 [graphql_spec]: http://facebook.github.io/graphql
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio

@@ -38,13 +38,13 @@ Check the LICENSE file for details.
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket_async/0.2.0")]
 
-use std::io::Cursor;
+use std::{borrow::Cow, io::Cursor};
 
 use rocket::{
     data::{self, FromData, ToByteUnit},
-    http::{ContentType, RawStr, Status},
+    form::{error::ErrorKind, DataField, Error, Errors, FromForm, Options, ValueField},
+    http::{ContentType, Status},
     outcome::Outcome::{Failure, Forward, Success},
-    request::{FormItems, FromForm, FromFormValue},
     response::{self, content, Responder, Response},
     Data, Request,
 };
@@ -158,7 +158,7 @@ impl GraphQLResponse {
     ///
     /// ```
     /// # use rocket::http::CookieJar;
-    /// # use rocket::request::Form;
+    /// # use rocket::form::Form;
     /// # use rocket::response::content;
     /// # use rocket::State;
     /// #
@@ -171,7 +171,7 @@ impl GraphQLResponse {
     /// fn get_graphql_handler(
     ///     cookies: &CookieJar,
     ///     context: State<Database>,
-    ///     request: Form<juniper_rocket_async::GraphQLRequest>,
+    ///     request: juniper_rocket_async::GraphQLRequest,
     ///     schema: State<Schema>,
     /// ) -> juniper_rocket_async::GraphQLResponse {
     ///     if cookies.get("user_id").is_none() {
@@ -199,100 +199,130 @@ impl GraphQLResponse {
     }
 }
 
-impl<'f, S> FromForm<'f> for GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
-    type Error = String;
+pub struct GraphQLContext<'f, S: ScalarValue> {
+    opts: Options,
+    query: Option<String>,
+    operation_name: Option<String>,
+    variables: Option<InputValue<S>>,
+    errors: Errors<'f>,
+}
 
-    fn from_form(form_items: &mut FormItems<'f>, strict: bool) -> Result<Self, String> {
-        let mut query = None;
-        let mut operation_name = None;
-        let mut variables = None;
+impl<'f, S: ScalarValue> GraphQLContext<'f, S> {
+    fn query(&mut self, value: String) {
+        if self.query.is_some() {
+            let error = Error::from(ErrorKind::Duplicate).with_name("query");
 
-        for form_item in form_items {
-            let (key, value) = form_item.key_value();
-            // Note: we explicitly decode in the match arms to save work rather
-            // than decoding every form item blindly.
-            match key.as_str() {
-                "query" => {
-                    if query.is_some() {
-                        return Err("Query parameter must not occur more than once".to_owned());
-                    } else {
-                        match value.url_decode() {
-                            Ok(v) => query = Some(v),
-                            Err(e) => return Err(e.to_string()),
-                        }
-                    }
-                }
-                "operation_name" => {
-                    if operation_name.is_some() {
-                        return Err(
-                            "Operation name parameter must not occur more than once".to_owned()
-                        );
-                    } else {
-                        match value.url_decode() {
-                            Ok(v) => operation_name = Some(v),
-                            Err(e) => return Err(e.to_string()),
-                        }
-                    }
-                }
-                "variables" => {
-                    if variables.is_some() {
-                        return Err("Variables parameter must not occur more than once".to_owned());
-                    } else {
-                        let decoded;
-                        match value.url_decode() {
-                            Ok(v) => decoded = v,
-                            Err(e) => return Err(e.to_string()),
-                        }
-                        variables = Some(
-                            serde_json::from_str::<InputValue<_>>(&decoded)
-                                .map_err(|err| err.to_string())?,
-                        );
-                    }
-                }
-                _ => {
-                    if strict {
-                        return Err(format!("Prohibited extra field '{}'", key));
-                    }
+            self.errors.push(error)
+        } else {
+            println!("{}", value);
+            self.query = Some(value);
+        }
+    }
+
+    fn operation_name(&mut self, value: String) {
+        if self.operation_name.is_some() {
+            let error = Error::from(ErrorKind::Duplicate).with_name("operation_name");
+
+            self.errors.push(error)
+        } else {
+            self.operation_name = Some(value);
+        }
+    }
+
+    fn variables(&mut self, value: String) {
+        if self.variables.is_some() {
+            let error = Error::from(ErrorKind::Duplicate).with_name("variables");
+
+            self.errors.push(error)
+        } else {
+            let parse_result = serde_json::from_str::<InputValue<S>>(&value);
+
+            match parse_result {
+                Ok(variables) => self.variables = Some(variables),
+                Err(e) => {
+                    let error = Error::from(ErrorKind::Validation(Cow::Owned(e.to_string())))
+                        .with_name("variables");
+
+                    self.errors.push(error);
                 }
             }
-        }
-
-        if let Some(query) = query {
-            Ok(GraphQLRequest(GraphQLBatchRequest::Single(
-                http::GraphQLRequest::new(query, operation_name, variables),
-            )))
-        } else {
-            Err("Query parameter missing".to_owned())
         }
     }
 }
 
-impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
+#[rocket::async_trait]
+impl<'f, S> FromForm<'f> for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send,
 {
-    type Error = String;
+    type Context = GraphQLContext<'f, S>;
 
-    fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
-        let mut form_items = FormItems::from(form_value);
+    fn init(opts: Options) -> Self::Context {
+        GraphQLContext {
+            opts,
+            query: None,
+            operation_name: None,
+            variables: None,
+            errors: Errors::new(),
+        }
+    }
 
-        Self::from_form(&mut form_items, true)
+    fn push_value(ctx: &mut Self::Context, field: ValueField<'f>) {
+        match field.name.key().map(|key| key.as_str()) {
+            Some("query") => ctx.query(field.value.to_owned()),
+            Some("operation_name") => ctx.operation_name(field.value.to_owned()),
+            Some("variables") => ctx.variables(field.value.to_owned()),
+            Some(key) => {
+                if ctx.opts.strict {
+                    let error = Error::from(ErrorKind::Unknown).with_name(key);
+
+                    ctx.errors.push(error)
+                }
+            }
+            None => {
+                if ctx.opts.strict {
+                    let error = Error::from(ErrorKind::Unexpected);
+
+                    ctx.errors.push(error)
+                }
+            }
+        }
+    }
+
+    async fn push_data(ctx: &mut Self::Context, field: DataField<'f, '_>) {
+        if ctx.opts.strict {
+            let error = Error::from(ErrorKind::Unexpected).with_name(field.name);
+
+            ctx.errors.push(error)
+        }
+    }
+
+    fn finalize(mut ctx: Self::Context) -> rocket::form::Result<'f, Self> {
+        if ctx.query.is_none() {
+            let error = Error::from(ErrorKind::Missing).with_name("query");
+
+            ctx.errors.push(error)
+        }
+
+        match ctx.errors.is_empty() {
+            true => Ok(GraphQLRequest(GraphQLBatchRequest::Single(
+                http::GraphQLRequest::new(ctx.query.unwrap(), ctx.operation_name, ctx.variables),
+            ))),
+            false => Err(ctx.errors),
+        }
     }
 }
 
 const BODY_LIMIT: u64 = 1024 * 100;
 
 #[rocket::async_trait]
-impl<S> FromData for GraphQLRequest<S>
+impl<'r, S> FromData<'r> for GraphQLRequest<S>
 where
     S: ScalarValue,
 {
     type Error = String;
 
-    async fn from_data(req: &Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
+    async fn from_data(req: &'r Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
         use rocket::tokio::io::AsyncReadExt as _;
 
         let content_type = req
@@ -340,40 +370,66 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for GraphQLResponse {
 mod fromform_tests {
     use super::*;
     use juniper::InputValue;
-    use rocket::request::{FormItems, FromForm};
-    use std::str;
+    use rocket::{
+        form::{error::ErrorKind, Error, Form, Strict},
+        http::RawStr,
+    };
+    use std::borrow::Cow;
 
-    fn check_error(input: &str, error: &str, strict: bool) {
-        let mut items = FormItems::from(input);
-        let result: Result<GraphQLRequest, _> = GraphQLRequest::from_form(&mut items, strict);
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), error);
+    fn check_error(input: &str, expected_errors: Vec<Error>, strict: bool) {
+        let errors = if strict {
+            let result = Form::<Strict<GraphQLRequest>>::parse_encoded(RawStr::new(input));
+            assert!(result.is_err());
+            result.unwrap_err()
+        } else {
+            let result = Form::<GraphQLRequest>::parse_encoded(RawStr::new(input));
+            assert!(result.is_err());
+            result.unwrap_err()
+        };
+        assert_eq!(errors.len(), expected_errors.len());
+        for (error, expected) in errors.iter().zip(&expected_errors) {
+            match (&error.kind, &expected.kind) {
+                (ErrorKind::Unknown, ErrorKind::Unknown) => (),
+                (kind_a, kind_b) => assert_eq!(kind_a, kind_b),
+            };
+            assert_eq!(error.name, expected.name);
+            assert_eq!(error.value, expected.value);
+            assert_eq!(error.entity, expected.entity);
+        }
     }
 
     #[test]
     fn test_empty_form() {
-        check_error("", "Query parameter missing", false);
+        check_error(
+            "",
+            vec![Error::from(ErrorKind::Missing).with_name("query")],
+            false,
+        );
     }
 
     #[test]
     fn test_no_query() {
         check_error(
             "operation_name=foo&variables={}",
-            "Query parameter missing",
+            vec![Error::from(ErrorKind::Missing).with_name("query")],
             false,
         );
     }
 
     #[test]
     fn test_strict() {
-        check_error("query=test&foo=bar", "Prohibited extra field \'foo\'", true);
+        check_error(
+            "query=test&foo=bar",
+            vec![Error::from(ErrorKind::Unknown).with_name("foo")],
+            true,
+        );
     }
 
     #[test]
     fn test_duplicate_query() {
         check_error(
             "query=foo&query=bar",
-            "Query parameter must not occur more than once",
+            vec![Error::from(ErrorKind::Duplicate).with_name("query")],
             false,
         );
     }
@@ -382,7 +438,7 @@ mod fromform_tests {
     fn test_duplicate_operation_name() {
         check_error(
             "query=test&operation_name=op1&operation_name=op2",
-            "Operation name parameter must not occur more than once",
+            vec![Error::from(ErrorKind::Duplicate).with_name("operation_name")],
             false,
         );
     }
@@ -391,7 +447,7 @@ mod fromform_tests {
     fn test_duplicate_variables() {
         check_error(
             "query=test&variables={}&variables={}",
-            "Variables parameter must not occur more than once",
+            vec![Error::from(ErrorKind::Duplicate).with_name("variables")],
             false,
         );
     }
@@ -400,16 +456,18 @@ mod fromform_tests {
     fn test_variables_invalid_json() {
         check_error(
             "query=test&variables=NOT_JSON",
-            "expected value at line 1 column 1",
+            vec![Error::from(ErrorKind::Validation(Cow::Owned(
+                "expected value at line 1 column 1".to_owned(),
+            )))
+            .with_name("variables")],
             false,
         );
     }
 
     #[test]
     fn test_variables_valid_json() {
-        let form_string = r#"query=test&variables={"foo":"bar"}"#;
-        let mut items = FormItems::from(form_string);
-        let result = GraphQLRequest::from_form(&mut items, false);
+        let result: Result<GraphQLRequest, Errors> =
+            Form::parse_encoded(RawStr::new(r#"query=test&variables={"foo":"bar"}"#));
         assert!(result.is_ok());
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"bar"}"#).unwrap();
         let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
@@ -422,10 +480,9 @@ mod fromform_tests {
 
     #[test]
     fn test_variables_encoded_json() {
-        let form_string = r#"query=test&variables={"foo": "x%20y%26%3F+z"}"#;
-        let mut items = FormItems::from(form_string);
-        let result = GraphQLRequest::from_form(&mut items, false);
-        assert!(result.is_ok());
+        let result: Result<GraphQLRequest, Errors> = Form::parse_encoded(RawStr::new(
+            r#"query=test&variables={"foo":"x%20y%26%3F+z"}"#,
+        ));
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"x y&? z"}"#).unwrap();
         let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "test".to_string(),
@@ -437,9 +494,9 @@ mod fromform_tests {
 
     #[test]
     fn test_url_decode() {
-        let form_string = "query=%25foo%20bar+baz%26%3F&operation_name=test";
-        let mut items = FormItems::from(form_string);
-        let result: Result<GraphQLRequest, _> = GraphQLRequest::from_form(&mut items, false);
+        let result: Result<GraphQLRequest, Errors> = Form::parse_encoded(RawStr::new(
+            "query=%25foo%20bar+baz%26%3F&operation_name=test",
+        ));
         assert!(result.is_ok());
         let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "%foo bar baz&?".to_string(),
@@ -464,9 +521,7 @@ mod tests {
         self, get,
         http::ContentType,
         local::asynchronous::{Client, LocalResponse},
-        post,
-        request::Form,
-        routes, Rocket, State,
+        post, routes, Rocket, State,
     };
 
     type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -474,7 +529,7 @@ mod tests {
     #[get("/?<request..>")]
     fn get_graphql_handler(
         context: State<Database>,
-        request: Form<super::GraphQLRequest>,
+        request: super::GraphQLRequest,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
         request.execute_sync(&schema, &context)
