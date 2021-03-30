@@ -46,13 +46,14 @@ graphql-parser = { version = "0.3", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
+smartstring = "0.2.6"
 static_assertions = "1.1"
 url = { version = "2.0", optional = true }
 uuid = { version = "0.8", default-features = false, optional = true }
 
 [dev-dependencies]
 bencher = "0.1.2"
-pretty_assertions = "0.6.1"
+pretty_assertions = "0.7.1"
 serde_json = "1.0.2"
 tokio = { version = "0.2", features = ["macros", "rt-core", "time"] }
 
