@@ -1158,7 +1158,7 @@ where
         T: GraphQLType<S> + ?Sized,
     {
         Field {
-            name: name.to_owned(),
+            name: smartstring::SmartString::from(name),
             description: None,
             arguments: None,
             field_type: self.get_type::<T>(info),
@@ -1176,7 +1176,7 @@ where
         I: GraphQLType<S>,
     {
         Field {
-            name: name.to_owned(),
+            name: smartstring::SmartString::from(name),
             description: None,
             arguments: None,
             field_type: self.get_type::<I>(info),
