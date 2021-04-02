@@ -308,13 +308,13 @@ where
                 let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
                 if fragment.type_condition.item == concrete_type_name {
                     let sub_result = instance
-                            .resolve_into_type_async(
-                                info,
-                                fragment.type_condition.item,
-                                Some(&fragment.selection_set[..]),
-                                &sub_exec,
-                            )
-                            .await;
+                        .resolve_into_type_async(
+                            info,
+                            fragment.type_condition.item,
+                            Some(&fragment.selection_set[..]),
+                            &sub_exec,
+                        )
+                        .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {

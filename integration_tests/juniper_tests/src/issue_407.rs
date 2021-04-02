@@ -38,8 +38,14 @@ impl Character for Droid {
 #[graphql_object]
 impl Query {
     fn characters() -> Vec<CharacterValue> {
-        let human = Human { id: "1".to_string(), name: "Han Solo".to_string() };
-        let droid = Droid { id: "2".to_string(), serial_number: "234532545235".to_string() };
+        let human = Human {
+            id: "1".to_string(),
+            name: "Han Solo".to_string(),
+        };
+        let droid = Droid {
+            id: "2".to_string(),
+            serial_number: "234532545235".to_string(),
+        };
         vec![Into::into(human), Into::into(droid)]
     }
 }
