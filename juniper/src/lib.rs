@@ -145,12 +145,12 @@ pub use crate::util::to_camel_case;
 use crate::{
     executor::{execute_validated_query, get_operation},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
-    parser::{parse_document_source, ParseError, Spanning},
+    parser::parse_document_source,
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
 };
 
 pub use crate::{
-    ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
+    ast::{Document, FromInputValue, InputValue, Selection, ToInputValue, Type},
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
@@ -161,6 +161,7 @@ pub use crate::{
         subscription::{ExtractTypeFromStream, IntoFieldResult},
         AsDynGraphQLValue,
     },
+    parser::{ParseError, Spanning},
     schema::{
         meta,
         model::{RootNode, SchemaType},
