@@ -16,3 +16,5 @@ mod issue_371;
 mod issue_398;
 #[cfg(test)]
 mod issue_500;
+#[cfg(test)]
+mod pre_parse;
