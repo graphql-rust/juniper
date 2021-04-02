@@ -54,23 +54,25 @@ type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription
 
 #[tokio::test]
 async fn test_fragments_in_interface() {
+    let query = r#"
+        query Query {
+            characters {
+                ...HumanFragment
+                ...DroidFragment
+            }
+        }
+
+        fragment HumanFragment on Human {
+            name
+        }
+
+        fragment DroidFragment on Droid {
+            serialNumber
+        }
+    "#;
+
     let (_, errors) = juniper::execute(
-        r#"
-            query Query {
-                characters {
-                    ...HumanFragment
-                    ...DroidFragment
-                }
-            }
-
-            fragment HumanFragment on Human {
-                name
-            }
-
-            fragment DroidFragment on Droid {
-                serialNumber
-            }
-        "#,
+        query,
         None,
         &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &Variables::new(),
@@ -78,33 +80,44 @@ async fn test_fragments_in_interface() {
     )
     .await
     .unwrap();
+    assert_eq!(errors.len(), 0);
 
+    let (_, errors) = juniper::execute_sync(
+        query,
+        None,
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
+        &Variables::new(),
+        &(),
+    )
+    .unwrap();
     assert_eq!(errors.len(), 0);
 }
 
 #[tokio::test]
 async fn test_inline_fragments_in_interface() {
-    let (_, errors) = juniper::execute(
-        r#"
-            query Query {
-                characters {
-                    ...on Human {
-                        ...HumanFragment
-                    }
-                    ...on Droid {
-                        ...DroidFragment
-                    }
+    let query = r#"
+        query Query {
+            characters {
+                ...on Human {
+                    ...HumanFragment
+                }
+                ...on Droid {
+                    ...DroidFragment
                 }
             }
+        }
 
-            fragment HumanFragment on Human {
-                name
-            }
+        fragment HumanFragment on Human {
+            name
+        }
 
-            fragment DroidFragment on Droid {
-                serialNumber
-            }
-        "#,
+        fragment DroidFragment on Droid {
+            serialNumber
+        }
+    "#;
+
+    let (_, errors) = juniper::execute(
+        query,
         None,
         &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &Variables::new(),
@@ -112,6 +125,15 @@ async fn test_inline_fragments_in_interface() {
     )
     .await
     .unwrap();
+    assert_eq!(errors.len(), 0);
 
+    let (_, errors) = juniper::execute_sync(
+        query,
+        None,
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
+        &Variables::new(),
+        &(),
+    )
+    .unwrap();
     assert_eq!(errors.len(), 0);
 }
