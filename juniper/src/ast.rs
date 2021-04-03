@@ -112,6 +112,7 @@ pub struct Directive<'a, S> {
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum OperationType {
     Query,
@@ -119,6 +120,7 @@ pub enum OperationType {
     Subscription,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, PartialEq, Debug)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,
@@ -136,12 +138,14 @@ pub struct Fragment<'a, S> {
     pub selection_set: Vec<Selection<'a, S>>,
 }
 
+#[doc(hidden)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum Definition<'a, S> {
     Operation(Spanning<Operation<'a, S>>),
     Fragment(Spanning<Fragment<'a, S>>),
 }
 
+#[doc(hidden)]
 pub type Document<'a, S> = Vec<Definition<'a, S>>;
 
 /// Parse an unstructured input value into a Rust data type.

@@ -11,6 +11,7 @@ use crate::{
 #[doc(hidden)]
 pub struct MultiVisitorNil;
 
+#[doc(hidden)]
 impl MultiVisitorNil {
     pub fn with<V>(self, visitor: V) -> MultiVisitorCons<V, Self> {
         MultiVisitorCons(visitor, self)
