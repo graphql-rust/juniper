@@ -14,4 +14,4 @@ futures = "0.3.1"
 log = "0.4.8"
 reqwest = { version = "0.11", features = ["rustls-tls"] }
 tokio = { version = "0.2", features = ["rt-core", "macros"] }
-warp = "0.2"
+warp = "0.3"
