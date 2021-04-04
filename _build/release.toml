@@ -3,5 +3,5 @@ pre-release-commit-message = "Release {{crate_name}} {{version}}"
 pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
 pre-release-replacements = [
-  {file="CHANGELOG.md", search="# master", replace="# master\n\n- Compatibility with the latest `juniper`.\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-{{version}})"},
+  {file="CHANGELOG.md", min=0, search="# master", replace="# master\n\n- Compatibility with the latest `juniper`.\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-{{version}})"},
 ]
