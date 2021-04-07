@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.15.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.4)
+
 - Un-deprecate select_child, has_child, and child_names methods ([#900]https://github.com/graphql-rust/juniper/pull/#900)
 
 # [[0.15.3] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.3)

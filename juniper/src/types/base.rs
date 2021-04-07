@@ -497,7 +497,9 @@ where
                 }
             }
             Selection::FragmentSpread(Spanning {
-                item: ref spread, ..
+                item: ref spread,
+                start: ref start_pos,
+                ..
             }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
@@ -507,14 +509,27 @@ where
                     .fragment_by_name(spread.name.item)
                     .expect("Fragment could not be found");
 
-                if !resolve_selection_set_into(
-                    instance,
-                    info,
-                    &fragment.selection_set[..],
-                    executor,
-                    result,
-                ) {
-                    return false;
+                let sub_exec = executor.type_sub_executor(
+                    Some(fragment.type_condition.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+                let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
+                if fragment.type_condition.item == concrete_type_name {
+                    let sub_result = instance.resolve_into_type(
+                        info,
+                        fragment.type_condition.item,
+                        Some(&fragment.selection_set[..]),
+                        &sub_exec,
+                    );
+
+                    if let Ok(Value::Object(object)) = sub_result {
+                        for (k, v) in object {
+                            merge_key_into(result, &k, v);
+                        }
+                    } else if let Err(e) = sub_result {
+                        sub_exec.push_error_at(e, *start_pos);
+                    }
                 }
             }
             Selection::InlineFragment(Spanning {

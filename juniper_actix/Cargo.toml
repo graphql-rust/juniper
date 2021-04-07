@@ -1,6 +1,6 @@
 [package]
 name = "juniper_actix"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2018"
 authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
 description = "Juniper GraphQL integration with Actix"
@@ -15,8 +15,8 @@ subscriptions = ["juniper_graphql_ws"]
 actix-web = "4.0.0-beta.3"
 actix-web-actors = "4.0.0-beta.2"
 
-juniper = { version = "0.15.3", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.2.3", path = "../juniper_graphql_ws", optional = true }
+juniper = { version = "0.15.4", path = "../juniper", default-features = false }
+juniper_graphql_ws = { version = "0.2.4", path = "../juniper_graphql_ws", optional = true }
 
 anyhow = "1.0"
 futures = "0.3.5"
@@ -30,7 +30,7 @@ actix-rt = "1.1"
 actix-cors = "0.5"
 actix-identity = "0.3"
 
-juniper = { version = "0.15.3", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.15.4", path = "../juniper", features = ["expose-test-schema"] }
 
 bytes = "0.6"
 env_logger = "0.8"

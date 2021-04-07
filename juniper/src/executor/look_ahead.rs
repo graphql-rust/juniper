@@ -96,6 +96,7 @@ where
     }
 }
 
+#[doc(hidden)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ChildSelection<'a, S: 'a> {
     pub(super) inner: LookAheadSelection<'a, S>,

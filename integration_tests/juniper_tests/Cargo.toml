@@ -8,6 +8,7 @@ publish = false
 derive_more = "0.99"
 futures = "0.3"
 juniper = { path = "../../juniper" }
+juniper_subscriptions = { path = "../../juniper_subscriptions" }
 
 [dev-dependencies]
 async-trait = "0.1.39"
