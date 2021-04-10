@@ -237,6 +237,8 @@ pub mod subscriptions {
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
+    use std::sync::Mutex;
+    use actix_web::dev::Handler;
 
     /// Serves the graphql-ws protocol over a WebSocket connection.
     ///
@@ -377,7 +379,7 @@ pub mod subscriptions {
             .into_actor(self);
 
             // TODO: trace
-            ctx.spawn(fut);
+            // ctx.spawn(fut);
         }
 
         fn stopped(&mut self, _: &mut Self::Context) {
@@ -401,7 +403,7 @@ pub mod subscriptions {
     {
         type Result = ();
 
-        fn handle(
+        fn call(
             &mut self,
             msg: ServerMessageWrapper<S>,
             ctx: &mut ws::WebsocketContext<Self>,
@@ -709,7 +711,7 @@ mod tests {
 
     impl TestActixWebIntegration {
         fn make_request(&self, req: test::TestRequest) -> TestResponse {
-            actix_web::rt::System::new("request").block_on(async move {
+            actix_web::rt::System::new().block_on(async move {
                 let schema = Schema::new(
                     Query,
                     EmptyMutation::<Database>::new(),
@@ -807,7 +809,7 @@ mod subscription_tests {
                 match message {
                     WsIntegrationMessage::Send(body) => {
                         framed
-                            .send(ws::Message::Text(body.to_owned()))
+                            .send(ws::Message::Text(ByteString::from(body.to_owned())))
                             .await
                             .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
                     }
