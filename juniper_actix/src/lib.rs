@@ -221,14 +221,10 @@ pub mod subscriptions {
     use std::{fmt, sync::Arc};
 
     use actix::{prelude::*, Actor, StreamHandler};
-    use actix_web::{
-        http::header::{HeaderName, HeaderValue},
-        web, HttpRequest, HttpResponse,
-    };
+    use actix_web::{http::header::{HeaderName, HeaderValue}, web, HttpRequest, HttpResponse, Responder};
     use actix_web_actors::ws;
 
-    use tokio::sync::Mutex;
-
+    use actix_web::dev::Handler;
     use juniper::{
         futures::{
             stream::{SplitSink, SplitStream, StreamExt},
@@ -238,7 +234,7 @@ pub mod subscriptions {
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
     use std::sync::Mutex;
-    use actix_web::dev::Handler;
+    use futures::Future;
 
     /// Serves the graphql-ws protocol over a WebSocket connection.
     ///
@@ -294,6 +290,7 @@ pub mod subscriptions {
     /// coordinates messages between actix_web and juniper_graphql_ws
     /// ws message -> actor -> juniper
     /// juniper -> actor -> ws response
+    #[derive(Clone)]
     struct SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
     where
         Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
@@ -388,27 +385,30 @@ pub mod subscriptions {
     }
 
     /// actor -> websocket response
-    impl<Query, Mutation, Subscription, CtxT, S, I> Handler<ServerMessageWrapper<S>>
+    impl<Query, Mutation, Subscription, CtxT, S, I, R> Handler<ServerMessageWrapper<S>, R>
         for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + Clone + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + Clone + 'static,
         Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + Clone + 'static,
         Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
+        CtxT: Unpin + Send + Sync + Clone + 'static,
         S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<S, CtxT> + Send + Clone,
+        R: Future,
+        R::Output: Responder,
     {
-        type Result = ();
+
 
         fn call(
             &mut self,
             msg: ServerMessageWrapper<S>,
-            ctx: &mut ws::WebsocketContext<Self>,
-        ) -> Self::Result {
+            // ctx: &mut ws::WebsocketContext<Self>,
+        ) {
             let msg = serde_json::to_string(&msg.message);
+            let mut ctx = ws::WebsocketContext::<Self>;
 
             match msg {
                 Ok(msg) => {
@@ -488,6 +488,7 @@ mod tests {
     };
 
     use super::*;
+    use actix_web::http::header::ACCEPT;
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -528,7 +529,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let resp = test::call_service(&mut app, req).await;
@@ -544,7 +545,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let mut resp = test::call_service(&mut app, req).await;
@@ -569,7 +570,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let resp = test::call_service(&mut app, req).await;
@@ -585,7 +586,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let mut resp = test::call_service(&mut app, req).await;
@@ -607,7 +608,7 @@ mod tests {
         );
 
         let req = test::TestRequest::post()
-            .header("content-type", "application/json; charset=utf-8")
+            .append_header(("content-type", "application/json; charset=utf-8"))
             .set_payload(
                 r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##,
             )
@@ -639,7 +640,7 @@ mod tests {
         );
 
         let req = test::TestRequest::get()
-            .header("content-type", "application/json")
+            .append_header(("content-type", "application/json"))
             .uri("/?query=%7B%20hero%28episode%3A%20NEW_HOPE%29%20%7B%20name%20%7D%20%7D&variables=null")
             .to_request();
 
@@ -673,7 +674,7 @@ mod tests {
         );
 
         let req = test::TestRequest::post()
-            .header("content-type", "application/json")
+            .append_header(("content-type", "application/json"))
             .set_payload(
                 r##"[
                      { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
@@ -735,7 +736,7 @@ mod tests {
         fn post_json(&self, url: &str, body: &str) -> TestResponse {
             self.make_request(
                 test::TestRequest::post()
-                    .header("content-type", "application/json")
+                    .append_header(("content-type", "application/json"))
                     .set_payload(body.to_string())
                     .uri(url),
             )
@@ -744,7 +745,7 @@ mod tests {
         fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
             self.make_request(
                 test::TestRequest::post()
-                    .header("content-type", "application/graphql")
+                    .append_header(("content-type", "application/graphql"))
                     .set_payload(body.to_string())
                     .uri(url),
             )
