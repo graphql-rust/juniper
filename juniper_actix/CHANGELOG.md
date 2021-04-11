@@ -2,6 +2,7 @@
 
 - Compatibility with the latest `juniper`.
 
+
 # [[0.2.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.4)
 
 - Compatibility with the latest `juniper`.
