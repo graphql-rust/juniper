@@ -312,8 +312,9 @@ impl Error for GraphQLRequestError {
 #[cfg(test)]
 mod tests {
     use hyper::{
+        server::Server,
         service::{make_service_fn, service_fn},
-        Body, Method, Response, server::Server, StatusCode,
+        Body, Method, Response, StatusCode,
     };
     use juniper::{
         http::tests as http_tests,
