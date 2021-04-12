@@ -41,7 +41,7 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use anyhow::anyhow;
-use bytes::Bytes;
+use warp::hyper::body::Bytes;
 use futures::{FutureExt as _, TryFutureExt};
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
@@ -717,7 +717,7 @@ mod tests_http_harness {
         }
 
         fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
-            let mut rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
+            let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
             make_test_response(rt.block_on(async move {
                 req.filter(&self.filter).await.unwrap_or_else(|rejection| {
                     let code = if rejection.is_not_found() {

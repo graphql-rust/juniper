@@ -2,7 +2,7 @@ use std::{convert::Infallible, sync::Arc};
 
 use hyper::{
     service::{make_service_fn, service_fn},
-    Body, Method, Response, Server, StatusCode,
+    Body, Method, Response, server::Server, StatusCode,
 };
 use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
