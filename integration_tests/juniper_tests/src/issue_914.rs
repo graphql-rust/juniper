@@ -11,12 +11,20 @@ struct Foo {
 struct Bar {
     a: i32,
     b: i32,
+    baz: Baz,
+}
+
+#[derive(GraphQLObject)]
+struct Baz {
+    c: i32,
+    d: i32,
 }
 
 #[graphql_object]
 impl Query {
     fn foo() -> Foo {
-        let bar = Bar { a: 1, b: 2 };
+        let baz = Baz { c: 1, d: 2 };
+        let bar = Bar { a: 1, b: 2, baz };
         Foo { bar }
     }
 }
@@ -24,12 +32,14 @@ impl Query {
 type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
-async fn test_fragments_on_nexted_types_dont_override_previous_selections() {
+async fn test_fragments_with_nested_objects_dont_override_previous_selections() {
     let query = r#"
         query Query {
             foo {
                 ...BarA
                 ...BarB
+                ...BazC
+                ...BazD
             }
         }
 
@@ -42,6 +52,22 @@ async fn test_fragments_on_nexted_types_dont_override_previous_selections() {
         fragment BarB on Foo {
             bar {
                 b
+            }
+        }
+
+        fragment BazC on Foo {
+            bar {
+                baz {
+                    c
+                }
+            }
+        }
+
+        fragment BazD on Foo {
+            bar {
+                baz {
+                    d
+                }
             }
         }
     "#;
@@ -82,4 +108,12 @@ async fn test_fragments_on_nexted_types_dont_override_previous_selections() {
         .unwrap();
     assert!(bar.contains_field("a"), "Field a should be selected");
     assert!(bar.contains_field("b"), "Field b should be selected");
+
+    let baz = bar
+        .get_field_value("baz")
+        .unwrap()
+        .as_object_value()
+        .unwrap();
+    assert!(baz.contains_field("c"), "Field c should be selected");
+    assert!(baz.contains_field("d"), "Field d should be selected");
 }

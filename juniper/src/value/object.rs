@@ -28,14 +28,26 @@ impl<S> Object<S> {
 
     /// Add a new field with a value
     ///
-    /// If there is already a field with the same name the old value
-    /// is returned
+    /// If there is already a field for the given key
+    /// any both values are objects, they are merged.
+    ///
+    /// Otherwise the existing value is replaced and
+    /// returned.
     pub fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
     where
         K: Into<String>,
         for<'a> &'a str: PartialEq<K>,
     {
-        self.key_value_list.insert(k.into(), value)
+        let key: String = k.into();
+        match (value, self.key_value_list.get_mut(&key)) {
+            (Value::<S>::Object(obj_val), Some(Value::<S>::Object(existing_obj))) => {
+                for (key, val) in obj_val.into_iter() {
+                    existing_obj.add_field::<String>(key, val);
+                }
+                None
+            },
+            (non_obj_val, _) => self.key_value_list.insert(key, non_obj_val),
+        }
     }
 
     /// Check if the object already contains a field with the given name
