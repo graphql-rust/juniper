@@ -14,7 +14,7 @@ repository = "https://github.com/graphql-rust/juniper"
 [dependencies]
 futures = "0.3.1"
 juniper = { version = "0.15.4", path = "../juniper", default-features = false }
-rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "master", default-features = false }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "50c9e88cf91cbcc6298cbd04282aebf6fba69b88", default-features = false }
 serde_json = "1.0.2"
 tokio = { version = "1", features = ["macros", "rt"] }
 
