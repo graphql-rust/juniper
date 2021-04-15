@@ -45,7 +45,7 @@ impl<S> Object<S> {
                     existing_obj.add_field::<String>(key, val);
                 }
                 None
-            },
+            }
             (non_obj_val, _) => self.key_value_list.insert(key, non_obj_val),
         }
     }
