@@ -1,6 +1,7 @@
 # master
 
-- Compatibility with the latest `juniper`.
+- Update `warp` to 0.3
+- Update `tokio` to 1.0
 
 # [[0.6.3] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.3)
 

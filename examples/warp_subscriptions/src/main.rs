@@ -9,6 +9,7 @@ use juniper::{
 };
 use juniper_graphql_ws::ConnectionConfig;
 use juniper_warp::{playground_filter, subscriptions::serve_graphql_ws};
+use tokio_stream::wrappers::IntervalStream;
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
@@ -109,7 +110,9 @@ struct Subscription;
 impl Subscription {
     async fn users() -> UsersStream {
         let mut counter = 0;
-        let stream = tokio::time::interval(Duration::from_secs(5)).map(move |_| {
+        let interval = tokio::time::interval(Duration::from_secs(5));
+        let interval_stream = IntervalStream::new(interval);
+        let stream = interval_stream.map(move |_| {
             counter += 1;
             if counter == 2 {
                 Err(FieldError::new(
@@ -137,7 +140,7 @@ fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     env::set_var("RUST_LOG", "warp_subscriptions");
     env_logger::init();

@@ -71,7 +71,7 @@ fn schema() -> Schema {
     )
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     std::env::set_var("RUST_LOG", "warp_async");
     env_logger::init();
