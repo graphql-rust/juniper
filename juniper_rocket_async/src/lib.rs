@@ -521,7 +521,7 @@ mod tests {
         self, get,
         http::ContentType,
         local::asynchronous::{Client, LocalResponse},
-        post, routes, Rocket, State,
+        post, routes, Build, Rocket, State,
     };
 
     type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -608,12 +608,12 @@ mod tests {
         assert_eq!(resp.await.status_code, 200);
     }
 
-    fn make_rocket() -> Rocket {
+    fn make_rocket() -> Rocket<Build> {
         make_rocket_without_routes().mount("/", routes![post_graphql_handler, get_graphql_handler])
     }
 
-    fn make_rocket_without_routes() -> Rocket {
-        rocket::ignite().manage(Database::new()).manage(Schema::new(
+    fn make_rocket_without_routes() -> Rocket<Build> {
+        Rocket::build().manage(Database::new()).manage(Schema::new(
             Query,
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),
