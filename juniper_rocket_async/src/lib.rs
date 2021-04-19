@@ -572,7 +572,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
+    #[rocket::async_test]
     async fn test_rocket_integration() {
         let rocket = make_rocket();
         let client = Client::untracked(rocket).await.expect("valid rocket");
@@ -581,7 +581,7 @@ mod tests {
         http_tests::run_http_test_suite(&integration);
     }
 
-    #[tokio::test]
+    #[rocket::async_test]
     async fn test_operation_names() {
         #[post("/", data = "<request>")]
         fn post_graphql_assert_operation_name_handler(
