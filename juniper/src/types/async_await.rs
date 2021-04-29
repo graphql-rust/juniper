@@ -307,7 +307,6 @@ where
 
                 let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
                 let type_name = instance.type_name(info);
-
                 if fragment.type_condition.item == concrete_type_name
                     || Some(fragment.type_condition.item) == type_name
                 {

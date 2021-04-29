@@ -6,7 +6,6 @@ struct Query;
 impl Query {
     fn characters(executor: &Executor) -> Vec<CharacterValue> {
         executor.look_ahead();
-
         vec![
             Into::into(Human {
                 id: 0,
