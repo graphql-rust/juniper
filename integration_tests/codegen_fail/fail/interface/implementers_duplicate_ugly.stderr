@@ -1,4 +1,4 @@
-error[E0119]: conflicting implementations of trait `<CharacterValue as juniper::GraphQLInterface<__S>>::mark::_::{closure#0}::MutuallyExclusive` for type `ObjA`:
+error[E0119]: conflicting implementations of trait `<CharacterValue as juniper::GraphQLInterface<__S>>::mark::_::{closure#0}::MutuallyExclusive` for type `ObjA`
   --> $DIR/implementers_duplicate_ugly.rs:18:1
    |
 18 | #[graphql_interface(for = [ObjA, ObjAlias])]
@@ -9,7 +9,7 @@ error[E0119]: conflicting implementations of trait `<CharacterValue as juniper::
    |
    = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0119]: conflicting implementations of trait `std::convert::From<ObjA>` for type `CharacterValue`:
+error[E0119]: conflicting implementations of trait `std::convert::From<ObjA>` for type `CharacterValue`
   --> $DIR/implementers_duplicate_ugly.rs:18:1
    |
 18 | #[graphql_interface(for = [ObjA, ObjAlias])]
