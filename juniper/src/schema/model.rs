@@ -579,7 +579,7 @@ mod test {
                 fn blah() -> bool {
                     true
                 }
-            };
+            }
             let schema = RootNode::new(
                 Query,
                 EmptyMutation::<()>::new(),
@@ -616,11 +616,11 @@ mod test {
             #[derive(GraphQLObject, Default)]
             struct Cake {
                 fresh: bool,
-            };
+            }
             #[derive(GraphQLObject, Default)]
             struct IceCream {
                 cold: bool,
-            };
+            }
             #[derive(GraphQLUnion)]
             enum GlutenFree {
                 Cake(Cake),
@@ -671,7 +671,7 @@ mod test {
                 fn really_old() -> f64 {
                     42.0
                 }
-            };
+            }
 
             let schema = RootNode::new(
                 Query,
