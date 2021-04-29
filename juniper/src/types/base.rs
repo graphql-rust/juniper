@@ -515,7 +515,11 @@ where
                 );
 
                 let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
-                if fragment.type_condition.item == concrete_type_name {
+                let type_name = instance.type_name(info);
+
+                if fragment.type_condition.item == concrete_type_name
+                    || Some(fragment.type_condition.item) == type_name
+                {
                     let sub_result = instance.resolve_into_type(
                         info,
                         fragment.type_condition.item,
@@ -549,11 +553,7 @@ where
                 if let Some(ref type_condition) = fragment.type_condition {
                     // Check whether the type matches the type condition.
                     let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
-                    let type_name = instance.type_name(info);
-
-                    if type_condition.item == concrete_type_name
-                        || Some(type_condition.item) == type_name
-                    {
+                    if type_condition.item == concrete_type_name {
                         let sub_result = instance.resolve_into_type(
                             info,
                             type_condition.item,
