@@ -4,8 +4,7 @@ struct Query;
 
 #[juniper::graphql_object]
 impl Query {
-    fn characters(executor: &Executor) -> Vec<CharacterValue> {
-        executor.look_ahead();
+    fn characters() -> Vec<CharacterValue> {
         vec![
             Into::into(Human {
                 id: 0,
@@ -98,23 +97,34 @@ async fn test_fragment_on_interface() {
 
     assert_eq!(errors.len(), 0);
 
-    let res = match res {
-        juniper::Value::Object(res) => res,
-        _ => panic!("Object should be returned"),
-    };
-    let characters = res.get_field_value("characters");
-    assert!(characters.is_some(), "No characters returned");
+    assert_eq!(
+        res,
+        graphql_value!({
+            "characters": [
+                {"__typename": "Human", "id": 0, "name": "human-32"},
+                {"__typename": "Droid", "id": 1, "name": "R2-D2"}
+            ]
+        }),
+    );
 
-    if let juniper::Value::List(values) = characters.unwrap() {
-        for obj in values {
-            if let juniper::Value::Object(obj) = obj {
-                assert!(obj.contains_field("id"), "id field should be present");
-                assert!(obj.contains_field("name"), "name field should be present");
-            } else {
-                assert!(false, "List should contain value");
-            }
-        }
-    } else {
-        assert!(false, "List should be returned")
-    }
+    let (res, errors) = juniper::execute_sync(
+        query,
+        None,
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
+        &Variables::new(),
+        &(),
+    )
+    .unwrap();
+
+    assert_eq!(errors.len(), 0);
+
+    assert_eq!(
+        res,
+        graphql_value!({
+            "characters": [
+                {"__typename": "Human", "id": 0, "name": "human-32"},
+                {"__typename": "Droid", "id": 1, "name": "R2-D2"}
+            ]
+        }),
+    );
 }
