@@ -106,6 +106,11 @@ pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
 
+// This is required by the `tracing` feature.
+#[cfg(feature = "tracing")]
+#[doc(hidden)]
+pub use tracing;
+
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
@@ -202,9 +207,12 @@ impl<'a> fmt::Display for GraphQLError<'a> {
         match self {
             GraphQLError::ParseError(error) => write!(f, "{}", error),
             GraphQLError::ValidationError(errors) => {
-                for error in errors {
-                    writeln!(f, "{}", error)?;
-                }
+                let errors = errors
+                    .iter()
+                    .map(|e| format!("{}", e))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                write!(f, "{}", errors)?;
                 Ok(())
             }
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
@@ -232,28 +240,40 @@ where
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
+    __juniper_span_trace!("execute_sync");
+
+    __juniper_trace!("document: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
+        __juniper_span_trace!("rule_validation");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace!("validation_error: {}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
     let operation = get_operation(&document, operation_name)?;
 
     {
+        __juniper_span_trace!("validate_input_values");
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace!("validation_error: {}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
+    __juniper_span_trace!("execute_validated_query");
     execute_validated_query(&document, operation, root_node, variables, context)
 }
 
@@ -275,30 +295,44 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
+    __juniper_span_trace!("execute");
+
+    __juniper_trace!("document: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
+        __juniper_span_trace!("rule_validation");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace!("validation_error: {}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
     let operation = get_operation(&document, operation_name)?;
 
     {
+        __juniper_span_trace!("validate_input_values");
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace!("validation_error: {}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
-    executor::execute_validated_query_async(&document, operation, root_node, variables, context)
-        .await
+    let f = executor::execute_validated_query_async(
+        &document, operation, root_node, variables, context,
+    );
+
+    __juniper_instrument_trace!(f, "execute_validated_query").await
 }
 
 /// Resolve subscription into `ValuesStream`
@@ -328,7 +362,10 @@ where
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace!("validation_error: {:?}", gql_error);
+
+            return Err(gql_error);
         }
     }
 
@@ -338,7 +375,10 @@ where
         let errors = validate_input_values(&variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let gql_error = GraphQLError::ValidationError(errors);
+            __juniper_trace!("validation_error: {:?}", gql_error);
+
+            return Err(gql_error);
         }
     }
 

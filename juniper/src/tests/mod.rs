@@ -11,3 +11,7 @@ mod schema_introspection;
 mod subscriptions;
 #[cfg(test)]
 mod type_info_tests;
+
+#[cfg(test)]
+#[cfg(feature = "tracing")]
+mod trace_tests;
