@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Fix fields on interfaces not being resolved when used with fragments ([#923](https://github.com/graphql-rust/juniper/pull/923))
 
 # [[0.15.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.4)
 
