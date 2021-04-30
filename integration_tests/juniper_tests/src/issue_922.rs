@@ -96,14 +96,13 @@ async fn test_fragment_on_interface() {
     .unwrap();
 
     assert_eq!(errors.len(), 0);
-
     assert_eq!(
         res,
         graphql_value!({
             "characters": [
                 {"__typename": "Human", "id": 0, "name": "human-32"},
-                {"__typename": "Droid", "id": 1, "name": "R2-D2"}
-            ]
+                {"__typename": "Droid", "id": 1, "name": "R2-D2"},
+            ],
         }),
     );
 
@@ -117,14 +116,13 @@ async fn test_fragment_on_interface() {
     .unwrap();
 
     assert_eq!(errors.len(), 0);
-
     assert_eq!(
         res,
         graphql_value!({
             "characters": [
                 {"__typename": "Human", "id": 0, "name": "human-32"},
-                {"__typename": "Droid", "id": 1, "name": "R2-D2"}
-            ]
+                {"__typename": "Droid", "id": 1, "name": "R2-D2"},
+            ],
         }),
     );
 }
