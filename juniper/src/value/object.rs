@@ -61,7 +61,7 @@ impl<S> Object<S> {
         self.key_value_list.get(key.as_ref())
     }
 
-    /// Get the value for a given field
+    /// Get the mutable value for a given field
     pub fn get_mut_field_value<K: AsRef<str>>(&mut self, key: K) -> Option<&mut Value<S>> {
         self.key_value_list.get_mut(key.as_ref())
     }
