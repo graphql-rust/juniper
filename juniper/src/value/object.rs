@@ -26,7 +26,8 @@ impl<S> Object<S> {
     /// Otherwise the existing value is replaced and
     /// returned.
     pub fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
-        where K: AsRef<str> + Into<String>,
+    where
+        K: AsRef<str> + Into<String>,
     {
         if let Some(v) = self.key_value_list.get_mut(k.as_ref()) {
             Some(::std::mem::replace(v, value))
