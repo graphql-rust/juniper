@@ -1,4 +1,4 @@
-use std::iter::FromIterator;
+use std::{iter::FromIterator, mem};
 
 use super::Value;
 use indexmap::map::{IndexMap, IntoIter};
@@ -30,7 +30,7 @@ impl<S> Object<S> {
         K: AsRef<str> + Into<String>,
     {
         if let Some(v) = self.key_value_list.get_mut(k.as_ref()) {
-            Some(::std::mem::replace(v, value))
+            Some(mem::replace(v, value))
         } else {
             self.key_value_list.insert(k.into(), value)
         }
