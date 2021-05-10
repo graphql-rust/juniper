@@ -326,6 +326,7 @@ where
 {
     type Type = T;
 
+    #[allow(clippy::type_complexity)]
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
     }
@@ -353,6 +354,7 @@ where
 {
     type Type = T;
 
+    #[allow(clippy::type_complexity)]
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
             .map_err(FieldError::map_scalar_value)

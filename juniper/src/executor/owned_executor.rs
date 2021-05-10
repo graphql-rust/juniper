@@ -112,16 +112,8 @@ where
         Executor {
             fragments: &self.fragments,
             variables: &self.variables,
-            current_selection_set: if let Some(s) = &self.current_selection_set {
-                Some(&s[..])
-            } else {
-                None
-            },
-            parent_selection_set: if let Some(s) = &self.parent_selection_set {
-                Some(&s[..])
-            } else {
-                None
-            },
+            current_selection_set: self.current_selection_set.as_deref(),
+            parent_selection_set: self.parent_selection_set.as_deref(),
             current_type: self.current_type.clone(),
             schema: self.schema,
             context: self.context,

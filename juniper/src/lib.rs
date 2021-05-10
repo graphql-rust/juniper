@@ -319,7 +319,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let document: crate::ast::Document<'a, S> =
+    let document: crate::ast::OwnedDocument<'a, S> =
         parse_document_source(document_source, &root_node.schema)?;
 
     {
