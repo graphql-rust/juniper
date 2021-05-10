@@ -1271,7 +1271,7 @@ impl GraphQLTypeDefiniton {
                 quote!(
                     #name => {
                         ::juniper::futures::FutureExt::boxed(async move {
-                            let res #_type = { #code };
+                            let res #_type = async { #code }.await;
                             let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
                             let executor= executor.as_owned_executor();
                             let f = res.then(move |res| {
