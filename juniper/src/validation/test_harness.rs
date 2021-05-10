@@ -865,7 +865,9 @@ where
     let mut ctx = ValidatorContext::new(unsafe { ::std::mem::transmute(&root.schema) }, &doc);
 
     let mut mv = MultiVisitorNil.with(factory());
-    visit(&mut mv, &mut ctx, unsafe { ::std::mem::transmute(&doc) });
+    visit(&mut mv, &mut ctx, unsafe {
+        ::std::mem::transmute(doc.as_slice())
+    });
 
     ctx.into_errors()
 }

@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 
 use crate::ast::{
-    Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread, InlineFragment,
-    InputValue, Operation, OperationType, Selection, Type, VariableDefinition, VariableDefinitions,
+    Arguments, Definition, Directive, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
+    Operation, OperationType, OwnedDocument, Selection, Type, VariableDefinition,
+    VariableDefinitions,
 };
 
 use crate::{
@@ -21,7 +22,7 @@ use crate::{
 pub fn parse_document_source<'a, 'b, S>(
     s: &'a str,
     schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, Document<'a, S>>
+) -> UnlocatedParseResult<'a, OwnedDocument<'a, S>>
 where
     S: ScalarValue,
 {
@@ -33,7 +34,7 @@ where
 fn parse_document<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, Document<'a, S>>
+) -> UnlocatedParseResult<'a, OwnedDocument<'a, S>>
 where
     S: ScalarValue,
 {
