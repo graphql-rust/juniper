@@ -1,6 +1,7 @@
 use crate::{
     ast::{
-        Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
+        Arguments, Definition, Field, InputValue, Operation, OperationType, OwnedDocument,
+        Selection,
     },
     parser::{document::parse_document_source, ParseError, SourcePosition, Spanning, Token},
     schema::model::SchemaType,
@@ -9,7 +10,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
 };
 
-fn parse_document<S>(s: &str) -> Document<S>
+fn parse_document<S>(s: &str) -> OwnedDocument<S>
 where
     S: ScalarValue,
 {

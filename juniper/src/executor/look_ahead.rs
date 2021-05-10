@@ -440,7 +440,7 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
 mod tests {
     use super::*;
     use crate::{
-        ast::Document,
+        ast::{Document, OwnedDocument},
         parser::UnlocatedParseResult,
         schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
@@ -448,7 +448,7 @@ mod tests {
     };
     use std::collections::HashMap;
 
-    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
+    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<OwnedDocument<S>>
     where
         S: ScalarValue,
     {

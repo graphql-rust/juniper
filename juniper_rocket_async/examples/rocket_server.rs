@@ -2,7 +2,7 @@ use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
-use rocket::{response::content, State};
+use rocket::{response::content, Rocket, State};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
@@ -31,7 +31,7 @@ fn post_graphql_handler(
 
 #[rocket::main]
 async fn main() {
-    rocket::ignite()
+    Rocket::build()
         .manage(Database::new())
         .manage(Schema::new(
             Query,

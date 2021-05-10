@@ -515,7 +515,10 @@ where
                 );
 
                 let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
-                if fragment.type_condition.item == concrete_type_name {
+                let type_name = instance.type_name(info);
+                if fragment.type_condition.item == concrete_type_name
+                    || Some(fragment.type_condition.item) == type_name
+                {
                     let sub_result = instance.resolve_into_type(
                         info,
                         fragment.type_condition.item,
@@ -614,5 +617,41 @@ where
 
 /// Merges `response_name`/`value` pair into `result`
 pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
+    if let Some(v) = result.get_mut_field_value(response_name) {
+        match v {
+            Value::Object(dest_obj) => {
+                if let Value::Object(src_obj) = value {
+                    merge_maps(dest_obj, src_obj);
+                }
+            }
+            Value::List(dest_list) => {
+                if let Value::List(src_list) = value {
+                    dest_list
+                        .iter_mut()
+                        .zip(src_list.into_iter())
+                        .for_each(|(d, s)| {
+                            if let Value::Object(d_obj) = d {
+                                if let Value::Object(s_obj) = s {
+                                    merge_maps(d_obj, s_obj);
+                                }
+                            }
+                        });
+                }
+            }
+            _ => {}
+        }
+        return;
+    }
     result.add_field(response_name, value);
+}
+
+/// Merges `src` object's fields into `dest`
+fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
+    for (key, value) in src {
+        if dest.contains_field(&key) {
+            merge_key_into(dest, &key, value);
+        } else {
+            dest.add_field(key, value);
+        }
+    }
 }
