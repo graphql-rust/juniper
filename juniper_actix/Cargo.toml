@@ -27,7 +27,7 @@ thiserror = "1.0"
 tokio = { version = "0.2", features = ["time"] }
 
 [dev-dependencies]
-actix-rt = "1.1"
+actix-rt = "2.2"
 actix-cors = "0.5"
 actix-identity = "0.3"
 
