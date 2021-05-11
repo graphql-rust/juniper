@@ -13,20 +13,20 @@ fn graphiql() -> content::Html<String> {
 
 #[rocket::get("/graphql?<request>")]
 fn get_graphql_handler(
-    context: State<Database>,
+    context: &State<Database>,
     request: juniper_rocket_async::GraphQLRequest,
-    schema: State<Schema>,
+    schema: &State<Schema>,
 ) -> juniper_rocket_async::GraphQLResponse {
-    request.execute_sync(&schema, &context)
+    request.execute_sync(&*schema, &*context)
 }
 
 #[rocket::post("/graphql", data = "<request>")]
 fn post_graphql_handler(
-    context: State<Database>,
+    context: &State<Database>,
     request: juniper_rocket_async::GraphQLRequest,
-    schema: State<Schema>,
+    schema: &State<Schema>,
 ) -> juniper_rocket_async::GraphQLResponse {
-    request.execute_sync(&schema, &context)
+    request.execute_sync(&*schema, &*context)
 }
 
 #[rocket::main]
