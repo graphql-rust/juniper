@@ -4,7 +4,7 @@ pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
 pre-release-replacements = [
   # Juniper's changelog
-  {file="CHANGELOG.md", min=0, search="# master", replace="# master\n\n- No changes yet\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-{{version}})"},
+  {file="CHANGELOG.md", min=0, search="# master", replace="# master\n\n- No changes yet\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-v{{version}})"},
   {file="src/lib.rs", min=0, search="docs.rs/juniper/[a-z0-9\\.-]+", replace="docs.rs/juniper/{{version}}"},
   # docs
   {file="../docs/book/content/quickstart.md", min=0, search="juniper = \"[^\"]+\"", replace="juniper = \"{{version}}\""},
