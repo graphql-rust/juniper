@@ -13,7 +13,7 @@ keywords = ["apollo", "graphql", "graphql-ws", "juniper"]
 juniper = { version = "0.15.5", path = "../juniper", default-features = false }
 juniper_subscriptions = { version = "0.15.4", path = "../juniper_subscriptions" }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
-tokio = { version = "0.2", features = ["macros", "rt-core", "time"], default-features = false }
+tokio = { version = "1.6", features = ["macros", "rt-core", "time"], default-features = false }
 
 [dev-dependencies]
 serde_json = "1.0"
