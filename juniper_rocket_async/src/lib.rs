@@ -170,16 +170,16 @@ impl GraphQLResponse {
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
     ///     cookies: &CookieJar,
-    ///     context: State<Database>,
+    ///     context: &State<Database>,
     ///     request: juniper_rocket_async::GraphQLRequest,
-    ///     schema: State<Schema>,
+    ///     schema: &State<Schema>,
     /// ) -> juniper_rocket_async::GraphQLResponse {
     ///     if cookies.get("user_id").is_none() {
     ///         let err = FieldError::new("User is not logged in", Value::null());
     ///         return juniper_rocket_async::GraphQLResponse::error(err);
     ///     }
     ///
-    ///     request.execute_sync(&schema, &context)
+    ///     request.execute_sync(&*schema, &*context)
     /// }
     /// ```
     pub fn error(error: FieldError) -> Self {
@@ -528,20 +528,20 @@ mod tests {
 
     #[get("/?<request..>")]
     fn get_graphql_handler(
-        context: State<Database>,
+        context: &State<Database>,
         request: super::GraphQLRequest,
-        schema: State<Schema>,
+        schema: &State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute_sync(&schema, &context)
+        request.execute_sync(&*schema, &*context)
     }
 
     #[post("/", data = "<request>")]
     fn post_graphql_handler(
-        context: State<Database>,
+        context: &State<Database>,
         request: super::GraphQLRequest,
-        schema: State<Schema>,
+        schema: &State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute_sync(&schema, &context)
+        request.execute_sync(&*schema, &*context)
     }
 
     struct TestRocketIntegration {
@@ -585,12 +585,12 @@ mod tests {
     async fn test_operation_names() {
         #[post("/", data = "<request>")]
         fn post_graphql_assert_operation_name_handler(
-            context: State<Database>,
+            context: &State<Database>,
             request: super::GraphQLRequest,
-            schema: State<Schema>,
+            schema: &State<Schema>,
         ) -> super::GraphQLResponse {
             assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-            request.execute_sync(&schema, &context)
+            request.execute_sync(&*schema, &*context)
         }
 
         let rocket = make_rocket_without_routes()

@@ -486,6 +486,7 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
         state: ConnectionState<S, I>,
     },
     HandlingMessage {
+        #[allow(clippy::type_complexity)]
         result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
     },
     Closed,
@@ -607,26 +608,22 @@ where
         }
 
         // Poll the reactions for new outgoing messages.
-        loop {
-            if !self.reactions.is_empty() {
-                match Pin::new(&mut self.reactions).poll_next(cx) {
-                    Poll::Ready(Some(reaction)) => match reaction {
-                        Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
-                        Reaction::EndStream => return Poll::Ready(None),
-                    },
-                    Poll::Ready(None) => {
-                        // In rare cases, the reaction stream may terminate. For example, this will
-                        // happen if the first message we receive does not require any reaction. Just
-                        // recreate it in that case.
-                        self.reactions = SelectAll::new();
-                        return Poll::Pending;
-                    }
-                    Poll::Pending => return Poll::Pending,
+        if !self.reactions.is_empty() {
+            match Pin::new(&mut self.reactions).poll_next(cx) {
+                Poll::Ready(Some(reaction)) => match reaction {
+                    Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
+                    Reaction::EndStream => return Poll::Ready(None),
+                },
+                Poll::Ready(None) => {
+                    // In rare cases, the reaction stream may terminate. For example, this will
+                    // happen if the first message we receive does not require any reaction. Just
+                    // recreate it in that case.
+                    self.reactions = SelectAll::new();
                 }
-            } else {
-                return Poll::Pending;
+                _ => (),
             }
         }
+        Poll::Pending
     }
 }
 

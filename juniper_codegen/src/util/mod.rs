@@ -161,7 +161,7 @@ fn join_doc_strings(docs: &[String]) -> String {
     docs.iter()
         .map(|s| s.as_str().trim_end())
         // Trim leading space.
-        .map(|s| if s.starts_with(' ') { &s[1..] } else { s })
+        .map(|s| s.strip_prefix(' ').unwrap_or(s))
         // Add newline, exept when string ends in a continuation backslash or is the last line.
         .enumerate()
         .fold(String::new(), |mut buffer, (index, s)| {
@@ -227,13 +227,11 @@ pub fn to_camel_case(s: &str) -> String {
 
     // Handle `_` and `__` to be more friendly with the `_var` convention for unused variables, and
     // GraphQL introspection identifiers.
-    let s_iter = if s.starts_with("__") {
+    let s_iter = if let Some(s) = s.strip_prefix("__") {
         dest.push_str("__");
-        &s[2..]
-    } else if s.starts_with('_') {
-        &s[1..]
-    } else {
         s
+    } else {
+        s.strip_prefix('_').unwrap_or(s)
     }
     .split('_')
     .enumerate();
@@ -434,9 +432,10 @@ impl ObjectAttributes {
             }
             Ok(a)
         } else {
-            let mut a = Self::default();
-            a.description = get_doc_comment(attrs);
-            Ok(a)
+            Ok(Self {
+                description: get_doc_comment(attrs),
+                ..Self::default()
+            })
         }
     }
 }
@@ -500,7 +499,7 @@ enum FieldAttribute {
     Deprecation(SpanContainer<DeprecationAttr>),
     Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
-    Default(SpanContainer<Option<syn::Expr>>),
+    Default(Box<SpanContainer<Option<syn::Expr>>>),
 }
 
 impl Parse for FieldAttribute {
@@ -573,7 +572,7 @@ impl Parse for FieldAttribute {
                     SpanContainer::new(ident.span(), None, None)
                 };
 
-                Ok(FieldAttribute::Default(default_expr))
+                Ok(FieldAttribute::Default(Box::new(default_expr)))
             }
             _ => Err(syn::Error::new(ident.span(), "unknown attribute")),
         }
@@ -617,7 +616,7 @@ impl Parse for FieldAttributes {
                     output.arguments = args;
                 }
                 FieldAttribute::Default(expr) => {
-                    output.default = Some(expr);
+                    output.default = Some(*expr);
                 }
             }
         }
@@ -1272,7 +1271,7 @@ impl GraphQLTypeDefiniton {
                 quote!(
                     #name => {
                         ::juniper::futures::FutureExt::boxed(async move {
-                            let res #_type = { #code };
+                            let res #_type = async { #code }.await;
                             let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
                             let executor= executor.as_owned_executor();
                             let f = res.then(move |res| {

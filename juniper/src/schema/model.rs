@@ -293,14 +293,10 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get the mutation type from the schema.
     pub fn mutation_type(&self) -> Option<TypeType<S>> {
-        if let Some(ref mutation_type_name) = self.mutation_type_name {
-            Some(
-                self.type_by_name(mutation_type_name)
-                    .expect("Mutation type does not exist in schema"),
-            )
-        } else {
-            None
-        }
+        self.mutation_type_name.as_ref().map(|name| {
+            self.type_by_name(name)
+                .expect("Mutation type does not exist in schema")
+        })
     }
 
     /// Get the concrete mutation type from the schema.
@@ -313,14 +309,10 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get the subscription type.
     pub fn subscription_type(&self) -> Option<TypeType<S>> {
-        if let Some(ref subscription_type_name) = self.subscription_type_name {
-            Some(
-                self.type_by_name(subscription_type_name)
-                    .expect("Subscription type does not exist in schema"),
-            )
-        } else {
-            None
-        }
+        self.subscription_type_name.as_ref().map(|name| {
+            self.type_by_name(name)
+                .expect("Subscription type does not exist in schema")
+        })
     }
 
     /// Get the concrete subscription type.
