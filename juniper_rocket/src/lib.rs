@@ -277,10 +277,10 @@ where
         let mut body = String::new();
         data.open()
             .read_to_string(&mut body)
-            .map_err(|e| Err((Status::InternalServerError, format!("{:?}", e))))?;
+            .map_err(|e| (Status::InternalServerError, format!("{:?}", e)))?;
 
         Success(GraphQLRequest(if is_json {
-            serde_json::from_str(&body).map_err(|e| Err((Status::BadRequest, format!("{}", e))))?
+            serde_json::from_str(&body).map_err(|e| (Status::BadRequest, format!("{}", e)))?
         } else {
             GraphQLBatchRequest::Single(http::GraphQLRequest::new(body, None, None))
         }))
