@@ -88,7 +88,13 @@ impl syn::parse::Parse for ScalarCodegenInput {
         let custom_data_type_is_struct: bool =
             !parse_custom_scalar_value_impl.generics.params.is_empty();
 
-        if let syn::Type::Path(type_path) = *parse_custom_scalar_value_impl.self_ty {
+        let mut self_ty = *parse_custom_scalar_value_impl.self_ty;
+
+        while let syn::Type::Group(type_group) = self_ty {
+            self_ty = *type_group.elem;
+        }
+
+        if let syn::Type::Path(type_path) = self_ty {
             if let Some(path_segment) = type_path.path.segments.first() {
                 impl_for_type = Some(path_segment.clone());
             }
