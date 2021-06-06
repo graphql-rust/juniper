@@ -1,3 +1,19 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error[E0277]: the trait bound `Test: GraphQLObjectType<__S>` is not satisfied
  --> $DIR/struct_non_object_variant.rs:9:10
   |
@@ -5,4 +21,4 @@ error[E0277]: the trait bound `Test: GraphQLObjectType<__S>` is not satisfied
   |          ^^^^^^^^^^^^ the trait `GraphQLObjectType<__S>` is not implemented for `Test`
   |
   = note: required by `juniper::marker::GraphQLObjectType::mark`
-  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the derive macro `GraphQLUnion` (in Nightly builds, run with -Z macro-backtrace for more info)

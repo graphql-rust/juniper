@@ -1,3 +1,19 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error[E0277]: the trait bound `Obj: IsInputType<__S>` is not satisfied
  --> $DIR/impl_argument_no_object.rs:8:1
   |
@@ -5,7 +21,7 @@ error[E0277]: the trait bound `Obj: IsInputType<__S>` is not satisfied
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `Obj`
   |
   = note: required by `juniper::marker::IsInputType::mark`
-  = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the attribute macro `juniper::graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `Obj: FromInputValue<__S>` is not satisfied
  --> $DIR/impl_argument_no_object.rs:8:1
@@ -13,7 +29,7 @@ error[E0277]: the trait bound `Obj: FromInputValue<__S>` is not satisfied
 8 | #[juniper::graphql_object]
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `Obj`
   |
-  = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the attribute macro `juniper::graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `Obj: FromInputValue` is not satisfied
    --> $DIR/impl_argument_no_object.rs:8:1
@@ -26,4 +42,4 @@ error[E0277]: the trait bound `Obj: FromInputValue` is not satisfied
     | pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     | ------------------------------------------------------- required by this bound in `FromInputValue`
     |
-    = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+    = note: this error originates in the attribute macro `juniper::graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,3 +1,19 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
   --> $DIR/argument_non_input_type.rs:16:1
    |
@@ -5,7 +21,7 @@ error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
    |
    = note: required by `juniper::marker::IsInputType::mark`
-   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> $DIR/argument_non_input_type.rs:16:1
@@ -13,4 +29,4 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
 16 | #[graphql_interface(for = ObjA)]
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
    |
-   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
