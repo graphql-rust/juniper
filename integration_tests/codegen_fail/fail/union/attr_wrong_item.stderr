@@ -1,7 +1,23 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error: #[graphql_union] attribute is applicable to trait definitions only
  --> $DIR/attr_wrong_item.rs:3:1
   |
 3 | #[graphql_union]
   | ^^^^^^^^^^^^^^^^
   |
-  = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the attribute macro `graphql_union` (in Nightly builds, run with -Z macro-backtrace for more info)

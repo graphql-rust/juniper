@@ -1,3 +1,19 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error[E0119]: conflicting implementations of trait `<(dyn Character + std::marker::Send + std::marker::Sync + '__obj) as juniper::GraphQLUnion<__S>>::mark::_::{closure#0}::MutuallyExclusive` for type `std::string::String`
  --> $DIR/trait_same_type_ugly.rs:3:1
   |
@@ -7,4 +23,4 @@ error[E0119]: conflicting implementations of trait `<(dyn Character + std::marke
   | first implementation here
   | conflicting implementation for `std::string::String`
   |
-  = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` (in Nightly builds, run with -Z macro-backtrace for more info)
