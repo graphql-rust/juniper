@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Allow `RootNode::as_schema_language` and `RootNode::as_parser_document` for arbitrary type info ([#935](https://github.com/graphql-rust/juniper/pull/935))
 
 # [[0.15.5] 2021-05-11](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.5)
 
