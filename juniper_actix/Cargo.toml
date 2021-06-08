@@ -1,6 +1,6 @@
 [package]
 name = "juniper_actix"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2018"
 authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
 description = "Juniper GraphQL integration with Actix"
