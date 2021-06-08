@@ -16,7 +16,7 @@ anyhow = "1.0"
 bytes = "0.5"
 futures = "0.3.1"
 juniper = { version = "0.15.6", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.2.4", path = "../juniper_graphql_ws", optional = true }
+juniper_graphql_ws = { version = "0.2.5", path = "../juniper_graphql_ws", optional = true }
 serde = { version = "1.0.75", features = ["derive"] }
 serde_json = "1.0.24"
 thiserror = "1.0"
