@@ -521,7 +521,7 @@ where
                 {
                     let sub_result = instance.resolve_into_type(
                         info,
-                        fragment.type_condition.item,
+                        &concrete_type_name,
                         Some(&fragment.selection_set[..]),
                         &sub_exec,
                     );
