@@ -1,6 +1,6 @@
 [package]
 name = "juniper_graphql_ws"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2018"
 authors = ["Christopher Brown <ccbrown112@gmail.com>"]
 license = "BSD-2-Clause"
@@ -10,8 +10,8 @@ repository = "https://github.com/graphql-rust/juniper"
 keywords = ["apollo", "graphql", "graphql-ws", "juniper"]
 
 [dependencies]
-juniper = { version = "0.15.5", path = "../juniper", default-features = false }
-juniper_subscriptions = { version = "0.15.4", path = "../juniper_subscriptions" }
+juniper = { version = "0.15.6", path = "../juniper", default-features = false }
+juniper_subscriptions = { version = "0.15.5", path = "../juniper_subscriptions" }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 tokio = { version = "0.2", features = ["macros", "rt-core", "time"], default-features = false }
 

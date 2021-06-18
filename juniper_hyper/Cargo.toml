@@ -1,6 +1,6 @@
 [package]
 name = "juniper_hyper"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2018"
 authors = ["Damir Vandic <info@dvic.io>"]
 description = "Juniper GraphQL integration with Hyper"
@@ -10,14 +10,14 @@ repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
 futures = "0.3.1"
-juniper = { version = "0.15.5", path = "../juniper", default-features = false }
+juniper = { version = "0.15.6", path = "../juniper", default-features = false }
 hyper = "0.13"
 serde_json = "1.0"
 tokio = "0.2"
 url = "2"
 
 [dev-dependencies]
-juniper = { version = "0.15.5", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.15.6", path = "../juniper", features = ["expose-test-schema"] }
 pretty_env_logger = "0.4"
 reqwest = { version = "0.11", features = ["blocking", "rustls-tls"] }
 tokio = { version = "0.2", features = ["macros"] }

@@ -2,6 +2,15 @@
 
 - Compatibility with the latest `juniper`.
 
+# [[0.7.1] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.7.1)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.0] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.7.0)
+
+- Minimum `rocket` version is now `0.4.9`. Note this also bumps the [minimum required `rustc` version](https://github.com/SergioBenitez/Rocket/blob/v0.4/CHANGELOG.md#version-048-may-18-2021).
+- Compatibility with the latest `juniper`.
+
 # [[0.6.3] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.6.3)
 
 - Compatibility with the latest `juniper`.

@@ -25,4 +25,6 @@ mod issue_922;
 #[cfg(test)]
 mod issue_925;
 #[cfg(test)]
+mod issue_945;
+#[cfg(test)]
 mod pre_parse;

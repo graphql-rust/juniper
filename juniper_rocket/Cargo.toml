@@ -1,6 +1,6 @@
 [package]
 name = "juniper_rocket"
-version = "0.6.3"
+version = "0.7.1"
 edition = "2018"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
@@ -12,9 +12,9 @@ documentation = "https://docs.rs/juniper_rocket"
 repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
-juniper = { version = "0.15.5", path = "../juniper", default-features = false}
-rocket = { version = "0.4.2", default-features = false }
+juniper = { version = "0.15.6", path = "../juniper", default-features = false}
+rocket = { version = "0.4.9", default-features = false }
 serde_json = "1.0.2"
 
 [dev-dependencies]
-juniper = { version = "0.15.5", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.15.6", path = "../juniper", features = ["expose-test-schema"] }

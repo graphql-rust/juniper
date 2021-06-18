@@ -1,6 +1,6 @@
 [package]
 name = "juniper_warp"
-version = "0.6.3"
+version = "0.6.4"
 edition = "2018"
 authors = ["Tom Houlé <tom@tomhoule.com>"]
 description = "Juniper GraphQL integration with Warp"
@@ -15,8 +15,8 @@ subscriptions = ["juniper_graphql_ws"]
 anyhow = "1.0"
 bytes = "0.5"
 futures = "0.3.1"
-juniper = { version = "0.15.5", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.2.4", path = "../juniper_graphql_ws", optional = true }
+juniper = { version = "0.15.6", path = "../juniper", default-features = false }
+juniper_graphql_ws = { version = "0.2.5", path = "../juniper_graphql_ws", optional = true }
 serde = { version = "1.0.75", features = ["derive"] }
 serde_json = "1.0.24"
 thiserror = "1.0"
@@ -25,7 +25,7 @@ warp = "0.2"
 
 [dev-dependencies]
 env_logger = "0.8"
-juniper = { version = "0.15.5", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.15.6", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 percent-encoding = "2.1"
 tokio = { version = "0.2", features = ["blocking", "macros", "rt-core"] }
