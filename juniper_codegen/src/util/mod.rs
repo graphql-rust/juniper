@@ -1399,7 +1399,7 @@ impl GraphQLTypeDefiniton {
                     executor: &'ref_e ::juniper::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
                         dyn ::juniper::futures::future::Future<
-                            Output = Result<
+                            Output = std::result::Result<
                                 ::juniper::Value<::juniper::ValuesStream<'res, #scalar>>,
                                 ::juniper::FieldError<#scalar>
                             >

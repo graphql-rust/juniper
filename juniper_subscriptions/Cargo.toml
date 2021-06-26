@@ -1,6 +1,6 @@
 [package]
 name = "juniper_subscriptions"
-version = "0.15.4"
+version = "0.15.5"
 edition = "2018"
 authors = ["nWacky <gosha.evtushenko@gmail.com>"]
 description = "Juniper SubscriptionCoordinator and SubscriptionConnection implementations"
@@ -10,7 +10,7 @@ repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
 futures = "0.3.1"
-juniper = { version = "0.15.5", path = "../juniper", default-features = false }
+juniper = { version = "0.15.6", path = "../juniper", default-features = false }
 
 [dev-dependencies]
 serde_json = "1.0"

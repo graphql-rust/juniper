@@ -118,22 +118,6 @@ where
     ) -> Self {
         RootNode::new_with_info(query, mutation, subscription, (), (), ())
     }
-
-    #[cfg(feature = "schema-language")]
-    /// The schema definition as a `String` in the
-    /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
-    /// format.
-    pub fn as_schema_language(&self) -> String {
-        let doc = self.as_parser_document();
-        format!("{}", doc)
-    }
-
-    #[cfg(feature = "graphql-parser-integration")]
-    /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
-    /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
-    pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
-        GraphQLParserTranslator::translate_schema(&self.schema)
-    }
 }
 
 impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
@@ -167,6 +151,22 @@ where
             mutation_info,
             subscription_info,
         }
+    }
+
+    #[cfg(feature = "schema-language")]
+    /// The schema definition as a `String` in the
+    /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
+    /// format.
+    pub fn as_schema_language(&self) -> String {
+        let doc = self.as_parser_document();
+        format!("{}", doc)
+    }
+
+    #[cfg(feature = "graphql-parser-integration")]
+    /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
+    /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
+    pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
+        GraphQLParserTranslator::translate_schema(&self.schema)
     }
 }
 

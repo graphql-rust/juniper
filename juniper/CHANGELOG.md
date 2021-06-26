@@ -1,6 +1,10 @@
 # master
 
-- No changes yet
+- Fix panic on spreading untyped union fragments ([#945](https://github.com/graphql-rust/juniper/issues/945))
+
+# [[0.15.6] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.6)
+
+- Allow `RootNode::as_schema_language` and `RootNode::as_parser_document` for arbitrary type info ([#935](https://github.com/graphql-rust/juniper/pull/935))
 
 # [[0.15.5] 2021-05-11](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.5)
 
