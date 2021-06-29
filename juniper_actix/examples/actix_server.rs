@@ -6,6 +6,7 @@ use actix_cors::Cors;
 use actix_web::{http::header, middleware, web, App, Error, HttpResponse, HttpServer};
 use juniper::{graphql_object, EmptyMutation, EmptySubscription, GraphQLObject, RootNode};
 use juniper_actix::{graphiql_handler, graphql_handler, playground_handler};
+
 #[derive(Clone, GraphQLObject)]
 ///a user
 pub struct User {

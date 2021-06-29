@@ -312,8 +312,9 @@ impl Error for GraphQLRequestError {
 #[cfg(test)]
 mod tests {
     use hyper::{
+        server::Server,
         service::{make_service_fn, service_fn},
-        Body, Method, Response, Server, StatusCode,
+        Body, Method, Response, StatusCode,
     };
     use juniper::{
         http::tests as http_tests,
@@ -421,7 +422,7 @@ mod tests {
         });
 
         let (shutdown_fut, shutdown) = futures::future::abortable(async {
-            tokio::time::delay_for(Duration::from_secs(60)).await;
+            tokio::time::sleep(Duration::from_secs(60)).await;
         });
 
         let server = Server::bind(&addr)
