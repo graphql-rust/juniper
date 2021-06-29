@@ -12,14 +12,11 @@ repository = "https://github.com/graphql-rust/juniper"
 subscriptions = ["juniper_graphql_ws"]
 
 [dependencies]
-actix = "0.11"
-# actix-web had some problems in beta release see https://github.com/actix/actix-web/issues/2173#issuecomment-822758353
-# and we need these version specification to handle this issue temporarily while the stable release is not available
-# to understand these dependecy version specification see https://github.com/actix/actix-web/issues/2185 or https://github.com/LukeMathWalker/zero-to-production/issues/96 
-actix-http = "=3.0.0-beta.5"
-actix-service = "=2.0.0-beta.5"
-actix-web = "=4.0.0-beta.5"
-actix-web-actors = "4.0.0-beta.4"
+actix = "0.12"
+actix-http = "3.0.0-beta.8"
+http = "0.2.4"
+actix-web = "4.0.0-beta.8"
+actix-web-actors = "4.0.0-beta.6"
 
 juniper = { version = "0.15.6", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.2.5", path = "../juniper_graphql_ws", optional = true }
@@ -32,11 +29,11 @@ thiserror = "1.0"
 
 [dev-dependencies]
 actix-rt = "2"
-actix-cors = "0.6.0-beta.1"
-actix-identity = "0.4.0-beta.1"
+actix-cors = {git = "https://github.com/actix/actix-extras"}
+actix-identity = {git = "https://github.com/actix/actix-extras"}
 tokio = "1"
 async-stream = "0.3"
-actix-test = "0.1.0-beta.1"
+actix-test = "0.1.0-beta.3"
 
 juniper = { version = "0.15.6", path = "../juniper", features = ["expose-test-schema"] }
 

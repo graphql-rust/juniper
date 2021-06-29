@@ -1,7 +1,12 @@
 use std::{env, pin::Pin, time::Duration};
 
 use actix_cors::Cors;
-use actix_web::{http::header, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{
+    http::header,
+    middleware,
+    web::{self, Data},
+    App, Error, HttpRequest, HttpResponse, HttpServer,
+};
 
 use juniper::{
     graphql_object, graphql_subscription,
@@ -114,18 +119,18 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .data(schema())
-            .wrap(middleware::Compress::default())
-            .wrap(middleware::Logger::default())
+            .app_data(Data::new(schema()))
             .wrap(
                 Cors::default()
-                    .allowed_origin("http://127.0.0.1:8080")
+                    .allow_any_origin()
                     .allowed_methods(vec!["POST", "GET"])
                     .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
                     .allowed_header(header::CONTENT_TYPE)
                     .supports_credentials()
                     .max_age(3600),
             )
+            .wrap(middleware::Compress::default())
+            .wrap(middleware::Logger::default())
             .service(web::resource("/subscriptions").route(web::get().to(subscriptions)))
             .service(
                 web::resource("/graphql")
