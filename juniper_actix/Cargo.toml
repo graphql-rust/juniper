@@ -17,7 +17,7 @@ actix = "0.11"
 # and we need these version specification to handle this issue temporarily while the stable release is not available
 # to understand these dependecy version specification see https://github.com/actix/actix-web/issues/2185 or https://github.com/LukeMathWalker/zero-to-production/issues/96 
 actix-http = "=3.0.0-beta.5"
-actix-service = "=2.0.0-beta.5"
+actix-service = "=2.0.0"
 actix-web = "=4.0.0-beta.5"
 actix-web-actors = "4.0.0-beta.4"
 
