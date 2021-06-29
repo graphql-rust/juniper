@@ -1,7 +1,7 @@
 use std::{env, pin::Pin, time::Duration};
 
 use actix_cors::Cors;
-use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{http::header, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 
 use juniper::{
     graphql_object, graphql_subscription,
@@ -64,27 +64,29 @@ impl Subscription {
 
         use rand::{rngs::StdRng, Rng, SeedableRng};
         let mut rng = StdRng::from_entropy();
-
-        let stream = tokio::time::interval(Duration::from_secs(3)).map(move |_| {
+        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        let stream = async_stream::stream! {
             counter += 1;
+            loop {
+                interval.tick().await;
+                if counter == 2 {
+                    yield Err(FieldError::new(
+                        "some field error from handler",
+                        Value::Scalar(DefaultScalarValue::String(
+                            "some additional string".to_string(),
+                        )),
+                    ))
+                } else {
+                    let random_id = rng.gen_range(1000..1005).to_string();
+                    let human = context.get_human(&random_id).unwrap().clone();
 
-            if counter == 2 {
-                Err(FieldError::new(
-                    "some field error from handler",
-                    Value::Scalar(DefaultScalarValue::String(
-                        "some additional string".to_string(),
-                    )),
-                ))
-            } else {
-                let random_id = rng.gen_range(1000, 1005).to_string();
-                let human = context.get_human(&random_id).unwrap().clone();
-
-                Ok(RandomHuman {
-                    id: human.id().to_owned(),
-                    name: human.name().unwrap().to_owned(),
-                })
+                    yield Ok(RandomHuman {
+                        id: human.id().to_owned(),
+                        name: human.name().unwrap().to_owned(),
+                    })
+                }
             }
-        });
+        };
 
         Box::pin(stream)
     }
@@ -117,7 +119,10 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(
                 Cors::default()
+                    .allowed_origin("http://127.0.0.1:8080")
                     .allowed_methods(vec!["POST", "GET"])
+                    .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+                    .allowed_header(header::CONTENT_TYPE)
                     .supports_credentials()
                     .max_age(3600),
             )
@@ -130,7 +135,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/playground").route(web::get().to(playground)))
             .default_service(web::route().to(|| {
                 HttpResponse::Found()
-                    .header("location", "/playground")
+                    .append_header((header::LOCATION, "/playground"))
                     .finish()
             }))
     })

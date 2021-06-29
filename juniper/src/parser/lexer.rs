@@ -297,7 +297,7 @@ impl<'a> Lexer<'a> {
         }
 
         // Make sure we are on a valid char boundary.
-        let escape = &self
+        let escape = self
             .source
             .get(start_idx..=end_idx)
             .ok_or_else(|| Spanning::zero_width(&self.position, LexerError::UnterminatedString))?;

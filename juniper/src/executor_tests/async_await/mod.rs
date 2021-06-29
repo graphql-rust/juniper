@@ -39,7 +39,7 @@ impl User {
     }
 
     async fn delayed() -> bool {
-        tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         true
     }
 }
@@ -65,7 +65,7 @@ impl Query {
     }
 
     async fn delayed() -> bool {
-        tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         true
     }
 }

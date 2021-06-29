@@ -497,7 +497,9 @@ where
                 }
             }
             Selection::FragmentSpread(Spanning {
-                item: ref spread, ..
+                item: ref spread,
+                start: ref start_pos,
+                ..
             }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
@@ -507,14 +509,30 @@ where
                     .fragment_by_name(spread.name.item)
                     .expect("Fragment could not be found");
 
-                if !resolve_selection_set_into(
-                    instance,
-                    info,
-                    &fragment.selection_set[..],
-                    executor,
-                    result,
-                ) {
-                    return false;
+                let sub_exec = executor.type_sub_executor(
+                    Some(fragment.type_condition.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+                let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
+                let type_name = instance.type_name(info);
+                if fragment.type_condition.item == concrete_type_name
+                    || Some(fragment.type_condition.item) == type_name
+                {
+                    let sub_result = instance.resolve_into_type(
+                        info,
+                        &concrete_type_name,
+                        Some(&fragment.selection_set[..]),
+                        &sub_exec,
+                    );
+
+                    if let Ok(Value::Object(object)) = sub_result {
+                        for (k, v) in object {
+                            merge_key_into(result, &k, v);
+                        }
+                    } else if let Err(e) = sub_result {
+                        sub_exec.push_error_at(e, *start_pos);
+                    }
                 }
             }
             Selection::InlineFragment(Spanning {
@@ -599,5 +617,41 @@ where
 
 /// Merges `response_name`/`value` pair into `result`
 pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
+    if let Some(v) = result.get_mut_field_value(response_name) {
+        match v {
+            Value::Object(dest_obj) => {
+                if let Value::Object(src_obj) = value {
+                    merge_maps(dest_obj, src_obj);
+                }
+            }
+            Value::List(dest_list) => {
+                if let Value::List(src_list) = value {
+                    dest_list
+                        .iter_mut()
+                        .zip(src_list.into_iter())
+                        .for_each(|(d, s)| {
+                            if let Value::Object(d_obj) = d {
+                                if let Value::Object(s_obj) = s {
+                                    merge_maps(d_obj, s_obj);
+                                }
+                            }
+                        });
+                }
+            }
+            _ => {}
+        }
+        return;
+    }
     result.add_field(response_name, value);
+}
+
+/// Merges `src` object's fields into `dest`
+fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
+    for (key, value) in src {
+        if dest.contains_field(&key) {
+            merge_key_into(dest, &key, value);
+        } else {
+            dest.add_field(key, value);
+        }
+    }
 }

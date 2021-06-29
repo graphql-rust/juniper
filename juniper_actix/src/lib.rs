@@ -73,10 +73,7 @@ where
             operation_name,
             variables,
         } = get_req;
-        let variables = match variables {
-            Some(variables) => Some(serde_json::from_str(&variables).unwrap()),
-            None => None,
-        };
+        let variables = variables.map(|s| serde_json::from_str(&s).unwrap());
         Self::new(query, operation_name, variables)
     }
 }
@@ -218,7 +215,10 @@ pub async fn playground_handler(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use std::{fmt, sync::Arc};
+    use std::{
+        fmt,
+        sync::{Arc, Mutex},
+    };
 
     use actix::{prelude::*, Actor, StreamHandler};
     use actix_web::{
@@ -226,8 +226,6 @@ pub mod subscriptions {
         web, HttpRequest, HttpResponse,
     };
     use actix_web_actors::ws;
-
-    use tokio::sync::Mutex;
 
     use juniper::{
         futures::{
@@ -331,7 +329,7 @@ pub mod subscriptions {
                     let tx = self.graphql_tx.clone();
 
                     async move {
-                        let mut tx = tx.lock().await;
+                        let mut tx = tx.lock().unwrap();
                         tx.send(msg)
                             .await
                             .expect("Infallible: this should not happen");
@@ -368,7 +366,7 @@ pub mod subscriptions {
             let addr = ctx.address();
 
             let fut = async move {
-                let mut stream = stream.lock().await;
+                let mut stream = stream.lock().unwrap();
                 while let Some(message) = stream.next().await {
                     // sending the message to self so that it can be forwarded back to the client
                     addr.do_send(ServerMessageWrapper { message });
@@ -386,7 +384,7 @@ pub mod subscriptions {
     }
 
     /// actor -> websocket response
-    impl<Query, Mutation, Subscription, CtxT, S, I> Handler<ServerMessageWrapper<S>>
+    impl<Query, Mutation, Subscription, CtxT, S, I> actix::prelude::Handler<ServerMessageWrapper<S>>
         for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
     where
         Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
@@ -404,14 +402,11 @@ pub mod subscriptions {
         fn handle(
             &mut self,
             msg: ServerMessageWrapper<S>,
-            ctx: &mut ws::WebsocketContext<Self>,
+            ctx: &mut Self::Context,
         ) -> Self::Result {
             let msg = serde_json::to_string(&msg.message);
-
             match msg {
-                Ok(msg) => {
-                    ctx.text(msg);
-                }
+                Ok(msg) => ctx.text(msg),
                 Err(e) => {
                     let reason = ws::CloseReason {
                         code: ws::CloseCode::Error,
@@ -419,12 +414,12 @@ pub mod subscriptions {
                     };
 
                     // TODO: trace
-                    ctx.close(Some(reason));
+                    ctx.close(Some(reason))
                 }
-            }
+            };
+            ()
         }
     }
-
     #[derive(Message)]
     #[rtype(result = "()")]
     struct ServerMessageWrapper<S>
@@ -486,6 +481,7 @@ mod tests {
     };
 
     use super::*;
+    use actix_web::http::header::ACCEPT;
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -526,7 +522,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let resp = test::call_service(&mut app, req).await;
@@ -542,7 +538,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let mut resp = test::call_service(&mut app, req).await;
@@ -567,7 +563,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let resp = test::call_service(&mut app, req).await;
@@ -583,7 +579,7 @@ mod tests {
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = test::TestRequest::get()
             .uri("/")
-            .header("accept", "text/html")
+            .append_header((ACCEPT, "text/html"))
             .to_request();
 
         let mut resp = test::call_service(&mut app, req).await;
@@ -605,7 +601,7 @@ mod tests {
         );
 
         let req = test::TestRequest::post()
-            .header("content-type", "application/json; charset=utf-8")
+            .append_header(("content-type", "application/json; charset=utf-8"))
             .set_payload(
                 r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##,
             )
@@ -637,7 +633,7 @@ mod tests {
         );
 
         let req = test::TestRequest::get()
-            .header("content-type", "application/json")
+            .append_header(("content-type", "application/json"))
             .uri("/?query=%7B%20hero%28episode%3A%20NEW_HOPE%29%20%7B%20name%20%7D%20%7D&variables=null")
             .to_request();
 
@@ -671,7 +667,7 @@ mod tests {
         );
 
         let req = test::TestRequest::post()
-            .header("content-type", "application/json")
+            .append_header(("content-type", "application/json"))
             .set_payload(
                 r##"[
                      { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
@@ -709,7 +705,7 @@ mod tests {
 
     impl TestActixWebIntegration {
         fn make_request(&self, req: test::TestRequest) -> TestResponse {
-            actix_web::rt::System::new("request").block_on(async move {
+            actix_web::rt::System::new().block_on(async move {
                 let schema = Schema::new(
                     Query,
                     EmptyMutation::<Database>::new(),
@@ -733,7 +729,7 @@ mod tests {
         fn post_json(&self, url: &str, body: &str) -> TestResponse {
             self.make_request(
                 test::TestRequest::post()
-                    .header("content-type", "application/json")
+                    .append_header(("content-type", "application/json"))
                     .set_payload(body.to_string())
                     .uri(url),
             )
@@ -742,7 +738,7 @@ mod tests {
         fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
             self.make_request(
                 test::TestRequest::post()
-                    .header("content-type", "application/graphql")
+                    .append_header(("content-type", "application/graphql"))
                     .set_payload(body.to_string())
                     .uri(url),
             )
@@ -771,7 +767,8 @@ mod tests {
 mod subscription_tests {
     use std::time::Duration;
 
-    use actix_web::{test, web, App, Error, HttpRequest, HttpResponse};
+    use actix_test::start;
+    use actix_web::{web, App, Error, HttpRequest, HttpResponse};
     use actix_web_actors::ws;
     use juniper::{
         futures::{SinkExt, StreamExt},
@@ -792,7 +789,7 @@ mod subscription_tests {
             &self,
             messages: Vec<WsIntegrationMessage>,
         ) -> Result<(), anyhow::Error> {
-            let mut server = test::start(|| {
+            let mut server = start(|| {
                 App::new()
                     .data(Schema::new(
                         Query,
@@ -807,7 +804,7 @@ mod subscription_tests {
                 match message {
                     WsIntegrationMessage::Send(body) => {
                         framed
-                            .send(ws::Message::Text(body.to_owned()))
+                            .send(ws::Message::Text(body.to_owned().into()))
                             .await
                             .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
                     }

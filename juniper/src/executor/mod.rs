@@ -1,3 +1,5 @@
+//! Resolve the document to values
+
 use std::{
     borrow::Cow,
     cmp::Ordering,
@@ -54,6 +56,7 @@ pub struct Registry<'r, S = DefaultScalarValue> {
     pub types: FnvHashMap<Name, MetaType<'r, S>>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone)]
 pub enum FieldPath<'a> {
     Root(SourcePosition),
@@ -323,6 +326,7 @@ where
 {
     type Type = T;
 
+    #[allow(clippy::type_complexity)]
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
     }
@@ -350,6 +354,7 @@ where
 {
     type Type = T;
 
+    #[allow(clippy::type_complexity)]
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
             .map_err(FieldError::map_scalar_value)
@@ -979,6 +984,7 @@ where
     Ok((value, errors))
 }
 
+#[doc(hidden)]
 pub fn get_operation<'b, 'd, 'e, S>(
     document: &'b Document<'d, S>,
     operation_name: Option<&str>,
@@ -1158,7 +1164,7 @@ where
         T: GraphQLType<S> + ?Sized,
     {
         Field {
-            name: name.to_owned(),
+            name: smartstring::SmartString::from(name),
             description: None,
             arguments: None,
             field_type: self.get_type::<T>(info),
@@ -1176,7 +1182,7 @@ where
         I: GraphQLType<S>,
     {
         Field {
-            name: name.to_owned(),
+            name: smartstring::SmartString::from(name),
             description: None,
             arguments: None,
             field_type: self.get_type::<I>(info),

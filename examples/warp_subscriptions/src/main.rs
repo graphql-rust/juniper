@@ -109,23 +109,27 @@ struct Subscription;
 impl Subscription {
     async fn users() -> UsersStream {
         let mut counter = 0;
-        let stream = tokio::time::interval(Duration::from_secs(5)).map(move |_| {
+        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        let stream = async_stream::stream! {
             counter += 1;
-            if counter == 2 {
-                Err(FieldError::new(
-                    "some field error from handler",
-                    Value::Scalar(DefaultScalarValue::String(
-                        "some additional string".to_string(),
-                    )),
-                ))
-            } else {
-                Ok(User {
-                    id: counter,
-                    kind: UserKind::Admin,
-                    name: "stream user".to_string(),
-                })
+            loop {
+                interval.tick().await;
+                if counter == 2 {
+                    yield Err(FieldError::new(
+                        "some field error from handler",
+                        Value::Scalar(DefaultScalarValue::String(
+                            "some additional string".to_string(),
+                        )),
+                    ))
+                } else {
+                    yield Ok(User {
+                        id: counter,
+                        kind: UserKind::Admin,
+                        name: "stream user".to_string(),
+                    })
+                }
             }
-        });
+        };
 
         Box::pin(stream)
     }

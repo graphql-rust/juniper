@@ -21,7 +21,7 @@ impl<T: ToTokens> ToTokens for SpanContainer<T> {
 
 impl<T> SpanContainer<T> {
     pub fn new(ident: Span, expr: Option<Span>, val: T) -> Self {
-        Self { ident, expr, val }
+        Self { expr, ident, val }
     }
 
     pub fn span_ident(&self) -> Span {

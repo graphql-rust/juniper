@@ -1,6 +1,6 @@
 [package]
 name = "juniper_actix"
-version = "0.2.3"
+version = "0.3.0"
 edition = "2018"
 authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
 description = "Juniper GraphQL integration with Actix"
@@ -12,27 +12,34 @@ repository = "https://github.com/graphql-rust/juniper"
 subscriptions = ["juniper_graphql_ws"]
 
 [dependencies]
-actix = "0.10"
-actix-web = "3.3"
-actix-web-actors = "3.0"
+actix = "0.11"
+# actix-web had some problems in beta release see https://github.com/actix/actix-web/issues/2173#issuecomment-822758353
+# and we need these version specification to handle this issue temporarily while the stable release is not available
+# to understand these dependecy version specification see https://github.com/actix/actix-web/issues/2185 or https://github.com/LukeMathWalker/zero-to-production/issues/96 
+actix-http = "=3.0.0-beta.5"
+actix-service = "=2.0.0-beta.5"
+actix-web = "=4.0.0-beta.5"
+actix-web-actors = "4.0.0-beta.4"
 
-juniper = { version = "0.15.3", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.2.3", path = "../juniper_graphql_ws", optional = true }
+juniper = { version = "0.15.6", path = "../juniper", default-features = false }
+juniper_graphql_ws = { version = "0.2.5", path = "../juniper_graphql_ws", optional = true }
 
 anyhow = "1.0"
-futures = "0.3.5"
-serde = { version = "1.0.116", features = ["derive"] }
-serde_json = "1.0.57"
+futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 thiserror = "1.0"
-tokio = { version = "0.2", features = ["time"] }
 
 [dev-dependencies]
-actix-rt = "1.1"
-actix-cors = "0.5"
-actix-identity = "0.3"
+actix-rt = "2"
+actix-cors = "0.6.0-beta.1"
+actix-identity = "0.4.0-beta.1"
+tokio = "1"
+async-stream = "0.3"
+actix-test = "0.1.0-beta.1"
 
-juniper = { version = "0.15.3", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.15.6", path = "../juniper", features = ["expose-test-schema"] }
 
-bytes = "0.6"
+bytes = "1.0"
 env_logger = "0.8"
 log = "0.4"

@@ -318,8 +318,8 @@ impl<'a, S> Field<'a, S>
 where
     S: crate::ScalarValue + 'a,
 {
-    fn name(&self) -> &String {
-        &self.name
+    fn name(&self) -> String {
+        self.name.clone().into()
     }
 
     fn description(&self) -> &Option<String> {

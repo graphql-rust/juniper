@@ -1,20 +1,12 @@
-use std::iter::FromIterator;
+use std::{iter::FromIterator, mem};
 
 use super::Value;
 use indexmap::map::{IndexMap, IntoIter};
 
 /// A Object value
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Object<S> {
     key_value_list: IndexMap<String, Value<S>>,
-}
-
-impl<S: PartialEq> PartialEq for Object<S> {
-    fn eq(&self, _: &Object<S>) -> bool {
-        match self {
-            Object { key_value_list } => self.key_value_list == *key_value_list,
-        }
-    }
 }
 
 impl<S> Object<S> {
@@ -28,23 +20,25 @@ impl<S> Object<S> {
 
     /// Add a new field with a value
     ///
-    /// If there is already a field with the same name the old value
-    /// is returned
+    /// If there is already a field for the given key
+    /// any both values are objects, they are merged.
+    ///
+    /// Otherwise the existing value is replaced and
+    /// returned.
     pub fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
     where
-        K: Into<String>,
-        for<'a> &'a str: PartialEq<K>,
+        K: AsRef<str> + Into<String>,
     {
-        self.key_value_list.insert(k.into(), value)
+        if let Some(v) = self.key_value_list.get_mut(k.as_ref()) {
+            Some(mem::replace(v, value))
+        } else {
+            self.key_value_list.insert(k.into(), value)
+        }
     }
 
     /// Check if the object already contains a field with the given name
-    pub fn contains_field<K>(&self, f: K) -> bool
-    where
-        K: Into<String>,
-        for<'a> &'a str: PartialEq<K>,
-    {
-        self.key_value_list.contains_key(&f.into())
+    pub fn contains_field<K: AsRef<str>>(&self, k: K) -> bool {
+        self.key_value_list.contains_key(k.as_ref())
     }
 
     /// Get a iterator over all field value pairs
@@ -63,12 +57,13 @@ impl<S> Object<S> {
     }
 
     /// Get the value for a given field
-    pub fn get_field_value<K>(&self, key: K) -> Option<&Value<S>>
-    where
-        K: Into<String>,
-        for<'a> &'a str: PartialEq<K>,
-    {
-        self.key_value_list.get(&key.into())
+    pub fn get_field_value<K: AsRef<str>>(&self, key: K) -> Option<&Value<S>> {
+        self.key_value_list.get(key.as_ref())
+    }
+
+    /// Get the mutable value for a given field
+    pub fn get_mut_field_value<K: AsRef<str>>(&mut self, key: K) -> Option<&mut Value<S>> {
+        self.key_value_list.get_mut(key.as_ref())
     }
 }
 
@@ -89,8 +84,7 @@ impl<S> From<Object<S>> for Value<S> {
 
 impl<K, S> FromIterator<(K, Value<S>)> for Object<S>
 where
-    K: Into<String>,
-    for<'a> &'a str: PartialEq<K>,
+    K: AsRef<str> + Into<String>,
 {
     fn from_iter<I>(iter: I) -> Self
     where
