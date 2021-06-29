@@ -181,7 +181,7 @@ type StringStream = Pin&lt;Box&lt;dyn Stream&lt;Item = Result&lt;String, FieldEr
 #[graphql_subscription(context = Database)]
 impl Subscription {
     async fn hello_world() -&gt; StringStream {
-        let stream = tokio::stream::iter(vec![
+        let stream = futures::stream::iter(vec![
             Ok(String::from(&quot;Hello&quot;)),
             Ok(String::from(&quot;World!&quot;))
         ]);
@@ -244,7 +244,7 @@ where [<code>Connection</code>][Connection] is a <code>Stream</code> of values r
 # impl Subscription {
 #     async fn hello_world() -&gt; StringStream {
 #         let stream =
-#             tokio::stream::iter(vec![Ok(String::from(&quot;Hello&quot;)), Ok(String::from(&quot;World!&quot;))]);
+#             futures::stream::iter(vec![Ok(String::from(&quot;Hello&quot;)), Ok(String::from(&quot;World!&quot;))]);
 #         Box::pin(stream)
 #     }
 # }
