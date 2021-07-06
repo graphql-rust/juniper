@@ -1,5 +1,6 @@
 # master
 
+- Require async rocket support (`rocket` >= 0.5-rc1).
 - Compatibility with the latest `juniper`.
 
 # [[0.7.1] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.7.1)
