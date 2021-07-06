@@ -214,7 +214,6 @@ impl<'f, S: ScalarValue> GraphQLContext<'f, S> {
 
             self.errors.push(error)
         } else {
-            println!("{}", value);
             self.query = Some(value);
         }
     }
