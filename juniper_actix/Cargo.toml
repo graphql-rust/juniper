@@ -29,8 +29,8 @@ thiserror = "1.0"
 
 [dev-dependencies]
 actix-rt = "2"
-actix-cors = {git = "https://github.com/actix/actix-extras"}
-actix-identity = {git = "https://github.com/actix/actix-extras"}
+actix-cors = "0.6.0-beta.2"
+actix-identity = "0.4.0-beta.2"
 tokio = "1"
 async-stream = "0.3"
 actix-test = "0.1.0-beta.3"

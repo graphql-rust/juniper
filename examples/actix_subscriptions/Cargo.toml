@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 actix-web = "4.0.0-beta.8"
-actix-cors = {git = "https://github.com/actix/actix-extras"}
+actix-cors = "0.6.0-beta.2"
 futures = "0.3"
 env_logger = "0.8"
 serde = "1.0"
