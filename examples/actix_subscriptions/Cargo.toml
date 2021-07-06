@@ -6,8 +6,8 @@ authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 publish = false
 
 [dependencies]
-actix-web = "4.0.0-beta.5"
-actix-cors = "0.6.0-beta.1"
+actix-web = "4.0.0-beta.8"
+actix-cors = {git = "https://github.com/actix/actix-extras"}
 futures = "0.3"
 env_logger = "0.8"
 serde = "1.0"

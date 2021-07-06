@@ -41,9 +41,8 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_actix/0.1.0")]
 
 use actix_web::{
-    error::{ErrorBadRequest, ErrorMethodNotAllowed, ErrorUnsupportedMediaType},
-    http::Method,
-    web, Error, FromRequest, HttpMessage, HttpRequest, HttpResponse,
+    error::JsonPayloadError, http::Method, web, Error, FromRequest, HttpMessage, HttpRequest,
+    HttpResponse,
 };
 use juniper::{
     http::{
@@ -98,9 +97,7 @@ where
     match *req.method() {
         Method::POST => post_graphql_handler(schema, context, req, payload).await,
         Method::GET => get_graphql_handler(schema, context, req).await,
-        _ => Err(ErrorMethodNotAllowed(
-            "GraphQL requests can only be sent with GET or POST",
-        )),
+        _ => Err(actix_web::error::UrlGenerationError::ResourceNotFound.into()),
     }
 }
 /// Actix GraphQL Handler for GET requests
@@ -152,7 +149,8 @@ where
     let req = match req.content_type() {
         "application/json" => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
-            serde_json::from_str::<GraphQLBatchRequest<S>>(&body).map_err(ErrorBadRequest)
+            serde_json::from_str::<GraphQLBatchRequest<S>>(&body)
+                .map_err(JsonPayloadError::Deserialize)
         }
         "application/graphql" => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
@@ -160,9 +158,7 @@ where
                 body, None, None,
             )))
         }
-        _ => Err(ErrorUnsupportedMediaType(
-            "GraphQL requests should have content type `application/json` or `application/graphql`",
-        )),
+        _ => Err(JsonPayloadError::ContentType),
     }?;
     let gql_batch_response = req.execute(schema, context).await;
     let gql_response = serde_json::to_string(&gql_batch_response)?;
@@ -472,9 +468,9 @@ pub mod subscriptions {
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, App};
+    use actix_http::body::AnyBody;
+    use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, web::Data, App};
     use juniper::{
-        futures::stream::StreamExt,
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription, RootNode,
@@ -487,14 +483,9 @@ mod tests {
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
     async fn take_response_body_string(resp: &mut ServiceResponse) -> String {
-        let (response_body, ..) = resp
-            .take_body()
-            .map(|body_out| body_out.unwrap().to_vec())
-            .into_future()
-            .await;
-        match response_body {
-            Some(response_body) => String::from_utf8(response_body).unwrap(),
-            None => String::from(""),
+        match resp.response().body() {
+            AnyBody::Bytes(body) => String::from_utf8(body.to_vec()).unwrap(),
+            _ => String::from(""),
         }
     }
 
@@ -608,11 +599,15 @@ mod tests {
             .uri("/")
             .to_request();
 
-        let mut app =
-            test::init_service(App::new().data(schema).route("/", web::post().to(index))).await;
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(schema))
+                .route("/", web::post().to(index)),
+        )
+        .await;
 
         let mut resp = test::call_service(&mut app, req).await;
-
+        dbg!(take_response_body_string(&mut resp).await);
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
             take_response_body_string(&mut resp).await,
@@ -637,8 +632,12 @@ mod tests {
             .uri("/?query=%7B%20hero%28episode%3A%20NEW_HOPE%29%20%7B%20name%20%7D%20%7D&variables=null")
             .to_request();
 
-        let mut app =
-            test::init_service(App::new().data(schema).route("/", web::get().to(index))).await;
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(schema))
+                .route("/", web::get().to(index)),
+        )
+        .await;
 
         let mut resp = test::call_service(&mut app, req).await;
 
@@ -677,8 +676,12 @@ mod tests {
             .uri("/")
             .to_request();
 
-        let mut app =
-            test::init_service(App::new().data(schema).route("/", web::post().to(index))).await;
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(schema))
+                .route("/", web::post().to(index)),
+        )
+        .await;
 
         let mut resp = test::call_service(&mut app, req).await;
 
@@ -712,8 +715,12 @@ mod tests {
                     EmptySubscription::<Database>::new(),
                 );
 
-                let mut app =
-                    test::init_service(App::new().data(schema).route("/", web::to(index))).await;
+                let mut app = test::init_service(
+                    App::new()
+                        .app_data(Data::new(schema))
+                        .route("/", web::to(index)),
+                )
+                .await;
 
                 let resp = test::call_service(&mut app, req.to_request()).await;
                 make_test_response(resp).await
@@ -768,7 +775,10 @@ mod subscription_tests {
     use std::time::Duration;
 
     use actix_test::start;
-    use actix_web::{web, App, Error, HttpRequest, HttpResponse};
+    use actix_web::{
+        web::{self, Data},
+        App, Error, HttpRequest, HttpResponse,
+    };
     use actix_web_actors::ws;
     use juniper::{
         futures::{SinkExt, StreamExt},
@@ -791,11 +801,11 @@ mod subscription_tests {
         ) -> Result<(), anyhow::Error> {
             let mut server = start(|| {
                 App::new()
-                    .data(Schema::new(
+                    .app_data(Data::new(Schema::new(
                         Query,
                         EmptyMutation::<Database>::new(),
                         Subscription,
-                    ))
+                    )))
                     .service(web::resource("/subscriptions").to(subscriptions))
             });
             let mut framed = server.ws_at("/subscriptions").await.unwrap();
