@@ -9,7 +9,7 @@
 
 #![deny(missing_docs)]
 #![deny(warnings)]
-#![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.15.5")]
+#![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.16.0")]
 
 use std::{
     iter::FromIterator,
