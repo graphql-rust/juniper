@@ -4,7 +4,7 @@
 //! You should not depend on juniper_codegen directly.
 //! You only need the `juniper` crate.
 
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.6")]
+#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.7")]
 #![recursion_limit = "1024"]
 
 mod result;
