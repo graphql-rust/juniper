@@ -1,6 +1,6 @@
 [package]
 name = "juniper_hyper"
-version = "0.7.1"
+version = "0.8.0"
 edition = "2018"
 authors = ["Damir Vandic <info@dvic.io>"]
 description = "Juniper GraphQL integration with Hyper"
