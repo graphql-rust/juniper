@@ -1,6 +1,6 @@
 [package]
 name = "juniper_graphql_ws"
-version = "0.2.5"
+version = "0.3.0"
 edition = "2018"
 authors = ["Christopher Brown <ccbrown112@gmail.com>"]
 license = "BSD-2-Clause"
