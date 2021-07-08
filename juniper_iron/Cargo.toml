@@ -1,6 +1,6 @@
 [package]
 name = "juniper_iron"
-version = "0.7.3"
+version = "0.7.4"
 edition = "2018"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
@@ -13,13 +13,13 @@ repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
 futures = "0.3.1"
-juniper = { version = "0.15.5", path = "../juniper" }
+juniper = { version = "0.15.6", path = "../juniper" }
 iron = ">= 0.5, < 0.7"
 serde_json = "1.0.2"
 urlencoded = ">= 0.5, < 0.7"
 
 [dev-dependencies]
-juniper = { version = "0.15.5", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.15.6", path = "../juniper", features = ["expose-test-schema"] }
 iron-test = "0.6"
 logger = "0.4"
 mount = "0.4"

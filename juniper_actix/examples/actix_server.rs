@@ -3,9 +3,15 @@
 use std::{collections::HashMap, env};
 
 use actix_cors::Cors;
-use actix_web::{http::header, middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{
+    http::header,
+    middleware,
+    web::{self, Data},
+    App, Error, HttpResponse, HttpServer,
+};
 use juniper::{graphql_object, EmptyMutation, EmptySubscription, GraphQLObject, RootNode};
 use juniper_actix::{graphiql_handler, graphql_handler, playground_handler};
+
 #[derive(Clone, GraphQLObject)]
 ///a user
 pub struct User {
@@ -106,18 +112,18 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new(move || {
         App::new()
-            .data(schema())
-            .wrap(middleware::Compress::default())
-            .wrap(middleware::Logger::default())
+            .app_data(Data::new(schema()))
             .wrap(
                 Cors::default()
-                    .allowed_origin("http://127.0.0.1:8080")
+                    .allow_any_origin()
                     .allowed_methods(vec!["POST", "GET"])
                     .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
                     .allowed_header(header::CONTENT_TYPE)
                     .supports_credentials()
                     .max_age(3600),
             )
+            .wrap(middleware::Compress::default())
+            .wrap(middleware::Logger::default())
             .service(
                 web::resource("/graphgl")
                     .route(web::post().to(graphql_route))

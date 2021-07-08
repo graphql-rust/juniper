@@ -1,6 +1,6 @@
 [package]
 name = "juniper_codegen"
-version = "0.15.5"
+version = "0.15.6"
 edition = "2018"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
@@ -26,4 +26,4 @@ syn = { version = "1.0.60", features = ["extra-traits", "full", "parsing"], defa
 [dev-dependencies]
 derive_more = "0.99.7"
 futures = "0.3"
-juniper = { version = "0.15.5", path = "../juniper" }
+juniper = { version = "0.15.6", path = "../juniper" }

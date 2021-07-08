@@ -1,11 +1,8 @@
-#![feature(decl_macro, proc_macro_hygiene)]
-
-use rocket::{response::content, State};
-
 use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
+use rocket::{response::content, Rocket, State};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
@@ -16,24 +13,25 @@ fn graphiql() -> content::Html<String> {
 
 #[rocket::get("/graphql?<request>")]
 fn get_graphql_handler(
-    context: State<Database>,
+    context: &State<Database>,
     request: juniper_rocket::GraphQLRequest,
-    schema: State<Schema>,
+    schema: &State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute_sync(&schema, &context)
+    request.execute_sync(&*schema, &*context)
 }
 
 #[rocket::post("/graphql", data = "<request>")]
 fn post_graphql_handler(
-    context: State<Database>,
+    context: &State<Database>,
     request: juniper_rocket::GraphQLRequest,
-    schema: State<Schema>,
+    schema: &State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute_sync(&schema, &context)
+    request.execute_sync(&*schema, &*context)
 }
 
-fn main() {
-    rocket::ignite()
+#[rocket::main]
+async fn main() {
+    Rocket::build()
         .manage(Database::new())
         .manage(Schema::new(
             Query,
@@ -44,5 +42,7 @@ fn main() {
             "/",
             rocket::routes![graphiql, get_graphql_handler, post_graphql_handler],
         )
-        .launch();
+        .launch()
+        .await
+        .expect("server to launch");
 }

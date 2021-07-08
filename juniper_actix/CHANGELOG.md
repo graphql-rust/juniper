@@ -1,5 +1,10 @@
 # master
 
+- Require `actix-web` >= `4.0.0-beta8`.
+- Compatibility with the latest `juniper`.
+
+# [[0.2.5] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.5)
+
 - Compatibility with the latest `juniper`.
 
 # [[0.2.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.4)

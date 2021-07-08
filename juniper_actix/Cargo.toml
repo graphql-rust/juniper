@@ -1,6 +1,6 @@
 [package]
 name = "juniper_actix"
-version = "0.2.4"
+version = "0.3.0"
 edition = "2018"
 authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
 description = "Juniper GraphQL integration with Actix"
@@ -12,27 +12,31 @@ repository = "https://github.com/graphql-rust/juniper"
 subscriptions = ["juniper_graphql_ws"]
 
 [dependencies]
-actix = "0.10"
-actix-web = "3.3"
-actix-web-actors = "3.0"
+actix = "0.12"
+actix-http = "3.0.0-beta.8"
+http = "0.2.4"
+actix-web = "4.0.0-beta.8"
+actix-web-actors = "4.0.0-beta.6"
 
-juniper = { version = "0.15.5", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.2.4", path = "../juniper_graphql_ws", optional = true }
+juniper = { version = "0.15.6", path = "../juniper", default-features = false }
+juniper_graphql_ws = { version = "0.2.5", path = "../juniper_graphql_ws", optional = true }
 
 anyhow = "1.0"
-futures = "0.3.5"
-serde = { version = "1.0.116", features = ["derive"] }
-serde_json = "1.0.57"
+futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 thiserror = "1.0"
-tokio = { version = "0.2", features = ["time"] }
 
 [dev-dependencies]
-actix-rt = "1.1"
-actix-cors = "0.5"
-actix-identity = "0.3"
+actix-rt = "2"
+actix-cors = "0.6.0-beta.2"
+actix-identity = "0.4.0-beta.2"
+tokio = "1"
+async-stream = "0.3"
+actix-test = "0.1.0-beta.3"
 
-juniper = { version = "0.15.5", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.15.6", path = "../juniper", features = ["expose-test-schema"] }
 
-bytes = "0.6"
+bytes = "1.0"
 env_logger = "0.8"
 log = "0.4"
