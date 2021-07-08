@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
+
 - Fix panic on spreading untyped union fragments ([#945](https://github.com/graphql-rust/juniper/issues/945))
 
 # [[0.15.6] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.6)
