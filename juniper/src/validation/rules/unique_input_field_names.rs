@@ -21,19 +21,11 @@ impl<'a, S> Visitor<'a, S> for UniqueInputFieldNames<'a>
 where
     S: ScalarValue,
 {
-    fn enter_object_value(
-        &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
-    ) {
+    fn enter_object_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedObject<'a, S>) {
         self.known_name_stack.push(HashMap::new());
     }
 
-    fn exit_object_value(
-        &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
-    ) {
+    fn exit_object_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedObject<'a, S>) {
         self.known_name_stack.pop();
     }
 
@@ -57,6 +49,8 @@ where
         }
     }
 }
+
+type SpannedObject<'a, S> = Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>;
 
 fn error_message(field_name: &str) -> String {
     format!("There can only be one input field named \"{}\"", field_name)

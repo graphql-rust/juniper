@@ -55,6 +55,10 @@ non-null types by default. A field of type `Vec<Episode>` will be converted into
 `[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
 `Option<Vec<Option<Episode>>>`.
 
+Juniper is agnostic to serialization format and network transport.
+
+Juniper supports both asynchronous and synchronous execution using `execute()` and `execute_sync()` respectively. Asynchronous execution is runtime agnostic.
+
 Juniper follows a [code-first approach][schema_approach] to defining GraphQL schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider [juniper-from-schema][] for generating code from a schema file.
 
 ## Integrations

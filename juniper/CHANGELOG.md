@@ -2,7 +2,21 @@
 
 - Fix fields on interfaces not being resolved when used with fragments ([#923](https://github.com/graphql-rust/juniper/pull/923))
 
-# [[0.15.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.4)
+# [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
+
+- Fix panic on spreading untyped union fragments ([#945](https://github.com/graphql-rust/juniper/issues/945))
+
+# [[0.15.6] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.6)
+
+- Allow `RootNode::as_schema_language` and `RootNode::as_parser_document` for arbitrary type info ([#935](https://github.com/graphql-rust/juniper/pull/935))
+
+# [[0.15.5] 2021-05-11](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.5)
+
+- Fix multiple fragments on sub types overriding each other ([#927](https://github.com/graphql-rust/juniper/pull/915))
+- Fix error extensions in subscriptions ([#927](https://github.com/graphql-rust/juniper/pull/927))
+- Fix fields on interfaces not being resolved when used with fragments ([#923](https://github.com/graphql-rust/juniper/pull/923))
+
+# [[0.15.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.4)
 
 - Un-deprecate select_child, has_child, and child_names methods ([#900](https://github.com/graphql-rust/juniper/pull/#900))
 
@@ -821,7 +835,7 @@ using the macros and not deriving `GraphQLType` directly.
 - Macro syntax stability has also been improved. All syntactical edge
   cases of the macros have gotten tests to verify their correctness.
 
-[0.8.0]: https://github.com/graphql-rust/juniper/compare/0.8.0...0.8.1
+[0.8.1]: https://github.com/graphql-rust/juniper/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/graphql-rust/juniper/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/graphql-rust/juniper/compare/0.6.3...0.7.0
 [0.6.3]: https://github.com/graphql-rust/juniper/compare/0.6.2...0.6.3

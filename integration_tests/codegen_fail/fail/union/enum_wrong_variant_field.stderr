@@ -1,3 +1,19 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error: GraphQL union enum allows only unnamed variants with a single field, e.g. `Some(T)`
  --> $DIR/enum_wrong_variant_field.rs:5:5
   |

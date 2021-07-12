@@ -48,7 +48,7 @@ DataLoader caching does not replace Redis, Memcache, or any other shared applica
 
 ```toml
 [dependencies]
-actix-identity = "0.2"
+actix-identity = "0.4.0-beta.2"
 actix-rt = "1.0"
 actix-web = {version = "2.0", features = []}
 juniper = { git = "https://github.com/graphql-rust/juniper" }

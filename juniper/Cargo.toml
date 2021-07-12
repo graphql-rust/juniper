@@ -1,6 +1,6 @@
 [package]
 name = "juniper"
-version = "0.15.4"
+version = "0.15.7"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -32,7 +32,7 @@ scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
 
 [dependencies]
-juniper_codegen = { version = "0.15.4", path = "../juniper_codegen"  }
+juniper_codegen = { version = "0.15.7", path = "../juniper_codegen"  }
 
 anyhow = { version = "1.0.32", optional = true, default-features = false }
 async-trait = "0.1.39"
@@ -55,7 +55,7 @@ uuid = { version = "0.8", default-features = false, optional = true }
 bencher = "0.1.2"
 pretty_assertions = "0.7.1"
 serde_json = "1.0.2"
-tokio = { version = "0.2", features = ["macros", "rt-core", "time"] }
+tokio = { version = "1", features = ["macros", "time", "rt-multi-thread"] }
 
 [[bench]]
 name = "bench"

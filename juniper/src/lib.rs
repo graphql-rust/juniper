@@ -90,7 +90,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [bson]: https://crates.io/crates/bson
 
 */
-#![doc(html_root_url = "https://docs.rs/juniper/0.15.4")]
+#![doc(html_root_url = "https://docs.rs/juniper/0.15.7")]
 #![warn(missing_docs)]
 
 // Required for using `juniper_codegen` macros inside this crate to resolve absolute `::juniper`
@@ -319,7 +319,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let document: crate::ast::Document<'a, S> =
+    let document: crate::ast::OwnedDocument<'a, S> =
         parse_document_source(document_source, &root_node.schema)?;
 
     {

@@ -16,7 +16,7 @@ iron = "0.5"
 mount = "0.4"
 skeptic = "0.13"
 serde_json = "1.0"
-tokio = { version = "0.2", features = ["blocking", "macros", "rt-core", "rt-util", "stream"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 uuid = "0.8"
 
 [build-dependencies]
