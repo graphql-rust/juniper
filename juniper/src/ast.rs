@@ -146,7 +146,9 @@ pub enum Definition<'a, S> {
 }
 
 #[doc(hidden)]
-pub type Document<'a, S> = Vec<Definition<'a, S>>;
+pub type Document<'a, S> = [Definition<'a, S>];
+#[doc(hidden)]
+pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
 /// Parse an unstructured input value into a Rust data type.
 ///
@@ -381,7 +383,7 @@ where
     ///
     /// This constructs a new IndexMap that contain references to the keys
     /// and values in `self`.
-    pub fn to_object_value<'a>(&'a self) -> Option<IndexMap<&'a str, &'a Self>> {
+    pub fn to_object_value(&self) -> Option<IndexMap<&str, &Self>> {
         match *self {
             InputValue::Object(ref o) => Some(
                 o.iter()

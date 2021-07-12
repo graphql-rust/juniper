@@ -299,7 +299,6 @@ where
     S: ScalarValue + Send + Sync,
 {
     use futures::stream::{FuturesOrdered, StreamExt as _};
-    use std::iter::FromIterator;
 
     let stop_on_null = executor
         .current_type()
@@ -307,8 +306,9 @@ where
         .expect("Current type is not a list type")
         .is_non_null();
 
-    let iter = items.map(|it| async move { executor.resolve_into_value_async(info, it).await });
-    let mut futures = FuturesOrdered::from_iter(iter);
+    let mut futures = items
+        .map(|it| async move { executor.resolve_into_value_async(info, it).await })
+        .collect::<FuturesOrdered<_>>();
 
     let mut values = Vec::with_capacity(futures.len());
     while let Some(value) = futures.next().await {

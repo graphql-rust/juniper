@@ -230,19 +230,11 @@ where
         self.1.exit_list_value(ctx, l);
     }
 
-    fn enter_object_value(
-        &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        o: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
-    ) {
+    fn enter_object_value(&mut self, ctx: &mut ValidatorContext<'a, S>, o: SpannedObject<'a, S>) {
         self.0.enter_object_value(ctx, o);
         self.1.enter_object_value(ctx, o);
     }
-    fn exit_object_value(
-        &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        o: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
-    ) {
+    fn exit_object_value(&mut self, ctx: &mut ValidatorContext<'a, S>, o: SpannedObject<'a, S>) {
         self.0.exit_object_value(ctx, o);
         self.1.exit_object_value(ctx, o);
     }
@@ -264,3 +256,5 @@ where
         self.1.exit_object_field(ctx, f);
     }
 }
+
+type SpannedObject<'a, S> = Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>;

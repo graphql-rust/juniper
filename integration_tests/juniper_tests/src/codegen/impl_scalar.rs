@@ -9,6 +9,7 @@ struct DefaultName(i32);
 struct OtherOrder(i32);
 struct Named(i32);
 struct ScalarDescription(i32);
+struct Generated(String);
 
 struct Root;
 
@@ -86,6 +87,32 @@ impl GraphQLScalar for ScalarDescription {
     }
 }
 
+macro_rules! impl_scalar {
+    ($name: ident) => {
+        #[graphql_scalar]
+        impl<S> GraphQLScalar for $name
+        where
+            S: ScalarValue,
+        {
+            fn resolve(&self) -> Value {
+                Value::scalar(self.0.clone())
+            }
+
+            fn from_input_value(v: &InputValue) -> Option<Self> {
+                v.as_scalar_value()
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| Some(Self(s.to_owned())))
+            }
+
+            fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+                <String as ParseScalarValue<S>>::from_str(value)
+            }
+        }
+    };
+}
+
+impl_scalar!(Generated);
+
 #[graphql_object(scalar = DefaultScalarValue)]
 impl Root {
     fn default_name() -> DefaultName {
@@ -99,6 +126,9 @@ impl Root {
     }
     fn scalar_description() -> ScalarDescription {
         ScalarDescription(0)
+    }
+    fn generated() -> Generated {
+        Generated("foo".to_owned())
     }
 }
 
@@ -269,6 +299,30 @@ async fn scalar_description_introspection() {
         assert_eq!(
             type_info.get_field_value("description"),
             Some(&Value::scalar("A sample scalar, represented as an integer"))
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn generated_scalar_introspection() {
+    let doc = r#"
+    {
+        __type(name: "Generated") {
+            name
+            description
+        }
+    }
+    "#;
+
+    run_type_info_query(doc, |type_info| {
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::scalar("Generated"))
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
         );
     })
     .await;

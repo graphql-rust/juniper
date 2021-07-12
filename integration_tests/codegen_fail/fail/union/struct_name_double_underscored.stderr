@@ -1,3 +1,19 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error: All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.
  --> $DIR/struct_name_double_underscored.rs:5:8
   |

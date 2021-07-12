@@ -176,7 +176,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 .boxed();
                             s = s
                                 .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::delay_for(keep_alive_interval).await;
+                                    tokio::time::sleep(keep_alive_interval).await;
                                     Some((
                                         Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
                                         (),
@@ -486,6 +486,7 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
         state: ConnectionState<S, I>,
     },
     HandlingMessage {
+        #[allow(clippy::type_complexity)]
         result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
     },
     Closed,
@@ -607,26 +608,22 @@ where
         }
 
         // Poll the reactions for new outgoing messages.
-        loop {
-            if !self.reactions.is_empty() {
-                match Pin::new(&mut self.reactions).poll_next(cx) {
-                    Poll::Ready(Some(reaction)) => match reaction {
-                        Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
-                        Reaction::EndStream => return Poll::Ready(None),
-                    },
-                    Poll::Ready(None) => {
-                        // In rare cases, the reaction stream may terminate. For example, this will
-                        // happen if the first message we receive does not require any reaction. Just
-                        // recreate it in that case.
-                        self.reactions = SelectAll::new();
-                        return Poll::Pending;
-                    }
-                    Poll::Pending => return Poll::Pending,
+        if !self.reactions.is_empty() {
+            match Pin::new(&mut self.reactions).poll_next(cx) {
+                Poll::Ready(Some(reaction)) => match reaction {
+                    Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
+                    Reaction::EndStream => return Poll::Ready(None),
+                },
+                Poll::Ready(None) => {
+                    // In rare cases, the reaction stream may terminate. For example, this will
+                    // happen if the first message we receive does not require any reaction. Just
+                    // recreate it in that case.
+                    self.reactions = SelectAll::new();
                 }
-            } else {
-                return Poll::Pending;
+                _ => (),
             }
         }
+        Poll::Pending
     }
 }
 
@@ -661,7 +658,7 @@ mod test {
     impl Subscription {
         /// never never emits anything.
         async fn never(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
-            tokio::time::delay_for(Duration::from_secs(10000))
+            tokio::time::sleep(Duration::from_secs(10000))
                 .map(|_| unreachable!())
                 .into_stream()
                 .boxed()
@@ -671,7 +668,7 @@ mod test {
         async fn context(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             stream::once(future::ready(Ok(context.0)))
                 .chain(
-                    tokio::time::delay_for(Duration::from_secs(10000))
+                    tokio::time::sleep(Duration::from_secs(10000))
                         .map(|_| unreachable!())
                         .into_stream(),
                 )
@@ -685,7 +682,7 @@ mod test {
                 Value::null(),
             ))))
             .chain(
-                tokio::time::delay_for(Duration::from_secs(10000))
+                tokio::time::sleep(Duration::from_secs(10000))
                     .map(|_| unreachable!())
                     .into_stream(),
             )

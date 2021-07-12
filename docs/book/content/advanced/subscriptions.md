@@ -51,7 +51,7 @@ type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send
 #[graphql_subscription(context = Database)]
 impl Subscription {
     async fn hello_world() -> StringStream {
-        let stream = tokio::stream::iter(vec![
+        let stream = futures::stream::iter(vec![
             Ok(String::from("Hello")),
             Ok(String::from("World!"))
         ]);
@@ -123,7 +123,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # impl Subscription {
 #     async fn hello_world() -> StringStream {
 #         let stream =
-#             tokio::stream::iter(vec![Ok(String::from("Hello")), Ok(String::from("World!"))]);
+#             futures::stream::iter(vec![Ok(String::from("Hello")), Ok(String::from("World!"))]);
 #         Box::pin(stream)
 #     }
 # }
