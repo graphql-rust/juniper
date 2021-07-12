@@ -94,6 +94,7 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
                 args: Vec::new(),
                 description: field_attrs.description.map(SpanContainer::into_inner),
                 deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
+                tracing: field_attrs.tracing,
                 resolver_code,
                 is_type_inferred: true,
                 is_async: false,

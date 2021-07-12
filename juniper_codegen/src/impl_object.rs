@@ -175,6 +175,7 @@ fn create(
                 args,
                 description: attrs.description.map(SpanContainer::into_inner),
                 deprecation: attrs.deprecation.map(SpanContainer::into_inner),
+                tracing: attrs.tracing,
                 resolver_code,
                 is_type_inferred: false,
                 is_async,

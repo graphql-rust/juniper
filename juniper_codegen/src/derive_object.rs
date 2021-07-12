@@ -82,6 +82,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
                 args: Vec::new(),
                 description: field_attrs.description.map(SpanContainer::into_inner),
                 deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
+                tracing: field_attrs.tracing,
                 resolver_code,
                 default: None,
                 is_type_inferred: true,

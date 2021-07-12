@@ -90,6 +90,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
                 args: Vec::new(),
                 description: field_attrs.description.map(SpanContainer::into_inner),
                 deprecation: None,
+                tracing: field_attrs.tracing,
                 resolver_code,
                 is_type_inferred: true,
                 is_async: false,

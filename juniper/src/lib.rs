@@ -106,8 +106,8 @@ pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
 
-// This is required by the `tracing` feature.
-#[cfg(feature = "tracing")]
+// This is required by the `traced` feature.
+#[cfg(feature = "traced")]
 #[doc(hidden)]
 pub use tracing;
 

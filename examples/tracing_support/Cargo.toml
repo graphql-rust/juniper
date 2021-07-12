@@ -10,5 +10,5 @@ tracing = "0.1.21"
 tracing-subscriber = "0.2.12"
 # Note instead of a path you would use the proper Juniper version in your own
 # project.
-juniper = { path = "../../juniper", features = ["tracing"] }
+juniper = { path = "../../juniper", features = ["traced"] }
 tokio = { version = "0.2.22", features = ["rt-core", "macros", "blocking"] }
