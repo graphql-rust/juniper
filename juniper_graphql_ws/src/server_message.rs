@@ -39,9 +39,9 @@ pub struct ErrorPayload {
 impl ErrorPayload {
     /// For this to be okay, the caller must guarantee that the error can only reference data from
     /// execution_params and that execution_params has not been modified or moved.
-    pub(crate) unsafe fn new_unchecked<'a>(
+    pub(crate) unsafe fn new_unchecked(
         execution_params: Box<dyn Any + Send>,
-        error: GraphQLError<'a>,
+        error: GraphQLError<'_>,
     ) -> Self {
         Self {
             _execution_params: Some(execution_params),

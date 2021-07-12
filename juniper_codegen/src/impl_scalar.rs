@@ -25,11 +25,9 @@ struct ScalarCodegenInput {
 fn get_first_method_arg(
     inputs: syn::punctuated::Punctuated<syn::FnArg, syn::Token![,]>,
 ) -> Option<syn::Ident> {
-    if let Some(fn_arg) = inputs.first() {
-        if let syn::FnArg::Typed(pat_type) = fn_arg {
-            if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
-                return Some(pat_ident.ident.clone());
-            }
+    if let Some(syn::FnArg::Typed(pat_type)) = inputs.first() {
+        if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
+            return Some(pat_ident.ident.clone());
         }
     }
 
@@ -45,42 +43,27 @@ fn get_method_return_type(output: syn::ReturnType) -> Option<syn::Type> {
 
 // Find the enum type by inspecting the type parameter on the return value
 fn get_enum_type(return_type: &Option<syn::Type>) -> Option<syn::PathSegment> {
-    if let Some(return_type) = return_type {
-        match return_type {
-            syn::Type::Path(type_path) => {
-                let path_segment = type_path
-                    .path
-                    .segments
-                    .iter()
-                    .find(|ps| match ps.arguments {
-                        syn::PathArguments::AngleBracketed(_) => true,
-                        _ => false,
-                    });
+    if let Some(syn::Type::Path(type_path)) = return_type {
+        let path_segment = type_path
+            .path
+            .segments
+            .iter()
+            .find(|ps| matches!(ps.arguments, syn::PathArguments::AngleBracketed(_)));
 
-                if let Some(path_segment) = path_segment {
-                    match &path_segment.arguments {
-                        syn::PathArguments::AngleBracketed(generic_args) => {
-                            let generic_type_arg =
-                                generic_args.args.iter().find(|generic_type_arg| {
-                                    match generic_type_arg {
-                                        syn::GenericArgument::Type(_) => true,
-                                        _ => false,
-                                    }
-                                });
+        if let Some(path_segment) = path_segment {
+            if let syn::PathArguments::AngleBracketed(generic_args) = &path_segment.arguments {
+                let generic_type_arg = generic_args.args.iter().find(|generic_type_arg| {
+                    matches!(generic_type_arg, syn::GenericArgument::Type(_))
+                });
 
-                            if let Some(syn::GenericArgument::Type(syn::Type::Path(type_path))) =
-                                generic_type_arg
-                            {
-                                if let Some(path_segment) = type_path.path.segments.first() {
-                                    return Some(path_segment.clone());
-                                }
-                            }
-                        }
-                        _ => (),
+                if let Some(syn::GenericArgument::Type(syn::Type::Path(type_path))) =
+                    generic_type_arg
+                {
+                    if let Some(path_segment) = type_path.path.segments.first() {
+                        return Some(path_segment.clone());
                     }
                 }
             }
-            _ => (),
         }
     }
 
@@ -105,15 +88,21 @@ impl syn::parse::Parse for ScalarCodegenInput {
         let custom_data_type_is_struct: bool =
             !parse_custom_scalar_value_impl.generics.params.is_empty();
 
-        if let syn::Type::Path(type_path) = *parse_custom_scalar_value_impl.self_ty {
+        let mut self_ty = *parse_custom_scalar_value_impl.self_ty;
+
+        while let syn::Type::Group(type_group) = self_ty {
+            self_ty = *type_group.elem;
+        }
+
+        if let syn::Type::Path(type_path) = self_ty {
             if let Some(path_segment) = type_path.path.segments.first() {
                 impl_for_type = Some(path_segment.clone());
             }
         }
 
         for impl_item in parse_custom_scalar_value_impl.items {
-            match impl_item {
-                syn::ImplItem::Method(method) => match method.sig.ident.to_string().as_str() {
+            if let syn::ImplItem::Method(method) = impl_item {
+                match method.sig.ident.to_string().as_str() {
                     "resolve" => {
                         resolve_body = Some(method.block);
                     }
@@ -133,9 +122,8 @@ impl syn::parse::Parse for ScalarCodegenInput {
                         from_str_body = Some(method.block);
                     }
                     _ => (),
-                },
-                _ => (),
-            };
+                }
+            }
         }
 
         let custom_data_type = if custom_data_type_is_struct {

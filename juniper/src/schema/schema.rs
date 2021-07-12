@@ -51,6 +51,10 @@ where
         QueryT::name(info)
     }
 
+    fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
+        self.query_type.concrete_type_name(context, info)
+    }
+
     fn resolve_field(
         &self,
         info: &Self::TypeInfo,
@@ -314,8 +318,8 @@ impl<'a, S> Field<'a, S>
 where
     S: crate::ScalarValue + 'a,
 {
-    fn name(&self) -> &String {
-        &self.name
+    fn name(&self) -> String {
+        self.name.clone().into()
     }
 
     fn description(&self) -> &Option<String> {

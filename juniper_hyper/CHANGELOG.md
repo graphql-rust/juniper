@@ -2,6 +2,34 @@
 
 - Compatibility with the latest `juniper`.
 
+# [[0.8.0] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.8.0)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.1] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.7.1)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.0] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.7.0)
+
+- **[Breaking change]** Remove unneccesary `Result`s ([#889](https://github.com/graphql-rust/juniper/pull/889))
+
+# [[0.6.3] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.6.3)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.6.2] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.6.2)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.6.1] 2020-12-12](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.6.1)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.6.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.6.0)
+
+- Compatibility with the latest `juniper`.
+
 ## Breaking Changes
 
 - `juniper_hyper::graphiql` now requires a second parameter for subscriptions.

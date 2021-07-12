@@ -5,6 +5,8 @@
 //! traits are used. Encountering an error where one of these traits
 //! is involved implies that the construct is not valid in GraphQL.
 
+use std::sync::Arc;
+
 use crate::{GraphQLType, ScalarValue};
 
 /// Maker object for GraphQL objects.
@@ -21,6 +23,39 @@ pub trait GraphQLObjectType<S: ScalarValue>: GraphQLType<S> {
     /// May contain compile timed check logic which ensures that types
     /// are used correctly according to the GraphQL specification.
     fn mark() {}
+}
+
+impl<'a, S, T> GraphQLObjectType<S> for &T
+where
+    T: GraphQLObjectType<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> GraphQLObjectType<S> for Box<T>
+where
+    T: GraphQLObjectType<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> GraphQLObjectType<S> for Arc<T>
+where
+    T: GraphQLObjectType<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
 }
 
 /// Maker trait for [GraphQL interfaces][1].
@@ -47,6 +82,39 @@ pub trait GraphQLInterface<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
+impl<'a, S, T> GraphQLInterface<S> for &T
+where
+    T: GraphQLInterface<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> GraphQLInterface<S> for Box<T>
+where
+    T: GraphQLInterface<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> GraphQLInterface<S> for Arc<T>
+where
+    T: GraphQLInterface<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
 /// Maker trait for [GraphQL unions][1].
 ///
 /// This trait extends the [`GraphQLType`] and is only used to mark an [union][1]. During compile
@@ -71,6 +139,39 @@ pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
+impl<'a, S, T> GraphQLUnion<S> for &T
+where
+    T: GraphQLUnion<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> GraphQLUnion<S> for Box<T>
+where
+    T: GraphQLUnion<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> GraphQLUnion<S> for Arc<T>
+where
+    T: GraphQLUnion<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
 /// Marker trait for types which can be used as output types.
 ///
 /// The GraphQL specification differentiates between input and output
@@ -86,6 +187,74 @@ pub trait IsOutputType<S: ScalarValue> /*: GraphQLType<S>*/ {
     fn mark() {}
 }
 
+impl<'a, S, T> IsOutputType<S> for &T
+where
+    T: IsOutputType<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsOutputType<S> for Box<T>
+where
+    T: IsOutputType<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsOutputType<S> for Arc<T>
+where
+    T: IsOutputType<S> + ?Sized,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsOutputType<S> for Option<T>
+where
+    T: IsOutputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsOutputType<S> for Vec<T>
+where
+    T: IsOutputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsOutputType<S> for [T]
+where
+    T: IsOutputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}
+
 /// Marker trait for types which can be used as input types.
 ///
 /// The GraphQL specification differentiates between input and output
@@ -100,59 +269,15 @@ pub trait IsInputType<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<S, T> IsInputType<S> for Option<T>
-where
-    T: IsInputType<S>,
-    S: ScalarValue,
-{
-}
-
-impl<S, T> IsOutputType<S> for Option<T>
-where
-    T: IsOutputType<S>,
-    S: ScalarValue,
-{
-}
-
-impl<S, T> IsOutputType<S> for Vec<T>
-where
-    T: IsOutputType<S>,
-    S: ScalarValue,
-{
-}
-
-impl<S, T> IsOutputType<S> for [T]
-where
-    T: IsOutputType<S>,
-    S: ScalarValue,
-{
-}
-
-impl<S, T> IsInputType<S> for Vec<T>
-where
-    T: IsInputType<S>,
-    S: ScalarValue,
-{
-}
-
-impl<S, T> IsInputType<S> for [T]
-where
-    T: IsInputType<S>,
-    S: ScalarValue,
-{
-}
-
 impl<'a, S, T> IsInputType<S> for &T
 where
     T: IsInputType<S> + ?Sized,
     S: ScalarValue,
 {
-}
-impl<'a, S, T> IsOutputType<S> for &T
-where
-    T: IsOutputType<S> + ?Sized,
-    S: ScalarValue,
-{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
 }
 
 impl<S, T> IsInputType<S> for Box<T>
@@ -160,13 +285,54 @@ where
     T: IsInputType<S> + ?Sized,
     S: ScalarValue,
 {
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
 }
-impl<S, T> IsOutputType<S> for Box<T>
+
+impl<S, T> IsInputType<S> for Arc<T>
 where
-    T: IsOutputType<S> + ?Sized,
+    T: IsInputType<S> + ?Sized,
     S: ScalarValue,
 {
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsInputType<S> for Option<T>
+where
+    T: IsInputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsInputType<S> for Vec<T>
+where
+    T: IsInputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T> IsInputType<S> for [T]
+where
+    T: IsInputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
 }
 
 impl<'a, S> IsInputType<S> for str where S: ScalarValue {}
-impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}

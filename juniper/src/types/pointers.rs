@@ -94,10 +94,7 @@ where
     T: FromInputValue<S>,
 {
     fn from_input_value(v: &InputValue<S>) -> Option<Box<T>> {
-        match <T as FromInputValue<S>>::from_input_value(v) {
-            Some(v) => Some(Box::new(v)),
-            None => None,
-        }
+        <T as FromInputValue<S>>::from_input_value(v).map(Box::new)
     }
 }
 
@@ -280,6 +277,16 @@ where
         executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         (**self).resolve_async(info, selection_set, executor)
+    }
+}
+
+impl<T, S> FromInputValue<S> for Arc<T>
+where
+    S: ScalarValue,
+    T: FromInputValue<S>,
+{
+    fn from_input_value(v: &InputValue<S>) -> Option<Arc<T>> {
+        <T as FromInputValue<S>>::from_input_value(v).map(Arc::new)
     }
 }
 

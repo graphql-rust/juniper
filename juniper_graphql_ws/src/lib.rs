@@ -97,7 +97,7 @@ enum Reaction<S: Schema> {
 
 impl<S: Schema> Reaction<S> {
     /// Converts the reaction into a one-item stream.
-    fn to_stream(self) -> BoxStream<'static, Self> {
+    fn into_stream(self) -> BoxStream<'static, Self> {
         stream::once(future::ready(self)).boxed()
     }
 }
@@ -153,7 +153,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         msg: ClientMessage<S::ScalarValue>,
     ) -> (Self, BoxStream<'static, Reaction<S>>) {
         if let ClientMessage::ConnectionTerminate = msg {
-            return (self, Reaction::EndStream.to_stream());
+            return (self, Reaction::EndStream.into_stream());
         }
 
         match self {
@@ -171,12 +171,12 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                             s = s
                                 .chain(
                                     Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
-                                        .to_stream(),
+                                        .into_stream(),
                                 )
                                 .boxed();
                             s = s
                                 .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::delay_for(keep_alive_interval).await;
+                                    tokio::time::sleep(keep_alive_interval).await;
                                     Some((
                                         Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
                                         (),
@@ -270,7 +270,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 // Once the stream ends, send the Complete message.
                                 let s = s.chain(
                                     Reaction::ServerMessage(ServerMessage::Complete { id })
-                                        .to_stream(),
+                                        .into_stream(),
                                 );
 
                                 s.boxed()
@@ -306,11 +306,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         // Try to execute this as a query or mutation.
         match juniper::execute(
             &params.start_payload.query,
-            params
-                .start_payload
-                .operation_name
-                .as_ref()
-                .map(|s| s.as_str()),
+            params.start_payload.operation_name.as_deref(),
             params.schema.root_node(),
             &params.start_payload.variables,
             &params.config.context,
@@ -322,7 +318,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     id: id.clone(),
                     payload: DataPayload { data, errors },
                 })
-                .to_stream();
+                .into_stream();
             }
             Err(GraphQLError::IsSubscription) => {}
             Err(e) => {
@@ -331,7 +327,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     // e only references data owned by params. The new ErrorPayload will continue to keep that data alive.
                     payload: unsafe { ErrorPayload::new_unchecked(Box::new(params.clone()), e) },
                 })
-                .to_stream();
+                .into_stream();
             }
         }
 
@@ -423,11 +419,7 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                         future: unsafe {
                             juniper::resolve_into_stream(
                                 &(*params).start_payload.query,
-                                (*params)
-                                    .start_payload
-                                    .operation_name
-                                    .as_ref()
-                                    .map(|s| s.as_str()),
+                                (*params).start_payload.operation_name.as_deref(),
                                 (*params).schema.root_node(),
                                 &(*params).start_payload.variables,
                                 &(*params).config.context,
@@ -494,6 +486,7 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
         state: ConnectionState<S, I>,
     },
     HandlingMessage {
+        #[allow(clippy::type_complexity)]
         result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
     },
     Closed,
@@ -575,7 +568,7 @@ where
                                     message: e.to_string(),
                                 },
                             })
-                            .to_stream(),
+                            .into_stream(),
                         );
                         ConnectionSinkState::Ready { state }
                     }
@@ -615,26 +608,22 @@ where
         }
 
         // Poll the reactions for new outgoing messages.
-        loop {
-            if !self.reactions.is_empty() {
-                match Pin::new(&mut self.reactions).poll_next(cx) {
-                    Poll::Ready(Some(reaction)) => match reaction {
-                        Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
-                        Reaction::EndStream => return Poll::Ready(None),
-                    },
-                    Poll::Ready(None) => {
-                        // In rare cases, the reaction stream may terminate. For example, this will
-                        // happen if the first message we receive does not require any reaction. Just
-                        // recreate it in that case.
-                        self.reactions = SelectAll::new();
-                        return Poll::Pending;
-                    }
-                    Poll::Pending => return Poll::Pending,
+        if !self.reactions.is_empty() {
+            match Pin::new(&mut self.reactions).poll_next(cx) {
+                Poll::Ready(Some(reaction)) => match reaction {
+                    Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
+                    Reaction::EndStream => return Poll::Ready(None),
+                },
+                Poll::Ready(None) => {
+                    // In rare cases, the reaction stream may terminate. For example, this will
+                    // happen if the first message we receive does not require any reaction. Just
+                    // recreate it in that case.
+                    self.reactions = SelectAll::new();
                 }
-            } else {
-                return Poll::Pending;
+                _ => (),
             }
         }
+        Poll::Pending
     }
 }
 
@@ -669,7 +658,7 @@ mod test {
     impl Subscription {
         /// never never emits anything.
         async fn never(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
-            tokio::time::delay_for(Duration::from_secs(10000))
+            tokio::time::sleep(Duration::from_secs(10000))
                 .map(|_| unreachable!())
                 .into_stream()
                 .boxed()
@@ -679,7 +668,7 @@ mod test {
         async fn context(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             stream::once(future::ready(Ok(context.0)))
                 .chain(
-                    tokio::time::delay_for(Duration::from_secs(10000))
+                    tokio::time::sleep(Duration::from_secs(10000))
                         .map(|_| unreachable!())
                         .into_stream(),
                 )
@@ -693,7 +682,7 @@ mod test {
                 Value::null(),
             ))))
             .chain(
-                tokio::time::delay_for(Duration::from_secs(10000))
+                tokio::time::sleep(Duration::from_secs(10000))
                     .map(|_| unreachable!())
                     .into_stream(),
             )

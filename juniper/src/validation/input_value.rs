@@ -19,6 +19,7 @@ enum Path<'a> {
     ObjectField(&'a str, &'a Path<'a>),
 }
 
+#[doc(hidden)]
 pub fn validate_input_values<S>(
     values: &Variables<S>,
     operation: &Spanning<Operation<S>>,

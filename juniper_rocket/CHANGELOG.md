@@ -1,6 +1,36 @@
 # master
 
 - Compatibility with the latest `juniper`.
+
+# [[0.8.0] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.8.0)
+
+- Require async rocket support (`rocket` >= 0.5-rc1).
+- Compatibility with the latest `juniper`.
+
+# [[0.7.1] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.7.1)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.0] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.7.0)
+
+- Minimum `rocket` version is now `0.4.9`. Note this also bumps the [minimum required `rustc` version](https://github.com/SergioBenitez/Rocket/blob/v0.4/CHANGELOG.md#version-048-may-18-2021).
+- Compatibility with the latest `juniper`.
+
+# [[0.6.3] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.6.3)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.6.2] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.6.2)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.6.1] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.6.1)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.6.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.6.0)
+
+- Compatibility with the latest `juniper`.
 - Rocket integration does not require default features.
 - Support `application/graphql` POST requests.
 

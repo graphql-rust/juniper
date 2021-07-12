@@ -2,6 +2,26 @@
 
 - Compatibility with the latest `juniper`.
 
+# [[0.7.4] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.4)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.3] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.3)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.2] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.2)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.1] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.1)
+
+- Compatibility with the latest `juniper`.
+
+# [[0.7.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.0)
+
+- Compatibility with the latest `juniper`.
+
 ## Breaking Changes
 
 - `juniper_iron::GraphiQLHandler::new` now requires a second parameter for subscriptions.

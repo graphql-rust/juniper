@@ -6,7 +6,7 @@ trait Character {
         0
     }
 
-    #[graphql_interface(downcast)]
+    #[graphql(downcast)]
     fn a(&self, ctx: &(), rand: u8) -> Option<&Human> {
         None
     }

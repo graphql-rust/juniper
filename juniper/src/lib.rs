@@ -73,7 +73,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
-[iron]: http://ironframework.io
+[iron]: https://github.com/iron/iron
 [graphql_spec]: http://facebook.github.io/graphql
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
@@ -90,7 +90,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [bson]: https://crates.io/crates/bson
 
 */
-#![doc(html_root_url = "https://docs.rs/juniper/0.14.2")]
+#![doc(html_root_url = "https://docs.rs/juniper/0.15.7")]
 #![warn(missing_docs)]
 
 // Required for using `juniper_codegen` macros inside this crate to resolve absolute `::juniper`
@@ -124,13 +124,13 @@ mod value;
 #[macro_use]
 mod macros;
 mod ast;
-mod executor;
+pub mod executor;
 mod introspection;
 pub mod parser;
 pub(crate) mod schema;
 mod types;
 mod util;
-mod validation;
+pub mod validation;
 // This needs to be public until docs have support for private modules:
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod http;
@@ -150,12 +150,15 @@ pub use crate::util::to_camel_case;
 use crate::{
     executor::{execute_validated_query, get_operation},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
-    parser::{parse_document_source, ParseError, Spanning},
+    parser::parse_document_source,
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
 };
 
 pub use crate::{
-    ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
+    ast::{
+        Definition, Document, FromInputValue, InputValue, Operation, OperationType, Selection,
+        ToInputValue, Type,
+    },
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
@@ -166,6 +169,7 @@ pub use crate::{
         subscription::{ExtractTypeFromStream, IntoFieldResult},
         AsDynGraphQLValue,
     },
+    parser::{ParseError, Spanning},
     schema::{
         meta,
         model::{RootNode, SchemaType},
@@ -349,7 +353,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let document: crate::ast::Document<'a, S> =
+    let document: crate::ast::OwnedDocument<'a, S> =
         parse_document_source(document_source, &root_node.schema)?;
 
     {

@@ -1,3 +1,19 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
 error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
  --> $DIR/derive_incompatible_object.rs:6:10
   |
@@ -5,7 +21,7 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
   |
   = note: required by `juniper::marker::IsInputType::mark`
-  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the derive macro `juniper::GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> $DIR/derive_incompatible_object.rs:6:10
@@ -13,7 +29,7 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
 6 | #[derive(juniper::GraphQLInputObject)]
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
   |
-  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the derive macro `juniper::GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> $DIR/derive_incompatible_object.rs:6:10
@@ -22,7 +38,7 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
   |
   = note: required by `from_input_value`
-  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the derive macro `juniper::GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0599]: no method named `to_input_value` found for struct `ObjectA` in the current scope
  --> $DIR/derive_incompatible_object.rs:6:10
@@ -36,4 +52,4 @@ error[E0599]: no method named `to_input_value` found for struct `ObjectA` in the
   = help: items from traits can only be used if the trait is implemented and in scope
   = note: the following trait defines an item `to_input_value`, perhaps you need to implement it:
           candidate #1: `ToInputValue`
-  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the derive macro `juniper::GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -112,6 +112,7 @@ pub struct Directive<'a, S> {
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum OperationType {
     Query,
@@ -119,6 +120,7 @@ pub enum OperationType {
     Subscription,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone, PartialEq, Debug)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,
@@ -136,13 +138,17 @@ pub struct Fragment<'a, S> {
     pub selection_set: Vec<Selection<'a, S>>,
 }
 
+#[doc(hidden)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum Definition<'a, S> {
     Operation(Spanning<Operation<'a, S>>),
     Fragment(Spanning<Fragment<'a, S>>),
 }
 
-pub type Document<'a, S> = Vec<Definition<'a, S>>;
+#[doc(hidden)]
+pub type Document<'a, S> = [Definition<'a, S>];
+#[doc(hidden)]
+pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
 /// Parse an unstructured input value into a Rust data type.
 ///
@@ -192,10 +198,7 @@ impl<'a> Type<'a> {
 
     /// Determines if a type only can represent non-null values.
     pub fn is_non_null(&self) -> bool {
-        match *self {
-            Type::NonNullNamed(_) | Type::NonNullList(_) => true,
-            _ => false,
-        }
+        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(_))
     }
 }
 
@@ -328,18 +331,12 @@ where
 
     /// Does the value represent null?
     pub fn is_null(&self) -> bool {
-        match *self {
-            InputValue::Null => true,
-            _ => false,
-        }
+        matches!(*self, InputValue::Null)
     }
 
     /// Does the value represent a variable?
     pub fn is_variable(&self) -> bool {
-        match *self {
-            InputValue::Variable(_) => true,
-            _ => false,
-        }
+        matches!(*self, InputValue::Variable(_))
     }
 
     /// View the underlying enum value, if present.
@@ -386,7 +383,7 @@ where
     ///
     /// This constructs a new IndexMap that contain references to the keys
     /// and values in `self`.
-    pub fn to_object_value<'a>(&'a self) -> Option<IndexMap<&'a str, &'a Self>> {
+    pub fn to_object_value(&self) -> Option<IndexMap<&str, &Self>> {
         match *self {
             InputValue::Object(ref o) => Some(
                 o.iter()

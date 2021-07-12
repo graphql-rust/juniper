@@ -1,5 +1,41 @@
 # master
 
+- Fix fields on interfaces not being resolved when used with fragments ([#923](https://github.com/graphql-rust/juniper/pull/923))
+
+# [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
+
+- Fix panic on spreading untyped union fragments ([#945](https://github.com/graphql-rust/juniper/issues/945))
+
+# [[0.15.6] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.6)
+
+- Allow `RootNode::as_schema_language` and `RootNode::as_parser_document` for arbitrary type info ([#935](https://github.com/graphql-rust/juniper/pull/935))
+
+# [[0.15.5] 2021-05-11](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.5)
+
+- Fix multiple fragments on sub types overriding each other ([#927](https://github.com/graphql-rust/juniper/pull/915))
+- Fix error extensions in subscriptions ([#927](https://github.com/graphql-rust/juniper/pull/927))
+- Fix fields on interfaces not being resolved when used with fragments ([#923](https://github.com/graphql-rust/juniper/pull/923))
+
+# [[0.15.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.4)
+
+- Un-deprecate select_child, has_child, and child_names methods ([#900](https://github.com/graphql-rust/juniper/pull/#900))
+
+# [[0.15.3] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.3)
+
+- Compatibility with the latest `syn` ([#861](https://github.com/graphql-rust/juniper/pull/861))
+- Fixed a regression in GraphQL Playground ([#856](https://github.com/graphql-rust/juniper/pull/856))
+
+# [[0.15.2] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.2)
+
+- Update GraphQL Playground to v1.7.27.
+- Add marker GraphQL trait implementations for Rust container types like `Box`([#847](https://github.com/graphql-rust/juniper/pull/847))
+
+# [[0.15.1] 2020-12-12](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.1)
+
+- Support `Arc` in input and output objects. ([#822](https://github.com/graphql-rust/juniper/pull/822))
+
+# [[0.15.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.15.0)
+
 ## Features
 
 - Added async support. ([#2](https://github.com/graphql-rust/juniper/issues/2))
@@ -39,6 +75,8 @@
 
 - Implement `IntoFieldError` for `std::convert::Infallible`. ([#796](https://github.com/graphql-rust/juniper/pull/796))
 
+- Allow using `#[graphql(Scalar = DefaultScalarValue)]` for derive macro `GraphQLScalarValue` ([#807](https://github.com/graphql-rust/juniper/pull/807))
+
 ## Fixes
 
 - Massively improved the `#[graphql_union]` proc macro. ([#666](https://github.com/graphql-rust/juniper/pull/666)):
@@ -54,7 +92,7 @@
   - Supports multiple `#[graphql]` attributes.
 
 - Massively improved the `#[graphql_interface]` macro. ([#682](https://github.com/graphql-rust/juniper/pull/682)):
-  - Applicable to traits and generates enum or trait object to represent a GraphQL interface.
+  - Applicable to traits and generates enum or trait object to represent a GraphQL interface (see the [example of migration from `graphql_interface!` macro](https://github.com/graphql-rust/juniper/commit/3472fe6d10d23472752b1a4cd26c6f3da767ae0e#diff-3506bce1e02051ceed41963a86ef59d660ee7d0cd26df1e9c87372918e3b01f0)).
   - Supports passing context and executor to a field resolver. 
   - Supports custom downcast functions and methods.
   - Supports generics.
@@ -797,7 +835,7 @@ using the macros and not deriving `GraphQLType` directly.
 - Macro syntax stability has also been improved. All syntactical edge
   cases of the macros have gotten tests to verify their correctness.
 
-[0.8.0]: https://github.com/graphql-rust/juniper/compare/0.8.0...0.8.1
+[0.8.1]: https://github.com/graphql-rust/juniper/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/graphql-rust/juniper/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/graphql-rust/juniper/compare/0.6.3...0.7.0
 [0.6.3]: https://github.com/graphql-rust/juniper/compare/0.6.2...0.6.3

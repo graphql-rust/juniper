@@ -89,10 +89,7 @@ impl<S: ScalarValue> Value<S> {
 
     /// Does this value represent null?
     pub fn is_null(&self) -> bool {
-        match *self {
-            Self::Null => true,
-            _ => false,
-        }
+        matches!(*self, Self::Null)
     }
 
     /// View the underlying scalar value if present
@@ -198,7 +195,7 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
             ),
             Value::Object(ref o) => InputValue::Object(
                 o.iter()
-                    .map(|&(ref k, ref v)| {
+                    .map(|(k, v)| {
                         (
                             Spanning::unlocated(k.clone()),
                             Spanning::unlocated(v.to_input_value()),

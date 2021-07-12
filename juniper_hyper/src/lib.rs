@@ -17,7 +17,7 @@ pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<Body>,
-) -> Result<Response<Body>, hyper::Error>
+) -> Response<Body>
 where
     QueryT: GraphQLType<S, Context = CtxT>,
     QueryT::TypeInfo: Sync,
@@ -28,17 +28,17 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    Ok(match parse_req(req).await {
+    match parse_req(req).await {
         Ok(req) => execute_request_sync(root_node, context, req).await,
         Err(resp) => resp,
-    })
+    }
 }
 
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<Body>,
-) -> Result<Response<Body>, hyper::Error>
+) -> Response<Body>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Sync,
@@ -49,10 +49,10 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    Ok(match parse_req(req).await {
+    match parse_req(req).await {
         Ok(req) => execute_request(root_node, context, req).await,
         Err(resp) => resp,
-    })
+    }
 }
 
 async fn parse_req<S: ScalarValue>(
@@ -73,7 +73,7 @@ async fn parse_req<S: ScalarValue>(
         }
         _ => return Err(new_response(StatusCode::METHOD_NOT_ALLOWED)),
     }
-    .map_err(|e| render_error(e))
+    .map_err(render_error)
 }
 
 fn parse_get_req<S: ScalarValue>(
@@ -121,26 +121,26 @@ async fn parse_post_graphql_req<S: ScalarValue>(
 pub async fn graphiql(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
-) -> Result<Response<Body>, hyper::Error> {
+) -> Response<Body> {
     let mut resp = new_html_response(StatusCode::OK);
     // XXX: is the call to graphiql_source blocking?
     *resp.body_mut() = Body::from(juniper::http::graphiql::graphiql_source(
         graphql_endpoint,
         subscriptions_endpoint,
     ));
-    Ok(resp)
+    resp
 }
 
 pub async fn playground(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
-) -> Result<Response<Body>, hyper::Error> {
+) -> Response<Body> {
     let mut resp = new_html_response(StatusCode::OK);
     *resp.body_mut() = Body::from(juniper::http::playground::playground_source(
         graphql_endpoint,
         subscriptions_endpoint,
     ));
-    Ok(resp)
+    resp
 }
 
 fn render_error(err: GraphQLRequestError) -> Response<Body> {
@@ -312,8 +312,9 @@ impl Error for GraphQLRequestError {
 #[cfg(test)]
 mod tests {
     use hyper::{
+        server::Server,
         service::{make_service_fn, service_fn},
-        Body, Method, Response, Server, StatusCode,
+        Body, Method, Response, StatusCode,
     };
     use juniper::{
         http::tests as http_tests,
@@ -321,7 +322,7 @@ mod tests {
         EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::{self, blocking::Response as ReqwestResponse};
-    use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
+    use std::{convert::Infallible, net::SocketAddr, sync::Arc, thread, time::Duration};
 
     struct TestHyperIntegration {
         port: u16,
@@ -404,7 +405,7 @@ mod tests {
                         }
                     };
                     async move {
-                        if matches {
+                        Ok::<_, Infallible>(if matches {
                             if is_sync {
                                 super::graphql_sync(root_node, ctx, req).await
                             } else {
@@ -413,15 +414,15 @@ mod tests {
                         } else {
                             let mut resp = Response::new(Body::empty());
                             *resp.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(resp)
-                        }
+                            resp
+                        })
                     }
                 }))
             }
         });
 
         let (shutdown_fut, shutdown) = futures::future::abortable(async {
-            tokio::time::delay_for(Duration::from_secs(60)).await;
+            tokio::time::sleep(Duration::from_secs(60)).await;
         });
 
         let server = Server::bind(&addr)

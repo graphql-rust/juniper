@@ -55,6 +55,10 @@ non-null types by default. A field of type `Vec<Episode>` will be converted into
 `[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
 `Option<Vec<Option<Episode>>>`.
 
+Juniper is agnostic to serialization format and network transport.
+
+Juniper supports both asynchronous and synchronous execution using `execute()` and `execute_sync()` respectively. Asynchronous execution is runtime agnostic.
+
 Juniper follows a [code-first approach][schema_approach] to defining GraphQL schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider [juniper-from-schema][] for generating code from a schema file.
 
 ## Integrations
@@ -81,7 +85,7 @@ your Schemas automatically.
 
 ## Guides & Examples
 
-- [Juniper + actix-web example](https://github.com/actix/examples/tree/master/juniper)
+- [Juniper + actix-web example](https://github.com/actix/examples/tree/master/graphql/juniper)
 
 ## API Stability
 
@@ -91,7 +95,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
 [playground]: https://github.com/prisma/graphql-playground
-[iron]: http://ironframework.io
+[iron]: https://github.com/iron/iron
 [graphql_spec]: http://facebook.github.io/graphql
 [schema_language]: https://graphql.org/learn/schema/#type-language
 [schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/

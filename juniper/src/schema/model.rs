@@ -118,22 +118,6 @@ where
     ) -> Self {
         RootNode::new_with_info(query, mutation, subscription, (), (), ())
     }
-
-    #[cfg(feature = "schema-language")]
-    /// The schema definition as a `String` in the
-    /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
-    /// format.
-    pub fn as_schema_language(&self) -> String {
-        let doc = self.as_parser_document();
-        format!("{}", doc)
-    }
-
-    #[cfg(feature = "graphql-parser-integration")]
-    /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
-    /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
-    pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
-        GraphQLParserTranslator::translate_schema(&self.schema)
-    }
 }
 
 impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
@@ -167,6 +151,22 @@ where
             mutation_info,
             subscription_info,
         }
+    }
+
+    #[cfg(feature = "schema-language")]
+    /// The schema definition as a `String` in the
+    /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
+    /// format.
+    pub fn as_schema_language(&self) -> String {
+        let doc = self.as_parser_document();
+        format!("{}", doc)
+    }
+
+    #[cfg(feature = "graphql-parser-integration")]
+    /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
+    /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
+    pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
+        GraphQLParserTranslator::translate_schema(&self.schema)
     }
 }
 
@@ -293,14 +293,10 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get the mutation type from the schema.
     pub fn mutation_type(&self) -> Option<TypeType<S>> {
-        if let Some(ref mutation_type_name) = self.mutation_type_name {
-            Some(
-                self.type_by_name(mutation_type_name)
-                    .expect("Mutation type does not exist in schema"),
-            )
-        } else {
-            None
-        }
+        self.mutation_type_name.as_ref().map(|name| {
+            self.type_by_name(name)
+                .expect("Mutation type does not exist in schema")
+        })
     }
 
     /// Get the concrete mutation type from the schema.
@@ -313,14 +309,10 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get the subscription type.
     pub fn subscription_type(&self) -> Option<TypeType<S>> {
-        if let Some(ref subscription_type_name) = self.subscription_type_name {
-            Some(
-                self.type_by_name(subscription_type_name)
-                    .expect("Subscription type does not exist in schema"),
-            )
-        } else {
-            None
-        }
+        self.subscription_type_name.as_ref().map(|name| {
+            self.type_by_name(name)
+                .expect("Subscription type does not exist in schema")
+        })
     }
 
     /// Get the concrete subscription type.
@@ -367,7 +359,7 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Determine if there is an overlap between types.
     pub fn type_overlap(&self, t1: &MetaType<S>, t2: &MetaType<S>) -> bool {
-        if (t1 as *const MetaType<S>) == (t2 as *const MetaType<S>) {
+        if std::ptr::eq(t1, t2) {
             return true;
         }
 
@@ -414,7 +406,7 @@ impl<'a, S> SchemaType<'a, S> {
     ) -> bool {
         self.possible_types(abstract_type)
             .into_iter()
-            .any(|t| (t as *const MetaType<S>) == (possible_type as *const MetaType<S>))
+            .any(|t| (std::ptr::eq(t, possible_type)))
     }
 
     /// If the type is a subtype of another type.
@@ -483,10 +475,7 @@ impl<'a, S> TypeType<'a, S> {
 
     #[inline]
     pub fn is_non_null(&self) -> bool {
-        match *self {
-            TypeType::NonNull(_) => true,
-            _ => false,
-        }
+        matches!(*self, TypeType::NonNull(_))
     }
 }
 
@@ -582,7 +571,7 @@ mod test {
                 fn blah() -> bool {
                     true
                 }
-            };
+            }
             let schema = RootNode::new(
                 Query,
                 EmptyMutation::<()>::new(),
@@ -619,11 +608,11 @@ mod test {
             #[derive(GraphQLObject, Default)]
             struct Cake {
                 fresh: bool,
-            };
+            }
             #[derive(GraphQLObject, Default)]
             struct IceCream {
                 cold: bool,
-            };
+            }
             #[derive(GraphQLUnion)]
             enum GlutenFree {
                 Cake(Cake),
@@ -674,7 +663,7 @@ mod test {
                 fn really_old() -> f64 {
                     42.0
                 }
-            };
+            }
 
             let schema = RootNode::new(
                 Query,
