@@ -315,7 +315,7 @@ where
 
 impl<T, S, const N: usize> FromInputValue<S> for [T; N]
 where
-    T: FromInputValue<S> + Default,
+    T: FromInputValue<S>,
     S: ScalarValue,
 {
     fn from_input_value(v: &InputValue<S>) -> Option<Self> {
