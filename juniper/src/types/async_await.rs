@@ -307,7 +307,9 @@ where
 
                 let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
                 let type_name = instance.type_name(info);
-                if fragment.type_condition.item == concrete_type_name
+                if executor
+                    .schema()
+                    .is_named_subtype(&concrete_type_name, &fragment.type_condition.item)
                     || Some(fragment.type_condition.item) == type_name
                 {
                     let sub_result = instance
@@ -351,11 +353,14 @@ where
                 if let Some(ref type_condition) = fragment.type_condition {
                     // Check whether the type matches the type condition.
                     let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
-                    if type_condition.item == concrete_type_name {
+                    if executor
+                        .schema()
+                        .is_named_subtype(&concrete_type_name, &type_condition.item)
+                    {
                         let sub_result = instance
                             .resolve_into_type_async(
                                 info,
-                                type_condition.item,
+                                &concrete_type_name,
                                 Some(&fragment.selection_set[..]),
                                 &sub_exec,
                             )
