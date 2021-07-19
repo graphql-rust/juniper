@@ -3,7 +3,7 @@ use std::{iter::FromIterator, mem};
 use super::Value;
 use indexmap::map::{IndexMap, IntoIter};
 
-/// A Object value
+/// An Object value
 #[derive(Debug, Clone, PartialEq)]
 pub struct Object<S> {
     key_value_list: IndexMap<String, Value<S>>,
