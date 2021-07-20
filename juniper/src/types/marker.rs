@@ -253,6 +253,17 @@ where
     }
 }
 
+impl<S, T, const N: usize> IsOutputType<S> for [T; N]
+where
+    T: IsOutputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
 impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}
 
 /// Marker trait for types which can be used as input types.
@@ -325,6 +336,17 @@ where
 }
 
 impl<S, T> IsInputType<S> for [T]
+where
+    T: IsInputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S, T, const N: usize> IsInputType<S> for [T; N]
 where
     T: IsInputType<S>,
     S: ScalarValue,
