@@ -351,7 +351,7 @@ where
                     // SAFETY: `mem::transmute_copy` is safe here, because we
                     //         have exactly `N` initialized `items`.
                     //         Also, despite `mem::transmute_copy` copies the
-                    //         value, we won't have a double-free if `T: Drop`
+                    //         value, we won't have a double-free when `T: Drop`
                     //         here, because original `data` is `MaybeUninit`,
                     //         so does nothing on `Drop`.
                     Some(unsafe { mem::transmute_copy(&out) })
@@ -377,12 +377,13 @@ where
                     // SAFETY: `mem::transmute_copy` is safe here, because we
                     //         check `N` to be `1`.
                     //         Also, despite `mem::transmute_copy` copies the
-                    //         value, we won't have a double-free if `T: Drop`
+                    //         value, we won't have a double-free when `T: Drop`
                     //         here, because original `e: T` value is wrapped
-                    //         into `MaybeUninit`, so does nothing on `Drop`.
+                    //         into `mem::ManuallyDrop`, so does nothing on
+                    //         `Drop`.
                     other
                         .convert()
-                        .map(|e: T| unsafe { mem::transmute_copy(&[MaybeUninit::new(e)]) })
+                        .map(|e: T| unsafe { mem::transmute_copy(&[mem::ManuallyDrop::new(e)]) })
                 } else {
                     None
                 }
