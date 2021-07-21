@@ -119,7 +119,7 @@ where
     where
         S: 'r,
     {
-        registry.build_list_type::<T>(info).into_meta()
+        registry.build_list_type::<T>(info, None).into_meta()
     }
 }
 
@@ -202,7 +202,7 @@ where
     where
         S: 'r,
     {
-        registry.build_list_type::<T>(info).into_meta()
+        registry.build_list_type::<T>(info, None).into_meta()
     }
 }
 
@@ -269,7 +269,7 @@ where
     where
         S: 'r,
     {
-        registry.build_list_type::<T>(info).into_meta()
+        registry.build_list_type::<T>(info, Some(N)).into_meta()
     }
 }
 
@@ -370,23 +370,26 @@ where
                 }
             }
             ref other => {
-                // TODO: Use `mem::transmute` instead of `mem::transmute_copy`
-                //       below, once it's allowed for const generics:
-                //       https://github.com/rust-lang/rust/issues/61956
-                if N == 1 {
-                    // SAFETY: `mem::transmute_copy` is safe here, because we
-                    //         check `N` to be `1`.
-                    //         Also, despite `mem::transmute_copy` copies the
-                    //         value, we won't have a double-free when `T: Drop`
-                    //         here, because original `e: T` value is wrapped
-                    //         into `mem::ManuallyDrop`, so does nothing on
-                    //         `Drop`.
-                    other
-                        .convert()
-                        .map(|e: T| unsafe { mem::transmute_copy(&[mem::ManuallyDrop::new(e)]) })
-                } else {
-                    None
-                }
+                other.convert().and_then(|e: T| {
+                    // TODO: Use `mem::transmute` instead of
+                    //       `mem::transmute_copy` below, once it's allowed for
+                    //       const generics:
+                    //       https://github.com/rust-lang/rust/issues/61956
+                    if N == 1 {
+                        // SAFETY: `mem::transmute_copy` is safe here, because
+                        //         we check `N` to be `1`.
+                        //         Also, despite `mem::transmute_copy` copies
+                        //         the value, we won't have a double-free when
+                        //         `T: Drop` here, because original `e: T` value
+                        //         is wrapped into `mem::ManuallyDrop`, so does
+                        //         nothing on `Drop`.
+                        Some(unsafe {
+                            mem::transmute_copy::<_, Self>(&[mem::ManuallyDrop::new(e)])
+                        })
+                    } else {
+                        None
+                    }
+                })
             }
         }
     }

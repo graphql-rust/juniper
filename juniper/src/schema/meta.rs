@@ -55,6 +55,9 @@ pub struct ScalarMeta<'a, S> {
 pub struct ListMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
+
+    #[doc(hidden)]
+    pub expected_size: Option<usize>,
 }
 
 /// Nullable type metadata
@@ -311,12 +314,15 @@ impl<'a, S> MetaType<'a, S> {
             | MetaType::InputObject(InputObjectMeta { ref name, .. }) => {
                 Type::NonNullNamed(name.clone())
             }
-            MetaType::List(ListMeta { ref of_type }) => {
-                Type::NonNullList(Box::new(of_type.clone()))
-            }
+            MetaType::List(ListMeta {
+                ref of_type,
+                expected_size,
+            }) => Type::NonNullList(Box::new(of_type.clone()), expected_size),
             MetaType::Nullable(NullableMeta { ref of_type }) => match *of_type {
                 Type::NonNullNamed(ref inner) => Type::Named(inner.clone()),
-                Type::NonNullList(ref inner) => Type::List(inner.clone()),
+                Type::NonNullList(ref inner, expected_size) => {
+                    Type::List(inner.clone(), expected_size)
+                }
                 ref t => t.clone(),
             },
             MetaType::Placeholder(PlaceholderMeta { ref of_type }) => of_type.clone(),
@@ -446,8 +452,11 @@ where
 
 impl<'a> ListMeta<'a> {
     /// Build a new list type by wrapping the specified type
-    pub fn new(of_type: Type<'a>) -> ListMeta<'a> {
-        ListMeta { of_type }
+    pub fn new(of_type: Type<'a>, expected_size: Option<usize>) -> Self {
+        Self {
+            of_type,
+            expected_size,
+        }
     }
 
     /// Wrap the list in a generic meta type

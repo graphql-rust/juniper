@@ -201,7 +201,7 @@ where
     fn kind(&self) -> TypeKind {
         match *self {
             TypeType::Concrete(t) => t.type_kind(),
-            TypeType::List(_) => TypeKind::List,
+            TypeType::List(..) => TypeKind::List,
             TypeType::NonNull(_) => TypeKind::NonNull,
         }
     }
@@ -224,7 +224,7 @@ where
     fn of_type(&self) -> Option<&Box<TypeType<S>>> {
         match *self {
             TypeType::Concrete(_) => None,
-            TypeType::List(ref l) | TypeType::NonNull(ref l) => Some(l),
+            TypeType::List(ref l, _) | TypeType::NonNull(ref l) => Some(l),
         }
     }
 
