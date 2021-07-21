@@ -206,8 +206,6 @@ fn parse_variant_from_trait_method(
         ty,
         resolver_code,
         resolver_check,
-        enum_path: None,
         context_ty: method_context_ty,
-        span: method_span,
     })
 }
