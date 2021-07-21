@@ -1,6 +1,7 @@
 # master
 
 - Allow spreading interface fragments on unions and other interfaces ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
+- Expose `GraphQLRequest` fields ([#750](https://github.com/graphql-rust/juniper/issues/750))
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 

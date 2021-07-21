@@ -1,6 +1,4 @@
 #[cfg(test)]
-mod api;
-#[cfg(test)]
 mod arc_fields;
 #[cfg(test)]
 mod codegen;
