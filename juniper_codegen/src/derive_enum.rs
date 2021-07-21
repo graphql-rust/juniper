@@ -148,6 +148,8 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
+
+        tracing_rule: attrs.tracing_rule,
     };
 
     Ok(definition.into_enum_tokens())

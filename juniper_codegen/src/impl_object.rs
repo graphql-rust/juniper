@@ -226,6 +226,8 @@ fn create(
         include_type_generics: false,
         generic_scalar: true,
         no_async: _impl.attrs.no_async.is_some(),
+
+        tracing_rule: _impl.attrs.tracing_rule,
     };
 
     Ok(definition)

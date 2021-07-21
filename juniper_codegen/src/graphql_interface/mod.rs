@@ -3,10 +3,15 @@
 //! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 
 pub mod attr;
+mod tracing;
 
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+};
 
 use proc_macro2::TokenStream;
+use proc_macro_error::abort;
 use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
 use syn::{
     parse::{Parse, ParseStream},
@@ -119,6 +124,8 @@ struct TraitMeta {
     /// Indicator whether the generated code is intended to be used only inside the [`juniper`]
     /// library.
     is_internal: bool,
+
+    tracing: Option<SpanContainer<tracing::TracingRule>>,
 }
 
 impl Parse for TraitMeta {
@@ -217,6 +224,26 @@ impl Parse for TraitMeta {
                 "internal" => {
                     output.is_internal = true;
                 }
+                "trace" => {
+                    let span = ident.span();
+                    input.parse::<token::Eq>()?;
+                    let tracing = input.parse::<syn::LitStr>()?;
+                    let tracing_rule = tracing::TracingRule::from_str(tracing.value().as_str());
+                    match tracing_rule {
+                        Ok(rule) => output
+                            .tracing
+                            .replace(SpanContainer::new(span, Some(tracing.span()), rule))
+                            .none_or_else(|_| err::dup_arg(span))?,
+                        Err(_) => abort!(syn::Error::new(
+                            tracing.span(),
+                            format!(
+                                "Unknown tracing rule: {}, \
+                             known values: trace-sync, trace-async, skip-all and complex",
+                                tracing.value(),
+                            )
+                        )),
+                    }
+                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -244,6 +271,7 @@ impl TraitMeta {
                 external_downcasts: self, another => span_joined
             ),
             is_internal: self.is_internal || another.is_internal,
+            tracing: try_merge_opt!(tracing: self, another),
         })
     }
 
@@ -751,6 +779,8 @@ struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implementers: Vec<Implementer>,
+
+    tracing_rule: Option<tracing::TracingRule>,
 }
 
 impl Definition {
@@ -845,7 +875,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(&trait_ty));
+            .filter_map(|f| f.method_resolve_field_tokens(&trait_ty, self));
         let async_fields_panic = {
             let names = self
                 .fields
@@ -959,7 +989,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.method_resolve_field_async_tokens(&trait_ty));
+            .map(|f| f.method_resolve_field_async_tokens(&trait_ty, &self));
         let no_field_panic = self.panic_no_field_tokens();
 
         let custom_downcasts = self
@@ -967,6 +997,8 @@ impl Definition {
             .iter()
             .filter_map(|i| i.method_resolve_into_type_async_tokens(&trait_ty));
         let regular_downcast = self.ty.method_resolve_into_type_async_tokens();
+
+        let instrument = tracing::instrument();
 
         quote! {
             #[automatically_derived]
@@ -979,6 +1011,8 @@ impl Definition {
                     args: &'b ::juniper::Arguments<#scalar>,
                     executor: &'b ::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    #instrument
+
                     match field {
                         #( #fields_resolvers )*
                         _ => #no_field_panic,
@@ -1272,6 +1306,8 @@ struct Field {
     ///
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     is_async: bool,
+
+    tracing: Option<tracing::Attr>,
 }
 
 impl Field {
@@ -1317,7 +1353,11 @@ impl Field {
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
-    fn method_resolve_field_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
+    fn method_resolve_field_tokens(
+        &self,
+        trait_ty: &syn::Type,
+        definition: &Definition,
+    ) -> Option<TokenStream> {
         if self.is_async {
             return None;
         }
@@ -1331,8 +1371,19 @@ impl Field {
 
         let resolving_code = gen::sync_resolving_code();
 
+        let (tracing_span, trace_sync) = if cfg!(feature = "trace-sync") {
+            (
+                tracing::span_tokens(definition, self),
+                tracing::sync_tokens(definition, self),
+            )
+        } else {
+            (quote!(), quote!())
+        };
+
         Some(quote! {
             #name => {
+                #tracing_span
+                #trace_sync
                 let res: #ty = <Self as #trait_ty>::#method(self #( , #arguments )*);
                 #resolving_code
             }
@@ -1344,7 +1395,11 @@ impl Field {
     ///
     /// [`GraphQLValueAsync::resolve_field_async`]: juniper::GraphQLValueAsync::resolve_field_async
     #[must_use]
-    fn method_resolve_field_async_tokens(&self, trait_ty: &syn::Type) -> TokenStream {
+    fn method_resolve_field_async_tokens(
+        &self,
+        trait_ty: &syn::Type,
+        definition: &Definition,
+    ) -> TokenStream {
         let (name, ty, method) = (&self.name, &self.ty, &self.method);
 
         let arguments = self
@@ -1357,10 +1412,20 @@ impl Field {
             fut = quote! { ::juniper::futures::future::ready(#fut) };
         }
 
-        let resolving_code = gen::async_resolving_code(Some(ty));
+        let (tracing_span, trace_async) = if cfg!(feature = "trace-async") {
+            (
+                tracing::span_tokens(definition, self),
+                tracing::async_tokens(definition, self),
+            )
+        } else {
+            (quote!(), quote!())
+        };
+
+        let resolving_code = gen::async_resolving_code(Some(ty), trace_async);
 
         quote! {
             #name => {
+                #tracing_span
                 let fut = #fut;
                 #resolving_code
             }
@@ -1522,8 +1587,7 @@ impl Implementer {
         let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
-
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = gen::async_resolving_code(None, quote!());
 
         Some(quote! {
             if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
@@ -1959,7 +2023,7 @@ impl EnumType {
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = gen::async_resolving_code(None, quote!());
 
         let match_arms = self.variants.iter().map(|ty| {
             let variant = Self::variant_ident(ty);
@@ -2141,7 +2205,7 @@ impl TraitObjectType {
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = gen::async_resolving_code(None, quote!());
 
         quote! {
             let fut = ::juniper::futures::future::ready(self.as_dyn_graphql_value_async());

@@ -106,10 +106,13 @@ pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
 
-// This is required by the `traced` feature.
-#[cfg(feature = "traced")]
+// This is required by the `trace` feature.
+#[cfg(feature = "tracing")]
 #[doc(hidden)]
 pub use tracing;
+#[cfg(feature = "tracing-futures")]
+#[doc(hidden)]
+pub use tracing_futures;
 
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
@@ -146,6 +149,8 @@ mod executor_tests;
 
 // Needs to be public because macros use it.
 pub use crate::util::to_camel_case;
+#[cfg(feature = "tracing-futures")]
+pub use crate::util::tracing::InstrumentInternal;
 
 use crate::{
     executor::{execute_validated_query, get_operation},
@@ -242,7 +247,6 @@ where
 {
     __juniper_span_trace!("execute_sync");
 
-    __juniper_trace!("document: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -297,7 +301,6 @@ where
 {
     __juniper_span_trace!("execute");
 
-    __juniper_trace!("document: {}", document_source);
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -353,10 +356,13 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
+    __juniper_span_trace!("resolve_into_stream");
+
     let document: crate::ast::OwnedDocument<'a, S> =
         parse_document_source(document_source, &root_node.schema)?;
 
     {
+        __juniper_span_trace!("rule_validation");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
@@ -372,6 +378,7 @@ where
     let operation = get_operation(&document, operation_name)?;
 
     {
+        __juniper_span_trace!("validate_input_values");
         let errors = validate_input_values(&variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
@@ -382,8 +389,11 @@ where
         }
     }
 
-    executor::resolve_validated_subscription(&document, operation, root_node, variables, context)
-        .await
+    let f = executor::resolve_validated_subscription(
+        &document, operation, root_node, variables, context,
+    );
+
+    __juniper_instrument_trace!(f, "resolve_validated_subscription").await
 }
 
 /// Execute the reference introspection query in the provided schema

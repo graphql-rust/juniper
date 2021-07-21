@@ -144,7 +144,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+#[proc_macro_derive(GraphQLObject, attributes(graphql, tracing))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_object::build_derive_object(ast, GraphQLScope::DeriveObject);

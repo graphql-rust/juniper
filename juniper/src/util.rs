@@ -51,3 +51,22 @@ fn test_to_camel_case() {
     assert_eq!(&to_camel_case("a")[..], "a");
     assert_eq!(&to_camel_case("")[..], "");
 }
+
+#[cfg(feature = "tracing-futures")]
+#[doc(hidden)]
+pub mod tracing {
+    use tracing::Span;
+    use tracing_futures::{Instrument, Instrumented};
+
+    /// Required to pass sanity tests when `Instrument` already imported.
+    pub trait InstrumentInternal {
+        fn __instrument(self, span: Span) -> Instrumented<Self>
+        where
+            Self: Sized,
+        {
+            self.instrument(span)
+        }
+    }
+
+    impl<T> InstrumentInternal for T where T: Instrument {}
+}

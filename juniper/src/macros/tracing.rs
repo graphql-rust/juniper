@@ -4,11 +4,11 @@
 #[macro_export]
 macro_rules! __juniper_instrument_internal {
     ($trace_type:ident; $fut:expr, $($element:expr),*) => {{
-        #[cfg(feature = "traced")]
+        #[cfg(feature = "tracing")]
         {
             $crate::tracing::Instrument::instrument($fut, tracing::$trace_type!($($element),*))
         }
-        #[cfg(not(feature = "traced"))]
+        #[cfg(not(feature = "tracing"))]
         {
             $fut
         }
@@ -29,9 +29,9 @@ macro_rules! __juniper_instrument_trace {
 #[macro_export]
 macro_rules! __juniper_span_internal {
     ($trace_type:ident; $($element:expr),*) => {
-        #[cfg(feature = "traced")]
+        #[cfg(feature = "tracing")]
         let myspan = $crate::tracing::span!($crate::tracing::Level::$trace_type, ($($element),*));
-        #[cfg(feature = "traced")]
+        #[cfg(feature = "tracing")]
         let _enter = myspan.enter();
     };
 }
@@ -82,7 +82,7 @@ macro_rules! __juniper_span_trace_error {
 #[macro_export]
 macro_rules! __juniper_trace_internal {
     ($trace_type:ident; $($element:expr),*) => {{
-        #[cfg(feature = "traced")]
+        #[cfg(feature = "tracing")]
         {
             $crate::tracing::$trace_type!($($element),*);
         }

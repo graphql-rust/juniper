@@ -12,7 +12,7 @@ use crate::{
         ScalarValueType,
     },
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, to_camel_case},
+    util::{path_eq_single, span_container::SpanContainer, to_camel_case, tracing},
 };
 
 use super::{
@@ -210,6 +210,8 @@ pub fn expand_on_trait(
 
         fields,
         implementers,
+
+        tracing_rule: meta.tracing.map(|t| *t.inner()),
     };
 
     // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
@@ -344,7 +346,7 @@ pub fn expand_on_impl(
 }
 
 /// Representation of parsed Rust trait method for `#[graphql_interface]` macro code generation.
-enum TraitMethod {
+pub(super) enum TraitMethod {
     /// Method represents a [`Field`] of [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -501,6 +503,8 @@ impl TraitMethod {
             method: method_ident.clone(),
             arguments,
             is_async: method.sig.asyncness.is_some(),
+
+            tracing: tracing::Attr::from_method(method),
         })
     }
 

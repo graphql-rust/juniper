@@ -146,6 +146,8 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
+
+        tracing_rule: attrs.tracing_rule,
     };
 
     Ok(definition.into_input_object_tokens())

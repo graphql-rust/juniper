@@ -3,6 +3,7 @@
 pub mod duplicate;
 pub mod parse_impl;
 pub mod span_container;
+pub mod tracing;
 
 use std::{collections::HashMap, str::FromStr};
 
@@ -18,6 +19,7 @@ use syn::{
     spanned::Spanned,
     token, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
+use tracing::{Attr, TracingRule};
 
 use crate::common::parse::ParseBufferExt as _;
 
@@ -139,51 +141,6 @@ fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
         }
     }
     DeprecationAttr { reason: None }
-}
-
-#[derive(Debug, Default)]
-pub struct TracingAttr {
-    name: Option<SpanContainer<syn::LitStr>>,
-    skip: HashMap<String, SpanContainer<syn::Ident>>,
-    no_trace: bool,
-}
-
-impl Parse for TracingAttr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut attr = TracingAttr::default();
-
-        let content;
-        syn::parenthesized!(content in input);
-        while !content.is_empty() {
-            let name = content.parse::<syn::Ident>()?;
-
-            match name.to_string().as_str() {
-                "name" => {
-                    content.parse::<token::Eq>()?;
-                    let val: syn::LitStr = content.parse()?;
-                    attr.name = Some(SpanContainer::new(name.span(), Some(val.span()), val));
-                }
-                "skip" => {
-                    let skipped_fields;
-                    syn::parenthesized!(skipped_fields in content);
-                    while !skipped_fields.is_empty() {
-                        let field: syn::Ident = skipped_fields.parse()?;
-                        attr.skip.insert(field.to_string(), SpanContainer::new(field.span(), None, field));
-
-                        skipped_fields.parse::<token::Comma>().ok();
-                    }
-                }
-                "no_trace" => {
-                    attr.no_trace = true;
-                }
-                _ => return Err(syn::Error::new(name.span(), "unknown attribute")),
-            }
-
-            // Discard trailing comma.
-            content.parse::<token::Comma>().ok();
-        }
-        Ok(attr)
-    }
 }
 
 // Gets doc comment.
@@ -383,6 +340,8 @@ pub struct ObjectAttributes {
     pub no_async: Option<SpanContainer<()>>,
     pub is_internal: bool,
     pub rename: Option<RenameRule>,
+
+    pub tracing_rule: Option<TracingRule>,
 }
 
 impl Parse for ObjectAttributes {
@@ -451,6 +410,15 @@ impl Parse for ObjectAttributes {
                         output.rename = Some(rename);
                     } else {
                         return Err(syn::Error::new(val.span(), "unknown rename rule"));
+                    }
+                }
+                "trace" => {
+                    input.parse::<syn::token::Eq>()?;
+                    let val = input.parse::<syn::LitStr>()?;
+                    if let Ok(trace) = TracingRule::from_str(&val.value()) {
+                        output.tracing_rule = Some(trace);
+                    } else {
+                        return Err(syn::Error::new(val.span(), "unknown tracing skip rule"));
                     }
                 }
                 _ => {
@@ -636,7 +604,7 @@ pub struct FieldAttributes {
     /// Only relevant for object input objects.
     pub default: Option<SpanContainer<Option<syn::Expr>>>,
     // Only relevant when `tracing` feature enabled
-    pub tracing: Option<TracingAttr>
+    pub tracing: Option<Attr>,
 }
 
 impl Parse for FieldAttributes {
@@ -699,7 +667,7 @@ impl FieldAttributes {
             output.deprecation = deprecation;
         }
 
-        let tracing_attr = attrs.iter().find(|attr| attr.path.is_ident("traced"));
+        let tracing_attr = attrs.iter().find(|attr| attr.path.is_ident("tracing"));
 
         if let Some(attr) = tracing_attr {
             output.tracing = Some(attr.parse_args()?);
@@ -727,7 +695,7 @@ pub struct GraphQLTypeDefinitionField {
     pub _type: syn::Type,
     pub description: Option<String>,
     pub deprecation: Option<DeprecationAttr>,
-    pub tracing: Option<TracingAttr>,
+    pub tracing: Option<Attr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
     pub resolver_code: TokenStream,
     pub is_type_inferred: bool,
@@ -775,6 +743,8 @@ pub struct GraphQLTypeDefiniton {
     pub generic_scalar: bool,
     // FIXME: make this redundant.
     pub no_async: bool,
+
+    pub tracing_rule: Option<TracingRule>,
 }
 
 impl GraphQLTypeDefiniton {
@@ -875,6 +845,15 @@ impl GraphQLTypeDefiniton {
                     },
                 )
             } else {
+                let (tracing_span, trace_sync) = if cfg!(feature = "trace-sync") {
+                    (
+                        tracing::span_tokens(&self, field),
+                        tracing::sync_tokens(&self, field),
+                    )
+                } else {
+                    (quote!(), quote!())
+                };
+
                 let _type = if field.is_type_inferred {
                     quote!()
                 } else {
@@ -883,6 +862,8 @@ impl GraphQLTypeDefiniton {
                 };
                 quote!(
                     #name => {
+                        #tracing_span
+                        #trace_sync
                         let res #_type = (|| { #code })();
                         ::juniper::IntoResolvable::into(
                             res,
@@ -940,6 +921,8 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
+        let tracing_instrument = tracing::instrument();
+
         let resolve_field_async = {
             let resolve_matches_async = self.fields.iter().map(|field| {
                 let name = &field.name;
@@ -951,46 +934,17 @@ impl GraphQLTypeDefiniton {
                     quote!(: #_type)
                 };
 
-                let tracing = if cfg!(feature = "traced") {
-                    let span_name = format!("{}.{}", self.name, name);
-                    let span_name = syn::LitStr::new(&span_name, name.span());
-
-                    let args = field.args.iter().filter_map(|arg| {
-                        let name = &arg.name;
-                        let arg_name = syn::Ident::new(name, arg._type.span());
-                        let arg_getter = syn::LitStr::new(name, arg._type.span());
-                        let scalar = &self.scalar.clone().unwrap_or_else(
-                            || syn::parse2(quote!(::juniper::DefaultScalarValue)).unwrap(),
-                        );
-                        let ty = &arg._type;
-                        field.tracing
-                            .as_ref()
-                            .map(|t| t.skip.get(name))
-                            .flatten()
-                            .is_none()
-                            .then(|| {
-                                quote!(
-                                    #arg_name = ::juniper::tracing::field::debug(
-                                        args.get::<#ty>(#arg_getter).unwrap_or_else(|| {
-                                            ::juniper::FromInputValue::<#scalar>::from_implicit_null()
-                                        })
-                                    )
-                                )
-                            })
-                    });
-
-                    let wrapper = quote!(
-                        .instrument(::juniper::tracing::trace_span!(#span_name, #(#args, )*))
-                    );
-
-                    Some(wrapper)
-                } else {
-                    None
-                };
-
+                let tracing_span = tracing::span_tokens(&self, field);
                 if field.is_async {
+                    let trace_async = if cfg!(feature = "trace-async") {
+                        tracing::async_tokens(&self, field)
+                    } else {
+                        quote!()
+                    };
+
                     quote!(
                         #name => {
+                            #tracing_span
                             let f = async move {
                                 let res #_type = async move { #code }.await;
 
@@ -1008,11 +962,20 @@ impl GraphQLTypeDefiniton {
                                     Ok(None) => Ok(::juniper::Value::null()),
                                     Err(e) => Err(e),
                                 }
-                            } #tracing;
+                            } #trace_async;
                             Box::pin(f)
                         },
                     )
                 } else {
+                    let (trace_async, trace_sync) = if cfg!(feature = "trace-sync") {
+                        (
+                            tracing::async_tokens(&self, field),
+                            tracing::sync_tokens(&self, field),
+                        )
+                    } else {
+                        (quote!(), quote!())
+                    };
+
                     let inner = if !self.no_async {
                         quote!(
                             let f = async move {
@@ -1024,12 +987,13 @@ impl GraphQLTypeDefiniton {
                                     Ok(None) => Ok(::juniper::Value::null()),
                                     Err(e) => Err(e),
                                 }
-                            };
+                            } #trace_async;
                             use ::juniper::futures::future;
                             future::FutureExt::boxed(f)
                         )
                     } else {
                         quote!(
+                            #trace_sync
                             let v = match res2 {
                                 Ok(Some((ctx, r))) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
                                 Ok(None) => Ok(::juniper::Value::null()),
@@ -1042,11 +1006,15 @@ impl GraphQLTypeDefiniton {
 
                     quote!(
                         #name => {
-                            let res #_type = (||{ #code })();
-                            let res2 = ::juniper::IntoResolvable::into(
-                                res,
-                                executor.context()
-                            );
+                            #tracing_span
+                            let res2 = {
+                                #trace_sync
+                                let res #_type = (||{ #code })();
+                                ::juniper::IntoResolvable::into(
+                                    res,
+                                    executor.context()
+                                )
+                            };
                             #inner
                         },
                     )
@@ -1084,12 +1052,6 @@ impl GraphQLTypeDefiniton {
                 None
             };
 
-            let instrument = if cfg!(feature = "traced") {
-                Some(quote!(use ::juniper::tracing::Instrument as _;))
-            } else {
-                None
-            };
-
             quote!(
                 impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #type_generics_tokens
                     #where_async
@@ -1105,7 +1067,7 @@ impl GraphQLTypeDefiniton {
                     {
                         use ::juniper::futures::future;
                         use ::juniper::GraphQLType;
-                        #instrument;
+                        #tracing_instrument;
                         match field {
                             #( #resolve_matches_async )*
                             _ => {
@@ -1193,6 +1155,8 @@ impl GraphQLTypeDefiniton {
                     args: &::juniper::Arguments<#scalar>,
                     executor: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
+                    #tracing_instrument
+
                     match field {
                         #( #resolve_matches )*
                         _ => {
@@ -1366,8 +1330,18 @@ impl GraphQLTypeDefiniton {
                     let _type_name = &field._type;
                     _type = quote!(: #_type_name);
                 };
+
+                let (trace_span, trace_async) = if cfg!(feature = "trace-async") {
+                    (
+                        tracing::span_tokens(&self, field),
+                        tracing::async_tokens(&self, field),
+                    )
+                } else {
+                    (quote!(), quote!())
+                };
                 quote!(
                     #name => {
+                        #trace_span
                         ::juniper::futures::FutureExt::boxed(async move {
                             let res #_type = async { #code }.await;
                             let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
@@ -1389,7 +1363,7 @@ impl GraphQLTypeDefiniton {
                                         Err(e) => Err(ex.new_error(e)),
                                     }
                                 }
-                            });
+                            }) #trace_async;
                             Ok(
                                 ::juniper::Value::Scalar::<
                                     ::juniper::ValuesStream::<#scalar>
@@ -1482,6 +1456,8 @@ impl GraphQLTypeDefiniton {
             }
         );
 
+        let instrument = tracing::instrument();
+
         let subscription_implementation = quote!(
             impl#impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty #type_generics_tokens
             #where_clause_with_send_sync
@@ -1514,6 +1490,7 @@ impl GraphQLTypeDefiniton {
                 {
                     use ::juniper::Value;
                     use ::juniper::futures::stream::StreamExt as _;
+                    #instrument
 
                     match field_name {
                             #( #resolve_matches_async )*

@@ -6,7 +6,7 @@ authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 build = "build.rs"
 
 [dependencies]
-juniper = { path = "../../../juniper", features = ["default", "traced"] }
+juniper = { path = "../../../juniper", features = ["default", "trace"] }
 juniper_iron = { path = "../../../juniper_iron" }
 juniper_subscriptions = { path = "../../../juniper_subscriptions" }
 

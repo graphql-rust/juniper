@@ -30,7 +30,10 @@ pub(crate) fn sync_resolving_code() -> TokenStream {
 /// [`Future`]: std::future::Future
 /// [`Future::Output`]: std::future::Future::Output
 /// [1]: https://spec.graphql.org/June2018/#sec-Types
-pub(crate) fn async_resolving_code(ty: Option<&syn::Type>) -> TokenStream {
+pub(crate) fn async_resolving_code(
+    ty: Option<&syn::Type>,
+    trace_async: TokenStream,
+) -> TokenStream {
     let ty = ty.map(|t| quote! { : #t });
 
     quote! {
@@ -42,6 +45,6 @@ pub(crate) fn async_resolving_code(ty: Option<&syn::Type>) -> TokenStream {
                 },
                 None => Ok(::juniper::Value::null()),
             }
-        }))
+        }) #trace_async)
     }
 }
