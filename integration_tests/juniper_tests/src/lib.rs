@@ -3,6 +3,8 @@ mod api;
 #[cfg(test)]
 mod arc_fields;
 #[cfg(test)]
+mod array;
+#[cfg(test)]
 mod codegen;
 #[cfg(test)]
 mod custom_scalar;

@@ -1,0 +1,28 @@
+warning: field is never read: `enum_path`
+   --> $DIR/mod.rs:282:5
+    |
+282 |     pub enum_path: Option<TokenStream>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field is never read: `span`
+   --> $DIR/mod.rs:296:5
+    |
+296 |     pub span: Span,
+    |     ^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+
+error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
+  --> $DIR/argument_wrong_default_array.rs:12:1
+   |
+12 | #[graphql_interface(for = ObjA)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`
+   |
+   = help: the following implementations were found:
+             <&'a [ascii::ascii_char::AsciiChar] as From<&'a ascii::ascii_str::AsciiStr>>
+             <&'a [u8] as From<&'a ascii::ascii_str::AsciiStr>>
+             <&'a mut [ascii::ascii_char::AsciiChar] as From<&'a mut ascii::ascii_str::AsciiStr>>
+   = note: required because of the requirements on the impl of `Into<[bool; 2]>` for `[bool; 3]`
+   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
