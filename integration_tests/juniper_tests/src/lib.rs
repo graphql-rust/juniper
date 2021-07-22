@@ -1,6 +1,4 @@
 #[cfg(test)]
-mod api;
-#[cfg(test)]
 mod arc_fields;
 #[cfg(test)]
 mod array;
@@ -14,6 +12,8 @@ mod explicit_null;
 mod infallible_as_field_error;
 #[cfg(test)]
 mod issue_371;
+#[cfg(test)]
+mod issue_372;
 #[cfg(test)]
 mod issue_398;
 #[cfg(test)]
