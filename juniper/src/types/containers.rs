@@ -319,55 +319,79 @@ where
     S: ScalarValue,
 {
     fn from_input_value(v: &InputValue<S>) -> Option<Self> {
+        struct PartiallyInitializedArray<T, const N: usize> {
+            arr: [MaybeUninit<T>; N],
+            init_len: usize,
+            no_drop: bool,
+        }
+
+        impl<T, const N: usize> Drop for PartiallyInitializedArray<T, N> {
+            fn drop(&mut self) {
+                if self.no_drop {
+                    return;
+                }
+                // Dropping a `MaybeUninit` does nothing, thus we need to drop
+                // the initialized elements manually, otherwise we may introduce
+                // a memory/resource leak if `T: Drop`.
+                for elem in &mut self.arr[0..self.init_len] {
+                    // SAFETY: This is safe, because `self.init_len` represents
+                    //         exactly the number of initialized elements.
+                    unsafe {
+                        ptr::drop_in_place(elem.as_mut_ptr());
+                    }
+                }
+            }
+        }
+
         match *v {
             InputValue::List(ref ls) => {
-                // SAFETY: The `.assume_init()` here is safe, because the type
-                //         we are claiming to have initialized here is a bunch
-                //         of `MaybeUninit`s, which do not require any
-                //         initialization.
-                let mut out: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
-                let (mut out_len, mut out_is_ok) = (0, true);
+                // SAFETY: The reason we're using a wrapper struct implementing
+                //         `Drop` here is to be panic safe:
+                //         `T: FromInputValue<S>` implementation is not
+                //         controlled by us, so calling `i.item.convert()` below
+                //         may cause a panic when our array is initialized only
+                //         partially. In such situation we need to drop already
+                //         initialized values to avoid possible memory/resource
+                //         leaks if `T: Drop`.
+                let mut out = PartiallyInitializedArray::<T, N> {
+                    // SAFETY: The `.assume_init()` here is safe, because the
+                    //         type we are claiming to have initialized here is
+                    //         a bunch of `MaybeUninit`s, which do not require
+                    //         any initialization.
+                    arr: unsafe { MaybeUninit::uninit().assume_init() },
+                    init_len: 0,
+                    no_drop: false,
+                };
 
                 let mut items = ls.iter().filter_map(|i| i.item.convert());
-                for elem in &mut out[..] {
+                for elem in &mut out.arr[..] {
                     if let Some(i) = items.next() {
                         *elem = MaybeUninit::new(i);
-                        out_len += 1;
+                        out.init_len += 1;
                     } else {
                         // There is not enough `items` to fill the array.
-                        out_is_ok = false;
-                        break;
+                        return None;
                     }
                 }
                 if items.next().is_some() {
                     // There is too much `items` to fit into the array.
-                    out_is_ok = false;
+                    return None;
                 }
+
+                // Do not drop collected `items`, because we're going to return
+                // them.
+                out.no_drop = true;
 
                 // TODO: Use `mem::transmute` instead of `mem::transmute_copy`
                 //       below, once it's allowed for const generics:
                 //       https://github.com/rust-lang/rust/issues/61956
-                if out_is_ok {
-                    // SAFETY: `mem::transmute_copy` is safe here, because we
-                    //         have exactly `N` initialized `items`.
-                    //         Also, despite `mem::transmute_copy` copies the
-                    //         value, we won't have a double-free when `T: Drop`
-                    //         here, because original `data` is `MaybeUninit`,
-                    //         so does nothing on `Drop`.
-                    Some(unsafe { mem::transmute_copy(&out) })
-                } else {
-                    // Dropping a `MaybeUninit` does nothing, thus we need to
-                    // drop the collected `items` manually, otherwise we may
-                    // introduce a memory/resource leak if `T: Drop`.
-                    for elem in &mut out[0..out_len] {
-                        // SAFETY: This is safe, because `out_len` represents
-                        //         exactly the number of added `items`.
-                        unsafe {
-                            ptr::drop_in_place(elem.as_mut_ptr());
-                        }
-                    }
-                    None
-                }
+                // SAFETY: `mem::transmute_copy` is safe here, because we have
+                //         exactly `N` initialized `items`.
+                //         Also, despite `mem::transmute_copy` copies the value,
+                //         we won't have a double-free when `T: Drop` here,
+                //         because original array elements are `MaybeUninit`, so
+                //         do nothing on `Drop`.
+                Some(unsafe { mem::transmute_copy::<_, Self>(&out.arr) })
             }
             ref other => {
                 other.convert().and_then(|e: T| {
