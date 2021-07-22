@@ -115,6 +115,7 @@ mod impl_scalar;
 
 mod common;
 mod graphql_interface;
+mod graphql_object;
 mod graphql_union;
 
 use proc_macro::TokenStream;
@@ -148,7 +149,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, GraphQLScope::DeriveObject);
+    let gen = derive_object::build_derive_object(ast, GraphQLScope::ObjectDerive);
     match gen {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
@@ -471,7 +472,7 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
     TokenStream::from(impl_object::build_object(
         args,
         input,
-        GraphQLScope::ImplObject,
+        GraphQLScope::ObjectAttr,
     ))
 }
 
@@ -545,7 +546,7 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
     TokenStream::from(impl_object::build_subscription(
         args,
         input,
-        GraphQLScope::ImplObject,
+        GraphQLScope::ObjectAttr,
     ))
 }
 

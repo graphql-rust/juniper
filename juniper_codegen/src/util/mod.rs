@@ -4,7 +4,7 @@ pub mod duplicate;
 pub mod parse_impl;
 pub mod span_container;
 
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, convert::TryFrom, str::FromStr};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
@@ -328,6 +328,20 @@ impl FromStr for RenameRule {
     }
 }
 
+impl TryFrom<&syn::LitStr> for RenameRule {
+    type Error = syn::Error;
+
+    fn try_from(lit: &syn::LitStr) -> syn::Result<Self> {
+        Self::from_str(&lit.value()).map_err(|_| syn::Error::new(lit.span(), "unknown rename rule"))
+    }
+}
+
+impl Parse for RenameRule {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Self::try_from(&input.parse::<syn::LitStr>()?)
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct ObjectAttributes {
     pub name: Option<SpanContainer<String>>,
@@ -400,13 +414,8 @@ impl Parse for ObjectAttributes {
                     output.is_internal = true;
                 }
                 "rename" => {
-                    input.parse::<syn::Token![=]>()?;
-                    let val = input.parse::<syn::LitStr>()?;
-                    if let Ok(rename) = RenameRule::from_str(&val.value()) {
-                        output.rename = Some(rename);
-                    } else {
-                        return Err(syn::Error::new(val.span(), "unknown rename rule"));
-                    }
+                    input.parse::<token::Eq>()?;
+                    output.rename = Some(input.parse::<RenameRule>()?);
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
