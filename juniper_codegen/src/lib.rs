@@ -143,6 +143,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     }
 }
 
+// TODO
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
@@ -495,7 +496,7 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 /// struct UserID(String);
 ///
 /// #[juniper::graphql_scalar(
-///     // You can rename the type for GraphQL by specifying the name here.    
+///     // You can rename the type for GraphQL by specifying the name here.
 ///     name = "MyName",
 ///     // You can also specify a description here.
 ///     // If present, doc comments will be ignored.
