@@ -69,21 +69,18 @@ async fn main() {
 ```
 
 To trace how GraphQL object being resolved you need to enable one of tracing 
-features and use `tracing` argument on top-level `#[graphql_object]` and
-`#[graphql_interface]` attributes. `tracing` argument can be used with one of
-provided arguments:
-`"trace-sync"`, `"trace-async"`, `"trace-all"` and `"complex"`.
- - Use `trace-sync` to trace only synchronous part (struct fields and `fn`s).
- - Use `trace-async` to trace only asynchronous part (`async fn`s) and
+features and use `trace` argument on top-level `#[graphql_object]` and
+`#[graphql_interface]` attributes or `#[graphql]` if used with `#[derive(GraphQLObject)]`.
+`tracing` argument can be used with one of provided arguments:
+`"sync"`, `"async"`, `"skip-all"` and `"complex"`.
+ - Use `"sync"` to trace only synchronous part (struct fields and `fn`s).
+ - Use `"async"` to trace only asynchronous part (`async fn`s) and
 subscriptions.
- - Use `complex` to trace only fields marked with `#[tracing(complex)]`
- - Use `skip-all` to skip all fields.
+ - Use `"complex"` to trace only fields marked with `#[tracing(complex)]`
+ - Use `"skip-all"` to skip tracing of all fields.
 
 In addition you can use `#[tracing(no_trace)]` with all variants above to
 exclude field from tracing even if it belongs to traced group.
-
-**Note: `trace-sync` feature is mutually exclusive with `"trace-async"`
-argument and vice versa.**
 
 If resolving of certain field requires additional arguments (when used `fn`s or
 `async fn`s) they also will be included in resulted trace (except `self` and
@@ -124,9 +121,7 @@ In case above both `filter` and `count` will be recorded in [`Span`] for
 
 In most cases `#[tracing]` mimics behaviour of the `#[instrument]` attribute
 from [tracing] crate and you could use it as a reference. With the only key
-deference you should understand, it applied implicitly to all sync resolvers
-(including the derived ones) when the `trace-sync` feature is enabled, to
-all async resolvers when `trace-async` feature is enabled and to all if the
+deference you should understand, it applied implicitly to all resolvers if the
 `trace` feature is enabled.
 
 [tracing]: https://crates.io/crates/tracing

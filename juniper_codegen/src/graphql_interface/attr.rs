@@ -6,13 +6,15 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
+#[cfg(feature = "tracing")]
+use crate::util::tracing;
 use crate::{
     common::{
         parse::{self, TypeExt as _},
         ScalarValueType,
     },
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, to_camel_case, tracing},
+    util::{path_eq_single, span_container::SpanContainer, to_camel_case},
 };
 
 use super::{
@@ -211,7 +213,8 @@ pub fn expand_on_trait(
         fields,
         implementers,
 
-        tracing_rule: meta.tracing.map(|t| *t.inner()),
+        #[cfg(feature = "tracing")]
+        tracing_rule: meta.tracing_rule.map(|t| *t.inner()),
     };
 
     // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
@@ -504,6 +507,7 @@ impl TraitMethod {
             arguments,
             is_async: method.sig.asyncness.is_some(),
 
+            #[cfg(feature = "tracing")]
             tracing: tracing::Attr::from_method(method),
         })
     }

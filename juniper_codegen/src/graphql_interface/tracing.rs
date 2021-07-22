@@ -1,12 +1,12 @@
 pub use crate::util::tracing::{
-    async_tokens, instrument, span_tokens, sync_tokens, Attr, TracedArgument, TracedField,
-    TracedType, TracingRule,
+    async_tokens, instrument, span_tokens, sync_tokens, Attr, Rule, TracedArgument, TracedField,
+    TracedType,
 };
 
 use super::{Definition, Field, FieldArgument};
 
 impl TracedType for Definition {
-    fn tracing_rule(&self) -> Option<TracingRule> {
+    fn tracing_rule(&self) -> Option<Rule> {
         self.tracing_rule
     }
 

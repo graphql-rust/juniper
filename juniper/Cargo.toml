@@ -30,9 +30,7 @@ expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
 scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
-trace = ["tracing", "tracing-futures", "juniper_codegen/trace-sync", "juniper_codegen/trace-async"]
-trace-async = ["tracing", "tracing-futures", "juniper_codegen/trace-async"]
-trace-sync = ["tracing", "tracing-futures", "juniper_codegen/trace-sync"]
+trace = ["tracing", "tracing-futures", "juniper_codegen/tracing"]
 
 [dependencies]
 juniper_codegen = { path = "../juniper_codegen" }

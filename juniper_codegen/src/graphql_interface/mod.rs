@@ -3,15 +3,12 @@
 //! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 
 pub mod attr;
+#[cfg(feature = "tracing")]
 mod tracing;
 
-use std::{
-    collections::{HashMap, HashSet},
-    str::FromStr,
-};
+use std::collections::{HashMap, HashSet};
 
 use proc_macro2::TokenStream;
-use proc_macro_error::abort;
 use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
 use syn::{
     parse::{Parse, ParseStream},
@@ -125,7 +122,16 @@ struct TraitMeta {
     /// library.
     is_internal: bool,
 
-    tracing: Option<SpanContainer<tracing::TracingRule>>,
+    /// Explicitly specified rule for tracing of fields that belong to this [GraphQL interface][1].
+    ///
+    /// If absent and `tracing` feature enabled all fields not marked with `#[tracing(no_trace)]`
+    /// will be traced.
+    ///
+    /// If it present but feature `tracing` disabled it will cause compilation error.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    #[cfg(feature = "tracing")]
+    tracing_rule: Option<SpanContainer<tracing::Rule>>,
 }
 
 impl Parse for TraitMeta {
@@ -224,21 +230,26 @@ impl Parse for TraitMeta {
                 "internal" => {
                     output.is_internal = true;
                 }
+                #[cfg(feature = "tracing")]
                 "trace" => {
+                    use std::str::FromStr as _;
+
+                    use proc_macro_error::abort;
+
                     let span = ident.span();
                     input.parse::<token::Eq>()?;
                     let tracing = input.parse::<syn::LitStr>()?;
-                    let tracing_rule = tracing::TracingRule::from_str(tracing.value().as_str());
+                    let tracing_rule = tracing::Rule::from_str(tracing.value().as_str());
                     match tracing_rule {
                         Ok(rule) => output
-                            .tracing
+                            .tracing_rule
                             .replace(SpanContainer::new(span, Some(tracing.span()), rule))
                             .none_or_else(|_| err::dup_arg(span))?,
                         Err(_) => abort!(syn::Error::new(
                             tracing.span(),
                             format!(
                                 "Unknown tracing rule: {}, \
-                             known values: trace-sync, trace-async, skip-all and complex",
+                                 known values: trace-sync, trace-async, skip-all and complex",
                                 tracing.value(),
                             )
                         )),
@@ -271,7 +282,8 @@ impl TraitMeta {
                 external_downcasts: self, another => span_joined
             ),
             is_internal: self.is_internal || another.is_internal,
-            tracing: try_merge_opt!(tracing: self, another),
+            #[cfg(feature = "tracing")]
+            tracing_rule: try_merge_opt!(tracing_rule: self, another),
         })
     }
 
@@ -780,7 +792,13 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implementers: Vec<Implementer>,
 
-    tracing_rule: Option<tracing::TracingRule>,
+    /// Explicitly defined rules of [GraphQL field][2]s that belongs to this
+    /// [GraphQL interface][1].
+    ///
+    /// If it's absent and `tracing` feature is enabled all [field][2]s not marked
+    /// with `#[tracing(no_trace)]` will be traced.
+    #[cfg(feature = "tracing")]
+    tracing_rule: Option<tracing::Rule>,
 }
 
 impl Definition {
@@ -998,7 +1016,7 @@ impl Definition {
             .filter_map(|i| i.method_resolve_into_type_async_tokens(&trait_ty));
         let regular_downcast = self.ty.method_resolve_into_type_async_tokens();
 
-        let instrument = tracing::instrument();
+        let instrument = if_tracing_enabled!(tracing::instrument());
 
         quote! {
             #[automatically_derived]
@@ -1307,6 +1325,16 @@ struct Field {
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     is_async: bool,
 
+    /// Tracing attribute placed on this [GraphQL field][2]. Only relevant when `tracing`
+    /// feature is enabled.
+    ///
+    /// If it is present and `tracing` feature is enabled it can be used to alter trace
+    /// behaviour.
+    ///
+    /// It it is present and `tracing` feature is disabled it will cause compile time error.
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    #[cfg(feature = "tracing")]
     tracing: Option<tracing::Attr>,
 }
 
@@ -1353,6 +1381,7 @@ impl Field {
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
+    #[allow(unused_variables)]
     fn method_resolve_field_tokens(
         &self,
         trait_ty: &syn::Type,
@@ -1371,19 +1400,14 @@ impl Field {
 
         let resolving_code = gen::sync_resolving_code();
 
-        let (tracing_span, trace_sync) = if cfg!(feature = "trace-sync") {
-            (
-                tracing::span_tokens(definition, self),
-                tracing::sync_tokens(definition, self),
-            )
-        } else {
-            (quote!(), quote!())
-        };
+        let tracing_span = if_tracing_enabled!(tracing::span_tokens(definition, self));
+        let trace_sync = if_tracing_enabled!(tracing::sync_tokens(definition, self));
 
         Some(quote! {
             #name => {
                 #tracing_span
                 #trace_sync
+
                 let res: #ty = <Self as #trait_ty>::#method(self #( , #arguments )*);
                 #resolving_code
             }
@@ -1412,14 +1436,8 @@ impl Field {
             fut = quote! { ::juniper::futures::future::ready(#fut) };
         }
 
-        let (tracing_span, trace_async) = if cfg!(feature = "trace-async") {
-            (
-                tracing::span_tokens(definition, self),
-                tracing::async_tokens(definition, self),
-            )
-        } else {
-            (quote!(), quote!())
-        };
+        let tracing_span = if_tracing_enabled!(tracing::span_tokens(definition, self));
+        let trace_async = if_tracing_enabled!(tracing::async_tokens(definition, self));
 
         let resolving_code = gen::async_resolving_code(Some(ty), trace_async);
 

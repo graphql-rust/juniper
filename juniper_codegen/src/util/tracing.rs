@@ -11,12 +11,25 @@ use syn::{
 
 #[derive(Debug, Default)]
 pub struct Attr {
+    /// Optional span rename, if `None` method name should be used instead.
     name: Option<syn::LitStr>,
+
+    /// Overwritten `level` of span generated, if `None` `Level::INFO` should be used.
     level: Option<syn::LitStr>,
+
+    /// Overwritten `target` of span.
     target: Option<syn::LitStr>,
+
+    /// Skipped arguments on `fn` resolvers.
     skip: HashMap<String, syn::Ident>,
+
+    /// Custom fields.
     fields: Vec<syn::ExprAssign>,
+
+    /// Whether this field is marked with `#[tracing(complex)]`
     is_complex: bool,
+
+    /// Whether this field is marked with `#[tracing(no_trace)]`
     no_trace: bool,
 }
 
@@ -100,11 +113,11 @@ impl Parse for Attr {
 
 /// The different possible groups of fields to trace.
 #[derive(Copy, Clone, Debug)]
-pub enum TracingRule {
+pub enum Rule {
     /// Trace all fields that resolved using `async fn`s.
     Async,
 
-    /// Trace all fields that can be syncronously resolved.
+    /// Trace all fields that can be synchronously resolved.
     Sync,
 
     /// Trace only fields that marked with `#[tracing(complex)]`.
@@ -114,8 +127,7 @@ pub enum TracingRule {
     SkipAll,
 }
 
-impl TracingRule {
-    #[cfg(any(feature = "trace-async", feature = "trace-sync"))]
+impl Rule {
     pub fn is_traced(&self, field: &impl TracedField) -> bool {
         match self {
             Self::Async => field.is_async(),
@@ -126,13 +138,13 @@ impl TracingRule {
     }
 }
 
-impl FromStr for TracingRule {
+impl FromStr for Rule {
     type Err = ();
 
     fn from_str(rule: &str) -> Result<Self, Self::Err> {
         match rule {
-            "trace-async" => Ok(Self::Async),
-            "trace-sync" => Ok(Self::Sync),
+            "async" => Ok(Self::Async),
+            "sync" => Ok(Self::Sync),
             "skip-all" => Ok(Self::SkipAll),
             "complex" => Ok(Self::Complex),
             _ => Err(()),
@@ -140,18 +152,35 @@ impl FromStr for TracingRule {
     }
 }
 
+/// Generalisation of type that can be traced.
 pub trait TracedType {
-    fn tracing_rule(&self) -> Option<TracingRule>;
+    /// Optional [`TracingRule`] read from attributes `#[graphql_object(trace = "...")]`
+    /// on impl block, `#[graphql(trace = "...")]` on derived GraphQLObject or
+    /// `#[graphql_interface(trace = "...")]` on trait definition.
+    fn tracing_rule(&self) -> Option<Rule>;
+
+    /// Name of this type.
     fn name(&self) -> &str;
+
+    /// Scalar used by this GraphQL object.
     fn scalar(&self) -> Option<syn::Type>;
 }
 
+/// Trait that marks type that this is field that can be traced.
 pub trait TracedField {
+    /// Type of argument used by this field.
     type Arg: TracedArgument;
 
+    /// Returns parsed `#[tracing]` attribute.
     fn tracing_attr(&self) -> Option<&Attr>;
+
+    /// Whether this field relies on async resolver.
     fn is_async(&self) -> bool;
+
+    /// Name of this field.
     fn name(&self) -> &str;
+
+    /// Arguments if resolver is `fn`.
     fn args(&self) -> Vec<&Self::Arg>;
 }
 
@@ -160,7 +189,6 @@ pub trait TracedArgument {
     fn name(&self) -> &str;
 }
 
-#[cfg(any(feature = "trace-async", feature = "trace-sync"))]
 fn is_traced(ty: &impl TracedType, field: &impl TracedField) -> bool {
     let traced = ty
         .tracing_rule()
@@ -171,21 +199,10 @@ fn is_traced(ty: &impl TracedType, field: &impl TracedField) -> bool {
     traced && !no_trace
 }
 
-#[cfg(not(any(feature = "trace-async", feature = "trace-sync")))]
-fn is_traced(_: &impl TracedType, _: &impl TracedField) -> bool {
-    false
-}
-
-#[cfg(any(feature = "trace-async", feature = "trace-sync"))]
 pub fn instrument() -> TokenStream {
     quote!(
         use ::juniper::InstrumentInternal as _;
     )
-}
-
-#[cfg(not(any(feature = "trace-async", feature = "trace-sync")))]
-pub fn instrument() -> TokenStream {
-    quote!()
 }
 
 // Returns code that constructs `span` required for tracing
@@ -287,13 +304,13 @@ pub fn sync_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
 
 mod graphql_object {
     use crate::util::{
-        GraphQLTypeDefinitionField, GraphQLTypeDefinitionFieldArg, GraphQLTypeDefiniton,
+        GraphQLTypeDefinition, GraphQLTypeDefinitionField, GraphQLTypeDefinitionFieldArg,
     };
 
-    use super::{Attr, TracedArgument, TracedField, TracedType, TracingRule};
+    use super::{Attr, Rule, TracedArgument, TracedField, TracedType};
 
-    impl TracedType for GraphQLTypeDefiniton {
-        fn tracing_rule(&self) -> Option<TracingRule> {
+    impl TracedType for GraphQLTypeDefinition {
+        fn tracing_rule(&self) -> Option<Rule> {
             self.tracing_rule
         }
 

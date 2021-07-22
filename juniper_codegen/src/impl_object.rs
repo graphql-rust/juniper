@@ -34,7 +34,7 @@ fn create(
     args: TokenStream,
     body: TokenStream,
     error: GraphQLScope,
-) -> syn::Result<util::GraphQLTypeDefiniton> {
+) -> syn::Result<util::GraphQLTypeDefinition> {
     let body_span = body.span();
     let _impl = util::parse_impl::ImplBlock::parse(args, body)?;
     let name = _impl
@@ -175,12 +175,14 @@ fn create(
                 args,
                 description: attrs.description.map(SpanContainer::into_inner),
                 deprecation: attrs.deprecation.map(SpanContainer::into_inner),
-                tracing: attrs.tracing,
                 resolver_code,
                 is_type_inferred: false,
                 is_async,
                 default: None,
                 span,
+
+                #[cfg(feature = "tracing")]
+                tracing: attrs.tracing,
             })
         })
         .collect::<Vec<_>>();
@@ -209,7 +211,7 @@ fn create(
     // Early abort after GraphQL properties
     proc_macro_error::abort_if_dirty();
 
-    let definition = util::GraphQLTypeDefiniton {
+    let definition = util::GraphQLTypeDefinition {
         name,
         _type: *_impl.target_type.clone(),
         scalar: _impl.attrs.scalar.map(SpanContainer::into_inner),
@@ -227,6 +229,7 @@ fn create(
         generic_scalar: true,
         no_async: _impl.attrs.no_async.is_some(),
 
+        #[cfg(feature = "tracing")]
         tracing_rule: _impl.attrs.tracing_rule,
     };
 

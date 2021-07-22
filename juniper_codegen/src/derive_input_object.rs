@@ -90,12 +90,14 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
                 args: Vec::new(),
                 description: field_attrs.description.map(SpanContainer::into_inner),
                 deprecation: None,
-                tracing: field_attrs.tracing,
                 resolver_code,
                 is_type_inferred: true,
                 is_async: false,
                 default,
                 span,
+
+                #[cfg(feature = "tracing")]
+                tracing: field_attrs.tracing,
             })
         })
         .collect::<Vec<_>>();
@@ -134,7 +136,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
 
     proc_macro_error::abort_if_dirty();
 
-    let definition = util::GraphQLTypeDefiniton {
+    let definition = util::GraphQLTypeDefinition {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),
@@ -147,6 +149,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
 
+        #[cfg(feature = "tracing")]
         tracing_rule: attrs.tracing_rule,
     };
 

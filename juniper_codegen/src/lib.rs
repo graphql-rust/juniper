@@ -7,6 +7,25 @@
 #![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.7")]
 #![recursion_limit = "1024"]
 
+// NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust
+//         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,
+//         and so we cannot move the definition into a sub-module and use the `#[macro_export]`
+//         attribute. Also it should be declared before `util` mod because `util` relies on it.
+/// Expands to `$expr` if `tracing` feature of this crate is enabled, otherwise returns an
+/// empty [`TokenStream`].
+macro_rules! if_tracing_enabled {
+    ($code: expr) => {{
+        #[cfg(feature = "tracing")]
+        {
+            $code
+        }
+        #[cfg(not(feature = "tracing"))]
+        {
+            ::quote::quote!()
+        }
+    }};
+}
+
 mod result;
 mod util;
 

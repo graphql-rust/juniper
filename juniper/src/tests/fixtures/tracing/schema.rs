@@ -81,22 +81,22 @@ impl Query {
         ]
     }
 
-    /// Returns GraphQL object marked with `trace = "trace-async"`.
+    /// Returns GraphQL object marked with `trace = "async"`.
     async fn trace_async() -> TraceAsync {
         TraceAsync
     }
 
-    /// Returns derived GraphQL object marked with `trace = "trace-async"`.
+    /// Returns derived GraphQL object marked with `trace = "async"`.
     async fn derived_async() -> AsyncDerived {
         AsyncDerived::default()
     }
 
-    /// Returns GraphQL object marked with `trace = "trace-sync"`.
+    /// Returns GraphQL object marked with `trace = "sync"`.
     fn trace_sync() -> TraceSync {
         TraceSync
     }
 
-    /// Returns derived GraphQL object marked with `trace = "trace-sync"`.
+    /// Returns derived GraphQL object marked with `trace = "sync"`.
     fn derived_sync() -> SyncDerived {
         SyncDerived::default()
     }
@@ -135,12 +135,12 @@ impl Query {
         InterfacedSimpleValue::TraceSync(TraceSync)
     }
 
-    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "trace-sync"`.
+    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "sync"`.
     fn erased_sync() -> InterfacedSyncValue {
         InterfacedSyncValue::TraceSync(TraceSync)
     }
 
-    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "trace-async"`.
+    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "async"`.
     fn erased_async() -> InterfacedAsyncValue {
         InterfacedAsyncValue::TraceAsync(TraceAsync)
     }
@@ -350,7 +350,7 @@ pub trait FooBar {
 pub struct TraceSync;
 
 #[graphql_object(
-    trace = "trace-sync",
+    trace = "sync",
     impl = [InterfacedSimpleValue, InterfacedSyncValue],
 )]
 impl TraceSync {
@@ -363,9 +363,9 @@ impl TraceSync {
     }
 }
 
-/// Derived GraphQL object marked with `trace = "trace-sync"`.
+/// Derived GraphQL object marked with `trace = "sync"`.
 #[derive(Default, GraphQLObject)]
-#[graphql(trace = "trace-sync")]
+#[graphql(trace = "sync")]
 pub struct SyncDerived {
     /// Simple field
     sync: i32,
@@ -375,7 +375,7 @@ pub struct SyncDerived {
 pub struct TraceAsync;
 
 #[graphql_object(
-    trace = "trace-async",
+    trace = "async",
     impl = [InterfacedAsyncValue],
 )]
 impl TraceAsync {
@@ -390,7 +390,7 @@ impl TraceAsync {
 
 /// Derived GraphQL object
 #[derive(Default, GraphQLObject)]
-#[graphql(trace = "trace-async")]
+#[graphql(trace = "async")]
 pub struct AsyncDerived {
     /// Simple field
     sync: i32,
@@ -471,7 +471,7 @@ trait InterfacedSimple {
 
 #[graphql_interface(
     for = [TraceSync],
-    trace = "trace-sync",
+    trace = "sync",
     async,
 )]
 trait InterfacedSync {
@@ -481,7 +481,7 @@ trait InterfacedSync {
 
 #[graphql_interface(
     for = [TraceAsync],
-    trace = "trace-async",
+    trace = "async",
     async,
 )]
 trait InterfacedAsync {

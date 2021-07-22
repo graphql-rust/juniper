@@ -18,8 +18,7 @@ travis-ci = { repository = "graphql-rust/juniper" }
 proc-macro = true
 
 [features]
-trace-async = []
-trace-sync = []
+tracing = []
 
 [dependencies]
 proc-macro-error = "1.0.2"

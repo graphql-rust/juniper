@@ -1,4 +1,4 @@
-#![allow(missing_docs)]
+//! Fixtures used to test integration with `tracing` crate.
 
 pub mod schema;
 
@@ -11,30 +11,45 @@ use tracing::{
 };
 use tracing_core::{span, Subscriber};
 
+/// Information about `tracing` span recorded within tests.
 #[derive(Clone, Debug)]
-pub struct TestSpan {
+struct TestSpan {
     id: span::Id,
     fields: HashMap<String, String>,
     metadata: &'static Metadata<'static>,
 }
 
+/// Information about `tracing` event recorded within tests.
 #[derive(Clone, Debug)]
 pub struct TestEvent {
     fields: HashMap<String, String>,
     metadata: &'static Metadata<'static>,
 }
 
+/// Method calls on [`TestSubscriber`].
 #[derive(Clone, Debug)]
-pub enum SubscriberEvent {
+enum SubscriberEvent {
+    /// `new_span` method.
     NewSpan(TestSpan),
+
+    /// `enter` method.
     Enter(span::Id),
+
+    /// `exit` method.
     Exit(span::Id),
+
+    /// `clone_span` method.
     CloneSpan(span::Id),
+
+    /// `try_close` method.
     TryClose(span::Id),
+
+    /// `event` method.
     Event(TestEvent),
 }
 
 impl TestEvent {
+    /// Constructs new [`TestEvent`] from `tracing` [`Event`].
     pub fn new(ev: &Event<'_>) -> Self {
         let mut visitor = Visitor::new();
 
@@ -46,6 +61,7 @@ impl TestEvent {
     }
 }
 
+/// Simple visitor useful for converting `tracing` [`Event`]s into [`TestEvent`]s.
 struct Visitor(HashMap<String, String>);
 
 impl Visitor {
@@ -61,9 +77,13 @@ impl Visit for Visitor {
     }
 }
 
+/// Subscriber that logs every method call.
 #[derive(Clone)]
 pub struct TestSubscriber {
+    /// Counter used to create unique [`span::Id`]s.
     counter: Rc<RefCell<u64>>,
+
+    /// Log of method calls to this subscriber.
     events: Rc<RefCell<Vec<SubscriberEvent>>>,
 }
 
@@ -72,6 +92,7 @@ unsafe impl Sync for TestSubscriber {}
 unsafe impl Send for TestSubscriber {}
 
 impl TestSubscriber {
+    /// Returns new [`TestSubscriber`].
     pub fn new() -> Self {
         TestSubscriber {
             counter: Rc::new(RefCell::new(1)),
@@ -79,6 +100,7 @@ impl TestSubscriber {
         }
     }
 
+    /// Creates [`SubscriberAssert`] used to validated constructed spans.
     pub fn assert(self) -> SubscriberAssert {
         SubscriberAssert {
             name_to_span: HashMap::new(),
@@ -146,9 +168,10 @@ impl Subscriber for TestSubscriber {
     }
 }
 
+/// Wrapper representing span tree received from [`TestSubscriber`].
 pub struct SubscriberAssert {
     name_to_span: HashMap<span::Id, String>,
-    pub events: Vec<SubscriberEvent>,
+    events: Vec<SubscriberEvent>,
 }
 
 impl SubscriberAssert {
@@ -381,6 +404,7 @@ impl SubscriberAssert {
     }
 }
 
+/// Struct that can be compared to span recorded by [`TestSubscriber`].
 pub struct SpanLike {
     name: String,
     level: Option<Level>,
@@ -389,21 +413,27 @@ pub struct SpanLike {
     strict_fields: bool,
 }
 
+/// Abstraction over types that can be compared with span form `tracing` crate.
 pub trait AsSpan {
+    /// Name of span.
     fn name(&self) -> &str;
 
+    /// [`Level`] of span.
     fn level(&self) -> Option<Level> {
         None
     }
 
+    /// `target` of span.
     fn target(&self) -> Option<&str> {
         None
     }
 
+    /// `fields` recorded within a span.
     fn fields(&self) -> Vec<(String, String)> {
         vec![]
     }
 
+    /// Whether fields should be checked strictly.
     fn is_strict(&self) -> bool {
         false
     }
@@ -437,15 +467,21 @@ impl AsSpan for SpanLike {
     }
 }
 
+/// Extension that allows fluent construction of [`SpanLike`].
 pub trait SpanExt {
+    /// Sets the given `name`.
     fn with_name(self, name: &str) -> SpanLike;
 
+    /// Sets the given `level`.
     fn with_level(self, level: Level) -> SpanLike;
 
+    /// Sets the given `target`.
     fn with_target(self, target: &str) -> SpanLike;
 
+    /// Adds the given `field` with the `value`.
     fn with_field(self, field: &str, value: &str) -> SpanLike;
 
+    /// Sets `is_strict` to the given value.
     fn with_strict_fields(self, strict: bool) -> SpanLike;
 }
 

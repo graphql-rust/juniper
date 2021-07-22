@@ -94,12 +94,14 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
                 args: Vec::new(),
                 description: field_attrs.description.map(SpanContainer::into_inner),
                 deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
-                tracing: field_attrs.tracing,
                 resolver_code,
                 is_type_inferred: true,
                 is_async: false,
                 default: None,
                 span,
+
+                #[cfg(feature = "tracing")]
+                tracing: field_attrs.tracing,
             })
         })
         .collect::<Vec<_>>();
@@ -135,7 +137,7 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
 
     proc_macro_error::abort_if_dirty();
 
-    let definition = util::GraphQLTypeDefiniton {
+    let definition = util::GraphQLTypeDefinition {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),
@@ -149,7 +151,9 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
 
-        tracing_rule: attrs.tracing_rule,
+        // NOTICE: nothing to trace on enums
+        #[cfg(feature = "tracing")]
+        tracing_rule: None,
     };
 
     Ok(definition.into_enum_tokens())

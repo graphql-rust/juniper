@@ -3,6 +3,8 @@
 pub mod duplicate;
 pub mod parse_impl;
 pub mod span_container;
+
+#[cfg(feature = "tracing")]
 pub mod tracing;
 
 use std::{collections::HashMap, str::FromStr};
@@ -19,7 +21,6 @@ use syn::{
     spanned::Spanned,
     token, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
-use tracing::{Attr, TracingRule};
 
 use crate::common::parse::ParseBufferExt as _;
 
@@ -341,7 +342,8 @@ pub struct ObjectAttributes {
     pub is_internal: bool,
     pub rename: Option<RenameRule>,
 
-    pub tracing_rule: Option<TracingRule>,
+    #[cfg(feature = "tracing")]
+    pub tracing_rule: Option<tracing::Rule>,
 }
 
 impl Parse for ObjectAttributes {
@@ -412,10 +414,11 @@ impl Parse for ObjectAttributes {
                         return Err(syn::Error::new(val.span(), "unknown rename rule"));
                     }
                 }
+                #[cfg(feature = "tracing")]
                 "trace" => {
                     input.parse::<syn::token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
-                    if let Ok(trace) = TracingRule::from_str(&val.value()) {
+                    if let Ok(trace) = tracing::Rule::from_str(&val.value()) {
                         output.tracing_rule = Some(trace);
                     } else {
                         return Err(syn::Error::new(val.span(), "unknown tracing skip rule"));
@@ -604,7 +607,8 @@ pub struct FieldAttributes {
     /// Only relevant for object input objects.
     pub default: Option<SpanContainer<Option<syn::Expr>>>,
     // Only relevant when `tracing` feature enabled
-    pub tracing: Option<Attr>,
+    #[cfg(feature = "tracing")]
+    pub tracing: Option<tracing::Attr>,
 }
 
 impl Parse for FieldAttributes {
@@ -667,9 +671,8 @@ impl FieldAttributes {
             output.deprecation = deprecation;
         }
 
-        let tracing_attr = attrs.iter().find(|attr| attr.path.is_ident("tracing"));
-
-        if let Some(attr) = tracing_attr {
+        #[cfg(feature = "tracing")]
+        if let Some(attr) = attrs.iter().find(|attr| attr.path.is_ident("tracing")) {
             output.tracing = Some(attr.parse_args()?);
         }
 
@@ -695,13 +698,15 @@ pub struct GraphQLTypeDefinitionField {
     pub _type: syn::Type,
     pub description: Option<String>,
     pub deprecation: Option<DeprecationAttr>,
-    pub tracing: Option<Attr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
     pub resolver_code: TokenStream,
     pub is_type_inferred: bool,
     pub is_async: bool,
     pub default: Option<TokenStream>,
     pub span: Span,
+
+    #[cfg(feature = "tracing")]
+    pub tracing: Option<tracing::Attr>,
 }
 
 impl syn::spanned::Spanned for GraphQLTypeDefinitionField {
@@ -720,7 +725,7 @@ impl<'a> syn::spanned::Spanned for &'a GraphQLTypeDefinitionField {
 /// by various macros.
 /// The definition can be rendered to Rust code.
 #[derive(Debug)]
-pub struct GraphQLTypeDefiniton {
+pub struct GraphQLTypeDefinition {
     pub name: String,
     pub _type: syn::Type,
     pub context: Option<syn::Type>,
@@ -744,10 +749,11 @@ pub struct GraphQLTypeDefiniton {
     // FIXME: make this redundant.
     pub no_async: bool,
 
-    pub tracing_rule: Option<TracingRule>,
+    #[cfg(feature = "tracing")]
+    pub tracing_rule: Option<tracing::Rule>,
 }
 
-impl GraphQLTypeDefiniton {
+impl GraphQLTypeDefinition {
     #[allow(unused)]
     fn has_async_field(&self) -> bool {
         self.fields.iter().any(|field| field.is_async)
@@ -845,14 +851,8 @@ impl GraphQLTypeDefiniton {
                     },
                 )
             } else {
-                let (tracing_span, trace_sync) = if cfg!(feature = "trace-sync") {
-                    (
-                        tracing::span_tokens(&self, field),
-                        tracing::sync_tokens(&self, field),
-                    )
-                } else {
-                    (quote!(), quote!())
-                };
+                let tracing_span = if_tracing_enabled!(tracing::span_tokens(&self, field));
+                let trace_sync = if_tracing_enabled!(tracing::sync_tokens(&self, field));
 
                 let _type = if field.is_type_inferred {
                     quote!()
@@ -864,6 +864,7 @@ impl GraphQLTypeDefiniton {
                     #name => {
                         #tracing_span
                         #trace_sync
+
                         let res #_type = (|| { #code })();
                         ::juniper::IntoResolvable::into(
                             res,
@@ -921,7 +922,7 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        let tracing_instrument = tracing::instrument();
+        let tracing_instrument = if_tracing_enabled!(tracing::instrument());
 
         let resolve_field_async = {
             let resolve_matches_async = self.fields.iter().map(|field| {
@@ -934,13 +935,9 @@ impl GraphQLTypeDefiniton {
                     quote!(: #_type)
                 };
 
-                let tracing_span = tracing::span_tokens(&self, field);
+                let tracing_span = if_tracing_enabled!(tracing::span_tokens(&self, field));
                 if field.is_async {
-                    let trace_async = if cfg!(feature = "trace-async") {
-                        tracing::async_tokens(&self, field)
-                    } else {
-                        quote!()
-                    };
+                    let trace_async = if_tracing_enabled!(tracing::async_tokens(&self, field));
 
                     quote!(
                         #name => {
@@ -967,14 +964,8 @@ impl GraphQLTypeDefiniton {
                         },
                     )
                 } else {
-                    let (trace_async, trace_sync) = if cfg!(feature = "trace-sync") {
-                        (
-                            tracing::async_tokens(&self, field),
-                            tracing::sync_tokens(&self, field),
-                        )
-                    } else {
-                        (quote!(), quote!())
-                    };
+                    let trace_async = if_tracing_enabled!(tracing::async_tokens(&self, field));
+                    let trace_sync = if_tracing_enabled!(tracing::sync_tokens(&self, field));
 
                     let inner = if !self.no_async {
                         quote!(
@@ -1331,17 +1322,12 @@ impl GraphQLTypeDefiniton {
                     _type = quote!(: #_type_name);
                 };
 
-                let (trace_span, trace_async) = if cfg!(feature = "trace-async") {
-                    (
-                        tracing::span_tokens(&self, field),
-                        tracing::async_tokens(&self, field),
-                    )
-                } else {
-                    (quote!(), quote!())
-                };
+                let trace_span = if_tracing_enabled!(tracing::span_tokens(&self, field));
+                let trace_async = if_tracing_enabled!(tracing::async_tokens(&self, field));
                 quote!(
                     #name => {
                         #trace_span
+
                         ::juniper::futures::FutureExt::boxed(async move {
                             let res #_type = async { #code }.await;
                             let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
@@ -1456,7 +1442,7 @@ impl GraphQLTypeDefiniton {
             }
         );
 
-        let instrument = tracing::instrument();
+        let instrument = if_tracing_enabled!(tracing::instrument());
 
         let subscription_implementation = quote!(
             impl#impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty #type_generics_tokens
