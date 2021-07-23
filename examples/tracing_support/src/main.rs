@@ -30,7 +30,7 @@ struct User {
 
 #[graphql_object(Context = Context)]
 impl User {
-    // `id` can be resolved pretty straight forward so we mark it with `no_trace`
+    // `id` can be resolved pretty straightforward so we mark it with `no_trace`
     #[tracing(no_trace)]
     fn id(&self) -> i32 {
         self.id
@@ -188,4 +188,29 @@ async fn main() {
     // This should output a validation error in the middle of other spans.
     let query = "{ bob { field_that_does_not_exist } }";
     let _ = juniper::execute_sync(query, None, &root, &vars, &ctx);
+
+    // If you use tracing with something like `jaeger_opentracing` span with name
+    // 'Query.guest' which has field 'name' with value '"Not Bob"' and 1 child span
+    // 'User.kind'. There won't be traces to 'User.id' because we marked it with
+    // `#[tracing(no_trace)]`
+    let query = "{ guest(id: 1, name: \"Not Bob\") { id  kind} }";
+    let (_, _errors) = juniper::execute(query, None, &root, &vars, &ctx)
+        .await
+        .unwrap();
+
+    // Here you'll see span 'Query.syncUser' with one child span
+    // 'SyncTracedUser.kind' because it's synchronous and not marked with
+    // `#[tracing(no_trace)]`.
+    let query = "{ syncUser { id name kind} }";
+    let (_, _errors) = juniper::execute(query, None, &root, &vars, &ctx)
+        .await
+        .unwrap();
+
+    // Here you'll see span 'Query.complexUser' with one child span
+    // 'ComplexDerivedUser.kind' because it's marked with `#[tracing(complex)]`
+    // and not marked with `#[tracing(no_trace)]`.
+    let query = "{ complexUser { id name kind }}";
+    let (_, _errors) = juniper::execute(query, None, &root, &vars, &ctx)
+        .await
+        .unwrap();
 }

@@ -12,16 +12,15 @@ juniper_subscriptions = { path = "../../../juniper_subscriptions" }
 
 derive_more = "0.99"
 futures = "0.3"
-tokio = { version = "0.2", features = ["rt-core", "blocking", "stream", "rt-util", "macros"] }
 iron = "0.5"
 mount = "0.4"
 skeptic = "0.13"
 serde_json = "1.0"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-core", "blocking", "stream", "rt-util", "rt-multi-thread"] }
 uuid = "0.8"
 
 tracing = "0.1.26"
-tracing-subscriber = "0.2.12"
+tracing-subscriber = "0.2.15"
 
 [build-dependencies]
 skeptic = "0.13"

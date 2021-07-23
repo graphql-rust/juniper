@@ -10,7 +10,7 @@ This feature is off by default and can be enabled via the `tracing` feature.
 [dependencies]
 juniper = { version = "0.15.7", features = ["default", "tracing"]}
 tracing = "0.1.26"
-tracing-subscriber = "0.2.9"
+tracing-subscriber = "0.2.15"
 ```
 
 ## Usage
@@ -82,7 +82,14 @@ async fn main() {
 
     // When run with `RUST_LOG=trace cargo run`, this should output traces /
     // span events to `stdout`.
-    let query = "{ foo }";
+    let query = r#"
+        {
+            foo { 
+                value
+                multiplyValues(another: 23)
+                squareValue
+            }
+        }"#;
     let (_, _errors) = juniper::execute(query, None, &root, &vars, &())
         .await
         .unwrap();
@@ -91,10 +98,10 @@ async fn main() {
 
 ## Skipping field resolvers
 
-In certain scenarios you may want to skip tracing of some fields because it
-too simple and tracing preparations of this resolver would actually take more
-time then execution in this cases you can use `#[tracing(no_trace)]` to completely
-disable tracing of this field resolver.
+In certain scenarios you may want to skip tracing of some fields because it too
+simple and straightforward that tracing preparations of this resolver would actually
+take more time then execution. In this cases you can use `#[tracing(no_trace)]` to
+completely disable tracing of this field resolver.
 
 ### Example
 
@@ -116,12 +123,13 @@ impl User {
 }
 ```
 
-When you don't need to trace how whole object is being resolve and setting
-`#[tracing(no_trace)]` on most of the simple fields is rather inefficient you can
-use `tracing` argument on top-level `#[graphql_object]`, `#[graphql_interface]`
-or `#[graphql]` (when it used with `#[derive(GraphQLObject)]`) attributes to trace
-specific group of fields or not to trace att all. `tracing` argument can be used
-with one of the following arguments: `"sync"`, `"async"`, `"skip-all"` and `"complex"`.
+Manually setting `#[tracing(no_traces)]` to avoid tracing of all, let's say for
+example synchronous field resolvers is rather inefficient when you have GraphQL
+object with too much fields. In this case you can use `tracing` argument on
+top-level `#[graphql_object]`, `#[graphql_interface]` or `#[graphql]` (when it
+used with `#[derive(GraphQLObject)]`) attributes to trace specific group of
+fields or not to trace at all. `tracing` argument can be used with one of the
+following arguments: `"sync"`, `"async"`, `"complex"` or `"skip-all"`.
  - Use `"sync"` to trace only synchronous part (struct fields and `fn`s).
  - Use `"async"` to trace only asynchronous part (`async fn`s) and
 subscriptions.
