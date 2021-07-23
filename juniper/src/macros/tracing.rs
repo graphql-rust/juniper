@@ -1,3 +1,7 @@
+//! Macros to instrument [`tracing`] spans inside this crate.
+//!
+//! [`tracing`]: crate::tracing
+
 // Macros to instrument future spans.
 
 #[doc(hidden)]
@@ -23,16 +27,16 @@ macro_rules! __juniper_instrument_trace {
     }}
 }
 
-// Macros to instrument (non-future) spans.
+// Macros to instrument non-future spans.
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __juniper_span_internal {
     ($trace_type:ident; $($element:expr),*) => {
         #[cfg(feature = "tracing")]
-        let myspan = $crate::tracing::span!($crate::tracing::Level::$trace_type, ($($element),*));
+        let __span = $crate::tracing::span!($crate::tracing::Level::$trace_type, ($($element),*));
         #[cfg(feature = "tracing")]
-        let _enter = myspan.enter();
+        let _span_enter = __span.enter();
     };
 }
 

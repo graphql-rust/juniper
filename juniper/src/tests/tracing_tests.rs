@@ -1,5 +1,4 @@
 use futures::StreamExt as _;
-use tracing::{subscriber::DefaultGuard, Level};
 
 use crate::{
     executor::Variables,
@@ -8,6 +7,7 @@ use crate::{
         schema::{Database, Query, Subscriptions},
         SpanExt as _, TestSubscriber,
     },
+    tracing::{self, subscriber::DefaultGuard, Level},
     types::scalars::EmptyMutation,
 };
 

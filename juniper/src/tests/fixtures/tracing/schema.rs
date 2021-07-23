@@ -1,28 +1,32 @@
-//! Schema that contains all necessary to test integration with `tracing` crate.
+//! Schema that contains all the necessities to test integration with
+//! [`tracing`] crate.
 
 use std::collections::HashMap;
 
 use futures::stream::{self, BoxStream};
-use tracing::instrument;
 
-use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLObject};
+use crate::{
+    graphql_interface, graphql_object, graphql_subscription, tracing, Context, GraphQLObject,
+};
 
-/// Test database
+/// Test database.
 #[derive(Debug)]
 pub struct Database {
     inner: HashMap<i32, String>,
 }
 
+impl Context for Database {}
+
 impl Database {
-    /// Returns new [`Database`].
+    /// Returns a new [`Database`].
     pub fn new() -> Self {
         let mut inner = HashMap::new();
         inner.insert(42, "Meaning of life".to_owned());
         Self { inner }
     }
 
-    /// Query mock, instrumented by `tracing` crate.
-    #[instrument(skip(self))]
+    /// Query mock, instrumented by [`tracing`] crate.
+    #[tracing::instrument(skip(self))]
     pub fn traced_query(&self, id: i32) -> Option<String> {
         self.inner.get(&id).cloned()
     }
@@ -33,9 +37,7 @@ impl Database {
     }
 }
 
-impl Context for Database {}
-
-/// Query root with various queries used to test tracing compatibility.
+/// Query root with various queries used to test [`tracing`] compatibility.
 pub struct Query;
 
 #[graphql_object(context = Database)]
@@ -45,7 +47,7 @@ impl Query {
         Foo { id: 37 }
     }
 
-    /// Sync query with argument.
+    /// Sync query with an argument.
     fn bar(id: i32) -> Bar {
         Bar { id }
     }
@@ -60,12 +62,12 @@ impl Query {
         }
     }
 
-    /// Async query with argument.
+    /// Async query with an argument.
     async fn async_bar(id: i32) -> Bar {
         Bar { id }
     }
 
-    /// Query that returns `Foo` wrapped in `FooBar`.
+    /// Query that returns an object wrapped into GraphQL interface.
     fn foo_bar() -> FooBarValue {
         FooBarValue::Foo(Foo { id: 1 })
     }
@@ -159,7 +161,7 @@ impl Query {
     }
 }
 
-/// Test GraphQL subscriptions.
+/// Subscriptions root with various queries used to test [`tracing`] compatibility.
 pub struct Subscriptions;
 
 #[graphql_subscription(context = Database)]
@@ -169,6 +171,21 @@ impl Subscriptions {
 
         stream::iter(items).boxed()
     }
+}
+
+macro_rules! build_impl {
+    ($ty:ident, $trt:ident) => {
+        #[graphql_interface(async)]
+        impl $trt for $ty {
+            fn sync_fn(&self) -> i32 {
+                1
+            }
+
+            async fn async_fn(&self) -> i32 {
+                2
+            }
+        }
+    };
 }
 
 /// Simple GraphQL object.
@@ -202,13 +219,13 @@ impl Foo {
         meaning_of_life
     }
 
-    /// Field with it's `target` overwritten.
+    /// Field with its `target` being overwritten.
     #[tracing(target = "my_target")]
     fn target(&self) -> bool {
         true
     }
 
-    /// Field with it's `level` overwritten.
+    /// Field with its `level` being overwritten.
     #[tracing(level = "warn")]
     fn level(&self) -> bool {
         true
@@ -239,7 +256,7 @@ impl Bar {
         self.id
     }
 
-    /// Field that has signature identical to `FooBar`s one but in fact traced.
+    /// Field having signature identical to `FooBar`'s one, but being traced in fact.
     fn non_traced(&self) -> bool {
         false
     }
@@ -256,7 +273,7 @@ impl Bar {
         context.traced_query(self.id)
     }
 
-    /// Non traced database query.
+    /// Non-traced database query.
     async fn non_traced_data(&self, context: &Database) -> Option<String> {
         context.non_traced_query(self.id)
     }
@@ -273,23 +290,23 @@ impl FooBar for Bar {
     }
 }
 
-/// Derived `GraphQLObject`.
+/// Derived [`GraphQLObject`].
 #[derive(GraphQLObject)]
 #[graphql(impl = FooBarValue, context = Database)]
 pub struct DerivedFoo {
-    /// Resolver from that has context bound and const bound trace fields.
+    /// Resolver having context bound and const bound trace fields.
     #[tracing(fields(self.id = self.id, custom_fields = "work"))]
     id: i32,
 
-    /// Field marked with `no_trace` within derived GraphQLObject.
+    /// Field marked with `no_trace` within derived [`GraphQLObject`].
     #[tracing(no_trace)]
     non_traced: String,
 
-    /// Field with it's `target` overwritten.
+    /// Field with its `target` being overwritten.
     #[tracing(target = "my_target")]
     target: bool,
 
-    /// Field with it's `level` overwritten.
+    /// Field with its `level` being overwritten.
     #[tracing(level = "warn")]
     level: bool,
 }
@@ -363,7 +380,7 @@ pub trait FooBar {
     }
 }
 
-/// GraphQL object marked with `trace = "skip-sync"`
+/// GraphQL object marked with `trace = "skip-sync"`.
 pub struct TraceSync;
 
 #[graphql_object(
@@ -379,6 +396,9 @@ impl TraceSync {
         2
     }
 }
+
+build_impl!(TraceSync, InterfacedSimple);
+build_impl!(TraceSync, InterfacedSync);
 
 /// Derived GraphQL object marked with `trace = "sync"`.
 #[derive(Default, GraphQLObject)]
@@ -405,7 +425,9 @@ impl TraceAsync {
     }
 }
 
-/// Derived GraphQL object
+build_impl!(TraceAsync, InterfacedAsync);
+
+/// Derived GraphQL object.
 #[derive(Default, GraphQLObject)]
 #[graphql(trace = "async")]
 pub struct AsyncDerived {
@@ -430,7 +452,9 @@ impl SkipAll {
     }
 }
 
-/// Derived GraphQL object marked with `trace = "skip-all"`
+build_impl!(SkipAll, InterfacedSkipAll);
+
+/// Derived GraphQL object marked with `trace = "skip-all"`.
 #[derive(Default, GraphQLObject)]
 #[graphql(trace = "skip-all")]
 pub struct SkipAllDerived {
@@ -438,7 +462,7 @@ pub struct SkipAllDerived {
     sync: i32,
 }
 
-/// GraphQL object marked with `trace = "complex"`
+/// GraphQL object marked with `trace = "complex"`.
 pub struct Complex;
 
 #[graphql_object(
@@ -465,6 +489,8 @@ impl Complex {
         4
     }
 }
+
+build_impl!(Complex, InterfacedComplex);
 
 /// Derived GraphQL object marked with `trace = "complex"`.
 #[derive(GraphQLObject)]
@@ -528,24 +554,3 @@ trait InterfacedComplex {
     #[tracing(complex)]
     async fn async_fn(&self) -> i32;
 }
-
-macro_rules! build_impl {
-    ($ty:ident, $trt:ident) => {
-        #[graphql_interface(async)]
-        impl $trt for $ty {
-            fn sync_fn(&self) -> i32 {
-                1
-            }
-
-            async fn async_fn(&self) -> i32 {
-                2
-            }
-        }
-    };
-}
-
-build_impl!(TraceSync, InterfacedSimple);
-build_impl!(TraceSync, InterfacedSync);
-build_impl!(TraceAsync, InterfacedAsync);
-build_impl!(SkipAll, InterfacedSkipAll);
-build_impl!(Complex, InterfacedComplex);

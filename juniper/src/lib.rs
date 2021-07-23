@@ -106,12 +106,11 @@ pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
 
-// This is required by the `tracing` feature.
-//
-// Name of `tracing` crate changed to `tracing_rs` so we can use `tracing` as feature.
+// These are required by the code generated via the `juniper_codegen` macros
+// when the `tracing` feature is enabled.
 #[doc(hidden)]
 #[cfg(feature = "tracing")]
-pub extern crate tracing_rs as tracing;
+pub use tracing_01 as tracing;
 #[doc(hidden)]
 #[cfg(feature = "tracing")]
 pub use tracing_futures;
@@ -151,7 +150,7 @@ mod executor_tests;
 
 // Needs to be public because macros use it.
 pub use crate::util::to_camel_case;
-#[cfg(feature = "tracing-futures")]
+#[cfg(feature = "tracing")]
 pub use crate::util::tracing::InstrumentInternal;
 
 use crate::{
@@ -214,13 +213,12 @@ impl<'a> fmt::Display for GraphQLError<'a> {
         match self {
             GraphQLError::ParseError(error) => write!(f, "{}", error),
             GraphQLError::ValidationError(errors) => {
-                let errors = errors
-                    .iter()
-                    .map(|e| format!("{}", e))
-                    .collect::<Vec<_>>()
-                    .join("\n");
-                write!(f, "{}", errors)?;
-                Ok(())
+                if let Some((last, other)) = errors.split_last() {
+                    for err in other {
+                        writeln!(f, "{}", err)?;
+                    }
+                    write!(f, "{}", last)?;
+                }
             }
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
             GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
@@ -252,7 +250,7 @@ where
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
-        __juniper_span_trace!("rule_validation");
+        __juniper_span_trace!("validate_document");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
@@ -260,7 +258,6 @@ where
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
             __juniper_trace!("validation_error: {}", gql_error);
-
             return Err(gql_error);
         }
     }
@@ -274,7 +271,6 @@ where
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
             __juniper_trace!("validation_error: {}", gql_error);
-
             return Err(gql_error);
         }
     }
@@ -306,7 +302,7 @@ where
     let document = parse_document_source(document_source, &root_node.schema)?;
 
     {
-        __juniper_span_trace!("rule_validation");
+        __juniper_span_trace!("validate_document");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
@@ -314,7 +310,6 @@ where
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
             __juniper_trace!("validation_error: {}", gql_error);
-
             return Err(gql_error);
         }
     }
@@ -328,16 +323,14 @@ where
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
             __juniper_trace!("validation_error: {}", gql_error);
-
             return Err(gql_error);
         }
     }
 
-    let f = executor::execute_validated_query_async(
+    let fut = executor::execute_validated_query_async(
         &document, operation, root_node, variables, context,
     );
-
-    __juniper_instrument_trace!(f, "execute_validated_query").await
+    __juniper_instrument_trace!(fut, "execute_validated_query_async").await
 }
 
 /// Resolve subscription into `ValuesStream`
@@ -364,7 +357,7 @@ where
         parse_document_source(document_source, &root_node.schema)?;
 
     {
-        __juniper_span_trace!("rule_validation");
+        __juniper_span_trace!("validate_document");
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
 
@@ -372,7 +365,6 @@ where
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
             __juniper_trace!("validation_error: {:?}", gql_error);
-
             return Err(gql_error);
         }
     }
@@ -386,16 +378,14 @@ where
         if !errors.is_empty() {
             let gql_error = GraphQLError::ValidationError(errors);
             __juniper_trace!("validation_error: {:?}", gql_error);
-
             return Err(gql_error);
         }
     }
 
-    let f = executor::resolve_validated_subscription(
+    let fut = executor::resolve_validated_subscription(
         &document, operation, root_node, variables, context,
     );
-
-    __juniper_instrument_trace!(f, "resolve_validated_subscription").await
+    __juniper_instrument_trace!(fut, "resolve_validated_subscription").await
 }
 
 /// Execute the reference introspection query in the provided schema

@@ -1,15 +1,19 @@
-//! Fixtures used to test integration with `tracing` crate.
+//! Fixtures used to test integration with [`tracing`] crate.
+//!
+//! [`tracing`]: crate::tracing
 
 pub mod schema;
 
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
 
-use tracing::{
+use tracing_core::{span, Subscriber};
+
+use crate::tracing::{
+    self,
     field::{Field, Visit},
     span::{Attributes, Record},
     Event, Level, Metadata,
 };
-use tracing_core::{span, Subscriber};
 
 /// Information about `tracing` span recorded within tests.
 #[derive(Clone, Debug)]
