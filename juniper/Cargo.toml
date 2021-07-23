@@ -33,7 +33,7 @@ schema-language = ["graphql-parser-integration"]
 tracing = ["tracing-rs", "tracing-futures", "juniper_codegen/tracing"]
 
 [dependencies]
-juniper_codegen = { path = "../juniper_codegen" }
+juniper_codegen = { version = "0.15.7", path = "../juniper_codegen"  }
 
 anyhow = { version = "1.0.32", optional = true, default-features = false }
 async-trait = "0.1.39"
@@ -52,7 +52,6 @@ static_assertions = "1.1"
 url = { version = "2.0", optional = true }
 uuid = { version = "0.8", default-features = false, optional = true }
 
-tracing-core = "0.1"
 tracing-rs = { package = "tracing", version = "0.1.23", optional = true }
 tracing-futures = { version = "0.2.5", optional = true, features = ["futures-03"] }
 
@@ -61,6 +60,7 @@ bencher = "0.1.2"
 pretty_assertions = "0.7.1"
 serde_json = "1.0.2"
 tokio = { version = "1", features = ["macros", "time", "rt-multi-thread"] }
+tracing-core = "0.1"
 tracing-subscriber = "0.2"
 
 [[bench]]
