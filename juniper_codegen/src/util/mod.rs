@@ -687,6 +687,8 @@ impl FieldAttributes {
 #[derive(Debug)]
 pub struct GraphQLTypeDefinitionFieldArg {
     pub name: String,
+    pub raw_name: syn::Ident,
+    pub resolver_code: TokenStream,
     pub description: Option<String>,
     pub default: Option<syn::Expr>,
     pub _type: Box<syn::Type>,
@@ -854,6 +856,8 @@ impl GraphQLTypeDefinition {
                 let tracing_span = if_tracing_enabled!(tracing::span_tokens(&self, field));
                 let trace_sync = if_tracing_enabled!(tracing::sync_tokens(&self, field));
 
+                let args = field.args.iter().map(|arg| &arg.resolver_code);
+
                 let _type = if field.is_type_inferred {
                     quote!()
                 } else {
@@ -862,10 +866,12 @@ impl GraphQLTypeDefinition {
                 };
                 quote!(
                     #name => {
+                        #( #args )*
+
                         #tracing_span
                         #trace_sync
 
-                        let res #_type = (|| { #code })();
+                        let res #_type = (move || { #code })();
                         ::juniper::IntoResolvable::into(
                             res,
                             executor.context()
@@ -935,12 +941,16 @@ impl GraphQLTypeDefinition {
                     quote!(: #_type)
                 };
 
+                let args = field.args.iter().map(|arg| &arg.resolver_code);
+
                 let tracing_span = if_tracing_enabled!(tracing::span_tokens(&self, field));
                 if field.is_async {
                     let trace_async = if_tracing_enabled!(tracing::async_tokens(&self, field));
 
                     quote!(
                         #name => {
+                            #( #args )*
+
                             #tracing_span
                             let f = async move {
                                 let res #_type = async move { #code }.await;
@@ -997,10 +1007,13 @@ impl GraphQLTypeDefinition {
 
                     quote!(
                         #name => {
+                            #( #args )*
+
                             #tracing_span
+
                             let res2 = {
                                 #trace_sync
-                                let res #_type = (||{ #code })();
+                                let res #_type = (move ||{ #code })();
                                 ::juniper::IntoResolvable::into(
                                     res,
                                     executor.context()
@@ -1314,6 +1327,8 @@ impl GraphQLTypeDefinition {
                 let name = &field.name;
                 let code = &field.resolver_code;
 
+                let args = field.args.iter().map(|arg| &arg.resolver_code);
+
                 let _type;
                 if field.is_type_inferred {
                     _type = quote!();
@@ -1326,12 +1341,14 @@ impl GraphQLTypeDefinition {
                 let trace_async = if_tracing_enabled!(tracing::async_tokens(&self, field));
                 quote!(
                     #name => {
+                        #( #args )*
+
                         #trace_span
 
                         ::juniper::futures::FutureExt::boxed(async move {
                             let res #_type = async { #code }.await;
                             let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
-                            let executor= executor.as_owned_executor();
+                            let executor = executor.as_owned_executor();
                             let f = res.then(move |res| {
                                 let executor = executor.clone();
                                 let res2: ::juniper::FieldResult<_, #scalar> =

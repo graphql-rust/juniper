@@ -1,6 +1,6 @@
 # master
 
-- Fix fields on interfaces not being resolved when used with fragments ([#923](https://github.com/graphql-rust/juniper/pull/923))
+- Add optional `tracing` integration ([#972](https://github.com/graphql-rust/juniper/pull/972))
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 

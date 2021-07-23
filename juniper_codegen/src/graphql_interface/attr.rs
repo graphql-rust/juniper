@@ -549,10 +549,14 @@ impl TraitMethod {
             }
         }
 
-        let name = if let Some(name) = meta.name.as_ref() {
-            name.as_ref().value()
+        let (name, raw_name) = if let Some(name) = meta.name.as_ref() {
+            let name = name.as_ref().value();
+            let raw_name = syn::Ident::new(name.as_str(), name.span());
+            (name, raw_name)
         } else if let syn::Pat::Ident(name) = &*argument.pat {
-            to_camel_case(&name.ident.unraw().to_string())
+            let raw_name = name.ident.clone();
+            let name = raw_name.unraw().to_string();
+            (name, raw_name)
         } else {
             ERR.custom(
                 argument.pat.span(),
@@ -577,6 +581,7 @@ impl TraitMethod {
 
         Some(MethodArgument::Regular(FieldArgument {
             name,
+            raw_name,
             ty: argument.ty.as_ref().clone(),
             description: meta.description.as_ref().map(|d| d.as_ref().value()),
             default: meta.default.as_ref().map(|v| v.as_ref().clone()),

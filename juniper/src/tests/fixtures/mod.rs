@@ -3,6 +3,6 @@
 /// GraphQL schema and data from Star Wars.
 pub mod starwars;
 
-#[cfg(feature = "trace")]
 /// Fixtures used to test integration with `tracing` crate.
+#[cfg(feature = "trace")]
 pub mod tracing;

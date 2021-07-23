@@ -109,16 +109,25 @@ fn create(
                         );
                     }
 
-                    let resolver = quote!(
-                        let #mut_modifier #arg_ident = args
-                            .get::<#ty>(#final_name)
+                    // External argument resolver that allows to extract variables prior entering
+                    // execution context, to avoid implicit cloning. So it can be used by external
+                    // tools such as tracing that records function arguments into span.
+                    let arg_resolver = quote!(
+                        let #arg_ident: #ty = args.get::<#ty>(#final_name)
                             .unwrap_or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null);
+                    );
+
+                    // Used to move extracted arguments to context of execution.
+                    let resolver = quote!(
+                        let #mut_modifier #arg_ident = #arg_ident;
                     );
 
                     let field_type = util::GraphQLTypeDefinitionFieldArg {
                         description: attrs
                             .argument(&arg_name)
                             .and_then(|arg| arg.description.as_ref().map(|d| d.value())),
+                        raw_name: arg_ident.clone(),
+                        resolver_code: arg_resolver,
                         default: attrs
                             .argument(&arg_name)
                             .and_then(|arg| arg.default.clone()),

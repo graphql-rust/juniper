@@ -1,13 +1,14 @@
+use futures::StreamExt as _;
 use tracing::Level;
 
 use crate::{
     executor::Variables,
     schema::model::RootNode,
     tests::fixtures::tracing::{
-        schema::{Database, Query},
+        schema::{Database, Query, Subscriptions},
         SpanExt as _, TestSubscriber,
     },
-    types::scalars::{EmptyMutation, EmptySubscription},
+    types::scalars::EmptyMutation,
 };
 
 #[test]
@@ -21,11 +22,7 @@ fn test_execute_sync_clean() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let collector = TestSubscriber::new();
     let handle = collector.clone();
@@ -61,11 +58,7 @@ fn test_execute_sync_with_error() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let subscriber = TestSubscriber::new();
     let handle = subscriber.clone();
@@ -104,11 +97,7 @@ async fn test_no_trace_field() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let subscriber = TestSubscriber::new();
     let handle = subscriber.clone();
@@ -152,11 +141,7 @@ async fn test_impl_fn_args() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let subscriber = TestSubscriber::new();
     let handle = subscriber.clone();
@@ -209,11 +194,7 @@ async fn test_custom_fields() {
         }
     "#;
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let subscriber = TestSubscriber::new();
     let handle = subscriber.clone();
@@ -271,11 +252,7 @@ async fn overwrite_level_and_target() {
         "#;
 
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let subscriber = TestSubscriber::new();
     let handle = subscriber.clone();
@@ -384,11 +361,7 @@ async fn graphql_object_trace_arg() {
         "#;
 
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let subscriber = TestSubscriber::new();
     let handle = subscriber.clone();
@@ -467,11 +440,7 @@ async fn graphql_interface_trace_arg() {
         "#;
 
     let database = Database::new();
-    let schema = RootNode::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
 
     let subscriber = TestSubscriber::new();
     let handle = subscriber.clone();
@@ -504,4 +473,96 @@ async fn graphql_interface_trace_arg() {
         .close_exited("Query.erasedComplex")
         .close_exited("execute_validated_query")
         .close_exited("execute");
+}
+
+#[tokio::test]
+async fn subscription_tracing() {
+    let doc = r#"
+        subscription {
+            barSub(id: 10) {
+                id
+                defaultArg(another: -1)
+            }
+        }
+        "#;
+
+    let database = Database::new();
+    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+
+    let subscriber = TestSubscriber::new();
+    let handle = subscriber.clone();
+
+    let _guard = tracing::subscriber::set_default(subscriber);
+
+    let request = crate::http::GraphQLRequest::new(doc.to_owned(), None, None);
+
+    let response = crate::http::resolve_into_stream(&request, &schema, &database).await;
+
+    assert!(response.is_ok());
+
+    let (values, errors) = response.unwrap();
+
+    assert_eq!(errors.len(), 0, "Should return no errors");
+
+    // cannot compare with `assert_eq` because
+    // stream does not implement Debug
+    let response_value_object = match values {
+        juniper::Value::Object(o) => Some(o),
+        _ => None,
+    };
+
+    assert!(response_value_object.is_some());
+
+    let response_returned_object = response_value_object.unwrap();
+
+    let fields = response_returned_object.into_iter();
+
+    let mut names = vec![];
+    let mut collected_values = vec![];
+
+    for (name, stream_val) in fields {
+        names.push(name.clone());
+
+        // since macro returns Value::Scalar(iterator) every time,
+        // other variants may be skipped
+        match stream_val {
+            juniper::Value::Scalar(stream) => {
+                let collected = stream.collect::<Vec<_>>().await;
+                collected_values.push(collected);
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    // Required argument
+    handle
+        .assert()
+        .enter_new_span("resolve_into_stream")
+        .simple_span("rule_validation")
+        .simple_span("validate_input_values")
+        .enter_new_span("resolve_validated_subscription")
+        .new_span(
+            &"Subscriptions.barSub"
+                .with_field("id", "10")
+                .with_strict_fields(true),
+        )
+        .close_exited("resolve_validated_subscription")
+        .close_exited("resolve_into_stream")
+        .enter("Subscriptions.barSub")
+        .simple_span(&"Bar.id".with_field("self.id", "11"))
+        .simple_span(
+            &"Bar.defaultArg"
+                .with_field("this", "42")
+                .with_field("another", "-1")
+                .with_strict_fields(true),
+        )
+        .re_enter("Subscriptions.barSub")
+        .simple_span(&"Bar.id".with_field("self.id", "12"))
+        .simple_span(
+            &"Bar.defaultArg"
+                .with_field("this", "42")
+                .with_field("another", "-1")
+                .with_strict_fields(true),
+        )
+        .close_exited("Subscriptions.barSub");
 }

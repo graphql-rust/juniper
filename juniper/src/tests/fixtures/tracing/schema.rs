@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use futures::stream::{self, BoxStream};
 use tracing::instrument;
 
 use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLObject};
@@ -153,6 +154,17 @@ impl Query {
     /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "complex"`.
     fn erased_complex() -> InterfacedComplexValue {
         InterfacedComplexValue::Complex(Complex)
+    }
+}
+
+pub struct Subscriptions;
+
+#[graphql_subscription(context = Database)]
+impl Subscriptions {
+    async fn bar_sub(id: i32) -> BoxStream<'static, Bar> {
+        let items = [Bar { id: id + 1 }, Bar { id: id + 2 }];
+
+        stream::iter(items).boxed()
     }
 }
 

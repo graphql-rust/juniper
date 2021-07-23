@@ -187,6 +187,7 @@ pub trait TracedField {
 pub trait TracedArgument {
     fn ty(&self) -> &syn::Type;
     fn name(&self) -> &str;
+    fn raw_name(&self) -> &syn::Ident;
 }
 
 fn is_traced(ty: &impl TracedType, field: &impl TracedField) -> bool {
@@ -217,12 +218,8 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
 
     let args = field.args().into_iter().filter_map(|arg| {
         let name = arg.name();
+        let raw_name = arg.raw_name();
         let arg_name = syn::LitStr::new(name, arg.ty().span());
-        let arg_getter = syn::LitStr::new(name, arg.ty().span());
-        let scalar = &ty
-            .scalar()
-            .unwrap_or_else(|| syn::parse2(quote!(::juniper::DefaultScalarValue)).unwrap());
-        let ty = arg.ty();
 
         field
             .tracing_attr()
@@ -231,11 +228,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
             .is_none()
             .then(|| {
                 quote!(
-                    #arg_name = ::juniper::tracing::field::debug(
-                        args.get::<#ty>(#arg_getter).unwrap_or_else(|| {
-                            ::juniper::FromInputValue::<#scalar>::from_implicit_null()
-                        })
-                    )
+                    #arg_name = ::juniper::tracing::field::debug(&#raw_name)
                 )
             })
     });
@@ -350,6 +343,10 @@ mod graphql_object {
 
         fn name(&self) -> &str {
             self.name.as_str()
+        }
+
+        fn raw_name(&self) -> &syn::Ident {
+            &self.raw_name
         }
     }
 }

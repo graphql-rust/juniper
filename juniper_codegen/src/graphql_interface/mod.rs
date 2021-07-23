@@ -1163,6 +1163,11 @@ struct FieldArgument {
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
     name: String,
 
+    /// Raw name of this [GraphQL field argument][2] in Rust code.
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    raw_name: syn::Ident,
+
     /// [Description][1] of this [GraphQL field argument][2] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Descriptions
@@ -1178,6 +1183,22 @@ struct FieldArgument {
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Arguments
     /// [3]: https://spec.graphql.org/June2018/#sec-Required-Arguments
     default: Option<Option<syn::Expr>>,
+}
+
+impl FieldArgument {
+    /// Returns [`TokenStream`] with code that can be used to resolve this argument into variable.
+    #[must_use]
+    fn into_arg_resolver(&self) -> TokenStream {
+        let (raw_name, name, ty) = (&self.raw_name, &self.name, &self.ty);
+        let err_text = format!(
+            "Internal error: missing argument `{}` - validation must have failed",
+            &name,
+        );
+
+        quote! {
+            let #raw_name = args.get::<#ty>(#name).expect(#err_text);
+        }
+    }
 }
 
 /// Possible kinds of Rust trait method arguments for code generation.
@@ -1259,15 +1280,8 @@ impl MethodArgument {
     fn method_resolve_field_tokens(&self) -> TokenStream {
         match self {
             Self::Regular(arg) => {
-                let (name, ty) = (&arg.name, &arg.ty);
-                let err_text = format!(
-                    "Internal error: missing argument `{}` - validation must have failed",
-                    &name,
-                );
-
-                quote! {
-                    args.get::<#ty>(#name).expect(#err_text)
-                }
+                let raw_name = &arg.raw_name;
+                quote! { #raw_name }
             }
 
             Self::Context(_) => quote! {
@@ -1393,6 +1407,11 @@ impl Field {
 
         let (name, ty, method) = (&self.name, &self.ty, &self.method);
 
+        let arg_resolvers = self
+            .arguments
+            .iter()
+            .filter_map(|arg| arg.as_regular().map(|f| f.into_arg_resolver()));
+
         let arguments = self
             .arguments
             .iter()
@@ -1405,6 +1424,8 @@ impl Field {
 
         Some(quote! {
             #name => {
+                #( #arg_resolvers )*
+
                 #tracing_span
                 #trace_sync
 
@@ -1419,12 +1440,18 @@ impl Field {
     ///
     /// [`GraphQLValueAsync::resolve_field_async`]: juniper::GraphQLValueAsync::resolve_field_async
     #[must_use]
+    #[allow(unused_variables)]
     fn method_resolve_field_async_tokens(
         &self,
         trait_ty: &syn::Type,
         definition: &Definition,
     ) -> TokenStream {
         let (name, ty, method) = (&self.name, &self.ty, &self.method);
+
+        let arg_resolvers = self
+            .arguments
+            .iter()
+            .filter_map(|arg| arg.as_regular().map(|f| f.into_arg_resolver()));
 
         let arguments = self
             .arguments
@@ -1443,6 +1470,8 @@ impl Field {
 
         quote! {
             #name => {
+                #( #arg_resolvers )*
+
                 #tracing_span
                 let fut = #fut;
                 #resolving_code

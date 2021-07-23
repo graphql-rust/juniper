@@ -50,4 +50,8 @@ impl TracedArgument for FieldArgument {
     fn name(&self) -> &str {
         self.name.as_str()
     }
+
+    fn raw_name(&self) -> &syn::Ident {
+        &self.raw_name
+    }
 }
