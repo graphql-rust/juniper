@@ -1,5 +1,5 @@
 use futures::StreamExt as _;
-use tracing::Level;
+use tracing::{subscriber::DefaultGuard, Level};
 
 use crate::{
     executor::Variables,
@@ -11,6 +11,21 @@ use crate::{
     types::scalars::EmptyMutation,
 };
 
+type TestSchema<'a> = RootNode<'a, Query, EmptyMutation<Database>, Subscriptions>;
+
+fn init_schema<'a>() -> TestSchema<'a> {
+    TestSchema::new(Query, EmptyMutation::<Database>::new(), Subscriptions)
+}
+
+fn init_tracer() -> (TestSubscriber, DefaultGuard) {
+    let subscriber = TestSubscriber::new();
+
+    (
+        subscriber.clone(),
+        tracing::subscriber::set_default(subscriber),
+    )
+}
+
 #[test]
 fn test_execute_sync_clean() {
     let doc = r#"
@@ -21,15 +36,11 @@ fn test_execute_sync_clean() {
                 skipArgument(name: "name?", meaningOfLife: 42)
             }
         }"#;
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let collector = TestSubscriber::new();
-    let handle = collector.clone();
-
-    tracing::subscriber::with_default(collector, || {
-        juniper::execute_sync(doc, None, &schema, &Variables::new(), &database).ok();
-    });
+    juniper::execute_sync(doc, None, &schema, &Variables::new(), &database).ok();
 
     handle
         .assert()
@@ -57,15 +68,11 @@ fn test_execute_sync_with_error() {
                 name
             }
         }"#;
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    tracing::subscriber::with_default(subscriber, || {
-        juniper::execute_sync(doc, None, &schema, &Variables::new(), &database).err();
-    });
+    juniper::execute_sync(doc, None, &schema, &Variables::new(), &database).err();
 
     handle
         .assert()
@@ -75,6 +82,42 @@ fn test_execute_sync_with_error() {
         .event(Level::TRACE, Some("juniper"), vec![])
         .close_exited("rule_validation")
         .close_exited("execute_sync");
+}
+
+#[tokio::test]
+async fn records_sub_spans() {
+    let doc = r#"
+        {
+            bar(id: 15) {
+                tracedData
+                nonTracedData
+            }
+        }
+        "#;
+    let schema = init_schema();
+    let database = Database::new();
+    let (handle, _guard) = init_tracer();
+
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
+
+    handle
+        .assert()
+        .enter_new_span("execute")
+        .simple_span("rule_validation")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query")
+        .enter_new_span("Query.bar")
+        // To check whether context hasn't leaked.
+        .enter_new_span(&"Bar.tracedData".with_strict_fields(true))
+        // `traced_query` is fn marked with `#[instrument]` from `tracing` crate
+        .simple_span(&"traced_query".with_field("id", "15"))
+        .close_exited("Bar.tracedData")
+        // Should has no child spans because `non_traced_query` doesn't marked with `#[instrument]`
+        .simple_span(&"Bar.nonTracedData".with_strict_fields(true))
+        .close_exited("Query.bar")
+        .close_exited("execute_validated_query")
+        .close_exited("execute");
 }
 
 #[tokio::test]
@@ -96,17 +139,12 @@ async fn test_no_trace_field() {
                 }
             }
         }"#;
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    let _guard = tracing::subscriber::set_default(subscriber);
-
-    juniper::execute(doc, None, &schema, &Variables::new(), &database)
-        .await
-        .err();
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
 
     handle
         .assert()
@@ -140,17 +178,12 @@ async fn test_impl_fn_args() {
                 defaultArg(another: -1)
             }
         }"#;
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    let _guard = tracing::subscriber::set_default(subscriber);
-
-    juniper::execute(doc, None, &schema, &Variables::new(), &database)
-        .await
-        .err();
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
 
     handle
         .assert()
@@ -193,17 +226,12 @@ async fn test_custom_fields() {
             }
         }
     "#;
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    let _guard = tracing::subscriber::set_default(subscriber);
-
-    juniper::execute(doc, None, &schema, &Variables::new(), &database)
-        .await
-        .err();
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
 
     handle
         .assert()
@@ -250,18 +278,12 @@ async fn overwrite_level_and_target() {
             }
         }
         "#;
-
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    let _guard = tracing::subscriber::set_default(subscriber);
-
-    juniper::execute(doc, None, &schema, &Variables::new(), &database)
-        .await
-        .err();
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
 
     handle
         .assert()
@@ -359,18 +381,12 @@ async fn graphql_object_trace_arg() {
             }
         }
         "#;
-
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    let _guard = tracing::subscriber::set_default(subscriber);
-
-    juniper::execute(doc, None, &schema, &Variables::new(), &database)
-        .await
-        .err();
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
 
     handle
         .assert()
@@ -438,18 +454,12 @@ async fn graphql_interface_trace_arg() {
             }
         }
         "#;
-
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
+    let (handle, _guard) = init_tracer();
 
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    let _guard = tracing::subscriber::set_default(subscriber);
-
-    juniper::execute(doc, None, &schema, &Variables::new(), &database)
-        .await
-        .err();
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
 
     handle
         .assert()
@@ -485,14 +495,9 @@ async fn subscription_tracing() {
             }
         }
         "#;
-
+    let schema = init_schema();
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new(), Subscriptions);
-
-    let subscriber = TestSubscriber::new();
-    let handle = subscriber.clone();
-
-    let _guard = tracing::subscriber::set_default(subscriber);
+    let (handle, _guard) = init_tracer();
 
     let request = crate::http::GraphQLRequest::new(doc.to_owned(), None, None);
 

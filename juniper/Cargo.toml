@@ -30,7 +30,7 @@ expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
 scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
-trace = ["tracing", "tracing-futures", "juniper_codegen/tracing"]
+tracing = ["tracing-rs", "tracing-futures", "juniper_codegen/tracing"]
 
 [dependencies]
 juniper_codegen = { path = "../juniper_codegen" }
@@ -52,7 +52,8 @@ static_assertions = "1.1"
 url = { version = "2.0", optional = true }
 uuid = { version = "0.8", default-features = false, optional = true }
 
-tracing = { version = "0.1.23", optional = true }
+tracing-core = "0.1"
+tracing-rs = { package = "tracing", version = "0.1.23", optional = true }
 tracing-futures = { version = "0.2.5", optional = true, features = ["futures-03"] }
 
 [dev-dependencies]
@@ -60,7 +61,6 @@ bencher = "0.1.2"
 pretty_assertions = "0.7.1"
 serde_json = "1.0.2"
 tokio = { version = "1", features = ["macros", "time", "rt-multi-thread"] }
-tracing-core = { version = "0.1" }
 tracing-subscriber = "0.2"
 
 [[bench]]

@@ -106,12 +106,14 @@ pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
 
-// This is required by the `trace` feature.
+// This is required by the `tracing` feature.
+//
+// Name of `tracing` crate changed to `tracing_rs` so we can use `tracing` as feature.
+#[doc(hidden)]
 #[cfg(feature = "tracing")]
+pub extern crate tracing_rs as tracing;
 #[doc(hidden)]
-pub use tracing;
-#[cfg(feature = "tracing-futures")]
-#[doc(hidden)]
+#[cfg(feature = "tracing")]
 pub use tracing_futures;
 
 // Depend on juniper_codegen and re-export everything in it.

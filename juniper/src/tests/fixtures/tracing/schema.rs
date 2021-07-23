@@ -1,4 +1,4 @@
-#![allow(missing_docs)]
+//! Schema that contains all necessary to test integration with `tracing` crate.
 
 use std::collections::HashMap;
 
@@ -7,12 +7,14 @@ use tracing::instrument;
 
 use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLObject};
 
+/// Test database
 #[derive(Debug)]
 pub struct Database {
     inner: HashMap<i32, String>,
 }
 
 impl Database {
+    /// Returns new [`Database`].
     pub fn new() -> Self {
         let mut inner = HashMap::new();
         inner.insert(42, "Meaning of life".to_owned());
@@ -157,6 +159,7 @@ impl Query {
     }
 }
 
+/// Test GraphQL subscriptions.
 pub struct Subscriptions;
 
 #[graphql_subscription(context = Database)]
@@ -347,11 +350,13 @@ pub trait FooBar {
         id + skipped + default + overwritten
     }
 
+    /// Field with overwritten `target` of span.
     #[tracing(target = "my_target")]
     fn target(&self) -> i32 {
         1
     }
 
+    /// Field with overwritten `level` of span.
     #[tracing(level = "warn")]
     fn level(&self) -> i32 {
         2
@@ -425,6 +430,7 @@ impl SkipAll {
     }
 }
 
+/// Derived GraphQL object marked with `trace = "skip-all"`
 #[derive(Default, GraphQLObject)]
 #[graphql(trace = "skip-all")]
 pub struct SkipAllDerived {
@@ -460,6 +466,7 @@ impl Complex {
     }
 }
 
+/// Derived GraphQL object marked with `trace = "complex"`.
 #[derive(GraphQLObject)]
 #[graphql(trace = "complex")]
 pub struct DerivedComplex {

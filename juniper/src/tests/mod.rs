@@ -13,5 +13,5 @@ mod subscriptions;
 mod type_info_tests;
 
 #[cfg(test)]
-#[cfg(feature = "trace")]
+#[cfg(feature = "tracing")]
 mod tracing_tests;

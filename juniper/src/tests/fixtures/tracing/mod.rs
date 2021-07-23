@@ -195,7 +195,7 @@ impl SubscriberAssert {
                     assert_eq!(
                         Some(&val),
                         span.fields.get(&f_name),
-                        "Field {} in span {} either doesn't exist or has value
+                        "Field {} in span {} either doesn't exist or has value \
                          different from {}, values: {:?}",
                         f_name,
                         expected.name(),

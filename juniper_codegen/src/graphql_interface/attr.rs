@@ -6,8 +6,6 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-#[cfg(feature = "tracing")]
-use crate::util::tracing;
 use crate::{
     common::{
         parse::{self, TypeExt as _},
@@ -16,6 +14,9 @@ use crate::{
     result::GraphQLScope,
     util::{path_eq_single, span_container::SpanContainer, to_camel_case},
 };
+
+#[cfg(feature = "tracing")]
+use crate::util::tracing;
 
 use super::{
     inject_async_trait, ArgumentMeta, Definition, EnumType, Field, FieldArgument, ImplMeta,

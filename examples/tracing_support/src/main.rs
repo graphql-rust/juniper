@@ -4,7 +4,8 @@ extern crate tracing;
 extern crate tracing_subscriber;
 
 use juniper::{
-    graphql_object, EmptyMutation, EmptySubscription, FieldError, GraphQLEnum, RootNode, Variables,
+    graphql_object, EmptyMutation, EmptySubscription, FieldError, GraphQLEnum, GraphQLObject,
+    RootNode, Variables,
 };
 use tracing::{trace_span, Instrument as _};
 use tracing_subscriber::EnvFilter;
@@ -29,6 +30,8 @@ struct User {
 
 #[graphql_object(Context = Context)]
 impl User {
+    // `id` can be resolved pretty straight forward so we mark it with `no_trace`
+    #[tracing(no_trace)]
     fn id(&self) -> i32 {
         self.id
     }
@@ -44,6 +47,47 @@ impl User {
     async fn friends(&self) -> Vec<User> {
         vec![]
     }
+}
+
+#[derive(Clone, Debug)]
+struct SyncTracedUser {
+    id: i32,
+    kind: UserKind,
+    name: String,
+}
+
+// Only sync `fn`s will be traced if they're not marked with `#[tracing(no_trace)]`
+// it works similarly with `#[graphql_interface]`
+#[graphql_object(Context = Context, trace = "sync")]
+impl SyncTracedUser {
+    // Won't be traced because it's marked with `no_trace`
+    #[tracing(no_trace)]
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    // Won't be traced because it's `async fn`
+    async fn kind(&self) -> UserKind {
+        self.kind
+    }
+
+    // The only resolver that will be traced
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+}
+
+#[derive(Clone, Debug, GraphQLObject)]
+#[graphql(trace = "complex")]
+struct ComplexDerivedUser {
+    // This shouldn't be traced because it's not marked with `#[tracing(complex)]`
+    id: i32,
+    // This is the only field that will be traced because it's marked with `#[tracing(complex)]`
+    #[tracing(complex)]
+    kind: UserKind,
+    // This shouldn't be traced because of `no_trace`.
+    #[tracing(complex, no_trace)]
+    name: String,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -64,6 +108,32 @@ impl Query {
             id: 1,
             kind: UserKind::Admin,
             name: "Bob".into(),
+        }
+    }
+
+    /// Create guest user with the given `id` and `name`.
+    #[tracing(skip(id))] // Here we skip `id` from being recorded into spans fields
+    fn guest(id: i32, name: String) -> User {
+        User {
+            id,
+            kind: UserKind::Guest,
+            name,
+        }
+    }
+
+    fn sync_user() -> SyncTracedUser {
+        SyncTracedUser {
+            id: 1,
+            kind: UserKind::User,
+            name: "Charlie".into(),
+        }
+    }
+
+    fn complex_derived() -> ComplexDerivedUser {
+        ComplexDerivedUser {
+            id: 42,
+            kind: UserKind::Admin,
+            name: "Dave".into(),
         }
     }
 

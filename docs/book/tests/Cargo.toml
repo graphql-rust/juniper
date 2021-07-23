@@ -6,7 +6,7 @@ authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 build = "build.rs"
 
 [dependencies]
-juniper = { path = "../../../juniper", features = ["default", "trace"] }
+juniper = { path = "../../../juniper", features = ["default", "tracing"] }
 juniper_iron = { path = "../../../juniper_iron" }
 juniper_subscriptions = { path = "../../../juniper_subscriptions" }
 
@@ -20,7 +20,7 @@ serde_json = "1.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 uuid = "0.8"
 
-tracing = "0.1.21"
+tracing = "0.1.26"
 tracing-subscriber = "0.2.12"
 
 [build-dependencies]

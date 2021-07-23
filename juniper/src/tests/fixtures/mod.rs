@@ -4,5 +4,5 @@
 pub mod starwars;
 
 /// Fixtures used to test integration with `tracing` crate.
-#[cfg(feature = "trace")]
+#[cfg(feature = "tracing")]
 pub mod tracing;
