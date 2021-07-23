@@ -1,6 +1,4 @@
 #[cfg(test)]
-mod api;
-#[cfg(test)]
 mod arc_fields;
 #[cfg(test)]
 mod codegen;
@@ -13,11 +11,15 @@ mod infallible_as_field_error;
 #[cfg(test)]
 mod issue_371;
 #[cfg(test)]
+mod issue_372;
+#[cfg(test)]
 mod issue_398;
 #[cfg(test)]
 mod issue_407;
 #[cfg(test)]
 mod issue_500;
+#[cfg(test)]
+mod issue_798;
 #[cfg(test)]
 mod issue_914;
 #[cfg(test)]

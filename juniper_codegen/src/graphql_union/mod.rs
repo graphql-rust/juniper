@@ -7,7 +7,7 @@ pub mod derive;
 
 use std::collections::HashMap;
 
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{quote, ToTokens, TokenStreamExt as _};
 use syn::{
     parse::{Parse, ParseStream},
@@ -274,13 +274,6 @@ struct UnionVariantDefinition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub resolver_check: syn::Expr,
 
-    /// Rust enum variant path that this [GraphQL union][1] variant is associated with.
-    ///
-    /// It's available only when code generation happens for Rust enums.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub enum_path: Option<TokenStream>,
-
     /// Rust type of `juniper::Context` that this [GraphQL union][1] variant requires for
     /// resolution.
     ///
@@ -289,11 +282,6 @@ struct UnionVariantDefinition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub context_ty: Option<syn::Type>,
-
-    /// [`Span`] that points to the Rust source code which defines this [GraphQL union][1] variant.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub span: Span,
 }
 
 /// Definition of [GraphQL union][1] for code generation.
@@ -605,8 +593,6 @@ fn emerge_union_variants_from_meta(
     }
 
     for (ty, rslvr) in external_resolvers {
-        let span = rslvr.span_joined();
-
         let resolver_fn = rslvr.into_inner();
         let resolver_code = parse_quote! {
             #resolver_fn(self, ::juniper::FromContext::from(context))
@@ -621,15 +607,12 @@ fn emerge_union_variants_from_meta(
         if let Some(var) = variants.iter_mut().find(|v| v.ty == ty) {
             var.resolver_code = resolver_code;
             var.resolver_check = resolver_check;
-            var.span = span;
         } else {
             variants.push(UnionVariantDefinition {
                 ty,
                 resolver_code,
                 resolver_check,
-                enum_path: None,
                 context_ty: None,
-                span,
             })
         }
     }

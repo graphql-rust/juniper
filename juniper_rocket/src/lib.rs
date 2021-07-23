@@ -65,6 +65,18 @@ pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
 where
     S: ScalarValue;
 
+impl<S: ScalarValue> AsRef<GraphQLBatchRequest<S>> for GraphQLRequest<S> {
+    fn as_ref(&self) -> &GraphQLBatchRequest<S> {
+        &self.0
+    }
+}
+
+impl<S: ScalarValue> AsMut<GraphQLBatchRequest<S>> for GraphQLRequest<S> {
+    fn as_mut(&mut self) -> &mut GraphQLBatchRequest<S> {
+        &mut self.0
+    }
+}
+
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);
 
