@@ -29,23 +29,31 @@ pub struct GraphQLRequest<S = DefaultScalarValue>
 where
     S: ScalarValue,
 {
-    query: String,
+    /// GraphQL query representing this request.
+    pub query: String,
+
+    /// Optional name of the operation associated with this request.
     #[serde(rename = "operationName")]
-    operation_name: Option<String>,
+    pub operation_name: Option<String>,
+
+    /// Optional variables to execute the GraphQL operation with.
     #[serde(bound(deserialize = "InputValue<S>: Deserialize<'de> + Serialize"))]
-    variables: Option<InputValue<S>>,
+    pub variables: Option<InputValue<S>>,
 }
 
 impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
 {
+    // TODO: Remove in 0.17 `juniper` version.
     /// Returns the `operation_name` associated with this request.
+    #[deprecated(since = "0.16", note = "Use the direct field access instead.")]
     pub fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_deref()
     }
 
-    fn variables(&self) -> Variables<S> {
+    /// Returns operation [`Variables`] defined withing this request.
+    pub fn variables(&self) -> Variables<S> {
         self.variables
             .as_ref()
             .and_then(|iv| {
@@ -64,7 +72,7 @@ where
         operation_name: Option<String>,
         variables: Option<InputValue<S>>,
     ) -> Self {
-        GraphQLRequest {
+        Self {
             query,
             operation_name,
             variables,
@@ -88,7 +96,7 @@ where
     {
         GraphQLResponse(crate::execute_sync(
             &self.query,
-            self.operation_name(),
+            self.operation_name.as_deref(),
             root_node,
             &self.variables(),
             context,
@@ -114,7 +122,7 @@ where
         SubscriptionT::TypeInfo: Sync,
         S: ScalarValue + Send + Sync,
     {
-        let op = self.operation_name();
+        let op = self.operation_name.as_deref();
         let vars = &self.variables();
         let res = crate::execute(&self.query, op, root_node, vars, context).await;
         GraphQLResponse(res)
@@ -143,7 +151,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let op = req.operation_name();
+    let op = req.operation_name.as_deref();
     let vars = req.variables();
 
     crate::resolve_into_stream(&req.query, op, root_node, &vars, context).await
@@ -316,8 +324,8 @@ where
     /// The operation names of the request.
     pub fn operation_names(&self) -> Vec<Option<&str>> {
         match self {
-            Self::Single(req) => vec![req.operation_name()],
-            Self::Batch(reqs) => reqs.iter().map(|req| req.operation_name()).collect(),
+            Self::Single(req) => vec![req.operation_name.as_deref()],
+            Self::Batch(reqs) => reqs.iter().map(|r| r.operation_name.as_deref()).collect(),
         }
     }
 }

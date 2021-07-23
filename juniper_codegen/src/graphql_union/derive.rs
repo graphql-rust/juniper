@@ -105,7 +105,6 @@ fn parse_variant_from_enum_variant(
         return None;
     }
 
-    let var_span = var.span();
     let var_ident = var.ident;
 
     let ty = match var.fields {
@@ -161,9 +160,7 @@ fn parse_variant_from_enum_variant(
         ty,
         resolver_code,
         resolver_check,
-        enum_path: Some(enum_path),
         context_ty: None,
-        span: var_span,
     })
 }
 
