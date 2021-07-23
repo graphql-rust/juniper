@@ -38,7 +38,7 @@ impl Foo {
     }
     
     // Here we'll record span and it will have field with name "another" and value we passed.
-    fn multiply_value(&self, another: i32) -> i32 {
+    fn multiply_values(&self, another: i32) -> i32 {
         self.value * another
     }
     
@@ -106,6 +106,13 @@ completely disable tracing of this field resolver.
 ### Example
 
 ```rust
+# extern crate juniper;
+# use juniper::graphql_object;
+# fn main() {}
+#
+# struct Context;
+# impl juniper::Context for Context {}
+
 struct User {
     id: i32,
 }
@@ -117,8 +124,9 @@ impl User {
         self.id
     }
 
-    async fn friends(&self, context: Context) -> Vec<User> {
+    async fn friends(&self, context: &Context) -> Vec<User> {
         // Some async query in which you're actually interested.
+        vec![]
     }
 }
 ```
@@ -152,12 +160,28 @@ If resolving of certain field requires additional arguments (when used `fn`s or
 arguments, similarly to the [`skip`] for `#[instrument]`
 
 ```rust
+# extern crate juniper;
+# use juniper::{graphql_object, GraphQLObject};
+#
+# fn main() {}
+#
+# struct Context;
+# impl juniper::Context for Context {}
+#
+# type Filter = i32;
+#
+# #[derive(GraphQLObject)]
+# struct Product {
+#     id: i32   
+# }
+
 struct Catalog;
 
 #[graphql_object]
 impl Catalog {
     async fn products(filter: Filter, count: i32) -> Vec<Product> {
         // Some query
+# unimplemented!()
     }
 }
 
@@ -173,6 +197,7 @@ impl User {
 
     async fn friends(&self) -> Vec<i32> {
         // async database query 
+# unimplemented!()
     }
 }
 ```
@@ -187,15 +212,27 @@ this field with `fields(field_name = some_value)`.
 
 ### Example
 ```rust
-#[derive(Clone)]
+# extern crate juniper;
+# use juniper::graphql_object;
+#
+# fn main() {}
+#
+# struct Context;
+# impl juniper::Context for Context {}
+# struct Query;
+
+#[derive(Clone, juniper::GraphQLInputObject)]
 struct NonDebug {
     important_field: String,
 }
 
-#[tracing(skip(non_debug), fields(non_debug = non_debug.important_field))]
+# #[graphql_object]
+# impl Query {
+#[tracing(skip(non_debug), fields(non_debug = non_debug.important_field.clone()))]
 fn my_query(&self, non_debug: NonDebug) -> i32 {
     24
 }
+# }
 ```
 
 ## `#[tracing]` attribute

@@ -41,7 +41,7 @@ use juniper::{
 #     fn insert_human(&self, _human: &NewHuman) -> FieldResult<Human> { Err("")? }
 # }
 
-#[derive(GraphQLEnum)]
+#[derive(Debug, GraphQLEnum)]
 enum Episode {
     NewHope,
     Empire,
@@ -59,7 +59,7 @@ struct Human {
 
 // There is also a custom derive for mapping GraphQL input objects.
 
-#[derive(GraphQLInputObject)]
+#[derive(Debug, GraphQLInputObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct NewHuman {
     name: String,

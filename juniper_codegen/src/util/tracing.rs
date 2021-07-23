@@ -223,7 +223,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
 
         field
             .tracing_attr()
-            .map(|t| t.skip.get(name))
+            .map(|t| t.skip.get(&raw_name.to_string()))
             .flatten()
             .is_none()
             .then(|| {

@@ -69,7 +69,7 @@ In Juniper, this can be done using the `Nullable` type:
 # extern crate juniper;
 use juniper::{FieldResult, Nullable};
 
-#[derive(juniper::GraphQLInputObject)]
+#[derive(Debug, juniper::GraphQLInputObject)]
 struct UserPatchInput {
     pub favorite_number: Nullable<i32>,
     pub least_favorite_number: Nullable<i32>,

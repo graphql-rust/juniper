@@ -16,11 +16,11 @@ iron = "0.5"
 mount = "0.4"
 skeptic = "0.13"
 serde_json = "1.0"
-tokio = { version = "1", features = ["macros", "rt-core", "stream", "rt-util", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
 uuid = "0.8"
 
 tracing = "0.1.26"
-tracing-subscriber = "0.2.15"
+tracing-subscriber = "0.2.1"
 
 [build-dependencies]
 skeptic = "0.13"

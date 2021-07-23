@@ -7,7 +7,7 @@ attribute, similar to simple objects and enums:
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-#[derive(juniper::GraphQLInputObject)]
+#[derive(Debug, juniper::GraphQLInputObject)]
 struct Coordinate {
     latitude: f64,
     longitude: f64
@@ -36,7 +36,7 @@ and add documentation to both the type and the fields:
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-#[derive(juniper::GraphQLInputObject)]
+#[derive(Debug, juniper::GraphQLInputObject)]
 #[graphql(name="Coordinate", description="A position on the globe")]
 struct WorldCoordinate {
     #[graphql(name="lat", description="The latitude")]
