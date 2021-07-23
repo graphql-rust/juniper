@@ -7,7 +7,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{result::GraphQLScope, util::span_container::SpanContainer};
 
-use super::{ObjectDefinition, ObjectMeta};
+use super::{Definition, ObjectMeta};
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLObject)]` macro.
 const ERR: GraphQLScope = GraphQLScope::ObjectDerive;
@@ -24,7 +24,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 }
 
 /// Expands into generated code a `#[derive(GraphQLObject)]` macro placed on a Rust struct.
-fn expand_struct(ast: syn::DeriveInput) -> syn::Result<ObjectDefinition> {
+fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
     let meta = ObjectMeta::from_attrs("graphql", &ast.attrs)?;
 
     let struct_span = ast.span();
@@ -44,7 +44,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<ObjectDefinition> {
         );
     }
 
-    Ok(ObjectDefinition {
+    Ok(Definition {
         name,
         ty: parse_quote! { #struct_ident },
         generics: ast.generics,

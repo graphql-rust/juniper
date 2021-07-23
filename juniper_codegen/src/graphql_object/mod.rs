@@ -201,7 +201,7 @@ impl ObjectMeta {
     }
 }
 
-struct ObjectDefinition {
+struct Definition {
     /// Name of this [GraphQL object][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
@@ -244,4 +244,63 @@ struct ObjectDefinition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     pub scalar: Option<syn::Type>,
+}
+
+impl Definition {
+    /// Returns generated code implementing [`marker::IsOutputType`] trait for
+    /// this [GraphQL object][1].
+    ///
+    /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_output_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let generics = self.ty.impl_generics();
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let ty = self.ty.ty_tokens();
+
+        /*
+        let fields_marks = self.fields.iter().map(|field| {
+            let arguments_marks = field.arguments.iter().filter_map(|arg| {
+                let arg_ty = &arg.as_regular()?.ty;
+                Some(quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); })
+            });
+
+            let field_ty = &field.ty;
+            let resolved_ty = quote! {
+                <#field_ty as ::juniper::IntoResolvable<
+                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
+                >>::Type
+            };
+
+            quote! {
+                #( #arguments_marks )*
+                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
+            }
+        });
+
+        let interface_tys = self.implementers.iter().map(|iface| &iface.ty);
+        */
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
+            {
+                fn mark() {
+                    #( #fields_marks )*
+                    #( <#interface_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                }
+            }
+        }
+    }
+}
+
+impl ToTokens for Definition {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        into.append_all(&[
+            self.impl_output_type_tokens(),
+        ]);
+    }
 }
