@@ -520,7 +520,11 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Type<'a>> {
     {
         let inner_type = parse_type(parser)?;
         let Spanning { end: end_pos, .. } = parser.expect(&Token::BracketClose)?;
-        Spanning::start_end(&start_pos, &end_pos, Type::List(Box::new(inner_type.item)))
+        Spanning::start_end(
+            &start_pos,
+            &end_pos,
+            Type::List(Box::new(inner_type.item), None),
+        )
     } else {
         parser.expect_name()?.map(|s| Type::Named(Cow::Borrowed(s)))
     };
@@ -542,7 +546,7 @@ fn wrap_non_null<'a>(
 
     let wrapped = match inner.item {
         Type::Named(name) => Type::NonNullNamed(name),
-        Type::List(l) => Type::NonNullList(l),
+        Type::List(l, expected_size) => Type::NonNullList(l, expected_size),
         t => t,
     };
 

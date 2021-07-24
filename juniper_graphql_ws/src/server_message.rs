@@ -1,6 +1,7 @@
+use std::{any::Any, fmt, marker::PhantomPinned, mem};
+
 use juniper::{ExecutionError, GraphQLError, ScalarValue, Value};
 use serde::{Serialize, Serializer};
-use std::{any::Any, fmt, marker::PhantomPinned};
 
 /// The payload for errors that are not associated with a GraphQL operation.
 #[derive(Debug, Serialize, PartialEq)]
@@ -45,7 +46,7 @@ impl ErrorPayload {
     ) -> Self {
         Self {
             _execution_params: Some(execution_params),
-            error: std::mem::transmute(error),
+            error: mem::transmute(error),
             _marker: PhantomPinned,
         }
     }

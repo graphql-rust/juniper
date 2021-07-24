@@ -62,7 +62,7 @@ impl<'a, S> Context for SchemaType<'a, S> {}
 pub enum TypeType<'a, S: 'a> {
     Concrete(&'a MetaType<'a, S>),
     NonNull(Box<TypeType<'a, S>>),
-    List(Box<TypeType<'a, S>>),
+    List(Box<TypeType<'a, S>>, Option<usize>),
 }
 
 #[derive(Debug)]
@@ -271,7 +271,7 @@ impl<'a, S> SchemaType<'a, S> {
             Type::NonNullNamed(ref name) | Type::Named(ref name) => {
                 self.concrete_type_by_name(name)
             }
-            Type::List(ref inner) | Type::NonNullList(ref inner) => self.lookup_type(inner),
+            Type::List(ref inner, _) | Type::NonNullList(ref inner, _) => self.lookup_type(inner),
         }
     }
 
@@ -339,11 +339,13 @@ impl<'a, S> SchemaType<'a, S> {
             Type::NonNullNamed(ref n) => TypeType::NonNull(Box::new(
                 self.type_by_name(n).expect("Type not found in schema"),
             )),
-            Type::NonNullList(ref inner) => {
-                TypeType::NonNull(Box::new(TypeType::List(Box::new(self.make_type(inner)))))
-            }
+            Type::NonNullList(ref inner, expected_size) => TypeType::NonNull(Box::new(
+                TypeType::List(Box::new(self.make_type(inner)), expected_size),
+            )),
             Type::Named(ref n) => self.type_by_name(n).expect("Type not found in schema"),
-            Type::List(ref inner) => TypeType::List(Box::new(self.make_type(inner))),
+            Type::List(ref inner, expected_size) => {
+                TypeType::List(Box::new(self.make_type(inner)), expected_size)
+            }
         }
     }
 
@@ -423,9 +425,9 @@ impl<'a, S> SchemaType<'a, S> {
             | (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
                 self.is_named_subtype(sub_name, super_name)
             }
-            (&NonNullList(ref super_inner), &NonNullList(ref sub_inner))
-            | (&List(ref super_inner), &List(ref sub_inner))
-            | (&List(ref super_inner), &NonNullList(ref sub_inner)) => {
+            (&NonNullList(ref super_inner, _), &NonNullList(ref sub_inner, _))
+            | (&List(ref super_inner, _), &List(ref sub_inner, _))
+            | (&List(ref super_inner, _), &NonNullList(ref sub_inner, _)) => {
                 self.is_subtype(sub_inner, super_inner)
             }
             _ => false,
@@ -460,14 +462,14 @@ impl<'a, S> TypeType<'a, S> {
     pub fn innermost_concrete(&self) -> &'a MetaType<S> {
         match *self {
             TypeType::Concrete(t) => t,
-            TypeType::NonNull(ref n) | TypeType::List(ref n) => n.innermost_concrete(),
+            TypeType::NonNull(ref n) | TypeType::List(ref n, _) => n.innermost_concrete(),
         }
     }
 
     #[inline]
     pub fn list_contents(&self) -> Option<&TypeType<'a, S>> {
         match *self {
-            TypeType::List(ref n) => Some(n),
+            TypeType::List(ref n, _) => Some(n),
             TypeType::NonNull(ref n) => n.list_contents(),
             _ => None,
         }
@@ -550,7 +552,7 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             TypeType::Concrete(t) => f.write_str(t.name().unwrap()),
-            TypeType::List(ref i) => write!(f, "[{}]", i),
+            TypeType::List(ref i, _) => write!(f, "[{}]", i),
             TypeType::NonNull(ref i) => write!(f, "{}!", i),
         }
     }
