@@ -529,8 +529,14 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
 
     fn is_type_conflict(&self, ctx: &ValidatorContext<'a, S>, t1: &Type, t2: &Type) -> bool {
         match (t1, t2) {
-            (&Type::List(ref inner1), &Type::List(ref inner2))
-            | (&Type::NonNullList(ref inner1), &Type::NonNullList(ref inner2)) => {
+            (&Type::List(ref inner1, expected_size1), &Type::List(ref inner2, expected_size2))
+            | (
+                &Type::NonNullList(ref inner1, expected_size1),
+                &Type::NonNullList(ref inner2, expected_size2),
+            ) => {
+                if expected_size1 != expected_size2 {
+                    return false;
+                }
                 self.is_type_conflict(ctx, inner1, inner2)
             }
             (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2))

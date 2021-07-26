@@ -1740,7 +1740,7 @@ impl GraphQLTypeDefiniton {
                         // TODO: investigate the unwraps here, they seem dangerous!
                         match obj.get(#field_name) {
                             #from_input_default
-                            Some(ref v) => ::juniper::FromInputValue::from_input_value(v).unwrap(),
+                            Some(ref v) => ::juniper::FromInputValue::from_input_value(v)?,
                             None => ::juniper::FromInputValue::<#scalar>::from_implicit_null(),
                         }
                     },
@@ -1858,15 +1858,10 @@ impl GraphQLTypeDefiniton {
             {
                 fn from_input_value(value: &::juniper::InputValue<#scalar>) -> Option<Self>
                 {
-                    if let Some(obj) = value.to_object_value() {
-                        let item = #ty {
-                            #( #from_inputs )*
-                        };
-                        Some(item)
-                    }
-                    else {
-                        None
-                    }
+                    let obj = value.to_object_value()?;
+                    Some(#ty {
+                        #( #from_inputs )*
+                    })
                 }
             }
 

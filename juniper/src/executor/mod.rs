@@ -1235,9 +1235,10 @@ where
     pub fn build_list_type<T: GraphQLType<S> + ?Sized>(
         &mut self,
         info: &T::TypeInfo,
+        expected_size: Option<usize>,
     ) -> ListMeta<'r> {
         let of_type = self.get_type::<T>(info);
-        ListMeta::new(of_type)
+        ListMeta::new(of_type, expected_size)
     }
 
     /// Create a nullable meta type

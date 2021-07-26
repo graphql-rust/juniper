@@ -108,13 +108,27 @@ where
             }
         }
 
-        TypeType::List(ref inner) => {
+        TypeType::List(ref inner, expected_size) => {
             if value.is_null() {
                 return errors;
             }
 
             match value.to_list_value() {
                 Some(l) => {
+                    if let Some(expected) = expected_size {
+                        if l.len() != expected {
+                            errors.push(unification_error(
+                                var_name,
+                                var_pos,
+                                &path,
+                                &format!(
+                                    "Expected list of {} elements, found {} elements",
+                                    expected,
+                                    l.len()
+                                ),
+                            ));
+                        }
+                    }
                     for (i, v) in l.iter().enumerate() {
                         errors.append(&mut unify_value(
                             var_name,

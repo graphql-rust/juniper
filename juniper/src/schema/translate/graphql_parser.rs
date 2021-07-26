@@ -140,13 +140,13 @@ impl GraphQLParserTranslator {
     {
         match input {
             Type::Named(x) => ExternalType::NamedType(From::from(x.as_ref())),
-            Type::List(x) => {
+            Type::List(x, _) => {
                 ExternalType::ListType(GraphQLParserTranslator::translate_type(x).into())
             }
             Type::NonNullNamed(x) => {
                 ExternalType::NonNullType(Box::new(ExternalType::NamedType(From::from(x.as_ref()))))
             }
-            Type::NonNullList(x) => ExternalType::NonNullType(Box::new(ExternalType::ListType(
+            Type::NonNullList(x, _) => ExternalType::NonNullType(Box::new(ExternalType::ListType(
                 Box::new(GraphQLParserTranslator::translate_type(x)),
             ))),
         }
