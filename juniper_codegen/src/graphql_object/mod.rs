@@ -5,7 +5,7 @@
 pub mod attr;
 pub mod derive;
 
-use std::{convert::TryInto as _, collections::HashSet};
+use std::{collections::HashSet, convert::TryInto as _};
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
@@ -17,11 +17,17 @@ use syn::{
 };
 
 use crate::{
-    common::parse::{
-        attr::{err, OptionExt as _},
-        ParseBufferExt as _,
+    common::{
+        field,
+        parse::{
+            attr::{err, OptionExt as _},
+            ParseBufferExt as _,
+        },
+        ScalarValueType,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
+    util::{
+        filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer, RenameRule,
+    },
 };
 
 /// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_object]`)
@@ -201,27 +207,28 @@ impl ObjectMeta {
     }
 }
 
+#[derive(Debug)]
 struct Definition {
     /// Name of this [GraphQL object][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub name: String,
+    name: String,
 
     /// Rust type that this [GraphQL object][1] is represented with.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub ty: syn::Type,
+    ty: syn::Type,
 
     /// Generics of the Rust type that this [GraphQL object][1] is implemented
     /// for.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub generics: syn::Generics,
+    generics: syn::Generics,
 
     /// Description of this [GraphQL object][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub description: Option<String>,
+    description: Option<String>,
 
     /// Rust type of `juniper::Context` to generate `juniper::GraphQLType`
     /// implementation with for this [GraphQL object][1].
@@ -230,23 +237,124 @@ struct Definition {
     /// `juniper::Context`.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub context: Option<syn::Type>,
+    context: Option<syn::Type>,
 
-    /// Rust type of `juniper::ScalarValue` to generate `juniper::GraphQLType`
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
     /// implementation with for this [GraphQL object][1].
     ///
-    /// If [`None`] then generated code will be generic over any
-    /// `juniper::ScalarValue` type, which, in turn, requires all [object][1]
-    /// fields to be generic over any `juniper::ScalarValue` type too. That's
-    /// why this type should be specified only if one of the variants implements
-    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue`
-    /// type.
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    scalar: ScalarValueType,
+
+    /// Defined [GraphQL fields][2] of this [GraphQL object][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub scalar: Option<syn::Type>,
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    fields: Vec<field::Definition>,
+
+    /// [GraphQL interfaces][2] implemented by this [GraphQL object][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
+    interfaces: Vec<syn::Type>,
 }
 
 impl Definition {
+    /// Returns generated code implementing [`GraphQLType`] trait for this
+    /// [GraphQL object][1].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_graphql_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+        let ty = &self.ty;
+
+        let name = &self.name;
+        let description = self
+            .description
+            .as_ref()
+            .map(|desc| quote! { .description(#desc) });
+
+        let fields_meta = self
+            .fields
+            .iter()
+            .map(field::Definition::method_meta_tokens);
+
+        // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
+        let mut interface_tys: Vec<_> = self.interfaces.iter().map(|iface| &iface.ty).collect();
+        interface_tys.sort_unstable_by(|a, b| {
+            let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
+            a.cmp(&b)
+        });
+        let interfaces = (!interface_tys.is_empty()).then(|| {
+            quote! {
+                .interfaces(&[
+                    #( registry.get_type::<#interface_tys>(info), )*
+                ])
+            }
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty#ty_generics #where_clause
+            {
+                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
+                    Some(#name)
+                }
+
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut ::juniper::Registry<'r, #scalar>
+                ) -> ::juniper::meta::MetaType<'r, #scalar>
+                where #scalar: 'r,
+                {
+                    let fields = [
+                        #( #fields_meta, )*
+                    ];
+                    registry.build_object_type::<#ty>(info, &fields)
+                        #description
+                        #interfaces
+                        .into_meta()
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`GraphQLObject`] trait for this
+    /// [GraphQL object][1].
+    ///
+    /// [`GraphQLObject`]: juniper::GraphQLObject
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_graphql_object_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_generics, where_clause) = self.generics();
+        let ty = &self.ty;
+
+        let interface_tys: Vec<_> = self.interfaces.iter().map(|iface| &iface.ty).collect();
+        let all_interfaces_unique = (interface_tys.len() > 1).then(|| {
+            quote! {
+                ::juniper::sa::assert_type_ne_all!(#( #interface_tys ),*);
+            }
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty#ty_generics #where_clause
+            {
+                fn mark() {
+                    #all_interfaces_unique
+                    #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
+                }
+            }
+        }
+    }
+
     /// Returns generated code implementing [`marker::IsOutputType`] trait for
     /// this [GraphQL object][1].
     ///
@@ -256,37 +364,16 @@ impl Definition {
     fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (impl_generics, ty_generics, where_clause) = self.generics();
+        let ty = &self.ty;
 
-        let ty = self.ty.ty_tokens();
+        let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
 
-        /*
-        let fields_marks = self.fields.iter().map(|field| {
-            let arguments_marks = field.arguments.iter().filter_map(|arg| {
-                let arg_ty = &arg.as_regular()?.ty;
-                Some(quote! { <#arg_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); })
-            });
-
-            let field_ty = &field.ty;
-            let resolved_ty = quote! {
-                <#field_ty as ::juniper::IntoResolvable<
-                    '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
-                >>::Type
-            };
-
-            quote! {
-                #( #arguments_marks )*
-                <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
-            }
-        });
-
-        let interface_tys = self.implementers.iter().map(|iface| &iface.ty);
-        */
+        let interface_tys = self.interfaces.iter().map(|iface| &iface.ty);
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty#ty_generics #where_clause
             {
                 fn mark() {
                     #( #fields_marks )*
@@ -300,7 +387,9 @@ impl Definition {
 impl ToTokens for Definition {
     fn to_tokens(&self, into: &mut TokenStream) {
         into.append_all(&[
+            self.impl_graphql_object_tokens(),
             self.impl_output_type_tokens(),
+            self.impl_graphql_type_tokens(),
         ]);
     }
 }

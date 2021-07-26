@@ -69,6 +69,11 @@ impl GraphQLScope {
             .note(self.spec_link())
     }
 
+    pub fn error(&self, err: syn::Error) -> Diagnostic {
+        Diagnostic::spanned(err.span(), Level::Error, format!("{} {}", self, err))
+            .note(self.spec_link())
+    }
+
     pub fn emit_custom<S: AsRef<str>>(&self, span: Span, msg: S) {
         self.custom(span, msg).emit()
     }

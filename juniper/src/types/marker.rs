@@ -9,26 +9,34 @@ use std::sync::Arc;
 
 use crate::{GraphQLType, ScalarValue};
 
-/// Maker object for GraphQL objects.
+/// Maker trait for [GraphQL objects][1].
 ///
-/// This trait extends the GraphQLType and is only used to mark
-/// object. During compile this addition information is required to
-/// prevent unwanted structure compiling. If an object requires this
-/// trait instead of the GraphQLType, then it explicitly requires an
-/// GraphQL objects. Other types (scalars, enums, and input objects)
-/// are not allowed.
-pub trait GraphQLObjectType<S: ScalarValue>: GraphQLType<S> {
+/// This trait extends the [`GraphQLType`] and is only used to mark an [object][1]. During
+/// compile this addition information is required to prevent unwanted structure compiling. If an
+/// object requires this trait instead of the [`GraphQLType`], then it explicitly requires
+/// [GraphQL objects][1]. Other types ([scalars][2], [enums][3], [interfaces][4], [input objects][5]
+/// and [unions][6]) are not allowed.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+/// [2]: https://spec.graphql.org/June2018/#sec-Scalars
+/// [3]: https://spec.graphql.org/June2018/#sec-Enums
+/// [4]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [5]: https://spec.graphql.org/June2018/#sec-Input-Objects
+/// [6]: https://spec.graphql.org/June2018/#sec-Unions
+pub trait GraphQLObject<S: ScalarValue>: GraphQLType<S> {
     /// An arbitrary function without meaning.
     ///
-    /// May contain compile timed check logic which ensures that types
-    /// are used correctly according to the GraphQL specification.
+    /// May contain compile timed check logic which ensures that types are used correctly according
+    /// to the [GraphQL specification][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/
     fn mark() {}
 }
 
-impl<'a, S, T> GraphQLObjectType<S> for &T
-where
-    T: GraphQLObjectType<S> + ?Sized,
-    S: ScalarValue,
+impl<'a, S, T> GraphQLObject<S> for &T
+    where
+        T: GraphQLInterface<S> + ?Sized,
+        S: ScalarValue,
 {
     #[inline]
     fn mark() {
@@ -36,10 +44,10 @@ where
     }
 }
 
-impl<S, T> GraphQLObjectType<S> for Box<T>
-where
-    T: GraphQLObjectType<S> + ?Sized,
-    S: ScalarValue,
+impl<S, T> GraphQLObject<S> for Box<T>
+    where
+        T: GraphQLInterface<S> + ?Sized,
+        S: ScalarValue,
 {
     #[inline]
     fn mark() {
@@ -47,10 +55,10 @@ where
     }
 }
 
-impl<S, T> GraphQLObjectType<S> for Arc<T>
-where
-    T: GraphQLObjectType<S> + ?Sized,
-    S: ScalarValue,
+impl<S, T> GraphQLObject<S> for Arc<T>
+    where
+        T: GraphQLInterface<S> + ?Sized,
+        S: ScalarValue,
 {
     #[inline]
     fn mark() {

@@ -563,7 +563,7 @@ impl ToTokens for UnionDefinition {
                 fn mark() {
                     #all_variants_unique
 
-                    #( <#var_types as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
+                    #( <#var_types as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
                 }
             }
         };

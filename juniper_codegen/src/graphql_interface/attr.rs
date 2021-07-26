@@ -8,6 +8,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
     common::{
+        field,
         parse::{self, TypeExt as _},
         ScalarValueType,
     },
@@ -16,8 +17,8 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, ArgumentMeta, Definition, EnumType, Field, FieldArgument, ImplMeta,
-    Implementer, ImplementerDowncast, MethodArgument, MethodMeta, TraitMeta, TraitObjectType, Type,
+    inject_async_trait, Definition, EnumType, Field, FieldArgument, ImplMeta, Implementer,
+    ImplementerDowncast, TraitMeta, TraitObjectType, Type,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -156,7 +157,7 @@ pub fn expand_on_trait(
             fields.iter().find_map(|f| {
                 f.arguments
                     .iter()
-                    .find_map(MethodArgument::context_ty)
+                    .find_map(field::MethodArgument::context_ty)
                     .cloned()
             })
         })
@@ -372,7 +373,7 @@ impl TraitMethod {
             .filter(|attr| !path_eq_single(&attr.path, "graphql"))
             .collect();
 
-        let meta = MethodMeta::from_attrs("graphql", &method_attrs)
+        let meta = field::Attr::from_attrs("graphql", &method_attrs)
             .map_err(|e| proc_macro_error::emit_error!(e))
             .ok()?;
 
@@ -435,17 +436,17 @@ impl TraitMethod {
     ///
     /// Returns [`None`] if parsing fails.
     #[must_use]
-    fn parse_field(method: &mut syn::TraitItemMethod, meta: MethodMeta) -> Option<Field> {
+    fn parse_field(method: &mut syn::TraitItemMethod, attr: field::Attr) -> Option<Field> {
         let method_ident = &method.sig.ident;
 
-        let name = meta
+        let name = attr
             .name
             .as_ref()
             .map(|m| m.as_ref().value())
             .unwrap_or_else(|| to_camel_case(&method_ident.unraw().to_string()));
         if name.starts_with("__") {
             ERR.no_double_underscore(
-                meta.name
+                attr.name
                     .as_ref()
                     .map(SpanContainer::span_ident)
                     .unwrap_or_else(|| method_ident.span()),
@@ -476,7 +477,7 @@ impl TraitMethod {
             args_iter
                 .filter_map(|arg| match arg {
                     syn::FnArg::Receiver(_) => None,
-                    syn::FnArg::Typed(arg) => Self::parse_field_argument(arg),
+                    syn::FnArg::Typed(arg) => field::MethodArgument::parse(arg, &ERR),
                 })
                 .collect()
         };
@@ -487,8 +488,8 @@ impl TraitMethod {
         };
         ty.lifetimes_anonymized();
 
-        let description = meta.description.as_ref().map(|d| d.as_ref().value());
-        let deprecated = meta
+        let description = attr.description.as_ref().map(|d| d.as_ref().value());
+        let deprecated = attr
             .deprecated
             .as_ref()
             .map(|d| d.as_ref().as_ref().map(syn::LitStr::value));
@@ -503,108 +504,6 @@ impl TraitMethod {
             is_async: method.sig.asyncness.is_some(),
         })
     }
-
-    /// Parses [`MethodArgument`] from the given trait method argument definition.
-    ///
-    /// Returns [`None`] if parsing fails.
-    #[must_use]
-    fn parse_field_argument(argument: &mut syn::PatType) -> Option<MethodArgument> {
-        let argument_attrs = argument.attrs.clone();
-
-        // Remove repeated attributes from the method, to omit incorrect expansion.
-        argument.attrs = mem::take(&mut argument.attrs)
-            .into_iter()
-            .filter(|attr| !path_eq_single(&attr.path, "graphql"))
-            .collect();
-
-        let meta = ArgumentMeta::from_attrs("graphql", &argument_attrs)
-            .map_err(|e| proc_macro_error::emit_error!(e))
-            .ok()?;
-
-        if meta.context.is_some() {
-            return Some(MethodArgument::Context(argument.ty.unreferenced().clone()));
-        }
-        if meta.executor.is_some() {
-            return Some(MethodArgument::Executor);
-        }
-        if let syn::Pat::Ident(name) = &*argument.pat {
-            let arg = match name.ident.unraw().to_string().as_str() {
-                "context" | "ctx" => {
-                    Some(MethodArgument::Context(argument.ty.unreferenced().clone()))
-                }
-                "executor" => Some(MethodArgument::Executor),
-                _ => None,
-            };
-            if arg.is_some() {
-                ensure_no_regular_field_argument_meta(&meta)?;
-                return arg;
-            }
-        }
-
-        let name = if let Some(name) = meta.name.as_ref() {
-            name.as_ref().value()
-        } else if let syn::Pat::Ident(name) = &*argument.pat {
-            to_camel_case(&name.ident.unraw().to_string())
-        } else {
-            ERR.custom(
-                argument.pat.span(),
-                "trait method argument should be declared as a single identifier",
-            )
-            .note(String::from(
-                "use `#[graphql(name = ...)]` attribute to specify custom argument's name without \
-                 requiring it being a single identifier",
-            ))
-            .emit();
-            return None;
-        };
-        if name.starts_with("__") {
-            ERR.no_double_underscore(
-                meta.name
-                    .as_ref()
-                    .map(SpanContainer::span_ident)
-                    .unwrap_or_else(|| argument.pat.span()),
-            );
-            return None;
-        }
-
-        Some(MethodArgument::Regular(FieldArgument {
-            name,
-            ty: argument.ty.as_ref().clone(),
-            description: meta.description.as_ref().map(|d| d.as_ref().value()),
-            default: meta.default.as_ref().map(|v| v.as_ref().clone()),
-        }))
-    }
-}
-
-/// Checks whether the given [`ArgumentMeta`] doesn't contain arguments related to
-/// [`FieldArgument`].
-#[must_use]
-fn ensure_no_regular_field_argument_meta(meta: &ArgumentMeta) -> Option<()> {
-    if let Some(span) = &meta.name {
-        return err_disallowed_attr(&span, "name");
-    }
-    if let Some(span) = &meta.description {
-        return err_disallowed_attr(&span, "description");
-    }
-    if let Some(span) = &meta.default {
-        return err_disallowed_attr(&span, "default");
-    }
-    Some(())
-}
-
-/// Emits "argument is not allowed" [`syn::Error`] for the given `arg` pointing to the given `span`.
-#[must_use]
-fn err_disallowed_attr<T, S: Spanned>(span: &S, arg: &str) -> Option<T> {
-    ERR.custom(
-        span.span(),
-        format!(
-            "attribute argument `#[graphql({} = ...)]` is not allowed here",
-            arg,
-        ),
-    )
-    .emit();
-
-    None
 }
 
 /// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given `span`.
