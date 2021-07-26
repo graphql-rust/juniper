@@ -1,4 +1,4 @@
-pub use crate::util::tracing::{
+pub use crate::tracing::{
     async_tokens, instrument, span_tokens, sync_tokens, Attr, Rule, TracedArgument, TracedField,
     TracedType,
 };

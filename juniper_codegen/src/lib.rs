@@ -7,6 +7,11 @@
 #![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.7")]
 #![recursion_limit = "1024"]
 
+use proc_macro::TokenStream;
+
+use proc_macro_error::{proc_macro_error, ResultExt as _};
+use result::GraphQLScope;
+
 // NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust
 //         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,
 //         and so we cannot move the definition into a sub-module and use the `#[macro_export]`
@@ -135,10 +140,8 @@ mod impl_scalar;
 mod common;
 mod graphql_interface;
 mod graphql_union;
-
-use proc_macro::TokenStream;
-use proc_macro_error::{proc_macro_error, ResultExt as _};
-use result::GraphQLScope;
+#[cfg(feature = "tracing")]
+pub mod tracing;
 
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]

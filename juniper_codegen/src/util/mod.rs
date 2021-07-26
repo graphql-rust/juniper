@@ -1,12 +1,5 @@
 #![allow(clippy::single_match)]
 
-pub mod duplicate;
-pub mod parse_impl;
-pub mod span_container;
-
-#[cfg(feature = "tracing")]
-pub mod tracing;
-
 use std::{collections::HashMap, str::FromStr};
 
 use proc_macro2::{Span, TokenStream};
@@ -14,15 +7,21 @@ use proc_macro_error::abort;
 use quote::quote;
 use span_container::SpanContainer;
 use syn::{
+    Attribute,
     ext::IdentExt as _,
-    parse::{Parse, ParseStream},
-    parse_quote,
-    punctuated::Punctuated,
-    spanned::Spanned,
-    token, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
+    Ident,
+    Lit,
+    Meta,
+    MetaList, MetaNameValue, NestedMeta, parse::{Parse, ParseStream}, parse_quote, punctuated::Punctuated, spanned::Spanned, token,
 };
 
 use crate::common::parse::ParseBufferExt as _;
+#[cfg(feature = "tracing")]
+use crate::tracing;
+
+pub mod duplicate;
+pub mod parse_impl;
+pub mod span_container;
 
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.
@@ -415,10 +414,11 @@ impl Parse for ObjectAttributes {
                     }
                 }
                 #[cfg(feature = "tracing")]
-                "trace" => {
-                    input.parse::<syn::token::Eq>()?;
-                    let val = input.parse::<syn::LitStr>()?;
-                    if let Ok(trace) = tracing::Rule::from_str(&val.value()) {
+                "tracing" => {
+                    let content;
+                    syn::parenthesized!(content in input);
+                    let val = content.parse_any_ident()?;
+                    if let Ok(trace) = tracing::Rule::from_str(&val.to_string()) {
                         output.tracing_rule = Some(trace);
                     } else {
                         return Err(syn::Error::new(val.span(), "unknown tracing skip rule"));
@@ -1960,8 +1960,9 @@ impl GraphQLTypeDefinition {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use syn::{Ident, LitStr};
+
+    use super::*;
 
     fn strs_to_strings(source: Vec<&str>) -> Vec<String> {
         source

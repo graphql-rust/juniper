@@ -16,7 +16,7 @@ use crate::{
 };
 
 #[cfg(feature = "tracing")]
-use crate::util::tracing;
+use crate::tracing;
 
 use super::{
     inject_async_trait, ArgumentMeta, Definition, EnumType, Field, FieldArgument, ImplMeta,
