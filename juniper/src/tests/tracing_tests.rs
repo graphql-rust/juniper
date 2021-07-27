@@ -45,7 +45,7 @@ fn test_execute_sync_clean() {
     handle
         .assert()
         .enter_new_span("execute_sync")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
         .enter_new_span("execute_validated_query")
         .enter_new_span("Query.foo")
@@ -77,10 +77,10 @@ fn test_execute_sync_with_error() {
     handle
         .assert()
         .enter_new_span("execute_sync")
-        .enter_new_span("rule_validation")
+        .enter_new_span("validate_document")
         // Test that it writes event to traces when failed to validate rules
         .event(Level::TRACE, Some("juniper"), vec![])
-        .close_exited("rule_validation")
+        .close_exited("validate_document")
         .close_exited("execute_sync");
 }
 
@@ -104,9 +104,9 @@ async fn records_sub_spans() {
     handle
         .assert()
         .enter_new_span("execute")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
-        .enter_new_span("execute_validated_query")
+        .enter_new_span("execute_validated_query_async")
         .enter_new_span("Query.bar")
         // To check whether context hasn't leaked.
         .enter_new_span(&"Bar.tracedData".with_strict_fields(true))
@@ -116,7 +116,7 @@ async fn records_sub_spans() {
         // Should has no child spans because `non_traced_query` doesn't marked with `#[instrument]`
         .simple_span(&"Bar.nonTracedData".with_strict_fields(true))
         .close_exited("Query.bar")
-        .close_exited("execute_validated_query")
+        .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
 
@@ -149,9 +149,9 @@ async fn test_no_trace_field() {
     handle
         .assert()
         .enter_new_span("execute")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
-        .enter_new_span("execute_validated_query")
+        .enter_new_span("execute_validated_query_async")
         .enter_new_span("Query.foo")
         // In between this two steps should be no other, because `nonTraced` and `asyncNonTraced`
         // marked with `no_trace`
@@ -163,7 +163,7 @@ async fn test_no_trace_field() {
         // Field with name present in interface but resolved on concrete object.
         .simple_span("Bar.nonTraced")
         .close_exited("Query.fooBars")
-        .close_exited("execute_validated_query")
+        .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
 
@@ -188,9 +188,9 @@ async fn test_impl_fn_args() {
     handle
         .assert()
         .enter_new_span("execute")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
-        .enter_new_span("execute_validated_query")
+        .enter_new_span("execute_validated_query_async")
         .enter_new_span("Query.foo")
         // Skipped field
         .simple_span(
@@ -210,7 +210,7 @@ async fn test_impl_fn_args() {
                 .with_strict_fields(true),
         )
         .close_exited("Query.bar")
-        .close_exited("execute_validated_query")
+        .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
 
@@ -236,9 +236,9 @@ async fn test_custom_fields() {
     handle
         .assert()
         .enter_new_span("execute")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
-        .enter_new_span("execute_validated_query")
+        .enter_new_span("execute_validated_query_async")
         .enter_new_span(&"Query.bar".with_field("id", "127").with_strict_fields(true))
         // Check whether custom field "self.id" exists
         .simple_span(
@@ -256,7 +256,7 @@ async fn test_custom_fields() {
                 .with_strict_fields(true),
         )
         .close_exited("Query.asyncFoo")
-        .close_exited("execute_validated_query")
+        .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
 
@@ -288,9 +288,9 @@ async fn overwrite_level_and_target() {
     handle
         .assert()
         .enter_new_span("execute")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
-        .enter_new_span("execute_validated_query")
+        .enter_new_span("execute_validated_query_async")
         .enter_new_span("Query.foo")
         .simple_span(
             &"Foo.target"
@@ -339,7 +339,7 @@ async fn overwrite_level_and_target() {
                 .with_level(Level::WARN),
         )
         .close_exited("Query.fooBar")
-        .close_exited("execute_validated_query")
+        .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
 
@@ -372,7 +372,6 @@ async fn graphql_object_trace_arg() {
                 syncFn
                 asyncFn
                 simpleField
-                noTraceComplex
             }
             complexDerived {
                 complex
@@ -386,14 +385,14 @@ async fn graphql_object_trace_arg() {
     let (handle, _guard) = init_tracer();
 
     let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
-    assert!(res.is_ok(), "Should be ok");
+    assert!(res.is_ok(), "Should be ok, Err: {:?}", res.err().unwrap());
 
     handle
         .assert()
         .enter_new_span("execute")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
-        .enter_new_span("execute_validated_query")
+        .enter_new_span("execute_validated_query_async")
         .enter_new_span("Query.traceAsync")
         .simple_span("TraceAsync.asyncFn")
         // There shouldn't be span for `syncFn` because it's not async
@@ -413,7 +412,7 @@ async fn graphql_object_trace_arg() {
         .enter_new_span("Query.complexSync")
         .simple_span("Complex.syncFn")
         .simple_span("Complex.asyncFn")
-        // There shouldn't be any spans for `simpleField` and `noTraceComplex`
+        // There shouldn't be any span for `simpleField`
         .close_exited("Query.complexSync")
         .enter_new_span("Query.complexDerived")
         .simple_span("DerivedComplex.complex")
@@ -424,7 +423,7 @@ async fn graphql_object_trace_arg() {
         )
         // There shouldn't be span for `sync` because it's not marked with `#[tracing(complex)]`
         .close_exited("Query.complexDerived")
-        .close_exited("execute_validated_query")
+        .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
 
@@ -464,9 +463,9 @@ async fn graphql_interface_trace_arg() {
     handle
         .assert()
         .enter_new_span("execute")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
-        .enter_new_span("execute_validated_query")
+        .enter_new_span("execute_validated_query_async")
         .enter_new_span("Query.erasedSimple")
         .simple_span("InterfacedSimple.syncFn")
         .simple_span("InterfacedSimple.asyncFn")
@@ -481,7 +480,7 @@ async fn graphql_interface_trace_arg() {
         .enter_new_span("Query.erasedComplex")
         .simple_span("InterfacedComplex.asyncFn")
         .close_exited("Query.erasedComplex")
-        .close_exited("execute_validated_query")
+        .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
 
@@ -543,7 +542,7 @@ async fn subscription_tracing() {
     handle
         .assert()
         .enter_new_span("resolve_into_stream")
-        .simple_span("rule_validation")
+        .simple_span("validate_document")
         .simple_span("validate_input_values")
         .enter_new_span("resolve_validated_subscription")
         .new_span(

@@ -39,7 +39,7 @@ pub(crate) fn async_resolving_code(
     let ty = ty.map(|t| quote! { : #t });
 
     quote! {
-        Box::pin(::juniper::futures::FutureExt::then(fut, move |res #ty| async move {
+        let f = ::juniper::futures::FutureExt::then(fut, move |res #ty| async move {
             match ::juniper::IntoResolvable::into(res, executor.context())? {
                 Some((ctx, r)) => {
                     let subexec = executor.replaced_context(ctx);
@@ -47,6 +47,9 @@ pub(crate) fn async_resolving_code(
                 },
                 None => Ok(::juniper::Value::null()),
             }
-        }) #trace_async)
+        });
+
+        #trace_async
+        Box::pin(f)
     }
 }

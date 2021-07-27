@@ -100,8 +100,11 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
                 default: None,
                 span,
 
+                // Enums cannot be traced.
                 #[cfg(feature = "tracing")]
-                tracing: field_attrs.tracing,
+                tracing_behaviour: None,
+                #[cfg(feature = "tracing")]
+                instrument_attr: None,
             })
         })
         .collect::<Vec<_>>();

@@ -6,6 +6,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
+#[cfg(feature = "tracing")]
+use crate::tracing;
+
 pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
     let ast_span = ast.span();
     let struct_fields = match ast.data {
@@ -38,6 +41,21 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
                 Err(e) => {
                     proc_macro_error::emit_error!(e);
                     return None;
+                }
+            };
+
+            #[cfg(feature = "tracing")]
+            let instrument_attr = match field
+                .attrs
+                .iter()
+                .find(|attr| attr.path.is_ident(tracing::ATTR_NAME))
+                .map(|attr| attr.parse_args())
+                .transpose()
+            {
+                Ok(attr) => attr,
+                Err(err) => {
+                    proc_macro_error::emit_error!(err);
+                    None
                 }
             };
 
@@ -89,7 +107,9 @@ pub fn build_derive_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::R
                 span,
 
                 #[cfg(feature = "tracing")]
-                tracing: field_attrs.tracing,
+                tracing_behaviour: field_attrs.tracing,
+                #[cfg(feature = "tracing")]
+                instrument_attr,
             })
         })
         .collect::<Vec<_>>();

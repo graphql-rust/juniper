@@ -1,13 +1,13 @@
 pub use crate::tracing::{
-    async_tokens, instrument, span_tokens, sync_tokens, Attr, Rule, TracedArgument, TracedField,
-    TracedType,
+    async_tokens, span_tokens, sync_tokens, Attr, FieldBehaviour, Rule, TracedArgument,
+    TracedField, TracedType,
 };
 
 use super::{Definition, Field, FieldArgument};
 
 impl TracedType for Definition {
-    fn tracing_rule(&self) -> Option<Rule> {
-        self.tracing_rule
+    fn tracing_rule(&self) -> Rule {
+        self.tracing_rule.unwrap_or(Rule::All)
     }
 
     fn name(&self) -> &str {
@@ -22,8 +22,12 @@ impl TracedType for Definition {
 impl TracedField for Field {
     type Arg = FieldArgument;
 
-    fn tracing_attr(&self) -> Option<&Attr> {
-        self.tracing.as_ref()
+    fn instrument(&self) -> Option<&Attr> {
+        self.instrument.as_ref()
+    }
+
+    fn tracing_behaviour(&self) -> FieldBehaviour {
+        self.tracing.unwrap_or(FieldBehaviour::Default)
     }
 
     fn is_async(&self) -> bool {

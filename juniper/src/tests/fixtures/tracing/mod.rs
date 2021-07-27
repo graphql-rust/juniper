@@ -9,7 +9,6 @@ use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
 use tracing_core::{span, Subscriber};
 
 use crate::tracing::{
-    self,
     field::{Field, Visit},
     span::{Attributes, Record},
     Event, Level, Metadata,
@@ -185,7 +184,13 @@ impl SubscriberAssert {
         let current_event = self.events.remove(0);
         match current_event {
             SubscriberEvent::NewSpan(span) => {
-                assert_eq!(expected.name(), span.metadata.name());
+                assert_eq!(
+                    expected.name(),
+                    span.metadata.name(),
+                    "Expected new span with name: {}, actual: {}",
+                    expected.name(),
+                    span.metadata.name(),
+                );
                 if expected.is_strict() {
                     assert_eq!(
                         expected.fields().len(),

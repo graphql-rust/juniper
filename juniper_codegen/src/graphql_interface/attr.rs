@@ -509,7 +509,9 @@ impl TraitMethod {
             is_async: method.sig.asyncness.is_some(),
 
             #[cfg(feature = "tracing")]
-            tracing: tracing::Attr::from_method(method),
+            instrument: tracing::Attr::from_trait_method(method),
+            #[cfg(feature = "tracing")]
+            tracing: meta.tracing_behaviour.map(|t| t.into_inner()),
         })
     }
 

@@ -141,7 +141,7 @@ mod common;
 mod graphql_interface;
 mod graphql_union;
 #[cfg(feature = "tracing")]
-pub mod tracing;
+mod tracing;
 
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
@@ -166,7 +166,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql, tracing))]
+#[proc_macro_derive(GraphQLObject, attributes(graphql, instrument))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_object::build_derive_object(ast, GraphQLScope::DeriveObject);

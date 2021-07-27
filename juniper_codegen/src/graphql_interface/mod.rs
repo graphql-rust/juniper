@@ -231,15 +231,16 @@ impl Parse for TraitMeta {
                     output.is_internal = true;
                 }
                 #[cfg(feature = "tracing")]
-                "trace" => {
+                "tracing" => {
                     use std::str::FromStr as _;
 
                     use proc_macro_error::abort;
 
                     let span = ident.span();
-                    input.parse::<token::Eq>()?;
-                    let tracing = input.parse::<syn::LitStr>()?;
-                    let tracing_rule = tracing::Rule::from_str(tracing.value().as_str());
+                    let content;
+                    syn::parenthesized!(content in input);
+                    let tracing = content.parse_any_ident()?;
+                    let tracing_rule = tracing::Rule::from_str(tracing.to_string().as_str());
                     match tracing_rule {
                         Ok(rule) => output
                             .tracing_rule
@@ -249,8 +250,8 @@ impl Parse for TraitMeta {
                             tracing.span(),
                             format!(
                                 "Unknown tracing rule: {}, \
-                                 known values: trace-sync, trace-async, skip-all and complex",
-                                tracing.value(),
+                                 known values: sync, async, skip-all and complex",
+                                tracing,
                             )
                         )),
                     }
@@ -452,6 +453,12 @@ struct MethodMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     downcast: Option<SpanContainer<syn::Ident>>,
+
+    /// Explicitly specified tracing behaviour of this [GraphQL field][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    #[cfg(feature = "tracing")]
+    tracing_behaviour: Option<SpanContainer<tracing::FieldBehaviour>>,
 }
 
 impl Parse for MethodMeta {
@@ -500,6 +507,21 @@ impl Parse for MethodMeta {
                     .downcast
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
                     .none_or_else(|_| err::dup_arg(&ident))?,
+                #[cfg(feature = "tracing")]
+                "tracing" => {
+                    let content;
+                    syn::parenthesized!(content in input);
+                    let val = content.parse_any_ident()?;
+                    let behaviour = tracing::FieldBehaviour::from_ident(&val)?;
+                    output
+                        .tracing_behaviour
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(val.span()),
+                            behaviour,
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?;
+                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -520,6 +542,8 @@ impl MethodMeta {
             deprecated: try_merge_opt!(deprecated: self, another),
             ignore: try_merge_opt!(ignore: self, another),
             downcast: try_merge_opt!(downcast: self, another),
+            #[cfg(feature = "tracing")]
+            tracing_behaviour: try_merge_opt!(tracing_behaviour: self, another),
         })
     }
 
@@ -1016,8 +1040,6 @@ impl Definition {
             .filter_map(|i| i.method_resolve_into_type_async_tokens(&trait_ty));
         let regular_downcast = self.ty.method_resolve_into_type_async_tokens();
 
-        let instrument = if_tracing_enabled!(tracing::instrument());
-
         quote! {
             #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
@@ -1029,8 +1051,6 @@ impl Definition {
                     args: &'b ::juniper::Arguments<#scalar>,
                     executor: &'b ::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
-                    #instrument
-
                     match field {
                         #( #fields_resolvers )*
                         _ => #no_field_panic,
@@ -1342,14 +1362,23 @@ struct Field {
     /// Tracing attribute placed on this [GraphQL field][2]. Only relevant when `tracing`
     /// feature is enabled.
     ///
-    /// If it is present and `tracing` feature is enabled it can be used to alter trace
-    /// behaviour.
+    /// If it is present and `tracing` feature is enabled it can be used to alter traces,
+    /// generated for this [GraphQL field][2].
     ///
-    /// It it is present and `tracing` feature is disabled it will cause compile time error.
+    /// If it is present and `tracing` feature is disabled it will result in compile time
+    /// error.
     ///
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[cfg(feature = "tracing")]
-    tracing: Option<tracing::Attr>,
+    instrument: Option<tracing::Attr>,
+
+    /// Tracing behaviour for this [GraphQL field][2] parsed from `#[graphql(tracing = ...)]`
+    ///
+    /// It can be used to define whether this field should be traced.
+    ///
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    #[cfg(feature = "tracing")]
+    tracing: Option<tracing::FieldBehaviour>,
 }
 
 impl Field {
@@ -1639,7 +1668,10 @@ impl Implementer {
         Some(quote! {
             if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
                 let fut = ::juniper::futures::future::ready(#downcast);
-                return #resolving_code;
+                let f = {
+                    #resolving_code
+                };
+                return f;
             }
         })
     }

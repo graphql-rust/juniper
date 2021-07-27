@@ -8,6 +8,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{ext::IdentExt, spanned::Spanned};
 
+#[cfg(feature = "tracing")]
+use crate::tracing;
+
 /// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, error: GraphQLScope) -> TokenStream {
     let definition = match create(args, body, error) {
@@ -73,6 +76,19 @@ fn create(
                 util::FieldAttributeParseMode::Impl,
             ) {
                 Ok(attrs) => attrs,
+                Err(err) => {
+                    proc_macro_error::emit_error!(err);
+                    return None;
+                }
+            };
+
+            #[cfg(feature = "tracing")]
+            let instrument_attr = match method.attrs
+                .iter()
+                .find(|attr| attr.path.is_ident(tracing::ATTR_NAME))
+                .map(|attr| attr.parse_args())
+                .transpose() {
+                Ok(attr) => attr,
                 Err(err) => {
                     proc_macro_error::emit_error!(err);
                     return None;
@@ -191,7 +207,9 @@ fn create(
                 span,
 
                 #[cfg(feature = "tracing")]
-                tracing: attrs.tracing,
+                tracing_behaviour: attrs.tracing,
+                #[cfg(feature = "tracing")]
+                instrument_attr,
             })
         })
         .collect::<Vec<_>>();

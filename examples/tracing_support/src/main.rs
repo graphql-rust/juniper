@@ -58,10 +58,10 @@ struct SyncTracedUser {
 
 // Only sync `fn`s will be traced if they're not marked with `#[tracing(no_trace)]`
 // it works similarly with `#[graphql_interface]`
-#[graphql_object(Context = Context, trace = "sync")]
+#[graphql_object(Context = Context, tracing(sync))]
 impl SyncTracedUser {
     // Won't be traced because it's marked with `no_trace`
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     fn id(&self) -> i32 {
         self.id
     }
@@ -78,15 +78,15 @@ impl SyncTracedUser {
 }
 
 #[derive(Clone, Debug, GraphQLObject)]
-#[graphql(trace = "complex")]
+#[graphql(tracing(only))]
 struct ComplexDerivedUser {
     // This shouldn't be traced because it's not marked with `#[tracing(complex)]`
     id: i32,
     // This is the only field that will be traced because it's marked with `#[tracing(complex)]`
-    #[tracing(complex)]
+    #[graphql(tracing(only))]
     kind: UserKind,
     // This shouldn't be traced because of `no_trace`.
-    #[tracing(complex, no_trace)]
+    #[graphql(tracing(ignore))]
     name: String,
 }
 
@@ -112,7 +112,7 @@ impl Query {
     }
 
     /// Create guest user with the given `id` and `name`.
-    #[tracing(skip(id))] // Here we skip `id` from being recorded into spans fields
+    #[instrument(skip(id))] // Here we skip `id` from being recorded into spans fields
     fn guest(id: i32, name: String) -> User {
         User {
             id,

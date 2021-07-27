@@ -219,6 +219,7 @@ impl<'a> fmt::Display for GraphQLError<'a> {
                     }
                     write!(f, "{}", last)?;
                 }
+                Ok(())
             }
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
             GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),

@@ -201,32 +201,32 @@ impl Foo {
     }
 
     /// Sync field marked with `no_trace`.
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     fn non_traced(&self) -> &str {
         "None can trace this"
     }
 
     /// Async field marked with `no_trace`.
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     async fn async_non_traced(&self) -> &str {
         "None can trace this"
     }
 
     /// Field with multiple arguments, one of which is skipped.
-    #[tracing(skip(name))]
+    #[instrument(skip(name))]
     fn skip_argument(&self, name: String, meaning_of_life: i32) -> i32 {
         let _ = name;
         meaning_of_life
     }
 
     /// Field with its `target` being overwritten.
-    #[tracing(target = "my_target")]
+    #[instrument(target = "my_target")]
     fn target(&self) -> bool {
         true
     }
 
     /// Field with its `level` being overwritten.
-    #[tracing(level = "warn")]
+    #[instrument(level = "warn")]
     fn level(&self) -> bool {
         true
     }
@@ -251,7 +251,7 @@ pub struct Bar {
 #[graphql_object(context = Database, impl = FooBarValue)]
 impl Bar {
     /// Custom field.
-    #[tracing(fields(self.id = self.id))]
+    #[instrument(fields(self.id = self.id))]
     fn id(&self) -> i32 {
         self.id
     }
@@ -263,7 +263,7 @@ impl Bar {
 
     /// Field with default arguments.
     #[graphql(arguments(this(default = 42), another(default = 0), skipped(default = 1),))]
-    #[tracing(skip(skipped))]
+    #[instrument(skip(skipped))]
     fn default_arg(&self, this: i32, another: i32, skipped: i32) -> i32 {
         this + another + skipped
     }
@@ -295,19 +295,19 @@ impl FooBar for Bar {
 #[graphql(impl = FooBarValue, context = Database)]
 pub struct DerivedFoo {
     /// Resolver having context bound and const bound trace fields.
-    #[tracing(fields(self.id = self.id, custom_fields = "work"))]
+    #[instrument(fields(self.id = self.id, custom_fields = "work"))]
     id: i32,
 
     /// Field marked with `no_trace` within derived [`GraphQLObject`].
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     non_traced: String,
 
     /// Field with its `target` being overwritten.
-    #[tracing(target = "my_target")]
+    #[instrument(target = "my_target")]
     target: bool,
 
     /// Field with its `level` being overwritten.
-    #[tracing(level = "warn")]
+    #[instrument(level = "warn")]
     level: bool,
 }
 
@@ -332,19 +332,19 @@ pub trait FooBar {
     async fn is_bar(&self) -> bool;
 
     /// Interface field marked with `no_trace`.
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     fn non_traced(&self) -> bool {
         true
     }
 
     /// Async interface field marked with `no_trace`.
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     async fn async_non_traced(&self) -> bool {
         true
     }
 
     /// Interface field with various arguments.
-    #[tracing(skip(skipped))]
+    #[instrument(skip(skipped))]
     fn with_arg(
         &self,
         id: i32,
@@ -356,7 +356,7 @@ pub trait FooBar {
     }
 
     /// Async interface field with various arguments.
-    #[tracing(skip(skipped))]
+    #[instrument(skip(skipped))]
     async fn async_with_arg(
         &self,
         id: i32,
@@ -368,13 +368,13 @@ pub trait FooBar {
     }
 
     /// Field with overwritten `target` of span.
-    #[tracing(target = "my_target")]
+    #[instrument(target = "my_target")]
     fn target(&self) -> i32 {
         1
     }
 
     /// Field with overwritten `level` of span.
-    #[tracing(level = "warn")]
+    #[instrument(level = "warn")]
     fn level(&self) -> i32 {
         2
     }
@@ -384,7 +384,7 @@ pub trait FooBar {
 pub struct TraceSync;
 
 #[graphql_object(
-    trace = "sync",
+    tracing(sync),
     impl = [InterfacedSimpleValue, InterfacedSyncValue],
 )]
 impl TraceSync {
@@ -402,7 +402,7 @@ build_impl!(TraceSync, InterfacedSync);
 
 /// Derived GraphQL object marked with `trace = "sync"`.
 #[derive(Default, GraphQLObject)]
-#[graphql(trace = "sync")]
+#[graphql(tracing(sync))]
 pub struct SyncDerived {
     /// Simple field
     sync: i32,
@@ -412,7 +412,7 @@ pub struct SyncDerived {
 pub struct TraceAsync;
 
 #[graphql_object(
-    trace = "async",
+    tracing(async),
     impl = [InterfacedAsyncValue],
 )]
 impl TraceAsync {
@@ -429,7 +429,7 @@ build_impl!(TraceAsync, InterfacedAsync);
 
 /// Derived GraphQL object.
 #[derive(Default, GraphQLObject)]
-#[graphql(trace = "async")]
+#[graphql(tracing(async))]
 pub struct AsyncDerived {
     /// Simple field
     sync: i32,
@@ -439,7 +439,7 @@ pub struct AsyncDerived {
 pub struct SkipAll;
 
 #[graphql_object(
-    trace = "skip-all",
+    tracing(skip_all),
     impl = [InterfacedSkipAllValue],
 )]
 impl SkipAll {
@@ -456,7 +456,7 @@ build_impl!(SkipAll, InterfacedSkipAll);
 
 /// Derived GraphQL object marked with `trace = "skip-all"`.
 #[derive(Default, GraphQLObject)]
-#[graphql(trace = "skip-all")]
+#[graphql(tracing(skip_all))]
 pub struct SkipAllDerived {
     /// Simple field
     sync: i32,
@@ -466,16 +466,16 @@ pub struct SkipAllDerived {
 pub struct Complex;
 
 #[graphql_object(
-    trace = "complex",
+    tracing(only),
     impl = [InterfacedComplexValue],
 )]
 impl Complex {
-    #[tracing(complex)]
+    #[graphql(tracing(only))]
     pub fn sync_fn(&self) -> i32 {
         1
     }
 
-    #[tracing(complex)]
+    #[graphql(tracing(only))]
     pub async fn async_fn(&self) -> i32 {
         2
     }
@@ -483,22 +483,18 @@ impl Complex {
     fn simple_field(&self) -> i32 {
         3
     }
-
-    #[tracing(complex, no_trace)]
-    fn no_trace_complex(&self) -> i32 {
-        4
-    }
 }
 
 build_impl!(Complex, InterfacedComplex);
 
 /// Derived GraphQL object marked with `trace = "complex"`.
 #[derive(GraphQLObject)]
-#[graphql(trace = "complex")]
+#[graphql(tracing(only))]
 pub struct DerivedComplex {
-    #[tracing(complex)]
+    #[graphql(tracing(only))]
     complex: bool,
-    #[tracing(complex, fields(test = "magic"))]
+    #[graphql(tracing(only))]
+    #[instrument(fields(test = "magic"))]
     another_complex: bool,
 
     /// Simple field
@@ -516,7 +512,7 @@ trait InterfacedSimple {
 
 #[graphql_interface(
     for = [TraceSync],
-    trace = "sync",
+    tracing(sync),
     async,
 )]
 trait InterfacedSync {
@@ -526,7 +522,7 @@ trait InterfacedSync {
 
 #[graphql_interface(
     for = [TraceAsync],
-    trace = "async",
+    tracing(async),
     async,
 )]
 trait InterfacedAsync {
@@ -536,7 +532,7 @@ trait InterfacedAsync {
 
 #[graphql_interface(
     for = [SkipAll],
-    trace = "skip-all",
+    tracing(skip_all),
     async,
 )]
 trait InterfacedSkipAll {
@@ -546,11 +542,11 @@ trait InterfacedSkipAll {
 
 #[graphql_interface(
     for = [Complex],
-    trace = "complex",
+    tracing(only),
     async,
 )]
 trait InterfacedComplex {
     fn sync_fn(&self) -> i32;
-    #[tracing(complex)]
+    #[graphql(tracing(only))]
     async fn async_fn(&self) -> i32;
 }

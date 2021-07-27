@@ -96,8 +96,11 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
                 default,
                 span,
 
+                // Tracing of GraphQL Input Objects not supported
                 #[cfg(feature = "tracing")]
-                tracing: field_attrs.tracing,
+                tracing_behaviour: None,
+                #[cfg(feature = "tracing")]
+                instrument_attr: None,
             })
         })
         .collect::<Vec<_>>();
@@ -150,7 +153,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
         no_async: attrs.no_async.is_some(),
 
         #[cfg(feature = "tracing")]
-        tracing_rule: attrs.tracing_rule,
+        tracing_rule: None,
     };
 
     Ok(definition.into_input_object_tokens())

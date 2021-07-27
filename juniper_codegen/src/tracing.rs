@@ -9,6 +9,8 @@ use syn::{
     token,
 };
 
+pub const ATTR_NAME: &'static str = "instrument";
+
 #[derive(Debug, Default)]
 pub struct Attr {
     /// Optional span rename, if `None` method name should be used instead.
@@ -25,28 +27,22 @@ pub struct Attr {
 
     /// Custom fields.
     fields: Vec<syn::ExprAssign>,
-
-    /// Whether this field is marked with `#[tracing(complex)]`
-    is_complex: bool,
-
-    /// Whether this field is marked with `#[tracing(no_trace)]`
-    no_trace: bool,
 }
 
 impl Attr {
     /// Parses [`TracingAttr`] from `method`s attributes and removes itself from
     /// `method.attrs` if present.
-    pub fn from_method(method: &mut syn::TraitItemMethod) -> Option<Self> {
+    pub fn from_trait_method(method: &mut syn::TraitItemMethod) -> Option<Self> {
         let attr = method
             .attrs
             .iter()
-            .find(|attr| attr.path.is_ident("tracing"))
+            .find(|attr| attr.path.is_ident(&ATTR_NAME))
             .map(|attr| attr.parse_args())
             .transpose();
 
         method.attrs = mem::take(&mut method.attrs)
             .into_iter()
-            .filter(|attr| !attr.path.is_ident("tracing"))
+            .filter(|attr| !attr.path.is_ident(&ATTR_NAME))
             .collect();
 
         match attr {
@@ -86,12 +82,6 @@ impl Parse for Attr {
                         skipped_fields.parse::<token::Comma>().ok();
                     }
                 }
-                "no_trace" => {
-                    attr.no_trace = true;
-                }
-                "complex" => {
-                    attr.is_complex = true;
-                }
                 "fields" => {
                     let fields;
                     syn::parenthesized!(fields in input);
@@ -114,6 +104,9 @@ impl Parse for Attr {
 /// The different possible groups of fields to trace.
 #[derive(Copy, Clone, Debug)]
 pub enum Rule {
+    /// Trace all fields.
+    All,
+
     /// Trace all fields that resolved using `async fn`s.
     Async,
 
@@ -127,14 +120,9 @@ pub enum Rule {
     SkipAll,
 }
 
-impl Rule {
-    pub fn is_traced(&self, field: &impl TracedField) -> bool {
-        match self {
-            Self::Async => field.is_async(),
-            Self::Sync => !field.is_async(),
-            Self::Complex => field.tracing_attr().map_or(false, |t| t.is_complex),
-            Self::SkipAll => false,
-        }
+impl Default for Rule {
+    fn default() -> Self {
+        Self::All
     }
 }
 
@@ -145,9 +133,41 @@ impl FromStr for Rule {
         match rule {
             "async" => Ok(Self::Async),
             "sync" => Ok(Self::Sync),
-            "skip-all" => Ok(Self::SkipAll),
-            "complex" => Ok(Self::Complex),
+            "skip_all" => Ok(Self::SkipAll),
+            "only" => Ok(Self::Complex),
             _ => Err(()),
+        }
+    }
+}
+
+/// Marker on field which used together with [`Rule`] to decide whether this
+/// field should be traced.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FieldBehaviour {
+    /// Default tracing behaviour.
+    ///
+    /// It means that field **should** be traced if nothing else restricting it.
+    Default,
+
+    /// Used together with `tracing(only)` argument to mark that field should be traced.
+    Only,
+
+    /// Used to mark that field shouldn't be traced at all.
+    Ignore,
+}
+
+impl FieldBehaviour {
+    pub fn from_ident(ident: &syn::Ident) -> syn::Result<Self> {
+        match ident.to_string().as_str() {
+            "only" => Ok(Self::Only),
+            "ignore" | "skip" => Ok(Self::Ignore),
+            _ => Err(syn::Error::new(
+                ident.span(),
+                format!(
+                    "Unknown tracing behaviour: got {}, supported values: only, ignore, skip",
+                    ident,
+                ),
+            )),
         }
     }
 }
@@ -157,7 +177,7 @@ pub trait TracedType {
     /// Optional [`TracingRule`] read from attributes `#[graphql_object(trace = "...")]`
     /// on impl block, `#[graphql(trace = "...")]` on derived GraphQLObject or
     /// `#[graphql_interface(trace = "...")]` on trait definition.
-    fn tracing_rule(&self) -> Option<Rule>;
+    fn tracing_rule(&self) -> Rule;
 
     /// Name of this type.
     fn name(&self) -> &str;
@@ -172,7 +192,10 @@ pub trait TracedField {
     type Arg: TracedArgument;
 
     /// Returns parsed `#[tracing]` attribute.
-    fn tracing_attr(&self) -> Option<&Attr>;
+    fn instrument(&self) -> Option<&Attr>;
+
+    /// Returns [`FieldBehaviour`] parsed from `#[graphql(tracing = ...)]`
+    fn tracing_behaviour(&self) -> FieldBehaviour;
 
     /// Whether this field relies on async resolver.
     fn is_async(&self) -> bool;
@@ -191,19 +214,15 @@ pub trait TracedArgument {
 }
 
 fn is_traced(ty: &impl TracedType, field: &impl TracedField) -> bool {
-    let traced = ty
-        .tracing_rule()
-        .map_or_else(|| true, |rule| rule.is_traced(field));
+    let rule = ty.tracing_rule();
 
-    let no_trace = field.tracing_attr().map(|t| t.no_trace).unwrap_or(false);
-
-    traced && !no_trace
-}
-
-pub fn instrument() -> TokenStream {
-    quote!(
-        use ::juniper::InstrumentInternal as _;
-    )
+    match rule {
+        Rule::All => field.tracing_behaviour() != FieldBehaviour::Ignore,
+        Rule::Sync if !field.is_async() => field.tracing_behaviour() != FieldBehaviour::Ignore,
+        Rule::Async if field.is_async() => field.tracing_behaviour() != FieldBehaviour::Ignore,
+        Rule::Complex => field.tracing_behaviour() == FieldBehaviour::Only,
+        _ => false,
+    }
 }
 
 // Returns code that constructs `span` required for tracing
@@ -222,7 +241,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
         let arg_name = syn::LitStr::new(name, arg.ty().span());
 
         field
-            .tracing_attr()
+            .instrument()
             .map(|t| t.skip.get(&raw_name.to_string()))
             .flatten()
             .is_none()
@@ -233,7 +252,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
             })
     });
 
-    let args: Vec<_> = if let Some(tracing) = field.tracing_attr() {
+    let args: Vec<_> = if let Some(tracing) = field.instrument() {
         let additional_fields = tracing.fields.iter().map(|f| {
             let name = &f.left;
             let right = &f.right;
@@ -246,7 +265,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
     };
 
     let level = field
-        .tracing_attr()
+        .instrument()
         .map(|t| t.level.as_ref())
         .flatten()
         .map(|l| match l.value().as_str() {
@@ -267,7 +286,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
         .unwrap_or_else(|| quote!(INFO));
 
     let target = field
-        .tracing_attr()
+        .instrument()
         .map(|t| t.target.as_ref())
         .flatten()
         .map_or_else(|| quote!(), |t| quote!(target: #t,));
@@ -284,7 +303,9 @@ pub fn async_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStre
     if !is_traced(ty, field) {
         return quote!();
     }
-    quote!(.__instrument(_tracing_span))
+    quote! (
+        let f = <_ as ::juniper::tracing_futures::Instrument>::instrument(f, _tracing_span);
+    )
 }
 
 // Returns code to start tracing of sync block
@@ -301,10 +322,11 @@ mod graphql_object {
     };
 
     use super::{Attr, Rule, TracedArgument, TracedField, TracedType};
+    use crate::tracing::FieldBehaviour;
 
     impl TracedType for GraphQLTypeDefinition {
-        fn tracing_rule(&self) -> Option<Rule> {
-            self.tracing_rule
+        fn tracing_rule(&self) -> Rule {
+            self.tracing_rule.unwrap_or(Rule::All)
         }
 
         fn name(&self) -> &str {
@@ -319,8 +341,12 @@ mod graphql_object {
     impl TracedField for GraphQLTypeDefinitionField {
         type Arg = GraphQLTypeDefinitionFieldArg;
 
-        fn tracing_attr(&self) -> Option<&Attr> {
-            self.tracing.as_ref()
+        fn instrument(&self) -> Option<&Attr> {
+            self.instrument_attr.as_ref()
+        }
+
+        fn tracing_behaviour(&self) -> FieldBehaviour {
+            self.tracing_behaviour.unwrap_or(FieldBehaviour::Default)
         }
 
         fn name(&self) -> &str {
