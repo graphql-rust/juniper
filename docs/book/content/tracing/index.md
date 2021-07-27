@@ -31,8 +31,8 @@ struct Foo {
 
 #[graphql_object]
 impl Foo {
-    // Value resolving is pretty straightforward so we can skip tracing.
-    #[tracing(no_trace)]
+    // Value resolving is pretty straight-forward so we can skip tracing.
+    #[graphql(tracing(ignore))]
     fn value(&self) -> i32 {
         self.value
     }
@@ -43,7 +43,7 @@ impl Foo {
     }
     
     // Here we'll record span and it will have field with name "self.value"
-    #[tracing(fields(self.value = self.value))]
+    #[instrument(fields(self.value = self.value))]
     fn square_value(&self) -> i32 {
         self.value * self.value
     }
@@ -99,9 +99,9 @@ async fn main() {
 ## Skipping field resolvers
 
 In certain scenarios you may want to skip tracing of some fields because it too
-simple and straightforward that tracing preparations of this resolver would actually
-take more time then execution. In this cases you can use `#[tracing(no_trace)]` to
-completely disable tracing of this field resolver.
+simple and straight-forward, that tracing preparations of this resolver would actually
+take more time then execution. In this cases you can use `tracing(ignore)` argument of
+`#[graphql]` attribute to completely disable tracing of this field resolver.
 
 ### Example
 
@@ -119,45 +119,44 @@ struct User {
 
 #[graphql_object(context = Context)]
 impl User {
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     fn id(&self) -> i32 {
         self.id
     }
 
     async fn friends(&self, context: &Context) -> Vec<User> {
         // Some async query in which you're actually interested.
-        vec![]
+#       unimplemented!()
     }
 }
 ```
 
-Manually setting `#[tracing(no_traces)]` to avoid tracing of all, let's say for
+Manually setting `#[graphql(tracing(ignore))]` to avoid tracing of all, let's say for
 example synchronous field resolvers is rather inefficient when you have GraphQL
 object with too much fields. In this case you can use `tracing` argument on
 top-level `#[graphql_object]`, `#[graphql_interface]` or `#[graphql]` (when it
 used with `#[derive(GraphQLObject)]`) attributes to trace specific group of
 fields or not to trace at all. `tracing` argument can be used with one of the
-following arguments: `"sync"`, `"async"`, `"complex"` or `"skip-all"`.
- - Use `"sync"` to trace only synchronous part (struct fields and `fn`s).
- - Use `"async"` to trace only asynchronous part (`async fn`s) and
+following arguments: `sync`, `async`, `only` or `skip_all`.
+ - Use `sync` to trace only synchronous part (struct fields and `fn`s).
+ - Use `async` to trace only asynchronous part (`async fn`s) and
 subscriptions.
- - Use `"complex"` to trace only fields marked with `#[tracing(complex)]`
- - Use `"skip-all"` to skip tracing of all fields.
+ - Use `only` to trace only fields marked with `#[graphql(tracing(only))]`
+ - Use `skip_all` to skip tracing of all fields.
 
-**Note:** using of `trace = "sync"` with derived struct is no-op because all
+**Note:** using of `tracing(sync)` with derived struct is no-op because all
 resolvers within derived GraphQL object is considered to be synchronous, also
-because of this `trace = "async"` will result in no traces.
+because of this `tracing(async)` will result in no traces.
 
-In addition you can use `#[tracing(no_trace)]` with all variants above to
-exclude field from tracing even if it belongs to traced group.
+In addition you can use `#[graphql(tracing(ignore))]` with `skip` and `async`
+variants to exclude field from tracing even if it belongs to traced group.
 
 **Be careful when skipping trace as it can lead to bad structured span trees,
 disabling of tracing on one level won't disable tracing in it's child methods.**
 
 If resolving of certain field requires additional arguments (when used `fn`s or
 `async fn`s) they also will be included in resulted trace (except `self` and
-`Context`). You can use `skip` argument of `#[tracing]` attribute, to skip some
-arguments, similarly to the [`skip`] for `#[instrument]`
+`Context`).
 
 ```rust
 # extern crate juniper;
@@ -174,9 +173,8 @@ arguments, similarly to the [`skip`] for `#[instrument]`
 # struct Product {
 #     id: i32   
 # }
-
-struct Catalog;
-
+#
+# struct Catalog;
 #[graphql_object]
 impl Catalog {
     async fn products(filter: Filter, count: i32) -> Vec<Product> {
@@ -184,30 +182,15 @@ impl Catalog {
 # unimplemented!()
     }
 }
-
-struct User {
-    id: i32
-}
-
-#[graphql_object]
-impl User {
-    fn id(&self) -> i32 {
-        self.id
-    }
-
-    async fn friends(&self) -> Vec<i32> {
-        // async database query 
-# unimplemented!()
-    }
-}
 ```
 
-In case above both `filter` and `count` will be recorded in [`Span`] for
-`Catalog::products(...)`. All fields will be recorded using their `Debug`
-implementation, if your field doesn't implement `Debug` you should skip it
-with `#[tracing(skip(<fields to skip>))]` if you still want to record it but
-for some reason you don't want or can't use `Debug` trait, consider reintroducing
-this field with `fields(field_name = some_value)`.
+In example above both `filter` and `count` of `products` field will be recorded
+in produced [`Span`]. All fields will be recorded using their `fmt::Debug`
+implementation, if your field doesn't implement `fmt::Debug` you'll get compile
+time error. In this case ypu should either implement `fmt::Debug` or skip it
+using `#[instrument(skip(<fields to skip>))]` if you still want to record it but
+for some reason you don't want to implement `fmt::Debug` trait, consider reintroducing
+this field with `fields(field_name = some_value)` like shown bellow.
 
 
 ### Example
@@ -228,16 +211,22 @@ struct NonDebug {
 
 # #[graphql_object]
 # impl Query {
-#[tracing(skip(non_debug), fields(non_debug = non_debug.important_field.clone()))]
+// Note that you can use name of the skipped field as alias.
+#[instrument(skip(non_debug), fields(non_debug = non_debug.important_field.clone()))]
 fn my_query(&self, non_debug: NonDebug) -> i32 {
-    24
+    // Some query
+#    unimplemented!()
 }
 # }
 ```
 
-## `#[tracing]` attribute
+Custom fields generated this way are context aware and can use both `context` and `self`
+even if they're not implicitly passed to resolver. In case when resolver is `fn` with not
+only `self` and `context` arguments they're also available to interact with as shown above.
 
-In most aspects `#[tracing]` mimics behaviour of the `#[instrument]` attribute
+## `#[instrument]` attribute
+
+In most aspects it mimics behaviour of the original `#[instrument]` attribute
 from [tracing] crate and you could use it as a reference. With the only key
 deference you should understand, it applied implicitly to all resolvers if the
 `tracing` feature is enabled.

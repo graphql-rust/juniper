@@ -41,6 +41,7 @@ impl Database {
 pub struct Query;
 
 #[graphql_object(context = Database)]
+#[graphql(tracing(...))]
 impl Query {
     /// Simple sync query with no arguments.
     fn foo() -> Foo {
@@ -86,47 +87,47 @@ impl Query {
         ]
     }
 
-    /// Returns GraphQL object marked with `trace = "async"`.
+    /// Returns GraphQL object marked with `tracing(async)`.
     async fn trace_async() -> TraceAsync {
         TraceAsync
     }
 
-    /// Returns derived GraphQL object marked with `trace = "async"`.
+    /// Returns derived GraphQL object marked with `tracing(async)`.
     async fn derived_async() -> AsyncDerived {
         AsyncDerived::default()
     }
 
-    /// Returns GraphQL object marked with `trace = "sync"`.
+    /// Returns GraphQL object marked with `tracing(sync)`.
     fn trace_sync() -> TraceSync {
         TraceSync
     }
 
-    /// Returns derived GraphQL object marked with `trace = "sync"`.
+    /// Returns derived GraphQL object marked with `tracing(sync)`.
     fn derived_sync() -> SyncDerived {
         SyncDerived::default()
     }
 
-    /// Returns GraphQL object marked with `trace = "skip-all"`.
+    /// Returns GraphQL object marked with `tracing(skip_all)`.
     fn skip_all() -> SkipAll {
         SkipAll
     }
 
-    /// Returns derived GraphQL object marked with `trace = "skip-all"`.
+    /// Returns derived GraphQL object marked with `tracing(skip_all)`.
     fn skip_all_derived() -> SkipAllDerived {
         SkipAllDerived::default()
     }
 
-    /// Returns GraphQL object marked with `trace = "complex"` in sync manner.
+    /// Returns GraphQL object marked with `tracing(complex)` in sync manner.
     fn complex_sync() -> Complex {
         Complex
     }
 
-    /// Returns GraphQL object marked with `trace = "complex"` in async manner.
+    /// Returns GraphQL object marked with `tracing(complex)` in async manner.
     async fn complex_async() -> Complex {
         Complex
     }
 
-    /// Returns derived GraphQL object marked with `trace = "complex"`.
+    /// Returns derived GraphQL object marked with `tracing(complex)`.
     fn complex_derived() -> DerivedComplex {
         DerivedComplex {
             complex: false,
@@ -140,22 +141,22 @@ impl Query {
         InterfacedSimpleValue::TraceSync(TraceSync)
     }
 
-    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "sync"`.
+    /// Returns GraphQL object wrapped in GraphQL interface marked with `tracing(sync)`.
     fn erased_sync() -> InterfacedSyncValue {
         InterfacedSyncValue::TraceSync(TraceSync)
     }
 
-    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "async"`.
+    /// Returns GraphQL object wrapped in GraphQL interface marked with `tracing(async)`.
     fn erased_async() -> InterfacedAsyncValue {
         InterfacedAsyncValue::TraceAsync(TraceAsync)
     }
 
-    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "skip-all"`.
+    /// Returns GraphQL object wrapped in GraphQL interface marked with `tracing(skip_all)`.
     fn erased_skip_all() -> InterfacedSkipAllValue {
         InterfacedSkipAllValue::SkipAll(SkipAll)
     }
 
-    /// Returns GraphQL object wrapped in GraphQL interface marked with `trace = "complex"`.
+    /// Returns GraphQL object wrapped in GraphQL interface marked with `tracing(complex)`.
     fn erased_complex() -> InterfacedComplexValue {
         InterfacedComplexValue::Complex(Complex)
     }
@@ -200,13 +201,13 @@ impl Foo {
         self.id
     }
 
-    /// Sync field marked with `no_trace`.
+    /// Sync field marked with `tracing(ignore)`.
     #[graphql(tracing(ignore))]
     fn non_traced(&self) -> &str {
         "None can trace this"
     }
 
-    /// Async field marked with `no_trace`.
+    /// Async field marked with `tracing(ignore)`.
     #[graphql(tracing(ignore))]
     async fn async_non_traced(&self) -> &str {
         "None can trace this"
@@ -298,7 +299,7 @@ pub struct DerivedFoo {
     #[instrument(fields(self.id = self.id, custom_fields = "work"))]
     id: i32,
 
-    /// Field marked with `no_trace` within derived [`GraphQLObject`].
+    /// Field marked with `tracing(ignore)` within derived [`GraphQLObject`].
     #[graphql(tracing(ignore))]
     non_traced: String,
 
@@ -331,13 +332,13 @@ pub trait FooBar {
     /// Simple async field.
     async fn is_bar(&self) -> bool;
 
-    /// Interface field marked with `no_trace`.
+    /// Interface field marked with `tracing(ignore)`.
     #[graphql(tracing(ignore))]
     fn non_traced(&self) -> bool {
         true
     }
 
-    /// Async interface field marked with `no_trace`.
+    /// Async interface field marked with `tracing(ignore)`.
     #[graphql(tracing(ignore))]
     async fn async_non_traced(&self) -> bool {
         true
@@ -367,20 +368,20 @@ pub trait FooBar {
         id + skipped + default + overwritten
     }
 
-    /// Field with overwritten `target` of span.
+    /// Field with its `target` being overwritten.
     #[instrument(target = "my_target")]
     fn target(&self) -> i32 {
         1
     }
 
-    /// Field with overwritten `level` of span.
+    /// Field with its `level` being overwritten.
     #[instrument(level = "warn")]
     fn level(&self) -> i32 {
         2
     }
 }
 
-/// GraphQL object marked with `trace = "skip-sync"`.
+/// GraphQL object marked with `tracing(sync)`.
 pub struct TraceSync;
 
 #[graphql_object(
@@ -400,7 +401,7 @@ impl TraceSync {
 build_impl!(TraceSync, InterfacedSimple);
 build_impl!(TraceSync, InterfacedSync);
 
-/// Derived GraphQL object marked with `trace = "sync"`.
+/// Derived GraphQL object marked with `tracing(sync)`.
 #[derive(Default, GraphQLObject)]
 #[graphql(tracing(sync))]
 pub struct SyncDerived {
@@ -408,7 +409,7 @@ pub struct SyncDerived {
     sync: i32,
 }
 
-/// GraphQL object marked with `trace = "async"`.
+/// GraphQL object marked with `tracing(async)`.
 pub struct TraceAsync;
 
 #[graphql_object(
@@ -435,7 +436,7 @@ pub struct AsyncDerived {
     sync: i32,
 }
 
-/// GraphQL object marked with `trace = "skip-all"`.
+/// GraphQL object marked with `tracing(skip_all)`.
 pub struct SkipAll;
 
 #[graphql_object(
@@ -454,7 +455,7 @@ impl SkipAll {
 
 build_impl!(SkipAll, InterfacedSkipAll);
 
-/// Derived GraphQL object marked with `trace = "skip-all"`.
+/// Derived GraphQL object marked with `tracing(skip_all)`.
 #[derive(Default, GraphQLObject)]
 #[graphql(tracing(skip_all))]
 pub struct SkipAllDerived {
@@ -462,7 +463,7 @@ pub struct SkipAllDerived {
     sync: i32,
 }
 
-/// GraphQL object marked with `trace = "complex"`.
+/// GraphQL object marked with `tracing(only)`.
 pub struct Complex;
 
 #[graphql_object(
@@ -487,7 +488,7 @@ impl Complex {
 
 build_impl!(Complex, InterfacedComplex);
 
-/// Derived GraphQL object marked with `trace = "complex"`.
+/// Derived GraphQL object marked with `tracing(only)`.
 #[derive(GraphQLObject)]
 #[graphql(tracing(only))]
 pub struct DerivedComplex {
