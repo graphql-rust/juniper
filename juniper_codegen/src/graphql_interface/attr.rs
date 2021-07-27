@@ -17,8 +17,8 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, Definition, EnumType, Field, FieldArgument, ImplMeta, Implementer,
-    ImplementerDowncast, TraitMeta, TraitObjectType, Type,
+    inject_async_trait, Definition, EnumType, ImplMeta, Implementer, ImplementerDowncast,
+    TraitMeta, TraitObjectType, Type,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -94,7 +94,7 @@ pub fn expand_on_trait(
 
     proc_macro_error::abort_if_dirty();
 
-    let renaming = attr
+    let renaming = meta
         .rename_fields
         .as_deref()
         .copied()
@@ -140,7 +140,7 @@ pub fn expand_on_trait(
         .map(|c| c.as_ref().clone())
         .or_else(|| {
             fields.iter().find_map(|f| {
-                f.arguments.and_then(|f| {
+                f.arguments.as_ref().and_then(|f| {
                     f.iter()
                         .find_map(field::MethodArgument::context_ty)
                         .cloned()
@@ -481,8 +481,8 @@ impl TraitMethod {
         let description = attr.description.as_ref().map(|d| d.as_ref().value());
         let deprecated = attr
             .deprecated
-            .as_ref()
-            .map(|d| d.as_deref().map(syn::LitStr::value));
+            .as_deref()
+            .map(|d| d.as_ref().map(syn::LitStr::value));
 
         Some(field::Definition {
             name,

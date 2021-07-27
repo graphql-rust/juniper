@@ -8,7 +8,6 @@ use quote::quote;
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
-    parse_quote,
     spanned::Spanned,
     token,
 };
@@ -438,7 +437,7 @@ impl OnMethod {
             return None;
         }
 
-        Some(Self(OnField {
+        Some(Self::Regular(OnField {
             name,
             ty: argument.ty.as_ref().clone(),
             description: attr.description.as_ref().map(|d| d.as_ref().value()),

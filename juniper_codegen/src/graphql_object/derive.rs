@@ -1,18 +1,12 @@
 //! Code generation for `#[derive(GraphQLObject)]` macro.
 
-use std::mem;
-
 use proc_macro2::TokenStream;
 use proc_macro_error::ResultExt as _;
 use quote::ToTokens;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
-    common::{
-        field,
-        parse::{self, TypeExt as _},
-        ScalarValueType,
-    },
+    common::{field, parse::TypeExt as _, ScalarValueType},
     result::GraphQLScope,
     util::{span_container::SpanContainer, RenameRule},
 };
@@ -69,6 +63,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
     if let syn::Data::Struct(data) = &ast.data {
         if let syn::Fields::Named(fs) = &data.fields {
             fields = fs
+                .named
                 .iter()
                 .filter_map(|f| parse_field(f, &renaming))
                 .collect();
@@ -100,7 +95,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
         interfaces: attr
             .interfaces
             .iter()
-            .map(|ty| ty.as_deref().clone())
+            .map(|ty| ty.as_ref().clone())
             .collect(),
     })
 }
@@ -141,8 +136,8 @@ fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Defin
     let description = attr.description.as_ref().map(|d| d.as_ref().value());
     let deprecated = attr
         .deprecated
-        .as_ref()
-        .map(|d| d.as_deref().map(syn::LitStr::value));
+        .as_deref()
+        .map(|d| d.as_ref().map(syn::LitStr::value));
 
     Some(field::Definition {
         name,

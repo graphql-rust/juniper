@@ -61,7 +61,7 @@ struct SkippedFieldObj {
 }
 
 #[derive(GraphQLObject, Debug, PartialEq)]
-#[graphql(rename = "none")]
+#[graphql(rename_all = "none")]
 struct NoRenameObj {
     one_field: bool,
     another_field: i32,

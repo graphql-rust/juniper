@@ -27,9 +27,7 @@ use crate::{
         },
         ScalarValueType,
     },
-    util::{
-        filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer, RenameRule,
-    },
+    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
 
 /// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait

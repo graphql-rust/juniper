@@ -8,7 +8,7 @@ pub mod derive;
 use std::{collections::HashSet, convert::TryInto as _};
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
+use quote::{quote, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -25,9 +25,7 @@ use crate::{
         },
         ScalarValueType,
     },
-    util::{
-        filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer, RenameRule,
-    },
+    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
@@ -268,11 +266,60 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_as_dyn_graphql_value_tokens().to_tokens(into());
+        self.impl_as_dyn_graphql_value_tokens().to_tokens(into);
     }
 }
 
 impl Definition {
+    /// Returns prepared [`syn::Generics::split_for_impl`] for [`GraphQLType`]
+    /// trait (and similar) implementation of this [GraphQL object][1].
+    ///
+    /// If `for_async` is `true`, then additional predicates are added to suit
+    /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_generics(
+        &self,
+        for_async: bool,
+    ) -> (TokenStream, TokenStream, Option<syn::WhereClause>) {
+        let (_, ty_generics, _) = self.generics.split_for_impl();
+
+        let mut generics = self.generics.clone();
+
+        let scalar = &self.scalar;
+        if self.scalar.is_implicit_generic() {
+            generics.params.push(parse_quote! { #scalar });
+        }
+        if scalar.is_generic() {
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        }
+
+        if for_async {
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { Self: Sync });
+            if scalar.is_generic() {
+                generics
+                    .make_where_clause()
+                    .predicates
+                    .push(parse_quote! { #scalar: Send + Sync });
+            }
+        }
+
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        (
+            quote! { #impl_generics },
+            quote! { #ty_generics },
+            where_clause.cloned(),
+        )
+    }
+
     /// Returns generated code implementing [`GraphQLObject`] trait for this
     /// [GraphQL object][1].
     ///
@@ -282,10 +329,10 @@ impl Definition {
     fn impl_graphql_object_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.generics();
+        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
-        let interface_tys: Vec<_> = self.interfaces.iter().map(|iface| &iface.ty).collect();
+        let interface_tys: Vec<_> = self.interfaces.iter().collect();
         let all_interfaces_unique = (interface_tys.len() > 1).then(|| {
             quote! {
                 ::juniper::sa::assert_type_ne_all!(#( #interface_tys ),*);
@@ -313,12 +360,12 @@ impl Definition {
     fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.generics();
+        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
 
-        let interface_tys = self.interfaces.iter().map(|iface| &iface.ty);
+        let interface_tys = self.interfaces.iter();
 
         quote! {
             #[automatically_derived]
@@ -341,7 +388,7 @@ impl Definition {
     fn impl_graphql_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let name = &self.name;
@@ -356,7 +403,7 @@ impl Definition {
             .map(field::Definition::method_meta_tokens);
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
-        let mut interface_tys: Vec<_> = self.interfaces.iter().map(|iface| &iface.ty).collect();
+        let mut interface_tys: Vec<_> = self.interfaces.iter().collect();
         interface_tys.sort_unstable_by(|a, b| {
             let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
             a.cmp(&b)
@@ -405,7 +452,7 @@ impl Definition {
         let scalar = &self.scalar;
         let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
 
-        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let name = &self.name;
@@ -471,17 +518,8 @@ impl Definition {
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
-        let mut where_clause = where_clause
-            .cloned()
-            .unwrap_or_else(|| parse_quote! { where });
-        where_clause.predicates.push(parse_quote! { Self: Sync });
-        if self.scalar.is_generic() {
-            where_clause
-                .predicates
-                .push(parse_quote! { #scalar: Send + Sync });
-        }
-        let ty = &self.ty.ty_tokens();
+        let (impl_generics, ty_generics, where_clause) = self.impl_generics(true);
+        let ty = &self.ty;
 
         let fields_resolvers = self
             .fields
@@ -522,17 +560,8 @@ impl Definition {
 
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
-        let mut where_clause = where_clause
-            .cloned()
-            .unwrap_or_else(|| parse_quote! { where });
-        where_clause.predicates.push(parse_quote! { Self: Sync });
-        if self.scalar.is_generic() {
-            where_clause
-                .predicates
-                .push(parse_quote! { #scalar: Send + Sync });
-        }
-        let ty = &self.ty.ty_tokens();
+        let (impl_generics, ty_generics, where_clause) = self.impl_generics(true);
+        let ty = &self.ty;
 
         Some(quote! {
             #[automatically_derived]

@@ -24,7 +24,7 @@ use crate::{
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
 
-pub(crate) use self::arg::{OnField as Argument, OnMethod as MethodArgument};
+pub(crate) use self::arg::OnMethod as MethodArgument;
 
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a
 /// [GraphQL field][1] definition.
@@ -263,7 +263,7 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
     pub(crate) fn is_method(&self) -> bool {
-        self.arguments.is_none()
+        self.arguments.is_some()
     }
 
     /// Returns generated code that panics about unknown [GraphQL field][1]
@@ -311,8 +311,10 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
     pub(crate) fn method_mark_tokens(&self, scalar: &ScalarValueType) -> TokenStream {
-        let args = self.arguments.unwrap_or_default();
-        let args_marks = args.iter().filter_map(|a| a.method_mark_tokens(scalar));
+        let args_marks = self
+            .arguments
+            .iter()
+            .flat_map(|args| args.iter().filter_map(|a| a.method_mark_tokens(scalar)));
 
         let ty = &self.ty;
         let resolved_ty = quote! {
@@ -353,7 +355,7 @@ impl Definition {
         let args = self
             .arguments
             .iter()
-            .filter_map(MethodArgument::method_meta_tokens);
+            .flat_map(|args| args.iter().filter_map(MethodArgument::method_meta_tokens));
 
         quote! {
             registry.field_convert::<#ty, _, Self::Context>(#name, info)
@@ -379,7 +381,7 @@ impl Definition {
             return None;
         }
 
-        let (name, ty, ident) = (&self.name, &self.ty, &self.ident);
+        let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
         let res = if self.is_method() {
             let args = self
@@ -399,7 +401,8 @@ impl Definition {
                 quote! { Self::#ident(#rcv #( #args ),*) }
             }
         } else {
-            quote! { self.#ident }
+            ty = parse_quote! { _ };
+            quote! { &self.#ident }
         };
 
         let resolving_code = gen::sync_resolving_code();
@@ -423,7 +426,7 @@ impl Definition {
         &self,
         trait_ty: Option<&syn::Type>,
     ) -> TokenStream {
-        let (name, ty, ident) = (&self.name, &self.ty, &self.ident);
+        let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
         let mut fut = if self.is_method() {
             let args = self
@@ -443,13 +446,14 @@ impl Definition {
                 quote! { Self::#ident(#rcv #( #args ),*) }
             }
         } else {
-            quote! { self.#ident }
+            ty = parse_quote! { _ };
+            quote! { &self.#ident }
         };
         if !self.is_async {
             fut = quote! { ::juniper::futures::future::ready(#fut) };
         }
 
-        let resolving_code = gen::async_resolving_code(Some(ty));
+        let resolving_code = gen::async_resolving_code(Some(&ty));
 
         quote! {
             #name => {

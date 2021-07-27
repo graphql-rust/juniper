@@ -108,7 +108,6 @@ macro_rules! try_merge_hashset {
 
 mod derive_enum;
 mod derive_input_object;
-mod derive_object;
 mod derive_scalar_value;
 mod impl_object;
 mod impl_scalar;
@@ -148,12 +147,9 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, GraphQLScope::ObjectDerive);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    self::graphql_object::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]

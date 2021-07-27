@@ -328,17 +328,17 @@ impl FromStr for RenameRule {
     }
 }
 
-impl TryFrom<&syn::LitStr> for RenameRule {
+impl TryFrom<syn::LitStr> for RenameRule {
     type Error = syn::Error;
 
-    fn try_from(lit: &syn::LitStr) -> syn::Result<Self> {
+    fn try_from(lit: syn::LitStr) -> syn::Result<Self> {
         Self::from_str(&lit.value()).map_err(|_| syn::Error::new(lit.span(), "unknown rename rule"))
     }
 }
 
 impl Parse for RenameRule {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        Self::try_from(&input.parse::<syn::LitStr>()?)
+        Self::try_from(input.parse::<syn::LitStr>()?)
     }
 }
 
@@ -1059,7 +1059,7 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::marker::GraphQLObjectType<#scalar> for #ty #type_generics_tokens #where_clause
+            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty #type_generics_tokens #where_clause
             { }
 
         impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #type_generics_tokens
