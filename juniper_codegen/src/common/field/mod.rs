@@ -14,6 +14,7 @@ use syn::{
 
 use crate::{
     common::{
+        gen,
         parse::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _,
@@ -242,6 +243,14 @@ pub(crate) struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     pub(crate) arguments: Option<Vec<MethodArgument>>,
 
+    /// [`syn::Receiver`] of the Rust method representing this
+    /// [GraphQL field][1].
+    ///
+    /// If [`None`] then this method has no receiver.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    pub(crate) receiver: Option<syn::Receiver>,
+
     /// Indicator whether this [GraphQL field][1] should be resolved
     /// asynchronously.
     ///
@@ -257,6 +266,44 @@ impl Definition {
     #[must_use]
     pub(crate) fn is_method(&self) -> bool {
         self.arguments.is_none()
+    }
+
+    /// Returns generated code that panics about unknown [GraphQL field][1]
+    /// tried to be resolved in the [`GraphQLValue::resolve_field`] method.
+    ///
+    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    #[must_use]
+    pub(crate) fn method_resolve_field_panic_no_field_tokens(
+        scalar: &ScalarValueType,
+    ) -> TokenStream {
+        quote! {
+            panic!(
+                "Field `{}` not found on type `{}`",
+                field,
+                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
+            )
+        }
+    }
+
+    /// Returns generated code that panics about [GraphQL fields][1] tried to be
+    /// resolved asynchronously in the [`GraphQLValue::resolve_field`] method
+    /// (which is synchronous itself).
+    ///
+    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    #[must_use]
+    pub(crate) fn method_resolve_field_panic_async_field_tokens(
+        field_names: &[&str],
+        scalar: &ScalarValueType,
+    ) -> TokenStream {
+        quote! {
+            #( #field_names )|* => panic!(
+                "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+                field,
+                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
+            ),
+        }
     }
 
     /// Returns generated code for the [`marker::IsOutputType::mark`] method,
@@ -318,49 +365,88 @@ impl Definition {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::resolve_field`] method, which resolves this
-    /// [`Field`] synchronously.
+    /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
+    /// which resolves this [GraphQL field][1] synchronously.
     ///
-    /// Returns [`None`] if this [`Field::is_async`].
+    /// Returns [`None`] if this [`Definition::is_async`].
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_resolve_field_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
+    pub(crate) fn method_resolve_field_tokens(
+        &self,
+        trait_ty: Option<&syn::Type>,
+    ) -> Option<TokenStream> {
         if self.is_async {
             return None;
         }
 
-        let (name, ty, method) = (&self.name, &self.ty, &self.method);
+        let (name, ty, ident) = (&self.name, &self.ty, &self.ident);
 
-        let arguments = self
-            .arguments
-            .iter()
-            .map(field::MethodArgument::method_resolve_field_tokens);
+        let res = if self.is_method() {
+            let args = self
+                .arguments
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(MethodArgument::method_resolve_field_tokens);
+
+            let rcv = self.receiver.is_some().then(|| {
+                quote! { self, }
+            });
+
+            if trait_ty.is_some() {
+                quote! { <Self as #trait_ty>::#ident(#rcv #( #args ),*) }
+            } else {
+                quote! { Self::#ident(#rcv #( #args ),*) }
+            }
+        } else {
+            quote! { self.#ident }
+        };
 
         let resolving_code = gen::sync_resolving_code();
 
         Some(quote! {
             #name => {
-                let res: #ty = <Self as #trait_ty>::#method(self #( , #arguments )*);
+                let res: #ty = #res;
                 #resolving_code
             }
         })
     }
 
-    /// Returns generated code for the [`GraphQLValueAsync::resolve_field_async`] method, which
-    /// resolves this [`Field`] asynchronously.
+    /// Returns generated code for the
+    /// [`GraphQLValueAsync::resolve_field_async`] method, which resolves this
+    /// [GraphQL field][1] asynchronously.
     ///
     /// [`GraphQLValueAsync::resolve_field_async`]: juniper::GraphQLValueAsync::resolve_field_async
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_resolve_field_async_tokens(&self, trait_ty: &syn::Type) -> TokenStream {
-        let (name, ty, method) = (&self.name, &self.ty, &self.method);
+    pub(crate) fn method_resolve_field_async_tokens(
+        &self,
+        trait_ty: Option<&syn::Type>,
+    ) -> TokenStream {
+        let (name, ty, ident) = (&self.name, &self.ty, &self.ident);
 
-        let arguments = self
-            .arguments
-            .iter()
-            .map(field::MethodArgument::method_resolve_field_tokens);
+        let mut fut = if self.is_method() {
+            let args = self
+                .arguments
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(MethodArgument::method_resolve_field_tokens);
 
-        let mut fut = quote! { <Self as #trait_ty>::#method(self #( , #arguments )*) };
+            let rcv = self.receiver.is_some().then(|| {
+                quote! { self, }
+            });
+
+            if trait_ty.is_some() {
+                quote! { <Self as #trait_ty>::#ident(#rcv #( #args ),*) }
+            } else {
+                quote! { Self::#ident(#rcv #( #args ),*) }
+            }
+        } else {
+            quote! { self.#ident }
+        };
         if !self.is_async {
             fut = quote! { ::juniper::futures::future::ready(#fut) };
         }

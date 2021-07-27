@@ -260,7 +260,77 @@ struct Definition {
     interfaces: Vec<syn::Type>,
 }
 
+impl ToTokens for Definition {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        self.impl_graphql_object_tokens().to_tokens(into);
+        self.impl_output_type_tokens().to_tokens(into);
+        self.impl_graphql_type_tokens().to_tokens(into);
+        self.impl_graphql_value_tokens().to_tokens(into);
+        self.impl_graphql_value_async_tokens().to_tokens(into);
+        self.impl_as_dyn_graphql_value_tokens().to_tokens(into());
+    }
+}
+
 impl Definition {
+    /// Returns generated code implementing [`GraphQLObject`] trait for this
+    /// [GraphQL object][1].
+    ///
+    /// [`GraphQLObject`]: juniper::GraphQLObject
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_graphql_object_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_generics, where_clause) = self.generics();
+        let ty = &self.ty;
+
+        let interface_tys: Vec<_> = self.interfaces.iter().map(|iface| &iface.ty).collect();
+        let all_interfaces_unique = (interface_tys.len() > 1).then(|| {
+            quote! {
+                ::juniper::sa::assert_type_ne_all!(#( #interface_tys ),*);
+            }
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty#ty_generics #where_clause
+            {
+                fn mark() {
+                    #all_interfaces_unique
+                    #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`marker::IsOutputType`] trait for
+    /// this [GraphQL object][1].
+    ///
+    /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_output_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_generics, where_clause) = self.generics();
+        let ty = &self.ty;
+
+        let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
+
+        let interface_tys = self.interfaces.iter().map(|iface| &iface.ty);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty#ty_generics #where_clause
+            {
+                fn mark() {
+                    #( #fields_marks )*
+                    #( <#interface_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                }
+            }
+        }
+    }
+
     /// Returns generated code implementing [`GraphQLType`] trait for this
     /// [GraphQL object][1].
     ///
@@ -324,72 +394,164 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`GraphQLObject`] trait for this
+    /// Returns generated code implementing [`GraphQLValue`] trait for this
     /// [GraphQL object][1].
     ///
-    /// [`GraphQLObject`]: juniper::GraphQLObject
+    /// [`GraphQLValue`]: juniper::GraphQLValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     #[must_use]
-    fn impl_graphql_object_tokens(&self) -> TokenStream {
+    fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
+        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
 
-        let (impl_generics, ty_generics, where_clause) = self.generics();
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
         let ty = &self.ty;
 
-        let interface_tys: Vec<_> = self.interfaces.iter().map(|iface| &iface.ty).collect();
-        let all_interfaces_unique = (interface_tys.len() > 1).then(|| {
-            quote! {
-                ::juniper::sa::assert_type_ne_all!(#( #interface_tys ),*);
-            }
-        });
+        let name = &self.name;
+
+        let fields_resolvers = self
+            .fields
+            .iter()
+            .filter_map(|f| f.method_resolve_field_tokens(None));
+        let async_fields_panic = {
+            let names = self
+                .fields
+                .iter()
+                .filter_map(|f| f.is_async.then(|| f.name.as_str()))
+                .collect::<Vec<_>>();
+            (!names.is_empty()).then(|| {
+                field::Definition::method_resolve_field_panic_async_field_tokens(&names, scalar)
+            })
+        };
+        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty#ty_generics #where_clause
             {
-                fn mark() {
-                    #all_interfaces_unique
-                    #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
+                type Context = #context;
+                type TypeInfo = ();
+
+                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                }
+
+                fn resolve_field(
+                    &self,
+                    info: &Self::TypeInfo,
+                    field: &str,
+                    args: &::juniper::Arguments<#scalar>,
+                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::ExecutionResult<#scalar> {
+                    match field {
+                        #( #fields_resolvers )*
+                        #async_fields_panic
+                        _ => #no_field_panic,
+                    }
+                }
+
+                fn concrete_type_name(
+                    &self,
+                    _: &Self::Context,
+                    _: &Self::TypeInfo,
+                ) -> String {
+                    #name.to_string()
                 }
             }
         }
     }
 
-    /// Returns generated code implementing [`marker::IsOutputType`] trait for
-    /// this [GraphQL object][1].
+    /// Returns generated code implementing [`GraphQLValueAsync`] trait for this
+    /// [GraphQL object][1].
     ///
-    /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
+    /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     #[must_use]
-    fn impl_output_type_tokens(&self) -> TokenStream {
+    fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.generics();
-        let ty = &self.ty;
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+        let mut where_clause = where_clause
+            .cloned()
+            .unwrap_or_else(|| parse_quote! { where });
+        where_clause.predicates.push(parse_quote! { Self: Sync });
+        if self.scalar.is_generic() {
+            where_clause
+                .predicates
+                .push(parse_quote! { #scalar: Send + Sync });
+        }
+        let ty = &self.ty.ty_tokens();
 
-        let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
-
-        let interface_tys = self.interfaces.iter().map(|iface| &iface.ty);
+        let fields_resolvers = self
+            .fields
+            .iter()
+            .map(|f| f.method_resolve_field_async_tokens(None));
+        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty#ty_generics #where_clause
             {
-                fn mark() {
-                    #( #fields_marks )*
-                    #( <#interface_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                fn resolve_field_async<'b>(
+                    &'b self,
+                    info: &'b Self::TypeInfo,
+                    field: &'b str,
+                    args: &'b ::juniper::Arguments<#scalar>,
+                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    match field {
+                        #( #fields_resolvers )*
+                        _ => #no_field_panic,
+                    }
                 }
             }
         }
     }
-}
 
-impl ToTokens for Definition {
-    fn to_tokens(&self, into: &mut TokenStream) {
-        into.append_all(&[
-            self.impl_graphql_object_tokens(),
-            self.impl_output_type_tokens(),
-            self.impl_graphql_type_tokens(),
-        ]);
+    /// Returns generated code implementing [`AsDynGraphQLValue`] trait for this
+    /// [GraphQL object][1].
+    ///
+    /// [`AsDynGraphQLValue`]: juniper::AsDynGraphQLValue
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_as_dyn_graphql_value_tokens(&self) -> Option<TokenStream> {
+        if self.interfaces.is_empty() {
+            return None;
+        }
+
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+        let mut where_clause = where_clause
+            .cloned()
+            .unwrap_or_else(|| parse_quote! { where });
+        where_clause.predicates.push(parse_quote! { Self: Sync });
+        if self.scalar.is_generic() {
+            where_clause
+                .predicates
+                .push(parse_quote! { #scalar: Send + Sync });
+        }
+        let ty = &self.ty.ty_tokens();
+
+        Some(quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty#ty_generics #where_clause
+            {
+                type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
+                type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;
+
+                fn as_dyn_graphql_value(
+                    &self,
+                ) -> &::juniper::DynGraphQLValue<#scalar, Self::Context, Self::TypeInfo> {
+                    self
+                }
+
+                fn as_dyn_graphql_value_async(
+                    &self,
+                ) -> &::juniper::DynGraphQLValueAsync<#scalar, Self::Context, Self::TypeInfo> {
+                    self
+                }
+            }
+        })
     }
 }

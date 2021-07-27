@@ -172,7 +172,7 @@ pub use crate::{
     types::{
         async_await::{DynGraphQLValueAsync, GraphQLTypeAsync, GraphQLValueAsync},
         base::{Arguments, DynGraphQLValue, GraphQLType, GraphQLValue, TypeKind},
-        marker::{self, GraphQLInterface, GraphQLUnion, GraphQLObject},
+        marker::{self, GraphQLInterface, GraphQLObject, GraphQLUnion},
         nullable::Nullable,
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{

@@ -416,21 +416,76 @@ struct Definition {
     implementers: Vec<Implementer>,
 }
 
+impl ToTokens for Definition {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        self.ty.to_token_stream().to_tokens(into);
+        self.impl_graphql_interface_tokens().to_tokens(into);
+        self.impl_output_type_tokens().to_tokens(into);
+        self.impl_graphql_type_tokens().to_tokens(into);
+        self.impl_graphql_value_tokens().to_tokens(into);
+        self.impl_graphql_value_async_tokens().to_tokens(into);
+    }
+}
+
 impl Definition {
-    /// Returns generated code that panics about unknown field tried to be resolved on this
+    /// Returns generated code implementing [`GraphQLInterface`] trait for this
     /// [GraphQL interface][1].
     ///
+    /// [`GraphQLInterface`]: juniper::GraphQLInterface
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
-    fn panic_no_field_tokens(&self) -> TokenStream {
+    fn impl_graphql_interface_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
+        let generics = self.ty.impl_generics();
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let ty = self.ty.ty_tokens();
+
+        let impler_tys: Vec<_> = self.implementers.iter().map(|impler| &impler.ty).collect();
+        let all_implers_unique = (impler_tys.len() > 1).then(|| {
+            quote! {
+                Some(quote! { ::juniper::sa::assert_type_ne_all!(#( #impler_tys ),*); })
+            }
+        });
+
         quote! {
-            panic!(
-                "Field `{}` not found on type `{}`",
-                field,
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
-            )
+            #[automatically_derived]
+            impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar> for #ty #where_clause
+            {
+                fn mark() {
+                    #all_implers_unique
+                    #( <#impler_tys as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`marker::IsOutputType`] trait for this
+    /// [GraphQL interface][1].
+    ///
+    /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    #[must_use]
+    fn impl_output_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let generics = self.ty.impl_generics();
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let ty = self.ty.ty_tokens();
+
+        let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
+
+        let impler_tys = self.implementers.iter().map(|impler| &impler.ty);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
+            {
+                fn mark() {
+                    #( #fields_marks )*
+                    #( <#impler_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                }
+            }
         }
     }
 
@@ -459,7 +514,10 @@ impl Definition {
             a.cmp(&b)
         });
 
-        let fields_meta = self.fields.iter().map(field::Definition::method_meta_tokens);
+        let fields_meta = self
+            .fields
+            .iter()
+            .map(field::Definition::method_meta_tokens);
 
         quote! {
             #[automatically_derived]
@@ -507,32 +565,18 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(&trait_ty));
+            .filter_map(|f| f.method_resolve_field_tokens(Some(&trait_ty)));
         let async_fields_panic = {
             let names = self
                 .fields
                 .iter()
-                .filter_map(|field| {
-                    if field.is_async {
-                        Some(&field.name)
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|f| f.is_async.then(|| f.name.as_str()))
                 .collect::<Vec<_>>();
-            if names.is_empty() {
-                None
-            } else {
-                Some(quote! {
-                    #( #names )|* => panic!(
-                        "Tried to resolve async field `{}` on type `{}` with a sync resolver",
-                        field,
-                        <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
-                    ),
-                })
-            }
+            (!names.is_empty()).then(|| {
+                field::Definition::method_resolve_field_panic_async_field_tokens(&names, scalar)
+            })
         };
-        let no_field_panic = self.panic_no_field_tokens();
+        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         let custom_downcast_checks = self
             .implementers
@@ -621,8 +665,8 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.method_resolve_field_async_tokens(&trait_ty));
-        let no_field_panic = self.panic_no_field_tokens();
+            .map(|f| f.method_resolve_field_async_tokens(Some(&trait_ty)));
+        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         let custom_downcasts = self
             .implementers
@@ -659,80 +703,6 @@ impl Definition {
                 }
             }
         }
-    }
-
-    /// Returns generated code implementing [`GraphQLInterface`] trait for this
-    /// [GraphQL interface][1].
-    ///
-    /// [`GraphQLInterface`]: juniper::GraphQLInterface
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    #[must_use]
-    fn impl_graphql_interface_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let ty = self.ty.ty_tokens();
-
-        let impler_tys: Vec<_> = self.implementers.iter().map(|impler| &impler.ty).collect();
-        let all_implers_unique = (impler_tys.len() > 1).then(|| {
-            quote! {
-                Some(quote! { ::juniper::sa::assert_type_ne_all!(#( #impler_tys ),*); })
-            }
-        });
-
-        quote! {
-            #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar> for #ty #where_clause
-            {
-                fn mark() {
-                    #all_implers_unique
-                    #( <#impler_tys as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
-                }
-            }
-        }
-    }
-
-    /// Returns generated code implementing [`marker::IsOutputType`] trait for this
-    /// [GraphQL interface][1].
-    ///
-    /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    #[must_use]
-    fn impl_output_type_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let ty = self.ty.ty_tokens();
-
-        let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
-
-        let impler_tys = self.implementers.iter().map(|impler| &impler.ty);
-
-        quote! {
-            #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
-            {
-                fn mark() {
-                    #( #fields_marks )*
-                    #( <#impler_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
-                }
-            }
-        }
-    }
-}
-
-impl ToTokens for Definition {
-    fn to_tokens(&self, into: &mut TokenStream) {
-        into.append_all(&[
-            self.ty.to_token_stream(),
-            self.impl_graphql_interface_tokens(),
-            self.impl_output_type_tokens(),
-            self.impl_graphql_type_tokens(),
-            self.impl_graphql_value_tokens(),
-            self.impl_graphql_value_async_tokens(),
-        ]);
     }
 }
 

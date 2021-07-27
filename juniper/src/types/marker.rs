@@ -34,9 +34,9 @@ pub trait GraphQLObject<S: ScalarValue>: GraphQLType<S> {
 }
 
 impl<'a, S, T> GraphQLObject<S> for &T
-    where
-        T: GraphQLInterface<S> + ?Sized,
-        S: ScalarValue,
+where
+    T: GraphQLInterface<S> + ?Sized,
+    S: ScalarValue,
 {
     #[inline]
     fn mark() {
@@ -45,9 +45,9 @@ impl<'a, S, T> GraphQLObject<S> for &T
 }
 
 impl<S, T> GraphQLObject<S> for Box<T>
-    where
-        T: GraphQLInterface<S> + ?Sized,
-        S: ScalarValue,
+where
+    T: GraphQLInterface<S> + ?Sized,
+    S: ScalarValue,
 {
     #[inline]
     fn mark() {
@@ -56,9 +56,9 @@ impl<S, T> GraphQLObject<S> for Box<T>
 }
 
 impl<S, T> GraphQLObject<S> for Arc<T>
-    where
-        T: GraphQLInterface<S> + ?Sized,
-        S: ScalarValue,
+where
+    T: GraphQLInterface<S> + ?Sized,
+    S: ScalarValue,
 {
     #[inline]
     fn mark() {
