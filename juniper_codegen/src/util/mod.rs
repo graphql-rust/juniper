@@ -295,7 +295,7 @@ pub fn is_valid_name(field_name: &str) -> bool {
 }
 
 /// The different possible ways to change case of fields in a struct, or variants in an enum.
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RenameRule {
     /// Don't apply a default rename rule.
     None,

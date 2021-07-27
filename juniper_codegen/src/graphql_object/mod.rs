@@ -30,22 +30,22 @@ use crate::{
     },
 };
 
-/// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_object]`)
-/// attribute when generating code for [GraphQL object][1] type.
+/// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
+/// when generating code for [GraphQL object][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[derive(Debug, Default)]
-struct ObjectMeta {
-    /// Explicitly specified name of [GraphQL object][1] type.
+struct Attr {
+    /// Explicitly specified name of this [GraphQL object][1] type.
     ///
-    /// If absent, then Rust type name is used by default.
+    /// If [`None`], then Rust type name is used by default.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     name: Option<SpanContainer<String>>,
 
-    /// Explicitly specified [description][2] of [GraphQL object][1] type.
+    /// Explicitly specified [description][2] of this [GraphQL object][1] type.
     ///
-    /// If absent, then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment is used as [description][2], if any.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
@@ -54,7 +54,8 @@ struct ObjectMeta {
     /// Explicitly specified type of `juniper::Context` to use for resolving
     /// this [GraphQL object][1] type with.
     ///
-    /// If absent, then unit type `()` is assumed as type of `juniper::Context`.
+    /// If [`None`], then unit type `()` is assumed as a type of
+    /// `juniper::Context`.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     context: Option<SpanContainer<syn::Type>>,
@@ -62,7 +63,7 @@ struct ObjectMeta {
     /// Explicitly specified type of `juniper::ScalarValue` to use for resolving
     /// this [GraphQL object][1] type with.
     ///
-    /// If absent, then generated code will be generic over any
+    /// If [`None`], then generated code will be generic over any
     /// `juniper::ScalarValue` type, which, in turn, requires all [object][1]
     /// fields to be generic over any `juniper::ScalarValue` type too. That's
     /// why this type should be specified only if one of the variants implements
@@ -88,11 +89,11 @@ struct ObjectMeta {
     rename_fields: Option<SpanContainer<RenameRule>>,
 
     /// Indicator whether the generated code is intended to be used only inside
-    /// the `juniper` library.
+    /// the [`juniper`] library.
     is_internal: bool,
 }
 
-impl Parse for ObjectMeta {
+impl Parse for Attr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut output = Self::default();
 
@@ -177,8 +178,8 @@ impl Parse for ObjectMeta {
     }
 }
 
-impl ObjectMeta {
-    /// Tries to merge two [`ObjectMeta`]s into a single one, reporting about
+impl Attr {
+    /// Tries to merge two [`Attr`]s into a single one, reporting about
     /// duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
@@ -192,18 +193,18 @@ impl ObjectMeta {
         })
     }
 
-    /// Parses [`ObjectMeta`] from the given multiple `name`d
-    /// [`syn::Attribute`]s placed on a struct or impl block definition.
+    /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a struct or impl block definition.
     fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        let mut meta = filter_attrs(name, attrs)
+        let mut attr = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
-        if meta.description.is_none() {
-            meta.description = get_doc_comment(attrs);
+        if attr.description.is_none() {
+            attr.description = get_doc_comment(attrs);
         }
 
-        Ok(meta)
+        Ok(attr)
     }
 }
 
@@ -257,7 +258,7 @@ struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
-    interfaces: Vec<syn::Type>,
+    interfaces: HashSet<syn::Type>,
 }
 
 impl ToTokens for Definition {

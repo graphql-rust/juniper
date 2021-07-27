@@ -243,13 +243,11 @@ pub(crate) struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     pub(crate) arguments: Option<Vec<MethodArgument>>,
 
-    /// [`syn::Receiver`] of the Rust method representing this
-    /// [GraphQL field][1].
-    ///
-    /// If [`None`] then this method has no receiver.
+    /// Indicator whether the Rust method representing this [GraphQL field][1]
+    /// has a [`syn::Receiver`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    pub(crate) receiver: Option<syn::Receiver>,
+    pub(crate) has_receiver: bool,
 
     /// Indicator whether this [GraphQL field][1] should be resolved
     /// asynchronously.
@@ -391,7 +389,7 @@ impl Definition {
                 .iter()
                 .map(MethodArgument::method_resolve_field_tokens);
 
-            let rcv = self.receiver.is_some().then(|| {
+            let rcv = self.has_receiver.then(|| {
                 quote! { self, }
             });
 
@@ -435,7 +433,7 @@ impl Definition {
                 .iter()
                 .map(MethodArgument::method_resolve_field_tokens);
 
-            let rcv = self.receiver.is_some().then(|| {
+            let rcv = self.has_receiver.then(|| {
                 quote! { self, }
             });
 
@@ -460,4 +458,14 @@ impl Definition {
             }
         }
     }
+}
+
+/// Checks whether all [GraphQL fields][1] fields have different names.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+#[must_use]
+pub(crate) fn all_different(fields: &[Definition]) -> bool {
+    let mut names: Vec<_> = fields.iter().map(|f| &f.name).collect();
+    names.dedup();
+    names.len() == fields.len()
 }

@@ -4,7 +4,10 @@
 
 pub mod attr;
 
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    convert::TryInto as _,
+};
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
@@ -24,7 +27,9 @@ use crate::{
         },
         ScalarValueType,
     },
-    util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
+    util::{
+        filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer, RenameRule,
+    },
 };
 
 /// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait
@@ -115,6 +120,14 @@ struct TraitMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     external_downcasts: HashMap<syn::Type, SpanContainer<syn::ExprPath>>,
+
+    /// Explicitly specified [`RenameRule`] for all fields of this
+    /// [GraphQL interface][1] type.
+    ///
+    /// If [`None`] then the default rule will be [`RenameRule::CamelCase`].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    rename_fields: Option<SpanContainer<RenameRule>>,
 
     /// Indicator whether the generated code is intended to be used only inside the [`juniper`]
     /// library.
@@ -214,6 +227,18 @@ impl Parse for TraitMeta {
                         .insert(ty, dwncst_spanned)
                         .none_or_else(|_| err::dup_arg(dwncst_span))?
                 }
+                "rename_all" => {
+                    input.parse::<token::Eq>()?;
+                    let val = input.parse::<syn::LitStr>()?;
+                    output
+                        .rename_fields
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(val.span()),
+                            val.try_into()?,
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?;
+                }
                 "internal" => {
                     output.is_internal = true;
                 }
@@ -243,6 +268,7 @@ impl TraitMeta {
             external_downcasts: try_merge_hashmap!(
                 external_downcasts: self, another => span_joined
             ),
+            rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
     }
@@ -250,12 +276,12 @@ impl TraitMeta {
     /// Parses [`TraitMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a trait
     /// definition.
     fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        let mut meta = filter_attrs(name, attrs)
+        let mut attr = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
-        if let Some(as_dyn) = &meta.r#dyn {
-            if meta.r#enum.is_some() {
+        if let Some(as_dyn) = &attr.r#dyn {
+            if attr.r#enum.is_some() {
                 return Err(syn::Error::new(
                     as_dyn.span(),
                     "`dyn` attribute argument is not composable with `enum` attribute argument",
@@ -263,11 +289,11 @@ impl TraitMeta {
             }
         }
 
-        if meta.description.is_none() {
-            meta.description = get_doc_comment(attrs);
+        if attr.description.is_none() {
+            attr.description = get_doc_comment(attrs);
         }
 
-        Ok(meta)
+        Ok(attr)
     }
 }
 

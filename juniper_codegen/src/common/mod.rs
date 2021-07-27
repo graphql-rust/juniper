@@ -31,6 +31,12 @@ pub(crate) enum ScalarValueType {
     ImplicitGeneric,
 }
 
+impl ToTokens for ScalarValueType {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        self.ty().to_tokens(into)
+    }
+}
+
 impl ScalarValueType {
     /// Indicates whether this [`ScalarValueType`] is generic.
     #[must_use]
@@ -81,10 +87,29 @@ impl ScalarValueType {
             }
         }
     }
-}
 
-impl ToTokens for ScalarValueType {
-    fn to_tokens(&self, into: &mut TokenStream) {
-        self.ty().to_tokens(into)
+    /// Parses [`ScalarValueType`] from the given `explicit` type definition (if
+    /// any), checking whether it contains in the giving `generics`.
+    #[must_use]
+    pub(crate) fn parse(explicit: Option<&syn::Type>, generics: &syn::Generics) -> Self {
+        if let Some(scalar_ty) = explicit {
+            generics
+                .params
+                .iter()
+                .find_map(|p| {
+                    if let syn::GenericParam::Type(tp) = p {
+                        let ident = &tp.ident;
+                        let ty: syn::Type = parse_quote! { #ident };
+                        if &ty == scalar_ty {
+                            return Some(&tp.ident);
+                        }
+                    }
+                    None
+                })
+                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
+                .unwrap_or_else(|| ScalarValueType::Concrete(scalar_ty.clone()))
+        } else {
+            ScalarValueType::ImplicitGeneric
+        }
     }
 }

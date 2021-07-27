@@ -13,7 +13,7 @@ use crate::{
         ScalarValueType,
     },
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, to_camel_case},
+    util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
 use super::{
@@ -69,27 +69,7 @@ pub fn expand_on_trait(
         );
     }
 
-    let scalar = meta
-        .scalar
-        .as_ref()
-        .map(|sc| {
-            ast.generics
-                .params
-                .iter()
-                .find_map(|p| {
-                    if let syn::GenericParam::Type(tp) = p {
-                        let ident = &tp.ident;
-                        let ty: syn::Type = parse_quote! { #ident };
-                        if &ty == sc.as_ref() {
-                            return Some(&tp.ident);
-                        }
-                    }
-                    None
-                })
-                .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
-                .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
-        })
-        .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
+    let scalar = ScalarValueType::parse(meta.scalar.as_deref(), &ast.generics);
 
     let mut implementers: Vec<_> = meta
         .implementers
@@ -114,10 +94,16 @@ pub fn expand_on_trait(
 
     proc_macro_error::abort_if_dirty();
 
+    let renaming = attr
+        .rename_fields
+        .as_deref()
+        .copied()
+        .unwrap_or(RenameRule::CamelCase);
+
     let mut fields = vec![];
     for item in &mut ast.items {
         if let syn::TraitItem::Method(m) = item {
-            match TraitMethod::parse(m) {
+            match TraitMethod::parse(m, &renaming) {
                 Some(TraitMethod::Field(f)) => fields.push(f),
                 Some(TraitMethod::Downcast(d)) => {
                     match implementers.iter_mut().find(|i| i.ty == d.ty) {
@@ -142,8 +128,7 @@ pub fn expand_on_trait(
     if fields.is_empty() {
         ERR.emit_custom(trait_span, "must have at least one field");
     }
-
-    if !all_fields_different(&fields) {
+    if !field::all_different(&fields) {
         ERR.emit_custom(trait_span, "must have a different name for each field");
     }
 
@@ -155,10 +140,11 @@ pub fn expand_on_trait(
         .map(|c| c.as_ref().clone())
         .or_else(|| {
             fields.iter().find_map(|f| {
-                f.arguments
-                    .iter()
-                    .find_map(field::MethodArgument::context_ty)
-                    .cloned()
+                f.arguments.and_then(|f| {
+                    f.iter()
+                        .find_map(field::MethodArgument::context_ty)
+                        .cloned()
+                })
             })
         })
         .or_else(|| {
@@ -349,7 +335,7 @@ enum TraitMethod {
     /// Method represents a [`Field`] of [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    Field(Field),
+    Field(field::Definition),
 
     /// Method represents a custom downcasting function into the [`Implementer`] of
     /// [GraphQL interface][1].
@@ -364,7 +350,7 @@ impl TraitMethod {
     /// Returns [`None`] if the trait method marked with `#[graphql(ignore)]` attribute,
     /// or parsing fails.
     #[must_use]
-    fn parse(method: &mut syn::TraitItemMethod) -> Option<Self> {
+    fn parse(method: &mut syn::TraitItemMethod, renaming: &RenameRule) -> Option<Self> {
         let method_attrs = method.attrs.clone();
 
         // Remove repeated attributes from the method, to omit incorrect expansion.
@@ -385,7 +371,7 @@ impl TraitMethod {
             return Some(Self::Downcast(Box::new(Self::parse_downcast(method)?)));
         }
 
-        Some(Self::Field(Self::parse_field(method, meta)?))
+        Some(Self::Field(Self::parse_field(method, meta, renaming)?))
     }
 
     /// Parses [`TraitMethod::Downcast`] from the given trait method definition.
@@ -436,14 +422,18 @@ impl TraitMethod {
     ///
     /// Returns [`None`] if parsing fails.
     #[must_use]
-    fn parse_field(method: &mut syn::TraitItemMethod, attr: field::Attr) -> Option<Field> {
+    fn parse_field(
+        method: &mut syn::TraitItemMethod,
+        attr: field::Attr,
+        renaming: &RenameRule,
+    ) -> Option<field::Definition> {
         let method_ident = &method.sig.ident;
 
         let name = attr
             .name
             .as_ref()
             .map(|m| m.as_ref().value())
-            .unwrap_or_else(|| to_camel_case(&method_ident.unraw().to_string()));
+            .unwrap_or_else(|| renaming.apply(&method_ident.unraw().to_string()));
         if name.starts_with("__") {
             ERR.no_double_underscore(
                 attr.name
@@ -492,15 +482,16 @@ impl TraitMethod {
         let deprecated = attr
             .deprecated
             .as_ref()
-            .map(|d| d.as_ref().as_ref().map(syn::LitStr::value));
+            .map(|d| d.as_deref().map(syn::LitStr::value));
 
-        Some(Field {
+        Some(field::Definition {
             name,
             ty,
             description,
             deprecated,
-            method: method_ident.clone(),
-            arguments,
+            ident: method_ident.clone(),
+            arguments: Some(arguments),
+            has_receiver: method.sig.receiver().is_some(),
             is_async: method.sig.asyncness.is_some(),
         })
     }
@@ -566,13 +557,4 @@ fn err_duplicate_downcast(
          implementers downcasting",
     ))
     .emit()
-}
-
-/// Checks whether all [GraphQL interface][1] fields have different names.
-///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-fn all_fields_different(fields: &[Field]) -> bool {
-    let mut names: Vec<_> = fields.iter().map(|f| &f.name).collect();
-    names.dedup();
-    names.len() == fields.len()
 }
