@@ -613,6 +613,7 @@ impl Definition {
         let regular_downcast = self.ty.method_resolve_into_type_tokens();
 
         quote! {
+            #[allow(deprecated)]
             #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
             {
@@ -697,6 +698,7 @@ impl Definition {
         let regular_downcast = self.ty.method_resolve_into_type_async_tokens();
 
         quote! {
+            #[allow(deprecated)]
             #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
             {

@@ -8,7 +8,7 @@ pub mod derive;
 use std::{collections::HashSet, convert::TryInto as _};
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -27,6 +27,7 @@ use crate::{
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
+use syn::ext::IdentExt;
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
 /// when generating code for [GraphQL object][1] type.
@@ -300,10 +301,28 @@ impl Definition {
         }
 
         if for_async {
+            let self_ty = if generics.lifetimes().next().is_some() {
+                // Modify lifetime names to omit "lifetime name `'a` shadows a
+                // lifetime name that is already in scope" error.
+                let mut generics = self.generics.clone();
+                for lt in generics.lifetimes_mut() {
+                    let ident = lt.lifetime.ident.unraw();
+                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                }
+
+                let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
+                let ty = &self.ty;
+                let (_, ty_generics, _) = generics.split_for_impl();
+
+                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+            } else {
+                quote! { Self }
+            };
             generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote! { Self: Sync });
+                .push(parse_quote! { #self_ty: Sync });
+
             if scalar.is_generic() {
                 generics
                     .make_where_clause()
@@ -433,7 +452,7 @@ impl Definition {
                     let fields = [
                         #( #fields_meta, )*
                     ];
-                    registry.build_object_type::<#ty>(info, &fields)
+                    registry.build_object_type::<#ty#ty_generics>(info, &fields)
                         #description
                         #interfaces
                         .into_meta()
@@ -474,6 +493,7 @@ impl Definition {
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {
+            #[allow(deprecated)]
             #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty#ty_generics #where_clause
             {
@@ -528,6 +548,7 @@ impl Definition {
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {
+            #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty#ty_generics #where_clause
             {
@@ -564,6 +585,7 @@ impl Definition {
         let ty = &self.ty;
 
         Some(quote! {
+            #[allow(non_snake_case)]
             #[automatically_derived]
             impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty#ty_generics #where_clause
             {

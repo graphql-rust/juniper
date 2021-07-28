@@ -10,21 +10,21 @@ pub struct Query;
 /// The root query object of the schema
 impl Query {
     fn human(
-        database: &Database,
+        #[graphql(context)] database: &Database,
         #[graphql(description = "id of the human")] id: String,
     ) -> Option<&Human> {
         database.get_human(&id)
     }
 
     fn droid(
-        database: &Database,
+        #[graphql(context)] database: &Database,
         #[graphql(description = "id of the droid")] id: String,
     ) -> Option<&Droid> {
         database.get_droid(&id)
     }
 
     fn hero(
-        database: &Database,
+        #[graphql(context)] database: &Database,
         #[graphql(description = "If omitted, returns the hero of the whole saga. \
                                  If provided, returns the hero of that particular episode")]
         episode: Option<Episode>,

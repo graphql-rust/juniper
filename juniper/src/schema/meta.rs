@@ -32,10 +32,10 @@ impl DeprecationStatus {
     }
 
     /// An optional reason for the deprecation, or none if `Current`.
-    pub fn reason(&self) -> Option<&String> {
+    pub fn reason(&self) -> Option<&str> {
         match self {
             DeprecationStatus::Current => None,
-            DeprecationStatus::Deprecated(ref reason) => reason.as_ref(),
+            DeprecationStatus::Deprecated(rsn) => rsn.as_deref(),
         }
     }
 }
@@ -236,26 +236,14 @@ impl<'a, S> MetaType<'a, S> {
     /// Access the description of the type, if applicable
     ///
     /// Lists, nullable wrappers, and placeholders don't have names.
-    pub fn description(&self) -> Option<&String> {
-        match *self {
-            MetaType::Scalar(ScalarMeta {
-                ref description, ..
-            })
-            | MetaType::Object(ObjectMeta {
-                ref description, ..
-            })
-            | MetaType::Enum(EnumMeta {
-                ref description, ..
-            })
-            | MetaType::Interface(InterfaceMeta {
-                ref description, ..
-            })
-            | MetaType::Union(UnionMeta {
-                ref description, ..
-            })
-            | MetaType::InputObject(InputObjectMeta {
-                ref description, ..
-            }) => description.as_ref(),
+    pub fn description(&self) -> Option<&str> {
+        match self {
+            MetaType::Scalar(ScalarMeta { description, .. })
+            | MetaType::Object(ObjectMeta { description, .. })
+            | MetaType::Enum(EnumMeta { description, .. })
+            | MetaType::Interface(InterfaceMeta { description, .. })
+            | MetaType::Union(UnionMeta { description, .. })
+            | MetaType::InputObject(InputObjectMeta { description, .. }) => description.as_deref(),
             _ => None,
         }
     }

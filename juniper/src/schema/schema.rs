@@ -1,6 +1,7 @@
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
+    graphql_object,
     types::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},
         base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
@@ -129,16 +130,13 @@ where
     }
 }
 
-#[crate::graphql_object(
+#[graphql_object(
     name = "__Schema"
     context = SchemaType<'a, S>,
     scalar = S,
     internal,
 )]
-impl<'a, S> SchemaType<'a, S>
-where
-    S: crate::ScalarValue + 'a,
-{
+impl<'a, S: ScalarValue + 'a> SchemaType<'a, S> {
     fn types(&self) -> Vec<TypeType<S>> {
         self.type_list()
             .into_iter()
@@ -150,18 +148,21 @@ where
                     })
                     .unwrap_or(false)
             })
-            .collect::<Vec<_>>()
+            .collect()
     }
 
-    fn query_type(&self) -> TypeType<S> {
+    #[graphql(name = "query_type")]
+    fn query_type_(&self) -> TypeType<S> {
         self.query_type()
     }
 
-    fn mutation_type(&self) -> Option<TypeType<S>> {
+    #[graphql(name = "mutation_type")]
+    fn mutation_type_(&self) -> Option<TypeType<S>> {
         self.mutation_type()
     }
 
-    fn subscription_type(&self) -> Option<TypeType<S>> {
+    #[graphql(name = "subscription_type")]
+    fn subscription_type_(&self) -> Option<TypeType<S>> {
         self.subscription_type()
     }
 
@@ -170,32 +171,29 @@ where
     }
 }
 
-#[crate::graphql_object(
+#[graphql_object(
     name = "__Type"
     context = SchemaType<'a, S>,
     scalar = S,
     internal,
 )]
-impl<'a, S> TypeType<'a, S>
-where
-    S: crate::ScalarValue + 'a,
-{
+impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn name(&self) -> Option<&str> {
-        match *self {
+        match self {
             TypeType::Concrete(t) => t.name(),
             _ => None,
         }
     }
 
-    fn description(&self) -> Option<&String> {
-        match *self {
+    fn description(&self) -> Option<&str> {
+        match self {
             TypeType::Concrete(t) => t.description(),
             _ => None,
         }
     }
 
     fn kind(&self) -> TypeKind {
-        match *self {
+        match self {
             TypeType::Concrete(t) => t.type_kind(),
             TypeType::List(..) => TypeKind::List,
             TypeType::NonNull(_) => TypeKind::NonNull,
@@ -206,7 +204,7 @@ where
         &self,
         #[graphql(default = false)] include_deprecated: bool,
     ) -> Option<Vec<&Field<S>>> {
-        match *self {
+        match self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
             | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
                 fields
@@ -219,53 +217,53 @@ where
         }
     }
 
-    fn of_type(&self) -> Option<&Box<TypeType<S>>> {
-        match *self {
+    fn of_type(&self) -> Option<&TypeType<S>> {
+        match self {
             TypeType::Concrete(_) => None,
-            TypeType::List(ref l, _) | TypeType::NonNull(ref l) => Some(l),
+            TypeType::List(l, _) | TypeType::NonNull(l) => Some(&*l),
         }
     }
 
-    fn input_fields(&self) -> Option<&Vec<Argument<S>>> {
-        match *self {
+    fn input_fields(&self) -> Option<&[Argument<S>]> {
+        match self {
             TypeType::Concrete(&MetaType::InputObject(InputObjectMeta {
                 ref input_fields,
                 ..
-            })) => Some(input_fields),
+            })) => Some(input_fields.as_slice()),
             _ => None,
         }
     }
 
-    fn interfaces(&self, schema: &SchemaType<'a, S>) -> Option<Vec<TypeType<S>>> {
-        match *self {
+    fn interfaces<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
+        match self {
             TypeType::Concrete(&MetaType::Object(ObjectMeta {
                 ref interface_names,
                 ..
             })) => Some(
                 interface_names
                     .iter()
-                    .filter_map(|n| schema.type_by_name(n))
+                    .filter_map(|n| context.type_by_name(n))
                     .collect(),
             ),
             _ => None,
         }
     }
 
-    fn possible_types(&self, schema: &SchemaType<'a, S>) -> Option<Vec<TypeType<S>>> {
-        match *self {
+    fn possible_types<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
+        match self {
             TypeType::Concrete(&MetaType::Union(UnionMeta {
                 ref of_type_names, ..
             })) => Some(
                 of_type_names
                     .iter()
-                    .filter_map(|tn| schema.type_by_name(tn))
+                    .filter_map(|tn| context.type_by_name(tn))
                     .collect(),
             ),
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta {
                 name: ref iface_name,
                 ..
             })) => Some(
-                schema
+                context
                     .concrete_type_list()
                     .iter()
                     .filter_map(|&ct| {
@@ -276,7 +274,7 @@ where
                         }) = *ct
                         {
                             if interface_names.contains(&iface_name.to_string()) {
-                                schema.type_by_name(name)
+                                context.type_by_name(name)
                             } else {
                                 None
                             }
@@ -294,7 +292,7 @@ where
         &self,
         #[graphql(default = false)] include_deprecated: bool,
     ) -> Option<Vec<&EnumValue>> {
-        match *self {
+        match self {
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
                 values
                     .iter()
@@ -306,22 +304,20 @@ where
     }
 }
 
-#[crate::graphql_object(
+#[graphql_object(
     name = "__Field",
     context = SchemaType<'a, S>,
     scalar = S,
     internal,
 )]
-impl<'a, S> Field<'a, S>
-where
-    S: crate::ScalarValue + 'a,
-{
+impl<'a, S: ScalarValue + 'a> Field<'a, S> {
     fn name(&self) -> String {
         self.name.clone().into()
     }
 
-    fn description(&self) -> &Option<String> {
-        &self.description
+    #[graphql(name = "description")]
+    fn description_(&self) -> Option<&str> {
+        self.description.as_deref()
     }
 
     fn args(&self) -> Vec<&Argument<S>> {
@@ -331,7 +327,7 @@ where
     }
 
     #[graphql(name = "type")]
-    fn _type(&self, context: &SchemaType<'a, S>) -> TypeType<S> {
+    fn type_<'s>(&self, context: &'s SchemaType<'a, S>) -> TypeType<'s, S> {
         context.make_type(&self.field_type)
     }
 
@@ -339,81 +335,79 @@ where
         self.deprecation_status.is_deprecated()
     }
 
-    fn deprecation_reason(&self) -> Option<&String> {
+    fn deprecation_reason(&self) -> Option<&str> {
         self.deprecation_status.reason()
     }
 }
 
-#[crate::graphql_object(
+#[graphql_object(
     name = "__InputValue",
     context = SchemaType<'a, S>,
     scalar = S,
     internal,
 )]
-impl<'a, S> Argument<'a, S>
-where
-    S: crate::ScalarValue + 'a,
-{
-    fn name(&self) -> &String {
+impl<'a, S: ScalarValue + 'a> Argument<'a, S> {
+    fn name(&self) -> &str {
         &self.name
     }
 
-    fn description(&self) -> &Option<String> {
-        &self.description
+    #[graphql(name = "description")]
+    fn description_(&self) -> Option<&str> {
+        self.description.as_deref()
     }
 
     #[graphql(name = "type")]
-    fn _type(&self, context: &SchemaType<'a, S>) -> TypeType<S> {
+    fn type_<'s>(&self, context: &'s SchemaType<'a, S>) -> TypeType<'s, S> {
         context.make_type(&self.arg_type)
     }
 
-    fn default_value(&self) -> Option<String> {
-        self.default_value.as_ref().map(|v| format!("{}", v))
+    #[graphql(name = "default_value")]
+    fn default_value_(&self) -> Option<String> {
+        self.default_value.as_ref().map(ToString::to_string)
     }
 }
 
-#[crate::graphql_object(name = "__EnumValue", internal)]
+#[graphql_object(name = "__EnumValue", internal)]
 impl EnumValue {
-    fn name(&self) -> &String {
+    fn name(&self) -> &str {
         &self.name
     }
 
-    fn description(&self) -> &Option<String> {
-        &self.description
+    #[graphql(name = "description")]
+    fn description_(&self) -> Option<&str> {
+        self.description.as_deref()
     }
 
     fn is_deprecated(&self) -> bool {
         self.deprecation_status.is_deprecated()
     }
 
-    fn deprecation_reason(&self) -> Option<&String> {
+    fn deprecation_reason(&self) -> Option<&str> {
         self.deprecation_status.reason()
     }
 }
 
-#[crate::graphql_object(
+#[graphql_object(
     name = "__Directive",
     context = SchemaType<'a, S>,
     scalar = S,
     internal,
 )]
-impl<'a, S> DirectiveType<'a, S>
-where
-    S: crate::ScalarValue + 'a,
-{
-    fn name(&self) -> &String {
+impl<'a, S: ScalarValue + 'a> DirectiveType<'a, S> {
+    fn name(&self) -> &str {
         &self.name
     }
 
-    fn description(&self) -> &Option<String> {
-        &self.description
+    #[graphql(name = "description")]
+    fn description_(&self) -> Option<&str> {
+        self.description.as_deref()
     }
 
-    fn locations(&self) -> &Vec<DirectiveLocation> {
+    fn locations(&self) -> &[DirectiveLocation] {
         &self.locations
     }
 
-    fn args(&self) -> &Vec<Argument<S>> {
+    fn args(&self) -> &[Argument<S>] {
         &self.arguments
     }
 
