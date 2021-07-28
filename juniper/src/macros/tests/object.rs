@@ -41,6 +41,7 @@ impl<'a> WithLifetime<'a> {
 }
 
 struct WithGenerics<T> {
+    #[allow(dead_code)]
     data: T,
 }
 

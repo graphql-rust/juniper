@@ -3,6 +3,7 @@
 use crate::{
     ast::{FromInputValue, InputValue},
     executor::Variables,
+    graphql_object, graphql_value,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
@@ -76,13 +77,13 @@ struct FieldDescription {
 
 #[derive(GraphQLInputObject, Debug)]
 struct FieldWithDefaults {
-    #[graphql(default = "123")]
+    #[graphql(default = 123)]
     field_one: i32,
-    #[graphql(default = "456", description = "The second field")]
+    #[graphql(default = 456, description = "The second field")]
     field_two: i32,
 }
 
-#[crate::graphql_object]
+#[graphql_object]
 impl Root {
     fn test_field(
         a1: DefaultName,
@@ -149,8 +150,7 @@ where
 
 #[tokio::test]
 async fn default_name_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "DefaultName") {
             name
             description
@@ -165,70 +165,35 @@ async fn default_name_introspection() {
                 defaultValue
             }
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("DefaultName"))
+            Some(&graphql_value!("DefaultName")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(fields.len(), 2);
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldOne")),
-                ("description", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldTwo")),
-                ("description", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldOne",
+            "description": None,
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldTwo",
+            "description": None,
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
     })
     .await;
 }
@@ -256,8 +221,7 @@ fn default_name_input_value() {
 
 #[tokio::test]
 async fn no_trailing_comma_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "NoTrailingComma") {
             name
             description
@@ -272,78 +236,42 @@ async fn no_trailing_comma_introspection() {
                 defaultValue
             }
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("NoTrailingComma"))
+            Some(&graphql_value!("NoTrailingComma")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(fields.len(), 2);
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldOne")),
-                ("description", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldTwo")),
-                ("description", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldOne",
+            "description": None,
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldTwo",
+            "description": None,
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
     })
     .await;
 }
 
 #[tokio::test]
 async fn derive_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "Derive") {
             name
             description
@@ -358,45 +286,27 @@ async fn derive_introspection() {
                 defaultValue
             }
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("Derive"))
+            Some(&graphql_value!("Derive")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(fields.len(), 1);
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldOne")),
-                ("description", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldOne",
+            "description": None,
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
     })
     .await;
 }
@@ -408,7 +318,7 @@ fn derive_derived() {
             "{:?}",
             Derive {
                 field_one: "test".to_owned(),
-            }
+            },
         ),
         "Derive { field_one: \"test\" }"
     );
@@ -416,8 +326,7 @@ fn derive_derived() {
 
 #[tokio::test]
 async fn named_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "ANamedInputObject") {
             name
             description
@@ -432,53 +341,34 @@ async fn named_introspection() {
                 defaultValue
             }
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("ANamedInputObject"))
+            Some(&graphql_value!("ANamedInputObject"))
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None))
         );
 
         assert_eq!(fields.len(), 1);
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldOne")),
-                ("description", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldOne",
+            "description": None,
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
     })
     .await;
 }
 
 #[tokio::test]
 async fn description_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "Description") {
             name
             description
@@ -493,53 +383,34 @@ async fn description_introspection() {
                 defaultValue
             }
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("Description"))
+            Some(&graphql_value!("Description")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::scalar("Description for the input object"))
+            Some(&graphql_value!("Description for the input object")),
         );
 
         assert_eq!(fields.len(), 1);
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldOne")),
-                ("description", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldOne",
+            "description": None,
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
     })
     .await;
 }
 
 #[tokio::test]
 async fn field_description_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "FieldDescription") {
             name
             description
@@ -554,78 +425,42 @@ async fn field_description_introspection() {
                 defaultValue
             }
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("FieldDescription"))
+            Some(&graphql_value!("FieldDescription")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(fields.len(), 2);
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldOne")),
-                ("description", Value::scalar("The first field")),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldTwo")),
-                ("description", Value::scalar("The second field")),
-                (
-                    "type",
-                    Value::object(
-                        vec![(
-                            "ofType",
-                            Value::object(
-                                vec![("name", Value::scalar("String"))]
-                                    .into_iter()
-                                    .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-                ("defaultValue", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldOne",
+            "description": "The first field",
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldTwo",
+            "description": "The second field",
+            "type": {
+                "ofType": {"name": "String"},
+            },
+            "defaultValue": None,
+        })));
     })
     .await;
 }
 
 #[tokio::test]
 async fn field_with_defaults_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "FieldWithDefaults") {
             name
             inputFields {
@@ -636,42 +471,25 @@ async fn field_with_defaults_introspection() {
                 defaultValue
             }
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("FieldWithDefaults"))
+            Some(&graphql_value!("FieldWithDefaults")),
         );
 
         assert_eq!(fields.len(), 2);
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldOne")),
-                (
-                    "type",
-                    Value::object(vec![("name", Value::scalar("Int"))].into_iter().collect()),
-                ),
-                ("defaultValue", Value::scalar("123")),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-
-        assert!(fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("fieldTwo")),
-                (
-                    "type",
-                    Value::object(vec![("name", Value::scalar("Int"))].into_iter().collect()),
-                ),
-                ("defaultValue", Value::scalar("456")),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldOne",
+            "type": {"name": "Int"},
+            "defaultValue": "123",
+        })));
+        assert!(fields.contains(&graphql_value!({
+            "name": "fieldTwo",
+            "type": {"name": "Int"},
+            "defaultValue": "456",
+        })));
     })
     .await;
 }

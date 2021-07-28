@@ -202,7 +202,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
     fn fields(
         &self,
-        #[graphql(default = false)] include_deprecated: bool,
+        #[graphql(default)] include_deprecated: bool,
     ) -> Option<Vec<&Field<S>>> {
         match self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
@@ -290,7 +290,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
     fn enum_values(
         &self,
-        #[graphql(default = false)] include_deprecated: bool,
+        #[graphql(default)] include_deprecated: bool,
     ) -> Option<Vec<&EnumValue>> {
         match self {
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(

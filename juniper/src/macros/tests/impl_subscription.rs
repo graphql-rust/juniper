@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use futures::StreamExt as _;
 
-use crate::{graphql_value, EmptyMutation, RootNode, Value};
+use crate::{graphql_object, graphql_value, EmptyMutation, RootNode, Value};
 
 use super::util;
 
@@ -17,16 +17,16 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[crate::graphql_object(Context = Context)]
+#[graphql_object(Context = Context)]
 impl<'a> WithLifetime<'a> {
-    fn value(&'a self) -> &'a str {
+    fn value(&self) -> &str {
         self.value
     }
 }
 
 struct WithContext;
 
-#[crate::graphql_object(Context = Context)]
+#[graphql_object(Context = Context)]
 impl WithContext {
     fn ctx(ctx: &Context) -> bool {
         ctx.flag1
@@ -36,7 +36,7 @@ impl WithContext {
 #[derive(Default)]
 struct Query;
 
-#[crate::graphql_object(
+#[graphql_object(
     Context = Context,
 )]
 impl Query {
@@ -48,7 +48,7 @@ impl Query {
 #[derive(Default)]
 struct Mutation;
 
-#[crate::graphql_object(context = Context)]
+#[graphql_object(context = Context)]
 impl Mutation {
     fn empty() -> bool {
         true

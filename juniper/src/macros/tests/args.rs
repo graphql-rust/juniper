@@ -60,7 +60,7 @@ impl Root {
         r#arg1 + r#arg2
     }
 
-    fn attr_arg_descr(#[graphql(description = "The arg")] arg: i32) -> i32 {
+    fn attr_arg_descr(#[graphql(description = "The arg")] _arg: i32) -> i32 {
         0
     }
 
@@ -101,7 +101,7 @@ impl Root {
 
     fn args_with_complex_default(
         #[graphql(
-            default = "test".to_string(),
+            default = "test",
             description = "A string default argument",
         )]
         arg1: String,

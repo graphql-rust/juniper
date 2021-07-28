@@ -57,7 +57,7 @@ struct ExampleInputObject {
 
 #[derive(GraphQLInputObject, Debug)]
 struct InputWithDefaults {
-    #[graphql(default = "123")]
+    #[graphql(default = 123)]
     a: i32,
 }
 
@@ -78,7 +78,7 @@ impl TestType {
     }
 
     fn field_with_default_argument_value(
-        #[graphql(default = "Hello World".to_string())] input: String,
+        #[graphql(default = "Hello World")] input: String,
     ) -> String {
         format!("{:?}", input)
     }

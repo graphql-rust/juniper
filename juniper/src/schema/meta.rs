@@ -658,7 +658,7 @@ impl<'a, S> Field<'a, S> {
 impl<'a, S> Argument<'a, S> {
     #[doc(hidden)]
     pub fn new(name: &str, arg_type: Type<'a>) -> Self {
-        Argument {
+        Self {
             name: name.to_owned(),
             description: None,
             arg_type,

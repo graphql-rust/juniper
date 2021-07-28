@@ -134,6 +134,34 @@ impl TypeExt for syn::Type {
     fn lifetimes_anonymized(&mut self) {
         use syn::{GenericArgument as GA, Type as T};
 
+        fn anonymize_path(path: &mut syn::Path) {
+            for seg in path.segments.iter_mut() {
+                match &mut seg.arguments {
+                    syn::PathArguments::AngleBracketed(angle) => {
+                        for arg in angle.args.iter_mut() {
+                            match arg {
+                                GA::Lifetime(lt) => {
+                                    lt.ident = syn::Ident::new("_", Span::call_site())
+                                }
+                                GA::Type(ty) => ty.lifetimes_anonymized(),
+                                GA::Binding(b) => b.ty.lifetimes_anonymized(),
+                                GA::Constraint(_) | GA::Const(_) => {}
+                            }
+                        }
+                    }
+                    syn::PathArguments::Parenthesized(args) => {
+                        for ty in args.inputs.iter_mut() {
+                            ty.lifetimes_anonymized()
+                        }
+                        if let syn::ReturnType::Type(_, ty) = &mut args.output {
+                            (&mut *ty).lifetimes_anonymized()
+                        }
+                    }
+                    syn::PathArguments::None => {}
+                }
+            }
+        }
+
         match self {
             T::Array(syn::TypeArray { elem, .. })
             | T::Group(syn::TypeGroup { elem, .. })
@@ -143,7 +171,7 @@ impl TypeExt for syn::Type {
 
             T::Tuple(syn::TypeTuple { elems, .. }) => {
                 for ty in elems.iter_mut() {
-                    ty.lifetimes_anonymized();
+                    ty.lifetimes_anonymized()
                 }
             }
 
@@ -154,8 +182,11 @@ impl TypeExt for syn::Type {
                         syn::TypeParamBound::Lifetime(lt) => {
                             lt.ident = syn::Ident::new("_", Span::call_site())
                         }
-                        syn::TypeParamBound::Trait(_) => {
-                            todo!("Anonymizing lifetimes in trait is not yet supported")
+                        syn::TypeParamBound::Trait(bound) => {
+                            if bound.lifetimes.is_some() {
+                                todo!("Anonymizing HRTB lifetimes in trait is not yet supported")
+                            }
+                            anonymize_path(&mut bound.path)
                         }
                     }
                 }
@@ -165,41 +196,15 @@ impl TypeExt for syn::Type {
                 if let Some(lt) = ref_ty.lifetime.as_mut() {
                     lt.ident = syn::Ident::new("_", Span::call_site());
                 }
-                (&mut *ref_ty.elem).lifetimes_anonymized();
+                (&mut *ref_ty.elem).lifetimes_anonymized()
             }
 
-            T::Path(ty) => {
-                for seg in ty.path.segments.iter_mut() {
-                    match &mut seg.arguments {
-                        syn::PathArguments::AngleBracketed(angle) => {
-                            for arg in angle.args.iter_mut() {
-                                match arg {
-                                    GA::Lifetime(lt) => {
-                                        lt.ident = syn::Ident::new("_", Span::call_site());
-                                    }
-                                    GA::Type(ty) => ty.lifetimes_anonymized(),
-                                    GA::Binding(b) => b.ty.lifetimes_anonymized(),
-                                    GA::Constraint(_) | GA::Const(_) => {}
-                                }
-                            }
-                        }
-                        syn::PathArguments::Parenthesized(args) => {
-                            for ty in args.inputs.iter_mut() {
-                                ty.lifetimes_anonymized();
-                            }
-                            if let syn::ReturnType::Type(_, ty) = &mut args.output {
-                                (&mut *ty).lifetimes_anonymized();
-                            }
-                        }
-                        syn::PathArguments::None => {}
-                    }
-                }
-            }
+            T::Path(ty) => anonymize_path(&mut ty.path),
 
             // These types unlikely will be used as GraphQL types.
             T::BareFn(_) | T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) => {}
 
-            // Following the syn idiom for exhaustive matching on Type
+            // Following the syn idiom for exhaustive matching on Type:
             // https://github.com/dtolnay/syn/blob/master/src/ty.rs#L66-L88
             #[cfg(test)]
             T::__TestExhaustive(_) => unimplemented!(),

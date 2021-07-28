@@ -18,7 +18,7 @@ struct WithLifetime<'a> {
 
 #[graphql_object(context = Context)]
 impl<'a> WithLifetime<'a> {
-    fn value(&'a self) -> &'a str {
+    fn value(&self) -> &str {
         self.value
     }
 }

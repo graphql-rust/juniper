@@ -111,7 +111,7 @@ mod field_execution {
                 "d": "Donut",
                 "e": "Egg",
                 "f": "Fish",
-                "pic": "ic of size: 100",
+                "pic": "Pic of size: 100",
                 "deep": {
                     "a": "Already Been Done",
                     "b": "Boring",
@@ -199,6 +199,7 @@ mod merge_parallel_fragments {
                     },
                     "c": "Cherry",
                 },
+                "c": "Cherry",
             }),
         );
     }
@@ -305,6 +306,7 @@ mod merge_parallel_inline_fragments {
                             "b": "Banana",
                             "c": "Cherry",
                         },
+                    }, {
                         "deepest": {
                             "b": "Banana",
                             "c": "Cherry",
@@ -599,7 +601,7 @@ mod dynamic_context_switching {
         assert_eq!(
             errs,
             vec![ExecutionError::new(
-                SourcePosition::new(25, 2, 12),
+                SourcePosition::new(14, 1, 12),
                 &["missing"],
                 FieldError::new("Could not find key 2", Value::null()),
             )]
@@ -1072,18 +1074,18 @@ mod propagates_errors_to_nullable_fields {
 
 mod named_operations {
     use crate::{
+        graphql_object, graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
         GraphQLError,
     };
 
     struct Schema;
 
-    #[crate::graphql_object]
+    #[graphql_object]
     impl Schema {
         fn a(p: Option<String>) -> &'static str {
-            let _ = p;
+            drop(p);
             "b"
         }
     }
@@ -1099,16 +1101,12 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+        let (res, errs) = crate::execute(doc, None, &schema, &vars, &())
             .await
             .expect("Execution failed");
 
         assert_eq!(errs, []);
-
-        assert_eq!(
-            result,
-            Value::object(vec![("a", Value::scalar("b"))].into_iter().collect())
-        );
+        assert_eq!(res, graphql_value!({"a": "b"}));
     }
 
     #[tokio::test]
@@ -1122,16 +1120,12 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+        let (res, errs) = crate::execute(doc, None, &schema, &vars, &())
             .await
             .expect("Execution failed");
 
         assert_eq!(errs, []);
-
-        assert_eq!(
-            result,
-            Value::object(vec![("a", Value::scalar("b"))].into_iter().collect())
-        );
+        assert_eq!(res, graphql_value!({"a": "b"}));
     }
 
     #[tokio::test]
@@ -1146,16 +1140,12 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = crate::execute(doc, Some("OtherExample"), &schema, &vars, &())
+        let (res, errs) = crate::execute(doc, Some("OtherExample"), &schema, &vars, &())
             .await
             .expect("Execution failed");
 
         assert_eq!(errs, []);
-
-        assert_eq!(
-            result,
-            Value::object(vec![("second", Value::scalar("b"))].into_iter().collect())
-        );
+        assert_eq!(res, graphql_value!({"second": "b"}));
     }
 
     #[tokio::test]
