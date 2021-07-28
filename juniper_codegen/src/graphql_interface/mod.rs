@@ -467,9 +467,7 @@ impl Definition {
 
         let impler_tys: Vec<_> = self.implementers.iter().map(|impler| &impler.ty).collect();
         let all_implers_unique = (impler_tys.len() > 1).then(|| {
-            quote! {
-                Some(quote! { ::juniper::sa::assert_type_ne_all!(#( #impler_tys ),*); })
-            }
+            quote! { ::juniper::sa::assert_type_ne_all!(#( #impler_tys ),*); }
         });
 
         quote! {

@@ -332,19 +332,19 @@ impl Definition {
         let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
-        let interface_tys: Vec<_> = self.interfaces.iter().collect();
-        let all_interfaces_unique = (interface_tys.len() > 1).then(|| {
-            quote! {
-                ::juniper::sa::assert_type_ne_all!(#( #interface_tys ),*);
-            }
-        });
+        let interface_tys = self.interfaces.iter();
+        // TODO: Make it work by repeating `sa::assert_type_ne_all!` expansion,
+        //       but considering generics.
+        //let interface_tys: Vec<_> = self.interfaces.iter().collect();
+        //let all_interfaces_unique = (interface_tys.len() > 1).then(|| {
+        //    quote! { ::juniper::sa::assert_type_ne_all!(#( #interface_tys ),*); }
+        //});
 
         quote! {
             #[automatically_derived]
             impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty#ty_generics #where_clause
             {
                 fn mark() {
-                    #all_interfaces_unique
                     #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
                 }
             }

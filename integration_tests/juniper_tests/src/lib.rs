@@ -1,13 +1,11 @@
-/*#[cfg(test)]
+#[cfg(test)]
 mod arc_fields;
 #[cfg(test)]
 mod array;
- */
 #[cfg(test)]
 mod codegen;
 #[cfg(test)]
 mod custom_scalar;
-/*
 #[cfg(test)]
 mod explicit_null;
 #[cfg(test)]
@@ -34,4 +32,3 @@ mod issue_925;
 mod issue_945;
 #[cfg(test)]
 mod pre_parse;
-*/
