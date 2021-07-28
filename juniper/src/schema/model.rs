@@ -640,12 +640,8 @@ mod test {
                 fn whatever() -> String {
                     "foo".to_string()
                 }
-                fn arr(stuff: Vec<Coordinate>) -> Option<&str> {
-                    if stuff.is_empty() {
-                        None
-                    } else {
-                        Some("stuff")
-                    }
+                fn arr(stuff: Vec<Coordinate>) -> Option<&'static str> {
+                    (!stuff.is_empty()).then(|| "stuff")
                 }
                 fn fruit() -> Fruit {
                     Fruit::Apple

@@ -8,8 +8,6 @@ Syntax to validate:
 * Nullable/fallible context switching
 */
 
-#![allow(dead_code)]
-
 use std::marker::PhantomData;
 
 use crate::{
@@ -19,7 +17,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    GraphQLObject,
+    Executor, GraphQLObject, ScalarValue,
 };
 
 struct CustomName;
@@ -82,19 +80,27 @@ struct CtxSwitcher;
 
 #[graphql_object(context = InnerContext)]
 impl CtxSwitcher {
-    fn ctx_switch_always() -> (&InnerContext, InnerType) {
+    fn ctx_switch_always<'e, S: ScalarValue>(
+        executor: &'e Executor<'_, '_, InnerContext, S>,
+    ) -> (&'e InnerContext, InnerType) {
         (executor.context(), InnerType { a: 0 })
     }
 
-    fn ctx_switch_opt() -> Option<(&InnerContext, InnerType)> {
+    fn ctx_switch_opt<'e, S: ScalarValue>(
+        executor: &'e Executor<'_, '_, InnerContext, S>,
+    ) -> Option<(&'e InnerContext, InnerType)> {
         Some((executor.context(), InnerType { a: 0 }))
     }
 
-    fn ctx_switch_res() -> FieldResult<(&InnerContext, InnerType)> {
+    fn ctx_switch_res<'e, S: ScalarValue>(
+        executor: &'e Executor<'_, '_, InnerContext, S>,
+    ) -> FieldResult<(&'e InnerContext, InnerType)> {
         Ok((executor.context(), InnerType { a: 0 }))
     }
 
-    fn ctx_switch_res_opt() -> FieldResult<Option<(&InnerContext, InnerType)>> {
+    fn ctx_switch_res_opt<'e, S: ScalarValue>(
+        executor: &'e Executor<'_, '_, InnerContext, S>,
+    ) -> FieldResult<Option<(&'e InnerContext, InnerType)>> {
         Ok(Some((executor.context(), InnerType { a: 0 })))
     }
 }

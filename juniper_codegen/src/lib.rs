@@ -143,15 +143,6 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     }
 }
 
-// TODO
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql))]
-pub fn derive_object(input: TokenStream) -> TokenStream {
-    self::graphql_object::derive::expand(input.into())
-        .unwrap_or_abort()
-        .into()
-}
-
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
 /// derive.
 ///
@@ -205,6 +196,16 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     }
 }
 
+// TODO
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+pub fn derive_object(body: TokenStream) -> TokenStream {
+    self::graphql_object::derive::expand(body.into())
+        .unwrap_or_abort()
+        .into()
+}
+
+// TODO
 /**
 The `object` proc macro is the primary way of defining GraphQL resolvers
 that can not be implemented with the GraphQLObject derive.
@@ -462,14 +463,10 @@ impl User {
 */
 #[proc_macro_error]
 #[proc_macro_attribute]
-pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_object::build_object(
-        args,
-        input,
-        GraphQLScope::ObjectAttr,
-    ))
+pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
+    self::graphql_object::attr::expand(attr.into(), body.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// Expose GraphQL scalars
@@ -1213,8 +1210,8 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLUnion, attributes(graphql))]
-pub fn derive_union(input: TokenStream) -> TokenStream {
-    self::graphql_union::derive::expand(input.into())
+pub fn derive_union(body: TokenStream) -> TokenStream {
+    self::graphql_union::derive::expand(body.into())
         .unwrap_or_abort()
         .into()
 }

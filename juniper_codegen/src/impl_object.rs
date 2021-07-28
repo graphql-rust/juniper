@@ -8,15 +8,6 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{ext::IdentExt, spanned::Spanned};
 
-/// Generate code for the juniper::graphql_object macro.
-pub fn build_object(args: TokenStream, body: TokenStream, error: GraphQLScope) -> TokenStream {
-    let definition = match create(args, body, error) {
-        Ok(definition) => definition,
-        Err(err) => return err.to_compile_error(),
-    };
-    definition.into_tokens()
-}
-
 /// Generate code for the juniper::graphql_subscription macro.
 pub fn build_subscription(
     args: TokenStream,

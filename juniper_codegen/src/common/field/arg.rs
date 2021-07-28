@@ -21,7 +21,7 @@ use crate::{
         ScalarValueType,
     },
     result::GraphQLScope,
-    util::{filter_attrs, path_eq_single, span_container::SpanContainer, to_camel_case},
+    util::{filter_attrs, path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a
@@ -285,11 +285,6 @@ impl OnMethod {
             None
         }
     }
-    /// Returns this [`OnField`] argument's name, if it represents the one.
-    #[must_use]
-    pub(crate) fn name(&self) -> Option<&str> {
-        self.as_regular().map(|a| a.name.as_str())
-    }
 
     /// Returns [`syn::Type`] of this [`OnMethod::Context`], if it represents
     /// the one.
@@ -377,7 +372,11 @@ impl OnMethod {
     ///
     /// Returns [`None`] if parsing fails and emits parsing errors into the
     /// given `scope`.
-    pub(crate) fn parse(argument: &mut syn::PatType, scope: &GraphQLScope) -> Option<Self> {
+    pub(crate) fn parse(
+        argument: &mut syn::PatType,
+        renaming: &RenameRule,
+        scope: &GraphQLScope,
+    ) -> Option<Self> {
         let orig_attrs = argument.attrs.clone();
 
         // Remove repeated attributes from the method, to omit incorrect expansion.
@@ -398,8 +397,10 @@ impl OnMethod {
         }
         if let syn::Pat::Ident(name) = &*argument.pat {
             let arg = match name.ident.unraw().to_string().as_str() {
-                "context" | "ctx" => Some(Self::Context(argument.ty.unreferenced().clone())),
-                "executor" => Some(Self::Executor),
+                "context" | "ctx" | "_context" | "_ctx" => {
+                    Some(Self::Context(argument.ty.unreferenced().clone()))
+                }
+                "executor" | "_executor" => Some(Self::Executor),
                 _ => None,
             };
             if arg.is_some() {
@@ -413,7 +414,7 @@ impl OnMethod {
         let name = if let Some(name) = attr.name.as_ref() {
             name.as_ref().value()
         } else if let syn::Pat::Ident(name) = &*argument.pat {
-            to_camel_case(&name.ident.unraw().to_string())
+            renaming.apply(&name.ident.unraw().to_string())
         } else {
             scope
                 .custom(

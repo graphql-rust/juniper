@@ -1,9 +1,9 @@
 mod field_execution {
     use crate::{
         ast::InputValue,
+        graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     struct DataType;
@@ -11,22 +11,22 @@ mod field_execution {
 
     #[crate::graphql_object]
     impl DataType {
-        fn a() -> &str {
+        fn a() -> &'static str {
             "Apple"
         }
-        fn b() -> &str {
+        fn b() -> &'static str {
             "Banana"
         }
-        fn c() -> &str {
+        fn c() -> &'static str {
             "Cookie"
         }
-        fn d() -> &str {
+        fn d() -> &'static str {
             "Donut"
         }
-        fn e() -> &str {
+        fn e() -> &'static str {
             "Egg"
         }
-        fn f() -> &str {
+        fn f() -> &'static str {
             "Fish"
         }
 
@@ -41,13 +41,13 @@ mod field_execution {
 
     #[crate::graphql_object]
     impl DeepDataType {
-        fn a() -> &str {
+        fn a() -> &'static str {
             "Already Been Done"
         }
-        fn b() -> &str {
+        fn b() -> &'static str {
             "Boring"
         }
-        fn c() -> Vec<Option<&str>> {
+        fn c() -> Vec<Option<&'static str>> {
             vec![Some("Contrived"), None, Some("Confusing")]
         }
 
@@ -64,30 +64,31 @@ mod field_execution {
             EmptySubscription::<()>::new(),
         );
         let doc = r"
-          query Example($size: Int) {
-            a,
-            b,
-            x: c
-            ...c
-            f
-            ...on DataType {
-              pic(size: $size)
+            query Example($size: Int) {
+                a,
+                b,
+                x: c
+                ...c
+                f
+                ...on DataType {
+                    pic(size: $size)
+                }
+                deep {
+                    a
+                    b
+                    c
+                    deeper {
+                        a
+                        b
+                    }
+                }
             }
-            deep {
-              a
-              b
-              c
-              deeper {
-                a
-                b
-              }
-            }
-          }
 
-          fragment c on DataType {
-            d
-            e
-          }";
+            fragment c on DataType {
+                d
+                e
+            }
+        ";
 
         let vars = vec![("size".to_owned(), InputValue::scalar(100))]
             .into_iter()
@@ -103,60 +104,31 @@ mod field_execution {
 
         assert_eq!(
             result,
-            Value::object(
-                vec![
-                    ("a", Value::scalar("Apple")),
-                    ("b", Value::scalar("Banana")),
-                    ("x", Value::scalar("Cookie")),
-                    ("d", Value::scalar("Donut")),
-                    ("e", Value::scalar("Egg")),
-                    ("f", Value::scalar("Fish")),
-                    ("pic", Value::scalar("Pic of size: 100")),
-                    (
-                        "deep",
-                        Value::object(
-                            vec![
-                                ("a", Value::scalar("Already Been Done")),
-                                ("b", Value::scalar("Boring")),
-                                (
-                                    "c",
-                                    Value::list(vec![
-                                        Value::scalar("Contrived"),
-                                        Value::null(),
-                                        Value::scalar("Confusing"),
-                                    ]),
-                                ),
-                                (
-                                    "deeper",
-                                    Value::list(vec![
-                                        Value::object(
-                                            vec![
-                                                ("a", Value::scalar("Apple")),
-                                                ("b", Value::scalar("Banana")),
-                                            ]
-                                            .into_iter()
-                                            .collect(),
-                                        ),
-                                        Value::null(),
-                                        Value::object(
-                                            vec![
-                                                ("a", Value::scalar("Apple")),
-                                                ("b", Value::scalar("Banana")),
-                                            ]
-                                            .into_iter()
-                                            .collect(),
-                                        ),
-                                    ]),
-                                ),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ),
-                ]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "a": "Apple",
+                "b": "Banana",
+                "x": "Cookie",
+                "d": "Donut",
+                "e": "Egg",
+                "f": "Fish",
+                "pic": "ic of size: 100",
+                "deep": {
+                    "a": "Already Been Done",
+                    "b": "Boring",
+                    "c": ["Contrived", None, "Confusing"],
+                    "deeper": [
+                        {
+                            "a": "Apple",
+                            "b": "Banana",
+                        },
+                        None,
+                        {
+                            "a": "Apple",
+                            "b": "Banana",
+                        },
+                    ],
+                },
+            }),
         );
     }
 }
@@ -165,20 +137,19 @@ mod merge_parallel_fragments {
     use crate::{
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     struct Type;
 
     #[crate::graphql_object]
     impl Type {
-        fn a() -> &str {
+        fn a() -> &'static str {
             "Apple"
         }
-        fn b() -> &str {
+        fn b() -> &'static str {
             "Banana"
         }
-        fn c() -> &str {
+        fn c() -> &'static str {
             "Cherry"
         }
         fn deep() -> Type {
@@ -194,15 +165,16 @@ mod merge_parallel_fragments {
             EmptySubscription::<()>::new(),
         );
         let doc = r"
-          { a, ...FragOne, ...FragTwo }
-          fragment FragOne on Type {
-            b
-            deep { b, deeper: deep { b } }
-          }
-          fragment FragTwo on Type {
-            c
-            deep { c, deeper: deep { c } }
-          }";
+            { a, ...FragOne, ...FragTwo }
+            fragment FragOne on Type {
+                b
+                deep { b, deeper: deep { b } }
+            }
+            fragment FragTwo on Type {
+                c
+                deep { c, deeper: deep { c } }
+            }
+        ";
 
         let vars = vec![].into_iter().collect();
 
@@ -216,37 +188,18 @@ mod merge_parallel_fragments {
 
         assert_eq!(
             result,
-            Value::object(
-                vec![
-                    ("a", Value::scalar("Apple")),
-                    ("b", Value::scalar("Banana")),
-                    (
-                        "deep",
-                        Value::object(
-                            vec![
-                                ("b", Value::scalar("Banana")),
-                                (
-                                    "deeper",
-                                    Value::object(
-                                        vec![
-                                            ("b", Value::scalar("Banana")),
-                                            ("c", Value::scalar("Cherry")),
-                                        ]
-                                        .into_iter()
-                                        .collect(),
-                                    ),
-                                ),
-                                ("c", Value::scalar("Cherry")),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ),
-                    ("c", Value::scalar("Cherry")),
-                ]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "a": "Apple",
+                "b": "Banana",
+                "deep": {
+                    "b": "Banana",
+                    "deeper": {
+                        "b": "Banana",
+                        "c": "Cherry",
+                    },
+                    "c": "Cherry",
+                },
+            }),
         );
     }
 }
@@ -255,7 +208,6 @@ mod merge_parallel_inline_fragments {
     use crate::{
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     struct Type;
@@ -263,13 +215,13 @@ mod merge_parallel_inline_fragments {
 
     #[crate::graphql_object]
     impl Type {
-        fn a() -> &str {
+        fn a() -> &'static str {
             "Apple"
         }
-        fn b() -> &str {
+        fn b() -> &'static str {
             "Banana"
         }
-        fn c() -> &str {
+        fn c() -> &'static str {
             "Cherry"
         }
         fn deep() -> Type {
@@ -282,13 +234,13 @@ mod merge_parallel_inline_fragments {
 
     #[crate::graphql_object]
     impl Other {
-        fn a() -> &str {
+        fn a() -> &'static str {
             "Apple"
         }
-        fn b() -> &str {
+        fn b() -> &'static str {
             "Banana"
         }
-        fn c() -> &str {
+        fn c() -> &'static str {
             "Cherry"
         }
         fn deep() -> Type {
@@ -307,29 +259,29 @@ mod merge_parallel_inline_fragments {
             EmptySubscription::<()>::new(),
         );
         let doc = r"
-          { a, ...FragOne }
-          fragment FragOne on Type {
-            b
-            deep: deep {
+            { a, ...FragOne }
+            fragment FragOne on Type {
                 b
-                deeper: other {
-                    deepest: deep {
-                        b
-                    }
-                }
-
-                ... on Type {
-                    c
+                deep: deep {
+                    b
                     deeper: other {
                         deepest: deep {
-                            c
+                            b
+                        }
+                    }
+
+                    ... on Type {
+                        c
+                        deeper: other {
+                            deepest: deep {
+                                c
+                            }
                         }
                     }
                 }
+                c
             }
-
-            c
-          }";
+        ";
 
         let vars = vec![].into_iter().collect();
 
@@ -343,61 +295,25 @@ mod merge_parallel_inline_fragments {
 
         assert_eq!(
             result,
-            Value::object(
-                vec![
-                    ("a", Value::scalar("Apple")),
-                    ("b", Value::scalar("Banana")),
-                    (
-                        "deep",
-                        Value::object(
-                            vec![
-                                ("b", Value::scalar("Banana")),
-                                (
-                                    "deeper",
-                                    Value::list(vec![
-                                        Value::object(
-                                            vec![(
-                                                "deepest",
-                                                Value::object(
-                                                    vec![
-                                                        ("b", Value::scalar("Banana")),
-                                                        ("c", Value::scalar("Cherry")),
-                                                    ]
-                                                    .into_iter()
-                                                    .collect(),
-                                                ),
-                                            )]
-                                            .into_iter()
-                                            .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![(
-                                                "deepest",
-                                                Value::object(
-                                                    vec![
-                                                        ("b", Value::scalar("Banana")),
-                                                        ("c", Value::scalar("Cherry")),
-                                                    ]
-                                                    .into_iter()
-                                                    .collect(),
-                                                ),
-                                            )]
-                                            .into_iter()
-                                            .collect(),
-                                        ),
-                                    ]),
-                                ),
-                                ("c", Value::scalar("Cherry")),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ),
-                    ("c", Value::scalar("Cherry")),
-                ]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "a": "Apple",
+                "b": "Banana",
+                "deep": {
+                    "b": "Banana",
+                    "deeper": [{
+                        "deepest": {
+                            "b": "Banana",
+                            "c": "Cherry",
+                        },
+                        "deepest": {
+                            "b": "Banana",
+                            "c": "Cherry",
+                        },
+                    }],
+                    "c": "Cherry",
+                },
+                "c": "Cherry",
+            }),
         );
     }
 }
@@ -405,9 +321,9 @@ mod merge_parallel_inline_fragments {
 mod threads_context_correctly {
     use crate::{
         executor::Context,
+        graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     struct Schema;
@@ -454,14 +370,7 @@ mod threads_context_correctly {
 
         println!("Result: {:#?}", result);
 
-        assert_eq!(
-            result,
-            Value::object(
-                vec![("a", Value::scalar("Context value"))]
-                    .into_iter()
-                    .collect()
-            )
-        );
+        assert_eq!(result, graphql_value!({"a": "Context value"}));
     }
 }
 
@@ -475,6 +384,7 @@ mod dynamic_context_switching {
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
         value::Value,
+        Executor, ScalarValue,
     };
 
     struct Schema;
@@ -494,7 +404,11 @@ mod dynamic_context_switching {
 
     #[graphql_object(context = OuterContext)]
     impl Schema {
-        fn item_opt(_context: &OuterContext, key: i32) -> Option<(&InnerContext, ItemRef)> {
+        fn item_opt<'e, S: ScalarValue>(
+            executor: &'e Executor<'_, '_, OuterContext, S>,
+            _context: &OuterContext,
+            key: i32,
+        ) -> Option<(&'e InnerContext, ItemRef)> {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
         }
 
@@ -653,11 +567,9 @@ mod dynamic_context_switching {
             EmptyMutation::<OuterContext>::new(),
             EmptySubscription::<OuterContext>::new(),
         );
-        let doc = r"
-          {
+        let doc = r"{
             missing: itemRes(key: 2) { value }
-          }
-          ";
+        }";
 
         let vars = vec![].into_iter().collect();
 
@@ -880,13 +792,13 @@ mod propagates_errors_to_nullable_fields {
         fn non_nullable_field() -> Inner {
             Inner
         }
-        fn nullable_error_field() -> FieldResult<Option<&str>> {
+        fn nullable_error_field() -> FieldResult<Option<&'static str>> {
             Err("Error for nullableErrorField")?
         }
-        fn non_nullable_error_field() -> FieldResult<&str> {
+        fn non_nullable_error_field() -> FieldResult<&'static str> {
             Err("Error for nonNullableErrorField")?
         }
-        fn custom_error_field() -> Result<&str, CustomError> {
+        fn custom_error_field() -> Result<&'static str, CustomError> {
             Err(CustomError::NotFound)
         }
     }
@@ -1170,7 +1082,7 @@ mod named_operations {
 
     #[crate::graphql_object]
     impl Schema {
-        fn a(p: Option<String>) -> &str {
+        fn a(p: Option<String>) -> &'static str {
             let _ = p;
             "b"
         }

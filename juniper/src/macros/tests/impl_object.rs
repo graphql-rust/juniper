@@ -1,5 +1,8 @@
+use crate::{
+    graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription, Executor, RootNode,
+};
+
 use super::util;
-use crate::{graphql_value, EmptyMutation, EmptySubscription, RootNode};
 
 #[derive(Default)]
 struct Context {
@@ -34,14 +37,12 @@ struct Query {
 }
 
 #[crate::graphql_object(
-    scalar = crate::DefaultScalarValue,
-    name = "Query", 
+    name = "Query",
+    scalar = DefaultScalarValue,
     context = Context,
-    // FIXME: make async work
-    noasync
 )]
 /// Query Description.
-impl<'a> Query {
+impl Query {
     #[graphql(description = "With Self Description")]
     fn with_self(&self) -> bool {
         self.b
@@ -51,11 +52,11 @@ impl<'a> Query {
         100
     }
 
-    fn with_executor(_exec: &Executor<Context>) -> bool {
+    fn with_executor(_executor: &Executor<'_, '_, Context>) -> bool {
         true
     }
 
-    fn with_executor_and_self(&self, _exec: &Executor<Context>) -> bool {
+    fn with_executor_and_self(&self, _executor: &Executor<'_, '_, Context>) -> bool {
         true
     }
 
@@ -86,13 +87,11 @@ impl<'a> Query {
         arg1
     }
 
-    #[graphql(arguments(default_arg(default = true)))]
-    fn default_argument(default_arg: bool) -> bool {
+    fn default_argument(#[graphql(default = true)] default_arg: bool) -> bool {
         default_arg
     }
 
-    #[graphql(arguments(arg(description = "my argument description")))]
-    fn arg_with_description(arg: bool) -> bool {
+    fn arg_with_description(#[graphql(description = "my argument description")] arg: bool) -> bool {
         arg
     }
 
@@ -100,7 +99,7 @@ impl<'a> Query {
         WithContext
     }
 
-    fn with_lifetime_child(&self) -> WithLifetime<'a> {
+    fn with_lifetime_child(&self) -> WithLifetime<'static> {
         WithLifetime { value: "blub" }
     }
 

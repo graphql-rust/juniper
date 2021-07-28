@@ -9,11 +9,11 @@ struct TestType;
 
 #[crate::graphql_object]
 impl TestType {
-    fn a() -> &str {
+    fn a() -> &'static str {
         "a"
     }
 
-    fn b() -> &str {
+    fn b() -> &'static str {
         "b"
     }
 }

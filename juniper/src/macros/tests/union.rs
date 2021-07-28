@@ -83,7 +83,7 @@ impl Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)
     }
-    fn with_lifetime() -> WithLifetime<'_> {
+    fn with_lifetime(&self) -> WithLifetime<'_> {
         WithLifetime::Int(PhantomData)
     }
     fn with_generics() -> WithGenerics<i32> {

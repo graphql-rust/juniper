@@ -30,11 +30,8 @@ struct Foo {
 
 struct Query;
 
-#[crate::graphql_object(Scalar = S)]
-impl<'a, S> Query
-where
-    S: crate::ScalarValue + 'a,
-{
+#[crate::graphql_object]
+impl Query {
     fn int_field() -> i32 {
         42
     }

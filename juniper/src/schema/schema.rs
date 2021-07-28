@@ -131,11 +131,9 @@ where
 
 #[crate::graphql_object(
     name = "__Schema"
-    Context = SchemaType<'a, S>,
-    Scalar = S,
+    context = SchemaType<'a, S>,
+    scalar = S,
     internal,
-    // FIXME: make this redundant.
-    noasync,
 )]
 impl<'a, S> SchemaType<'a, S>
 where
@@ -174,11 +172,9 @@ where
 
 #[crate::graphql_object(
     name = "__Type"
-    Context = SchemaType<'a, S>,
-    Scalar = S,
+    context = SchemaType<'a, S>,
+    scalar = S,
     internal,
-    // FIXME: make this redundant.
-    noasync,
 )]
 impl<'a, S> TypeType<'a, S>
 where
@@ -206,8 +202,10 @@ where
         }
     }
 
-    #[graphql(arguments(include_deprecated(default = false)))]
-    fn fields(&self, include_deprecated: bool) -> Option<Vec<&Field<S>>> {
+    fn fields(
+        &self,
+        #[graphql(default = false)] include_deprecated: bool,
+    ) -> Option<Vec<&Field<S>>> {
         match *self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
             | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
@@ -292,8 +290,10 @@ where
         }
     }
 
-    #[graphql(arguments(include_deprecated(default = false)))]
-    fn enum_values(&self, include_deprecated: bool) -> Option<Vec<&EnumValue>> {
+    fn enum_values(
+        &self,
+        #[graphql(default = false)] include_deprecated: bool,
+    ) -> Option<Vec<&EnumValue>> {
         match *self {
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
                 values
@@ -308,11 +308,9 @@ where
 
 #[crate::graphql_object(
     name = "__Field",
-    Context = SchemaType<'a, S>,
-    Scalar = S,
+    context = SchemaType<'a, S>,
+    scalar = S,
     internal,
-    // FIXME: make this redundant.
-    noasync,
 )]
 impl<'a, S> Field<'a, S>
 where
@@ -348,11 +346,9 @@ where
 
 #[crate::graphql_object(
     name = "__InputValue",
-    Context = SchemaType<'a, S>,
-    Scalar = S,
+    context = SchemaType<'a, S>,
+    scalar = S,
     internal,
-    // FIXME: make this redundant.
-    noasync,
 )]
 impl<'a, S> Argument<'a, S>
 where
@@ -376,17 +372,8 @@ where
     }
 }
 
-#[crate::graphql_object(
-    name = "__EnumValue",
-    Scalar = S,
-    internal,
-    // FIXME: make this redundant.
-    noasync,
-)]
-impl<'a, S> EnumValue
-where
-    S: crate::ScalarValue + 'a,
-{
+#[crate::graphql_object(name = "__EnumValue", internal)]
+impl EnumValue {
     fn name(&self) -> &String {
         &self.name
     }
@@ -406,11 +393,9 @@ where
 
 #[crate::graphql_object(
     name = "__Directive",
-    Context = SchemaType<'a, S>,
-    Scalar = S,
+    context = SchemaType<'a, S>,
+    scalar = S,
     internal,
-    // FIXME: make this redundant.
-    noasync,
 )]
 impl<'a, S> DirectiveType<'a, S>
 where

@@ -136,8 +136,8 @@ pub fn expand_on_trait(
 
     let context = meta
         .context
-        .as_ref()
-        .map(|c| c.as_ref().clone())
+        .as_deref()
+        .cloned()
         .or_else(|| {
             fields.iter().find_map(|f| {
                 f.arguments.as_ref().and_then(|f| {
@@ -240,12 +240,11 @@ pub fn expand_on_trait(
 
     Ok(quote! {
         #ast
-
         #generated_code
     })
 }
 
-/// Expands `#[graphql_interface]` macro placed on trait implementation block.
+/// Expands `#[graphql_interface]` macro placed on a trait implementation block.
 pub fn expand_on_impl(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemImpl,
@@ -467,7 +466,7 @@ impl TraitMethod {
             args_iter
                 .filter_map(|arg| match arg {
                     syn::FnArg::Receiver(_) => None,
-                    syn::FnArg::Typed(arg) => field::MethodArgument::parse(arg, &ERR),
+                    syn::FnArg::Typed(arg) => field::MethodArgument::parse(arg, renaming, &ERR),
                 })
                 .collect()
         };
@@ -500,34 +499,29 @@ impl TraitMethod {
 /// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given `span`.
 #[must_use]
 fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.custom(
+    ERR.emit_custom(
         span.span(),
         "trait method receiver can only be a shared reference `&self`",
-    )
-    .emit();
-
+    );
     None
 }
 
 /// Emits "no trait method receiver" [`syn::Error`] pointing to the given `span`.
 #[must_use]
 fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.custom(
+    ERR.emit_custom(
         span.span(),
         "trait method should have a shared reference receiver `&self`",
-    )
-    .emit();
-
+    );
     None
 }
 
 /// Emits "non-implementer downcast target" [`syn::Error`] pointing to the given `span`.
 fn err_only_implementer_downcast<S: Spanned>(span: &S) {
-    ERR.custom(
+    ERR.emit_custom(
         span.span(),
         "downcasting is possible only to interface implementers",
-    )
-    .emit();
+    );
 }
 
 /// Emits "duplicate downcast" [`syn::Error`] for the given `method` and `external`

@@ -68,8 +68,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
                 .filter_map(|f| parse_field(f, &renaming))
                 .collect();
         } else {
-            ERR.custom(struct_span, "only named fields are allowed")
-                .emit();
+            ERR.emit_custom(struct_span, "only named fields are allowed");
         }
     }
 
