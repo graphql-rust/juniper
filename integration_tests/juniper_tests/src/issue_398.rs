@@ -1,4 +1,7 @@
-// Original author of this test is <https://github.com/davidpdrsn>.
+//! Checks that `executor.look_ahead()` on a fragment with nested type works okay.
+//! See [#398](https://github.com/graphql-rust/juniper/issues/398) for details.
+//!
+//! Original author of this test is [@davidpdrsn](https://github.com/davidpdrsn).
 
 use juniper::{
     graphql_object, EmptyMutation, EmptySubscription, Executor, RootNode, ScalarValue, Variables,
@@ -9,7 +12,7 @@ struct Query;
 #[graphql_object]
 impl Query {
     fn users<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<User> {
-        // This doesn't cause a panic
+        // This doesn't cause a panic.
         executor.look_ahead();
 
         vec![User {
@@ -46,7 +49,7 @@ impl Country {
 type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
 
 #[tokio::test]
-async fn test_lookahead_from_fragment_with_nested_type() {
+async fn lookahead_from_fragment_with_nested_type() {
     let _ = juniper::execute(
         r#"
             query Query {

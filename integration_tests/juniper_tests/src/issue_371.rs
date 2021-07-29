@@ -1,4 +1,8 @@
-// Original author of this test is <https://github.com/davidpdrsn>.
+//! Checks that `executor.look_ahead().field_name()` is correct in presence of
+//! multiple query fields.
+//! See [#371](https://github.com/graphql-rust/juniper/issues/371) for details.
+//!
+//! Original author of this test is [@davidpdrsn](https://github.com/davidpdrsn).
 
 use juniper::{
     graphql_object, EmptyMutation, EmptySubscription, Executor, LookAheadMethods as _, RootNode,
@@ -52,11 +56,7 @@ type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription
 async fn users() {
     let query = "{ users { id } }";
 
-    let schema = Schema::new(
-        Query,
-        EmptyMutation::<Context>::new(),
-        EmptySubscription::<Context>::new(),
-    );
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
     let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
         .await
         .unwrap();
@@ -83,11 +83,7 @@ async fn both() {
         users { id }
     }";
 
-    let schema = Schema::new(
-        Query,
-        EmptyMutation::<Context>::new(),
-        EmptySubscription::<Context>::new(),
-    );
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
     let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
         .await
         .unwrap();
@@ -102,11 +98,7 @@ async fn both_in_different_order() {
         countries { id }
     }";
 
-    let schema = Schema::new(
-        Query,
-        EmptyMutation::<Context>::new(),
-        EmptySubscription::<Context>::new(),
-    );
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
     let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
         .await
         .unwrap();

@@ -1,8 +1,14 @@
-use juniper::*;
+//! Checks that fields on interface fragment spreads resolve okay.
+//! See [#922](https://github.com/graphql-rust/juniper/issues/922) for details.
+
+use juniper::{
+    graphql_interface, graphql_object, graphql_value, EmptyMutation, EmptySubscription,
+    GraphQLObject, Variables,
+};
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
     fn characters() -> Vec<CharacterValue> {
         vec![
@@ -18,21 +24,21 @@ impl Query {
     }
 }
 
-#[juniper::graphql_interface(for = [Human, Droid])]
+#[graphql_interface(for = [Human, Droid])]
 trait Character {
     fn id(&self) -> i32;
 
     fn name(&self) -> String;
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue)]
 struct Human {
     pub id: i32,
     pub name: String,
 }
 
-#[juniper::graphql_interface]
+#[graphql_interface]
 impl Character for Human {
     fn id(&self) -> i32 {
         self.id
@@ -43,14 +49,14 @@ impl Character for Human {
     }
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue)]
 struct Droid {
     pub id: i32,
     pub name: String,
 }
 
-#[juniper::graphql_interface]
+#[graphql_interface]
 impl Character for Droid {
     fn id(&self) -> i32 {
         self.id
@@ -61,10 +67,10 @@ impl Character for Droid {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
-async fn test_fragment_on_interface() {
+async fn fragment_on_interface() {
     let query = r#"
         query Query {
             characters {
@@ -85,15 +91,11 @@ async fn test_fragment_on_interface() {
         }
     "#;
 
-    let (res, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
+    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
@@ -106,14 +108,8 @@ async fn test_fragment_on_interface() {
         }),
     );
 
-    let (res, errors) = juniper::execute_sync(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .unwrap();
+    let (res, errors) =
+        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(

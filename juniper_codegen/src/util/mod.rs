@@ -1348,7 +1348,6 @@ impl GraphQLTypeDefiniton {
 
                 quote!(
                     #field_ident: {
-                        // TODO: investigate the unwraps here, they seem dangerous!
                         match obj.get(#field_name) {
                             #from_input_default
                             Some(ref v) => ::juniper::FromInputValue::from_input_value(v)?,

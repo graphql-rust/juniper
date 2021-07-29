@@ -1,8 +1,14 @@
-use juniper::*;
+//! Checks that `FieldError` doesn't lose its extensions while being implicitly
+//! converted from user defined subscription errors.
+//! See [#925](https://github.com/graphql-rust/juniper/issues/925) for details.
 
 use futures::stream::BoxStream;
+use juniper::{
+    graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLObject,
+    IntoFieldError, Object, ScalarValue, Value, Variables,
+};
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 struct User {
     name: String,
 }
@@ -33,17 +39,17 @@ fn users_stream() -> Result<BoxStream<'static, User>, Error> {
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
     fn users() -> Vec<User> {
         vec![]
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>, SubscriptionsRoot>;
+type Schema = juniper::RootNode<'static, Query, EmptyMutation, SubscriptionsRoot>;
 
 #[tokio::test]
-async fn test_error_extensions() {
+async fn error_extensions() {
     let sub = r#"
         subscription Users {
             users {
@@ -52,18 +58,13 @@ async fn test_error_extensions() {
         }
     "#;
 
-    let (_, errors) = juniper::resolve_into_stream(
-        sub,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), SubscriptionsRoot),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), SubscriptionsRoot);
+    let (_, errors) = juniper::resolve_into_stream(sub, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 
     assert_eq!(
         errors.first().unwrap().error().extensions(),
-        &graphql_value!({ "a": 42 })
+        &graphql_value!({ "a": 42 }),
     );
 }
