@@ -17,8 +17,8 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, Definition, EnumType, ImplMeta, Implementer, ImplementerDowncast,
-    TraitMeta, TraitObjectType, Type,
+    inject_async_trait, Definition, EnumType, ImplAttr, Implementer, ImplementerDowncast,
+    TraitAttr, TraitObjectType, Type,
 };
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
@@ -50,28 +50,28 @@ pub fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
-    let meta = TraitMeta::from_attrs("graphql_interface", &attrs)?;
+    let attr = TraitAttr::from_attrs("graphql_interface", &attrs)?;
 
     let trait_ident = &ast.ident;
     let trait_span = ast.span();
 
-    let name = meta
+    let name = attr
         .name
         .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| trait_ident.unraw().to_string());
-    if !meta.is_internal && name.starts_with("__") {
+    if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
-            meta.name
+            attr.name
                 .as_ref()
                 .map(SpanContainer::span_ident)
                 .unwrap_or_else(|| trait_ident.span()),
         );
     }
 
-    let scalar = scalar::Type::parse(meta.scalar.as_deref(), &ast.generics);
+    let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    let mut implementers: Vec<_> = meta
+    let mut implementers: Vec<_> = attr
         .implementers
         .iter()
         .map(|ty| Implementer {
@@ -81,7 +81,7 @@ pub fn expand_on_trait(
             scalar: scalar.clone(),
         })
         .collect();
-    for (ty, downcast) in &meta.external_downcasts {
+    for (ty, downcast) in &attr.external_downcasts {
         match implementers.iter_mut().find(|i| &i.ty == ty) {
             Some(impler) => {
                 impler.downcast = Some(ImplementerDowncast::External {
@@ -94,7 +94,7 @@ pub fn expand_on_trait(
 
     proc_macro_error::abort_if_dirty();
 
-    let renaming = meta
+    let renaming = attr
         .rename_fields
         .as_deref()
         .copied()
@@ -134,7 +134,7 @@ pub fn expand_on_trait(
 
     proc_macro_error::abort_if_dirty();
 
-    let context = meta
+    let context = attr
         .context
         .as_deref()
         .cloned()
@@ -154,9 +154,9 @@ pub fn expand_on_trait(
                 .cloned()
         });
 
-    let is_trait_object = meta.r#dyn.is_some();
+    let is_trait_object = attr.r#dyn.is_some();
 
-    let is_async_trait = meta.asyncness.is_some()
+    let is_async_trait = attr.asyncness.is_some()
         || ast
             .items
             .iter()
@@ -173,14 +173,14 @@ pub fn expand_on_trait(
     let ty = if is_trait_object {
         Type::TraitObject(Box::new(TraitObjectType::new(
             &ast,
-            &meta,
+            &attr,
             scalar.clone(),
             context.clone(),
         )))
     } else {
         Type::Enum(Box::new(EnumType::new(
             &ast,
-            &meta,
+            &attr,
             &implementers,
             scalar.clone(),
         )))
@@ -190,7 +190,7 @@ pub fn expand_on_trait(
         ty,
 
         name,
-        description: meta.description.map(SpanContainer::into_inner),
+        description: attr.description.map(SpanContainer::into_inner),
 
         context,
         scalar: scalar.clone(),
@@ -249,9 +249,9 @@ pub fn expand_on_impl(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemImpl,
 ) -> syn::Result<TokenStream> {
-    let meta = ImplMeta::from_attrs("graphql_interface", &attrs)?;
+    let attr = ImplAttr::from_attrs("graphql_interface", &attrs)?;
 
-    let is_async_trait = meta.asyncness.is_some()
+    let is_async_trait = attr.asyncness.is_some()
         || ast
             .items
             .iter()
@@ -261,10 +261,10 @@ pub fn expand_on_impl(
             })
             .is_some();
 
-    let is_trait_object = meta.r#dyn.is_some();
+    let is_trait_object = attr.r#dyn.is_some();
 
     if is_trait_object {
-        let scalar = scalar::Type::parse(meta.scalar.as_deref(), &ast.generics);
+        let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
         ast.attrs.push(parse_quote! {
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
@@ -338,19 +338,19 @@ impl TraitMethod {
             .filter(|attr| !path_eq_single(&attr.path, "graphql"))
             .collect();
 
-        let meta = field::Attr::from_attrs("graphql", &method_attrs)
+        let attr = field::Attr::from_attrs("graphql", &method_attrs)
             .map_err(|e| proc_macro_error::emit_error!(e))
             .ok()?;
 
-        if meta.ignore.is_some() {
+        if attr.ignore.is_some() {
             return None;
         }
 
-        if meta.downcast.is_some() {
+        if attr.downcast.is_some() {
             return Some(Self::Downcast(Box::new(Self::parse_downcast(method)?)));
         }
 
-        Some(Self::Field(Self::parse_field(method, meta, renaming)?))
+        Some(Self::Field(Self::parse_field(method, attr, renaming)?))
     }
 
     /// Parses [`TraitMethod::Downcast`] from the given trait method definition.
@@ -476,7 +476,8 @@ impl TraitMethod {
     }
 }
 
-/// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given `span`.
+/// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given
+/// `span`.
 #[must_use]
 fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(
@@ -486,7 +487,8 @@ fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     None
 }
 
-/// Emits "no trait method receiver" [`syn::Error`] pointing to the given `span`.
+/// Emits "no trait method receiver" [`syn::Error`] pointing to the given
+/// `span`.
 #[must_use]
 fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(
@@ -496,7 +498,8 @@ fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     None
 }
 
-/// Emits "non-implementer downcast target" [`syn::Error`] pointing to the given `span`.
+/// Emits "non-implementer downcast target" [`syn::Error`] pointing to the given
+/// `span`.
 fn err_only_implementer_downcast<S: Spanned>(span: &S) {
     ERR.emit_custom(
         span.span(),
@@ -504,8 +507,8 @@ fn err_only_implementer_downcast<S: Spanned>(span: &S) {
     );
 }
 
-/// Emits "duplicate downcast" [`syn::Error`] for the given `method` and `external`
-/// [`ImplementerDowncast`] function.
+/// Emits "duplicate downcast" [`syn::Error`] for the given `method` and
+/// `external` [`ImplementerDowncast`] function.
 fn err_duplicate_downcast(
     method: &syn::TraitItemMethod,
     external: &ImplementerDowncast,
@@ -519,16 +522,17 @@ fn err_duplicate_downcast(
     ERR.custom(
         method.span(),
         format!(
-            "trait method `{}` conflicts with the external downcast function `{}` declared on the \
-             trait to downcast into the implementer type `{}`",
+            "trait method `{}` conflicts with the external downcast function \
+             `{}` declared on the trait to downcast into the implementer type \
+             `{}`",
             method.sig.ident,
             external.to_token_stream(),
             impler_ty.to_token_stream(),
         ),
     )
     .note(String::from(
-        "use `#[graphql(ignore)]` attribute argument to ignore this trait method for interface \
-         implementers downcasting",
+        "use `#[graphql(ignore)]` attribute argument to ignore this trait \
+         method for interface implementers downcasting",
     ))
     .emit()
 }

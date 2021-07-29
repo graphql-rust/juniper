@@ -31,56 +31,58 @@ use crate::{
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
 
-/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait
-/// definition, when generating code for [GraphQL interface][1] type.
+/// Available arguments behind `#[graphql_interface]` attribute placed on a
+/// trait definition, when generating code for [GraphQL interface][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
-struct TraitMeta {
+struct TraitAttr {
     /// Explicitly specified name of [GraphQL interface][1] type.
     ///
-    /// If absent, then Rust trait name is used by default.
+    /// If [`None`], then Rust trait name is used by default.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of [GraphQL interface][1] type.
     ///
-    /// If absent, then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment is used as [description][2], if any.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
     description: Option<SpanContainer<String>>,
 
-    /// Explicitly specified identifier of the enum Rust type behind the trait, being an actual
-    /// implementation of a [GraphQL interface][1] type.
+    /// Explicitly specified identifier of the enum Rust type behind the trait,
+    /// being an actual implementation of a [GraphQL interface][1] type.
     ///
-    /// If absent, then `{trait_name}Value` identifier will be used.
+    /// If [`None`], then `{trait_name}Value` identifier will be used.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     r#enum: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified identifier of the Rust type alias of the [trait object][2], being an
-    /// actual implementation of a [GraphQL interface][1] type.
+    /// Explicitly specified identifier of the Rust type alias of the
+    /// [trait object][2], being an actual implementation of a
+    /// [GraphQL interface][1] type.
     ///
-    /// Effectively makes code generation to use a [trait object][2] as a [GraphQL interface][1]
-    /// type rather than an enum. If absent, then enum is used by default.
+    /// Effectively makes code generation to use a [trait object][2] as a
+    /// [GraphQL interface][1] type rather than an enum. If [`None`], then enum
+    /// is used by default.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
     r#dyn: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified Rust types of [GraphQL objects][2] implementing this
-    /// [GraphQL interface][1] type.
+    /// Explicitly specified Rust types of [GraphQL objects][2] implementing
+    /// this [GraphQL interface][1] type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     implementers: HashSet<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified type of [`Context`] to use for resolving this [GraphQL interface][1]
-    /// type with.
+    /// Explicitly specified type of [`Context`] to use for resolving this
+    /// [GraphQL interface][1] type with.
     ///
-    /// If absent, then unit type `()` is assumed as type of [`Context`].
+    /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
     ///
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -89,33 +91,35 @@ struct TraitMeta {
     /// Explicitly specified type (or type parameter with its bounds) of
     /// [`ScalarValue`] to resolve this [GraphQL interface][1] type with.
     ///
-    /// If absent, then generated code will be generic over any [`ScalarValue`]
-    /// type, which, in turn, requires all [interface][1] implementers to be
-    /// generic over any [`ScalarValue`] type too. That's why this type should
-    /// be specified only if one of the implementers implements [`GraphQLType`]
-    /// in a non-generic way over [`ScalarValue`] type.
+    /// If [`None`], then generated code will be generic over any
+    /// [`ScalarValue`] type, which, in turn, requires all [interface][1]
+    /// implementers to be generic over any [`ScalarValue`] type too. That's why
+    /// this type should be specified only if one of the implementers implements
+    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
-    /// Explicitly specified marker indicating that the Rust trait should be transformed into
-    /// [`async_trait`].
+    /// Explicitly specified marker indicating that the Rust trait should be
+    /// transformed into [`async_trait`].
     ///
-    /// If absent, then trait will be transformed into [`async_trait`] only if it contains async
-    /// methods.
+    /// If [`None`], then trait will be transformed into [`async_trait`] only if
+    /// it contains async methods.
     asyncness: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified external downcasting functions for [GraphQL interface][1] implementers.
+    /// Explicitly specified external downcasting functions for
+    /// [GraphQL interface][1] implementers.
     ///
-    /// If absent, then macro will downcast to the implementers via enum dispatch or dynamic
-    /// dispatch (if the one is chosen). That's why specifying an external resolver function has
-    /// sense, when some custom [interface][1] implementer resolving logic is involved.
+    /// If [`None`], then macro will downcast to the implementers via enum
+    /// dispatch or dynamic dispatch (if the one is chosen). That's why
+    /// specifying an external resolver function has sense, when some custom
+    /// [interface][1] implementer resolving logic is involved.
     ///
-    /// Once the downcasting function is specified for some [GraphQL object][2] implementer type, it
-    /// cannot be downcast another such function or trait method marked with a
-    /// [`MethodMeta::downcast`] marker.
+    /// Once the downcasting function is specified for some [GraphQL object][2]
+    /// implementer type, it cannot be downcast another such function or trait
+    /// method marked with a [`MethodMeta::downcast`] marker.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
@@ -129,23 +133,21 @@ struct TraitMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     rename_fields: Option<SpanContainer<RenameRule>>,
 
-    /// Indicator whether the generated code is intended to be used only inside the [`juniper`]
-    /// library.
+    /// Indicator whether the generated code is intended to be used only inside
+    /// the [`juniper`] library.
     is_internal: bool,
 }
 
-impl Parse for TraitMeta {
+impl Parse for TraitAttr {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let mut output = Self::default();
-
+        let mut out = Self::default();
         while !input.is_empty() {
             let ident = input.parse_any_ident()?;
             match ident.to_string().as_str() {
                 "name" => {
                     input.parse::<token::Eq>()?;
                     let name = input.parse::<syn::LitStr>()?;
-                    output
-                        .name
+                    out.name
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(name.span()),
@@ -156,8 +158,7 @@ impl Parse for TraitMeta {
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
                     let desc = input.parse::<syn::LitStr>()?;
-                    output
-                        .description
+                    out.description
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(desc.span()),
@@ -168,16 +169,14 @@ impl Parse for TraitMeta {
                 "ctx" | "context" | "Context" => {
                     input.parse::<token::Eq>()?;
                     let ctx = input.parse::<syn::Type>()?;
-                    output
-                        .context
+                    out.context
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<scalar::AttrValue>()?;
-                    output
-                        .scalar
+                    out.scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -187,7 +186,7 @@ impl Parse for TraitMeta {
                         syn::Type, token::Bracket, token::Comma,
                     >()? {
                         let impler_span = impler.span();
-                        output
+                        out
                             .implementers
                             .replace(SpanContainer::new(ident.span(), Some(impler_span), impler))
                             .none_or_else(|_| err::dup_arg(impler_span))?;
@@ -196,23 +195,20 @@ impl Parse for TraitMeta {
                 "dyn" => {
                     input.parse::<token::Eq>()?;
                     let alias = input.parse::<syn::Ident>()?;
-                    output
-                        .r#dyn
+                    out.r#dyn
                         .replace(SpanContainer::new(ident.span(), Some(alias.span()), alias))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "enum" => {
                     input.parse::<token::Eq>()?;
                     let alias = input.parse::<syn::Ident>()?;
-                    output
-                        .r#enum
+                    out.r#enum
                         .replace(SpanContainer::new(ident.span(), Some(alias.span()), alias))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "async" => {
                     let span = ident.span();
-                    output
-                        .asyncness
+                    out.asyncness
                         .replace(SpanContainer::new(span, Some(span), ident))
                         .none_or_else(|_| err::dup_arg(span))?;
                 }
@@ -222,16 +218,14 @@ impl Parse for TraitMeta {
                     let dwncst = input.parse::<syn::ExprPath>()?;
                     let dwncst_spanned = SpanContainer::new(ident.span(), Some(ty.span()), dwncst);
                     let dwncst_span = dwncst_spanned.span_joined();
-                    output
-                        .external_downcasts
+                    out.external_downcasts
                         .insert(ty, dwncst_spanned)
                         .none_or_else(|_| err::dup_arg(dwncst_span))?
                 }
                 "rename_all" => {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
-                    output
-                        .rename_fields
+                    out.rename_fields
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(val.span()),
@@ -240,7 +234,7 @@ impl Parse for TraitMeta {
                         .none_or_else(|_| err::dup_arg(&ident))?;
                 }
                 "internal" => {
-                    output.is_internal = true;
+                    out.is_internal = true;
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
@@ -248,13 +242,13 @@ impl Parse for TraitMeta {
             }
             input.try_parse::<token::Comma>()?;
         }
-
-        Ok(output)
+        Ok(out)
     }
 }
 
-impl TraitMeta {
-    /// Tries to merge two [`TraitMeta`]s into a single one, reporting about duplicates, if any.
+impl TraitAttr {
+    /// Tries to merge two [`TraitAttr`]s into a single one, reporting about
+    /// duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
@@ -273,8 +267,8 @@ impl TraitMeta {
         })
     }
 
-    /// Parses [`TraitMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a trait
-    /// definition.
+    /// Parses [`TraitAttr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a trait definition.
     fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut attr = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -297,12 +291,13 @@ impl TraitMeta {
     }
 }
 
-/// Available metadata (arguments) behind `#[graphql_interface]` attribute placed on a trait
-/// implementation block, when generating code for [GraphQL interface][1] type.
+/// Available arguments behind `#[graphql_interface]` attribute placed on a
+/// trait implementation block, when generating code for [GraphQL interface][1]
+/// type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
-struct ImplMeta {
+struct ImplAttr {
     /// Explicitly specified type (or type parameter with its bounds) of
     /// [`ScalarValue`] to implementing the [GraphQL interface][1] type with.
     ///
@@ -317,50 +312,47 @@ struct ImplMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
-    /// Explicitly specified marker indicating that the trait implementation block should be
-    /// transformed with applying [`async_trait`].
+    /// Explicitly specified marker indicating that the trait implementation
+    /// block should be transformed with applying [`async_trait`].
     ///
-    /// If absent, then trait will be transformed with applying [`async_trait`] only if it contains
-    /// async methods.
+    /// If absent, then trait will be transformed with applying [`async_trait`]
+    /// only if it contains async methods.
     ///
-    /// This marker is especially useful when Rust trait contains async default methods, while the
-    /// implementation block doesn't.
+    /// This marker is especially useful when Rust trait contains async default
+    /// methods, while the implementation block doesn't.
     asyncness: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified marker indicating that the implemented [GraphQL interface][1] type is
-    /// represented as a [trait object][2] in Rust type system rather then an enum (default mode,
-    /// when the marker is absent).
+    /// Explicitly specified marker indicating that the implemented
+    /// [GraphQL interface][1] type is represented as a [trait object][2] in
+    /// Rust type system rather then an enum (default mode, when the marker is
+    /// absent).
     ///
     /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
     r#dyn: Option<SpanContainer<syn::Ident>>,
 }
 
-impl Parse for ImplMeta {
+impl Parse for ImplAttr {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let mut output = Self::default();
-
+        let mut out = Self::default();
         while !input.is_empty() {
             let ident = input.parse_any_ident()?;
             match ident.to_string().as_str() {
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<scalar::AttrValue>()?;
-                    output
-                        .scalar
+                    out.scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "dyn" => {
                     let span = ident.span();
-                    output
-                        .r#dyn
+                    out.r#dyn
                         .replace(SpanContainer::new(span, Some(span), ident))
                         .none_or_else(|_| err::dup_arg(span))?;
                 }
                 "async" => {
                     let span = ident.span();
-                    output
-                        .asyncness
+                    out.asyncness
                         .replace(SpanContainer::new(span, Some(span), ident))
                         .none_or_else(|_| err::dup_arg(span))?;
                 }
@@ -370,13 +362,13 @@ impl Parse for ImplMeta {
             }
             input.try_parse::<token::Comma>()?;
         }
-
-        Ok(output)
+        Ok(out)
     }
 }
 
-impl ImplMeta {
-    /// Tries to merge two [`ImplMeta`]s into a single one, reporting about duplicates, if any.
+impl ImplAttr {
+    /// Tries to merge two [`ImplAttr`]s into a single one, reporting about
+    /// duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             scalar: try_merge_opt!(scalar: self, another),
@@ -385,8 +377,8 @@ impl ImplMeta {
         })
     }
 
-    /// Parses [`ImplMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a trait
-    /// implementation block.
+    /// Parses [`ImplAttr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a trait implementation block.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -413,8 +405,8 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     description: Option<String>,
 
-    /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with for this
-    /// [GraphQL interface][1].
+    /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
+    /// for this [GraphQL interface][1].
     ///
     /// If [`None`] then generated code will use unit type `()` as [`Context`].
     ///
@@ -423,8 +415,8 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     context: Option<syn::Type>,
 
-    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation
-    /// with for this [GraphQL interface][1].
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
+    /// implementation with for this [GraphQL interface][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
@@ -484,8 +476,8 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`marker::IsOutputType`] trait for this
-    /// [GraphQL interface][1].
+    /// Returns generated code implementing [`marker::IsOutputType`] trait for
+    /// this [GraphQL interface][1].
     ///
     /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -512,7 +504,8 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`GraphQLType`] trait for this [GraphQL interface][1].
+    /// Returns generated code implementing [`GraphQLType`] trait for this
+    /// [GraphQL interface][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -569,7 +562,8 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`GraphQLValue`] trait for this [GraphQL interface][1].
+    /// Returns generated code implementing [`GraphQLValue`] trait for this
+    /// [GraphQL interface][1].
     ///
     /// [`GraphQLValue`]: juniper::GraphQLValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -717,20 +711,22 @@ impl Definition {
     }
 }
 
-/// Representation of custom downcast into an [`Implementer`] from a [GraphQL interface][1] type for
-/// code generation.
+/// Representation of custom downcast into an [`Implementer`] from a
+/// [GraphQL interface][1] type for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Clone, Debug)]
 enum ImplementerDowncast {
-    /// Downcast is performed via a method of trait describing a [GraphQL interface][1].
+    /// Downcast is performed via a method of trait describing a
+    /// [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     Method {
         /// Name of trait method which performs this [`ImplementerDowncast`].
         name: syn::Ident,
 
-        /// Indicator whether the trait method accepts a [`Context`] as its second argument.
+        /// Indicator whether the trait method accepts a [`Context`] as its
+        /// second argument.
         ///
         /// [`Context`]: juniper::Context
         with_context: bool,
@@ -748,21 +744,23 @@ enum ImplementerDowncast {
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Clone, Debug)]
 struct Implementer {
-    /// Rust type that this [GraphQL interface][1] [`Implementer`] is represented by.
+    /// Rust type that this [GraphQL interface][1] [`Implementer`] is
+    /// represented by.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     ty: syn::Type,
 
     /// Custom [`ImplementerDowncast`] for this [`Implementer`].
     ///
-    /// If absent, then [`Implementer`] is downcast from an enum variant or a trait object.
+    /// If absent, then [`Implementer`] is downcast from an enum variant or a
+    /// trait object.
     downcast: Option<ImplementerDowncast>,
 
-    /// Rust type of [`Context`] that this [GraphQL interface][1] [`Implementer`] requires for
-    /// downcasting.
+    /// Rust type of [`Context`] that this [GraphQL interface][1]
+    /// [`Implementer`] requires for downcasting.
     ///
-    /// It's available only when code generation happens for Rust traits and a trait method contains
-    /// context argument.
+    /// It's available only when code generation happens for Rust traits and a
+    /// trait method contains context argument.
     ///
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -805,8 +803,9 @@ impl Implementer {
         })
     }
 
-    /// Returns generated code for the [`GraphQLValue::concrete_type_name`] method, which returns
-    /// name of the GraphQL type represented by this [`Implementer`].
+    /// Returns generated code for the [`GraphQLValue::concrete_type_name`]
+    /// method, which returns name of the GraphQL type represented by this
+    /// [`Implementer`].
     ///
     /// Returns [`None`] if there is no custom [`Implementer::downcast`].
     ///
@@ -830,12 +829,13 @@ impl Implementer {
         })
     }
 
-    /// Returns generated code for the [`GraphQLValue::resolve_into_type`] method, which downcasts
-    /// the [GraphQL interface][1] type into this [`Implementer`] synchronously.
+    /// Returns generated code for the [`GraphQLValue::resolve_into_type`][0]
+    /// method, which downcasts the [GraphQL interface][1] type into this
+    /// [`Implementer`] synchronously.
     ///
     /// Returns [`None`] if there is no custom [`Implementer::downcast`].
     ///
-    /// [`GraphQLValue::resolve_into_type`]: juniper::GraphQLValue::resolve_into_type
+    /// [0]: juniper::GraphQLValue::resolve_into_type
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn method_resolve_into_type_tokens(&self, trait_ty: &syn::Type) -> Option<TokenStream> {
@@ -856,8 +856,10 @@ impl Implementer {
         })
     }
 
-    /// Returns generated code for the [`GraphQLValueAsync::resolve_into_type_async`][0] method,
-    /// which downcasts the [GraphQL interface][1] type into this [`Implementer`] asynchronously.
+    /// Returns generated code for the
+    /// [`GraphQLValueAsync::resolve_into_type_async`][0] method, which
+    /// downcasts the [GraphQL interface][1] type into this [`Implementer`]
+    /// asynchronously.
     ///
     /// Returns [`None`] if there is no custom [`Implementer::downcast`].
     ///
@@ -883,7 +885,8 @@ impl Implementer {
     }
 }
 
-/// Representation of Rust enum implementing [GraphQL interface][1] type for code generation.
+/// Representation of Rust enum implementing [GraphQL interface][1] type for
+/// code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 struct EnumType {
@@ -893,52 +896,62 @@ struct EnumType {
     /// [`syn::Visibility`] of this [`EnumType`] to generate it with.
     visibility: syn::Visibility,
 
-    /// Rust types of all [GraphQL interface][1] implements to represent variants of this
-    /// [`EnumType`].
+    /// Rust types of all [GraphQL interface][1] implements to represent
+    /// variants of this [`EnumType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     variants: Vec<syn::Type>,
 
-    /// Name of the trait describing the [GraphQL interface][1] represented by this [`EnumType`].
+    /// Name of the trait describing the [GraphQL interface][1] represented by
+    /// this [`EnumType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_ident: syn::Ident,
 
-    /// [`syn::Generics`] of the trait describing the [GraphQL interface][1] represented by this
-    /// [`EnumType`].
+    /// [`syn::Generics`] of the trait describing the [GraphQL interface][1]
+    /// represented by this [`EnumType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_generics: syn::Generics,
 
-    /// Associated types of the trait describing the [GraphQL interface][1] represented by this
-    /// [`EnumType`].
+    /// Associated types of the trait describing the [GraphQL interface][1]
+    /// represented by this [`EnumType`].
     trait_types: Vec<(syn::Ident, syn::Generics)>,
 
-    /// Associated constants of the trait describing the [GraphQL interface][1] represented by this
-    /// [`EnumType`].
+    /// Associated constants of the trait describing the [GraphQL interface][1]
+    /// represented by this [`EnumType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_consts: Vec<(syn::Ident, syn::Type)>,
 
-    /// Methods of the trait describing the [GraphQL interface][1] represented by this [`EnumType`].
+    /// Methods of the trait describing the [GraphQL interface][1] represented
+    /// by this [`EnumType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_methods: Vec<syn::Signature>,
 
-    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation
-    /// with for this [`EnumType`].
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
+    /// implementation with for this [`EnumType`].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     scalar: scalar::Type,
 }
 
+impl ToTokens for EnumType {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        self.type_definition_tokens().to_tokens(into);
+        into.append_all(self.impl_from_tokens());
+        self.impl_trait_tokens().to_tokens(into);
+    }
+}
+
 impl EnumType {
-    /// Constructs new [`EnumType`] out of the given parameters.
+    /// Constructs a new [`EnumType`] out of the given parameters.
     #[must_use]
     fn new(
         r#trait: &syn::ItemTrait,
-        meta: &TraitMeta,
+        meta: &TraitAttr,
         implers: &[Implementer],
         scalar: scalar::Type,
     ) -> Self {
@@ -990,8 +1003,8 @@ impl EnumType {
         }
     }
 
-    /// Returns name of a single variant of this [`EnumType`] by the given underlying [`syn::Type`]
-    /// of the variant.
+    /// Returns name of a single variant of this [`EnumType`] by the given
+    /// underlying [`syn::Type`] of the variant.
     #[must_use]
     fn variant_ident(ty: &syn::Type) -> &syn::Ident {
         if let syn::Type::Path(p) = ty {
@@ -1001,15 +1014,15 @@ impl EnumType {
         }
     }
 
-    /// Indicates whether this [`EnumType`] has non-exhaustive phantom variant to hold type
-    /// parameters.
+    /// Indicates whether this [`EnumType`] has non-exhaustive phantom variant
+    /// to hold type parameters.
     #[must_use]
     fn has_phantom_variant(&self) -> bool {
         !self.trait_generics.params.is_empty()
     }
 
-    /// Returns generate code for dispatching non-exhaustive phantom variant of this [`EnumType`]
-    /// in `match` expressions.
+    /// Returns generate code for dispatching non-exhaustive phantom variant of
+    /// this [`EnumType`] in `match` expressions.
     ///
     /// Returns [`None`] if this [`EnumType`] is exhaustive.
     #[must_use]
@@ -1081,8 +1094,8 @@ impl EnumType {
         generics
     }
 
-    /// Returns full type signature of the original trait describing the [GraphQL interface][1] for
-    /// this [`EnumType`].
+    /// Returns full type signature of the original trait describing the
+    /// [GraphQL interface][1] for this [`EnumType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
@@ -1104,8 +1117,8 @@ impl EnumType {
 
     /// Returns generate code of the Rust type definitions of this [`EnumType`].
     ///
-    /// If the [`EnumType::trait_generics`] are not empty, then they are contained in the generated
-    /// enum too.
+    /// If the [`EnumType::trait_generics`] are not empty, then they are
+    /// contained in the generated enum too.
     #[must_use]
     fn type_definition_tokens(&self) -> TokenStream {
         let enum_ty = &self.ident;
@@ -1168,8 +1181,8 @@ impl EnumType {
         }
     }
 
-    /// Returns generated code implementing [`From`] trait for this [`EnumType`] from its
-    /// [`EnumType::variants`].
+    /// Returns generated code implementing [`From`] trait for this [`EnumType`]
+    /// from its [`EnumType::variants`].
     fn impl_from_tokens(&self) -> impl Iterator<Item = TokenStream> + '_ {
         let enum_ty = &self.ident;
         let (impl_generics, generics, where_clause) = self.trait_generics.split_for_impl();
@@ -1188,8 +1201,8 @@ impl EnumType {
         })
     }
 
-    /// Returns generated code implementing the original trait describing the [GraphQL interface][1]
-    /// for this [`EnumType`].
+    /// Returns generated code implementing the original trait describing the
+    /// [GraphQL interface][1] for this [`EnumType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
@@ -1288,10 +1301,11 @@ impl EnumType {
         impl_tokens
     }
 
-    /// Returns generated code for the [`GraphQLValue::concrete_type_name`] method, which returns
-    /// name of the underlying [`Implementer`] GraphQL type contained in this [`EnumType`].
+    /// Returns generated code for the [`GraphQLValue::concrete_type_name`][0]
+    /// method, which returns name of the underlying [`Implementer`] GraphQL
+    /// type contained in this [`EnumType`].
     ///
-    /// [`GraphQLValue::concrete_type_name`]: juniper::GraphQLValue::concrete_type_name
+    /// [0]: juniper::GraphQLValue::concrete_type_name
     #[must_use]
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -1315,10 +1329,11 @@ impl EnumType {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::resolve_into_type`] method, which downcasts
-    /// this [`EnumType`] into its underlying [`Implementer`] type synchronously.
+    /// Returns generated code for the [`GraphQLValue::resolve_into_type`][0]
+    /// method, which downcasts this [`EnumType`] into its underlying
+    /// [`Implementer`] type synchronously.
     ///
-    /// [`GraphQLValue::resolve_into_type`]: juniper::GraphQLValue::resolve_into_type
+    /// [0]: juniper::GraphQLValue::resolve_into_type
     #[must_use]
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         let resolving_code = gen::sync_resolving_code();
@@ -1340,8 +1355,10 @@ impl EnumType {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValueAsync::resolve_into_type_async`][0] method,
-    /// which downcasts this [`EnumType`] into its underlying [`Implementer`] type asynchronously.
+    /// Returns generated code for the
+    /// [`GraphQLValueAsync::resolve_into_type_async`][0] method, which
+    /// downcasts this [`EnumType`] into its underlying [`Implementer`] type
+    /// asynchronously.
     ///
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
     #[must_use]
@@ -1369,16 +1386,8 @@ impl EnumType {
     }
 }
 
-impl ToTokens for EnumType {
-    fn to_tokens(&self, into: &mut TokenStream) {
-        into.append_all(&[self.type_definition_tokens()]);
-        into.append_all(self.impl_from_tokens());
-        into.append_all(&[self.impl_trait_tokens()]);
-    }
-}
-
-/// Representation of Rust [trait object][2] implementing [GraphQL interface][1] type for code
-/// generation.
+/// Representation of Rust [trait object][2] implementing [GraphQL interface][1]
+/// type for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
@@ -1389,19 +1398,20 @@ struct TraitObjectType {
     /// [`syn::Visibility`] of this [`TraitObjectType`] to generate it with.
     visibility: syn::Visibility,
 
-    /// Name of the trait describing the [GraphQL interface][1] represented by this
-    /// [`TraitObjectType`].
+    /// Name of the trait describing the [GraphQL interface][1] represented by
+    /// this [`TraitObjectType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_ident: syn::Ident,
 
-    /// [`syn::Generics`] of the trait describing the [GraphQL interface][1] represented by this
-    /// [`TraitObjectType`].
+    /// [`syn::Generics`] of the trait describing the [GraphQL interface][1]
+    /// represented by this [`TraitObjectType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_generics: syn::Generics,
 
-    /// [`ScalarValue`] parametrization of this [`TraitObjectType`] to generate it with.
+    /// [`ScalarValue`] parametrization of this [`TraitObjectType`] to generate
+    /// it with.
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     scalar: scalar::Type,
@@ -1415,11 +1425,11 @@ struct TraitObjectType {
 }
 
 impl TraitObjectType {
-    /// Constructs new [`TraitObjectType`] out of the given parameters.
+    /// Constructs a new [`TraitObjectType`] out of the given parameters.
     #[must_use]
     fn new(
         r#trait: &syn::ItemTrait,
-        meta: &TraitMeta,
+        meta: &TraitAttr,
         scalar: scalar::Type,
         context: Option<syn::Type>,
     ) -> Self {
@@ -1477,8 +1487,8 @@ impl TraitObjectType {
         generics
     }
 
-    /// Returns full type signature of the original trait describing the [GraphQL interface][1] for
-    /// this [`TraitObjectType`].
+    /// Returns full type signature of the original trait describing the
+    /// [GraphQL interface][1] for this [`TraitObjectType`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
@@ -1495,7 +1505,8 @@ impl TraitObjectType {
         parse_quote! { #ty#generics }
     }
 
-    /// Returns generated code of the full type signature of this [`TraitObjectType`].
+    /// Returns generated code of the full type signature of this
+    /// [`TraitObjectType`].
     #[must_use]
     fn ty_tokens(&self) -> TokenStream {
         let ty = &self.trait_ident;
@@ -1516,10 +1527,11 @@ impl TraitObjectType {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::concrete_type_name`] method, which returns
-    /// name of the underlying [`Implementer`] GraphQL type contained in this [`TraitObjectType`].
+    /// Returns generated code for the [`GraphQLValue::concrete_type_name`][0]
+    /// method, which returns name of the underlying [`Implementer`] GraphQL
+    /// type contained in this [`TraitObjectType`].
     ///
-    /// [`GraphQLValue::concrete_type_name`]: juniper::GraphQLValue::concrete_type_name
+    /// [0]: juniper::GraphQLValue::concrete_type_name
     #[must_use]
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
         quote! {
@@ -1527,10 +1539,11 @@ impl TraitObjectType {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::resolve_into_type`] method, which downcasts
-    /// this [`TraitObjectType`] into its underlying [`Implementer`] type synchronously.
+    /// Returns generated code for the [`GraphQLValue::resolve_into_type`][0]
+    /// method, which downcasts this [`TraitObjectType`] into its underlying
+    /// [`Implementer`] type synchronously.
     ///
-    /// [`GraphQLValue::resolve_into_type`]: juniper::GraphQLValue::resolve_into_type
+    /// [0]: juniper::GraphQLValue::resolve_into_type
     #[must_use]
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         let resolving_code = gen::sync_resolving_code();
@@ -1541,9 +1554,10 @@ impl TraitObjectType {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValueAsync::resolve_into_type_async`][0] method,
-    /// which downcasts this [`TraitObjectType`] into its underlying [`Implementer`] type
-    /// asynchronously.
+    /// Returns generated code for the
+    /// [`GraphQLValueAsync::resolve_into_type_async`][0] method, which
+    /// downcasts this [`TraitObjectType`] into its underlying [`Implementer`]
+    /// type asynchronously.
     ///
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
     #[must_use]
@@ -1607,8 +1621,8 @@ impl ToTokens for TraitObjectType {
     }
 }
 
-/// Representation of possible Rust types implementing [GraphQL interface][1] type for code
-/// generation.
+/// Representation of possible Rust types implementing [GraphQL interface][1]
+/// type for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 enum Type {
@@ -1622,6 +1636,15 @@ enum Type {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
     TraitObject(Box<TraitObjectType>),
+}
+
+impl ToTokens for Type {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        match self {
+            Self::Enum(e) => e.to_tokens(into),
+            Self::TraitObject(o) => o.to_tokens(into),
+        }
+    }
 }
 
 impl Type {
@@ -1643,8 +1666,8 @@ impl Type {
         (quote! { #impl_generics }, where_clause.cloned())
     }
 
-    /// Returns full type signature of the original trait describing the [GraphQL interface][1] for
-    /// this [`Type`].
+    /// Returns full type signature of the original trait describing the
+    /// [GraphQL interface][1] for this [`Type`].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
@@ -1664,10 +1687,11 @@ impl Type {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::concrete_type_name`] method, which returns
-    /// name of the underlying [`Implementer`] GraphQL type contained in this [`Type`].
+    /// Returns generated code for the [`GraphQLValue::concrete_type_name`][0]
+    /// method, which returns name of the underlying [`Implementer`] GraphQL
+    /// type contained in this [`Type`].
     ///
-    /// [`GraphQLValue::concrete_type_name`]: juniper::GraphQLValue::concrete_type_name
+    /// [0]: juniper::GraphQLValue::concrete_type_name
     #[must_use]
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
         match self {
@@ -1676,10 +1700,11 @@ impl Type {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::resolve_into_type`] method, which downcasts
-    /// this [`Type`] into its underlying [`Implementer`] type synchronously.
+    /// Returns generated code for the [`GraphQLValue::resolve_into_type`][0]
+    /// method, which downcasts this [`Type`] into its underlying
+    /// [`Implementer`] type synchronously.
     ///
-    /// [`GraphQLValue::resolve_into_type`]: juniper::GraphQLValue::resolve_into_type
+    /// [0]: juniper::GraphQLValue::resolve_into_type
     #[must_use]
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         match self {
@@ -1688,8 +1713,10 @@ impl Type {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValueAsync::resolve_into_type_async`][0] method,
-    /// which downcasts this [`Type`] into its underlying [`Implementer`] type asynchronously.
+    /// Returns generated code for the
+    /// [`GraphQLValueAsync::resolve_into_type_async`][0] method, which
+    /// downcasts this [`Type`] into its underlying [`Implementer`] type
+    /// asynchronously.
     ///
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
@@ -1700,18 +1727,9 @@ impl Type {
     }
 }
 
-impl ToTokens for Type {
-    fn to_tokens(&self, into: &mut TokenStream) {
-        match self {
-            Self::Enum(e) => e.to_tokens(into),
-            Self::TraitObject(o) => o.to_tokens(into),
-        }
-    }
-}
-
-/// Injects [`async_trait`] implementation into the given trait definition or trait implementation
-/// block, correctly restricting type and lifetime parameters with `'async_trait` lifetime, if
-/// required.
+/// Injects [`async_trait`] implementation into the given trait definition or
+/// trait implementation block, correctly restricting type and lifetime
+/// parameters with `'async_trait` lifetime, if required.
 fn inject_async_trait<'m, M>(attrs: &mut Vec<syn::Attribute>, methods: M, generics: &syn::Generics)
 where
     M: IntoIterator<Item = &'m mut syn::Signature>,

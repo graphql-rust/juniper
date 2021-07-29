@@ -50,26 +50,26 @@ struct Attr {
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
     description: Option<SpanContainer<String>>,
 
-    /// Explicitly specified type of `juniper::Context` to use for resolving
-    /// this [GraphQL object][1] type with.
+    /// Explicitly specified type of [`Context`] to use for resolving this
+    /// [GraphQL object][1] type with.
     ///
-    /// If [`None`], then unit type `()` is assumed as a type of
-    /// `juniper::Context`.
+    /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
     ///
+    /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     context: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type (or type parameter with its bounds) of
-    /// `juniper::ScalarValue` to use for resolving this [GraphQL object][1]
-    /// type with.
+    /// [`ScalarValue`] to use for resolving this [GraphQL object][1] type with.
     ///
     /// If [`None`], then generated code will be generic over any
-    /// `juniper::ScalarValue` type, which, in turn, requires all [object][1]
-    /// fields to be generic over any `juniper::ScalarValue` type too. That's
-    /// why this type should be specified only if one of the variants implements
-    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue`
-    /// type.
+    /// [`ScalarValue`] type, which, in turn, requires all [object][1] fields to
+    /// be generic over any [`ScalarValue`] type too. That's why this type
+    /// should be specified only if one of the variants implements
+    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
     ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
@@ -95,16 +95,14 @@ struct Attr {
 
 impl Parse for Attr {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let mut output = Self::default();
-
+        let mut out = Self::default();
         while !input.is_empty() {
             let ident = input.parse_any_ident()?;
             match ident.to_string().as_str() {
                 "name" => {
                     input.parse::<token::Eq>()?;
                     let name = input.parse::<syn::LitStr>()?;
-                    output
-                        .name
+                    out.name
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(name.span()),
@@ -115,8 +113,7 @@ impl Parse for Attr {
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
                     let desc = input.parse::<syn::LitStr>()?;
-                    output
-                        .description
+                    out.description
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(desc.span()),
@@ -127,16 +124,14 @@ impl Parse for Attr {
                 "ctx" | "context" | "Context" => {
                     input.parse::<token::Eq>()?;
                     let ctx = input.parse::<syn::Type>()?;
-                    output
-                        .context
+                    out.context
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<scalar::AttrValue>()?;
-                    output
-                        .scalar
+                    out.scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -146,7 +141,7 @@ impl Parse for Attr {
                         syn::Type, token::Bracket, token::Comma,
                     >()? {
                         let iface_span = iface.span();
-                        output
+                        out
                             .interfaces
                             .replace(SpanContainer::new(ident.span(), Some(iface_span), iface))
                             .none_or_else(|_| err::dup_arg(iface_span))?;
@@ -155,8 +150,7 @@ impl Parse for Attr {
                 "rename_all" => {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
-                    output
-                        .rename_fields
+                    out.rename_fields
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(val.span()),
@@ -165,7 +159,7 @@ impl Parse for Attr {
                         .none_or_else(|_| err::dup_arg(&ident))?;
                 }
                 "internal" => {
-                    output.is_internal = true;
+                    out.is_internal = true;
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
@@ -173,8 +167,7 @@ impl Parse for Attr {
             }
             input.try_parse::<token::Comma>()?;
         }
-
-        Ok(output)
+        Ok(out)
     }
 }
 
@@ -208,6 +201,9 @@ impl Attr {
     }
 }
 
+/// Definition of [GraphQL object][1] for code generation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[derive(Debug)]
 struct Definition {
     /// Name of this [GraphQL object][1] in GraphQL schema.
@@ -231,12 +227,13 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     description: Option<String>,
 
-    /// Rust type of `juniper::Context` to generate `juniper::GraphQLType`
-    /// implementation with for this [GraphQL object][1].
+    /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
+    /// for this [GraphQL object][1].
     ///
-    /// If [`None`] then generated code will use unit type `()` as
-    /// `juniper::Context`.
+    /// If [`None`] then generated code will use unit type `()` as [`Context`].
     ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     context: Option<syn::Type>,
 
