@@ -3595,31 +3595,31 @@ mod explicit_generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid], scalar = S: ScalarValue)]
+    #[graphql_interface(for = [Human, Droid], scalar = S: ScalarValue + Clone)]
     trait Character {
         fn id(&self) -> &str;
     }
 
-    #[graphql_interface(dyn = DynHero, for = [Human, Droid], scalar = S: ScalarValue)]
+    #[graphql_interface(dyn = DynHero, for = [Human, Droid], scalar = S: ScalarValue + Clone)]
     trait Hero {
         async fn info(&self) -> &str;
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, DynHero<S>], scalar = S: ScalarValue)]
+    #[graphql(impl = [CharacterValue, DynHero<S>], scalar = S: ScalarValue + Clone)]
     struct Human {
         id: String,
         home_planet: String,
     }
 
-    #[graphql_interface(scalar = S: ScalarValue)]
+    #[graphql_interface(scalar = S: ScalarValue + Clone)]
     impl Character for Human {
         fn id(&self) -> &str {
             &self.id
         }
     }
 
-    #[graphql_interface(dyn, scalar = S: ScalarValue)]
+    #[graphql_interface(dyn, scalar = S: ScalarValue + Clone)]
     impl Hero for Human {
         async fn info(&self) -> &str {
             &self.home_planet
@@ -3633,14 +3633,14 @@ mod bounded_generic_scalar {
         primary_function: String,
     }
 
-    #[graphql_interface(scalar = S: ScalarValue)]
+    #[graphql_interface(scalar = S: ScalarValue + Clone)]
     impl Character for Droid {
         fn id(&self) -> &str {
             &self.id
         }
     }
 
-    #[graphql_interface(dyn, scalar = S: ScalarValue)]
+    #[graphql_interface(dyn, scalar = S: ScalarValue + Clone)]
     impl Hero for Droid {
         async fn info(&self) -> &str {
             &self.primary_function
@@ -3653,7 +3653,7 @@ mod bounded_generic_scalar {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object(scalar = S: ScalarValue + Clone + Send + Sync)]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -3670,7 +3670,7 @@ mod bounded_generic_scalar {
             }
         }
 
-        fn hero<S: ScalarValue + Send + Sync>(&self) -> Box<DynHero<'_, S>> {
+        fn hero<S: ScalarValue + Clone + Send + Sync>(&self) -> Box<DynHero<'_, S>> {
             let ch: Box<DynHero<'_, _>> = match self {
                 Self::Human => Box::new(Human {
                     id: "human-32".to_string(),
