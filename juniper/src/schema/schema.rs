@@ -151,17 +151,17 @@ impl<'a, S: ScalarValue + 'a> SchemaType<'a, S> {
             .collect()
     }
 
-    #[graphql(name = "query_type")]
+    #[graphql(name = "queryType")]
     fn query_type_(&self) -> TypeType<S> {
         self.query_type()
     }
 
-    #[graphql(name = "mutation_type")]
+    #[graphql(name = "mutationType")]
     fn mutation_type_(&self) -> Option<TypeType<S>> {
         self.mutation_type()
     }
 
-    #[graphql(name = "subscription_type")]
+    #[graphql(name = "subscriptionType")]
     fn subscription_type_(&self) -> Option<TypeType<S>> {
         self.subscription_type()
     }
@@ -200,10 +200,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn fields(
-        &self,
-        #[graphql(default)] include_deprecated: bool,
-    ) -> Option<Vec<&Field<S>>> {
+    fn fields(&self, #[graphql(default)] include_deprecated: bool) -> Option<Vec<&Field<S>>> {
         match self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
             | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
@@ -288,10 +285,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn enum_values(
-        &self,
-        #[graphql(default)] include_deprecated: bool,
-    ) -> Option<Vec<&EnumValue>> {
+    fn enum_values(&self, #[graphql(default)] include_deprecated: bool) -> Option<Vec<&EnumValue>> {
         match self {
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
                 values
@@ -361,7 +355,7 @@ impl<'a, S: ScalarValue + 'a> Argument<'a, S> {
         context.make_type(&self.arg_type)
     }
 
-    #[graphql(name = "default_value")]
+    #[graphql(name = "defaultValue")]
     fn default_value_(&self) -> Option<String> {
         self.default_value.as_ref().map(ToString::to_string)
     }

@@ -19,7 +19,7 @@ use crate::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _,
         },
-        ScalarValueType,
+        scalar,
     },
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
@@ -80,7 +80,7 @@ pub(crate) struct Attr {
 }
 
 impl Parse for Attr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut out = Self::default();
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
@@ -272,9 +272,7 @@ impl Definition {
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_resolve_field_panic_no_field_tokens(
-        scalar: &ScalarValueType,
-    ) -> TokenStream {
+    pub(crate) fn method_resolve_field_panic_no_field_tokens(scalar: &scalar::Type) -> TokenStream {
         quote! {
             panic!(
                 "Field `{}` not found on type `{}`",
@@ -293,7 +291,7 @@ impl Definition {
     #[must_use]
     pub(crate) fn method_resolve_field_panic_async_field_tokens(
         field_names: &[&str],
-        scalar: &ScalarValueType,
+        scalar: &scalar::Type,
     ) -> TokenStream {
         quote! {
             #( #field_names )|* => panic!(
@@ -310,7 +308,7 @@ impl Definition {
     /// [`marker::IsOutputType::mark`]: juniper::marker::IsOutputType::mark
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_mark_tokens(&self, scalar: &ScalarValueType) -> TokenStream {
+    pub(crate) fn method_mark_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         let args_marks = self
             .arguments
             .iter()
@@ -375,6 +373,7 @@ impl Definition {
     #[must_use]
     pub(crate) fn method_resolve_field_tokens(
         &self,
+        scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
     ) -> Option<TokenStream> {
         if self.is_async {
@@ -389,7 +388,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(MethodArgument::method_resolve_field_tokens);
+                .map(|arg| arg.method_resolve_field_tokens(scalar));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
@@ -424,6 +423,7 @@ impl Definition {
     #[must_use]
     pub(crate) fn method_resolve_field_async_tokens(
         &self,
+        scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
     ) -> TokenStream {
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
@@ -434,7 +434,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(MethodArgument::method_resolve_field_tokens);
+                .map(|arg| arg.method_resolve_field_tokens(scalar));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }

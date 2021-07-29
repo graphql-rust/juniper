@@ -1,10 +1,10 @@
-use juniper::*;
+use juniper::{graphql_object, EmptyMutation, EmptySubscription, Executor, ScalarValue, Variables};
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
-    fn users(executor: &Executor) -> Vec<User> {
+    fn users<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<User> {
         executor.look_ahead();
 
         vec![User {
@@ -19,9 +19,9 @@ struct User {
     city: City,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl User {
-    fn city(&self, executor: &Executor) -> &City {
+    fn city<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &City {
         executor.look_ahead();
         &self.city
     }
@@ -31,9 +31,9 @@ struct City {
     country: Country,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl City {
-    fn country(&self, executor: &Executor) -> &Country {
+    fn country<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &Country {
         executor.look_ahead();
         &self.country
     }
@@ -43,7 +43,7 @@ struct Country {
     id: i32,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Country {
     fn id(&self) -> i32 {
         self.id

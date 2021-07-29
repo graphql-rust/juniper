@@ -10,7 +10,7 @@ use crate::{
     common::{
         field,
         parse::{self, TypeExt as _},
-        ScalarValueType,
+        scalar,
     },
     result::GraphQLScope,
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
@@ -63,7 +63,7 @@ pub fn expand_on_impl(
         );
     }
 
-    let scalar = ScalarValueType::parse(attr.scalar.as_deref(), &ast.generics);
+    let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     proc_macro_error::abort_if_dirty();
 

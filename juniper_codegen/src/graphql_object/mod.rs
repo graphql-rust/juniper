@@ -23,7 +23,7 @@ use crate::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _,
         },
-        ScalarValueType,
+        scalar,
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
@@ -59,8 +59,9 @@ struct Attr {
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     context: Option<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified type of `juniper::ScalarValue` to use for resolving
-    /// this [GraphQL object][1] type with.
+    /// Explicitly specified type (or type parameter with its bounds) of
+    /// `juniper::ScalarValue` to use for resolving this [GraphQL object][1]
+    /// type with.
     ///
     /// If [`None`], then generated code will be generic over any
     /// `juniper::ScalarValue` type, which, in turn, requires all [object][1]
@@ -70,7 +71,7 @@ struct Attr {
     /// type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    scalar: Option<SpanContainer<syn::Type>>,
+    scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified [GraphQL interfaces][2] this [GraphQL object][1]
     /// type implements.
@@ -93,7 +94,7 @@ struct Attr {
 }
 
 impl Parse for Attr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut output = Self::default();
 
         while !input.is_empty() {
@@ -133,7 +134,7 @@ impl Parse for Attr {
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Type>()?;
+                    let scl = input.parse::<scalar::AttrValue>()?;
                     output
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
@@ -245,7 +246,7 @@ struct Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    scalar: ScalarValueType,
+    scalar: scalar::Type,
 
     /// Defined [GraphQL fields][2] of this [GraphQL object][1].
     ///
@@ -290,7 +291,7 @@ impl Definition {
         let mut generics = self.generics.clone();
 
         let scalar = &self.scalar;
-        if self.scalar.is_implicit_generic() {
+        if scalar.is_implicit_generic() {
             generics.params.push(parse_quote! { #scalar });
         }
         if scalar.is_generic() {
@@ -298,6 +299,9 @@ impl Definition {
                 .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        }
+        if let Some(bound) = scalar.bounds() {
+            generics.make_where_clause().predicates.push(bound);
         }
 
         if for_async {
@@ -479,7 +483,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(None));
+            .filter_map(|f| f.method_resolve_field_tokens(scalar, None));
         let async_fields_panic = {
             let names = self
                 .fields
@@ -544,7 +548,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.method_resolve_field_async_tokens(None));
+            .map(|f| f.method_resolve_field_async_tokens(scalar, None));
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {

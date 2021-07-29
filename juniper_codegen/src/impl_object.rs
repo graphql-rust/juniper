@@ -103,7 +103,8 @@ fn create(
                     let resolver = quote!(
                         let #mut_modifier #arg_ident = args
                             .get::<#ty>(#final_name)
-                            .unwrap_or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null);
+                            .or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null)
+                            .unwrap();
                     );
 
                     let field_type = util::GraphQLTypeDefinitionFieldArg {

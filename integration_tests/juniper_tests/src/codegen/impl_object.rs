@@ -7,8 +7,7 @@ pub struct MyObject;
 
 #[graphql_object]
 impl MyObject {
-    #[graphql(arguments(arg(name = "test")))]
-    fn test(&self, arg: String) -> String {
+    fn test(&self, #[graphql(name = "test")] arg: String) -> String {
         arg
     }
 }
@@ -104,9 +103,8 @@ mod raw_argument {
 
     #[graphql_object]
     impl Obj {
-        #[graphql(arguments(r#arg(description = "The only argument")))]
-        fn test(&self, arg: String) -> String {
-            arg
+        fn test(&self, #[graphql(desc = "The only argument")] r#arg: String) -> String {
+            r#arg
         }
     }
 

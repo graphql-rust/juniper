@@ -100,11 +100,7 @@ impl Root {
     }
 
     fn args_with_complex_default(
-        #[graphql(
-            default = "test",
-            description = "A string default argument",
-        )]
-        arg1: String,
+        #[graphql(default = "test", description = "A string default argument")] arg1: String,
         #[graphql(
             default = Point { x: 1 },
             description = "An input object default argument",

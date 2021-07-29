@@ -337,7 +337,7 @@ impl TryFrom<syn::LitStr> for RenameRule {
 }
 
 impl Parse for RenameRule {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         Self::try_from(input.parse::<syn::LitStr>()?)
     }
 }
@@ -355,7 +355,7 @@ pub struct ObjectAttributes {
 }
 
 impl Parse for ObjectAttributes {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut output = Self::default();
 
         while !input.is_empty() {
@@ -458,7 +458,7 @@ pub struct FieldAttributeArgument {
 }
 
 impl Parse for FieldAttributeArgument {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let name = input.parse::<Ident>()?.unraw();
 
         let mut arg = Self {
@@ -512,7 +512,7 @@ enum FieldAttribute {
 }
 
 impl Parse for FieldAttribute {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let ident = input.parse::<syn::Ident>()?;
 
         match ident.to_string().as_str() {
@@ -602,7 +602,7 @@ pub struct FieldAttributes {
 }
 
 impl Parse for FieldAttributes {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let items = Punctuated::<FieldAttribute, token::Comma>::parse_terminated(&input)?;
 
         let mut output = Self::default();
@@ -1352,7 +1352,7 @@ impl GraphQLTypeDefiniton {
                         match obj.get(#field_name) {
                             #from_input_default
                             Some(ref v) => ::juniper::FromInputValue::from_input_value(v)?,
-                            None => ::juniper::FromInputValue::<#scalar>::from_implicit_null(),
+                            None => ::juniper::FromInputValue::<#scalar>::from_implicit_null()?,
                         }
                     },
                 )

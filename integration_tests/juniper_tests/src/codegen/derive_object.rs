@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 use juniper::{
-    execute, graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, GraphQLObject,
-    GraphQLType, Object, Registry, RootNode, Value, Variables,
+    execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
+    GraphQLObject, GraphQLType, Object, Registry, RootNode, Value, Variables,
 };
 
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -131,7 +131,7 @@ impl Query {
 
 struct NoRenameQuery;
 
-#[graphql_object(rename = "none")]
+#[graphql_object(rename_all = "none")]
 impl NoRenameQuery {
     fn obj() -> Obj {
         Obj {
@@ -152,13 +152,13 @@ impl NoRenameQuery {
 async fn test_doc_comment_simple() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
+    assert_eq!(meta.description(), Some("Object comment."));
 
     check_descriptions(
         "DocComment",
-        &Value::scalar("Object comment."),
+        &graphql_value!("Object comment."),
         "regularField",
-        &Value::scalar("Field comment."),
+        &graphql_value!("Field comment."),
     )
     .await;
 }
@@ -167,16 +167,13 @@ async fn test_doc_comment_simple() {
 async fn test_multi_doc_comment() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
-    assert_eq!(
-        meta.description(),
-        Some(&"Doc 1. Doc 2.\n\nDoc 4.".to_string())
-    );
+    assert_eq!(meta.description(), Some("Doc 1. Doc 2.\n\nDoc 4."));
 
     check_descriptions(
         "MultiDocComment",
-        &Value::scalar("Doc 1. Doc 2.\n\nDoc 4."),
+        &graphql_value!("Doc 1. Doc 2.\n\nDoc 4."),
         "regularField",
-        &Value::scalar("Field 1.\nField 2."),
+        &graphql_value!("Field 1.\nField 2."),
     )
     .await;
 }
@@ -185,13 +182,13 @@ async fn test_multi_doc_comment() {
 async fn test_doc_comment_override() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"obj override".to_string()));
+    assert_eq!(meta.description(), Some("obj override"));
 
     check_descriptions(
         "OverrideDocComment",
-        &Value::scalar("obj override"),
+        &graphql_value!("obj override"),
         "regularField",
-        &Value::scalar("field override"),
+        &graphql_value!("field override"),
     )
     .await;
 }
@@ -208,15 +205,14 @@ async fn test_derived_object() {
     let meta = Obj::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("MyObj"));
-    assert_eq!(meta.description(), Some(&"obj descr".to_string()));
+    assert_eq!(meta.description(), Some("obj descr"));
 
-    let doc = r#"
-        {
-            obj {
-                regularField
-                renamedField
-            }
-        }"#;
+    let doc = r#"{
+        obj {
+            regularField
+            renamedField
+        }
+    }"#;
 
     let schema = RootNode::new(
         Query,
@@ -227,35 +223,25 @@ async fn test_derived_object() {
     assert_eq!(
         execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
-            Value::object(
-                vec![(
-                    "obj",
-                    Value::object(
-                        vec![
-                            ("regularField", Value::scalar(true)),
-                            ("renamedField", Value::scalar(22)),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+            graphql_value!({
+                "obj": {
+                    "regularField": true,
+                    "renamedField": 22,
+                },
+            }),
+            vec![],
+        )),
     );
 }
 
 #[tokio::test]
 #[should_panic]
 async fn test_cannot_query_skipped_field() {
-    let doc = r#"
-        {
-            skippedFieldObj {
-                skippedField
-            }
-        }"#;
+    let doc = r#"{
+        skippedFieldObj {
+            skippedField
+        }
+    }"#;
     let schema = RootNode::new(
         Query,
         EmptyMutation::<()>::new(),
@@ -268,12 +254,11 @@ async fn test_cannot_query_skipped_field() {
 
 #[tokio::test]
 async fn test_skipped_field_siblings_unaffected() {
-    let doc = r#"
-        {
-            skippedFieldObj {
-                regularField
-            }
-        }"#;
+    let doc = r#"{
+        skippedFieldObj {
+            regularField
+        }
+    }"#;
     let schema = RootNode::new(
         Query,
         EmptyMutation::<()>::new(),
@@ -286,15 +271,14 @@ async fn test_skipped_field_siblings_unaffected() {
 
 #[tokio::test]
 async fn test_derived_object_nested() {
-    let doc = r#"
-        {
-            nested {
-                obj {
-                    regularField
-                    renamedField
-                }
+    let doc = r#"{
+        nested {
+            obj {
+                regularField
+                renamedField
             }
-        }"#;
+        }
+    }"#;
 
     let schema = RootNode::new(
         Query,
@@ -305,46 +289,30 @@ async fn test_derived_object_nested() {
     assert_eq!(
         execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
-            Value::object(
-                vec![(
-                    "nested",
-                    Value::object(
-                        vec![(
-                            "obj",
-                            Value::object(
-                                vec![
-                                    ("regularField", Value::scalar(false)),
-                                    ("renamedField", Value::scalar(333)),
-                                ]
-                                .into_iter()
-                                .collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+            graphql_value!({
+                "nested": {
+                    "obj": {
+                        "regularField": false,
+                        "renamedField": 333,
+                    },
+                },
+            }),
+            vec![],
+        )),
     );
 }
 
 #[tokio::test]
 async fn test_no_rename_root() {
-    let doc = r#"
-        {
-            no_rename_obj {
-                one_field
-                another_field
-            }
-
-            obj {
-                regularField
-            }
-        }"#;
+    let doc = r#"{
+        no_rename_obj {
+            one_field
+            another_field
+        }
+        obj {
+            regularField
+        }
+    }"#;
 
     let schema = RootNode::new(
         NoRenameQuery,
@@ -355,45 +323,28 @@ async fn test_no_rename_root() {
     assert_eq!(
         execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
-            Value::object(
-                vec![
-                    (
-                        "no_rename_obj",
-                        Value::object(
-                            vec![
-                                ("one_field", Value::scalar(true)),
-                                ("another_field", Value::scalar(146)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ),
-                    (
-                        "obj",
-                        Value::object(
-                            vec![("regularField", Value::scalar(false)),]
-                                .into_iter()
-                                .collect(),
-                        ),
-                    )
-                ]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+            graphql_value!({
+                "no_rename_obj": {
+                    "one_field": true,
+                    "another_field": 146,
+                },
+                "obj": {
+                    "regularField": false,
+                },
+            }),
+            vec![],
+        )),
     );
 }
 
 #[tokio::test]
 async fn test_no_rename_obj() {
-    let doc = r#"
-        {
-            noRenameObj {
-                one_field
-                another_field
-            }
-        }"#;
+    let doc = r#"{
+        noRenameObj {
+            one_field
+            another_field
+        }
+    }"#;
 
     let schema = RootNode::new(
         Query,
@@ -404,23 +355,14 @@ async fn test_no_rename_obj() {
     assert_eq!(
         execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
-            Value::object(
-                vec![(
-                    "noRenameObj",
-                    Value::object(
-                        vec![
-                            ("one_field", Value::scalar(true)),
-                            ("another_field", Value::scalar(146)),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+            graphql_value!({
+                "noRenameObj": {
+                    "one_field": true,
+                    "another_field": 146,
+                },
+            }),
+            vec![],
+        )),
     );
 }
 
@@ -431,37 +373,31 @@ async fn check_descriptions(
     field_value: &Value,
 ) {
     let doc = format!(
-        r#"
-    {{
-        __type(name: "{}") {{
-            name,
-            description,
-            fields {{
+        r#"{{
+            __type(name: "{}") {{
                 name
                 description
+                fields {{
+                    name
+                    description
+                }}
             }}
-        }}
-    }}
-    "#,
-        object_name
+        }}"#,
+        object_name,
     );
     let _result = run_type_info_query(&doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar(object_name))
+            Some(&graphql_value!(object_name))
         );
         assert_eq!(
             type_info.get_field_value("description"),
             Some(object_description)
         );
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar(field_name)),
-                ("description", field_value.clone()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": (field_name.clone()),
+            "description": (field_value.clone()),
+        })));
     })
     .await;
 }

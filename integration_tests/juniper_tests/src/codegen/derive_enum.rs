@@ -69,7 +69,7 @@ fn test_derived_enum() {
     let meta = SomeEnum::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("Some"));
-    assert_eq!(meta.description(), Some(&"enum descr".to_string()));
+    assert_eq!(meta.description(), Some("enum descr"));
 
     // Test no rename variant.
     assert_eq!(
@@ -102,24 +102,21 @@ fn test_derived_enum() {
 fn test_doc_comment() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = DocEnum::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"Enum doc.".to_string()));
+    assert_eq!(meta.description(), Some("Enum doc."));
 }
 
 #[test]
 fn test_multi_doc_comment() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = MultiDocEnum::meta(&(), &mut registry);
-    assert_eq!(
-        meta.description(),
-        Some(&"Doc 1. Doc 2.\n\nDoc 4.".to_string())
-    );
+    assert_eq!(meta.description(), Some("Doc 1. Doc 2.\n\nDoc 4."));
 }
 
 #[test]
 fn test_doc_comment_override() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = OverrideDocEnum::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"enum override".to_string()));
+    assert_eq!(meta.description(), Some("enum override"));
 }
 
 fn test_context<T>(_t: T)

@@ -1,12 +1,14 @@
 // Original author of this test is <https://github.com/davidpdrsn>.
 
-use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode, Variables};
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, Executor, RootNode, ScalarValue, Variables,
+};
 
 struct Query;
 
 #[graphql_object]
 impl Query {
-    fn users(executor: &Executor) -> Vec<User> {
+    fn users<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<User> {
         // This doesn't cause a panic
         executor.look_ahead();
 
@@ -22,7 +24,7 @@ struct User {
 
 #[graphql_object]
 impl User {
-    fn country(&self, executor: &Executor) -> &Country {
+    fn country<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &Country {
         // This panics!
         executor.look_ahead();
 

@@ -10,7 +10,7 @@ use crate::{
     common::{
         field,
         parse::{self, TypeExt as _},
-        ScalarValueType,
+        scalar,
     },
     result::GraphQLScope,
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
@@ -69,7 +69,7 @@ pub fn expand_on_trait(
         );
     }
 
-    let scalar = ScalarValueType::parse(meta.scalar.as_deref(), &ast.generics);
+    let scalar = scalar::Type::parse(meta.scalar.as_deref(), &ast.generics);
 
     let mut implementers: Vec<_> = meta
         .implementers
@@ -264,27 +264,7 @@ pub fn expand_on_impl(
     let is_trait_object = meta.r#dyn.is_some();
 
     if is_trait_object {
-        let scalar = meta
-            .scalar
-            .as_ref()
-            .map(|sc| {
-                ast.generics
-                    .params
-                    .iter()
-                    .find_map(|p| {
-                        if let syn::GenericParam::Type(tp) = p {
-                            let ident = &tp.ident;
-                            let ty: syn::Type = parse_quote! { #ident };
-                            if &ty == sc.as_ref() {
-                                return Some(&tp.ident);
-                            }
-                        }
-                        None
-                    })
-                    .map(|ident| ScalarValueType::ExplicitGeneric(ident.clone()))
-                    .unwrap_or_else(|| ScalarValueType::Concrete(sc.as_ref().clone()))
-            })
-            .unwrap_or_else(|| ScalarValueType::ImplicitGeneric);
+        let scalar = scalar::Type::parse(meta.scalar.as_deref(), &ast.generics);
 
         ast.attrs.push(parse_quote! {
             #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
@@ -413,7 +393,7 @@ impl TraitMethod {
             ty,
             downcast: Some(downcast),
             context_ty,
-            scalar: ScalarValueType::ImplicitGeneric,
+            scalar: scalar::Type::ImplicitGeneric(None),
         })
     }
 

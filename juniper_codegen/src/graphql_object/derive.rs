@@ -6,7 +6,7 @@ use quote::ToTokens;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
-    common::{field, parse::TypeExt as _, ScalarValueType},
+    common::{field, parse::TypeExt as _, scalar},
     result::GraphQLScope,
     util::{span_container::SpanContainer, RenameRule},
 };
@@ -49,7 +49,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
         );
     }
 
-    let scalar = ScalarValueType::parse(attr.scalar.as_deref(), &ast.generics);
+    let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     proc_macro_error::abort_if_dirty();
 

@@ -1,4 +1,7 @@
-use juniper::*;
+use juniper::{
+    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLInputObject,
+    InputValue, Nullable,
+};
 
 pub struct Context;
 
@@ -6,12 +9,12 @@ impl juniper::Context for Context {}
 
 pub struct Query;
 
-#[derive(juniper::GraphQLInputObject)]
+#[derive(GraphQLInputObject)]
 struct ObjectInput {
     field: Nullable<i32>,
 }
 
-#[graphql_object(Context=Context)]
+#[graphql_object(context = Context)]
 impl Query {
     fn is_explicit_null(arg: Nullable<i32>) -> bool {
         arg.is_explicit_null()
@@ -26,40 +29,38 @@ type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>, EmptySub
 
 #[tokio::test]
 async fn explicit_null() {
-    let ctx = Context;
-
     let query = r#"
-    query Foo($emptyObj: ObjectInput!, $literalNullObj: ObjectInput!) {
-        literalOneIsExplicitNull: isExplicitNull(arg: 1)
-        literalNullIsExplicitNull: isExplicitNull(arg: null)
-        noArgIsExplicitNull: isExplicitNull
-        literalOneFieldIsExplicitNull: objectFieldIsExplicitNull(obj: {field: 1})
-        literalNullFieldIsExplicitNull: objectFieldIsExplicitNull(obj: {field: null})
-        noFieldIsExplicitNull: objectFieldIsExplicitNull(obj: {})
-        emptyVariableObjectFieldIsExplicitNull: objectFieldIsExplicitNull(obj: $emptyObj)
-        literalNullVariableObjectFieldIsExplicitNull: objectFieldIsExplicitNull(obj: $literalNullObj)
-    }
+        query Foo($emptyObj: ObjectInput!, $literalNullObj: ObjectInput!) {
+            literalOneIsExplicitNull: isExplicitNull(arg: 1)
+            literalNullIsExplicitNull: isExplicitNull(arg: null)
+            noArgIsExplicitNull: isExplicitNull
+            literalOneFieldIsExplicitNull: objectFieldIsExplicitNull(obj: {field: 1})
+            literalNullFieldIsExplicitNull: objectFieldIsExplicitNull(obj: {field: null})
+            noFieldIsExplicitNull: objectFieldIsExplicitNull(obj: {})
+            emptyVariableObjectFieldIsExplicitNull: objectFieldIsExplicitNull(obj: $emptyObj)
+            literalNullVariableObjectFieldIsExplicitNull: objectFieldIsExplicitNull(obj: $literalNullObj)
+        }
     "#;
+
+    let schema = &Schema::new(
+        Query,
+        EmptyMutation::<Context>::new(),
+        EmptySubscription::<Context>::new(),
+    );
+    let vars = [
+        ("emptyObj".to_string(), InputValue::Object(vec![])),
+        (
+            "literalNullObj".to_string(),
+            InputValue::object(vec![("field", InputValue::null())].into_iter().collect()),
+        ),
+    ];
 
     let (data, errors) = juniper::execute(
         query,
         None,
-        &Schema::new(
-            Query,
-            EmptyMutation::<Context>::new(),
-            EmptySubscription::<Context>::new(),
-        ),
-        &[
-            ("emptyObj".to_string(), InputValue::Object(vec![])),
-            (
-                "literalNullObj".to_string(),
-                InputValue::object(vec![("field", InputValue::null())].into_iter().collect()),
-            ),
-        ]
-        .iter()
-        .cloned()
-        .collect(),
-        &ctx,
+        &schema,
+        &vars.iter().cloned().collect(),
+        &Context,
     )
     .await
     .unwrap();

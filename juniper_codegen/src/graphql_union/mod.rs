@@ -83,7 +83,7 @@ struct UnionMeta {
 }
 
 impl Parse for UnionMeta {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut output = Self::default();
 
         while !input.is_empty() {
@@ -207,7 +207,7 @@ struct UnionVariantMeta {
 }
 
 impl Parse for UnionVariantMeta {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut output = Self::default();
 
         while !input.is_empty() {

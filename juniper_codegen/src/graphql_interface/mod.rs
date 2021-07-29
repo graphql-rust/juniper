@@ -25,7 +25,7 @@ use crate::{
             attr::{err, OptionExt as _},
             GenericsExt as _, ParseBufferExt as _,
         },
-        ScalarValueType,
+        scalar,
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
@@ -85,18 +85,19 @@ struct TraitMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     context: Option<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified type of [`ScalarValue`] to use for resolving this
-    /// [GraphQL interface][1] type with.
+    /// Explicitly specified type (or type parameter with its bounds) of
+    /// [`ScalarValue`] to resolve this [GraphQL interface][1] type with.
     ///
-    /// If absent, then generated code will be generic over any [`ScalarValue`] type, which, in
-    /// turn, requires all [interface][1] implementers to be generic over any [`ScalarValue`] type
-    /// too. That's why this type should be specified only if one of the implementers implements
-    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
+    /// If absent, then generated code will be generic over any [`ScalarValue`]
+    /// type, which, in turn, requires all [interface][1] implementers to be
+    /// generic over any [`ScalarValue`] type too. That's why this type should
+    /// be specified only if one of the implementers implements [`GraphQLType`]
+    /// in a non-generic way over [`ScalarValue`] type.
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    scalar: Option<SpanContainer<syn::Type>>,
+    scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified marker indicating that the Rust trait should be transformed into
     /// [`async_trait`].
@@ -133,7 +134,7 @@ struct TraitMeta {
 }
 
 impl Parse for TraitMeta {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut output = Self::default();
 
         while !input.is_empty() {
@@ -173,7 +174,7 @@ impl Parse for TraitMeta {
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Type>()?;
+                    let scl = input.parse::<scalar::AttrValue>()?;
                     output
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
@@ -301,18 +302,19 @@ impl TraitMeta {
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
 struct ImplMeta {
-    /// Explicitly specified type of [`ScalarValue`] to use for implementing the
-    /// [GraphQL interface][1] type.
+    /// Explicitly specified type (or type parameter with its bounds) of
+    /// [`ScalarValue`] to implementing the [GraphQL interface][1] type with.
     ///
-    /// If absent, then generated code will be generic over any [`ScalarValue`] type, which, in
-    /// turn, requires all [interface][1] implementers to be generic over any [`ScalarValue`] type
-    /// too. That's why this type should be specified only if the implementer itself implements
-    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
+    /// If absent, then generated code will be generic over any [`ScalarValue`]
+    /// type, which, in turn, requires all [interface][1] implementers to be
+    /// generic over any [`ScalarValue`] type too. That's why this type should
+    /// be specified only if the implementer itself implements [`GraphQLType`]
+    /// in a non-generic way over [`ScalarValue`] type.
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    scalar: Option<SpanContainer<syn::Type>>,
+    scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified marker indicating that the trait implementation block should be
     /// transformed with applying [`async_trait`].
@@ -333,7 +335,7 @@ struct ImplMeta {
 }
 
 impl Parse for ImplMeta {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut output = Self::default();
 
         while !input.is_empty() {
@@ -341,7 +343,7 @@ impl Parse for ImplMeta {
             match ident.to_string().as_str() {
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Type>()?;
+                    let scl = input.parse::<scalar::AttrValue>()?;
                     output
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
@@ -420,13 +422,13 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     context: Option<syn::Type>,
 
-    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation with for this
-    /// [GraphQL interface][1].
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation
+    /// with for this [GraphQL interface][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    scalar: ScalarValueType,
+    scalar: scalar::Type,
 
     /// Defined [GraphQL fields][2] of this [GraphQL interface][1].
     ///
@@ -587,7 +589,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(Some(&trait_ty)));
+            .filter_map(|f| f.method_resolve_field_tokens(scalar, Some(&trait_ty)));
         let async_fields_panic = {
             let names = self
                 .fields
@@ -688,7 +690,7 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.method_resolve_field_async_tokens(Some(&trait_ty)));
+            .map(|f| f.method_resolve_field_async_tokens(scalar, Some(&trait_ty)));
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         let custom_downcasts = self
@@ -784,7 +786,7 @@ struct Implementer {
     /// [`ScalarValue`] parametrization of this [`Implementer`].
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
-    scalar: ScalarValueType,
+    scalar: scalar::Type,
 }
 
 impl Implementer {
@@ -938,12 +940,12 @@ struct EnumType {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     trait_methods: Vec<syn::Signature>,
 
-    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation with for this
-    /// [`EnumType`].
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`] implementation
+    /// with for this [`EnumType`].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    scalar: ScalarValueType,
+    scalar: scalar::Type,
 }
 
 impl EnumType {
@@ -953,7 +955,7 @@ impl EnumType {
         r#trait: &syn::ItemTrait,
         meta: &TraitMeta,
         implers: &[Implementer],
-        scalar: ScalarValueType,
+        scalar: scalar::Type,
     ) -> Self {
         Self {
             ident: meta
@@ -1379,7 +1381,7 @@ struct TraitObjectType {
     /// [`ScalarValue`] parametrization of this [`TraitObjectType`] to generate it with.
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
-    scalar: ScalarValueType,
+    scalar: scalar::Type,
 
     /// Rust type of [`Context`] to generate this [`TraitObjectType`] with.
     ///
@@ -1395,7 +1397,7 @@ impl TraitObjectType {
     fn new(
         r#trait: &syn::ItemTrait,
         meta: &TraitMeta,
-        scalar: ScalarValueType,
+        scalar: scalar::Type,
         context: Option<syn::Type>,
     ) -> Self {
         Self {

@@ -18,7 +18,7 @@ use crate::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _, TypeExt as _,
         },
-        ScalarValueType,
+        scalar,
     },
     result::GraphQLScope,
     util::{filter_attrs, path_eq_single, span_container::SpanContainer, RenameRule},
@@ -82,7 +82,7 @@ pub(crate) struct Attr {
 }
 
 impl Parse for Attr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut out = Self::default();
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
@@ -303,7 +303,7 @@ impl OnMethod {
     ///
     /// [`marker::IsOutputType::mark`]: juniper::marker::IsOutputType::mark
     #[must_use]
-    pub(crate) fn method_mark_tokens(&self, scalar: &ScalarValueType) -> Option<TokenStream> {
+    pub(crate) fn method_mark_tokens(&self, scalar: &scalar::Type) -> Option<TokenStream> {
         let ty = &self.as_regular()?.ty;
         Some(quote! {
             <#ty as ::juniper::marker::IsInputType<#scalar>>::mark();
@@ -346,7 +346,7 @@ impl OnMethod {
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
-    pub(crate) fn method_resolve_field_tokens(&self) -> TokenStream {
+    pub(crate) fn method_resolve_field_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
@@ -355,7 +355,9 @@ impl OnMethod {
                     &name,
                 );
                 quote! {
-                    args.get::<#ty>(#name).expect(#err_text)
+                    args.get::<#ty>(#name)
+                        .or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null)
+                        .expect(#err_text)
                 }
             }
 
