@@ -21,6 +21,10 @@ impl<'a> WithLifetime<'a> {
     fn value(&self) -> &str {
         self.value
     }
+
+    async fn value_async(&self) -> &str {
+        self.value
+    }
 }
 
 struct WithContext;
@@ -140,115 +144,83 @@ async fn object_introspect() {
         graphql_value!({
             "name": "Query",
             "description": "Query Description.",
-            "fields": [
-                {
-                    "name": "withSelf",
-                    "description": "With Self Description",
-                    "args": [],
-                },
-                {
-                    "name": "independent",
+            "fields": [{
+                "name": "withSelf",
+                "description": "With Self Description",
+                "args": [],
+            }, {
+                "name": "independent",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withExecutor",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withExecutorAndSelf",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withContext",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withContextAndSelf",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "renamed",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "hasDescriptionAttr",
+                "description": "attr",
+                "args": [],
+            }, {
+                "name": "hasDescriptionDocComment",
+                "description": "Doc description",
+                "args": [],
+            }, {
+                "name": "hasArgument",
+                "description": None,
+                "args": [{
+                    "name": "arg1",
                     "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withExecutor",
+                    "type": {"name": None},
+                }],
+            }, {
+                "name": "defaultArgument",
+                "description": None,
+                "args": [{
+                    "name": "defaultArg",
                     "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withExecutorAndSelf",
+                    "type": {"name": "Boolean"},
+                }],
+            }, {
+                "name": "argWithDescription",
+                "description": None,
+                "args": [{
+                    "name": "arg",
+                    "description": "my argument description",
+                    "type": {"name": None},
+                }],
+            }, {
+                "name": "withContextChild",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withLifetimeChild",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withMutArg",
+                "description": None,
+                "args": [{
+                    "name": "arg",
                     "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withContext",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withContextAndSelf",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "renamed",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "hasDescriptionAttr",
-                    "description": "attr",
-                    "args": [],
-                },
-                {
-                    "name": "hasDescriptionDocComment",
-                    "description": "Doc description",
-                    "args": [],
-                },
-                {
-                    "name": "hasArgument",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "arg1",
-                            "description": None,
-                            "type": {
-                                "name": None,
-                            },
-                        }
-                    ],
-                },
-                {
-                    "name": "defaultArgument",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "defaultArg",
-                            "description": None,
-                            "type": {
-                                "name": "Boolean",
-                            },
-                        }
-                    ],
-                },
-                {
-                    "name": "argWithDescription",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "arg",
-                            "description": "my argument description",
-                            "type": {
-                                "name": None
-                            },
-                        }
-                    ],
-                },
-                {
-                    "name": "withContextChild",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withLifetimeChild",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withMutArg",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "arg",
-                            "description": None,
-                            "type": {
-                                "name": None,
-                            },
-                        }
-                    ],
-                },
-            ]
+                    "type": {"name": None},
+                }],
+            }],
         })
     );
 }
@@ -272,6 +244,7 @@ async fn object_query() {
         }
         withLifetimeChild {
             value
+            valueAsync
         }
         withMutArg(arg: true)
     }
@@ -300,8 +273,8 @@ async fn object_query() {
             "hasArgument": true,
             "defaultArgument": true,
             "argWithDescription": true,
-            "withContextChild": { "ctx": true },
-            "withLifetimeChild": { "value": "blub" },
+            "withContextChild": {"ctx": true},
+            "withLifetimeChild": {"value": "blub", "valueAsync": "blub"},
             "withMutArg": false,
         })
     );

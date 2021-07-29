@@ -3592,6 +3592,229 @@ mod explicit_generic_scalar {
     }
 }
 
+mod bounded_generic_scalar {
+    use super::*;
+
+    #[graphql_interface(for = [Human, Droid], scalar = S: ScalarValue)]
+    trait Character {
+        fn id(&self) -> &str;
+    }
+
+    #[graphql_interface(dyn = DynHero, for = [Human, Droid], scalar = S: ScalarValue)]
+    trait Hero {
+        async fn info(&self) -> &str;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = [CharacterValue, DynHero<S>], scalar = S: ScalarValue)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    #[graphql_interface(scalar = S: ScalarValue)]
+    impl Character for Human {
+        fn id(&self) -> &str {
+            &self.id
+        }
+    }
+
+    #[graphql_interface(dyn, scalar = S: ScalarValue)]
+    impl Hero for Human {
+        async fn info(&self) -> &str {
+            &self.home_planet
+        }
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = [CharacterValue, DynHero<__S>])]
+    struct Droid {
+        id: String,
+        primary_function: String,
+    }
+
+    #[graphql_interface(scalar = S: ScalarValue)]
+    impl Character for Droid {
+        fn id(&self) -> &str {
+            &self.id
+        }
+    }
+
+    #[graphql_interface(dyn, scalar = S: ScalarValue)]
+    impl Hero for Droid {
+        async fn info(&self) -> &str {
+            &self.primary_function
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
+            match self {
+                Self::Human => Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }
+                .into(),
+                Self::Droid => Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }
+                .into(),
+            }
+        }
+
+        fn hero<S: ScalarValue + Send + Sync>(&self) -> Box<DynHero<'_, S>> {
+            let ch: Box<DynHero<'_, _>> = match self {
+                Self::Human => Box::new(Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }),
+                Self::Droid => Box::new(Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }),
+            };
+            ch
+        }
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_droid() {
+        const DOC: &str = r#"{
+            character {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn dyn_resolves_human() {
+        const DOC: &str = r#"{
+            hero {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"hero": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn dyn_resolves_droid() {
+        const DOC: &str = r#"{
+            hero {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"hero": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+            }
+        }"#;
+
+        for (root, expected_id) in &[
+            (QueryRoot::Human, "human-32"),
+            (QueryRoot::Droid, "droid-99"),
+        ] {
+            let schema = schema(*root);
+
+            let expected_id: &str = *expected_id;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn dyn_resolves_info_field() {
+        const DOC: &str = r#"{
+            hero {
+                info
+            }
+        }"#;
+
+        for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
+            let schema = schema(*root);
+
+            let expected_info: &str = *expected_info;
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"hero": {"info": expected_info}}), vec![])),
+            );
+        }
+    }
+}
+
 mod explicit_custom_context {
     use super::*;
 

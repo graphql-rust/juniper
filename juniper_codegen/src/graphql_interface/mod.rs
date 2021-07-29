@@ -12,6 +12,7 @@ use std::{
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
 use syn::{
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
@@ -463,8 +464,7 @@ impl Definition {
     fn impl_graphql_interface_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
 
         let impler_tys: Vec<_> = self.implementers.iter().map(|impler| &impler.ty).collect();
@@ -493,8 +493,7 @@ impl Definition {
     fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
 
         let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
@@ -521,8 +520,7 @@ impl Definition {
     fn impl_graphql_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
 
         let name = &self.name;
@@ -579,9 +577,7 @@ impl Definition {
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-
+        let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
         let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
@@ -672,18 +668,7 @@ impl Definition {
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let generics = self.ty.impl_generics();
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let mut where_clause = where_clause
-            .cloned()
-            .unwrap_or_else(|| parse_quote! { where });
-        where_clause.predicates.push(parse_quote! { Self: Sync });
-        if self.scalar.is_generic() {
-            where_clause
-                .predicates
-                .push(parse_quote! { #scalar: Send + Sync });
-        }
-
+        let (impl_generics, where_clause) = self.ty.impl_generics(true);
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
 
@@ -700,7 +685,7 @@ impl Definition {
         let regular_downcast = self.ty.method_resolve_into_type_async_tokens();
 
         quote! {
-            #[allow(deprecated)]
+            #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
             {
@@ -1036,23 +1021,61 @@ impl EnumType {
         }
     }
 
-    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and similar) implementation
-    /// for this [`EnumType`].
+    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
+    /// similar) implementation of this [`EnumType`].
     ///
+    /// If `for_async` is `true`, then additional predicates are added to suit
+    /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
+    ///
+    /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
     #[must_use]
-    fn impl_generics(&self) -> syn::Generics {
+    fn impl_generics(&self, for_async: bool) -> syn::Generics {
         let mut generics = self.trait_generics.clone();
 
         let scalar = &self.scalar;
-        if self.scalar.is_implicit_generic() {
+        if scalar.is_implicit_generic() {
             generics.params.push(parse_quote! { #scalar });
         }
-        if self.scalar.is_generic() {
+        if scalar.is_generic() {
             generics
                 .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        }
+        if let Some(bound) = scalar.bounds() {
+            generics.make_where_clause().predicates.push(bound);
+        }
+
+        if for_async {
+            let self_ty = if self.trait_generics.lifetimes().next().is_some() {
+                // Modify lifetime names to omit "lifetime name `'a` shadows a
+                // lifetime name that is already in scope" error.
+                let mut generics = self.trait_generics.clone();
+                for lt in generics.lifetimes_mut() {
+                    let ident = lt.lifetime.ident.unraw();
+                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                }
+
+                let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
+                let ty = &self.ident;
+                let (_, ty_generics, _) = generics.split_for_impl();
+
+                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+            } else {
+                quote! { Self }
+            };
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #self_ty: Sync });
+
+            if scalar.is_generic() {
+                generics
+                    .make_where_clause()
+                    .predicates
+                    .push(parse_quote! { #scalar: Send + Sync });
+            }
         }
 
         generics
@@ -1410,12 +1433,16 @@ impl TraitObjectType {
         }
     }
 
-    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and similar) implementation
-    /// for this [`TraitObjectType`].
+    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
+    /// similar) implementation of this [`TraitObjectType`].
     ///
+    /// If `for_async` is `true`, then additional predicates are added to suit
+    /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
+    ///
+    /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
     #[must_use]
-    fn impl_generics(&self) -> syn::Generics {
+    fn impl_generics(&self, for_async: bool) -> syn::Generics {
         let mut generics = self.trait_generics.clone();
 
         generics.params.push(parse_quote! { '__obj });
@@ -1429,6 +1456,22 @@ impl TraitObjectType {
                 .make_where_clause()
                 .predicates
                 .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        }
+        if let Some(bound) = scalar.bounds() {
+            generics.make_where_clause().predicates.push(bound);
+        }
+
+        if for_async {
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { Self: Sync });
+            if scalar.is_generic() {
+                generics
+                    .make_where_clause()
+                    .predicates
+                    .push(parse_quote! { #scalar: Send + Sync });
+            }
         }
 
         generics
@@ -1582,16 +1625,22 @@ enum Type {
 }
 
 impl Type {
-    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and similar) implementation
-    /// for this [`Type`].
+    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
+    /// similar) implementation of this [`Type`].
     ///
+    /// If `for_async` is `true`, then additional predicates are added to suit
+    /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
+    ///
+    /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
     #[must_use]
-    fn impl_generics(&self) -> syn::Generics {
-        match self {
-            Self::Enum(e) => e.impl_generics(),
-            Self::TraitObject(o) => o.impl_generics(),
-        }
+    fn impl_generics(&self, for_async: bool) -> (TokenStream, Option<syn::WhereClause>) {
+        let generics = match self {
+            Self::Enum(e) => e.impl_generics(for_async),
+            Self::TraitObject(o) => o.impl_generics(for_async),
+        };
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        (quote! { #impl_generics }, where_clause.cloned())
     }
 
     /// Returns full type signature of the original trait describing the [GraphQL interface][1] for

@@ -279,6 +279,7 @@ impl Definition {
     /// If `for_async` is `true`, then additional predicates are added to suit
     /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
     ///
+    /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     #[must_use]
@@ -305,7 +306,7 @@ impl Definition {
         }
 
         if for_async {
-            let self_ty = if generics.lifetimes().next().is_some() {
+            let self_ty = if self.generics.lifetimes().next().is_some() {
                 // Modify lifetime names to omit "lifetime name `'a` shadows a
                 // lifetime name that is already in scope" error.
                 let mut generics = self.generics.clone();
