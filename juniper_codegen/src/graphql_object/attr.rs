@@ -1,9 +1,9 @@
 //! Code generation for `#[graphql_object]` macro.
 
-use std::mem;
+use std::{marker::PhantomData, mem};
 
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -16,7 +16,7 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
-use super::{Attr, Definition};
+use super::{Attr, Definition, Query};
 
 /// [`GraphQLScope`] of errors for `#[graphql_object]` macro.
 const ERR: GraphQLScope = GraphQLScope::ObjectAttr;
@@ -27,7 +27,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
         if ast.trait_.is_none() {
             let impl_attrs = parse::attr::unite(("graphql_object", &attr_args), &ast.attrs);
             ast.attrs = parse::attr::strip("graphql_object", ast.attrs);
-            return expand_on_impl(impl_attrs, ast);
+            return expand_on_impl::<Query>(Attr::from_attrs("graphql_object", &impl_attrs)?, ast);
         }
     }
 
@@ -38,12 +38,13 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
 }
 
 /// Expands `#[graphql_object]` macro placed on an implementation block.
-pub fn expand_on_impl(
-    attrs: Vec<syn::Attribute>,
+pub(crate) fn expand_on_impl<Operation>(
+    attr: Attr,
     mut ast: syn::ItemImpl,
-) -> syn::Result<TokenStream> {
-    let attr = Attr::from_attrs("graphql_object", &attrs)?;
-
+) -> syn::Result<TokenStream>
+where
+    Definition<Operation>: ToTokens,
+{
     let type_span = ast.self_ty.span();
     let type_ident = ast.self_ty.topmost_ident().ok_or_else(|| {
         ERR.custom_error(type_span, "could not determine ident for the `impl` type")
@@ -106,7 +107,7 @@ pub fn expand_on_impl(
         })
     });
 
-    let generated_code = Definition {
+    let generated_code = Definition::<Operation> {
         name,
         ty: parse_quote! { #type_ident },
         generics: ast.generics.clone(),
@@ -119,6 +120,7 @@ pub fn expand_on_impl(
             .iter()
             .map(|ty| ty.as_ref().clone())
             .collect(),
+        _operation: PhantomData,
     };
 
     Ok(quote! {

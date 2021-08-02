@@ -46,7 +46,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
 }
 
 /// Expands `#[graphql_interface]` macro placed on trait definition.
-pub fn expand_on_trait(
+fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
@@ -245,10 +245,7 @@ pub fn expand_on_trait(
 }
 
 /// Expands `#[graphql_interface]` macro placed on a trait implementation block.
-pub fn expand_on_impl(
-    attrs: Vec<syn::Attribute>,
-    mut ast: syn::ItemImpl,
-) -> syn::Result<TokenStream> {
+fn expand_on_impl(attrs: Vec<syn::Attribute>, mut ast: syn::ItemImpl) -> syn::Result<TokenStream> {
     let attr = ImplAttr::from_attrs("graphql_interface", &attrs)?;
 
     let is_async_trait = attr.asyncness.is_some()

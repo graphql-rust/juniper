@@ -35,7 +35,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
 }
 
 /// Expands `#[graphql_union]` macro placed on a trait definition.
-pub fn expand_on_trait(
+fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {

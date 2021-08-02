@@ -308,13 +308,23 @@ impl Definition {
     /// [`marker::IsOutputType::mark`]: juniper::marker::IsOutputType::mark
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_mark_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+    pub(crate) fn method_mark_tokens(
+        &self,
+        coerce_result: bool,
+        scalar: &scalar::Type,
+    ) -> TokenStream {
         let args_marks = self
             .arguments
             .iter()
             .flat_map(|args| args.iter().filter_map(|a| a.method_mark_tokens(scalar)));
 
         let ty = &self.ty;
+        let mut ty = quote! { #ty };
+        if coerce_result {
+            ty = quote! {
+                <#ty as ::juniper::IntoFieldResult::<_, #scalar>>::Item
+            };
+        }
         let resolved_ty = quote! {
             <#ty as ::juniper::IntoResolvable<
                 '_, #scalar, _, <Self as ::juniper::GraphQLValue<#scalar>>::Context,
@@ -363,12 +373,12 @@ impl Definition {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
-    /// which resolves this [GraphQL field][1] synchronously.
+    /// Returns generated code for the [`GraphQLValue::resolve_field`][0]
+    /// method, which resolves this [GraphQL field][1] synchronously.
     ///
     /// Returns [`None`] if this [`Definition::is_async`].
     ///
-    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
+    /// [0]: juniper::GraphQLValue::resolve_field
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
     pub(crate) fn method_resolve_field_tokens(
@@ -415,10 +425,10 @@ impl Definition {
     }
 
     /// Returns generated code for the
-    /// [`GraphQLValueAsync::resolve_field_async`] method, which resolves this
-    /// [GraphQL field][1] asynchronously.
+    /// [`GraphQLValueAsync::resolve_field_async`][0] method, which resolves
+    /// this [GraphQL field][1] asynchronously.
     ///
-    /// [`GraphQLValueAsync::resolve_field_async`]: juniper::GraphQLValueAsync::resolve_field_async
+    /// [0]: juniper::GraphQLValueAsync::resolve_field_async
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
     pub(crate) fn method_resolve_field_async_tokens(
@@ -459,6 +469,73 @@ impl Definition {
             #name => {
                 let fut = #fut;
                 #resolving_code
+            }
+        }
+    }
+
+    /// Returns generated code for the
+    /// [`GraphQLSubscriptionValue::resolve_field_into_stream`][0] method, which
+    /// resolves this [GraphQL field][1] as [subscription][2].
+    ///
+    /// [0]: juniper::GraphQLSubscriptionValue::resolve_field_into_stream
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/June2018/#sec-Subscription
+    #[must_use]
+    pub(crate) fn method_resolve_field_into_stream_tokens(
+        &self,
+        scalar: &scalar::Type,
+    ) -> TokenStream {
+        let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
+
+        let mut fut = if self.is_method() {
+            let args = self
+                .arguments
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(|arg| arg.method_resolve_field_tokens(scalar));
+
+            let rcv = self.has_receiver.then(|| {
+                quote! { self, }
+            });
+
+            quote! { Self::#ident(#rcv #( #args ),*) }
+        } else {
+            ty = parse_quote! { _ };
+            quote! { &self.#ident }
+        };
+        if !self.is_async {
+            fut = quote! { ::juniper::futures::future::ready(#fut) };
+        }
+
+        quote! {
+            #name => {
+                ::juniper::futures::FutureExt::boxed(async move {
+                    let res: #ty = #fut.await;
+                    let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
+                    let executor = executor.as_owned_executor();
+                    let stream = ::juniper::futures::StreamExt::then(res, move |res| {
+                        let executor = executor.clone();
+                        let res2: ::juniper::FieldResult<_, #scalar> =
+                            ::juniper::IntoResolvable::into(res, executor.context());
+                        async move {
+                            let ex = executor.as_executor();
+                            match res2 {
+                                Ok(Some((ctx, r))) => {
+                                    let sub = ex.replaced_context(ctx);
+                                    sub.resolve_with_ctx_async(&(), &r)
+                                        .await
+                                        .map_err(|e| ex.new_error(e))
+                                }
+                                Ok(None) => Ok(Value::null()),
+                                Err(e) => Err(ex.new_error(e)),
+                            }
+                        }
+                    });
+                    Ok(::juniper::Value::Scalar::<
+                        ::juniper::ValuesStream::<#scalar>
+                    >(Box::pin(stream)))
+                })
             }
         }
     }

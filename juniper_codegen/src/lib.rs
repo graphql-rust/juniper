@@ -109,12 +109,12 @@ macro_rules! try_merge_hashset {
 mod derive_enum;
 mod derive_input_object;
 mod derive_scalar_value;
-mod impl_object;
 mod impl_scalar;
 
 mod common;
 mod graphql_interface;
 mod graphql_object;
+mod graphql_subscription;
 mod graphql_union;
 
 use proc_macro::TokenStream;
@@ -530,17 +530,14 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
+// TODO
 /// A proc macro for defining a GraphQL subscription.
 #[proc_macro_error]
 #[proc_macro_attribute]
-pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_object::build_subscription(
-        args,
-        input,
-        GraphQLScope::ObjectAttr,
-    ))
+pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
+    self::graphql_subscription::attr::expand(attr.into(), body.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[graphql_interface]` macro for generating a [GraphQL interface][1] implementation for traits

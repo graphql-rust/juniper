@@ -1,5 +1,7 @@
 //! Code generation for `#[derive(GraphQLObject)]` macro.
 
+use std::marker::PhantomData;
+
 use proc_macro2::TokenStream;
 use proc_macro_error::ResultExt as _;
 use quote::ToTokens;
@@ -11,7 +13,7 @@ use crate::{
     util::{span_container::SpanContainer, RenameRule},
 };
 
-use super::{Attr, Definition};
+use super::{Attr, Definition, Query};
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLObject)]` macro.
 const ERR: GraphQLScope = GraphQLScope::ObjectDerive;
@@ -29,7 +31,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
 /// Expands into generated code a `#[derive(GraphQLObject)]` macro placed on a
 /// Rust struct.
-fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
+fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
     let attr = Attr::from_attrs("graphql", &ast.attrs)?;
 
     let struct_span = ast.span();
@@ -96,6 +98,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
             .iter()
             .map(|ty| ty.as_ref().clone())
             .collect(),
+        _operation: PhantomData,
     })
 }
 

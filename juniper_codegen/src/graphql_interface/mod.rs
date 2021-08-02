@@ -488,7 +488,10 @@ impl Definition {
         let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
 
-        let fields_marks = self.fields.iter().map(|f| f.method_mark_tokens(scalar));
+        let fields_marks = self
+            .fields
+            .iter()
+            .map(|f| f.method_mark_tokens(false, scalar));
 
         let impler_tys = self.implementers.iter().map(|impler| &impler.ty);
 
