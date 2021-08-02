@@ -642,6 +642,8 @@ mod test {
 
     struct Context(i32);
 
+    impl juniper::Context for Context {}
+
     struct Query;
 
     #[graphql_object(context = Context)]
@@ -657,7 +659,7 @@ mod test {
     #[graphql_subscription(context = Context)]
     impl Subscription {
         /// never never emits anything.
-        async fn never(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
+        async fn never(_context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             tokio::time::sleep(Duration::from_secs(10000))
                 .map(|_| unreachable!())
                 .into_stream()
@@ -676,7 +678,7 @@ mod test {
         }
 
         /// error emits an error once, then never emits anything else.
-        async fn error(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
+        async fn error(_context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             stream::once(future::ready(Err(FieldError::new(
                 "field error",
                 Value::null(),

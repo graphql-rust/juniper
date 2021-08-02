@@ -1,3 +1,5 @@
+//! GraphQL support for [url](https://github.com/servo/rust-url) types.
+
 use url::Url;
 
 use crate::{

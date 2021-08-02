@@ -82,6 +82,8 @@ where
 ///
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
+///
+/// [`GraphQLResponse`]: crate::http::GraphQLResponse
 pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> {}
 
 /// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.

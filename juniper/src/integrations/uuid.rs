@@ -1,3 +1,5 @@
+//! GraphQL support for [uuid](https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html) types.
+
 #![allow(clippy::needless_lifetimes)]
 
 use uuid::Uuid;

@@ -71,12 +71,15 @@ impl juniper::Context for Database {}
 struct Query;
 #[graphql_object(context = Database)]
 impl Query {
-    fn apiVersion() -> String {
-        "1.0".to_string()
+    fn api_version() -> &'static str {
+        "1.0"
     }
-    #[graphql(arguments(id(description = "id of the user")))]
-    fn user(database: &Database, id: i32) -> Option<&User> {
-        database.get_user(&id)
+
+    fn user(
+        context: &Database,
+        #[graphql(description = "id of the user")] id: i32,
+    ) -> Option<&User> {
+        context.get_user(&id)
     }
 }
 
