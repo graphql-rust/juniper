@@ -1,9 +1,11 @@
-error: GraphQL object does not allow fields with the same name
- --> $DIR/derive_fields_unique.rs:4:5
+error: GraphQL object must have a different name for each field
+ --> $DIR/derive_fields_unique.rs:2:1
   |
-4 | /     #[graphql(name = "test")]
+2 | / struct Object {
+3 | |     test: String,
+4 | |     #[graphql(name = "test")]
 5 | |     test2: String,
-  | |_________________^
+6 | | }
+  | |_^
   |
-  = help: There is at least one other field with the same name `test`, possibly renamed via the #[graphql] attribute
   = note: https://spec.graphql.org/June2018/#sec-Objects

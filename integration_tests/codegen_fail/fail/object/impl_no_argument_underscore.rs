@@ -2,8 +2,7 @@ struct Object {}
 
 #[juniper::graphql_object]
 impl Object {
-    #[graphql(arguments(arg(name = "__arg")))]
-    fn test(&self, arg: String) -> String {
+    fn test(&self, #[graphql(name = "__arg")] arg: String) -> String {
         arg
     }
 }
