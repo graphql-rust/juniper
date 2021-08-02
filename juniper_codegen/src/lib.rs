@@ -304,7 +304,6 @@ specifying an argument with the same type as the context
 (but as a reference).
 
 ```
-
 # #[derive(juniper::GraphQLObject)] struct User { id: i32 }
 # struct DbPool;
 # impl DbPool { fn user(&self, id: i32) -> Option<User> { unimplemented!() } }
@@ -318,10 +317,8 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::graphql_object(
-    // Here we specify the context type for this object.
-    Context = Context,
-)]
+// Here we specify the context type for this object.
+#[juniper::graphql_object(context = Context)]
 impl Query {
     // Context is injected by specifying a argument
     // as a reference to the Context.
@@ -331,7 +328,9 @@ impl Query {
 
     // You can also gain access to the executor, which
     // allows you to do look aheads.
-    fn with_executor(executor: &Executor) -> bool {
+    fn with_executor<__S: juniper::ScalarValue>(
+        executor: &juniper::Executor<'_, '_, Context, __S>,
+    ) -> bool {
         let info = executor.look_ahead();
         // ...
         true
@@ -376,26 +375,15 @@ impl InternalQuery {
     )]
     fn deprecated_field_simple() -> bool { true }
 
-
-    // Customizing field arguments is a little awkward right now.
-    // This will improve once [RFC 2564](https://github.com/rust-lang/rust/issues/60406)
-    // is implemented, which will allow attributes on function parameters.
-
-    #[graphql(
-        arguments(
-            arg1(
-                // You can specify default values.
-                // A default can be any valid expression that yields the right type.
-                default = true,
-                description = "Argument description....",
-            ),
-            arg2(
-                default = false,
-                description = "arg2 description...",
-            ),
-        ),
-    )]
-    fn args(arg1: bool, arg2: bool) -> bool {
+    fn args(
+        // You can specify default values.
+        // A default can be any valid expression that yields the right type.
+        #[graphql(default = true, description = "Argument description....")]
+        arg1: bool,
+        // If expression is not specified then `Default::default()` is used.
+        #[graphql(default, description = "arg2 description...")]
+        arg2: bool,
+    ) -> bool {
         arg1 && arg2
     }
 }
