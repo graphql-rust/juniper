@@ -89,7 +89,7 @@ struct Query;
     context = Context,
 )]
 impl Query {
-    fn apiVersion() -> &str {
+    fn apiVersion() -> &'static str {
         "1.0"
     }
 
@@ -114,14 +114,13 @@ struct Mutation;
 
 #[graphql_object(
     context = Context,
-
     // If we need to use `ScalarValue` parametrization explicitly somewhere
-    // in the object definition (like here in `FieldResult`), we should
+    // in the object definition (like here in `FieldResult`), we could
     // declare an explicit type parameter for that, and specify it.
-    scalar = S,
+    scalar = S: ScalarValue + Display,
 )]
-impl<S: ScalarValue + Display> Mutation {
-    fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human, S> {
+impl Mutation {
+    fn createHuman<S: ScalarValue + Display>(context: &Context, new_human: NewHuman) -> FieldResult<Human, S> {
         let db = context.pool.get_connection().map_err(|e| e.map_scalar_value())?;
         let human: Human = db.insert_human(&new_human).map_err(|e| e.map_scalar_value())?;
         Ok(human)

@@ -63,8 +63,8 @@ impl User {
     //    with the context type.
     // Note: 
     //   - the type must be a reference
-    //   - the name of the argument SHOULD be context
-    fn friends(&self, context: &Database) -> Vec<&User> {
+    //   - the name of the argument SHOULD be `context`
+    fn friends<'db>(&self, context: &'db Database) -> Vec<&'db User> {
 
         // 5. Use the database to lookup users
         self.friend_ids.iter()

@@ -36,7 +36,7 @@ struct Example {
 
 #[graphql_object]
 impl Example {
-    fn contents() -> FieldResult<String> {
+    fn contents(&self) -> FieldResult<String> {
         let mut file = File::open(&self.filename)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
@@ -44,13 +44,10 @@ impl Example {
     }
 
     fn foo() -> FieldResult<Option<String>> {
-      // Some invalid bytes.
-      let invalid = vec![128, 223];
+        // Some invalid bytes.
+        let invalid = vec![128, 223];
 
-      match str::from_utf8(&invalid) {
-        Ok(s) => Ok(Some(s.to_string())),
-        Err(e) => Err(e)?,
-      }
+        Ok(Some(str::from_utf8(&invalid)?.to_string()))
     }
 }
 #
@@ -162,11 +159,11 @@ struct Example {
 
 #[graphql_object]
 impl Example {
-    fn whatever() -> Result<bool, CustomError> {
-      if let Some(value) = self.whatever {
-        return Ok(value);
-      }
-      Err(CustomError::WhateverNotSet)
+    fn whatever(&self) -> Result<bool, CustomError> {
+        if let Some(value) = self.whatever {
+            return Ok(value);
+        }
+        Err(CustomError::WhateverNotSet)
     }
 }
 #
