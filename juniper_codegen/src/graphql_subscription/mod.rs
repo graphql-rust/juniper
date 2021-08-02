@@ -35,16 +35,16 @@ impl Definition<Subscription> {
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
-        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
+        let context = &self.context;
 
-        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
+        let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let name = &self.name;
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
@@ -85,7 +85,7 @@ impl Definition<Subscription> {
 
         // We use `for_async = false` here as `GraphQLSubscriptionValue` requires
         // simpler and less `Send`/`Sync` bounds than `GraphQLValueAsync`.
-        let (impl_generics, ty_generics, mut where_clause) = self.impl_generics(false);
+        let (impl_generics, mut where_clause) = self.impl_generics(false);
         if scalar.is_generic() {
             where_clause = Some(where_clause.unwrap_or_else(|| parse_quote! { where }));
             where_clause
@@ -105,7 +105,7 @@ impl Definition<Subscription> {
         quote! {
             #[allow(deprecated)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty #where_clause
             {
                 fn resolve_field_into_stream<
                     's, 'i, 'fi, 'args, 'e, 'ref_e, 'res, 'f,

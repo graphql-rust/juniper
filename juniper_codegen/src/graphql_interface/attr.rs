@@ -77,7 +77,7 @@ fn expand_on_trait(
         .map(|ty| Implementer {
             ty: ty.as_ref().clone(),
             downcast: None,
-            context_ty: None,
+            context: None,
             scalar: scalar.clone(),
         })
         .collect();
@@ -112,7 +112,7 @@ fn expand_on_trait(
                                 err_duplicate_downcast(m, external, &impler.ty);
                             } else {
                                 impler.downcast = d.downcast;
-                                impler.context_ty = d.context_ty;
+                                impler.context = d.context;
                             }
                         }
                         None => err_only_implementer_downcast(&m.sig),
@@ -150,9 +150,10 @@ fn expand_on_trait(
         .or_else(|| {
             implementers
                 .iter()
-                .find_map(|impler| impler.context_ty.as_ref())
+                .find_map(|impler| impler.context.as_ref())
                 .cloned()
-        });
+        })
+        .unwrap_or_else(|| parse_quote! { () });
 
     let is_trait_object = attr.r#dyn.is_some();
 
@@ -389,7 +390,7 @@ impl TraitMethod {
         Some(Implementer {
             ty,
             downcast: Some(downcast),
-            context_ty,
+            context: context_ty,
             scalar: scalar::Type::ImplicitGeneric(None),
         })
     }

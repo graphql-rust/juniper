@@ -21,7 +21,7 @@ use crate::{
         field,
         parse::{
             attr::{err, OptionExt as _},
-            ParseBufferExt as _,
+            ParseBufferExt as _, TypeExt,
         },
         scalar,
     },
@@ -213,6 +213,8 @@ pub(crate) struct Definition<Operation: ?Sized> {
 
     /// Rust type that this [GraphQL object][1] is represented with.
     ///
+    /// It should contain all its generics, if any.
+    ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     pub(crate) ty: syn::Type,
 
@@ -230,12 +232,10 @@ pub(crate) struct Definition<Operation: ?Sized> {
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL object][1].
     ///
-    /// If [`None`] then generated code will use unit type `()` as [`Context`].
-    ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub(crate) context: Option<syn::Type>,
+    pub(crate) context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
     /// implementation with for this [GraphQL object][1].
@@ -278,12 +278,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     #[must_use]
-    pub(crate) fn impl_generics(
-        &self,
-        for_async: bool,
-    ) -> (TokenStream, TokenStream, Option<syn::WhereClause>) {
-        let (_, ty_generics, _) = self.generics.split_for_impl();
-
+    pub(crate) fn impl_generics(&self, for_async: bool) -> (TokenStream, Option<syn::WhereClause>) {
         let mut generics = self.generics.clone();
 
         let scalar = &self.scalar;
@@ -302,19 +297,18 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         if for_async {
             let self_ty = if self.generics.lifetimes().next().is_some() {
+                let mut lifetimes = vec![];
+
                 // Modify lifetime names to omit "lifetime name `'a` shadows a
                 // lifetime name that is already in scope" error.
-                let mut generics = self.generics.clone();
-                for lt in generics.lifetimes_mut() {
-                    let ident = lt.lifetime.ident.unraw();
-                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
-                }
+                let mut ty = self.ty.clone();
+                ty.lifetimes_iter_mut(&mut |lt| {
+                    let ident = lt.ident.unraw();
+                    lt.ident = format_ident!("__fa__{}", ident);
+                    lifetimes.push(lt.clone());
+                });
 
-                let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
-                let ty = &self.ty;
-                let (_, ty_generics, _) = generics.split_for_impl();
-
-                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+                quote! { for<#( #lifetimes ),*> #ty }
             } else {
                 quote! { Self }
             };
@@ -332,11 +326,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         }
 
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        (
-            quote! { #impl_generics },
-            quote! { #ty_generics },
-            where_clause.cloned(),
-        )
+        (quote! { #impl_generics }, where_clause.cloned())
     }
 
     /// Returns generated code implementing [`marker::IsOutputType`] trait for
@@ -348,7 +338,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     pub(crate) fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
+        let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let coerce_result = TypeId::of::<Operation>() != TypeId::of::<Query>();
@@ -361,7 +351,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
             {
                 fn mark() {
                     #( #fields_marks )*
@@ -380,7 +370,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     pub(crate) fn impl_graphql_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
+        let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let name = &self.name;
@@ -411,7 +401,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
@@ -426,7 +416,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                     let fields = [
                         #( #fields_meta, )*
                     ];
-                    registry.build_object_type::<#ty#ty_generics>(info, &fields)
+                    registry.build_object_type::<#ty>(info, &fields)
                         #description
                         #interfaces
                         .into_meta()
@@ -462,7 +452,7 @@ impl Definition<Query> {
     fn impl_graphql_object_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
+        let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let interface_tys = self.interfaces.iter();
@@ -475,7 +465,7 @@ impl Definition<Query> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty #where_clause
             {
                 fn mark() {
                     #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
@@ -492,9 +482,9 @@ impl Definition<Query> {
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
-        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
+        let context = &self.context;
 
-        let (impl_generics, ty_generics, where_clause) = self.impl_generics(false);
+        let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let name = &self.name;
@@ -518,7 +508,7 @@ impl Definition<Query> {
         quote! {
             #[allow(deprecated)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
@@ -561,7 +551,7 @@ impl Definition<Query> {
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.impl_generics(true);
+        let (impl_generics, where_clause) = self.impl_generics(true);
         let ty = &self.ty;
 
         let fields_resolvers = self
@@ -573,7 +563,7 @@ impl Definition<Query> {
         quote! {
             #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
             {
                 fn resolve_field_async<'b>(
                     &'b self,
@@ -604,13 +594,13 @@ impl Definition<Query> {
 
         let scalar = &self.scalar;
 
-        let (impl_generics, ty_generics, where_clause) = self.impl_generics(true);
+        let (impl_generics, where_clause) = self.impl_generics(true);
         let ty = &self.ty;
 
         Some(quote! {
             #[allow(non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty#ty_generics #where_clause
+            impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #where_clause
             {
                 type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
                 type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;

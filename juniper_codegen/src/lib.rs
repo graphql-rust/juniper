@@ -336,7 +336,6 @@ impl Query {
         true
     }
 }
-
 ```
 
 ## Customization (Documentation, Renaming, ...)

@@ -99,19 +99,24 @@ where
 
     proc_macro_error::abort_if_dirty();
 
-    let context = attr.context.as_deref().cloned().or_else(|| {
-        fields.iter().find_map(|f| {
-            f.arguments.as_ref().and_then(|f| {
-                f.iter()
-                    .find_map(field::MethodArgument::context_ty)
-                    .cloned()
+    let context = attr
+        .context
+        .as_deref()
+        .cloned()
+        .or_else(|| {
+            fields.iter().find_map(|f| {
+                f.arguments.as_ref().and_then(|f| {
+                    f.iter()
+                        .find_map(field::MethodArgument::context_ty)
+                        .cloned()
+                })
             })
         })
-    });
+        .unwrap_or_else(|| parse_quote! { () });
 
     let generated_code = Definition::<Operation> {
         name,
-        ty: parse_quote! { #type_ident },
+        ty: ast.self_ty.unparenthesized().clone(),
         generics: ast.generics.clone(),
         description: attr.description.map(SpanContainer::into_inner),
         context,

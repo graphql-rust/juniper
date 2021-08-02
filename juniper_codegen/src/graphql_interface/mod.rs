@@ -408,12 +408,10 @@ struct Definition {
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL interface][1].
     ///
-    /// If [`None`] then generated code will use unit type `()` as [`Context`].
-    ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    context: Option<syn::Type>,
+    context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
     /// implementation with for this [GraphQL interface][1].
@@ -570,11 +568,11 @@ impl Definition {
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
+        let context = &self.context;
 
         let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
-        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
 
         let fields_resolvers = self
             .fields
@@ -764,7 +762,7 @@ struct Implementer {
     ///
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    context_ty: Option<syn::Type>,
+    context: Option<syn::Type>,
 
     /// [`ScalarValue`] parametrization of this [`Implementer`].
     ///
@@ -1418,10 +1416,8 @@ struct TraitObjectType {
 
     /// Rust type of [`Context`] to generate this [`TraitObjectType`] with.
     ///
-    /// If [`None`] then generated code will use unit type `()` as [`Context`].
-    ///
     /// [`Context`]: juniper::Context
-    context: Option<syn::Type>,
+    context: syn::Type,
 }
 
 impl TraitObjectType {
@@ -1431,7 +1427,7 @@ impl TraitObjectType {
         r#trait: &syn::ItemTrait,
         meta: &TraitAttr,
         scalar: scalar::Type,
-        context: Option<syn::Type>,
+        context: syn::Type,
     ) -> Self {
         Self {
             ident: meta.r#dyn.as_ref().unwrap().as_ref().clone(),
@@ -1520,7 +1516,7 @@ impl TraitObjectType {
         }
         let ty_params = &generics.params;
 
-        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
+        let context = &self.context;
 
         quote! {
             dyn #ty<#ty_params, Context = #context, TypeInfo = ()> + '__obj + Send + Sync
@@ -1607,7 +1603,7 @@ impl ToTokens for TraitObjectType {
             ty_params_right = Some(quote! { #params, });
         };
 
-        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
+        let context = &self.context;
 
         let dyn_alias = quote! {
             #[automatically_derived]

@@ -37,6 +37,9 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
     let struct_span = ast.span();
     let struct_ident = ast.ident;
 
+    let (_, struct_generics, _) = ast.generics.split_for_impl();
+    let ty = parse_quote! { #struct_ident#struct_generics };
+
     let name = attr
         .name
         .clone()
@@ -87,10 +90,13 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
 
     Ok(Definition {
         name,
-        ty: parse_quote! { #struct_ident },
+        ty,
         generics: ast.generics,
         description: attr.description.map(SpanContainer::into_inner),
-        context: attr.context.map(SpanContainer::into_inner),
+        context: attr
+            .context
+            .map(SpanContainer::into_inner)
+            .unwrap_or_else(|| parse_quote! { () }),
         scalar,
         fields,
         interfaces: attr

@@ -107,7 +107,11 @@ pub(crate) trait TypeExt {
     #[must_use]
     fn unreferenced(&self) -> &Self;
 
-    /// Anonymises all the lifetime parameters of this [`syn::Type`] making it
+    /// Iterates mutably over all the lifetime parameters of this [`syn::Type`]
+    /// with the given `func`tion.
+    fn lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F);
+
+    /// Anonymizes all the lifetime parameters of this [`syn::Type`] making it
     /// suitable for using in contexts with inferring.
     fn lifetimes_anonymized(&mut self);
 
@@ -131,30 +135,28 @@ impl TypeExt for syn::Type {
         }
     }
 
-    fn lifetimes_anonymized(&mut self) {
+    fn lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F) {
         use syn::{GenericArgument as GA, Type as T};
 
-        fn anonymize_path(path: &mut syn::Path) {
+        fn iter_path<F: FnMut(&mut syn::Lifetime)>(path: &mut syn::Path, func: &mut F) {
             for seg in path.segments.iter_mut() {
                 match &mut seg.arguments {
                     syn::PathArguments::AngleBracketed(angle) => {
                         for arg in angle.args.iter_mut() {
                             match arg {
-                                GA::Lifetime(lt) => {
-                                    lt.ident = syn::Ident::new("_", Span::call_site())
-                                }
-                                GA::Type(ty) => ty.lifetimes_anonymized(),
-                                GA::Binding(b) => b.ty.lifetimes_anonymized(),
+                                GA::Lifetime(lt) => func(lt),
+                                GA::Type(ty) => ty.lifetimes_iter_mut(func),
+                                GA::Binding(b) => b.ty.lifetimes_iter_mut(func),
                                 GA::Constraint(_) | GA::Const(_) => {}
                             }
                         }
                     }
                     syn::PathArguments::Parenthesized(args) => {
                         for ty in args.inputs.iter_mut() {
-                            ty.lifetimes_anonymized()
+                            ty.lifetimes_iter_mut(func)
                         }
                         if let syn::ReturnType::Type(_, ty) = &mut args.output {
-                            (&mut *ty).lifetimes_anonymized()
+                            (&mut *ty).lifetimes_iter_mut(func)
                         }
                     }
                     syn::PathArguments::None => {}
@@ -167,11 +169,11 @@ impl TypeExt for syn::Type {
             | T::Group(syn::TypeGroup { elem, .. })
             | T::Paren(syn::TypeParen { elem, .. })
             | T::Ptr(syn::TypePtr { elem, .. })
-            | T::Slice(syn::TypeSlice { elem, .. }) => (&mut *elem).lifetimes_anonymized(),
+            | T::Slice(syn::TypeSlice { elem, .. }) => (&mut *elem).lifetimes_iter_mut(func),
 
             T::Tuple(syn::TypeTuple { elems, .. }) => {
                 for ty in elems.iter_mut() {
-                    ty.lifetimes_anonymized()
+                    ty.lifetimes_iter_mut(func)
                 }
             }
 
@@ -179,14 +181,12 @@ impl TypeExt for syn::Type {
             | T::TraitObject(syn::TypeTraitObject { bounds, .. }) => {
                 for bound in bounds.iter_mut() {
                     match bound {
-                        syn::TypeParamBound::Lifetime(lt) => {
-                            lt.ident = syn::Ident::new("_", Span::call_site())
-                        }
+                        syn::TypeParamBound::Lifetime(lt) => func(lt),
                         syn::TypeParamBound::Trait(bound) => {
                             if bound.lifetimes.is_some() {
-                                todo!("Anonymizing HRTB lifetimes in trait is not yet supported")
+                                todo!("Iterating over HRTB lifetimes in trait is not yet supported")
                             }
-                            anonymize_path(&mut bound.path)
+                            iter_path(&mut bound.path, func)
                         }
                     }
                 }
@@ -194,12 +194,12 @@ impl TypeExt for syn::Type {
 
             T::Reference(ref_ty) => {
                 if let Some(lt) = ref_ty.lifetime.as_mut() {
-                    lt.ident = syn::Ident::new("_", Span::call_site());
+                    func(lt)
                 }
-                (&mut *ref_ty.elem).lifetimes_anonymized()
+                (&mut *ref_ty.elem).lifetimes_iter_mut(func)
             }
 
-            T::Path(ty) => anonymize_path(&mut ty.path),
+            T::Path(ty) => iter_path(&mut ty.path, func),
 
             // These types unlikely will be used as GraphQL types.
             T::BareFn(_) | T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) => {}
@@ -212,6 +212,12 @@ impl TypeExt for syn::Type {
             #[cfg(not(test))]
             _ => {}
         }
+    }
+
+    fn lifetimes_anonymized(&mut self) {
+        self.lifetimes_iter_mut(&mut |lt| {
+            lt.ident = syn::Ident::new("_", Span::call_site());
+        });
     }
 
     fn topmost_ident(&self) -> Option<&syn::Ident> {

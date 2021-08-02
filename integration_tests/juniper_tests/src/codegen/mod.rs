@@ -6,6 +6,7 @@ mod derive_scalar;
 mod impl_object;
 mod impl_scalar;
 mod interface_attr;
+mod object_attr;
 mod scalar_value_transparent;
 mod union_attr;
 mod union_derive;

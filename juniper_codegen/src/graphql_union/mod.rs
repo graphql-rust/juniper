@@ -288,12 +288,10 @@ struct Definition {
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL union][1].
     ///
-    /// If [`None`] then generated code will use unit type `()` as [`Context`].
-    ///
     /// [`Context`]: juniper::Context
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    context: Option<syn::Type>,
+    context: syn::Type,
 
     /// Rust type of [`ScalarValue`] to generate [`GraphQLType`] implementation
     /// with for this [GraphQL union][1].
@@ -511,7 +509,7 @@ impl Definition {
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
-        let context = self.context.clone().unwrap_or_else(|| parse_quote! { () });
+        let context = &self.context;
 
         let (impl_generics, ty_full, where_clause) = self.impl_generics(false);
 

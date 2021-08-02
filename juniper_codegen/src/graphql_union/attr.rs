@@ -87,7 +87,8 @@ fn expand_on_trait(
     let context = attr
         .context
         .map(SpanContainer::into_inner)
-        .or_else(|| variants.iter().find_map(|v| v.context.as_ref()).cloned());
+        .or_else(|| variants.iter().find_map(|v| v.context.as_ref()).cloned())
+        .unwrap_or_else(|| parse_quote! { () });
 
     let generated_code = Definition {
         name,

@@ -83,7 +83,10 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<Definition> {
         ty: parse_quote! { #enum_ident },
         is_trait_object: false,
         description: attr.description.map(SpanContainer::into_inner),
-        context: attr.context.map(SpanContainer::into_inner),
+        context: attr
+            .context
+            .map(SpanContainer::into_inner)
+            .unwrap_or_else(|| parse_quote! { () }),
         scalar: scalar::Type::parse(attr.scalar.as_deref(), &ast.generics),
         generics: ast.generics,
         variants,
@@ -210,7 +213,10 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
         ty: parse_quote! { #struct_ident },
         is_trait_object: false,
         description: attr.description.map(SpanContainer::into_inner),
-        context: attr.context.map(SpanContainer::into_inner),
+        context: attr
+            .context
+            .map(SpanContainer::into_inner)
+            .unwrap_or_else(|| parse_quote! { () }),
         scalar: scalar::Type::parse(attr.scalar.as_deref(), &ast.generics),
         generics: ast.generics,
         variants,
