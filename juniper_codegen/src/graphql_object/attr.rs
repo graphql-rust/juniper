@@ -1,6 +1,6 @@
 //! Code generation for `#[graphql_object]` macro.
 
-use std::{marker::PhantomData, mem};
+use std::{any::TypeId, marker::PhantomData, mem};
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
@@ -44,6 +44,7 @@ pub(crate) fn expand_on_impl<Operation>(
 ) -> syn::Result<TokenStream>
 where
     Definition<Operation>: ToTokens,
+    Operation: 'static,
 {
     let type_span = ast.self_ty.span();
     let type_ident = ast.self_ty.topmost_ident().ok_or_else(|| {
@@ -74,12 +75,13 @@ where
         .copied()
         .unwrap_or(RenameRule::CamelCase);
 
+    let async_only = TypeId::of::<Operation>() != TypeId::of::<Query>();
     let fields: Vec<_> = ast
         .items
         .iter_mut()
         .filter_map(|item| {
             if let syn::ImplItem::Method(m) = item {
-                parse_field(m, &renaming)
+                parse_field(m, async_only, &renaming)
             } else {
                 None
             }
@@ -135,6 +137,7 @@ where
 #[must_use]
 fn parse_field(
     method: &mut syn::ImplItemMethod,
+    async_only: bool,
     renaming: &RenameRule,
 ) -> Option<field::Definition> {
     let method_attrs = method.attrs.clone();
@@ -151,6 +154,10 @@ fn parse_field(
 
     if attr.ignore.is_some() {
         return None;
+    }
+
+    if async_only && method.sig.asyncness.is_none() {
+        return err_no_sync_resolvers(&method.sig);
     }
 
     let method_ident = &method.sig.ident;
@@ -222,12 +229,22 @@ fn parse_field(
     })
 }
 
-/// Emits "invalid method  receiver" [`syn::Error`] pointing to the given `span`.
+/// Emits "invalid method receiver" [`syn::Error`] pointing to the given `span`.
 #[must_use]
 fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(
         span.span(),
         "method should have a shared reference receiver `&self`, or no receiver at all",
     );
+    None
+}
+
+/// Emits "synchronous resolvers are not supported" [`syn::Error`] pointing to
+/// the given `span`.
+#[must_use]
+fn err_no_sync_resolvers<T, S: Spanned>(span: &S) -> Option<T> {
+    ERR.custom(span.span(), "synchronous resolvers are not supported")
+        .note("Specify that this function is async: `async fn foo()`".into())
+        .emit();
     None
 }

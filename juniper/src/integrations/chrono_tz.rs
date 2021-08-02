@@ -1,6 +1,5 @@
 //! [`Tz`] (timezone) scalar implementation, represented by its [IANA database][1] name.
 //!
-//! [`Tz`]: chrono_tz::Tz
 //! [1]: http://www.iana.org/time-zones
 
 use chrono_tz::Tz;

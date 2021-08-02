@@ -5,7 +5,7 @@ use std::{env, pin::Pin, sync::Arc, time::Duration};
 use futures::{FutureExt as _, Stream};
 use juniper::{
     graphql_object, graphql_subscription, DefaultScalarValue, EmptyMutation, FieldError,
-    GraphQLEnum, RootNode,
+    GraphQLEnum, RootNode, Value,
 };
 use juniper_graphql_ws::ConnectionConfig;
 use juniper_warp::{playground_filter, subscriptions::serve_graphql_ws};

@@ -1,5 +1,7 @@
 //! Common functions, definitions and extensions for parsing and code generation
-//! of [GraphQL arguments][1].
+//! of [GraphQL arguments][1]
+//!
+//! [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments.
 
 use std::mem;
 

@@ -389,10 +389,11 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             .as_ref()
             .map(|desc| quote! { .description(#desc) });
 
+        let extract_stream_type = TypeId::of::<Operation>() != TypeId::of::<Query>();
         let fields_meta = self
             .fields
             .iter()
-            .map(field::Definition::method_meta_tokens);
+            .map(|f| f.method_meta_tokens(extract_stream_type.then(|| scalar)));
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
         let mut interface_tys: Vec<_> = self.interfaces.iter().collect();

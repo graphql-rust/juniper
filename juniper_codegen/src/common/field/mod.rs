@@ -1,5 +1,7 @@
 //! Common functions, definitions and extensions for parsing and code generation
-//! of [GraphQL fields][1].
+//! of [GraphQL fields][1]
+//!
+//! [1]: https://spec.graphql.org/June2018/#sec-Language.Fields.
 
 pub(crate) mod arg;
 
@@ -310,7 +312,7 @@ impl Definition {
     #[must_use]
     pub(crate) fn method_mark_tokens(
         &self,
-        coerce_result: bool,
+        infer_result: bool,
         scalar: &scalar::Type,
     ) -> TokenStream {
         let args_marks = self
@@ -320,7 +322,7 @@ impl Definition {
 
         let ty = &self.ty;
         let mut ty = quote! { #ty };
-        if coerce_result {
+        if infer_result {
             ty = quote! {
                 <#ty as ::juniper::IntoFieldResult::<_, #scalar>>::Item
             };
@@ -344,8 +346,17 @@ impl Definition {
     /// [`Registry`]: juniper::Registry
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_meta_tokens(&self) -> TokenStream {
+    pub(crate) fn method_meta_tokens(
+        &self,
+        extract_stream_type: Option<&scalar::Type>,
+    ) -> TokenStream {
         let (name, ty) = (&self.name, &self.ty);
+        let mut ty = quote! { #ty };
+        if let Some(scalar) = extract_stream_type {
+            ty = quote! {
+                <#ty as ::juniper::ExtractTypeFromStream<_, #scalar>>::Item
+            };
+        }
 
         let description = self
             .description
@@ -527,14 +538,14 @@ impl Definition {
                                         .await
                                         .map_err(|e| ex.new_error(e))
                                 }
-                                Ok(None) => Ok(Value::null()),
+                                Ok(None) => Ok(::juniper::Value::null()),
                                 Err(e) => Err(ex.new_error(e)),
                             }
                         }
                     });
                     Ok(::juniper::Value::Scalar::<
                         ::juniper::ValuesStream::<#scalar>
-                    >(Box::pin(stream)))
+                    >(::juniper::futures::StreamExt::boxed(stream)))
                 })
             }
         }

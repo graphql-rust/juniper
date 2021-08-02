@@ -532,10 +532,7 @@ impl Definition {
             a.cmp(&b)
         });
 
-        let fields_meta = self
-            .fields
-            .iter()
-            .map(field::Definition::method_meta_tokens);
+        let fields_meta = self.fields.iter().map(|f| f.method_meta_tokens(None));
 
         quote! {
             #[automatically_derived]

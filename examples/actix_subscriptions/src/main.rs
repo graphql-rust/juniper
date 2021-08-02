@@ -11,7 +11,7 @@ use actix_web::{
 use juniper::{
     graphql_object, graphql_subscription,
     tests::fixtures::starwars::schema::{Character as _, Database, Query},
-    DefaultScalarValue, EmptyMutation, FieldError, RootNode,
+    DefaultScalarValue, EmptyMutation, FieldError, RootNode, Value,
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
 use juniper_graphql_ws::ConnectionConfig;

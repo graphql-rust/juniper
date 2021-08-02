@@ -384,6 +384,8 @@ pub type DynGraphQLValue<S, C, TI> =
 ///     }
 /// }
 /// ```
+///
+/// [3]: https://spec.graphql.org/June2018/#sec-Objects
 pub trait GraphQLType<S = DefaultScalarValue>: GraphQLValue<S>
 where
     S: ScalarValue,

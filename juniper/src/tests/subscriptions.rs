@@ -1,10 +1,10 @@
 use std::{iter, iter::FromIterator as _, pin::Pin};
 
-use futures::{self, StreamExt as _};
+use futures::{stream, StreamExt as _};
 
 use crate::{
-    http::GraphQLRequest, Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError,
-    GraphQLObject, Object, RootNode, Value,
+    graphql_object, graphql_subscription, http::GraphQLRequest, Context, DefaultScalarValue,
+    EmptyMutation, ExecutionError, FieldError, GraphQLObject, Object, RootNode, Value,
 };
 
 #[derive(Debug, Clone)]
@@ -22,7 +22,7 @@ struct Human {
 
 struct MyQuery;
 
-#[crate::graphql_object(context = MyContext)]
+#[graphql_object(context = MyContext)]
 impl MyQuery {
     fn test(&self) -> i32 {
         0 // NOTICE: does not serve a purpose
@@ -42,10 +42,10 @@ type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
 struct MySubscription;
 
-#[crate::graphql_subscription(context = MyContext)]
+#[graphql_subscription(context = MyContext)]
 impl MySubscription {
     async fn async_human() -> HumanStream {
-        Box::pin(futures::stream::once(async {
+        Box::pin(stream::once(async {
             Human {
                 id: "stream id".to_string(),
                 name: "stream name".to_string(),
@@ -61,9 +61,9 @@ impl MySubscription {
         ))
     }
 
-    async fn human_with_context(ctxt: &MyContext) -> HumanStream {
-        let context_val = ctxt.0.clone();
-        Box::pin(futures::stream::once(async move {
+    async fn human_with_context(context: &MyContext) -> HumanStream {
+        let context_val = context.0.clone();
+        Box::pin(stream::once(async move {
             Human {
                 id: context_val.to_string(),
                 name: context_val.to_string(),
@@ -73,7 +73,7 @@ impl MySubscription {
     }
 
     async fn human_with_args(id: String, name: String) -> HumanStream {
-        Box::pin(futures::stream::once(async {
+        Box::pin(stream::once(async {
             Human {
                 id,
                 name,

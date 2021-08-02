@@ -1,8 +1,11 @@
-use std::pin::Pin;
+use std::{collections::HashMap, pin::Pin};
 
-use futures::StreamExt as _;
+use futures::{stream, StreamExt as _};
 
-use crate::{graphql_object, graphql_value, EmptyMutation, RootNode, Value};
+use crate::{
+    graphql_object, graphql_subscription, graphql_value, resolve_into_stream, DefaultScalarValue,
+    EmptyMutation, Executor, RootNode, Value,
+};
 
 use super::util;
 
@@ -17,7 +20,7 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[graphql_object(Context = Context)]
+#[graphql_object(context = Context)]
 impl<'a> WithLifetime<'a> {
     fn value(&self) -> &str {
         self.value
@@ -26,7 +29,7 @@ impl<'a> WithLifetime<'a> {
 
 struct WithContext;
 
-#[graphql_object(Context = Context)]
+#[graphql_object(context = Context)]
 impl WithContext {
     fn ctx(ctx: &Context) -> bool {
         ctx.flag1
@@ -36,9 +39,7 @@ impl WithContext {
 #[derive(Default)]
 struct Query;
 
-#[graphql_object(
-    Context = Context,
-)]
+#[graphql_object(context = Context)]
 impl Query {
     fn empty() -> bool {
         true
@@ -62,76 +63,74 @@ struct Subscription {
     b: bool,
 }
 
-#[crate::graphql_subscription(
-    scalar = crate::DefaultScalarValue,
+#[graphql_subscription(
     name = "Subscription",
     context = Context,
+    scalar = DefaultScalarValue,
 )]
 /// Subscription Description.
 impl Subscription {
     #[graphql(description = "With Self Description")]
     async fn with_self(&self) -> Stream<bool> {
         let b = self.b;
-        Box::pin(futures::stream::once(async move { b }))
+        Box::pin(stream::once(async move { b }))
     }
 
     async fn independent() -> Stream<i32> {
-        Box::pin(futures::stream::once(async { 100 }))
+        Box::pin(stream::once(async { 100 }))
     }
 
-    async fn with_executor(_exec: &Executor<Context>) -> Stream<bool> {
-        Box::pin(futures::stream::once(async { true }))
+    async fn with_executor(_executor: &Executor<'_, '_, Context>) -> Stream<bool> {
+        Box::pin(stream::once(async { true }))
     }
 
-    async fn with_executor_and_self(&self, _exec: &Executor<Context>) -> Stream<bool> {
-        Box::pin(futures::stream::once(async { true }))
+    async fn with_executor_and_self(&self, _executor: &Executor<'_, '_, Context>) -> Stream<bool> {
+        Box::pin(stream::once(async { true }))
     }
 
     async fn with_context(_context: &Context) -> Stream<bool> {
-        Box::pin(futures::stream::once(async { true }))
+        Box::pin(stream::once(async { true }))
     }
 
     async fn with_context_and_self(&self, _context: &Context) -> Stream<bool> {
-        Box::pin(futures::stream::once(async { true }))
+        Box::pin(stream::once(async { true }))
     }
 
     #[graphql(name = "renamed")]
     async fn has_custom_name() -> Stream<bool> {
-        Box::pin(futures::stream::once(async { true }))
+        Box::pin(stream::once(async { true }))
     }
 
     #[graphql(description = "attr")]
     async fn has_description_attr() -> Stream<bool> {
-        Box::pin(futures::stream::once(async { true }))
+        Box::pin(stream::once(async { true }))
     }
 
     /// Doc description
     async fn has_description_doc_comment() -> Stream<bool> {
-        Box::pin(futures::stream::once(async { true }))
+        Box::pin(stream::once(async { true }))
     }
 
     async fn has_argument(arg1: bool) -> Stream<bool> {
-        Box::pin(futures::stream::once(async move { arg1 }))
+        Box::pin(stream::once(async move { arg1 }))
     }
 
-    #[graphql(arguments(default_arg(default = true)))]
-    async fn default_argument(default_arg: bool) -> Stream<bool> {
-        Box::pin(futures::stream::once(async move { default_arg }))
+    async fn default_argument(#[graphql(default = true)] default_arg: bool) -> Stream<bool> {
+        Box::pin(stream::once(async move { default_arg }))
     }
 
-    #[graphql(arguments(arg(description = "my argument description")))]
-    async fn arg_with_description(arg: bool) -> Stream<bool> {
-        Box::pin(futures::stream::once(async move { arg }))
+    async fn arg_with_description(
+        #[graphql(description = "my argument description")] arg: bool,
+    ) -> Stream<bool> {
+        Box::pin(stream::once(async move { arg }))
     }
 
     async fn with_context_child(&self) -> Stream<WithContext> {
-        Box::pin(futures::stream::once(async { WithContext }))
+        Box::pin(stream::once(async { WithContext }))
     }
 
-    async fn with_implicit_lifetime_child(&self) -> Stream<WithLifetime<'_>> {
-        Box::pin(futures::stream::once(async {
-            WithLifetime { value: "blub" }
-        }))
+    async fn with_implicit_lifetime_child(&self) -> Stream<WithLifetime<'static>> {
+        Box::pin(stream::once(async { WithLifetime { value: "blub" } }))
     }
 
     async fn with_mut_arg(mut arg: bool) -> Stream<bool> {
@@ -139,11 +138,11 @@ impl Subscription {
             arg = !arg;
         }
 
-        Box::pin(futures::stream::once(async move { arg }))
+        Box::pin(stream::once(async move { arg }))
     }
 
-    async fn without_type_alias() -> Pin<Box<dyn futures::Stream<Item = &str> + Send>> {
-        Box::pin(futures::stream::once(async { "abc" }))
+    async fn without_type_alias() -> Pin<Box<dyn futures::Stream<Item = &'static str> + Send>> {
+        Box::pin(stream::once(async { "abc" }))
     }
 }
 
@@ -152,123 +151,90 @@ async fn object_introspect() {
     let res = util::run_info_query::<Query, Mutation, Subscription>("Subscription").await;
     assert_eq!(
         res,
-        crate::graphql_value!({
+        graphql_value!({
             "name": "Subscription",
             "description": "Subscription Description.",
-            "fields": [
-                {
-                    "name": "withSelf",
-                    "description": "With Self Description",
-                    "args": [],
-                },
-                {
-                    "name": "independent",
+            "fields": [{
+                "name": "withSelf",
+                "description": "With Self Description",
+                "args": [],
+            }, {
+                "name": "independent",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withExecutor",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withExecutorAndSelf",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withContext",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withContextAndSelf",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "renamed",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "hasDescriptionAttr",
+                "description": "attr",
+                "args": [],
+            }, {
+                "name": "hasDescriptionDocComment",
+                "description": "Doc description",
+                "args": [],
+            }, {
+                "name": "hasArgument",
+                "description": None,
+                "args": [{
+                    "name": "arg1",
                     "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withExecutor",
+                    "type": {"name": None},
+                }],
+            }, {
+                "name": "defaultArgument",
+                "description": None,
+                "args": [{
+                    "name": "defaultArg",
                     "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withExecutorAndSelf",
+                    "type": {"name": "Boolean"},
+                }],
+            }, {
+                "name": "argWithDescription",
+                "description": None,
+                "args": [{
+                    "name": "arg",
+                    "description": "my argument description",
+                    "type": {"name": None},
+                }],
+            }, {
+                "name": "withContextChild",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withImplicitLifetimeChild",
+                "description": None,
+                "args": [],
+            }, {
+                "name": "withMutArg",
+                "description": None,
+                "args": [{
+                    "name": "arg",
                     "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withContext",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withContextAndSelf",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "renamed",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "hasDescriptionAttr",
-                    "description": "attr",
-                    "args": [],
-                },
-                {
-                    "name": "hasDescriptionDocComment",
-                    "description": "Doc description",
-                    "args": [],
-                },
-                {
-                    "name": "hasArgument",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "arg1",
-                            "description": None,
-                            "type": {
-                                "name": None,
-                            },
-                        }
-                    ],
-                },
-                {
-                    "name": "defaultArgument",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "defaultArg",
-                            "description": None,
-                            "type": {
-                                "name": "Boolean",
-                            },
-                        }
-                    ],
-                },
-                {
-                    "name": "argWithDescription",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "arg",
-                            "description": "my argument description",
-                            "type": {
-                                "name": None
-                            },
-                        }
-                    ],
-                },
-                {
-                    "name": "withContextChild",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withImplicitLifetimeChild",
-                    "description": None,
-                    "args": [],
-                },
-                {
-                    "name": "withMutArg",
-                    "description": None,
-                    "args": [
-                        {
-                            "name": "arg",
-                            "description": None,
-                            "type": {
-                                "name": None,
-                            },
-                        }
-                    ],
-                },
-                {
-                    "name": "withoutTypeAlias",
-                    "description": None,
-                    "args": [],
-                }
-            ]
+                    "type": {"name": None},
+                }],
+            }, {
+                "name": "withoutTypeAlias",
+                "description": None,
+                "args": [],
+            }],
         })
     );
 }
@@ -302,10 +268,10 @@ async fn object_query() {
         EmptyMutation::<Context>::new(),
         Subscription { b: true },
     );
-    let vars = std::collections::HashMap::new();
+    let vars = HashMap::new();
 
     let (stream_val, errs) =
-        crate::resolve_into_stream(doc, None, &schema, &vars, &Context { flag1: true })
+        resolve_into_stream(doc, None, &schema, &vars, &Context { flag1: true })
             .await
             .expect("Execution failed");
 
@@ -342,11 +308,11 @@ async fn object_query() {
             ("argWithDescription".to_string(), graphql_value!(true)),
             (
                 "withContextChild".to_string(),
-                graphql_value!({"ctx": true})
+                graphql_value!({"ctx": true}),
             ),
             (
                 "withImplicitLifetimeChild".to_string(),
-                graphql_value!({ "value": "blub" })
+                graphql_value!({"value": "blub"}),
             ),
             ("withMutArg".to_string(), graphql_value!(false)),
             ("withoutTypeAlias".to_string(), graphql_value!("abc")),

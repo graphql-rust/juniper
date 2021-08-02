@@ -540,23 +540,27 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
         .into()
 }
 
-/// `#[graphql_interface]` macro for generating a [GraphQL interface][1] implementation for traits
-/// and its implementers.
+/// `#[graphql_interface]` macro for generating a [GraphQL interface][1]
+/// implementation for traits and its implementers.
 ///
-/// Specifying multiple `#[graphql_interface]` attributes on the same definition is totally okay.
+/// Specifying multiple `#[graphql_interface]` attributes on the same definition
+/// is totally okay.
 /// They all will be treated as a single attribute.
 ///
-/// The main difference between [GraphQL interface][1] type and Rust trait is that the former serves
-/// both as an _abstraction_ and a _value downcastable to concrete implementers_, while in Rust, a
-/// trait is an _abstraction only_ and you need a separate type to downcast into a concrete
-/// implementer, like enum or [trait object][3], because trait doesn't represent a type itself.
-/// Macro uses Rust enum to represent a value type of [GraphQL interface][1] by default, however
-/// [trait object][3] may be used too (use `dyn` attribute argument for that).
+/// The main difference between [GraphQL interface][1] type and Rust trait is
+/// that the former serves both as an _abstraction_ and a _value downcastable to
+/// concrete implementers_, while in Rust, a trait is an _abstraction only_ and
+/// you need a separate type to downcast into a concrete implementer, like enum
+/// or [trait object][3], because trait doesn't represent a type itself.
+/// Macro uses Rust enum to represent a value type of [GraphQL interface][1] by
+/// default, however [trait object][3] may be used too (use `dyn` attribute
+/// argument for that).
 ///
-/// A __trait has to be [object safe][2]__ if its values are represented by [trait object][3],
-/// because schema resolvers will need to return that [trait object][3]. The [trait object][3] has
-/// to be [`Send`] and [`Sync`], and the macro automatically generate a convenien type alias for
-/// such [trait object][3].
+/// A __trait has to be [object safe][2]__ if its values are represented by
+/// [trait object][3], because schema resolvers will need to return that
+/// [trait object][3]. The [trait object][3] has to be [`Send`] and [`Sync`],
+/// and the macro automatically generate a convenien type alias for such
+/// [trait object][3].
 ///
 /// ```
 /// use juniper::{graphql_interface, GraphQLObject};
