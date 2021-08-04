@@ -1725,6 +1725,7 @@ mod generic {
             );
         }
     }
+
     #[tokio::test]
     async fn dyn_resolves_info_field() {
         const DOC: &str = r#"{
@@ -1969,6 +1970,7 @@ mod generic_async {
             );
         }
     }
+
     #[tokio::test]
     async fn dyn_resolves_info_field() {
         const DOC: &str = r#"{
@@ -2213,6 +2215,7 @@ mod generic_lifetime_async {
             );
         }
     }
+
     #[tokio::test]
     async fn dyn_resolves_info_field() {
         const DOC: &str = r#"{
@@ -2408,7 +2411,7 @@ mod argument {
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
                 Ok((
-                    graphql_value!({"__type": { "fields": [{"args": [{"description": None}]}]}}),
+                    graphql_value!({"__type": {"fields": [{"args": [{"description": None}]}]}}),
                     vec![],
                 )),
             );
@@ -2436,7 +2439,7 @@ mod argument {
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
                 Ok((
-                    graphql_value!({"__type": { "fields": [{"args": [{"defaultValue": None}]}]}}),
+                    graphql_value!({"__type": {"fields": [{"args": [{"defaultValue": None}]}]}}),
                     vec![],
                 )),
             );
@@ -2591,7 +2594,8 @@ mod description_from_doc_comment {
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
                 graphql_value!({"__type": {
-                    "description": "Rust docs.", "fields": [{"description": "Rust `id` docs."}],
+                    "description": "Rust docs.",
+                    "fields": [{"description": "Rust `id` docs."}],
                 }}),
                 vec![],
             )),
@@ -2600,8 +2604,6 @@ mod description_from_doc_comment {
 }
 
 mod deprecation_from_attr {
-    #![allow(deprecated)]
-
     use super::*;
 
     #[graphql_interface(for = Human)]
@@ -2675,7 +2677,7 @@ mod deprecation_from_attr {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"character": {"a": "a", "b": "b"}}), vec![],)),
+            Ok((graphql_value!({"character": {"a": "a", "b": "b"}}), vec![])),
         );
     }
 
@@ -2733,8 +2735,6 @@ mod deprecation_from_attr {
 }
 
 mod explicit_name_description_and_deprecation {
-    #![allow(deprecated)]
-
     use super::*;
 
     /// Rust docs.
@@ -2745,7 +2745,7 @@ mod explicit_name_description_and_deprecation {
         #[deprecated(note = "Should be omitted.")]
         fn id(
             &self,
-            #[graphql(name = "myName", desc = "My argument.", default)] n: Option<String>,
+            #[graphql(name = "myName", desc = "My argument.")] n: Option<String>,
         ) -> &str;
 
         #[graphql(deprecated)]

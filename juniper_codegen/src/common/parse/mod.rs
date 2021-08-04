@@ -111,8 +111,9 @@ pub(crate) trait TypeExt {
     /// with the given `func`tion.
     fn lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F);
 
-    /// Anonymizes all the lifetime parameters of this [`syn::Type`] making it
-    /// suitable for using in contexts with inferring.
+    /// Anonymizes all the lifetime parameters of this [`syn::Type`] (except
+    /// the `'static` ones), making it suitable for using in contexts with
+    /// inferring.
     fn lifetimes_anonymized(&mut self);
 
     /// Returns the topmost [`syn::Ident`] of this [`syn::TypePath`], if any.
@@ -216,7 +217,9 @@ impl TypeExt for syn::Type {
 
     fn lifetimes_anonymized(&mut self) {
         self.lifetimes_iter_mut(&mut |lt| {
-            lt.ident = syn::Ident::new("_", Span::call_site());
+            if lt.ident != "_" && lt.ident != "static" {
+                lt.ident = syn::Ident::new("_", Span::call_site());
+            }
         });
     }
 

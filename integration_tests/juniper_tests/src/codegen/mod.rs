@@ -3,7 +3,6 @@ mod derive_input_object;
 mod derive_object;
 mod derive_object_with_raw_idents;
 mod derive_scalar;
-mod impl_object;
 mod impl_scalar;
 mod interface_attr;
 mod object_attr;
