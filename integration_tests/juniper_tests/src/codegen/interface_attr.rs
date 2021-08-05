@@ -2743,10 +2743,7 @@ mod explicit_name_description_and_deprecation {
         /// Rust `id` docs.
         #[graphql(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
         #[deprecated(note = "Should be omitted.")]
-        fn id(
-            &self,
-            #[graphql(name = "myName", desc = "My argument.")] n: Option<String>,
-        ) -> &str;
+        fn id(&self, #[graphql(name = "myName", desc = "My argument.")] n: Option<String>) -> &str;
 
         #[graphql(deprecated)]
         #[deprecated(note = "Should be omitted.")]
@@ -3818,7 +3815,7 @@ mod bounded_generic_scalar {
 mod explicit_custom_context {
     use super::*;
 
-    pub struct CustomContext;
+    struct CustomContext;
 
     impl juniper::Context for CustomContext {}
 
@@ -4085,7 +4082,7 @@ mod explicit_custom_context {
 mod inferred_custom_context_from_field {
     use super::*;
 
-    pub struct CustomContext(String);
+    struct CustomContext(String);
 
     impl juniper::Context for CustomContext {}
 

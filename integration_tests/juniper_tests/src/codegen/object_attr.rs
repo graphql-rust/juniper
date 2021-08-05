@@ -653,6 +653,160 @@ mod generic_lifetime_async {
     }
 }
 
+mod nested_generic_lifetime_async {
+    use super::*;
+
+    struct Droid<'p, A = ()> {
+        id: A,
+        primary_function: &'p str,
+    }
+
+    #[graphql_object]
+    impl<'p> Droid<'p, i32> {
+        async fn id(&self) -> i32 {
+            self.id
+        }
+
+        async fn primary_function(&self) -> &str {
+            self.primary_function
+        }
+    }
+
+    #[graphql_object(name = "DroidString")]
+    impl<'id, 'p> Droid<'p, &'id str> {
+        async fn id(&self) -> &str {
+            self.id
+        }
+
+        async fn primary_function(&self) -> &str {
+            self.primary_function
+        }
+    }
+
+    struct Human<'p, A = ()> {
+        id: A,
+        home_planet: &'p str,
+    }
+
+    #[graphql_object]
+    impl<'p> Human<'p, i32> {
+        async fn id(&self) -> i32 {
+            self.id
+        }
+
+        async fn planet(&self) -> &str {
+            self.home_planet
+        }
+
+        async fn droid(&self) -> Droid<'_, i32> {
+            Droid {
+                id: self.id,
+                primary_function: "run",
+            }
+        }
+    }
+
+    #[graphql_object(name = "HumanString")]
+    impl<'id, 'p> Human<'p, &'id str> {
+        async fn id(&self) -> &str {
+            self.id
+        }
+
+        async fn planet(&self) -> &str {
+            self.home_planet
+        }
+
+        async fn droid(&self) -> Droid<'_, &str> {
+            Droid {
+                id: "none",
+                primary_function: self.home_planet,
+            }
+        }
+    }
+
+    #[derive(Clone)]
+    struct QueryRoot(String);
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn human(&self) -> Human<'static, i32> {
+            Human {
+                id: 32,
+                home_planet: "earth",
+            }
+        }
+
+        fn human_string(&self) -> Human<'_, &str> {
+            Human {
+                id: self.0.as_str(),
+                home_planet: self.0.as_str(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_human() {
+        const DOC: &str = r#"{
+            human {
+                id
+                planet
+                droid {
+                    id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot("mars".to_owned()));
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"human": {
+                    "id": 32,
+                    "planet": "earth",
+                    "droid": {
+                        "id": 32,
+                        "primaryFunction": "run",
+                    },
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_human_string() {
+        const DOC: &str = r#"{
+            humanString {
+                id
+                planet
+                droid {
+                    id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot("mars".to_owned()));
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"humanString": {
+                    "id": "mars",
+                    "planet": "mars",
+                    "droid": {
+                        "id": "none",
+                        "primaryFunction": "mars",
+                    },
+                }}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod argument {
     use super::*;
 
@@ -1190,6 +1344,126 @@ mod explicit_name_description_and_deprecation {
     }
 }
 
+mod explicit_custom_context {
+    use super::*;
+
+    struct CustomContext(String);
+
+    impl juniper::Context for CustomContext {}
+
+    struct Human;
+
+    #[graphql_object(context = CustomContext)]
+    impl Human {
+        async fn id<'c>(&self, context: &'c CustomContext) -> &'c str {
+            context.0.as_str()
+        }
+
+        async fn info(_ctx: &()) -> &'static str {
+            "human being"
+        }
+
+        fn more(#[graphql(context)] custom: &CustomContext) -> &str {
+            custom.0.as_str()
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(context = CustomContext)]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                info
+                more
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+        let ctx = CustomContext("ctx!".into());
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &ctx).await,
+            Ok((
+                graphql_value!({"human": {
+                    "id": "ctx!",
+                    "info": "human being",
+                    "more": "ctx!",
+                }}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod inferred_custom_context_from_field {
+    use super::*;
+
+    struct CustomContext(String);
+
+    impl juniper::Context for CustomContext {}
+
+    struct Human;
+
+    #[graphql_object]
+    impl Human {
+        async fn id<'c>(&self, context: &'c CustomContext) -> &'c str {
+            context.0.as_str()
+        }
+
+        async fn info(_ctx: &()) -> &'static str {
+            "human being"
+        }
+
+        fn more(#[graphql(context)] custom: &CustomContext) -> &str {
+            custom.0.as_str()
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(context = CustomContext)]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                info
+                more
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+        let ctx = CustomContext("ctx!".into());
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &ctx).await,
+            Ok((
+                graphql_value!({"human": {
+                    "id": "ctx!",
+                    "info": "human being",
+                    "more": "ctx!",
+                }}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod executor {
     use juniper::LookAheadMethods as _;
 
@@ -1212,6 +1486,13 @@ mod executor {
         {
             "no info"
         }
+
+        fn info2<'e, S>(_executor: &'e Executor<'_, '_, (), S>) -> &'e str
+        where
+            S: ScalarValue,
+        {
+            "no info"
+        }
     }
 
     struct QueryRoot;
@@ -1229,6 +1510,7 @@ mod executor {
             human {
                 id
                 info
+                info2
             }
         }"#;
 
@@ -1237,7 +1519,11 @@ mod executor {
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
-                graphql_value!({"human": {"id": "id", "info": "no info"}}),
+                graphql_value!({"human": {
+                    "id": "id",
+                    "info": "no info",
+                    "info2": "no info",
+                }}),
                 vec![],
             )),
         );
