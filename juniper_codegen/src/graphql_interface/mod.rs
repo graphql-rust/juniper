@@ -1270,6 +1270,7 @@ impl EnumType {
         });
 
         let mut impl_tokens = quote! {
+            #[allow(deprecated)]
             #[automatically_derived]
             impl#impl_generics #trait_ident#generics for #enum_ty#generics #where_clause {
                 #( #assoc_types )*

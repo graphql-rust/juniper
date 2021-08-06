@@ -2915,6 +2915,107 @@ mod explicit_name_description_and_deprecation {
     }
 }
 
+mod renamed_all_fields_and_args {
+    use super::*;
+
+    #[graphql_interface(rename_all = "none", for = Human)]
+    trait Character {
+        fn id(&self) -> &str {
+            "human-32"
+        }
+
+        async fn home_planet(&self, planet_name: String) -> String {
+            planet_name
+        }
+
+        async fn r#async_info(&self, r#my_num: i32) -> i32 {
+            r#my_num
+        }
+    }
+
+    struct Human;
+
+    #[graphql_object(rename_all = "none", impl = CharacterValue)]
+    impl Human {
+        fn id() -> &'static str {
+            "human-32"
+        }
+
+        fn home_planet(planet_name: String) -> String {
+            planet_name
+        }
+
+        fn r#async_info(r#my_num: i32) -> i32 {
+            r#my_num
+        }
+    }
+
+    #[graphql_interface]
+    impl Character for Human {}
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
+            Human.into()
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            character {
+                id
+                home_planet(planet_name: "earth")
+                async_info(my_num: 3)
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {
+                    "id": "human-32",
+                    "home_planet": "earth",
+                    "async_info": 3,
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_correct_fields_and_args_names() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                fields {
+                    name
+                    args {
+                        name
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"name": "id", "args": []},
+                    {"name": "home_planet", "args": [{"name": "planet_name"}]},
+                    {"name": "async_info", "args": [{"name": "my_num"}]},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod explicit_scalar {
     use super::*;
 

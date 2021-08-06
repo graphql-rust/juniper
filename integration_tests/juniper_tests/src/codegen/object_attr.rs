@@ -2,7 +2,8 @@
 
 use juniper::{
     execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
-    Executor, FieldError, GraphQLType, IntoFieldError, RootNode, ScalarValue, Variables,
+    Executor, FieldError, FieldResult, GraphQLObject, GraphQLType, IntoFieldError, RootNode,
+    ScalarValue, Variables,
 };
 
 fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -1431,6 +1432,89 @@ mod explicit_name_description_and_deprecation {
     }
 }
 
+mod renamed_all_fields_and_args {
+    use super::*;
+
+    struct Human;
+
+    #[graphql_object(rename_all = "none")]
+    impl Human {
+        fn id() -> &'static str {
+            "human-32"
+        }
+
+        async fn home_planet(&self, planet_name: String) -> String {
+            planet_name
+        }
+
+        async fn r#async_info(r#my_num: i32) -> i32 {
+            r#my_num
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                home_planet(planet_name: "earth")
+                async_info(my_num: 3)
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"human": {
+                    "id": "human-32",
+                    "home_planet": "earth",
+                    "async_info": 3,
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_correct_fields_and_args_names() {
+        const DOC: &str = r#"{
+            __type(name: "Human") {
+                fields {
+                    name
+                    args {
+                        name
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"name": "id", "args": []},
+                    {"name": "home_planet", "args": [{"name": "planet_name"}]},
+                    {"name": "async_info", "args": [{"name": "my_num"}]},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod explicit_scalar {
     use super::*;
 
@@ -1809,6 +1893,145 @@ mod executor {
                     "info": "no info",
                     "info2": "no info",
                 }}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod switched_context {
+    use super::*;
+
+    struct CustomContext;
+
+    impl juniper::Context for CustomContext {}
+
+    #[derive(GraphQLObject)]
+    #[graphql(context = CustomContext)]
+    struct Droid {
+        id: i32,
+    }
+
+    struct Human;
+
+    #[graphql_object(context = CustomContext)]
+    impl Human {
+        fn switch_always<'e, S: ScalarValue>(
+            executor: &'e Executor<'_, '_, CustomContext, S>,
+        ) -> (&'e CustomContext, Droid) {
+            (executor.context(), Droid { id: 0 })
+        }
+
+        async fn switch_opt<'e, S: ScalarValue>(
+            executor: &'e Executor<'_, '_, CustomContext, S>,
+        ) -> Option<(&'e CustomContext, Droid)> {
+            Some((executor.context(), Droid { id: 1 }))
+        }
+
+        fn switch_res<'e, S: ScalarValue>(
+            &self,
+            executor: &'e Executor<'_, '_, CustomContext, S>,
+        ) -> FieldResult<(&'e CustomContext, Droid)> {
+            Ok((executor.context(), Droid { id: 2 }))
+        }
+
+        async fn switch_res_opt<'e, S: ScalarValue>(
+            &self,
+            executor: &'e Executor<'_, '_, CustomContext, S>,
+        ) -> FieldResult<Option<(&'e CustomContext, Droid)>> {
+            Ok(Some((executor.context(), Droid { id: 3 })))
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(context = CustomContext)]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                switchAlways { id }
+                switchOpt { id }
+                switchRes { id }
+                switchResOpt { id }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+        let ctx = CustomContext;
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &ctx).await,
+            Ok((
+                graphql_value!({"human": {
+                    "switchAlways": {"id": 0},
+                    "switchOpt": {"id": 1},
+                    "switchRes": {"id": 2},
+                    "switchResOpt": {"id": 3},
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_correct_fields_types() {
+        const DOC: &str = r#"{
+            __type(name: "Human") {
+                fields {
+                    name
+                    type {
+                        kind
+                        name
+                        ofType {
+                            name
+                        }
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+        let ctx = CustomContext;
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &ctx).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [{
+                    "name": "switchAlways",
+                    "type": {
+                        "kind": "NON_NULL",
+                        "name": None,
+                        "ofType": {"name": "Droid"},
+                    },
+                }, {
+                    "name": "switchOpt",
+                    "type": {
+                        "kind": "OBJECT",
+                        "name": "Droid",
+                        "ofType": None,
+                    },
+                }, {
+                    "name": "switchRes",
+                    "type": {
+                        "kind": "NON_NULL",
+                        "name": None,
+                        "ofType": {"name": "Droid"},
+                    },
+                }, {
+                    "name": "switchResOpt",
+                    "type": {
+                        "kind": "OBJECT",
+                        "name": "Droid",
+                        "ofType": None,
+                    },
+                }]}}),
                 vec![],
             )),
         );

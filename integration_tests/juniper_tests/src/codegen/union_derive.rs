@@ -1381,9 +1381,16 @@ mod trivial_struct {
         }"#;
 
         let schema = schema(QueryRoot::Human);
+        let db = Database {
+            human: Some(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            }),
+            droid: None,
+        };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &Variables::new(), &db).await,
             Ok((graphql_value!({"__type": {"kind": "UNION"}}), vec![])),
         );
     }
@@ -1397,9 +1404,16 @@ mod trivial_struct {
         }"#;
 
         let schema = schema(QueryRoot::Human);
+        let db = Database {
+            human: Some(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            }),
+            droid: None,
+        };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &Variables::new(), &db).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -1413,9 +1427,16 @@ mod trivial_struct {
         }"#;
 
         let schema = schema(QueryRoot::Human);
+        let db = Database {
+            human: Some(Human {
+                id: "human-32".to_string(),
+                home_planet: "earth".to_string(),
+            }),
+            droid: None,
+        };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &Variables::new(), &db).await,
             Ok((graphql_value!({"__type": {"description": None}}), vec![])),
         );
     }

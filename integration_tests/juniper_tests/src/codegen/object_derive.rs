@@ -742,6 +742,81 @@ mod explicit_name_description_and_deprecation {
     }
 }
 
+mod renamed_all_fields {
+    use super::*;
+
+    #[derive(GraphQLObject)]
+    #[graphql(rename_all = "none")]
+    struct Human {
+        id: &'static str,
+        home_planet: String,
+        r#async_info: i32,
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human {
+                id: "human-32",
+                home_planet: "earth".into(),
+                r#async_info: 3,
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                home_planet
+                async_info
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"human": {
+                    "id": "human-32",
+                    "home_planet": "earth",
+                    "async_info": 3,
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_correct_fields_names() {
+        const DOC: &str = r#"{
+            __type(name: "Human") {
+                fields {
+                    name
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"name": "id"},
+                    {"name": "home_planet"},
+                    {"name": "async_info"},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod explicit_scalar {
     use super::*;
 
@@ -909,9 +984,7 @@ mod explicit_custom_context {
     #[graphql_object(context = CustomContext)]
     impl QueryRoot {
         fn human(ctx: &CustomContext) -> Human<'_> {
-            Human {
-                id: ctx.0.as_str(),
-            }
+            Human { id: ctx.0.as_str() }
         }
     }
 
