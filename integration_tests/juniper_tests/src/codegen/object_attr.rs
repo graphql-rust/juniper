@@ -51,14 +51,14 @@ mod trivial {
         }
     }
 
-    const DOC: &str = r#"{
-        human {
-            id
-        }
-    }"#;
-
     #[tokio::test]
     async fn resolves() {
+        const DOC: &str = r#"{
+            human {
+                id
+            }
+        }"#;
+
         let schema = schema(QueryRoot);
 
         assert_eq!(
@@ -139,14 +139,14 @@ mod trivial_async {
         }
     }
 
-    const DOC: &str = r#"{
-        human {
-            id
-        }
-    }"#;
-
     #[tokio::test]
     async fn resolves() {
+        const DOC: &str = r#"{
+            human {
+                id
+            }
+        }"#;
+
         let schema = schema(QueryRoot);
 
         assert_eq!(
@@ -204,7 +204,7 @@ mod trivial_async {
     }
 }
 
-mod raw_field {
+mod raw_method {
     use super::*;
 
     struct Human;
@@ -229,15 +229,15 @@ mod raw_field {
         }
     }
 
-    const DOC: &str = r#"{
-        human {
-            myId
-            async
-        }
-    }"#;
-
     #[tokio::test]
     async fn resolves() {
+        const DOC: &str = r#"{
+            human {
+                myId
+                async
+            }
+        }"#;
+
         let schema = schema(QueryRoot);
 
         assert_eq!(
@@ -271,6 +271,71 @@ mod raw_field {
                     "kind": "OBJECT",
                     "fields": [{"name": "myId"}, {"name": "async"}],
                 }}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod ignored_method {
+    use super::*;
+
+    struct Human;
+
+    #[graphql_object]
+    impl Human {
+        fn id() -> &'static str {
+            "human-32"
+        }
+
+        #[allow(dead_code)]
+        #[graphql(ignore)]
+        fn planet() -> &'static str {
+            "earth"
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves() {
+        const DOC: &str = r#"{
+            human {
+                id
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn is_not_field() {
+        const DOC: &str = r#"{
+            __type(name: "Human") {
+                fields {
+                    name
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [{"name": "id"}]}}),
                 vec![],
             )),
         );
@@ -400,7 +465,7 @@ mod generic {
 
         fn human_string(&self) -> Human<String> {
             Human {
-                id: "human-32".to_owned(),
+                id: "human-32".into(),
                 _home_planet: (),
             }
         }
@@ -491,7 +556,7 @@ mod generic_async {
 
         fn human_string(&self) -> Human<String> {
             Human {
-                id: "human-32".to_owned(),
+                id: "human-32".into(),
                 _home_planet: (),
             }
         }
@@ -605,7 +670,7 @@ mod generic_lifetime_async {
             }
         }"#;
 
-        let schema = schema(QueryRoot("mars".to_owned()));
+        let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -625,7 +690,7 @@ mod generic_lifetime_async {
             }
         }"#;
 
-        let schema = schema(QueryRoot("mars".to_owned()));
+        let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -644,7 +709,7 @@ mod generic_lifetime_async {
             }
         }"#;
 
-        let schema = schema(QueryRoot("mars".to_owned()));
+        let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -757,7 +822,7 @@ mod nested_generic_lifetime_async {
             }
         }"#;
 
-        let schema = schema(QueryRoot("mars".to_owned()));
+        let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -788,7 +853,7 @@ mod nested_generic_lifetime_async {
             }
         }"#;
 
-        let schema = schema(QueryRoot("mars".to_owned()));
+        let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -804,6 +869,28 @@ mod nested_generic_lifetime_async {
                 vec![],
             )),
         );
+    }
+
+    #[tokio::test]
+    async fn uses_type_name_without_type_params() {
+        for object in &["Human", "Droid"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        name
+                    }}
+                }}"#,
+                object,
+            );
+
+            let schema = schema(QueryRoot("mars".into()));
+
+            let expected_name: &str = *object;
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"__type": {"name": expected_name}}), vec![])),
+            );
+        }
     }
 }
 
@@ -1344,6 +1431,204 @@ mod explicit_name_description_and_deprecation {
     }
 }
 
+mod explicit_scalar {
+    use super::*;
+
+    struct Human;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl Human {
+        fn id(&self) -> &str {
+            "human-32"
+        }
+
+        async fn home_planet() -> &'static str {
+            "earth"
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                homePlanet
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"human": {"id": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod custom_scalar {
+    use crate::custom_scalar::MyScalarValue;
+
+    use super::*;
+
+    struct Human;
+
+    #[graphql_object(scalar = MyScalarValue)]
+    impl Human {
+        fn id() -> &'static str {
+            "human-32"
+        }
+
+        async fn home_planet(&self) -> &str {
+            "earth"
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = MyScalarValue)]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                homePlanet
+            }
+        }"#;
+
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"human": {"id": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod explicit_generic_scalar {
+    use std::marker::PhantomData;
+
+    use super::*;
+
+    struct Human<S>(PhantomData<S>);
+
+    #[graphql_object(scalar = S)]
+    impl<S: ScalarValue> Human<S> {
+        fn id() -> &'static str {
+            "human-32"
+        }
+
+        async fn another(&self, _executor: &Executor<'_, '_, (), S>) -> Human<S> {
+            Human(PhantomData)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn human<__S>() -> Human<__S> {
+            Human(PhantomData)
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                another {
+                    id
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"human": {
+                    "id": "human-32",
+                    "another": {"id": "human-32"},
+                }}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod bounded_generic_scalar {
+    use super::*;
+
+    struct Human;
+
+    #[graphql_object(scalar = S: ScalarValue + Clone)]
+    impl Human {
+        fn id() -> &'static str {
+            "human-32"
+        }
+
+        async fn another<S>(&self, _executor: &Executor<'_, '_, (), S>) -> Human {
+            Human
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn human() -> Human {
+            Human
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_fields() {
+        const DOC: &str = r#"{
+            human {
+                id
+                another {
+                    id
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"human": {
+                    "id": "human-32",
+                    "another": {"id": "human-32"},
+                }}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod explicit_custom_context {
     use super::*;
 
@@ -1524,71 +1809,6 @@ mod executor {
                     "info": "no info",
                     "info2": "no info",
                 }}),
-                vec![],
-            )),
-        );
-    }
-}
-
-mod ignored_method {
-    use super::*;
-
-    struct Human;
-
-    #[graphql_object]
-    impl Human {
-        fn id() -> &'static str {
-            "human-32"
-        }
-
-        #[allow(dead_code)]
-        #[graphql(ignore)]
-        fn planet() -> &'static str {
-            "earth"
-        }
-    }
-
-    struct QueryRoot;
-
-    #[graphql_object]
-    impl QueryRoot {
-        fn human() -> Human {
-            Human
-        }
-    }
-
-    #[tokio::test]
-    async fn resolves() {
-        const DOC: &str = r#"{
-            human {
-                id
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"human": {"id": "human-32"}}), vec![],)),
-        );
-    }
-
-    #[tokio::test]
-    async fn is_not_field() {
-        const DOC: &str = r#"{
-            __type(name: "Human") {
-                fields {
-                    name
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((
-                graphql_value!({"__type": {"fields": [{"name": "id"}]}}),
                 vec![],
             )),
         );

@@ -1268,8 +1268,8 @@ mod trivial_struct {
     #[derive(GraphQLUnion)]
     #[graphql(context = Database)]
     #[graphql(
-    on Human = Character::as_human,
-    on Droid = Character::as_droid,
+        on Human = Character::as_human,
+        on Droid = Character::as_droid,
     )]
     struct Character {
         id: String,
@@ -1369,6 +1369,54 @@ mod trivial_struct {
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
             )),
+        );
+    }
+
+    #[tokio::test]
+    async fn is_graphql_union() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"__type": {"kind": "UNION"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_type_name() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                name
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
         );
     }
 }
