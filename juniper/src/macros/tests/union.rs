@@ -31,12 +31,6 @@ impl Concrete {
 }
 
 #[derive(GraphQLUnion)]
-#[graphql(name = "ACustomNamedUnion")]
-enum CustomName {
-    Concrete(Concrete),
-}
-
-#[derive(GraphQLUnion)]
 #[graphql(on Concrete = WithLifetime::resolve)]
 enum WithLifetime<'a> {
     #[graphql(ignore)]
@@ -53,44 +47,12 @@ impl<'a> WithLifetime<'a> {
     }
 }
 
-#[derive(GraphQLUnion)]
-#[graphql(on Concrete = WithGenerics::resolve)]
-enum WithGenerics<T> {
-    #[graphql(ignore)]
-    Generic(T),
-}
-
-impl<T> WithGenerics<T> {
-    fn resolve(&self, _: &()) -> Option<&Concrete> {
-        if matches!(self, Self::Generic(_)) {
-            Some(&Concrete)
-        } else {
-            None
-        }
-    }
-}
-
-#[derive(GraphQLUnion)]
-#[graphql(description = "A description")]
-enum DescriptionFirst {
-    Concrete(Concrete),
-}
-
 struct Root;
 
 #[graphql_object]
 impl Root {
-    fn custom_name() -> CustomName {
-        CustomName::Concrete(Concrete)
-    }
     fn with_lifetime(&self) -> WithLifetime<'_> {
         WithLifetime::Int(PhantomData)
-    }
-    fn with_generics() -> WithGenerics<i32> {
-        WithGenerics::Generic(123)
-    }
-    fn description_first() -> DescriptionFirst {
-        DescriptionFirst::Concrete(Concrete)
     }
 }
 
@@ -144,24 +106,6 @@ where
 }
 
 #[tokio::test]
-async fn introspect_custom_name() {
-    run_type_info_query("ACustomNamedUnion", |union, possible_types| {
-        assert_eq!(
-            union.get_field_value("name"),
-            Some(&Value::scalar("ACustomNamedUnion"))
-        );
-        assert_eq!(union.get_field_value("description"), Some(&Value::null()));
-
-        assert!(possible_types.contains(&Value::object(
-            vec![("name", Value::scalar("Concrete"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
 async fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |union, possible_types| {
         assert_eq!(
@@ -169,45 +113,6 @@ async fn introspect_with_lifetime() {
             Some(&Value::scalar("WithLifetime"))
         );
         assert_eq!(union.get_field_value("description"), Some(&Value::null()));
-
-        assert!(possible_types.contains(&Value::object(
-            vec![("name", Value::scalar("Concrete"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
-async fn introspect_with_generics() {
-    run_type_info_query("WithGenerics", |union, possible_types| {
-        assert_eq!(
-            union.get_field_value("name"),
-            Some(&Value::scalar("WithGenerics"))
-        );
-        assert_eq!(union.get_field_value("description"), Some(&Value::null()));
-
-        assert!(possible_types.contains(&Value::object(
-            vec![("name", Value::scalar("Concrete"))]
-                .into_iter()
-                .collect(),
-        )));
-    })
-    .await;
-}
-
-#[tokio::test]
-async fn introspect_description_first() {
-    run_type_info_query("DescriptionFirst", |union, possible_types| {
-        assert_eq!(
-            union.get_field_value("name"),
-            Some(&Value::scalar("DescriptionFirst"))
-        );
-        assert_eq!(
-            union.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
 
         assert!(possible_types.contains(&Value::object(
             vec![("name", Value::scalar("Concrete"))]

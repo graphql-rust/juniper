@@ -2,8 +2,8 @@
 
 use juniper::{
     execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
-    Executor, FieldError, FieldResult, GraphQLObject, GraphQLType, IntoFieldError, RootNode,
-    ScalarValue, Variables,
+    Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject, GraphQLType,
+    IntoFieldError, RootNode, ScalarValue, Variables,
 };
 
 fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -906,8 +906,8 @@ mod argument {
             arg
         }
 
-        fn home_planet(r#raw_arg: String) -> String {
-            r#raw_arg
+        async fn home_planet(&self, r#raw_arg: String, r#async: Option<i32>) -> String {
+            format!("{},{:?}", r#raw_arg, r#async)
         }
     }
 
@@ -934,7 +934,7 @@ mod argument {
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
-                graphql_value!({"human": {"id": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"human": {"id": "human-32", "homePlanet": "earth,None"}}),
                 vec![],
             )),
         );
@@ -960,7 +960,7 @@ mod argument {
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "args": [{"name": "arg"}]},
-                    {"name": "homePlanet", "args": [{"name": "rawArg"}]},
+                    {"name": "homePlanet", "args": [{"name": "rawArg"}, {"name": "async"}]},
                 ]}}),
                 vec![],
             )),
@@ -986,7 +986,7 @@ mod argument {
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"args": [{"description": None}]},
-                    {"args": [{"description": None}]},
+                    {"args": [{"description": None}, {"description": None}]},
                 ]}}),
                 vec![],
             )),
@@ -1012,7 +1012,7 @@ mod argument {
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"args": [{"defaultValue": None}]},
-                    {"args": [{"defaultValue": None}]},
+                    {"args": [{"defaultValue": None}, {"defaultValue": None}]},
                 ]}}),
                 vec![],
             )),
@@ -1022,6 +1022,11 @@ mod argument {
 
 mod default_argument {
     use super::*;
+
+    #[derive(GraphQLInputObject, Debug)]
+    struct Point {
+        x: i32,
+    }
 
     struct Human;
 
@@ -1033,6 +1038,10 @@ mod default_argument {
             #[graphql(default = true)] r#arg3: bool,
         ) -> String {
             format!("{}|{}&{}", arg1, arg2, r#arg3)
+        }
+
+        fn info(#[graphql(default = Point { x: 1 })] coord: Point) -> i32 {
+            coord.x
         }
     }
 
@@ -1046,12 +1055,12 @@ mod default_argument {
     }
 
     #[tokio::test]
-    async fn resolves() {
+    async fn resolves_id_field() {
         let schema = schema(QueryRoot);
 
         for (input, expected) in &[
             ("{ human { id } }", "0|second&true"),
-            (r#"{ human { id(arg1: 1) } }"#, "1|second&true"),
+            ("{ human { id(arg1: 1) } }", "1|second&true"),
             (r#"{ human { id(arg2: "") } }"#, "0|&true"),
             (r#"{ human { id(arg1: 2, arg2: "") } }"#, "2|&true"),
             (
@@ -1069,6 +1078,23 @@ mod default_argument {
     }
 
     #[tokio::test]
+    async fn resolves_info_field() {
+        let schema = schema(QueryRoot);
+
+        for (input, expected) in &[
+            ("{ human { info } }", 1),
+            ("{ human { info(coord: { x: 2 }) } }", 2),
+        ] {
+            let expected: i32 = *expected;
+
+            assert_eq!(
+                execute(*input, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"human": {"info": expected}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn has_defaults() {
         const DOC: &str = r#"{
             __type(name: "Human") {
@@ -1076,6 +1102,12 @@ mod default_argument {
                     args {
                         name
                         defaultValue
+                        type {
+                            name
+                            ofType {
+                                name
+                            }
+                        }
                     }
                 }
             }
@@ -1086,11 +1118,27 @@ mod default_argument {
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
-                graphql_value!({"__type": {"fields": [{"args": [
-                    {"name": "arg1", "defaultValue": "0"},
-                    {"name": "arg2", "defaultValue": r#""second""#},
-                    {"name": "arg3", "defaultValue": "true"},
-                ]}]}}),
+                graphql_value!({"__type": {"fields": [{
+                    "args": [{
+                        "name": "arg1",
+                        "defaultValue": "0",
+                        "type": {"name": "Int", "ofType": None},
+                    }, {
+                        "name": "arg2",
+                        "defaultValue": r#""second""#,
+                        "type": {"name": "String", "ofType": None},
+                    }, {
+                        "name": "arg3",
+                        "defaultValue": "true",
+                        "type": {"name": "Boolean", "ofType": None},
+                    }],
+                }, {
+                    "args": [{
+                        "name": "coord",
+                        "defaultValue": "{x: 1}",
+                        "type": {"name": "Point", "ofType": None},
+                    }],
+                }]}}),
                 vec![],
             )),
         );
@@ -1849,11 +1897,15 @@ mod executor {
             executor.look_ahead().field_name()
         }
 
-        fn info<'b, S>(&'b self, #[graphql(executor)] _another: &Executor<'_, '_, (), S>) -> &'b str
+        fn info<S>(
+            &self,
+            arg: String,
+            #[graphql(executor)] _another: &Executor<'_, '_, (), S>,
+        ) -> String
         where
             S: ScalarValue,
         {
-            "no info"
+            arg
         }
 
         fn info2<'e, S>(_executor: &'e Executor<'_, '_, (), S>) -> &'e str
@@ -1878,7 +1930,7 @@ mod executor {
         const DOC: &str = r#"{
             human {
                 id
-                info
+                info(arg: "input!")
                 info2
             }
         }"#;
@@ -1890,9 +1942,37 @@ mod executor {
             Ok((
                 graphql_value!({"human": {
                     "id": "id",
-                    "info": "no info",
+                    "info": "input!",
                     "info2": "no info",
                 }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn not_arg() {
+        const DOC: &str = r#"{
+            __type(name: "Human") {
+                fields {
+                    name
+                    args {
+                        name
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"name": "id", "args": []},
+                    {"name": "info", "args": [{"name": "arg"}]},
+                    {"name": "info2", "args": []},
+                ]}}),
                 vec![],
             )),
         );

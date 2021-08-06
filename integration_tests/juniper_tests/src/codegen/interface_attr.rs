@@ -2,8 +2,8 @@
 
 use juniper::{
     execute, graphql_interface, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, Executor, FieldError, FieldResult, GraphQLObject, GraphQLType,
-    IntoFieldError, RootNode, ScalarValue, Variables,
+    EmptySubscription, Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject,
+    GraphQLType, IntoFieldError, RootNode, ScalarValue, Variables,
 };
 
 fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -2264,11 +2264,15 @@ mod argument {
     #[graphql_interface(for = Human)]
     trait Character {
         fn id_wide(&self, is_number: bool) -> &str;
+
+        async fn id_wide2(&self, is_number: bool, r#async: Option<i32>) -> &str;
     }
 
     #[graphql_interface(dyn = DynHero, for = Human)]
     trait Hero {
         fn info_wide(&self, is_planet: bool) -> &str;
+
+        async fn info_wide2(&self, is_planet: bool, r#async: Option<i32>) -> &str;
     }
 
     #[derive(GraphQLObject)]
@@ -2287,11 +2291,27 @@ mod argument {
                 "none"
             }
         }
+
+        async fn id_wide2(&self, is_number: bool, _: Option<i32>) -> &str {
+            if is_number {
+                &self.id
+            } else {
+                "none"
+            }
+        }
     }
 
     #[graphql_interface(dyn)]
     impl Hero for Human {
         fn info_wide(&self, is_planet: bool) -> &str {
+            if is_planet {
+                &self.home_planet
+            } else {
+                &self.id
+            }
+        }
+
+        async fn info_wide2(&self, is_planet: bool, _: Option<i32>) -> &str {
             if is_planet {
                 &self.home_planet
             } else {
@@ -2325,14 +2345,26 @@ mod argument {
         let schema = schema(QueryRoot);
 
         for (input, expected) in &[
-            ("{ character { idWide(isNumber: true) } }", "human-32"),
-            ("{ character { idWide(isNumber: false) } }", "none"),
+            (
+                "{ character { idWide(isNumber: true), idWide2(isNumber: true) } }",
+                "human-32",
+            ),
+            (
+                "{ character { idWide(isNumber: false), idWide2(isNumber: false, async: 5) } }",
+                "none",
+            ),
         ] {
             let expected: &str = *expected;
 
             assert_eq!(
                 execute(*input, None, &schema, &Variables::new(), &()).await,
-                Ok((graphql_value!({"character": {"idWide": expected}}), vec![])),
+                Ok((
+                    graphql_value!({"character": {
+                        "idWide": expected,
+                        "idWide2": expected,
+                    }}),
+                    vec![],
+                )),
             );
         }
     }
@@ -2342,14 +2374,26 @@ mod argument {
         let schema = schema(QueryRoot);
 
         for (input, expected) in &[
-            ("{ hero { infoWide(isPlanet: true) } }", "earth"),
-            ("{ hero { infoWide(isPlanet: false) } }", "human-32"),
+            (
+                "{ hero { infoWide(isPlanet: true), infoWide2(isPlanet: true) } }",
+                "earth",
+            ),
+            (
+                "{ hero { infoWide(isPlanet: false), infoWide2(isPlanet: false, async: 3) } }",
+                "human-32",
+            ),
         ] {
             let expected: &str = *expected;
 
             assert_eq!(
                 execute(*input, None, &schema, &Variables::new(), &()).await,
-                Ok((graphql_value!({"hero": {"infoWide": expected}}), vec![])),
+                Ok((
+                    graphql_value!({"hero": {
+                        "infoWide": expected,
+                        "infoWide2": expected,
+                    }}),
+                    vec![],
+                )),
             );
         }
     }
@@ -2377,13 +2421,23 @@ mod argument {
             );
 
             let expected_field_name: &str = *field;
+            let expected_field_name2: &str = &format!("{}2", field);
             let expected_arg_name: &str = *arg;
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
                 Ok((
-                    graphql_value!({"__type": {"fields": [
-                        {"name": expected_field_name, "args": [{"name": expected_arg_name}]},
-                    ]}}),
+                    graphql_value!({"__type": {"fields": [{
+                        "name": expected_field_name,
+                        "args": [
+                            {"name": expected_arg_name},
+                        ],
+                    }, {
+                        "name": expected_field_name2,
+                        "args": [
+                            {"name": expected_arg_name},
+                            {"name": "async"},
+                        ],
+                    }]}}),
                     vec![],
                 )),
             );
@@ -2411,7 +2465,10 @@ mod argument {
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
                 Ok((
-                    graphql_value!({"__type": {"fields": [{"args": [{"description": None}]}]}}),
+                    graphql_value!({"__type": {"fields": [
+                        {"args": [{"description": None}]},
+                        {"args": [{"description": None}, {"description": None}]},
+                    ]}}),
                     vec![],
                 )),
             );
@@ -2439,7 +2496,10 @@ mod argument {
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
                 Ok((
-                    graphql_value!({"__type": {"fields": [{"args": [{"defaultValue": None}]}]}}),
+                    graphql_value!({"__type": {"fields": [
+                        {"args": [{"defaultValue": None}]},
+                        {"args": [{"defaultValue": None}, {"defaultValue": None}]},
+                    ]}}),
                     vec![],
                 )),
             );
@@ -2450,6 +2510,11 @@ mod argument {
 mod default_argument {
     use super::*;
 
+    #[derive(GraphQLInputObject, Debug)]
+    struct Point {
+        x: i32,
+    }
+
     #[graphql_interface(for = Human)]
     trait Character {
         async fn id(
@@ -2458,12 +2523,17 @@ mod default_argument {
             #[graphql(default = "second".to_string())] second: String,
             #[graphql(default = "t")] third: String,
         ) -> String;
+
+        fn info(&self, #[graphql(default = Point { x: 1 })] coord: Point) -> i32 {
+            coord.x
+        }
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
         id: String,
+        info: i32,
     }
 
     #[graphql_interface]
@@ -2480,6 +2550,7 @@ mod default_argument {
         fn character(&self) -> CharacterValue {
             Human {
                 id: "human-32".to_string(),
+                info: 0,
             }
             .into()
         }
@@ -2512,6 +2583,23 @@ mod default_argument {
     }
 
     #[tokio::test]
+    async fn resolves_info_field() {
+        let schema = schema(QueryRoot);
+
+        for (input, expected) in &[
+            ("{ character { info } }", 1),
+            ("{ character { info(coord: {x: 2}) } }", 2),
+        ] {
+            let expected: i32 = *expected;
+
+            assert_eq!(
+                execute(*input, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"character": {"info": expected}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn has_defaults() {
         const DOC: &str = r#"{
             __type(name: "Character") {
@@ -2519,6 +2607,12 @@ mod default_argument {
                     args {
                         name
                         defaultValue
+                        type {
+                            name
+                            ofType {
+                                name
+                            }
+                        }
                     }
                 }
             }
@@ -2529,11 +2623,27 @@ mod default_argument {
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
-                graphql_value!({"__type": {"fields": [{"args": [
-                    {"name": "first", "defaultValue": r#""""#},
-                    {"name": "second", "defaultValue": r#""second""#},
-                    {"name": "third", "defaultValue": r#""t""#},
-                ]}]}}),
+                graphql_value!({"__type": {"fields": [{
+                    "args": [{
+                        "name": "first",
+                        "defaultValue": r#""""#,
+                        "type": {"name": "String", "ofType": None},
+                    }, {
+                        "name": "second",
+                        "defaultValue": r#""second""#,
+                        "type": {"name": "String", "ofType": None},
+                    }, {
+                        "name": "third",
+                        "defaultValue": r#""t""#,
+                        "type": {"name": "String", "ofType": None},
+                    }],
+                }, {
+                    "args": [{
+                        "name": "coord",
+                        "defaultValue": "{x: 1}",
+                        "type": {"name": "Point", "ofType": None},
+                    }],
+                }]}}),
                 vec![],
             )),
         );
@@ -4711,6 +4821,7 @@ mod executor {
 
         async fn info<'b>(
             &'b self,
+            arg: Option<i32>,
             #[graphql(executor)] another: &Executor<'_, '_, (), S>,
         ) -> &'b str
         where
@@ -4728,6 +4839,7 @@ mod executor {
 
         async fn info<'b>(
             &'b self,
+            arg: Option<i32>,
             #[graphql(executor)] another: &Executor<'_, '_, (), S>,
         ) -> &'b str
         where
@@ -4743,7 +4855,7 @@ mod executor {
 
     #[graphql_interface(scalar = S)]
     impl<S: ScalarValue> Character<S> for Human {
-        async fn info<'b>(&'b self, _: &Executor<'_, '_, (), S>) -> &'b str
+        async fn info<'b>(&'b self, _: Option<i32>, _: &Executor<'_, '_, (), S>) -> &'b str
         where
             S: Send + Sync,
         {
@@ -4753,7 +4865,7 @@ mod executor {
 
     #[graphql_interface(dyn, scalar = S)]
     impl<S: ScalarValue> Hero<S> for Human {
-        async fn info<'b>(&'b self, _: &Executor<'_, '_, (), S>) -> &'b str
+        async fn info<'b>(&'b self, _: Option<i32>, _: &Executor<'_, '_, (), S>) -> &'b str
         where
             S: Send + Sync,
         {
@@ -4770,7 +4882,7 @@ mod executor {
 
     #[graphql_interface(scalar = S)]
     impl<S: ScalarValue> Character<S> for Droid {
-        async fn info<'b>(&'b self, _: &Executor<'_, '_, (), S>) -> &'b str
+        async fn info<'b>(&'b self, _: Option<i32>, _: &Executor<'_, '_, (), S>) -> &'b str
         where
             S: Send + Sync,
         {
@@ -4780,7 +4892,7 @@ mod executor {
 
     #[graphql_interface(dyn, scalar = S)]
     impl<S: ScalarValue> Hero<S> for Droid {
-        async fn info<'b>(&'b self, _: &Executor<'_, '_, (), S>) -> &'b str
+        async fn info<'b>(&'b self, _: Option<i32>, _: &Executor<'_, '_, (), S>) -> &'b str
         where
             S: Send + Sync,
         {
@@ -4941,6 +5053,38 @@ mod executor {
                     )),
                 );
             }
+        }
+    }
+
+    #[tokio::test]
+    async fn not_arg() {
+        for interface in &["Character", "Hero"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        fields {{
+                            name
+                            args {{
+                                name
+                            }}
+                        }}
+                    }}
+                }}"#,
+                interface,
+            );
+
+            let schema = schema(QueryRoot::Human);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({"__type": {"fields": [
+                        {"name": "id", "args": []},
+                        {"name": "info", "args": [{"name": "arg"}]},
+                    ]}}),
+                    vec![],
+                )),
+            );
         }
     }
 }
