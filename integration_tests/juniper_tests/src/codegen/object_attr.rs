@@ -1912,17 +1912,11 @@ mod executor {
             &self,
             arg: String,
             #[graphql(executor)] _another: &Executor<'_, '_, (), S>,
-        ) -> String
-        where
-            S: ScalarValue,
-        {
+        ) -> String {
             arg
         }
 
-        fn info2<'e, S>(_executor: &'e Executor<'_, '_, (), S>) -> &'e str
-        where
-            S: ScalarValue,
-        {
+        fn info2<'e, S>(_executor: &'e Executor<'_, '_, (), S>) -> &'e str {
             "no info"
         }
     }
