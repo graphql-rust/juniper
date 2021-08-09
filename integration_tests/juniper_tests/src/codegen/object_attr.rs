@@ -363,6 +363,10 @@ mod fallible_field {
         fn id(&self) -> Result<&str, CustomError> {
             Ok(&self.id)
         }
+
+        async fn home_planet<__S>() -> FieldResult<&'static str, __S> {
+            Ok("earth")
+        }
     }
 
     #[derive(Clone, Copy)]
@@ -382,6 +386,7 @@ mod fallible_field {
         const DOC: &str = r#"{
             human {
                 id
+                homePlanet
             }
         }"#;
 
@@ -389,7 +394,10 @@ mod fallible_field {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
+            Ok((
+                graphql_value!({"human": {"id": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
         );
     }
 
@@ -421,6 +429,9 @@ mod fallible_field {
                     "kind": "OBJECT",
                     "fields": [{
                         "name": "id",
+                        "type": {"kind": "NON_NULL", "ofType": {"name": "String"}},
+                    }, {
+                        "name": "homePlanet",
                         "type": {"kind": "NON_NULL", "ofType": {"name": "String"}},
                     }]
                 }}),

@@ -284,6 +284,101 @@ mod generic_enum {
     }
 }
 
+/* TODO: make it work
+mod generic_lifetime_enum {
+    use super::*;
+
+    #[derive(GraphQLObject)]
+    struct LifetimeHuman<'id> {
+        id: &'id str,
+    }
+
+    #[derive(GraphQLObject)]
+    struct GenericDroid<B = ()> {
+        id: String,
+        #[graphql(ignore)]
+        _t: PhantomData<B>,
+    }
+
+    #[derive(GraphQLUnion)]
+    enum Character<'id, B = ()> {
+        A(LifetimeHuman<'id>),
+        B(GenericDroid<B>),
+    }
+
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> Character<'_> {
+            match self {
+                Self::Human => Character::A(LifetimeHuman { id: "human-32" }),
+                Self::Droid => Character::B(GenericDroid {
+                    id: "droid-99".to_string(),
+                    _t: PhantomData,
+                }),
+            }
+        }
+    }
+
+    const DOC: &str = r#"{
+        character {
+            ... on LifetimeHuman {
+                humanId: id
+            }
+            ... on GenericDroid {
+                droidId: id
+            }
+        }
+    }"#;
+
+    #[tokio::test]
+    async fn resolves_human() {
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_type_name_without_type_params() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                name
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
+        );
+    }
+}
+*/
+
 mod description_from_doc_comments {
     use super::*;
 

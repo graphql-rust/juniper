@@ -2657,6 +2657,7 @@ mod description_from_doc_comment {
     #[graphql_interface(for = Human)]
     trait Character {
         /// Rust `id` docs.
+        /// Long.
         fn id(&self) -> &str;
     }
 
@@ -2705,7 +2706,7 @@ mod description_from_doc_comment {
             Ok((
                 graphql_value!({"__type": {
                     "description": "Rust docs.",
-                    "fields": [{"description": "Rust `id` docs."}],
+                    "fields": [{"description": "Rust `id` docs.\nLong."}],
                 }}),
                 vec![],
             )),
