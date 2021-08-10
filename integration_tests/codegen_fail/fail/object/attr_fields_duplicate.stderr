@@ -1,7 +1,7 @@
 error: GraphQL object must have a different name for each field
- --> $DIR/impl_fields_unique.rs:4:6
+ --> $DIR/attr_fields_duplicate.rs:6:6
   |
-4 | impl Object {
-  |      ^^^^^^
+6 | impl ObjA {
+  |      ^^^^
   |
   = note: https://spec.graphql.org/June2018/#sec-Objects

@@ -1,7 +1,7 @@
 error: GraphQL object must have at least one field
- --> $DIR/impl_no_fields.rs:4:6
+ --> $DIR/attr_no_fields.rs:6:6
   |
-4 | impl Object {}
-  |      ^^^^^^
+6 | impl Obj {}
+  |      ^^^
   |
   = note: https://spec.graphql.org/June2018/#sec-Objects

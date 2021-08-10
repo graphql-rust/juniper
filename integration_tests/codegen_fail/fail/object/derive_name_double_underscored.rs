@@ -1,6 +1,8 @@
 use juniper::GraphQLObject;
 
 #[derive(GraphQLObject)]
-struct Obj {}
+struct __Obj {
+    id: String,
+}
 
 fn main() {}
