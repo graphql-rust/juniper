@@ -196,266 +196,6 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     }
 }
 
-// TODO
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql))]
-pub fn derive_object(body: TokenStream) -> TokenStream {
-    self::graphql_object::derive::expand(body.into())
-        .unwrap_or_abort()
-        .into()
-}
-
-// TODO
-/**
-The `object` proc macro is the primary way of defining GraphQL resolvers
-that can not be implemented with the GraphQLObject derive.
-
-It enables you to write GraphQL field resolvers for a type by declaring a
-regular Rust `impl` block. Under the hood, the procedural macro implements
-the GraphQLType trait.
-
-`object` comes with many features that allow customization of
-your fields, all of which are detailed below.
-
-### Getting Started
-
-This simple example will show you the most basic use of `object`.
-More advanced use cases are introduced step by step.
-
-```
-// So we can declare it as a plain struct without any members.
-struct Query;
-
-// We prefix the impl Block with the procedural macro.
-#[juniper::graphql_object]
-impl Query {
-
-    // A **warning**: only GraphQL fields can be specified in this impl block.
-    // If you want to define normal methods on the struct,
-    // you have to do so in a separate, normal `impl` block.
-
-
-    // This defines a simple, static field which does not require any context.
-    // You can return any value that implements the `GraphQLType` trait.
-    // This trait is implemented for:
-    //  - basic scalar types like bool, &str, String, i32, f64
-    //  - GraphQL compatible wrappers like Option<_>, Vec<_>.
-    //  - types which use the `#derive[juniper::GraphQLObject]`
-    //  - `object` structs.
-    //
-    // An important note regarding naming:
-    // By default, field names will be converted to camel case.
-    // For your GraphQL queries, the field will be available as `apiVersion`.
-    //
-    // You can also manually customize the field name if required. (See below)
-    fn api_version() -> &'static str {
-        "0.1"
-    }
-
-    // This field takes two arguments.
-    // GraphQL arguments are just regular function parameters.
-    // **Note**: in Juniper, arguments are non-nullable by default.
-    //           for optional arguments, you have to specify them with Option<T>.
-    fn add(a: f64, b: f64, c: Option<f64>) -> f64 {
-        a + b + c.unwrap_or(0.0)
-    }
-}
-```
-
-## Accessing self
-
-```
-struct Person {
-    first_name: String,
-    last_name: String,
-}
-
-impl Person {
-    // The full name method is useful outside of GraphQL,
-    // so we define it as a normal method.
-    fn build_full_name(&self) -> String {
-        format!("{} {}", self.first_name, self.last_name)
-    }
-}
-
-#[juniper::graphql_object]
-impl Person {
-    fn first_name(&self) -> &str {
-        &self.first_name
-    }
-
-    fn last_name(&self) -> &str {
-        &self.last_name
-    }
-
-    fn full_name(&self) -> String {
-        self.build_full_name()
-    }
-}
-```
-
-## Context (+ Executor)
-
-You can specify a context that will be available across
-all your resolvers during query execution.
-
-The Context can be injected into your resolvers by just
-specifying an argument with the same type as the context
-(but as a reference).
-
-```
-# #[derive(juniper::GraphQLObject)] struct User { id: i32 }
-# struct DbPool;
-# impl DbPool { fn user(&self, id: i32) -> Option<User> { unimplemented!() } }
-
-struct Context {
-    db: DbPool,
-}
-
-// Mark our struct for juniper.
-impl juniper::Context for Context {}
-
-struct Query;
-
-// Here we specify the context type for this object.
-#[juniper::graphql_object(context = Context)]
-impl Query {
-    // Context is injected by specifying a argument
-    // as a reference to the Context.
-    fn user(context: &Context, id: i32) -> Option<User> {
-        context.db.user(id)
-    }
-
-    // You can also gain access to the executor, which
-    // allows you to do look aheads.
-    fn with_executor<__S: juniper::ScalarValue>(
-        executor: &juniper::Executor<'_, '_, Context, __S>,
-    ) -> bool {
-        let info = executor.look_ahead();
-        // ...
-        true
-    }
-}
-```
-
-## Customization (Documentation, Renaming, ...)
-
-```
-struct InternalQuery;
-
-// Doc comments can be used to specify graphql documentation.
-/// GRAPHQL DOCUMENTATION.
-/// More info for GraphQL users....
-#[juniper::graphql_object(
-    // You can rename the type for GraphQL by specifying the name here.
-    name = "Query",
-    // You can also specify a description here.
-    // If present, doc comments will be ignored.
-    description = "...",
-)]
-impl InternalQuery {
-    // Documentation doc comments also work on fields.
-    /// GraphQL description...
-    fn field_with_description() -> bool { true }
-
-    // Fields can also be customized with the #[graphql] attribute.
-    #[graphql(
-        // overwrite the public name
-        name = "actualFieldName",
-        // Can be used instead of doc comments.
-        description = "field description",
-    )]
-    fn internal_name() -> bool { true }
-
-    // Fields can be deprecated too.
-    #[graphql(
-        deprecated = "deprecatin info...",
-        // Note: just "deprecated," without a description works too.
-    )]
-    fn deprecated_field_simple() -> bool { true }
-
-    fn args(
-        // You can specify default values.
-        // A default can be any valid expression that yields the right type.
-        #[graphql(default = true, description = "Argument description....")]
-        arg1: bool,
-        // If expression is not specified then `Default::default()` is used.
-        #[graphql(default, description = "arg2 description...")]
-        arg2: bool,
-    ) -> bool {
-        arg1 && arg2
-    }
-}
-```
-
-## Lifetimes, Generics and custom Scalars
-
-Lifetimes work just like you'd expect.
-
-
-```
-struct WithLifetime<'a> {
-    value: &'a str,
-}
-
-#[juniper::graphql_object]
-impl<'a> WithLifetime<'a> {
-    fn value(&self) -> &str {
-        self.value
-    }
-}
-
-```
-
-Juniper has support for custom scalars.
-Mostly you will only need the default scalar type juniper::DefaultScalarValue.
-
-You can easily specify a custom scalar though.
-
-
-```
-
-# type MyCustomScalar = juniper::DefaultScalarValue;
-
-struct Query;
-
-#[juniper::graphql_object(
-    Scalar = MyCustomScalar,
-)]
-impl Query {
-    fn test(&self) -> i32 {
-        0
-    }
-}
-```
-
-## Raw identifiers
-
-You can use [raw identifiers](https://doc.rust-lang.org/stable/edition-guide/rust-2018/module-system/raw-identifiers.html)
-if you want a GrahpQL field that happens to be a Rust keyword:
-
-```
-struct User {
-    r#type: String,
-}
-
-#[juniper::graphql_object]
-impl User {
-    fn r#type(&self) -> &str {
-        &self.r#type
-    }
-}
-```
-
-*/
-#[proc_macro_error]
-#[proc_macro_attribute]
-pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_object::attr::expand(attr.into(), body.into())
-        .unwrap_or_abort()
-        .into()
-}
-
 /// Expose GraphQL scalars
 ///
 /// The GraphQL language defines a number of built-in scalars: strings, numbers, and
@@ -602,7 +342,7 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///
 /// # Custom name, description, deprecation and argument defaults
 ///
-/// The name of [GraphQL interface][1], its field, or a field argument may be overriden with a
+/// The name of [GraphQL interface][1], its field, or a field argument may be overridden with a
 /// `name` attribute's argument. By default, a type name is used or `camelCased` method/argument
 /// name.
 ///
@@ -610,13 +350,12 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 /// either with a `description`/`desc` attribute's argument, or with a regular Rust doc comment.
 ///
 /// A field of [GraphQL interface][1] may be deprecated by specifying a `deprecated` attribute's
-/// argument, or with regulat Rust `#[deprecated]` attribute.
+/// argument, or with regular Rust `#[deprecated]` attribute.
 ///
 /// The default value of a field argument may be specified with a `default` attribute argument (if
 /// no exact value is specified then [`Default::default`] is used).
 ///
 /// ```
-/// # #![allow(deprecated)]
 /// # use juniper::graphql_interface;
 /// #
 /// #[graphql_interface(name = "Character", desc = "Possible episode characters.")]
@@ -647,10 +386,10 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 /// trait methods, and uses [unit type `()`][4] if signatures contains no [`Context`] arguments.
 ///
 /// If [`Context`] type cannot be inferred or is inferred incorrectly, then specify it explicitly
-/// with `context`/`Context` attribute's argument.
+/// with `context` attribute's argument.
 ///
 /// If trait method represents a [GraphQL interface][1] field and its argument is named as `context`
-/// or `ctx` then this argument is assumed as [`Context`] and will be omited in GraphQL schema.
+/// or `ctx` then this argument is assumed as [`Context`] and will be omitted in GraphQL schema.
 /// Additionally, any argument may be marked as [`Context`] with a `context` attribute's argument.
 ///
 /// ```
@@ -706,7 +445,7 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///
 /// If an [`Executor`] is required in a trait method to resolve a [GraphQL interface][1] field,
 /// specify it as an argument named as `executor` or explicitly marked with an `executor`
-/// attribute's argument. Such method argument will be omited in GraphQL schema.
+/// attribute's argument. Such method argument will be omitted in GraphQL schema.
 ///
 /// However, this requires to explicitly parametrize over [`ScalarValue`], as [`Executor`] does so.
 ///
@@ -714,7 +453,7 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 /// # use juniper::{graphql_interface, Executor, GraphQLObject, LookAheadMethods as _, ScalarValue};
 /// #
 /// // NOTICE: Specifying `ScalarValue` as existing type parameter.
-/// #[graphql_interface(for = Human, Scalar = S)]
+/// #[graphql_interface(for = Human, scalar = S)]
 /// trait Character<S: ScalarValue> {
 ///     async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
 ///     where
@@ -734,7 +473,7 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///     id: String,
 ///     name: String,
 /// }
-/// #[graphql_interface(Scalar = S)]
+/// #[graphql_interface(scalar = S)]
 /// impl<S: ScalarValue> Character<S> for Human {
 ///     async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
 ///     where
@@ -754,28 +493,29 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///
 /// # Custom `ScalarValue`
 ///
-/// By default, `#[graphql_interface]` macro generates code, which is generic over a [`ScalarValue`]
-/// type. This may introduce a problem when at least one of [GraphQL interface][1] implementers is
-/// restricted to a concrete [`ScalarValue`] type in its implementation. To resolve such problem, a
-/// concrete [`ScalarValue`] type should be specified with a `scalar`/`Scalar`/`ScalarValue`
+/// By default, `#[graphql_interface]` macro generates code, which is generic
+/// over a [`ScalarValue`] type. This may introduce a problem when at least one
+/// of [GraphQL interface][1] implementers is restricted to a concrete
+/// [`ScalarValue`] type in its implementation. To resolve such problem, a
+/// concrete [`ScalarValue`] type should be specified with a `scalar`
 /// attribute's argument.
 ///
 /// ```
 /// # use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
 /// #
 /// // NOTICE: Removing `Scalar` argument will fail compilation.
-/// #[graphql_interface(for = [Human, Droid], Scalar = DefaultScalarValue)]
+/// #[graphql_interface(for = [Human, Droid], scalar = DefaultScalarValue)]
 /// trait Character {
 ///     fn id(&self) -> &str;
 /// }
 ///
 /// #[derive(GraphQLObject)]
-/// #[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
+/// #[graphql(impl = CharacterValue, scalar = DefaultScalarValue)]
 /// struct Human {
 ///     id: String,
 ///     home_planet: String,
 /// }
-/// #[graphql_interface(Scalar = DefaultScalarValue)]
+/// #[graphql_interface(scalar = DefaultScalarValue)]
 /// impl Character for Human {
 ///     fn id(&self) -> &str{
 ///         &self.id
@@ -783,12 +523,12 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 /// }
 ///
 /// #[derive(GraphQLObject)]
-/// #[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
+/// #[graphql(impl = CharacterValue, scalar = DefaultScalarValue)]
 /// struct Droid {
 ///     id: String,
 ///     primary_function: String,
 /// }
-/// #[graphql_interface(Scalar = DefaultScalarValue)]
+/// #[graphql_interface(scalar = DefaultScalarValue)]
 /// impl Character for Droid {
 ///     fn id(&self) -> &str {
 ///         &self.id
@@ -896,6 +636,284 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
         .into()
 }
 
+// TODO
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+pub fn derive_object(body: TokenStream) -> TokenStream {
+    self::graphql_object::derive::expand(body.into())
+        .unwrap_or_abort()
+        .into()
+}
+
+/// `#[graphql_object]` macro for generating a [GraphQL object][1]
+/// implementation for structs with computable field resolvers (declared via
+/// a regular Rust `impl` block).
+///
+/// It enables you to write GraphQL field resolvers for a type by declaring a
+/// regular Rust `impl` block. Under the hood, the macro implements
+/// the GraphQLType trait.
+///
+/// Specifying multiple `#[graphql_object]` attributes on the same definition
+/// is totally okay.
+/// They all will be treated as a single attribute.
+///
+/// ```
+/// use juniper::graphql_object;
+///
+/// // We can declare the type as a plain struct without any members.
+/// struct Query;
+///
+/// #[graphql_object]
+/// impl Query {
+///     // WARNING: Only GraphQL fields can be specified in this `impl` block.
+///     //          If normal methods are required on the struct, they can be
+///     //          defined either in a separate "normal" `impl` block, or
+///     //          marked with `#[graphql(ignore)]` attribute.
+///
+///     // This defines a simple, static field which does not require any
+///     // context.
+///     // Such field can return any value that implements `GraphQLType` and
+///     // `GraphQLValue` traits.
+///     //
+///     // NOTICE: By default, field names will be converted to `camelCase`.
+///     //         In the generated GraphQL schema this field will be available
+///     //         as `apiVersion`.
+///     fn api_version() -> &'static str {
+///         "0.1"
+///     }
+///
+///     // This field takes two arguments.
+///     // GraphQL arguments are just regular function parameters.
+///     //
+///     // NOTICE: In `juniper`, arguments are non-nullable by default. For
+///     //         optional arguments, you have to specify them as `Option<_>`.
+///     async fn add(a: f64, b: f64, c: Option<f64>) -> f64 {
+///         a + b + c.unwrap_or(0.0)
+///     }
+/// }
+/// ```
+///
+/// # Accessing self
+///
+/// Fields may also have a `self` receiver.
+///
+/// ```
+/// # use juniper::graphql_object;
+/// #
+/// struct Person {
+///     first_name: String,
+///     last_name: String,
+/// }
+///
+/// #[graphql_object]
+/// impl Person {
+///     fn first_name(&self) -> &str {
+///         &self.first_name
+///     }
+///
+///     fn last_name(&self) -> &str {
+///         &self.last_name
+///     }
+///
+///     fn full_name(&self) -> String {
+///         self.build_full_name()
+///     }
+///
+///     // This method is useful only to define GraphQL fields, but is not
+///     // a field itself, so we ignore it in schema.
+///     #[graphql(ignore)]
+///     fn build_full_name(&self) -> String {
+///         format!("{} {}", self.first_name, self.last_name)
+///     }
+/// }
+/// ```
+///
+/// # Custom name, description, deprecation and argument defaults
+///
+/// The name of [GraphQL object][1], its field, or a field argument may be
+/// overridden with a `name` attribute's argument. By default, a type name is
+/// used or `camelCased` method/argument name.
+///
+/// The description of [GraphQL object][1], its field, or a field argument may
+/// be specified either with a `description`/`desc` attribute's argument, or
+/// with a regular Rust doc comment.
+///
+/// A field of [GraphQL object][1] may be deprecated by specifying a
+/// `deprecated` attribute's argument, or with regular Rust `#[deprecated]`
+/// attribute.
+///
+/// The default value of a field argument may be specified with a `default`
+/// attribute argument (if no exact value is specified then [`Default::default`]
+/// is used).
+///
+/// ```
+/// # use juniper::graphql_object;
+/// #
+/// struct HumanWithAttrs;
+///
+/// #[graphql_object(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "Human",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "Possible episode human.",
+/// )]
+/// impl HumanWithAttrs {
+///     #[graphql(name = "id", desc = "ID of the human.")]
+///     #[graphql(deprecated = "Don't use it")]
+///     fn some_id(
+///         &self,
+///         #[graphql(name = "number", desc = "Arbitrary number.")]
+///         // You may specify default values.
+///         // A default can be any valid expression that yields the right type.
+///         #[graphql(default = 5)]
+///         num: i32,
+///     ) -> &str {
+///         "Don't use me!"
+///     }
+/// }
+///
+/// struct HumanWithDocs;
+///
+/// // Rust docs are used as GraphQL description.
+/// /// Possible episode human.
+/// #[graphql_object]
+/// impl HumanWithDocs {
+///     // Doc comments also work on fields.
+///     /// ID of the human.
+///     #[deprecated]
+///     fn id(
+///         &self,
+///         // If expression is not specified then `Default::default()` is used.
+///         #[graphql(default)] num: i32,
+///     ) -> &str {
+///         "Deprecated"
+///     }
+/// }
+/// ```
+///
+/// # Custom context
+///
+/// By default, the generated implementation tries to infer [`Context`] type
+/// from signatures of `impl` block methods, and uses [unit type `()`][4] if
+/// signatures contains no [`Context`] arguments.
+///
+/// If [`Context`] type cannot be inferred or is inferred incorrectly, then
+/// specify it explicitly with `context` attribute's argument.
+///
+/// If method argument is named as `context` or `ctx` then this argument is
+/// assumed as [`Context`] and will be omitted in GraphQL schema.
+/// Additionally, any argument may be marked as [`Context`] with a `context`
+/// attribute's argument.
+///
+/// ```
+/// # use std::collections::HashMap;
+/// # use juniper::graphql_object;
+/// #
+/// struct Database {
+///     humans: HashMap<String, Human>,
+/// }
+/// impl juniper::Context for Database {}
+///
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[graphql_object(context = Database)]
+/// impl Human {
+///     fn id<'db>(&self, context: &'db Database) -> Option<&'db str> {
+///         context.humans.get(&self.id).map(|h| h.id.as_str())
+///     }
+///     fn info<'db>(&self, context: &'db Database) -> Option<&'db str> {
+///         context.humans.get(&self.id).map(|h| h.home_planet.as_str())
+///     }
+/// }
+/// ```
+///
+/// # Using `Executor`
+///
+/// If an [`Executor`] is required in a method to resolve a [GraphQL object][1]
+/// field, specify it as an argument named as `executor` or explicitly marked
+/// with an `executor` attribute's argument. Such method argument will be
+/// omitted in GraphQL schema.
+///
+/// However, this requires to explicitly parametrize over [`ScalarValue`], as
+/// [`Executor`] does so.
+///
+/// ```
+/// # use juniper::{graphql_object, Executor, GraphQLObject, LookAheadMethods as _, ScalarValue};
+/// #
+/// struct Human {
+///     name: String,
+/// }
+///
+/// // NOTICE: Specifying `ScalarValue` as custom named type parameter.
+/// //         Its name should be similar to the one used in methods.
+/// #[graphql_object(scalar = S: ScalarValue)]
+/// impl Human {
+///     async fn id<'a, S: ScalarValue>(
+///         &self,
+///         executor: &'a Executor<'_, '_, (), S>,
+///     ) -> &'a str {
+///         executor.look_ahead().field_name()
+///     }
+///
+///     fn name<'b, S: ScalarValue>(
+///         &'b self,
+///         #[graphql(executor)] _another: &Executor<'_, '_, (), S>,
+///     ) -> &'b str {
+///         &self.name
+///     }
+/// }
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, `#[graphql_object]` macro generates code, which is generic over
+/// a [`ScalarValue`] type. This may introduce a problem when at least one of
+/// its fields is restricted to a concrete [`ScalarValue`] type in its
+/// implementation. To resolve such problem, a concrete [`ScalarValue`] type
+/// should be specified with a `scalar` attribute's argument.
+///
+/// ```
+/// # use juniper::{graphql_object, DefaultScalarValue, GraphQLObject};
+/// #
+/// struct Human(String);
+///
+/// // NOTICE: Removing `scalar` argument will fail compilation.
+/// #[graphql_object(scalar = DefaultScalarValue)]
+/// impl Human {
+///     fn id(&self) -> &str {
+///         &self.0
+///     }
+///
+///     fn helper(&self) -> Droid {
+///         Droid {
+///             id: self.0.clone(),
+///         }
+///     }
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(scalar = DefaultScalarValue)]
+/// struct Droid {
+///     id: String,
+/// }
+/// ```
+///
+/// [`Context`]: juniper::Context
+/// [`Executor`]: juniper::Executor
+/// [`ScalarValue`]: juniper::ScalarValue
+/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+#[proc_macro_error]
+#[proc_macro_attribute]
+pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
+    self::graphql_object::attr::expand(attr.into(), body.into())
+        .unwrap_or_abort()
+        .into()
+}
+
 /// `#[derive(GraphQLUnion)]` macro for deriving a [GraphQL union][1] implementation for enums and
 /// structs.
 ///
@@ -978,7 +996,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// By default, the generated implementation uses [unit type `()`][4] as [`Context`]. To use a
 /// custom [`Context`] type for [GraphQL union][1] variants types or external resolver functions,
-/// specify it with `context`/`Context` attribute's argument.
+/// specify it with `context` attribute's argument.
 ///
 /// ```
 /// # use juniper::{GraphQLObject, GraphQLUnion};
@@ -1010,17 +1028,17 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// # Custom `ScalarValue`
 ///
-/// By default, this macro generates code, which is generic over a [`ScalarValue`] type.
-/// This may introduce a problem when at least one of [GraphQL union][1] variants is restricted to a
-/// concrete [`ScalarValue`] type in its implementation. To resolve such problem, a concrete
-/// [`ScalarValue`] type should be specified with a `scalar`/`Scalar`/`ScalarValue` attribute's
-/// argument.
+/// By default, this macro generates code, which is generic over a
+/// [`ScalarValue`] type. This may introduce a problem when at least one of
+/// [GraphQL union][1] variants is restricted to a concrete [`ScalarValue`] type
+/// in its implementation. To resolve such problem, a concrete [`ScalarValue`]
+/// type should be specified with a `scalar` attribute's argument.
 ///
 /// ```
 /// # use juniper::{DefaultScalarValue, GraphQLObject, GraphQLUnion};
 /// #
 /// #[derive(GraphQLObject)]
-/// #[graphql(Scalar = DefaultScalarValue)]
+/// #[graphql(scalar = DefaultScalarValue)]
 /// struct Human {
 ///     id: String,
 ///     home_planet: String,
@@ -1034,7 +1052,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// // NOTICE: Removing `Scalar` argument will fail compilation.
 /// #[derive(GraphQLUnion)]
-/// #[graphql(Scalar = DefaultScalarValue)]
+/// #[graphql(scalar = DefaultScalarValue)]
 /// enum Character {
 ///     Human(Human),
 ///     Droid(Droid),
@@ -1302,7 +1320,7 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// trait methods, and uses [unit type `()`][4] if signatures contains no [`Context`] arguments.
 ///
 /// If [`Context`] type cannot be inferred or is inferred incorrectly, then specify it explicitly
-/// with `context`/`Context` attribute's argument.
+/// with `context` attribute's argument.
 ///
 /// ```
 /// # use std::collections::HashMap;
@@ -1349,17 +1367,17 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 ///
 /// # Custom `ScalarValue`
 ///
-/// By default, `#[graphql_union]` macro generates code, which is generic over a [`ScalarValue`]
-/// type. This may introduce a problem when at least one of [GraphQL union][1] variants is
-/// restricted to a concrete [`ScalarValue`] type in its implementation. To resolve such problem, a
-/// concrete [`ScalarValue`] type should be specified with a `scalar`/`Scalar`/`ScalarValue`
-/// attribute's argument.
+/// By default, `#[graphql_union]` macro generates code, which is generic over
+/// a [`ScalarValue`] type. This may introduce a problem when at least one of
+/// [GraphQL union][1] variants is restricted to a concrete [`ScalarValue`] type
+/// in its implementation. To resolve such problem, a concrete [`ScalarValue`]
+/// type should be specified with a `scalar` attribute's argument.
 ///
 /// ```
 /// # use juniper::{graphql_union, DefaultScalarValue, GraphQLObject};
 /// #
 /// #[derive(GraphQLObject)]
-/// #[graphql(Scalar = DefaultScalarValue)]
+/// #[graphql(scalar = DefaultScalarValue)]
 /// struct Human {
 ///     id: String,
 ///     home_planet: String,
@@ -1372,7 +1390,7 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// }
 ///
 /// // NOTICE: Removing `Scalar` argument will fail compilation.
-/// #[graphql_union(Scalar = DefaultScalarValue)]
+/// #[graphql_union(scalar = DefaultScalarValue)]
 /// trait Character {
 ///     fn as_human(&self) -> Option<&Human> { None }
 ///     fn as_droid(&self) -> Option<&Droid> { None }
