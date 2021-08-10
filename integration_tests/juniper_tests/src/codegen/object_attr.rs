@@ -343,7 +343,7 @@ mod ignored_method {
     }
 }
 
-mod fallible_field {
+mod fallible_method {
     use super::*;
 
     struct CustomError;
