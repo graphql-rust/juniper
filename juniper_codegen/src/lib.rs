@@ -257,16 +257,6 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-// TODO
-/// A proc macro for defining a GraphQL subscription.
-#[proc_macro_error]
-#[proc_macro_attribute]
-pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_subscription::attr::expand(attr.into(), body.into())
-        .unwrap_or_abort()
-        .into()
-}
-
 /// `#[graphql_interface]` macro for generating a [GraphQL interface][1]
 /// implementation for traits and its implementers.
 ///
@@ -377,6 +367,23 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///     /// ID of the character.
 ///     #[deprecated]
 ///     fn id(&self, #[graphql(default)] num: i32) -> &str;
+/// }
+/// ```
+///
+/// # Ignoring trait methods
+///
+/// To omit some trait method to be assumed as a [GraphQL interface][1] field
+/// and ignore it, use an `ignore` attribute's argument directly on that method.
+///
+/// ```
+/// # use juniper::graphql_interface;
+/// #
+/// #[graphql_interface]
+/// trait Character {
+///     fn id(&self) -> &str;
+///
+///     #[graphql(ignore)]
+///     fn kaboom(&mut self);
 /// }
 /// ```
 ///
@@ -536,23 +543,6 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 /// }
 /// ```
 ///
-/// # Ignoring trait methods
-///
-/// To omit some trait method to be assumed as a [GraphQL interface][1] field and ignore it, use an
-/// `ignore`/`skip` attribute's argument directly on that method.
-///
-/// ```
-/// # use juniper::graphql_interface;
-/// #
-/// #[graphql_interface]
-/// trait Character {
-///     fn id(&self) -> &str;
-///
-///     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
-///     fn kaboom(&mut self);
-/// }
-/// ```
-///
 /// # Downcasting
 ///
 /// By default, the [GraphQL interface][1] value is downcast to one of its implementer types via
@@ -636,7 +626,111 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
         .into()
 }
 
-// TODO
+/// `#[derive(GraphQLObject)]` macro for deriving a [GraphQL object][1]
+/// implementation for structs.
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived
+/// implementation. Specifying multiple `#[graphql]` attributes on the same
+/// definition is totally okay. They all will be treated as a single attribute.
+///
+/// ```
+/// use juniper::GraphQLObject;
+///
+/// #[derive(GraphQLObject)]
+/// struct Query {
+///     // NOTICE: By default, field names will be converted to `camelCase`.
+///     //         In the generated GraphQL schema this field will be available
+///     //         as `apiVersion`.
+///     api_version: &'static str,
+/// }
+/// ```
+///
+/// # Custom name, description and deprecation
+///
+/// The name of [GraphQL object][1] or its field may be overridden with a `name`
+/// attribute's argument. By default, a type name is used or `camelCased` field
+/// name.
+///
+/// The description of [GraphQL object][1] or its field may be specified either
+/// with a `description`/`desc` attribute's argument, or with a regular Rust doc
+/// comment.
+///
+/// A field of [GraphQL object][1] may be deprecated by specifying a
+/// `deprecated` attribute's argument, or with regular Rust `#[deprecated]`
+/// attribute.
+///
+/// ```
+/// # use juniper::GraphQLObject;
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "Human",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "Possible episode human.",
+/// )]
+/// struct HumanWithAttrs {
+///     #[graphql(name = "id", desc = "ID of the human.")]
+///     #[graphql(deprecated = "Don't use it")]
+///     some_id: String,
+/// }
+///
+/// // Rust docs are used as GraphQL description.
+/// /// Possible episode human.
+/// #[derive(GraphQLObject)]
+/// struct HumanWithDocs {
+///     // Doc comments also work on fields.
+///     /// ID of the human.
+///     #[deprecated]
+///     id: String,
+/// }
+/// ```
+///
+/// # Ignoring struct fields
+///
+/// To omit exposing a struct field in the GraphQL schema, use an `ignore`
+/// attribute's argument directly on that field.
+///
+/// ```
+/// # use juniper::GraphQLObject;
+/// #
+/// #[derive(GraphQLObject)]
+/// struct Human {
+///     id: String,
+///     #[graphql(ignore)]
+///     home_planet: String,
+/// }
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, `#[derive(GraphQLObject)]` macro generates code, which is
+/// generic over a [`ScalarValue`] type. This may introduce a problem when at
+/// least one of its fields is restricted to a concrete [`ScalarValue`] type in
+/// its implementation. To resolve such problem, a concrete [`ScalarValue`] type
+/// should be specified with a `scalar` attribute's argument.
+///
+/// ```
+/// # use juniper::{DefaultScalarValue, GraphQLObject};
+/// #
+/// #[derive(GraphQLObject)]
+/// // NOTICE: Removing `scalar` argument will fail compilation.
+/// #[graphql(scalar = DefaultScalarValue)]
+/// struct Human {
+///     id: String,
+///     helper: Droid,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(scalar = DefaultScalarValue)]
+/// struct Droid {
+///     id: String,
+/// }
+/// ```
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+/// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(body: TokenStream) -> TokenStream {
@@ -792,6 +886,27 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
+/// # Ignoring trait methods
+///
+/// To omit some method to be assumed as a [GraphQL object][1] field and ignore
+/// it, use an `ignore` attribute's argument directly on that method.
+///
+/// ```
+/// # use juniper::graphql_object;
+/// #
+/// struct Human(String);
+///
+/// #[graphql_object]
+/// impl Human {
+///     fn id(&self) -> &str {
+///         &self.0
+///     }
+///
+///     #[graphql(ignore)]
+///     fn kaboom(&mut self) {}
+/// }
+/// ```
+///
 /// # Custom context
 ///
 /// By default, the generated implementation tries to infer [`Context`] type
@@ -910,6 +1025,16 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
     self::graphql_object::attr::expand(attr.into(), body.into())
+        .unwrap_or_abort()
+        .into()
+}
+
+// TODO
+/// A proc macro for defining a GraphQL subscription.
+#[proc_macro_error]
+#[proc_macro_attribute]
+pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
+    self::graphql_subscription::attr::expand(attr.into(), body.into())
         .unwrap_or_abort()
         .into()
 }
@@ -1061,8 +1186,8 @@ pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// # Ignoring enum variants
 ///
-/// To omit exposing an enum variant in the GraphQL schema, use an `ignore`/`skip` attribute's
-/// argument directly on that variant.
+/// To omit exposing an enum variant in the GraphQL schema, use an `ignore`
+/// attribute's argument directly on that variant.
 ///
 /// > __WARNING__:
 /// > It's the _library user's responsibility_ to ensure that ignored enum variant is _never_
@@ -1090,7 +1215,7 @@ pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///     Human(Human),
 ///     Droid(Droid),
 ///     #[from(ignore)]
-///     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
+///     #[graphql(ignore)]
 ///     _State(PhantomData<S>),
 /// }
 /// ```
@@ -1402,8 +1527,8 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 ///
 /// # Ignoring trait methods
 ///
-/// To omit some trait method to be assumed as a [GraphQL union][1] variant and ignore it, use an
-/// `ignore`/`skip` attribute's argument directly on that method.
+/// To omit some trait method to be assumed as a [GraphQL union][1] variant and
+/// ignore it, use an `ignore` attribute's argument directly on that method.
 ///
 /// ```
 /// # use juniper::{graphql_union, GraphQLObject};
@@ -1424,7 +1549,7 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// trait Character {
 ///     fn as_human(&self) -> Option<&Human> { None }
 ///     fn as_droid(&self) -> Option<&Droid> { None }
-///     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
+///     #[graphql(ignore)]
 ///     fn id(&self) -> &str;
 /// }
 /// #
