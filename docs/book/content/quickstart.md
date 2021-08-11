@@ -6,11 +6,9 @@ Juniper follows a [code-first approach][schema_approach] to defining GraphQL sch
 
 ## Installation
 
-!FILENAME Cargo.toml
-
 ```toml
 [dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
+juniper = "0.15"
 ```
 
 ## Schema example

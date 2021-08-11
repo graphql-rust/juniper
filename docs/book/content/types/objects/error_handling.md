@@ -17,8 +17,7 @@ it will bubble up to the surrounding framework and hopefully be dealt with
 there.
 
 For recoverable errors, Juniper works well with the built-in `Result` type, you
-can use the `?` operator or the `try!` macro and things will generally just work
-as you expect them to:
+can use the `?` operator and things will generally just work as you expect them to:
 
 ```rust
 # extern crate juniper;
@@ -63,7 +62,6 @@ there - those errors are automatically converted into `FieldError`.
 
 Juniper's error behavior conforms to the [GraphQL specification](https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability).
 
-
 When a field returns an error, the field's result is replaced by `null`, an
 additional `errors` object is created at the top level of the response, and the
 execution is resumed. For example, with the previous example and the following
@@ -83,12 +81,12 @@ returned:
 
 !FILENAME Response for nullable field with error
 
-```js
+```json
 {
   "data": {
     "example": {
       contents: "<Contents of the file>",
-      foo: null,
+      foo: null
     }
   },
   "errors": [
@@ -117,7 +115,7 @@ following would be returned:
 
 !FILENAME Response for non-null field with error and no nullable parent
 
-```js
+```json
 {
   "errors": [
     "message": "Permission denied (os error 13)",
