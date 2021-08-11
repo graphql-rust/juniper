@@ -370,6 +370,45 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
+/// # Renaming policy
+///
+/// By default, all [GraphQL interface][1] fields and their arguments are renamed
+/// via `camelCase` policy (so `fn my_id(&self) -> String` becomes `myId` field
+/// in GraphQL schema, and so on). This complies with default GraphQL naming
+/// conventions [demonstrated in spec][0].
+///
+/// However, if you need for some reason apply another naming convention, it's
+/// possible to do by using `rename_all` attribute's argument. At the moment it
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// `none` (disables any renaming).
+///
+/// ```
+/// # use juniper::{graphql_interface, GraphQLObject};
+/// #
+/// #[graphql_interface(for = Human, rename_all = "none")] // disables renaming
+/// trait Character {
+///     // NOTICE: In the generated GraphQL schema this field and its argument
+///     //         will be `detailed_info` and `info_kind`.
+///     fn detailed_info(&self, info_kind: String) -> String;
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(impl = CharacterValue)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+/// #[graphql_interface]
+/// impl Character for Human {
+///     fn detailed_info(&self, info_kind: String) -> String {
+///         (info_kind == "planet")
+///             .then(|| &self.home_planet)
+///             .unwrap_or(&self.id)
+///             .clone()
+///     }
+/// }
+/// ```
+///
 /// # Ignoring trait methods
 ///
 /// To omit some trait method to be assumed as a [GraphQL interface][1] field
@@ -614,6 +653,7 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 /// [`Context`]: juniper::Context
 /// [`Executor`]: juniper::Executor
 /// [`ScalarValue`]: juniper::ScalarValue
+/// [0]: https://spec.graphql.org/June2018
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 /// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
 /// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
@@ -684,6 +724,30 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///     /// ID of the human.
 ///     #[deprecated]
 ///     id: String,
+/// }
+/// ```
+///
+/// # Renaming policy
+///
+/// By default, all [GraphQL object][1] fields are renamed via `camelCase`
+/// policy (so `api_version: String` becomes `apiVersion` field in GraphQL
+/// schema, and so on). This complies with default GraphQL naming conventions
+/// [demonstrated in spec][0].
+///
+/// However, if you need for some reason apply another naming convention, it's
+/// possible to do by using `rename_all` attribute's argument. At the moment it
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// `none` (disables any renaming).
+///
+/// ```
+/// # use juniper::GraphQLObject;
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(rename_all = "none")] // disables renaming
+/// struct Query {
+///     // NOTICE: In the generated GraphQL schema this field will be available
+///     //         as `api_version`.
+///     api_version: String,
 /// }
 /// ```
 ///
@@ -886,7 +950,40 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// # Ignoring trait methods
+/// # Renaming policy
+///
+/// By default, all [GraphQL object][1] fields and their arguments are renamed
+/// via `camelCase` policy (so `fn api_version() -> String` becomes `apiVersion`
+/// field in GraphQL schema, and so on). This complies with default GraphQL
+/// naming conventions [demonstrated in spec][0].
+///
+/// However, if you need for some reason apply another naming convention, it's
+/// possible to do by using `rename_all` attribute's argument. At the moment it
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// `none` (disables any renaming).
+///
+/// ```
+/// # use juniper::graphql_object;
+/// #
+/// struct Query;
+///
+/// #[graphql_object(rename_all = "none")] // disables renaming
+/// impl Query {
+///     // NOTICE: In the generated GraphQL schema this field will be available
+///     //         as `api_version`.
+///     fn api_version() -> &'static str {
+///         "0.1"
+///     }
+///
+///     // NOTICE: In the generated GraphQL schema these field arguments will be
+///     //         available as `arg_a` and `arg_b`.
+///     async fn add(arg_a: f64, arg_b: f64, c: Option<f64>) -> f64 {
+///         arg_a + arg_b + c.unwrap_or(0.0)
+///     }
+/// }
+/// ```
+///
+/// # Ignoring methods
 ///
 /// To omit some method to be assumed as a [GraphQL object][1] field and ignore
 /// it, use an `ignore` attribute's argument directly on that method.
@@ -1020,6 +1117,7 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// [`Context`]: juniper::Context
 /// [`Executor`]: juniper::Executor
 /// [`ScalarValue`]: juniper::ScalarValue
+/// [0]: https://spec.graphql.org/June2018
 /// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[proc_macro_error]
 #[proc_macro_attribute]
