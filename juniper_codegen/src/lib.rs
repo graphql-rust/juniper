@@ -261,8 +261,7 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 /// implementation for traits and its implementers.
 ///
 /// Specifying multiple `#[graphql_interface]` attributes on the same definition
-/// is totally okay.
-/// They all will be treated as a single attribute.
+/// is totally okay. They all will be treated as a single attribute.
 ///
 /// The main difference between [GraphQL interface][1] type and Rust trait is
 /// that the former serves both as an _abstraction_ and a _value downcastable to
@@ -809,11 +808,10 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///
 /// It enables you to write GraphQL field resolvers for a type by declaring a
 /// regular Rust `impl` block. Under the hood, the macro implements
-/// the GraphQLType trait.
+/// [`GraphQLType`]/[`GraphQLValue`] traits.
 ///
 /// Specifying multiple `#[graphql_object]` attributes on the same definition
-/// is totally okay.
-/// They all will be treated as a single attribute.
+/// is totally okay. They all will be treated as a single attribute.
 ///
 /// ```
 /// use juniper::graphql_object;
@@ -1116,6 +1114,8 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///
 /// [`Context`]: juniper::Context
 /// [`Executor`]: juniper::Executor
+/// [`GraphQLType`]: juniper::GraphQLType
+/// [`GraphQLValue`]: juniper::GraphQLValue
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [0]: https://spec.graphql.org/June2018
 /// [1]: https://spec.graphql.org/June2018/#sec-Objects
@@ -1127,8 +1127,51 @@ pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
         .into()
 }
 
-// TODO
-/// A proc macro for defining a GraphQL subscription.
+/// `#[graphql_subscription]` macro for generating a [GraphQL subscription][1]
+/// implementation for structs with computable field resolvers (declared via
+/// a regular Rust `impl` block).
+///
+/// It enables you to write GraphQL field resolvers for a type by declaring a
+/// regular Rust `impl` block. Under the hood, the macro implements
+/// [`GraphQLType`]/[`GraphQLSubscriptionValue`] traits.
+///
+/// Specifying multiple `#[graphql_subscription]` attributes on the same
+/// definition is totally okay. They all will be treated as a single attribute.
+///
+/// This macro is similar to [`#[graphql_object]` macro](macro@graphql_object)
+/// and has all its properties, but requires methods to be `async` and return
+/// [`Stream`] of values instead of a value itself.
+///
+/// ```
+/// # use futures::stream::{self, BoxStream};
+/// use juniper::graphql_subscription;
+///
+/// // We can declare the type as a plain struct without any members.
+/// struct Subscription;
+///
+/// #[graphql_subscription]
+/// impl Subscription {
+///     // WARNING: Only GraphQL fields can be specified in this `impl` block.
+///     //          If normal methods are required on the struct, they can be
+///     //          defined either in a separate "normal" `impl` block, or
+///     //          marked with `#[graphql(ignore)]` attribute.
+///
+///     // This defines a simple, static field which does not require any
+///     // context.
+///     // Such field can return a `Stream` of any value implementing
+///     // `GraphQLType` and `GraphQLValue` traits.
+///     //
+///     // NOTICE: Method must be `async`.
+///     async fn api_version() -> BoxStream<'static, &'static str> {
+///         Box::pin(stream::once(async { "0.1" }))
+///     }
+/// }
+/// ```
+///
+/// [`GraphQLType`]: juniper::GraphQLType
+/// [`GraphQLSubscriptionValue`]: juniper::GraphQLSubscriptionValue
+/// [`Stream`]: futures::Stream
+/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
