@@ -1,7 +1,12 @@
-// Original author of this test is <https://github.com/davidpdrsn>.
+//! Checks that `executor.look_ahead().field_name()` is correct in presence of
+//! multiple query fields.
+//! See [#371](https://github.com/graphql-rust/juniper/issues/371) for details.
+//!
+//! Original author of this test is [@davidpdrsn](https://github.com/davidpdrsn).
 
 use juniper::{
-    graphql_object, EmptyMutation, EmptySubscription, LookAheadMethods as _, RootNode, Variables,
+    graphql_object, EmptyMutation, EmptySubscription, Executor, LookAheadMethods as _, RootNode,
+    ScalarValue, Variables,
 };
 
 pub struct Context;
@@ -12,14 +17,14 @@ pub struct Query;
 
 #[graphql_object(context = Context)]
 impl Query {
-    fn users(exec: &Executor) -> Vec<User> {
-        let lh = exec.look_ahead();
+    fn users<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<User> {
+        let lh = executor.look_ahead();
         assert_eq!(lh.field_name(), "users");
         vec![User]
     }
 
-    fn countries(exec: &Executor) -> Vec<Country> {
-        let lh = exec.look_ahead();
+    fn countries<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<Country> {
+        let lh = executor.look_ahead();
         assert_eq!(lh.field_name(), "countries");
         vec![Country]
     }
@@ -49,98 +54,54 @@ type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription
 
 #[tokio::test]
 async fn users() {
-    let ctx = Context;
+    let query = "{ users { id } }";
 
-    let query = r#"{ users { id } }"#;
-
-    let (_, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(
-            Query,
-            EmptyMutation::<Context>::new(),
-            EmptySubscription::<Context>::new(),
-        ),
-        &juniper::Variables::new(),
-        &ctx,
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
 #[tokio::test]
 async fn countries() {
-    let ctx = Context;
+    let query = "{ countries { id } }";
 
-    let query = r#"{ countries { id } }"#;
-
-    let (_, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &juniper::Variables::new(),
-        &ctx,
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
 #[tokio::test]
 async fn both() {
-    let ctx = Context;
-
-    let query = r#"
-    {
+    let query = "{
         countries { id }
         users { id }
-    }
-    "#;
+    }";
 
-    let (_, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(
-            Query,
-            EmptyMutation::<Context>::new(),
-            EmptySubscription::<Context>::new(),
-        ),
-        &Variables::new(),
-        &ctx,
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
 #[tokio::test]
 async fn both_in_different_order() {
-    let ctx = Context;
-
-    let query = r#"
-    {
+    let query = "{
         users { id }
         countries { id }
-    }
-    "#;
+    }";
 
-    let (_, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(
-            Query,
-            EmptyMutation::<Context>::new(),
-            EmptySubscription::<Context>::new(),
-        ),
-        &Variables::new(),
-        &ctx,
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
 }

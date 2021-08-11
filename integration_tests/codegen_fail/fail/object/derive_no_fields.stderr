@@ -1,7 +1,7 @@
-error: GraphQL object expects at least one field
- --> $DIR/derive_no_fields.rs:2:1
+error: GraphQL object must have at least one field
+ --> $DIR/derive_no_fields.rs:4:1
   |
-2 | struct Object {}
-  | ^^^^^^^^^^^^^^^^
+4 | struct Obj {}
+  | ^^^^^^^^^^^^^
   |
   = note: https://spec.graphql.org/June2018/#sec-Objects

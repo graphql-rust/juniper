@@ -232,6 +232,21 @@ trait Character {
 # fn main() {}
 ```
 
+Renaming policies for all [GraphQL interface][1] fields and arguments are supported as well:
+```rust
+# #![allow(deprecated)]
+# extern crate juniper;
+use juniper::graphql_interface;
+
+#[graphql_interface(rename_all = "none")] // disables any renaming
+trait Character {
+    // Now exposed as `my_id` and `my_num` in the schema
+    fn my_id(&self, my_num: i32) -> &str;
+}
+#
+# fn main() {}
+```
+
 
 ### Custom context
 

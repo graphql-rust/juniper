@@ -24,7 +24,7 @@ pub struct Query;
 
 #[graphql_object(context = Database)]
 impl Query {
-    fn hello_world() -> &str {
+    fn hello_world() -> &'static str {
         "Hello World!"
     }
 }

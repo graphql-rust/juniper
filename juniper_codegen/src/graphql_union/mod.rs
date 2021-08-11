@@ -8,8 +8,9 @@ pub mod derive;
 use std::collections::HashMap;
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens, TokenStreamExt as _};
+use quote::{format_ident, quote, ToTokens};
 use syn::{
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
@@ -17,83 +18,90 @@ use syn::{
 };
 
 use crate::{
-    common::parse::{
-        attr::{err, OptionExt as _},
-        ParseBufferExt as _,
+    common::{
+        gen,
+        parse::{
+            attr::{err, OptionExt as _},
+            ParseBufferExt as _,
+        },
+        scalar,
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
 };
 
-/// Helper alias for the type of [`UnionMeta::external_resolvers`] field.
-type UnionMetaResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
+/// Helper alias for the type of [`Attr::external_resolvers`] field.
+type AttrResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
 
-/// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_union]`) attribute when
-/// generating code for [GraphQL union][1] type.
+/// Available arguments behind `#[graphql]` (or `#[graphql_union]`) attribute
+/// when generating code for [GraphQL union][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
 #[derive(Debug, Default)]
-struct UnionMeta {
+struct Attr {
     /// Explicitly specified name of [GraphQL union][1] type.
     ///
-    /// If absent, then Rust type name is used by default.
+    /// If [`None`], then Rust type name is used by default.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub name: Option<SpanContainer<String>>,
+    name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of [GraphQL union][1] type.
     ///
-    /// If absent, then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment is used as [description][2], if any.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    pub description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<String>>,
 
-    /// Explicitly specified type of `juniper::Context` to use for resolving this [GraphQL union][1]
-    /// type with.
-    ///
-    /// If absent, then unit type `()` is assumed as type of `juniper::Context`.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub context: Option<SpanContainer<syn::Type>>,
-
-    /// Explicitly specified type of `juniper::ScalarValue` to use for resolving this
+    /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL union][1] type with.
     ///
-    /// If absent, then generated code will be generic over any `juniper::ScalarValue` type, which,
-    /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
-    /// too. That's why this type should be specified only if one of the variants implements
-    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
+    /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
+    ///
+    /// [`Context`]: juniper::Context
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    context: Option<SpanContainer<syn::Type>>,
+
+    /// Explicitly specified type of [`ScalarValue`] to use for resolving this
+    /// [GraphQL union][1] type with.
+    ///
+    /// If [`None`], then generated code will be generic over any
+    /// [`ScalarValue`] type, which, in turn, requires all [union][1] variants
+    /// to be generic over any [`ScalarValue`] type too. That's why this type
+    /// should be specified only if one of the variants implements
+    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    scalar: Option<SpanContainer<scalar::AttrValue>>,
+
+    /// Explicitly specified external resolver functions for [GraphQL union][1]
+    /// variants.
+    ///
+    /// If [`None`], then macro will try to auto-infer all the possible variants
+    /// from the type declaration, if possible. That's why specifying an
+    /// external resolver function has sense, when some custom [union][1]
+    /// variant resolving logic is involved, or variants cannot be inferred.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub scalar: Option<SpanContainer<syn::Type>>,
+    external_resolvers: AttrResolvers,
 
-    /// Explicitly specified external resolver functions for [GraphQL union][1] variants.
-    ///
-    /// If absent, then macro will try to auto-infer all the possible variants from the type
-    /// declaration, if possible. That's why specifying an external resolver function has sense,
-    /// when some custom [union][1] variant resolving logic is involved, or variants cannot be
-    /// inferred.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub external_resolvers: UnionMetaResolvers,
-
-    /// Indicator whether the generated code is intended to be used only inside the `juniper`
-    /// library.
-    pub is_internal: bool,
+    /// Indicator whether the generated code is intended to be used only inside
+    /// the [`juniper`] library.
+    is_internal: bool,
 }
 
-impl Parse for UnionMeta {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut output = Self::default();
-
+impl Parse for Attr {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let mut out = Self::default();
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
                 "name" => {
                     input.parse::<token::Eq>()?;
                     let name = input.parse::<syn::LitStr>()?;
-                    output
-                        .name
+                    out.name
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(name.span()),
@@ -104,8 +112,7 @@ impl Parse for UnionMeta {
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
                     let desc = input.parse::<syn::LitStr>()?;
-                    output
-                        .description
+                    out.description
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(desc.span()),
@@ -116,16 +123,14 @@ impl Parse for UnionMeta {
                 "ctx" | "context" | "Context" => {
                     input.parse::<token::Eq>()?;
                     let ctx = input.parse::<syn::Type>()?;
-                    output
-                        .context
+                    out.context
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Type>()?;
-                    output
-                        .scalar
+                    let scl = input.parse::<scalar::AttrValue>()?;
+                    out.scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -135,13 +140,12 @@ impl Parse for UnionMeta {
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     let rslvr_spanned = SpanContainer::new(ident.span(), Some(ty.span()), rslvr);
                     let rslvr_span = rslvr_spanned.span_joined();
-                    output
-                        .external_resolvers
+                    out.external_resolvers
                         .insert(ty, rslvr_spanned)
                         .none_or_else(|_| err::dup_arg(rslvr_span))?
                 }
                 "internal" => {
-                    output.is_internal = true;
+                    out.is_internal = true;
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
@@ -149,13 +153,13 @@ impl Parse for UnionMeta {
             }
             input.try_parse::<token::Comma>()?;
         }
-
-        Ok(output)
+        Ok(out)
     }
 }
 
-impl UnionMeta {
-    /// Tries to merge two [`UnionMeta`]s into a single one, reporting about duplicates, if any.
+impl Attr {
+    /// Tries to merge two [`Attr`]s into a single one, reporting about
+    /// duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
@@ -169,9 +173,9 @@ impl UnionMeta {
         })
     }
 
-    /// Parses [`UnionMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a type
-    /// definition.
-    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+    /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a type definition.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
@@ -184,17 +188,17 @@ impl UnionMeta {
     }
 }
 
-/// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_union]`) attribute when
-/// generating code for [GraphQL union][1]'s variant.
+/// Available arguments behind `#[graphql]` attribute when generating code for
+/// [GraphQL union][1]'s variant.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
 #[derive(Debug, Default)]
-struct UnionVariantMeta {
-    /// Explicitly specified marker for the variant/field being ignored and not included into
-    /// [GraphQL union][1].
+struct VariantAttr {
+    /// Explicitly specified marker for the variant/field being ignored and not
+    /// included into [GraphQL union][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub ignore: Option<SpanContainer<syn::Ident>>,
+    ignore: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified external resolver function for this [GraphQL union][1] variant.
     ///
@@ -203,25 +207,23 @@ struct UnionVariantMeta {
     /// logic is involved.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub external_resolver: Option<SpanContainer<syn::ExprPath>>,
+    external_resolver: Option<SpanContainer<syn::ExprPath>>,
 }
 
-impl Parse for UnionVariantMeta {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut output = Self::default();
-
+impl Parse for VariantAttr {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let mut out = Self::default();
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
-                "ignore" | "skip" => output
+                "ignore" | "skip" => out
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
                     .none_or_else(|_| err::dup_arg(&ident))?,
                 "with" => {
                     input.parse::<token::Eq>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
-                    output
-                        .external_resolver
+                    out.external_resolver
                         .replace(SpanContainer::new(ident.span(), Some(rslvr.span()), rslvr))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -231,14 +233,13 @@ impl Parse for UnionVariantMeta {
             }
             input.try_parse::<token::Comma>()?;
         }
-
-        Ok(output)
+        Ok(out)
     }
 }
 
-impl UnionVariantMeta {
-    /// Tries to merge two [`UnionVariantMeta`]s into a single one, reporting about duplicates, if
-    /// any.
+impl VariantAttr {
+    /// Tries to merge two [`VariantAttr`]s into a single one, reporting about
+    /// duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             ignore: try_merge_opt!(ignore: self, another),
@@ -246,219 +247,238 @@ impl UnionVariantMeta {
         })
     }
 
-    /// Parses [`UnionVariantMeta`] from the given multiple `name`d [`syn::Attribute`]s placed on a
-    /// variant/field/method definition.
-    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+    /// Parses [`VariantAttr`] from the given multiple `name`d
+    /// [`syn::Attribute`]s placed on a variant/field/method definition.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
     }
 }
 
-/// Definition of [GraphQL union][1] variant for code generation.
-///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
-struct UnionVariantDefinition {
-    /// Rust type that this [GraphQL union][1] variant resolves into.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub ty: syn::Type,
-
-    /// Rust code for value resolution of this [GraphQL union][1] variant.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub resolver_code: syn::Expr,
-
-    /// Rust code for checking whether [GraphQL union][1] should be resolved into this variant.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub resolver_check: syn::Expr,
-
-    /// Rust type of `juniper::Context` that this [GraphQL union][1] variant requires for
-    /// resolution.
-    ///
-    /// It's available only when code generation happens for Rust traits and a trait method contains
-    /// context argument.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub context_ty: Option<syn::Type>,
-}
-
 /// Definition of [GraphQL union][1] for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-struct UnionDefinition {
+struct Definition {
     /// Name of this [GraphQL union][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub name: String,
+    name: String,
 
     /// Rust type that this [GraphQL union][1] is represented with.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub ty: syn::Type,
+    ty: syn::Type,
 
-    /// Generics of the Rust type that this [GraphQL union][1] is implemented for.
+    /// Generics of the Rust type that this [GraphQL union][1] is implemented
+    /// for.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub generics: syn::Generics,
+    generics: syn::Generics,
 
-    /// Indicator whether code should be generated for a trait object, rather than for a regular
-    /// Rust type.
-    pub is_trait_object: bool,
+    /// Indicator whether code should be generated for a trait object, rather
+    /// than for a regular Rust type.
+    is_trait_object: bool,
 
     /// Description of this [GraphQL union][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub description: Option<String>,
+    description: Option<String>,
 
-    /// Rust type of `juniper::Context` to generate `juniper::GraphQLType` implementation with
+    /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL union][1].
     ///
-    /// If [`None`] then generated code will use unit type `()` as `juniper::Context`.
-    ///
+    /// [`Context`]: juniper::Context
+    /// [`GraphQLType`]: juniper::GraphQLType
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub context: Option<syn::Type>,
+    context: syn::Type,
 
-    /// Rust type of `juniper::ScalarValue` to generate `juniper::GraphQLType` implementation with
-    /// for this [GraphQL union][1].
+    /// Rust type of [`ScalarValue`] to generate [`GraphQLType`] implementation
+    /// with for this [GraphQL union][1].
     ///
-    /// If [`None`] then generated code will be generic over any `juniper::ScalarValue` type, which,
-    /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
-    /// too. That's why this type should be specified only if one of the variants implements
-    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
+    /// If [`None`] then generated code will be generic over any [`ScalarValue`]
+    /// type, which, in turn, requires all [union][1] variants to be generic
+    /// over any [`ScalarValue`] type too. That's why this type should be
+    /// specified only if one of the variants implements [`GraphQLType`] in a
+    /// non-generic way over [`ScalarValue`] type.
     ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub scalar: Option<syn::Type>,
+    scalar: scalar::Type,
 
     /// Variants definitions of this [GraphQL union][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub variants: Vec<UnionVariantDefinition>,
+    variants: Vec<VariantDefinition>,
 }
 
-impl ToTokens for UnionDefinition {
+impl ToTokens for Definition {
     fn to_tokens(&self, into: &mut TokenStream) {
-        let name = &self.name;
-        let ty = &self.ty;
+        self.impl_graphql_union_tokens().to_tokens(into);
+        self.impl_output_type_tokens().to_tokens(into);
+        self.impl_graphql_type_tokens().to_tokens(into);
+        self.impl_graphql_value_tokens().to_tokens(into);
+        self.impl_graphql_value_async_tokens().to_tokens(into);
+    }
+}
 
-        let context = self
-            .context
-            .as_ref()
-            .map(|ctx| quote! { #ctx })
-            .unwrap_or_else(|| quote! { () });
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|scl| quote! { #scl })
-            .unwrap_or_else(|| quote! { __S });
-
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
-
-        let var_types: Vec<_> = self.variants.iter().map(|var| &var.ty).collect();
-
-        let all_variants_unique = if var_types.len() > 1 {
-            Some(quote! { ::juniper::sa::assert_type_ne_all!(#(#var_types),*); })
-        } else {
-            None
-        };
-
-        let match_names = self.variants.iter().map(|var| {
-            let var_ty = &var.ty;
-            let var_check = &var.resolver_check;
-            quote! {
-                if #var_check {
-                    return <#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)
-                        .unwrap().to_string();
-                }
-            }
-        });
-
-        let match_resolves: Vec<_> = self.variants.iter().map(|var| &var.resolver_code).collect();
-        let resolve_into_type = self.variants.iter().zip(match_resolves.iter()).map(|(var, expr)| {
-            let var_ty = &var.ty;
-
-            let get_name = quote! { (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info)) };
-            quote! {
-                if type_name == #get_name.unwrap() {
-                    return ::juniper::IntoResolvable::into(
-                        { #expr },
-                        executor.context(),
-                    )
-                    .and_then(|res| match res {
-                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
-                        None => Ok(::juniper::Value::null()),
-                    });
-                }
-            }
-        });
-        let resolve_into_type_async =
-            self.variants
-                .iter()
-                .zip(match_resolves.iter())
-                .map(|(var, expr)| {
-                    let var_ty = &var.ty;
-
-                    let get_name = quote! {
-                        (<#var_ty as ::juniper::GraphQLType<#scalar>>::name(info))
-                    };
-                    quote! {
-                        if type_name == #get_name.unwrap() {
-                            let res = ::juniper::IntoResolvable::into(
-                                { #expr },
-                                executor.context(),
-                            );
-                            return Box::pin(async move {
-                                match res? {
-                                    Some((ctx, r)) => {
-                                        let subexec = executor.replaced_context(ctx);
-                                        subexec.resolve_with_ctx_async(info, &r).await
-                                    },
-                                    None => Ok(::juniper::Value::null()),
-                                }
-                            });
-                        }
-                    }
-                });
-
+impl Definition {
+    /// Returns prepared [`syn::Generics::split_for_impl`] for [`GraphQLType`]
+    /// trait (and similar) implementation of this [GraphQL union][1].
+    ///
+    /// If `for_async` is `true`, then additional predicates are added to suit
+    /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
+    ///
+    /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    fn impl_generics(
+        &self,
+        for_async: bool,
+    ) -> (TokenStream, TokenStream, Option<syn::WhereClause>) {
         let (_, ty_generics, _) = self.generics.split_for_impl();
-
-        let mut ext_generics = self.generics.clone();
-        if self.is_trait_object {
-            ext_generics.params.push(parse_quote! { '__obj });
-        }
-        if self.scalar.is_none() {
-            ext_generics.params.push(parse_quote! { #scalar });
-            ext_generics
-                .make_where_clause()
-                .predicates
-                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
-        }
-        let (ext_impl_generics, _, where_clause) = ext_generics.split_for_impl();
-
-        let mut where_async = where_clause
-            .cloned()
-            .unwrap_or_else(|| parse_quote! { where });
-        where_async.predicates.push(parse_quote! { Self: Sync });
-        if self.scalar.is_none() {
-            where_async
-                .predicates
-                .push(parse_quote! { #scalar: Send + Sync });
-        }
+        let ty = &self.ty;
 
         let mut ty_full = quote! { #ty#ty_generics };
         if self.is_trait_object {
             ty_full = quote! { dyn #ty_full + '__obj + Send + Sync };
         }
 
-        let type_impl = quote! {
+        let mut generics = self.generics.clone();
+
+        if self.is_trait_object {
+            generics.params.push(parse_quote! { '__obj });
+        }
+
+        let scalar = &self.scalar;
+        if scalar.is_implicit_generic() {
+            generics.params.push(parse_quote! { #scalar });
+        }
+        if scalar.is_generic() {
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        }
+        if let Some(bound) = scalar.bounds() {
+            generics.make_where_clause().predicates.push(bound);
+        }
+
+        if for_async {
+            let self_ty = if !self.is_trait_object && self.generics.lifetimes().next().is_some() {
+                // Modify lifetime names to omit "lifetime name `'a` shadows a
+                // lifetime name that is already in scope" error.
+                let mut generics = self.generics.clone();
+                for lt in generics.lifetimes_mut() {
+                    let ident = lt.lifetime.ident.unraw();
+                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                }
+
+                let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
+                let ty = &self.ty;
+                let (_, ty_generics, _) = generics.split_for_impl();
+
+                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+            } else {
+                quote! { Self }
+            };
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #self_ty: Sync });
+
+            if scalar.is_generic() {
+                generics
+                    .make_where_clause()
+                    .predicates
+                    .push(parse_quote! { #scalar: Send + Sync });
+            }
+        }
+
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        (
+            quote! { #impl_generics },
+            quote! { #ty_full },
+            where_clause.cloned(),
+        )
+    }
+
+    /// Returns generated code implementing [`GraphQLUnion`] trait for this
+    /// [GraphQL union][1].
+    ///
+    /// [`GraphQLUnion`]: juniper::GraphQLUnion
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    fn impl_graphql_union_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_full, where_clause) = self.impl_generics(false);
+
+        let variant_tys: Vec<_> = self.variants.iter().map(|var| &var.ty).collect();
+        let all_variants_unique = (variant_tys.len() > 1).then(|| {
+            quote! { ::juniper::sa::assert_type_ne_all!(#( #variant_tys ),*); }
+        });
+
+        quote! {
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::GraphQLType<#scalar> for #ty_full
-                #where_clause
+            impl#impl_generics ::juniper::marker::GraphQLUnion<#scalar> for #ty_full #where_clause
+            {
+                fn mark() {
+                    #all_variants_unique
+                    #( <#variant_tys as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`marker::IsOutputType`] trait for
+    /// this [GraphQL union][1].
+    ///
+    /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    fn impl_output_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_full, where_clause) = self.impl_generics(false);
+
+        let variant_tys = self.variants.iter().map(|var| &var.ty);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty_full #where_clause
+            {
+                fn mark() {
+                    #( <#variant_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`GraphQLType`] trait for this
+    /// [GraphQL union][1].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    fn impl_graphql_type_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_full, where_clause) = self.impl_generics(false);
+
+        let name = &self.name;
+        let description = self
+            .description
+            .as_ref()
+            .map(|desc| quote! { .description(#desc) });
+
+        let variant_tys = self.variants.iter().map(|var| &var.ty);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty_full #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
@@ -471,19 +491,43 @@ impl ToTokens for UnionDefinition {
                 where #scalar: 'r,
                 {
                     let types = [
-                        #( registry.get_type::<#var_types>(info), )*
+                        #( registry.get_type::<#variant_tys>(info), )*
                     ];
                     registry.build_union_type::<#ty_full>(info, &types)
-                    #description
-                    .into_meta()
+                        #description
+                        .into_meta()
                 }
             }
-        };
+        }
+    }
 
-        let value_impl = quote! {
+    /// Returns generated code implementing [`GraphQLValue`] trait for this
+    /// [GraphQL union][1].
+    ///
+    /// [`GraphQLValue`]: juniper::GraphQLValue
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    fn impl_graphql_value_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let context = &self.context;
+
+        let (impl_generics, ty_full, where_clause) = self.impl_generics(false);
+
+        let name = &self.name;
+
+        let match_variant_names = self
+            .variants
+            .iter()
+            .map(|v| v.method_concrete_type_name_tokens(scalar));
+
+        let variant_resolvers = self
+            .variants
+            .iter()
+            .map(|v| v.method_resolve_into_type_tokens(scalar));
+
+        quote! {
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::GraphQLValue<#scalar> for #ty_full
-                #where_clause
+            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty_full #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
@@ -497,10 +541,10 @@ impl ToTokens for UnionDefinition {
                     context: &Self::Context,
                     info: &Self::TypeInfo,
                 ) -> String {
-                    #( #match_names )*
+                    #( #match_variant_names )*
                     panic!(
-                        "GraphQL union {} cannot be resolved into any of its variants in its \
-                         current state",
+                        "GraphQL union `{}` cannot be resolved into any of its \
+                         variants in its current state",
                         #name,
                     );
                 }
@@ -513,19 +557,39 @@ impl ToTokens for UnionDefinition {
                     executor: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     let context = executor.context();
-                    #( #resolve_into_type )*
+                    #( #variant_resolvers )*
                     panic!(
-                        "Concrete type {} is not handled by instance resolvers on GraphQL union {}",
+                        "Concrete type `{}` is not handled by instance \
+                         resolvers on GraphQL union `{}`",
                         type_name, #name,
                     );
                 }
             }
-        };
+        }
+    }
 
-        let value_async_impl = quote! {
+    /// Returns generated code implementing [`GraphQLValueAsync`] trait for this
+    /// [GraphQL union][1].
+    ///
+    /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    fn impl_graphql_value_async_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (impl_generics, ty_full, where_clause) = self.impl_generics(true);
+
+        let name = &self.name;
+
+        let variant_async_resolvers = self
+            .variants
+            .iter()
+            .map(|v| v.method_resolve_into_type_async_tokens(scalar));
+
+        quote! {
+            #[allow(non_snake_case)]
             #[automatically_derived]
-            impl#ext_impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty_full
-                #where_async
+            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty_full #where_clause
             {
                 fn resolve_into_type_async<'b>(
                     &'b self,
@@ -535,58 +599,119 @@ impl ToTokens for UnionDefinition {
                     executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     let context = executor.context();
-                    #( #resolve_into_type_async )*
+                    #( #variant_async_resolvers )*
                     panic!(
-                        "Concrete type {} is not handled by instance resolvers on GraphQL union {}",
+                        "Concrete type `{}` is not handled by instance \
+                         resolvers on GraphQL union `{}`",
                         type_name, #name,
                     );
                 }
             }
-        };
-
-        let output_type_impl = quote! {
-            #[automatically_derived]
-            impl#ext_impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty_full
-                #where_clause
-            {
-                fn mark() {
-                    #( <#var_types as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
-                }
-            }
-        };
-
-        let union_impl = quote! {
-            #[automatically_derived]
-            impl#ext_impl_generics ::juniper::marker::GraphQLUnion<#scalar> for #ty_full
-                #where_clause
-            {
-                fn mark() {
-                    #all_variants_unique
-
-                    #( <#var_types as ::juniper::marker::GraphQLObjectType<#scalar>>::mark(); )*
-                }
-            }
-        };
-
-        into.append_all(&[
-            union_impl,
-            output_type_impl,
-            type_impl,
-            value_impl,
-            value_async_impl,
-        ]);
+        }
     }
 }
 
-/// Emerges [`UnionMeta::external_resolvers`] into the given [GraphQL union][1] `variants`.
+/// Definition of [GraphQL union][1] variant for code generation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+struct VariantDefinition {
+    /// Rust type that this [GraphQL union][1] variant resolves into.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    ty: syn::Type,
+
+    /// Rust code for value resolution of this [GraphQL union][1] variant.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    resolver_code: syn::Expr,
+
+    /// Rust code for checking whether [GraphQL union][1] should be resolved
+    /// into this variant.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    resolver_check: syn::Expr,
+
+    /// Rust type of [`Context`] that this [GraphQL union][1] variant requires
+    /// for resolution.
+    ///
+    /// It's available only when code generation happens for Rust traits and a
+    /// trait method contains context argument.
+    ///
+    /// [`Context`]: juniper::Context
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    context: Option<syn::Type>,
+}
+
+impl VariantDefinition {
+    /// Returns generated code for the [`GraphQLValue::concrete_type_name`][0]
+    /// method, which returns name of the underlying GraphQL type contained in
+    /// this [`VariantDefinition`].
+    ///
+    /// [0]: juniper::GraphQLValue::concrete_type_name
+    #[must_use]
+    fn method_concrete_type_name_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+        let ty = &self.ty;
+        let check = &self.resolver_check;
+
+        quote! {
+            if #check {
+                return <#ty as ::juniper::GraphQLType<#scalar>>::name(info)
+                    .unwrap()
+                    .to_string();
+            }
+        }
+    }
+
+    /// Returns generated code for the [`GraphQLValue::resolve_into_type`][0]
+    /// method, which resolves the underlying GraphQL type contained in this
+    /// [`VariantDefinition`] synchronously.
+    ///
+    /// [0]: juniper::GraphQLValue::resolve_into_type
+    #[must_use]
+    fn method_resolve_into_type_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+        let ty = &self.ty;
+        let expr = &self.resolver_code;
+        let resolving_code = gen::sync_resolving_code();
+
+        quote! {
+            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
+                let res = { #expr };
+                return #resolving_code;
+            }
+        }
+    }
+
+    /// Returns generated code for the
+    /// [`GraphQLValueAsync::resolve_into_type_async`][0] method, which
+    /// resolves the underlying GraphQL type contained in this
+    /// [`VariantDefinition`] asynchronously.
+    ///
+    /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
+    #[must_use]
+    fn method_resolve_into_type_async_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+        let ty = &self.ty;
+        let expr = &self.resolver_code;
+        let resolving_code = gen::async_resolving_code(None);
+
+        quote! {
+            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
+                let fut = ::juniper::futures::future::ready({ #expr });
+                return #resolving_code;
+            }
+        }
+    }
+}
+
+/// Emerges [`Attr::external_resolvers`] into the given [GraphQL union][1]
+/// `variants`.
 ///
 /// If duplication happens, then resolving code is overwritten with the one from
 /// `external_resolvers`.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-fn emerge_union_variants_from_meta(
-    variants: &mut Vec<UnionVariantDefinition>,
-    external_resolvers: UnionMetaResolvers,
+fn emerge_union_variants_from_attr(
+    variants: &mut Vec<VariantDefinition>,
+    external_resolvers: AttrResolvers,
 ) {
     if external_resolvers.is_empty() {
         return;
@@ -597,9 +722,10 @@ fn emerge_union_variants_from_meta(
         let resolver_code = parse_quote! {
             #resolver_fn(self, ::juniper::FromContext::from(context))
         };
-        // Doing this may be quite an expensive, because resolving may contain some heavy
-        // computation, so we're preforming it twice. Unfortunately, we have no other options here,
-        // until the `juniper::GraphQLType` itself will allow to do it in some cleverer way.
+        // Doing this may be quite an expensive, because resolving may contain
+        // some heavy computation, so we're preforming it twice. Unfortunately,
+        // we have no other options here, until the `juniper::GraphQLType`
+        // itself will allow to do it in some cleverer way.
         let resolver_check = parse_quote! {
             ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
         };
@@ -608,29 +734,30 @@ fn emerge_union_variants_from_meta(
             var.resolver_code = resolver_code;
             var.resolver_check = resolver_check;
         } else {
-            variants.push(UnionVariantDefinition {
+            variants.push(VariantDefinition {
                 ty,
                 resolver_code,
                 resolver_check,
-                context_ty: None,
+                context: None,
             })
         }
     }
 }
 
-/// Checks whether all [GraphQL union][1] `variants` represent a different Rust type.
+/// Checks whether all [GraphQL union][1] `variants` represent a different Rust
+/// type.
 ///
 /// # Notice
 ///
-/// This is not an optimal implementation, as it's possible to bypass this check by using a full
-/// qualified path instead (`crate::Test` vs `Test`). Since this requirement is mandatory, the
-/// static assertion [`assert_type_ne_all!`][2] is used to enforce this requirement in the generated
-/// code. However, due to the bad error message this implementation should stay and provide
-/// guidance.
+/// This is not an optimal implementation, as it's possible to bypass this check
+/// by using a full qualified path instead (`crate::Test` vs `Test`). Since this
+/// requirement is mandatory, the static assertion [`assert_type_ne_all!`][2] is
+/// used to enforce this requirement in the generated code. However, due to the
+/// bad error message this implementation should stay and provide guidance.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-/// [2]: https://docs.rs/static_assertions/latest/static_assertions/macro.assert_type_ne_all.html
-fn all_variants_different(variants: &[UnionVariantDefinition]) -> bool {
+/// [2]: juniper::sa::assert_type_ne_all
+fn all_variants_different(variants: &[VariantDefinition]) -> bool {
     let mut types: Vec<_> = variants.iter().map(|var| &var.ty).collect();
     types.dedup();
     types.len() == variants.len()

@@ -253,72 +253,68 @@ mod integration_test {
 
     use crate::{
         executor::Variables,
+        graphql_object, graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     #[tokio::test]
     async fn test_serialization() {
         struct Root;
 
-        #[crate::graphql_object]
+        #[graphql_object]
         #[cfg(feature = "scalar-naivetime")]
         impl Root {
-            fn exampleNaiveDate() -> NaiveDate {
+            fn example_naive_date() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)
             }
-            fn exampleNaiveDateTime() -> NaiveDateTime {
+            fn example_naive_date_time() -> NaiveDateTime {
                 NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11)
             }
-            fn exampleNaiveTime() -> NaiveTime {
+            fn example_naive_time() -> NaiveTime {
                 NaiveTime::from_hms(16, 7, 8)
             }
-            fn exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
+            fn example_date_time_fixed_offset() -> DateTime<FixedOffset> {
                 DateTime::parse_from_rfc3339("1996-12-19T16:39:57-08:00").unwrap()
             }
-            fn exampleDateTimeUtc() -> DateTime<Utc> {
+            fn example_date_time_utc() -> DateTime<Utc> {
                 Utc.timestamp(61, 0)
             }
         }
 
-        #[crate::graphql_object]
+        #[graphql_object]
         #[cfg(not(feature = "scalar-naivetime"))]
         impl Root {
-            fn exampleNaiveDate() -> NaiveDate {
+            fn example_naive_date() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)
             }
-            fn exampleNaiveDateTime() -> NaiveDateTime {
+            fn example_naive_date_time() -> NaiveDateTime {
                 NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11)
             }
-            fn exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
+            fn example_date_time_fixed_offset() -> DateTime<FixedOffset> {
                 DateTime::parse_from_rfc3339("1996-12-19T16:39:57-08:00").unwrap()
             }
-            fn exampleDateTimeUtc() -> DateTime<Utc> {
+            fn example_date_time_utc() -> DateTime<Utc> {
                 Utc.timestamp(61, 0)
             }
         }
 
         #[cfg(feature = "scalar-naivetime")]
-        let doc = r#"
-        {
+        let doc = r#"{
             exampleNaiveDate,
             exampleNaiveDateTime,
             exampleNaiveTime,
             exampleDateTimeFixedOffset,
             exampleDateTimeUtc,
-        }
-        "#;
+        }"#;
 
         #[cfg(not(feature = "scalar-naivetime"))]
-        let doc = r#"
-        {
+        let doc = r#"{
             exampleNaiveDate,
             exampleNaiveDateTime,
             exampleDateTimeFixedOffset,
             exampleDateTimeUtc,
-        }
-        "#;
+        }"#;
 
         let schema = RootNode::new(
             Root,
@@ -332,26 +328,26 @@ mod integration_test {
 
         assert_eq!(errs, []);
 
+        #[cfg(feature = "scalar-naivetime")]
         assert_eq!(
             result,
-            Value::object(
-                vec![
-                    ("exampleNaiveDate", Value::scalar("2015-03-14")),
-                    ("exampleNaiveDateTime", Value::scalar(1_467_969_011.0)),
-                    #[cfg(feature = "scalar-naivetime")]
-                    ("exampleNaiveTime", Value::scalar("16:07:08")),
-                    (
-                        "exampleDateTimeFixedOffset",
-                        Value::scalar("1996-12-19T16:39:57-08:00"),
-                    ),
-                    (
-                        "exampleDateTimeUtc",
-                        Value::scalar("1970-01-01T00:01:01+00:00"),
-                    ),
-                ]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "exampleNaiveDate": "2015-03-14",
+                "exampleNaiveDateTime": 1_467_969_011.0,
+                "exampleNaiveTime": "16:07:08",
+                "exampleDateTimeFixedOffset": "1996-12-19T16:39:57-08:00",
+                "exampleDateTimeUtc": "1970-01-01T00:01:01+00:00",
+            }),
+        );
+        #[cfg(not(feature = "scalar-naivetime"))]
+        assert_eq!(
+            result,
+            graphql_value!({
+                "exampleNaiveDate": "2015-03-14",
+                "exampleNaiveDateTime": 1_467_969_011.0,
+                "exampleDateTimeFixedOffset": "1996-12-19T16:39:57-08:00",
+                "exampleDateTimeUtc": "1970-01-01T00:01:01+00:00",
+            }),
         );
     }
 }

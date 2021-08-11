@@ -1,0 +1,7 @@
+error: #[graphql_object] attribute is applicable to non-trait `impl` blocks only
+ --> $DIR/attr_field_double_underscored.rs:5:1
+  |
+5 | #[graphql_object]
+  | ^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)

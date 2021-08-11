@@ -25,10 +25,6 @@ This example shows a subscription operation that returns two events, the strings
 sequentially: 
 
 ```rust
-# extern crate futures;
-# extern crate juniper;
-# extern crate juniper_subscriptions;
-# extern crate tokio;
 # use juniper::{graphql_object, graphql_subscription, FieldError};
 # use futures::Stream;
 # use std::pin::Pin;
@@ -40,7 +36,7 @@ sequentially:
 # pub struct Query;
 # #[graphql_object(context = Database)]
 # impl Query {
-#    fn hello_world() -> &str {
+#    fn hello_world() -> &'static str {
 #        "Hello World!"
 #    }
 # }
@@ -110,7 +106,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # 
 # #[graphql_object(context = Database)]
 # impl Query {
-#     fn hello_world() -> &str {
+#     fn hello_world() -> &'static str {
 #         "Hello World!"
 #     }
 # }

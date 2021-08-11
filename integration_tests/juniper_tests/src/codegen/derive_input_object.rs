@@ -115,7 +115,7 @@ fn test_derived_input_object() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = Input::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyInput"));
-    assert_eq!(meta.description(), Some(&"input descr".to_string()));
+    assert_eq!(meta.description(), Some("input descr"));
 
     // Test default value injection.
 
@@ -173,22 +173,19 @@ fn test_derived_input_object() {
 fn test_doc_comment() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
+    assert_eq!(meta.description(), Some("Object comment."));
 }
 
 #[test]
 fn test_multi_doc_comment() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
-    assert_eq!(
-        meta.description(),
-        Some(&"Doc 1. Doc 2.\n\nDoc 4.".to_string())
-    );
+    assert_eq!(meta.description(), Some("Doc 1. Doc 2.\n\nDoc 4."));
 }
 
 #[test]
 fn test_doc_comment_override() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"obj override".to_string()));
+    assert_eq!(meta.description(), Some("obj override"));
 }

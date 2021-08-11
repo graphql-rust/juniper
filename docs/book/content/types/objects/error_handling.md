@@ -17,8 +17,7 @@ it will bubble up to the surrounding framework and hopefully be dealt with
 there.
 
 For recoverable errors, Juniper works well with the built-in `Result` type, you
-can use the `?` operator or the `try!` macro and things will generally just work
-as you expect them to:
+can use the `?` operator and things will generally just work as you expect them to:
 
 ```rust
 # extern crate juniper;
@@ -36,7 +35,7 @@ struct Example {
 
 #[graphql_object]
 impl Example {
-    fn contents() -> FieldResult<String> {
+    fn contents(&self) -> FieldResult<String> {
         let mut file = File::open(&self.filename)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
@@ -44,13 +43,10 @@ impl Example {
     }
 
     fn foo() -> FieldResult<Option<String>> {
-      // Some invalid bytes.
-      let invalid = vec![128, 223];
+        // Some invalid bytes.
+        let invalid = vec![128, 223];
 
-      match str::from_utf8(&invalid) {
-        Ok(s) => Ok(Some(s.to_string())),
-        Err(e) => Err(e)?,
-      }
+        Ok(Some(str::from_utf8(&invalid)?.to_string()))
     }
 }
 #
@@ -65,7 +61,6 @@ there - those errors are automatically converted into `FieldError`.
 ## Error payloads, `null`, and partial errors
 
 Juniper's error behavior conforms to the [GraphQL specification](https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability).
-
 
 When a field returns an error, the field's result is replaced by `null`, an
 additional `errors` object is created at the top level of the response, and the
@@ -86,12 +81,12 @@ returned:
 
 !FILENAME Response for nullable field with error
 
-```js
+```json
 {
   "data": {
     "example": {
       contents: "<Contents of the file>",
-      foo: null,
+      foo: null
     }
   },
   "errors": [
@@ -120,7 +115,7 @@ following would be returned:
 
 !FILENAME Response for non-null field with error and no nullable parent
 
-```js
+```json
 {
   "errors": [
     "message": "Permission denied (os error 13)",
@@ -162,11 +157,11 @@ struct Example {
 
 #[graphql_object]
 impl Example {
-    fn whatever() -> Result<bool, CustomError> {
-      if let Some(value) = self.whatever {
-        return Ok(value);
-      }
-      Err(CustomError::WhateverNotSet)
+    fn whatever(&self) -> Result<bool, CustomError> {
+        if let Some(value) = self.whatever {
+            return Ok(value);
+        }
+        Err(CustomError::WhateverNotSet)
     }
 }
 #

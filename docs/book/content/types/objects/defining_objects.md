@@ -152,7 +152,22 @@ struct Person {
     name: String,
     age: i32,
     #[graphql(name = "websiteURL")]
-    website_url: Option<String>, // Now exposed as websiteURL in the schema
+    website_url: Option<String>, // now exposed as `websiteURL` in the schema
+}
+#
+# fn main() {}
+```
+
+Or provide a different renaming policy on a struct for all its fields:
+```rust
+# extern crate juniper;
+# use juniper::GraphQLObject;
+#[derive(GraphQLObject)]
+#[graphql(rename_all = "none")] // disables any renaming
+struct Person {
+    name: String,
+    age: i32,
+    website_url: Option<String>, // now exposed as `website_url` in the schema
 }
 #
 # fn main() {}
@@ -181,9 +196,9 @@ The `name`, `description`, and `deprecation` arguments can of course be
 combined. Some restrictions from the GraphQL spec still applies though; you can
 only deprecate object fields and enum values.
 
-## Skipping fields
+## Ignoring fields
 
-By default all fields in a `GraphQLObject` are included in the generated GraphQL type. To prevent including a specific field, annotate the field with `#[graphql(skip)]`:
+By default, all fields in a `GraphQLObject` are included in the generated GraphQL type. To prevent including a specific field, annotate the field with `#[graphql(ignore)]`:
 
 ```rust
 # extern crate juniper;
@@ -192,9 +207,9 @@ By default all fields in a `GraphQLObject` are included in the generated GraphQL
 struct Person {
     name: String,
     age: i32,
-    #[graphql(skip)]
+    #[graphql(ignore)]
     # #[allow(dead_code)]
-    password_hash: String, // This cannot be queried or modified from GraphQL
+    password_hash: String, // cannot be queried or modified from GraphQL
 }
 #
 # fn main() {}

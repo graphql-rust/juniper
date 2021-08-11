@@ -145,8 +145,7 @@ mod as_input_argument {
             input[0]
         }
 
-        #[graphql(arguments(input(default = [true, false, false])))]
-        fn third(input: [bool; 3]) -> bool {
+        fn third(#[graphql(default = [true, false, false])] input: [bool; 3]) -> bool {
             input[2]
         }
     }

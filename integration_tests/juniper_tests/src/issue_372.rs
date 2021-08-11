@@ -1,3 +1,6 @@
+//! Checks that `__typename` field queries okay on root types.
+//! See [#372](https://github.com/graphql-rust/juniper/issues/372) for details.
+
 use futures::{stream, StreamExt as _};
 use juniper::{graphql_object, graphql_subscription, graphql_value, RootNode, Value, Variables};
 

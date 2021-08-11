@@ -1,4 +1,6 @@
-#[derive(juniper::GraphQLObject)]
-struct Object {}
+use juniper::GraphQLObject;
+
+#[derive(GraphQLObject)]
+struct Obj {}
 
 fn main() {}
