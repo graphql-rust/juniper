@@ -1,8 +1,19 @@
 # master
 
-- Allow spreading interface fragments on unions and other interfaces ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
-- Expose `GraphQLRequest` fields ([#750](https://github.com/graphql-rust/juniper/issues/750))
-- Support using Rust array as GraphQL list ([#966](https://github.com/graphql-rust/juniper/pull/966), [#918](https://github.com/graphql-rust/juniper/issues/918))
+## Breaking Changes
+
+- `#[graphql_object]` and `#[graphql_subscription]` macros expansion now preserves defined `impl` blocks "as is" and reuses defined methods in opaque way. ([#971](https://github.com/graphql-rust/juniper/pull/971)
+- `rename = "<policy>"` attribute's argument renamed to `rename_all = "<policy>"`. ([#971](https://github.com/graphql-rust/juniper/pull/971)
+
+## Features
+
+- Support using Rust array as GraphQL list. ([#966](https://github.com/graphql-rust/juniper/pull/966), [#918](https://github.com/graphql-rust/juniper/issues/918))
+- Expose `GraphQLRequest` fields. ([#750](https://github.com/graphql-rust/juniper/issues/750))
+- `#[graphql_interface]` macro now supports `rename_all = "<policy>"` argument influencing its fields and their arguments. ([#971](https://github.com/graphql-rust/juniper/pull/971)
+
+## Fixes
+
+- Allow spreading interface fragments on unions and other interfaces. ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 
@@ -41,8 +52,8 @@
 ## Features
 
 - Added async support. ([#2](https://github.com/graphql-rust/juniper/issues/2))
-    - `execute()` is now async. Synchronous execution can still be used via `execute_sync()`.
-    - Field resolvers may optionally be declared as `async` and return a future.
+  - `execute()` is now async. Synchronous execution can still be used via `execute_sync()`.
+  - Field resolvers may optionally be declared as `async` and return a future.
 
 - Added *experimental* support for GraphQL subscriptions. ([#433](https://github.com/graphql-rust/juniper/pull/433))
 
