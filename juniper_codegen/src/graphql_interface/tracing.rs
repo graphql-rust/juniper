@@ -1,11 +1,13 @@
-pub use crate::tracing::{
-    async_tokens, span_tokens, sync_tokens, Attr, FieldBehaviour, Rule, TracedArgument,
-    TracedField, TracedType,
+pub use crate::{
+    tracing::{
+        async_tokens, span_tokens, sync_tokens, Attr, FieldBehavior, Rule, TracedArgument,
+        TracedField, TracedType,
+    }
 };
 
-use super::{Definition, Field, FieldArgument};
+use super::{Definition as InterfaceDefinition, field};
 
-impl TracedType for Definition {
+impl TracedType for InterfaceDefinition {
     fn tracing_rule(&self) -> Rule {
         self.tracing_rule.unwrap_or(Rule::All)
     }
@@ -19,15 +21,15 @@ impl TracedType for Definition {
     }
 }
 
-impl TracedField for Field {
-    type Arg = FieldArgument;
+impl TracedField for field::Definition {
+    type Arg = field::arg::OnField;
 
     fn instrument(&self) -> Option<&Attr> {
         self.instrument.as_ref()
     }
 
-    fn tracing_behaviour(&self) -> FieldBehaviour {
-        self.tracing.unwrap_or(FieldBehaviour::Default)
+    fn tracing_behavior(&self) -> FieldBehavior {
+        self.tracing.unwrap_or(FieldBehavior::Default)
     }
 
     fn is_async(&self) -> bool {
@@ -40,13 +42,16 @@ impl TracedField for Field {
 
     fn args(&self) -> Vec<&Self::Arg> {
         self.arguments
-            .iter()
-            .filter_map(|arg| arg.as_regular())
-            .collect()
+            .as_ref()
+            .map_or_else(
+                || vec![],
+                |args| args.iter()
+                    .filter_map(|arg| arg.as_regular())
+                    .collect())
     }
 }
 
-impl TracedArgument for FieldArgument {
+impl TracedArgument for field::arg::OnField {
     fn ty(&self) -> &syn::Type {
         &self.ty
     }

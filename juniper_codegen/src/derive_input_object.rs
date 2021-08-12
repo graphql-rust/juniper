@@ -98,7 +98,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
 
                 // Tracing of GraphQL Input Objects not supported
                 #[cfg(feature = "tracing")]
-                tracing_behaviour: None,
+                tracing_behavior: None,
                 #[cfg(feature = "tracing")]
                 instrument_attr: None,
             })

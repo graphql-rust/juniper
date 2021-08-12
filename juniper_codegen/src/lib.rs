@@ -817,7 +817,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+#[proc_macro_derive(GraphQLObject, attributes(graphql, instrument))]
 pub fn derive_object(body: TokenStream) -> TokenStream {
     self::graphql_object::derive::expand(body.into())
         .unwrap_or_abort()

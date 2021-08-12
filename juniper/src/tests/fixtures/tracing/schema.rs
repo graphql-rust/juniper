@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use futures::stream::{self, BoxStream};
+use futures::stream::{self, BoxStream, StreamExt as _};
 
 use crate::{
     graphql_interface, graphql_object, graphql_subscription, tracing, Context, GraphQLObject,
@@ -41,7 +41,6 @@ impl Database {
 pub struct Query;
 
 #[graphql_object(context = Database)]
-#[graphql(tracing(...))]
 impl Query {
     /// Simple sync query with no arguments.
     fn foo() -> Foo {
@@ -263,9 +262,16 @@ impl Bar {
     }
 
     /// Field with default arguments.
-    #[graphql(arguments(this(default = 42), another(default = 0), skipped(default = 1),))]
     #[instrument(skip(skipped))]
-    fn default_arg(&self, this: i32, another: i32, skipped: i32) -> i32 {
+    fn default_arg(
+        &self,
+        #[graphql(default = 42)]
+        this: i32,
+        #[graphql(default = 0)]
+        another: i32,
+        #[graphql(default = 1)]
+        skipped: i32
+    ) -> i32 {
         this + another + skipped
     }
 

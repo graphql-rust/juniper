@@ -237,6 +237,8 @@ pub(crate) struct OnField {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
     pub(crate) name: String,
 
+    pub(crate) raw_name: syn::Ident,
+
     /// [Description][2] of this [GraphQL field argument][1] to put into GraphQL
     /// schema.
     ///
@@ -348,19 +350,11 @@ impl OnMethod {
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
-    pub(crate) fn method_resolve_field_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+    pub(crate) fn method_resolve_field_tokens(&self) -> TokenStream {
         match self {
             Self::Regular(arg) => {
-                let (name, ty) = (&arg.name, &arg.ty);
-                let err_text = format!(
-                    "Internal error: missing argument `{}` - validation must have failed",
-                    &name,
-                );
-                quote! {
-                    args.get::<#ty>(#name)
-                        .or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null)
-                        .expect(#err_text)
-                }
+                let name = &arg.raw_name;
+                quote! { #name }
             }
 
             Self::Context(_) => quote! {
@@ -368,6 +362,27 @@ impl OnMethod {
             },
 
             Self::Executor => quote! { &executor },
+        }
+    }
+
+    #[must_use]
+    pub(crate) fn method_resolve_arg_getter_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+
+        match self {
+            Self::Regular(arg) => {
+                let (name, raw_name, ty) = (&arg.name, &arg.raw_name, &arg.ty);
+                let err_text = format!(
+                    "Internal error: missing argument `{}` - validation must have failed",
+                    &name,
+                );
+                quote! {
+                    let #raw_name = args.get::<#ty>(#name)
+                        .or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null)
+                            .expect(#err_text);
+
+                }
+            }
+            Self::Context(_) | Self::Executor => quote!()
         }
     }
 
@@ -415,10 +430,13 @@ impl OnMethod {
             }
         }
 
-        let name = if let Some(name) = attr.name.as_ref() {
-            name.as_ref().value()
+        let (name, raw_name) = if let Some(name) = attr.name.as_ref() {
+            let field_name = name.as_ref().value();
+            let raw_name = syn::Ident::new(&field_name, name.span());
+            (field_name, raw_name)
         } else if let syn::Pat::Ident(name) = &*argument.pat {
-            renaming.apply(&name.ident.unraw().to_string())
+            let raw_name = name.ident.clone();
+            (renaming.apply(&raw_name.unraw().to_string()), raw_name)
         } else {
             scope
                 .custom(
@@ -444,6 +462,7 @@ impl OnMethod {
 
         Some(Self::Regular(OnField {
             name,
+            raw_name,
             ty: argument.ty.as_ref().clone(),
             description: attr.description.as_ref().map(|d| d.as_ref().value()),
             default: attr.default.as_ref().map(|v| v.as_ref().clone()),

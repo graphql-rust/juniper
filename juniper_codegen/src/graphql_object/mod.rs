@@ -5,11 +5,16 @@
 pub mod attr;
 pub mod derive;
 
-use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::PhantomData};
+#[cfg(feature = "tracing")]
+mod tracing;
 
+use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::PhantomData, str::FromStr as _};
+
+use proc_macro_error::abort;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
@@ -27,7 +32,6 @@ use crate::{
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
-use syn::ext::IdentExt;
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
 /// when generating code for [GraphQL object][1] type.
@@ -91,6 +95,9 @@ pub(crate) struct Attr {
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
     pub(crate) is_internal: bool,
+
+    #[cfg(feature = "tracing")]
+    pub(crate) tracing_rule: Option<SpanContainer<tracing::Rule>>
 }
 
 impl Parse for Attr {
@@ -161,6 +168,27 @@ impl Parse for Attr {
                 "internal" => {
                     out.is_internal = true;
                 }
+                #[cfg(feature = "tracing")]
+                "tracing" => {
+                    let content;
+                    syn::parenthesized!(content in input);
+                    let tracing = content.parse_any_ident()?;
+                    let tracing_rule = tracing::Rule::from_str(tracing.to_string().as_str());
+                    match tracing_rule {
+                        Ok(rule) => out
+                            .tracing_rule
+                            .replace(SpanContainer::new(ident.span(), Some(tracing.span()), rule))
+                            .none_or_else(|_| err::dup_arg(ident.span()))?,
+                        Err(_) => abort!(syn::Error::new(
+                            tracing.span(),
+                            format!(
+                                "Unknown tracing rule: {}, \
+                                 known values: sync, async, skip-all and complex",
+                                tracing,
+                            )
+                        )),
+                    }
+                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -183,6 +211,7 @@ impl Attr {
             interfaces: try_merge_hashset!(interfaces: self, another => span_joined),
             rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
+            tracing_rule: try_merge_opt!(tracing_rule: self, another),
         })
     }
 
@@ -265,6 +294,9 @@ pub(crate) struct Definition<Operation: ?Sized> {
     /// [2]: https://spec.graphql.org/June2018/#sec-Query
     /// [3]: https://spec.graphql.org/June2018/#sec-Subscription
     pub(crate) _operation: PhantomData<Box<Operation>>,
+
+    #[cfg(feature = "tracing")]
+    pub(crate) tracing: Option<tracing::Rule>,
 }
 
 impl<Operation: ?Sized + 'static> Definition<Operation> {
@@ -492,7 +524,12 @@ impl Definition<Query> {
         let fields_resolvers = self
             .fields
             .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(scalar, None));
+            .filter_map(|f| f.method_resolve_field_tokens(
+                scalar,
+                None,
+                #[cfg(feature = "tracing")]
+                self
+            ));
         let async_fields_panic = {
             let names = self
                 .fields
@@ -557,7 +594,12 @@ impl Definition<Query> {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.method_resolve_field_async_tokens(scalar, None));
+            .map(|f| f.method_resolve_field_async_tokens(
+                scalar,
+                None,
+                #[cfg(feature = "tracing")]
+                self,
+            ));
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {

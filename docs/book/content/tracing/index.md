@@ -226,7 +226,7 @@ only `self` and `context` arguments they're also available to interact with as s
 
 ## `#[instrument]` attribute
 
-In most aspects it mimics behaviour of the original `#[instrument]` attribute
+In most aspects it mimics behavior of the original `#[instrument]` attribute
 from [tracing] crate and you could use it as a reference. With the only key
 deference you should understand, it applied implicitly to all resolvers if the
 `tracing` feature is enabled.

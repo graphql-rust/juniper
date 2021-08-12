@@ -12,6 +12,8 @@ use crate::{
     result::GraphQLScope,
     util::{span_container::SpanContainer, RenameRule},
 };
+#[cfg(feature = "tracing")]
+use crate::tracing;
 
 use super::{Attr, Definition, Query};
 
@@ -65,8 +67,8 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
         .unwrap_or(RenameRule::CamelCase);
 
     let mut fields = vec![];
-    if let syn::Data::Struct(data) = &ast.data {
-        if let syn::Fields::Named(fs) = &data.fields {
+    if let syn::Data::Struct(data) = ast.data {
+        if let syn::Fields::Named(fs) = data.fields {
             fields = fs
                 .named
                 .iter()
@@ -105,6 +107,9 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
             .map(|ty| ty.as_ref().clone())
             .collect(),
         _operation: PhantomData,
+
+        #[cfg(feature = "tracing")]
+        tracing: attr.tracing_rule.map(|t| t.into_inner()),
     })
 }
 
@@ -156,5 +161,10 @@ fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Defin
         arguments: None,
         has_receiver: false,
         is_async: false,
+
+        #[cfg(feature = "tracing")]
+        instrument: tracing::Attr::from_field(field),
+        #[cfg(feature = "tracing")]
+        tracing: attr.tracing_behavior.map(|t| t.into_inner()),
     })
 }

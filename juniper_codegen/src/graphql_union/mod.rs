@@ -691,12 +691,15 @@ impl VariantDefinition {
     fn method_resolve_into_type_async_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         let ty = &self.ty;
         let expr = &self.resolver_code;
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = gen::async_resolving_code(None, quote!());
 
         quote! {
             if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
                 let fut = ::juniper::futures::future::ready({ #expr });
-                return #resolving_code;
+                let f = {
+                    #resolving_code
+                };
+                return f
             }
         }
     }

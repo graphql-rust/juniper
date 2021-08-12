@@ -99,7 +99,11 @@ impl Definition<Subscription> {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.method_resolve_field_into_stream_tokens(scalar));
+            .map(|f| f.method_resolve_field_into_stream_tokens(
+                scalar,
+                #[cfg(feature = "tracing")]
+                self,
+            ));
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {

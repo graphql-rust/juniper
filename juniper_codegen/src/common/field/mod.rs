@@ -25,6 +25,8 @@ use crate::{
     },
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
+#[cfg(feature = "tracing")]
+use crate::tracing;
 
 pub(crate) use self::arg::OnMethod as MethodArgument;
 
@@ -79,6 +81,9 @@ pub(crate) struct Attr {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     pub(crate) downcast: Option<SpanContainer<syn::Ident>>,
+
+    #[cfg(feature = "tracing")]
+    pub(crate) tracing_behavior: Option<SpanContainer<tracing::FieldBehavior>>,
 }
 
 impl Parse for Attr {
@@ -123,6 +128,15 @@ impl Parse for Attr {
                     .downcast
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
                     .none_or_else(|_| err::dup_arg(&ident))?,
+                #[cfg(feature = "tracing")]
+                "tracing" => {
+                    let content;
+                    syn::parenthesized!(content in input);
+                    let behavior = content.parse_any_ident()?;
+                    out.tracing_behavior
+                        .replace(SpanContainer::new(ident.span(), Some(behavior.span()), tracing::FieldBehavior::from_ident(&behavior)?))
+                        .none_or_else(|_| err::dup_arg(&ident))?;
+                },
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -143,6 +157,7 @@ impl Attr {
             deprecated: try_merge_opt!(deprecated: self, another),
             ignore: try_merge_opt!(ignore: self, another),
             downcast: try_merge_opt!(downcast: self, another),
+            tracing_behavior: try_merge_opt!(tracing_behavior: self, another),
         })
     }
 
@@ -256,6 +271,12 @@ pub(crate) struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     pub(crate) is_async: bool,
+
+    #[cfg(feature = "tracing")]
+    pub(crate) instrument: Option<tracing::Attr>,
+
+    #[cfg(feature = "tracing")]
+    pub(crate) tracing: Option<tracing::FieldBehavior>,
 }
 
 impl Definition {
@@ -396,6 +417,8 @@ impl Definition {
         &self,
         scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
+        #[cfg(feature = "tracing")]
+        traced_ty: &impl tracing::TracedType,
     ) -> Option<TokenStream> {
         if self.is_async {
             return None;
@@ -403,32 +426,43 @@ impl Definition {
 
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
-        let res = if self.is_method() {
-            let args = self
+        let (res, getters) = if self.is_method() {
+            let (args, getters): (Vec<_>, Vec<_>) = self
                 .arguments
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| (
+                    arg.method_resolve_field_tokens(),
+                    arg.method_resolve_arg_getter_tokens(scalar),
+                ))
+                .unzip();
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
             });
 
-            if trait_ty.is_some() {
+            let res = if trait_ty.is_some() {
                 quote! { <Self as #trait_ty>::#ident(#rcv #( #args ),*) }
             } else {
                 quote! { Self::#ident(#rcv #( #args ),*) }
-            }
+            };
+            (res, quote!(#( #getters )*))
         } else {
             ty = parse_quote! { _ };
-            quote! { &self.#ident }
+            (quote! { &self.#ident }, quote!())
         };
 
         let resolving_code = gen::sync_resolving_code();
+        let span = if_tracing_enabled!(tracing::span_tokens(traced_ty, self));
+        let trace_sync = if_tracing_enabled!(tracing::sync_tokens(traced_ty, self));
 
         Some(quote! {
             #name => {
+                #getters
+                #span
+                #trace_sync
+
                 let res: #ty = #res;
                 #resolving_code
             }
@@ -446,38 +480,51 @@ impl Definition {
         &self,
         scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
+        #[cfg(feature = "tracing")]
+        traced_ty: &impl tracing::TracedType,
     ) -> TokenStream {
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
-        let mut fut = if self.is_method() {
-            let args = self
+        let (mut fut, fields) = if self.is_method() {
+            let (args, getters): (Vec<_>, Vec<_>) = self
                 .arguments
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| (
+                    arg.method_resolve_field_tokens(),
+                    arg.method_resolve_arg_getter_tokens(scalar),
+                ))
+                .unzip();
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
             });
 
-            if trait_ty.is_some() {
+            let fut = if trait_ty.is_some() {
                 quote! { <Self as #trait_ty>::#ident(#rcv #( #args ),*) }
             } else {
                 quote! { Self::#ident(#rcv #( #args ),*) }
-            }
+            };
+            (fut, quote!( #( #getters )*))
         } else {
             ty = parse_quote! { _ };
-            quote! { &self.#ident }
+            (quote! { &self.#ident }, quote!())
         };
         if !self.is_async {
             fut = quote! { ::juniper::futures::future::ready(#fut) };
         }
 
-        let resolving_code = gen::async_resolving_code(Some(&ty));
+        let trace_async = if_tracing_enabled!(tracing::async_tokens(traced_ty, self));
+        let span = if_tracing_enabled!(tracing::span_tokens(traced_ty, self));
+
+        let resolving_code = gen::async_resolving_code(Some(&ty), trace_async);
 
         quote! {
             #name => {
+                #fields
+                #span
+
                 let fut = #fut;
                 #resolving_code
             }
@@ -495,37 +542,52 @@ impl Definition {
     pub(crate) fn method_resolve_field_into_stream_tokens(
         &self,
         scalar: &scalar::Type,
+        #[cfg(feature = "tracing")]
+        traced_ty: &impl tracing::TracedType,
     ) -> TokenStream {
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
-        let mut fut = if self.is_method() {
-            let args = self
+        let (mut fut, args) = if self.is_method() {
+            let (args, getters): (Vec<_>, Vec<_>) = self
                 .arguments
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| (
+                    arg.method_resolve_field_tokens(),
+                    arg.method_resolve_arg_getter_tokens(scalar),
+                ))
+                .unzip();
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
             });
 
-            quote! { Self::#ident(#rcv #( #args ),*) }
+            (
+                quote! { Self::#ident(#rcv #( #args ),*) },
+                quote! { #( #getters )* }
+            )
         } else {
             ty = parse_quote! { _ };
-            quote! { &self.#ident }
+            (quote! { &self.#ident }, quote!())
         };
         if !self.is_async {
             fut = quote! { ::juniper::futures::future::ready(#fut) };
         }
 
+        let span = if_tracing_enabled!(tracing::span_tokens(traced_ty, self));
+        let trace_async = if_tracing_enabled!(tracing::async_tokens(traced_ty, self));
+
         quote! {
             #name => {
+                #args
+                #span
+
                 ::juniper::futures::FutureExt::boxed(async move {
                     let res: #ty = #fut.await;
                     let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
                     let executor = executor.as_owned_executor();
-                    let stream = ::juniper::futures::StreamExt::then(res, move |res| {
+                    let f = ::juniper::futures::StreamExt::then(res, move |res| {
                         let executor = executor.clone();
                         let res2: ::juniper::FieldResult<_, #scalar> =
                             ::juniper::IntoResolvable::into(res, executor.context());
@@ -543,9 +605,10 @@ impl Definition {
                             }
                         }
                     });
+                    #trace_async
                     Ok(::juniper::Value::Scalar::<
                         ::juniper::ValuesStream::<#scalar>
-                    >(::juniper::futures::StreamExt::boxed(stream)))
+                    >(::juniper::futures::StreamExt::boxed(f)))
                 })
             }
         }

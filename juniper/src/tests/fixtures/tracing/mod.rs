@@ -172,6 +172,7 @@ impl Subscriber for TestSubscriber {
 }
 
 /// Wrapper representing span tree received from [`TestSubscriber`].
+#[derive(Debug)]
 pub struct SubscriberAssert {
     name_to_span: HashMap<span::Id, String>,
     events: Vec<SubscriberEvent>,

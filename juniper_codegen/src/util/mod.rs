@@ -475,7 +475,7 @@ enum FieldAttribute {
     Arguments(HashMap<String, FieldAttributeArgument>),
     Default(Box<SpanContainer<Option<syn::Expr>>>),
     #[cfg(feature = "tracing")]
-    Tracing(SpanContainer<tracing::FieldBehaviour>),
+    Tracing(SpanContainer<tracing::FieldBehavior>),
 }
 
 impl Parse for FieldAttribute {
@@ -554,11 +554,11 @@ impl Parse for FieldAttribute {
             "tracing" => {
                 let content;
                 syn::parenthesized!(content in input);
-                let behaviour = content.parse_any_ident()?;
-                tracing::FieldBehaviour::from_ident(&behaviour).map(|val| {
+                let behavior = content.parse_any_ident()?;
+                tracing::FieldBehavior::from_ident(&behavior).map(|val| {
                     FieldAttribute::Tracing(SpanContainer::new(
                         ident.span(),
-                        Some(behaviour.span()),
+                        Some(behavior.span()),
                         val,
                     ))
                 })
@@ -582,7 +582,7 @@ pub struct FieldAttributes {
 
     // Only relevant for GraphQLObject derive and graphql_object attribute.
     #[cfg(feature = "tracing")]
-    pub tracing: Option<tracing::FieldBehaviour>,
+    pub tracing: Option<tracing::FieldBehavior>,
 }
 
 impl Parse for FieldAttributes {
@@ -676,7 +676,7 @@ pub struct GraphQLTypeDefinitionField {
 
     // Relevant only for `#[graphql_object]` and `#[derive(GraphQLObject)]`
     #[cfg(feature = "tracing")]
-    pub tracing_behaviour: Option<tracing::FieldBehaviour>,
+    pub tracing_behavior: Option<tracing::FieldBehavior>,
     #[cfg(feature = "tracing")]
     pub instrument_attr: Option<tracing::Attr>,
 }

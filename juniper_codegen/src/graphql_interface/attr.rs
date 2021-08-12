@@ -203,7 +203,7 @@ fn expand_on_trait(
         implementers,
 
         #[cfg(feature = "tracing")]
-        tracing_rule: meta.tracing_rule.map(|t| *t.inner()),
+        tracing_rule: attr.tracing_rule.map(|t| t.into_inner()),
     };
 
     // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
@@ -480,7 +480,7 @@ impl TraitMethod {
             #[cfg(feature = "tracing")]
             instrument: tracing::Attr::from_trait_method(method),
             #[cfg(feature = "tracing")]
-            tracing: meta.tracing_behaviour.map(|t| t.into_inner()),
+            tracing: attr.tracing_behavior.map(|t| t.into_inner()),
         })
     }
 }

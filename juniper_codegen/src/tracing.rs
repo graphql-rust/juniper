@@ -50,6 +50,39 @@ impl Attr {
             Err(e) => abort!(e),
         }
     }
+
+    pub fn from_method(method: &mut syn::ImplItemMethod) -> Option<Self> {
+        let attr = method
+            .attrs
+            .iter()
+            .find(|attr| attr.path.is_ident(&ATTR_NAME))
+            .map(|attr| attr.parse_args())
+            .transpose();
+
+        method.attrs = mem::take(&mut method.attrs)
+            .into_iter()
+            .filter(|attr| !attr.path.is_ident(&ATTR_NAME))
+            .collect();
+
+        match attr {
+            Ok(attr) => attr,
+            Err(e) => abort!(e),
+        }
+    }
+
+    pub fn from_field(field: &syn::Field) -> Option<Self> {
+        let attr = field
+            .attrs
+            .iter()
+            .find(|attr| attr.path.is_ident(&ATTR_NAME))
+            .map(|attr| attr.parse_args())
+            .transpose();
+
+        match attr {
+            Ok(attr) => attr,
+            Err(e) => abort!(e),
+        }
+    }
 }
 
 impl Parse for Attr {
@@ -143,8 +176,8 @@ impl FromStr for Rule {
 /// Marker on field which used together with [`Rule`] to decide whether this
 /// field should be traced.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum FieldBehaviour {
-    /// Default tracing behaviour.
+pub enum FieldBehavior {
+    /// Default tracing behavior.
     ///
     /// It means that field **should** be traced if nothing else restricting it.
     Default,
@@ -156,7 +189,7 @@ pub enum FieldBehaviour {
     Ignore,
 }
 
-impl FieldBehaviour {
+impl FieldBehavior {
     pub fn from_ident(ident: &syn::Ident) -> syn::Result<Self> {
         match ident.to_string().as_str() {
             "only" => Ok(Self::Only),
@@ -164,7 +197,7 @@ impl FieldBehaviour {
             _ => Err(syn::Error::new(
                 ident.span(),
                 format!(
-                    "Unknown tracing behaviour: got {}, supported values: only, ignore, skip",
+                    "Unknown tracing behavior: got {}, supported values: only, ignore, skip",
                     ident,
                 ),
             )),
@@ -195,7 +228,7 @@ pub trait TracedField {
     fn instrument(&self) -> Option<&Attr>;
 
     /// Returns [`FieldBehaviour`] parsed from `#[graphql(tracing = ...)]`
-    fn tracing_behaviour(&self) -> FieldBehaviour;
+    fn tracing_behavior(&self) -> FieldBehavior;
 
     /// Whether this field relies on async resolver.
     fn is_async(&self) -> bool;
@@ -217,10 +250,10 @@ fn is_traced(ty: &impl TracedType, field: &impl TracedField) -> bool {
     let rule = ty.tracing_rule();
 
     match rule {
-        Rule::All => field.tracing_behaviour() != FieldBehaviour::Ignore,
-        Rule::Sync if !field.is_async() => field.tracing_behaviour() != FieldBehaviour::Ignore,
-        Rule::Async if field.is_async() => field.tracing_behaviour() != FieldBehaviour::Ignore,
-        Rule::Complex => field.tracing_behaviour() == FieldBehaviour::Only,
+        Rule::All => field.tracing_behavior() != FieldBehavior::Ignore,
+        Rule::Sync if !field.is_async() => field.tracing_behavior() != FieldBehavior::Ignore,
+        Rule::Async if field.is_async() => field.tracing_behavior() != FieldBehavior::Ignore,
+        Rule::Complex => field.tracing_behavior() == FieldBehavior::Only,
         _ => false,
     }
 }
@@ -322,7 +355,7 @@ mod graphql_object {
     };
 
     use super::{Attr, Rule, TracedArgument, TracedField, TracedType};
-    use crate::tracing::FieldBehaviour;
+    use crate::tracing::FieldBehavior;
 
     impl TracedType for GraphQLTypeDefinition {
         fn tracing_rule(&self) -> Rule {
@@ -345,8 +378,8 @@ mod graphql_object {
             self.instrument_attr.as_ref()
         }
 
-        fn tracing_behaviour(&self) -> FieldBehaviour {
-            self.tracing_behaviour.unwrap_or(FieldBehaviour::Default)
+        fn tracing_behavior(&self) -> FieldBehavior {
+            self.tracing_behavior.unwrap_or(FieldBehavior::Default)
         }
 
         fn name(&self) -> &str {

@@ -261,7 +261,7 @@ impl Parse for TraitAttr {
                     let tracing = content.parse_any_ident()?;
                     let tracing_rule = tracing::Rule::from_str(tracing.to_string().as_str());
                     match tracing_rule {
-                        Ok(rule) => output
+                        Ok(rule) => out
                             .tracing_rule
                             .replace(SpanContainer::new(span, Some(tracing.span()), rule))
                             .none_or_else(|_| err::dup_arg(span))?,
@@ -626,7 +626,12 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(scalar, Some(&trait_ty)));
+            .filter_map(|f| f.method_resolve_field_tokens(
+                scalar,
+                Some(&trait_ty),
+                #[cfg(feature = "tracing")]
+                self,
+            ));
         let async_fields_panic = {
             let names = self
                 .fields
@@ -716,7 +721,12 @@ impl Definition {
         let fields_resolvers = self
             .fields
             .iter()
-            .map(|f| f.method_resolve_field_async_tokens(scalar, Some(&trait_ty)));
+            .map(|f| f.method_resolve_field_async_tokens(
+                scalar,
+                Some(&trait_ty),
+                #[cfg(feature = "tracing")]
+                self,
+            ));
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         let custom_downcasts = self

@@ -102,7 +102,7 @@ pub fn impl_enum(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Result<Toke
 
                 // Enums cannot be traced.
                 #[cfg(feature = "tracing")]
-                tracing_behaviour: None,
+                tracing_behavior: None,
                 #[cfg(feature = "tracing")]
                 instrument_attr: None,
             })
