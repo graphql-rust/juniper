@@ -9,9 +9,9 @@ use actix_web::{
 };
 
 use juniper::{
-    graphql_object, graphql_subscription,
+    graphql_object, graphql_subscription, graphql_value,
     tests::fixtures::starwars::schema::{Character as _, Database, Query},
-    DefaultScalarValue, EmptyMutation, FieldError, RootNode, Value,
+    EmptyMutation, FieldError, RootNode,
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
 use juniper_graphql_ws::ConnectionConfig;
@@ -77,9 +77,7 @@ impl Subscription {
                 if counter == 2 {
                     yield Err(FieldError::new(
                         "some field error from handler",
-                        Value::Scalar(DefaultScalarValue::String(
-                            "some additional string".to_string(),
-                        )),
+                        graphql_value!("some additional string"),
                     ))
                 } else {
                     let random_id = rng.gen_range(1000..1005).to_string();

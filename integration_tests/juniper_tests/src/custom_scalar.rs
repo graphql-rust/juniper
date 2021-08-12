@@ -218,7 +218,7 @@ async fn querying_long() {
     run_query("{ longField }", |result| {
         assert_eq!(
             result.get_field_value("longField"),
-            Some(&Value::scalar(i64::from(i32::max_value()) + 1))
+            Some(&Value::scalar(i64::from(i32::MAX) + 1))
         );
     })
     .await;
@@ -227,14 +227,11 @@ async fn querying_long() {
 #[tokio::test]
 async fn querying_long_arg() {
     run_query(
-        &format!(
-            "{{ longWithArg(longArg: {}) }}",
-            i64::from(i32::max_value()) + 3
-        ),
+        &format!("{{ longWithArg(longArg: {}) }}", i64::from(i32::MAX) + 3),
         |result| {
             assert_eq!(
                 result.get_field_value("longWithArg"),
-                Some(&Value::scalar(i64::from(i32::max_value()) + 3))
+                Some(&Value::scalar(i64::from(i32::MAX) + 3))
             );
         },
     )
@@ -247,14 +244,14 @@ async fn querying_long_variable() {
         "query q($test: Long!){ longWithArg(longArg: $test) }",
         vec![(
             "test".to_owned(),
-            InputValue::Scalar(MyScalarValue::Long(i64::from(i32::max_value()) + 42)),
+            InputValue::Scalar(MyScalarValue::Long(i64::from(i32::MAX) + 42)),
         )]
         .into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("longWithArg"),
-                Some(&Value::scalar(i64::from(i32::max_value()) + 42))
+                Some(&Value::scalar(i64::from(i32::MAX) + 42))
             );
         },
     )
@@ -263,7 +260,7 @@ async fn querying_long_variable() {
 
 #[test]
 fn deserialize_variable() {
-    let json = format!("{{\"field\": {}}}", i64::from(i32::max_value()) + 42);
+    let json = format!("{{\"field\": {}}}", i64::from(i32::MAX) + 42);
 
     let input_value: InputValue<MyScalarValue> = serde_json::from_str(&json).unwrap();
     assert_eq!(
@@ -271,7 +268,7 @@ fn deserialize_variable() {
         InputValue::Object(vec![(
             Spanning::unlocated("field".into()),
             Spanning::unlocated(InputValue::Scalar(MyScalarValue::Long(
-                i64::from(i32::max_value()) + 42
+                i64::from(i32::MAX) + 42
             )))
         )])
     );

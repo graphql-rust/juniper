@@ -1,8 +1,9 @@
-use crate::custom_scalar::MyScalarValue;
 use juniper::{
-    execute, EmptyMutation, EmptySubscription, FromInputValue, InputValue, RootNode, ToInputValue,
-    Value, Variables,
+    execute, graphql_value, EmptyMutation, EmptySubscription, FromInputValue, InputValue, RootNode,
+    ToInputValue, Value, Variables,
 };
+
+use crate::custom_scalar::MyScalarValue;
 
 #[derive(Debug, PartialEq, Eq, Hash, juniper::GraphQLScalarValue)]
 #[graphql(transparent, scalar = MyScalarValue)]
@@ -56,28 +57,14 @@ async fn test_scalar_value_large_query() {
         EmptySubscription::<()>::new(),
     );
 
-    let doc = r#"
-        query {
-            user { id }
-        }"#;
+    let doc = r#"{
+        user { id }
+    }"#;
 
+    let val = Value::<MyScalarValue>::scalar(0_i64);
     assert_eq!(
         execute(doc, None, &schema, &Variables::<MyScalarValue>::new(), &()).await,
-        Ok((
-            Value::object(
-                vec![(
-                    "user",
-                    Value::object(
-                        vec![("id", Value::<MyScalarValue>::scalar(0_i64)),]
-                            .into_iter()
-                            .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+        Ok((graphql_value!({"user": {"id": val}}), vec![])),
     );
 }
 
@@ -89,51 +76,23 @@ async fn test_scalar_value_large_mutation() {
         EmptySubscription::<()>::new(),
     );
 
-    let doc = r#"
-        mutation {
-            changeUser(id: 1) { id }
-        }"#;
+    let doc = r#"mutation {
+        changeUser(id: 1) { id }
+    }"#;
 
+    let val = Value::<MyScalarValue>::scalar(1_i64);
     assert_eq!(
         execute(doc, None, &schema, &Variables::<MyScalarValue>::new(), &()).await,
-        Ok((
-            Value::object(
-                vec![(
-                    "changeUser",
-                    Value::object(
-                        vec![("id", Value::<MyScalarValue>::scalar(1_i64)),]
-                            .into_iter()
-                            .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+        Ok((graphql_value!({"changeUser": {"id": val}}), vec![])),
     );
 
-    let doc = r#"
-        mutation {
-            changeUser(id: 4294967297) { id }
-        }"#;
+    let doc = r#"mutation {
+        changeUser(id: 4294967297) { id }
+    }"#;
 
+    let val = Value::<MyScalarValue>::scalar(4294967297_i64);
     assert_eq!(
         execute(doc, None, &schema, &Variables::<MyScalarValue>::new(), &()).await,
-        Ok((
-            Value::object(
-                vec![(
-                    "changeUser",
-                    Value::object(
-                        vec![("id", Value::<MyScalarValue>::scalar(4294967297_i64)),]
-                            .into_iter()
-                            .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+        Ok((graphql_value!({"changeUser": {"id": val}}), vec![])),
     );
 }

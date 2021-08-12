@@ -3,8 +3,9 @@ use std::{iter, iter::FromIterator as _, pin::Pin};
 use futures::{stream, StreamExt as _};
 
 use crate::{
-    graphql_object, graphql_subscription, http::GraphQLRequest, Context, DefaultScalarValue,
-    EmptyMutation, ExecutionError, FieldError, GraphQLObject, Object, RootNode, Value,
+    graphql_object, graphql_subscription, graphql_value, http::GraphQLRequest, Context,
+    DefaultScalarValue, EmptyMutation, ExecutionError, FieldError, GraphQLObject, Object, RootNode,
+    Value,
 };
 
 #[derive(Debug, Clone)]
@@ -57,7 +58,7 @@ impl MySubscription {
     async fn error_human() -> Result<HumanStream, FieldError> {
         Err(FieldError::new(
             "handler error",
-            Value::Scalar(DefaultScalarValue::String("more details".to_string())),
+            graphql_value!("more details"),
         ))
     }
 
@@ -163,14 +164,8 @@ fn returns_requested_object() {
         std::iter::from_fn(move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
-                2 => Some((
-                    "name",
-                    Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
+                2 => Some(("name", graphql_value!("stream name"))),
                 _ => None,
             }
         }),
@@ -199,10 +194,7 @@ fn returns_error() {
     let expected_error = ExecutionError::new(
         crate::parser::SourcePosition::new(23, 1, 8),
         &vec!["errorHuman"],
-        FieldError::new(
-            "handler error",
-            Value::Scalar(DefaultScalarValue::String("more details".to_string())),
-        ),
+        FieldError::new("handler error", graphql_value!("more details")),
     );
 
     assert_eq!(returned_errors, vec![expected_error]);
@@ -224,10 +216,7 @@ fn can_access_context() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("2".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("2"))),
                 _ => None,
             }
         },
@@ -255,10 +244,7 @@ fn resolves_typed_inline_fragments() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
                 _ => None,
             }
         },
@@ -286,10 +272,7 @@ fn resolves_nontyped_inline_fragments() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
                 _ => None,
             }
         },
@@ -316,14 +299,8 @@ fn can_access_arguments() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("123".to_string())),
-                )),
-                2 => Some((
-                    "name",
-                    Value::Scalar(DefaultScalarValue::String("args name".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("123"))),
+                2 => Some(("name", graphql_value!("args name"))),
                 _ => None,
             }
         },
@@ -350,14 +327,8 @@ fn type_alias() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
-                2 => Some((
-                    "name",
-                    Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
+                2 => Some(("name", graphql_value!("stream name"))),
                 _ => None,
             }
         },

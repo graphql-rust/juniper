@@ -27,13 +27,14 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::InputValue;
     use url::Url;
+
+    use crate::{DefaultScalarValue, InputValue};
 
     #[test]
     fn url_from_input_value() {
         let raw = "https://example.net/";
-        let input: InputValue = InputValue::scalar(raw.to_string());
+        let input = <InputValue<DefaultScalarValue>>::scalar(raw.to_string());
 
         let parsed: Url = crate::FromInputValue::from_input_value(&input).unwrap();
         let url = Url::parse(raw).unwrap();

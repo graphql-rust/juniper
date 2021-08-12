@@ -4,8 +4,8 @@ use std::{env, pin::Pin, sync::Arc, time::Duration};
 
 use futures::{FutureExt as _, Stream};
 use juniper::{
-    graphql_object, graphql_subscription, DefaultScalarValue, EmptyMutation, FieldError,
-    GraphQLEnum, RootNode, Value,
+    graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLEnum,
+    RootNode,
 };
 use juniper_graphql_ws::ConnectionConfig;
 use juniper_warp::{playground_filter, subscriptions::serve_graphql_ws};
@@ -117,9 +117,7 @@ impl Subscription {
                 if counter == 2 {
                     yield Err(FieldError::new(
                         "some field error from handler",
-                        Value::Scalar(DefaultScalarValue::String(
-                            "some additional string".to_string(),
-                        )),
+                        graphql_value!("some additional string"),
                     ))
                 } else {
                     yield Ok(User {

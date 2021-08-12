@@ -1,8 +1,13 @@
 //! Checks that `__typename` field queries okay on root types.
 //! See [#372](https://github.com/graphql-rust/juniper/issues/372) for details.
 
-use futures::{stream, StreamExt as _};
-use juniper::{graphql_object, graphql_subscription, graphql_value, RootNode, Value, Variables};
+use futures::{stream, FutureExt as _};
+use juniper::{
+    execute, graphql_object, graphql_subscription, graphql_value, resolve_into_stream, RootNode,
+    Variables,
+};
+
+use crate::util::extract_next;
 
 pub struct Query;
 
@@ -36,12 +41,11 @@ async fn implicit_query_typename() {
     let query = r#"{ __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
-        .await
-        .unwrap();
 
-    assert_eq!(errors.len(), 0);
-    assert_eq!(res, graphql_value!({"__typename": "Query"}));
+    assert_eq!(
+        execute(query, None, &schema, &Variables::new(), &()).await,
+        Ok((graphql_value!({"__typename": "Query"}), vec![])),
+    );
 }
 
 #[tokio::test]
@@ -49,12 +53,11 @@ async fn query_typename() {
     let query = r#"query { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
-        .await
-        .unwrap();
 
-    assert_eq!(errors.len(), 0);
-    assert_eq!(res, graphql_value!({"__typename": "Query"}));
+    assert_eq!(
+        execute(query, None, &schema, &Variables::new(), &()).await,
+        Ok((graphql_value!({"__typename": "Query"}), vec![])),
+    );
 }
 
 #[tokio::test]
@@ -62,12 +65,11 @@ async fn explicit_query_typename() {
     let query = r#"query Query { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
-        .await
-        .unwrap();
 
-    assert_eq!(errors.len(), 0);
-    assert_eq!(res, graphql_value!({"__typename": "Query"}));
+    assert_eq!(
+        execute(query, None, &schema, &Variables::new(), &()).await,
+        Ok((graphql_value!({"__typename": "Query"}), vec![])),
+    );
 }
 
 #[tokio::test]
@@ -75,12 +77,11 @@ async fn mutation_typename() {
     let query = r#"mutation { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
-        .await
-        .unwrap();
 
-    assert_eq!(errors.len(), 0);
-    assert_eq!(res, graphql_value!({"__typename": "Mutation"}));
+    assert_eq!(
+        execute(query, None, &schema, &Variables::new(), &()).await,
+        Ok((graphql_value!({"__typename": "Mutation"}), vec![])),
+    );
 }
 
 #[tokio::test]
@@ -88,12 +89,11 @@ async fn explicit_mutation_typename() {
     let query = r#"mutation Mutation { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
-        .await
-        .unwrap();
 
-    assert_eq!(errors.len(), 0);
-    assert_eq!(res, graphql_value!({"__typename": "Mutation"}));
+    assert_eq!(
+        execute(query, None, &schema, &Variables::new(), &()).await,
+        Ok((graphql_value!({"__typename": "Mutation"}), vec![])),
+    );
 }
 
 #[tokio::test]
@@ -101,24 +101,13 @@ async fn subscription_typename() {
     let query = r#"subscription { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
-    let (res, errors) = juniper::resolve_into_stream(query, None, &schema, &Variables::new(), &())
-        .await
-        .unwrap();
 
-    assert_eq!(errors.len(), 0);
-    assert!(matches!(res, Value::Object(_)));
-    if let Value::Object(mut obj) = res {
-        assert!(obj.contains_field("__typename"));
-
-        let val = obj.get_mut_field_value("__typename").unwrap();
-        assert!(matches!(val, Value::Scalar(_)));
-        if let Value::Scalar(ref mut stream) = val {
-            assert_eq!(
-                stream.next().await,
-                Some(Ok(graphql_value!("Subscription"))),
-            );
-        }
-    }
+    assert_eq!(
+        resolve_into_stream(query, None, &schema, &Variables::new(), &())
+            .then(|s| extract_next(s))
+            .await,
+        Ok((graphql_value!({"__typename": "Subscription"}), vec![])),
+    );
 }
 
 #[tokio::test]
@@ -126,22 +115,11 @@ async fn explicit_subscription_typename() {
     let query = r#"subscription Subscription { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
-    let (res, errors) = juniper::resolve_into_stream(query, None, &schema, &Variables::new(), &())
-        .await
-        .unwrap();
 
-    assert_eq!(errors.len(), 0);
-    assert!(matches!(res, Value::Object(_)));
-    if let Value::Object(mut obj) = res {
-        assert!(obj.contains_field("__typename"));
-
-        let val = obj.get_mut_field_value("__typename").unwrap();
-        assert!(matches!(val, Value::Scalar(_)));
-        if let Value::Scalar(ref mut stream) = val {
-            assert_eq!(
-                stream.next().await,
-                Some(Ok(graphql_value!("Subscription"))),
-            );
-        }
-    }
+    assert_eq!(
+        resolve_into_stream(query, None, &schema, &Variables::new(), &())
+            .then(|s| extract_next(s))
+            .await,
+        Ok((graphql_value!({"__typename": "Subscription"}), vec![])),
+    );
 }

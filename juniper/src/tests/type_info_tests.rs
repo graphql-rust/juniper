@@ -2,12 +2,13 @@ use indexmap::IndexMap;
 
 use crate::{
     executor::{ExecutionResult, Executor, Registry, Variables},
+    graphql_value,
     schema::{meta::MetaType, model::RootNode},
     types::{
         base::{Arguments, GraphQLType, GraphQLValue},
         scalars::{EmptyMutation, EmptySubscription},
     },
-    value::{ScalarValue, Value},
+    value::ScalarValue,
 };
 
 pub struct NodeTypeInfo {
@@ -95,16 +96,12 @@ fn test_node() {
     assert_eq!(
         crate::execute_sync(doc, None, &schema, &Variables::new(), &()),
         Ok((
-            Value::object(
-                vec![
-                    ("foo", Value::scalar("1")),
-                    ("bar", Value::scalar("2")),
-                    ("baz", Value::scalar("3")),
-                ]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+            graphql_value!({
+                "foo": "1",
+                "bar": "2",
+                "baz": "3",
+            }),
+            vec![],
+        )),
     );
 }

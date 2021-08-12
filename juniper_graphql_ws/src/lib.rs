@@ -633,9 +633,9 @@ mod test {
 
     use juniper::{
         futures::sink::SinkExt,
-        graphql_object, graphql_subscription,
+        graphql_object, graphql_subscription, graphql_value,
         parser::{ParseError, Spanning, Token},
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode, Value,
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode,
     };
 
     use super::*;
@@ -681,7 +681,7 @@ mod test {
         async fn error(_context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             stream::once(future::ready(Err(FieldError::new(
                 "field error",
-                Value::null(),
+                graphql_value!(None),
             ))))
             .chain(
                 tokio::time::sleep(Duration::from_secs(10000))
@@ -729,12 +729,7 @@ mod test {
             ServerMessage::Data {
                 id: "foo".to_string(),
                 payload: DataPayload {
-                    data: Value::Object(
-                        [("context", Value::Scalar(DefaultScalarValue::Int(1)))]
-                            .iter()
-                            .cloned()
-                            .collect()
-                    ),
+                    data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
             },
@@ -779,7 +774,7 @@ mod test {
             ServerMessage::Data {
                 id: "foo".to_string(),
                 payload: DataPayload {
-                    data: Value::Object([("context", Value::scalar(1))].iter().cloned().collect()),
+                    data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
             },
@@ -801,7 +796,7 @@ mod test {
             ServerMessage::Data {
                 id: "bar".to_string(),
                 payload: DataPayload {
-                    data: Value::Object([("context", Value::scalar(1))].iter().cloned().collect()),
+                    data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
             },
@@ -1009,12 +1004,7 @@ mod test {
             ServerMessage::Data {
                 id: "foo".to_string(),
                 payload: DataPayload {
-                    data: Value::Object(
-                        [("context", Value::Scalar(DefaultScalarValue::Int(1)))]
-                            .iter()
-                            .cloned()
-                            .collect()
-                    ),
+                    data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
             },
@@ -1054,10 +1044,7 @@ mod test {
                 payload: DataPayload { data, errors },
             } => {
                 assert_eq!(id, "foo");
-                assert_eq!(
-                    data,
-                    Value::Object([("error", Value::null())].iter().cloned().collect())
-                );
+                assert_eq!(data, graphql_value!({ "error": None }),);
                 assert_eq!(errors.len(), 1);
             }
             msg @ _ => panic!("expected data, got: {:?}", msg),

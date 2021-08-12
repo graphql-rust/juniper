@@ -134,8 +134,9 @@ pub enum ServerMessage<S: ScalarValue> {
 
 #[cfg(test)]
 mod test {
+    use juniper::{graphql_value, DefaultScalarValue};
+
     use super::*;
-    use juniper::DefaultScalarValue;
 
     #[test]
     fn test_serialization() {
@@ -160,7 +161,7 @@ mod test {
             serde_json::to_string(&ServerMessage::Data {
                 id: "foo".to_string(),
                 payload: DataPayload {
-                    data: Value::null(),
+                    data: graphql_value!(None),
                     errors: vec![],
                 },
             })
