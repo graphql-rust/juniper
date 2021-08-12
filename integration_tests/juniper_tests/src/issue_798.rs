@@ -1,3 +1,6 @@
+//! Checks that interface field resolves okay on a union.
+//! See [#798](https://github.com/graphql-rust/juniper/issues/798) for details.
+
 use juniper::{
     graphql_interface, graphql_object, graphql_value, EmptyMutation, EmptySubscription,
     GraphQLObject, GraphQLUnion, RootNode, Variables,
@@ -64,10 +67,10 @@ impl Query {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
-async fn test_interface_inline_fragment_on_union() {
+async fn interface_inline_fragment_on_union() {
     let query = r#"
         query Query {
             field {
@@ -85,15 +88,10 @@ async fn test_interface_inline_fragment_on_union() {
         }
     "#;
 
-    let (res, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(Query::Human, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query::Human, EmptyMutation::new(), EmptySubscription::new());
+    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
@@ -107,14 +105,9 @@ async fn test_interface_inline_fragment_on_union() {
         }),
     );
 
-    let (res, errors) = juniper::execute_sync(
-        query,
-        None,
-        &Schema::new(Query::Droid, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .unwrap();
+    let schema = Schema::new(Query::Droid, EmptyMutation::new(), EmptySubscription::new());
+    let (res, errors) =
+        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
@@ -130,7 +123,7 @@ async fn test_interface_inline_fragment_on_union() {
 }
 
 #[tokio::test]
-async fn test_interface_fragment_on_union() {
+async fn interface_fragment_on_union() {
     let query = r#"
         query Query {
             field {
@@ -150,15 +143,10 @@ async fn test_interface_fragment_on_union() {
         }
     "#;
 
-    let (res, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(Query::Human, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query::Human, EmptyMutation::new(), EmptySubscription::new());
+    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
@@ -172,14 +160,9 @@ async fn test_interface_fragment_on_union() {
         }),
     );
 
-    let (res, errors) = juniper::execute_sync(
-        query,
-        None,
-        &Schema::new(Query::Droid, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .unwrap();
+    let schema = Schema::new(Query::Droid, EmptyMutation::new(), EmptySubscription::new());
+    let (res, errors) =
+        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(

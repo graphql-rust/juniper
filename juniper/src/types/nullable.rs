@@ -290,8 +290,8 @@ where
         }
     }
 
-    fn from_implicit_null() -> Self {
-        Self::ImplicitNull
+    fn from_implicit_null() -> Option<Self> {
+        Some(Self::ImplicitNull)
     }
 }
 

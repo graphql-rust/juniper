@@ -54,7 +54,9 @@ impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
                     .find(|&&&(ref n, _)| n.item == var_name.item)
                 {
                     let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
-                        (&Some(_), &Type::List(ref inner)) => Type::NonNullList(inner.clone()),
+                        (&Some(_), &Type::List(ref inner, expected_size)) => {
+                            Type::NonNullList(inner.clone(), expected_size)
+                        }
                         (&Some(_), &Type::Named(ref inner)) => {
                             Type::NonNullNamed(Cow::Borrowed(inner))
                         }

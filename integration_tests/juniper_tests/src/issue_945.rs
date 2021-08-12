@@ -1,4 +1,10 @@
-use juniper::*;
+//! Checks that spreading untyped union fragment work okay.
+//! See [#945](https://github.com/graphql-rust/juniper/issues/945) for details.
+
+use juniper::{
+    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLObject, GraphQLUnion,
+    Variables,
+};
 
 struct Query;
 
@@ -34,10 +40,10 @@ struct Droid {
     pub sensor_color: String,
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
-async fn test_fragment_on_interface() {
+async fn fragment_on_union() {
     let query = r#"
         query Query {
             artoo {
@@ -58,38 +64,28 @@ async fn test_fragment_on_interface() {
         }
     "#;
 
-    let (res, errors) = execute(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
+    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
         res,
         graphql_value!({
-            "artoo": {"__typename": "Droid", "id": 1, "sensorColor": "red"}
+            "artoo": {"__typename": "Droid", "id": 1, "sensorColor": "red"},
         }),
     );
 
-    let (res, errors) = execute_sync(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .unwrap();
+    let (res, errors) =
+        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
         res,
         graphql_value!({
-            "artoo": {"__typename": "Droid", "id": 1, "sensorColor": "red"}
+            "artoo": {"__typename": "Droid", "id": 1, "sensorColor": "red"},
         }),
     );
 }

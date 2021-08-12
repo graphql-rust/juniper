@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::{
     ast::{FromInputValue, InputValue},
     executor::Registry,
@@ -862,12 +864,10 @@ where
 
     let doc =
         parse_document_source(q, &root.schema).expect(&format!("Parse error on input {:#?}", q));
-    let mut ctx = ValidatorContext::new(unsafe { ::std::mem::transmute(&root.schema) }, &doc);
+    let mut ctx = ValidatorContext::new(unsafe { mem::transmute(&root.schema) }, &doc);
 
     let mut mv = MultiVisitorNil.with(factory());
-    visit(&mut mv, &mut ctx, unsafe {
-        ::std::mem::transmute(doc.as_slice())
-    });
+    visit(&mut mv, &mut ctx, unsafe { mem::transmute(doc.as_slice()) });
 
     ctx.into_errors()
 }

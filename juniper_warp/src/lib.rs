@@ -70,6 +70,7 @@ use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 /// # #[derive(Debug)]
 /// struct AppState(Vec<i64>);
 /// struct ExampleContext(Arc<AppState>, UserId);
+/// # impl juniper::Context for ExampleContext {}
 ///
 /// struct QueryRoot;
 ///

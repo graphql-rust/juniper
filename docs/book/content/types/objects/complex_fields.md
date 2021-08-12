@@ -3,9 +3,10 @@
 If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
 the `#[graphql_object]` procedural macro. This macro lets you define GraphQL object
-fields in a Rust `impl` block for a type. Note that only GraphQL fields
-can be specified in this `impl` block. If you want to define normal methods on the struct,
-you have to do so in a separate, normal `impl` block. Continuing with the
+fields in a Rust `impl` block for a type. Note, that GraphQL fields are defined in 
+this `impl` block by default. If you want to define normal methods on the struct,
+you have to do so either in a separate "normal" `impl` block, or mark them with
+`#[graphql(ignore)]` attribute to be omitted by the macro. Continuing with the
 example from the last chapter, this is how you would define `Person` using the
 macro:
 
@@ -28,12 +29,15 @@ impl Person {
     fn age(&self) -> i32 {
         self.age
     }
+
+    #[graphql(ignore)]
+    pub fn hidden_from_graphql(&self) {
+        // [...]
+    }
 }
 
-// Note that this syntax generates an implementation of the GraphQLType trait,
-// the base impl of your struct can still be written like usual:
 impl Person {
-    pub fn hidden_from_graphql(&self) {
+    pub fn hidden_from_graphql2(&self) {
         // [...]
     }
 }
@@ -43,7 +47,6 @@ impl Person {
 
 While this is a bit more verbose, it lets you write any kind of function in the
 field resolver. With this syntax, fields can also take arguments:
-
 
 ```rust
 # extern crate juniper;
@@ -61,7 +64,7 @@ struct House {
 
 #[graphql_object]
 impl House {
-    // Creates the field inhabitantWithName(name), returning a nullable person
+    // Creates the field `inhabitantWithName(name)`, returning a nullable `Person`.
     fn inhabitant_with_name(&self, name: String) -> Option<&Person> {
         self.inhabitants.iter().find(|p| p.name == name)
     }
@@ -127,14 +130,28 @@ impl Person {
 # fn main() { }
 ```
 
+Or provide a different renaming policy on a `impl` block for all its fields:
+```rust
+# extern crate juniper;
+# use juniper::graphql_object;
+struct Person;
+
+#[graphql_object(rename_all = "none")] // disables any renaming
+impl Person {
+    // Now exposed as `renamed_field` in the schema
+    fn renamed_field() -> bool {
+        true
+    }
+}
+#
+# fn main() {}
+```
+
 ## Customizing arguments
 
 Method field arguments can also be customized.
 
 They can have custom descriptions and default values.
-
-**Note**: The syntax for this is currently a little awkward. 
-This will become better once the [Rust RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented.
 
 ```rust
 # extern crate juniper;
@@ -144,21 +161,22 @@ struct Person {}
 
 #[graphql_object]
 impl Person {
-    #[graphql(
-        arguments(
-            arg1(
-                // Set a default value which will be injected if not present.
-                // The default can be any valid Rust expression, including a function call, etc.
-                default = true,
-                // Set a description.
-                description = "The first argument..."
-            ),
-            arg2(
-                default = 0,
-            )
-        )
-    )]
-    fn field1(&self, arg1: bool, arg2: i32) -> String {
+    fn field1(
+        &self,
+        #[graphql(
+            // Arguments can also be renamed if required.
+            name = "arg",
+            // Set a default value which will be injected if not present.
+            // The default can be any valid Rust expression, including a function call, etc.
+            default = true,
+            // Set a description.
+            description = "The first argument..."
+        )]
+        arg1: bool,
+        // If default expression is not specified then `Default::default()` value is used.
+        #[graphql(default)]
+        arg2: i32,
+    ) -> String {
         format!("{} {}", arg1, arg2)
     }
 }
@@ -166,13 +184,23 @@ impl Person {
 # fn main() { }
 ```
 
+Provide a different renaming policy on a `impl` block also implies for arguments:
+```rust
+# extern crate juniper;
+# use juniper::graphql_object;
+struct Person;
+
+#[graphql_object(rename_all = "none")] // disables any renaming
+impl Person {
+    // Now exposed as `my_arg` in the schema
+    fn field(my_arg: bool) -> bool {
+        my_arg
+    }
+}
+#
+# fn main() {}
+```
+
 ## More features
 
-GraphQL fields expose more features than Rust's standard method syntax gives us:
-
-* Per-field description and deprecation messages
-* Per-argument default values
-* Per-argument descriptions
-
-These, and more features, are described more thoroughly in [the reference
-documentation](https://docs.rs/juniper/latest/juniper/macro.object.html).
+These, and more features, are described more thoroughly in [the reference documentation](https://docs.rs/juniper/latest/juniper/attr.graphql_object.html).

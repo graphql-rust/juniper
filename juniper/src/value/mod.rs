@@ -164,8 +164,12 @@ impl<S: ScalarValue> Value<S> {
     /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.
     pub fn map_scalar_value<Into: ScalarValue>(self) -> Value<Into> {
         if TypeId::of::<Into>() == TypeId::of::<S>() {
-            // This is totally safe, because we're transmuting the value into itself,
-            // so no invariants may change and we're just satisfying the type checker.
+            // SAFETY: This is safe, because we're transmuting the value into
+            //         itself, so no invariants may change and we're just
+            //         satisfying the type checker.
+            //         As `mem::transmute_copy` creates a copy of data, we need
+            //         `mem::ManuallyDrop` here to omit double-free when
+            //         `S: Drop`.
             let val = mem::ManuallyDrop::new(self);
             unsafe { mem::transmute_copy(&*val) }
         } else {

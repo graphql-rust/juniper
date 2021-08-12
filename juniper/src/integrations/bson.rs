@@ -1,3 +1,5 @@
+//! GraphQL support for [bson](https://github.com/mongodb/bson-rust) types.
+
 use bson::{oid::ObjectId, DateTime as UtcDateTime};
 use chrono::prelude::*;
 

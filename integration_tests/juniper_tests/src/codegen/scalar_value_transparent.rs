@@ -63,10 +63,7 @@ fn test_scalar_value_custom() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = CustomUserId::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyUserId"));
-    assert_eq!(
-        meta.description(),
-        Some(&"custom description...".to_string())
-    );
+    assert_eq!(meta.description(), Some("custom description..."));
 
     let input: InputValue = serde_json::from_value(serde_json::json!("userId1")).unwrap();
     let output: CustomUserId = FromInputValue::from_input_value(&input).unwrap();
@@ -81,5 +78,5 @@ fn test_scalar_value_custom() {
 fn test_scalar_value_doc_comment() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = IdWithDocComment::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"The doc comment...".to_string()));
+    assert_eq!(meta.description(), Some("The doc comment..."));
 }

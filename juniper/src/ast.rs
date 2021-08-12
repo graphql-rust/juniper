@@ -19,13 +19,13 @@ pub enum Type<'a> {
     /// A nullable list type, e.g. `[String]`
     ///
     /// The list itself is what's nullable, the containing type might be non-null.
-    List(Box<Type<'a>>),
+    List(Box<Type<'a>>, Option<usize>),
     /// A non-null named type, e.g. `String!`
     NonNullNamed(Cow<'a, str>),
     /// A non-null list type, e.g. `[String]!`.
     ///
     /// The list itself is what's non-null, the containing type might be null.
-    NonNullList(Box<Type<'a>>),
+    NonNullList(Box<Type<'a>>, Option<usize>),
 }
 
 /// A JSON-like value that can be passed into the query execution, either
@@ -160,12 +160,13 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn from_input_value(v: &InputValue<S>) -> Option<Self>;
 
-    /// Performs the conversion from an absent value (e.g. to distinguish between implicit and
-    /// explicit null). The default implementation just uses `from_input_value` as if an explicit
-    /// null were provided. This conversion must not fail.
-    fn from_implicit_null() -> Self {
+    /// Performs the conversion from an absent value (e.g. to distinguish between
+    /// implicit and explicit null). The default implementation just uses
+    /// `from_input_value` as if an explicit null were provided.
+    ///
+    /// This conversion must not fail.
+    fn from_implicit_null() -> Option<Self> {
         Self::from_input_value(&InputValue::<S>::Null)
-            .expect("input value conversion from null must not fail")
     }
 }
 
@@ -192,13 +193,13 @@ impl<'a> Type<'a> {
     pub fn innermost_name(&self) -> &str {
         match *self {
             Type::Named(ref n) | Type::NonNullNamed(ref n) => n,
-            Type::List(ref l) | Type::NonNullList(ref l) => l.innermost_name(),
+            Type::List(ref l, _) | Type::NonNullList(ref l, _) => l.innermost_name(),
         }
     }
 
     /// Determines if a type only can represent non-null values.
     pub fn is_non_null(&self) -> bool {
-        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(_))
+        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(..))
     }
 }
 
@@ -207,8 +208,8 @@ impl<'a> fmt::Display for Type<'a> {
         match *self {
             Type::Named(ref n) => write!(f, "{}", n),
             Type::NonNullNamed(ref n) => write!(f, "{}!", n),
-            Type::List(ref t) => write!(f, "[{}]", t),
-            Type::NonNullList(ref t) => write!(f, "[{}]!", t),
+            Type::List(ref t, _) => write!(f, "[{}]", t),
+            Type::NonNullList(ref t, _) => write!(f, "[{}]!", t),
         }
     }
 }

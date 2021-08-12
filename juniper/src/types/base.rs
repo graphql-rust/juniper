@@ -105,7 +105,7 @@ where
     /// the `InputValue` will be converted into the type `T`.
     ///
     /// Returns `Some` if the argument is present _and_ type conversion
-    /// succeeeds.
+    /// succeeds.
     pub fn get<T>(&self, key: &str) -> Option<T>
     where
         T: FromInputValue<S>,
@@ -384,6 +384,8 @@ pub type DynGraphQLValue<S, C, TI> =
 ///     }
 /// }
 /// ```
+///
+/// [3]: https://spec.graphql.org/June2018/#sec-Objects
 pub trait GraphQLType<S = DefaultScalarValue>: GraphQLValue<S>
 where
     S: ScalarValue,

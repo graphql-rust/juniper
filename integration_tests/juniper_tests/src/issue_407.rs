@@ -1,4 +1,9 @@
-use juniper::*;
+//! Checks that using a fragment of an implementation in an interface works okay.
+//! See [#407](https://github.com/graphql-rust/juniper/issues/407) for details.
+
+use juniper::{
+    graphql_interface, graphql_object, EmptyMutation, EmptySubscription, GraphQLObject, Variables,
+};
 
 struct Query;
 
@@ -53,7 +58,7 @@ impl Query {
 type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
-async fn test_fragments_in_interface() {
+async fn fragments_in_interface() {
     let query = r#"
         query Query {
             characters {
@@ -71,30 +76,19 @@ async fn test_fragments_in_interface() {
         }
     "#;
 
-    let (_, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
+    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
     assert_eq!(errors.len(), 0);
 
-    let (_, errors) = juniper::execute_sync(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .unwrap();
+    let (_, errors) = juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
     assert_eq!(errors.len(), 0);
 }
 
 #[tokio::test]
-async fn test_inline_fragments_in_interface() {
+async fn inline_fragments_in_interface() {
     let query = r#"
         query Query {
             characters {
@@ -116,24 +110,13 @@ async fn test_inline_fragments_in_interface() {
         }
     "#;
 
-    let (_, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
+    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
     assert_eq!(errors.len(), 0);
 
-    let (_, errors) = juniper::execute_sync(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .unwrap();
+    let (_, errors) = juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
     assert_eq!(errors.len(), 0);
 }

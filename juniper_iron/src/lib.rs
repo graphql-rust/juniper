@@ -44,9 +44,9 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 #         Ok(&self.name)
 #     }
 #
-#     fn friends(&self, context: &Database) -> FieldResult<Vec<&User>> {
+#     fn friends<'c>(&self, context: &'c Database) -> FieldResult<Vec<&'c User>> {
 #         Ok(self.friend_ids.iter()
-#             .filter_map(|id| executor.context().users.get(id))
+#             .filter_map(|id| context.users.get(id))
 #             .collect())
 #     }
 # }
@@ -54,7 +54,7 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 # #[juniper::graphql_object(context = Database, scalar = juniper::DefaultScalarValue)]
 # impl QueryRoot {
 #     fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
-#         Ok(executor.context().users.get(&id))
+#         Ok(context.users.get(&id))
 #     }
 # }
 

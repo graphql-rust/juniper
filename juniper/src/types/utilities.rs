@@ -24,11 +24,25 @@ where
                 is_valid_literal_value(schema, inner, arg_value)
             }
         }
-        TypeType::List(ref inner) => match *arg_value {
-            InputValue::List(ref items) => items
-                .iter()
-                .all(|i| is_valid_literal_value(schema, inner, &i.item)),
-            ref v => is_valid_literal_value(schema, inner, v),
+        TypeType::List(ref inner, expected_size) => match *arg_value {
+            InputValue::List(ref items) => {
+                if let Some(expected) = expected_size {
+                    if items.len() != expected {
+                        return false;
+                    }
+                }
+                items
+                    .iter()
+                    .all(|i| is_valid_literal_value(schema, inner, &i.item))
+            }
+            ref v => {
+                if let Some(expected) = expected_size {
+                    if expected != 1 {
+                        return false;
+                    }
+                }
+                is_valid_literal_value(schema, inner, v)
+            }
         },
         TypeType::Concrete(t) => {
             // Even though InputValue::String can be parsed into an enum, they

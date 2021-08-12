@@ -1,10 +1,13 @@
-use juniper::*;
+//! Checks that using nested fragments works okay.
+//! See [#500](https://github.com/graphql-rust/juniper/issues/500) for details.
+
+use juniper::{graphql_object, EmptyMutation, EmptySubscription, Executor, ScalarValue, Variables};
 
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
-    fn users(executor: &Executor) -> Vec<User> {
+    fn users<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<User> {
         executor.look_ahead();
 
         vec![User {
@@ -19,9 +22,9 @@ struct User {
     city: City,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl User {
-    fn city(&self, executor: &Executor) -> &City {
+    fn city<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &City {
         executor.look_ahead();
         &self.city
     }
@@ -31,9 +34,9 @@ struct City {
     country: Country,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl City {
-    fn country(&self, executor: &Executor) -> &Country {
+    fn country<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &Country {
         executor.look_ahead();
         &self.country
     }
@@ -43,7 +46,7 @@ struct Country {
     id: i32,
 }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Country {
     fn id(&self) -> i32 {
         self.id
@@ -53,7 +56,7 @@ impl Country {
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
 
 #[tokio::test]
-async fn test_nested_fragments() {
+async fn nested_fragments() {
     let query = r#"
         query Query {
             users {
@@ -78,15 +81,10 @@ async fn test_nested_fragments() {
         }
     "#;
 
-    let (_, errors) = juniper::execute(
-        query,
-        None,
-        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
-        &(),
-    )
-    .await
-    .unwrap();
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
 }

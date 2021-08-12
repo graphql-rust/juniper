@@ -32,10 +32,10 @@ impl DeprecationStatus {
     }
 
     /// An optional reason for the deprecation, or none if `Current`.
-    pub fn reason(&self) -> Option<&String> {
+    pub fn reason(&self) -> Option<&str> {
         match self {
             DeprecationStatus::Current => None,
-            DeprecationStatus::Deprecated(ref reason) => reason.as_ref(),
+            DeprecationStatus::Deprecated(rsn) => rsn.as_deref(),
         }
     }
 }
@@ -55,6 +55,9 @@ pub struct ScalarMeta<'a, S> {
 pub struct ListMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
+
+    #[doc(hidden)]
+    pub expected_size: Option<usize>,
 }
 
 /// Nullable type metadata
@@ -233,26 +236,14 @@ impl<'a, S> MetaType<'a, S> {
     /// Access the description of the type, if applicable
     ///
     /// Lists, nullable wrappers, and placeholders don't have names.
-    pub fn description(&self) -> Option<&String> {
-        match *self {
-            MetaType::Scalar(ScalarMeta {
-                ref description, ..
-            })
-            | MetaType::Object(ObjectMeta {
-                ref description, ..
-            })
-            | MetaType::Enum(EnumMeta {
-                ref description, ..
-            })
-            | MetaType::Interface(InterfaceMeta {
-                ref description, ..
-            })
-            | MetaType::Union(UnionMeta {
-                ref description, ..
-            })
-            | MetaType::InputObject(InputObjectMeta {
-                ref description, ..
-            }) => description.as_ref(),
+    pub fn description(&self) -> Option<&str> {
+        match self {
+            MetaType::Scalar(ScalarMeta { description, .. })
+            | MetaType::Object(ObjectMeta { description, .. })
+            | MetaType::Enum(EnumMeta { description, .. })
+            | MetaType::Interface(InterfaceMeta { description, .. })
+            | MetaType::Union(UnionMeta { description, .. })
+            | MetaType::InputObject(InputObjectMeta { description, .. }) => description.as_deref(),
             _ => None,
         }
     }
@@ -311,12 +302,15 @@ impl<'a, S> MetaType<'a, S> {
             | MetaType::InputObject(InputObjectMeta { ref name, .. }) => {
                 Type::NonNullNamed(name.clone())
             }
-            MetaType::List(ListMeta { ref of_type }) => {
-                Type::NonNullList(Box::new(of_type.clone()))
-            }
+            MetaType::List(ListMeta {
+                ref of_type,
+                expected_size,
+            }) => Type::NonNullList(Box::new(of_type.clone()), expected_size),
             MetaType::Nullable(NullableMeta { ref of_type }) => match *of_type {
                 Type::NonNullNamed(ref inner) => Type::Named(inner.clone()),
-                Type::NonNullList(ref inner) => Type::List(inner.clone()),
+                Type::NonNullList(ref inner, expected_size) => {
+                    Type::List(inner.clone(), expected_size)
+                }
                 ref t => t.clone(),
             },
             MetaType::Placeholder(PlaceholderMeta { ref of_type }) => of_type.clone(),
@@ -446,8 +440,11 @@ where
 
 impl<'a> ListMeta<'a> {
     /// Build a new list type by wrapping the specified type
-    pub fn new(of_type: Type<'a>) -> ListMeta<'a> {
-        ListMeta { of_type }
+    pub fn new(of_type: Type<'a>, expected_size: Option<usize>) -> Self {
+        Self {
+            of_type,
+            expected_size,
+        }
     }
 
     /// Wrap the list in a generic meta type
@@ -661,7 +658,7 @@ impl<'a, S> Field<'a, S> {
 impl<'a, S> Argument<'a, S> {
     #[doc(hidden)]
     pub fn new(name: &str, arg_type: Type<'a>) -> Self {
-        Argument {
+        Self {
             name: name.to_owned(),
             description: None,
             arg_type,

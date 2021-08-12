@@ -336,7 +336,7 @@ fn visit_input_value<'a, S, V>(
         }
         InputValue::List(ref ls) => {
             let inner_type = ctx.current_input_type_literal().and_then(|t| match *t {
-                Type::List(ref inner) | Type::NonNullList(ref inner) => {
+                Type::List(ref inner, _) | Type::NonNullList(ref inner, _) => {
                     Some(inner.as_ref().clone())
                 }
                 _ => None,

@@ -99,10 +99,11 @@ impl Into<UserPatch> for UserPatchInput {
 struct Context {
     session: Session,
 }
+impl juniper::Context for Context {}
 
 struct Mutation;
 
-#[juniper::graphql_object(Context=Context)]
+#[juniper::graphql_object(context = Context)]
 impl Mutation {
     fn patch_user(ctx: &Context, patch: UserPatchInput) -> FieldResult<bool> {
         ctx.session.patch_user(patch.into())?;
