@@ -265,12 +265,9 @@ impl Bar {
     #[instrument(skip(skipped))]
     fn default_arg(
         &self,
-        #[graphql(default = 42)]
-        this: i32,
-        #[graphql(default = 0)]
-        another: i32,
-        #[graphql(default = 1)]
-        skipped: i32
+        #[graphql(default = 42)] this: i32,
+        #[graphql(default = 0)] another: i32,
+        #[graphql(default = 1)] skipped: i32,
     ) -> i32 {
         this + another + skipped
     }

@@ -19,6 +19,8 @@ use syn::{
     token,
 };
 
+#[cfg(feature = "tracing")]
+use crate::tracing;
 use crate::{
     common::{
         field, gen,
@@ -30,8 +32,6 @@ use crate::{
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
-#[cfg(feature = "tracing")]
-use crate::tracing;
 
 /// Available arguments behind `#[graphql_interface]` attribute placed on a
 /// trait definition, when generating code for [GraphQL interface][1] type.
@@ -600,15 +600,14 @@ impl Definition {
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(
+        let fields_resolvers = self.fields.iter().filter_map(|f| {
+            f.method_resolve_field_tokens(
                 scalar,
                 Some(&trait_ty),
                 #[cfg(feature = "tracing")]
                 self,
-            ));
+            )
+        });
         let async_fields_panic = {
             let names = self
                 .fields
@@ -695,15 +694,14 @@ impl Definition {
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .map(|f| f.method_resolve_field_async_tokens(
+        let fields_resolvers = self.fields.iter().map(|f| {
+            f.method_resolve_field_async_tokens(
                 scalar,
                 Some(&trait_ty),
                 #[cfg(feature = "tracing")]
                 self,
-            ));
+            )
+        });
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         let custom_downcasts = self

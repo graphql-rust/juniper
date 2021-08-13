@@ -500,15 +500,14 @@ impl Definition<Query> {
 
         let name = &self.name;
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(
+        let fields_resolvers = self.fields.iter().filter_map(|f| {
+            f.method_resolve_field_tokens(
                 scalar,
                 None,
                 #[cfg(feature = "tracing")]
-                self
-            ));
+                self,
+            )
+        });
         let async_fields_panic = {
             let names = self
                 .fields
@@ -570,15 +569,14 @@ impl Definition<Query> {
         let (impl_generics, where_clause) = self.impl_generics(true);
         let ty = &self.ty;
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .map(|f| f.method_resolve_field_async_tokens(
+        let fields_resolvers = self.fields.iter().map(|f| {
+            f.method_resolve_field_async_tokens(
                 scalar,
                 None,
                 #[cfg(feature = "tracing")]
                 self,
-            ));
+            )
+        });
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {

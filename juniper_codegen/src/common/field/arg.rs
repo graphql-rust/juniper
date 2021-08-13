@@ -385,7 +385,7 @@ impl OnMethod {
 
                 }
             }
-            Self::Context(_) | Self::Executor => quote!()
+            Self::Context(_) | Self::Executor => quote!(),
         }
     }
 

@@ -145,7 +145,7 @@ impl Parse for Attr {
                             tracing::FieldBehavior::from_ident(&behavior)?,
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?;
-                },
+                }
                 #[cfg(not(feature = "tracing"))]
                 "tracing" => {
                     return Err(err::tracing_disabled(&ident));
@@ -439,8 +439,7 @@ impl Definition {
         &self,
         scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
-        #[cfg(feature = "tracing")]
-        traced_ty: &impl tracing::TracedType,
+        #[cfg(feature = "tracing")] traced_ty: &impl tracing::TracedType,
     ) -> Option<TokenStream> {
         if self.is_async {
             return None;
@@ -454,10 +453,12 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| (
-                    arg.method_resolve_field_tokens(),
-                    arg.method_resolve_arg_getter_tokens(scalar),
-                ))
+                .map(|arg| {
+                    (
+                        arg.method_resolve_field_tokens(),
+                        arg.method_resolve_arg_getter_tokens(scalar),
+                    )
+                })
                 .unzip();
 
             let rcv = self.has_receiver.then(|| {
@@ -502,8 +503,7 @@ impl Definition {
         &self,
         scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
-        #[cfg(feature = "tracing")]
-        traced_ty: &impl tracing::TracedType,
+        #[cfg(feature = "tracing")] traced_ty: &impl tracing::TracedType,
     ) -> TokenStream {
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
@@ -513,10 +513,12 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| (
-                    arg.method_resolve_field_tokens(),
-                    arg.method_resolve_arg_getter_tokens(scalar),
-                ))
+                .map(|arg| {
+                    (
+                        arg.method_resolve_field_tokens(),
+                        arg.method_resolve_arg_getter_tokens(scalar),
+                    )
+                })
                 .unzip();
 
             let rcv = self.has_receiver.then(|| {
@@ -564,8 +566,7 @@ impl Definition {
     pub(crate) fn method_resolve_field_into_stream_tokens(
         &self,
         scalar: &scalar::Type,
-        #[cfg(feature = "tracing")]
-        traced_ty: &impl tracing::TracedType,
+        #[cfg(feature = "tracing")] traced_ty: &impl tracing::TracedType,
     ) -> TokenStream {
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
@@ -575,10 +576,12 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| (
-                    arg.method_resolve_field_tokens(),
-                    arg.method_resolve_arg_getter_tokens(scalar),
-                ))
+                .map(|arg| {
+                    (
+                        arg.method_resolve_field_tokens(),
+                        arg.method_resolve_arg_getter_tokens(scalar),
+                    )
+                })
                 .unzip();
 
             let rcv = self.has_receiver.then(|| {
@@ -587,7 +590,7 @@ impl Definition {
 
             (
                 quote! { Self::#ident(#rcv #( #args ),*) },
-                quote! { #( #getters )* }
+                quote! { #( #getters )* },
             )
         } else {
             ty = parse_quote! { _ };

@@ -163,13 +163,11 @@ impl Rule {
     /// Constructs [`Rule`] from attribute with given name. If attribute with
     /// `attr_name` is not present then returns default [`Rule`].
     pub fn from_attrs(attr_name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        Ok(
-            attrs.iter()
-                .find_map(|attr| attr.path.is_ident(attr_name)
-                    .then(|| attr.parse_args()))
-                .transpose()?
-                .unwrap_or_else(Self::default)
-        )
+        Ok(attrs
+            .iter()
+            .find_map(|attr| attr.path.is_ident(attr_name).then(|| attr.parse_args()))
+            .transpose()?
+            .unwrap_or_else(Self::default))
     }
 
     /// Constructs [`Rule`] from attribute with given name, and strips it from list.
@@ -201,16 +199,14 @@ impl Parse for Rule {
             "sync" => Ok(Self::Sync),
             "skip_all" => Ok(Self::SkipAll),
             "only" => Ok(Self::Only),
-            tracing => Err(
-                syn::Error::new(
-                    ident.span(),
-                    format!(
-                        "Unknown tracing rule: {}, \
+            tracing => Err(syn::Error::new(
+                ident.span(),
+                format!(
+                    "Unknown tracing rule: {}, \
                          known values: sync, async, skip-all and complex",
-                        tracing,
-                    )
-                )
-            ),
+                    tracing,
+                ),
+            )),
         }
     }
 }
@@ -448,13 +444,10 @@ mod impls {
         }
 
         fn args(&self) -> Vec<&Self::Arg> {
-            self.arguments
-                .as_ref()
-                .map_or_else(
-                    || vec![],
-                    |args| args.iter()
-                        .filter_map(|arg| arg.as_regular())
-                        .collect())
+            self.arguments.as_ref().map_or_else(
+                || vec![],
+                |args| args.iter().filter_map(|arg| arg.as_regular()).collect(),
+            )
         }
     }
 
