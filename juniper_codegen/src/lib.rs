@@ -208,7 +208,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// TODO: write documentation.
 ///
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLScalarValue, attributes(graphql, instrument))]
+#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_scalar_value::impl_scalar_value(&ast, GraphQLScope::DeriveScalar);
@@ -817,7 +817,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql, instrument))]
+#[proc_macro_derive(GraphQLObject, attributes(graphql, instrument, tracing))]
 pub fn derive_object(body: TokenStream) -> TokenStream {
     self::graphql_object::derive::expand(body.into())
         .unwrap_or_abort()

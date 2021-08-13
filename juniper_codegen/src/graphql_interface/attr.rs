@@ -32,6 +32,10 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
     if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body.clone()) {
         let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
         ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
+        #[cfg(feature = "tracing")]
+        {
+            ast.attrs = parse::attr::strip("tracing", ast.attrs);
+        }
         return expand_on_trait(trait_attrs, ast);
     } else if let Ok(mut ast) = syn::parse2::<syn::ItemImpl>(body) {
         if ast.trait_.is_some() {
@@ -203,7 +207,7 @@ fn expand_on_trait(
         implementers,
 
         #[cfg(feature = "tracing")]
-        tracing_rule: attr.tracing_rule.map(|t| t.into_inner()),
+        tracing_rule: tracing::Rule::from_attrs("tracing", &attrs)?,
     };
 
     // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.

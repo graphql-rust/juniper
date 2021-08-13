@@ -25,6 +25,7 @@ use crate::{
     },
     util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
 };
+
 #[cfg(feature = "tracing")]
 use crate::tracing;
 
@@ -82,6 +83,10 @@ pub(crate) struct Attr {
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     pub(crate) downcast: Option<SpanContainer<syn::Ident>>,
 
+    /// Explicitly specified tracing behavior of this [GraphQL field][1] resolver
+    /// that used to define whether this it should be traced or not.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[cfg(feature = "tracing")]
     pub(crate) tracing_behavior: Option<SpanContainer<tracing::FieldBehavior>>,
 }
@@ -134,9 +139,17 @@ impl Parse for Attr {
                     syn::parenthesized!(content in input);
                     let behavior = content.parse_any_ident()?;
                     out.tracing_behavior
-                        .replace(SpanContainer::new(ident.span(), Some(behavior.span()), tracing::FieldBehavior::from_ident(&behavior)?))
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(behavior.span()),
+                            tracing::FieldBehavior::from_ident(&behavior)?,
+                        ))
                         .none_or_else(|_| err::dup_arg(&ident))?;
                 },
+                #[cfg(not(feature = "tracing"))]
+                "tracing" => {
+                    return Err(err::tracing_disabled(&ident));
+                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -157,6 +170,7 @@ impl Attr {
             deprecated: try_merge_opt!(deprecated: self, another),
             ignore: try_merge_opt!(ignore: self, another),
             downcast: try_merge_opt!(downcast: self, another),
+            #[cfg(feature = "tracing")]
             tracing_behavior: try_merge_opt!(tracing_behavior: self, another),
         })
     }
@@ -272,9 +286,17 @@ pub(crate) struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     pub(crate) is_async: bool,
 
+    /// Optional `#[instrument]` attribute placed on top of this [GraphQL field][1]
+    /// resolver.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[cfg(feature = "tracing")]
     pub(crate) instrument: Option<tracing::Attr>,
 
+    /// Explicitly specified tracing behavior of this [GraphQL field][1] resolver
+    /// that affects whether this it should be traced or not.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[cfg(feature = "tracing")]
     pub(crate) tracing: Option<tracing::FieldBehavior>,
 }

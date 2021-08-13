@@ -390,10 +390,8 @@ pub trait FooBar {
 /// GraphQL object marked with `tracing(sync)`.
 pub struct TraceSync;
 
-#[graphql_object(
-    tracing(sync),
-    impl = [InterfacedSimpleValue, InterfacedSyncValue],
-)]
+#[graphql_object(impl = [InterfacedSimpleValue, InterfacedSyncValue])]
+#[tracing(sync)]
 impl TraceSync {
     pub fn sync_fn(&self) -> i32 {
         1
@@ -409,7 +407,7 @@ build_impl!(TraceSync, InterfacedSync);
 
 /// Derived GraphQL object marked with `tracing(sync)`.
 #[derive(Default, GraphQLObject)]
-#[graphql(tracing(sync))]
+#[tracing(sync)]
 pub struct SyncDerived {
     /// Simple field
     sync: i32,
@@ -418,10 +416,8 @@ pub struct SyncDerived {
 /// GraphQL object marked with `tracing(async)`.
 pub struct TraceAsync;
 
-#[graphql_object(
-    tracing(async),
-    impl = [InterfacedAsyncValue],
-)]
+#[graphql_object(impl = [InterfacedAsyncValue])]
+#[tracing(async)]
 impl TraceAsync {
     pub fn sync_fn(&self) -> i32 {
         1
@@ -436,7 +432,7 @@ build_impl!(TraceAsync, InterfacedAsync);
 
 /// Derived GraphQL object.
 #[derive(Default, GraphQLObject)]
-#[graphql(tracing(async))]
+#[tracing(async)]
 pub struct AsyncDerived {
     /// Simple field
     sync: i32,
@@ -445,10 +441,8 @@ pub struct AsyncDerived {
 /// GraphQL object marked with `tracing(skip_all)`.
 pub struct SkipAll;
 
-#[graphql_object(
-    tracing(skip_all),
-    impl = [InterfacedSkipAllValue],
-)]
+#[graphql_object(impl = [InterfacedSkipAllValue])]
+#[tracing(skip_all)]
 impl SkipAll {
     pub fn sync_fn(&self) -> i32 {
         1
@@ -463,7 +457,7 @@ build_impl!(SkipAll, InterfacedSkipAll);
 
 /// Derived GraphQL object marked with `tracing(skip_all)`.
 #[derive(Default, GraphQLObject)]
-#[graphql(tracing(skip_all))]
+#[tracing(skip_all)]
 pub struct SkipAllDerived {
     /// Simple field
     sync: i32,
@@ -472,10 +466,8 @@ pub struct SkipAllDerived {
 /// GraphQL object marked with `tracing(only)`.
 pub struct Complex;
 
-#[graphql_object(
-    tracing(only),
-    impl = [InterfacedComplexValue],
-)]
+#[graphql_object(impl = [InterfacedComplexValue])]
+#[tracing(only)]
 impl Complex {
     #[graphql(tracing(only))]
     pub fn sync_fn(&self) -> i32 {
@@ -496,7 +488,7 @@ build_impl!(Complex, InterfacedComplex);
 
 /// Derived GraphQL object marked with `tracing(only)`.
 #[derive(GraphQLObject)]
-#[graphql(tracing(only))]
+#[tracing(only)]
 pub struct DerivedComplex {
     #[graphql(tracing(only))]
     complex: bool,
@@ -517,41 +509,29 @@ trait InterfacedSimple {
     async fn async_fn(&self) -> i32;
 }
 
-#[graphql_interface(
-    for = [TraceSync],
-    tracing(sync),
-    async,
-)]
+#[graphql_interface(for = [TraceSync], async)]
+#[tracing(sync)]
 trait InterfacedSync {
     fn sync_fn(&self) -> i32;
     async fn async_fn(&self) -> i32;
 }
 
-#[graphql_interface(
-    for = [TraceAsync],
-    tracing(async),
-    async,
-)]
+#[graphql_interface(for = [TraceAsync], async)]
+#[tracing(async)]
 trait InterfacedAsync {
     fn sync_fn(&self) -> i32;
     async fn async_fn(&self) -> i32;
 }
 
-#[graphql_interface(
-    for = [SkipAll],
-    tracing(skip_all),
-    async,
-)]
+#[graphql_interface(for = [SkipAll], async)]
+#[tracing(skip_all)]
 trait InterfacedSkipAll {
     fn sync_fn(&self) -> i32;
     async fn async_fn(&self) -> i32;
 }
 
-#[graphql_interface(
-    for = [Complex],
-    tracing(only),
-    async,
-)]
+#[graphql_interface(for = [Complex], async)]
+#[tracing(only)]
 trait InterfacedComplex {
     fn sync_fn(&self) -> i32;
     #[graphql(tracing(only))]

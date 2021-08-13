@@ -19,8 +19,6 @@ use syn::{
 };
 
 use crate::common::parse::ParseBufferExt as _;
-#[cfg(feature = "tracing")]
-use crate::tracing;
 
 /// Compares a path to a one-segment string value,
 /// return true if equal.
@@ -304,9 +302,6 @@ pub struct ObjectAttributes {
     pub no_async: Option<SpanContainer<()>>,
     pub is_internal: bool,
     pub rename: Option<RenameRule>,
-
-    #[cfg(feature = "tracing")]
-    pub tracing_rule: Option<tracing::Rule>,
 }
 
 impl Parse for ObjectAttributes {
@@ -371,17 +366,6 @@ impl Parse for ObjectAttributes {
                 "rename" => {
                     input.parse::<token::Eq>()?;
                     output.rename = Some(input.parse::<RenameRule>()?);
-                }
-                #[cfg(feature = "tracing")]
-                "tracing" => {
-                    let content;
-                    syn::parenthesized!(content in input);
-                    let val = content.parse_any_ident()?;
-                    if let Ok(trace) = tracing::Rule::from_str(&val.to_string()) {
-                        output.tracing_rule = Some(trace);
-                    } else {
-                        return Err(syn::Error::new(val.span(), "unknown tracing skip rule"));
-                    }
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
@@ -474,8 +458,6 @@ enum FieldAttribute {
     Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
     Default(Box<SpanContainer<Option<syn::Expr>>>),
-    #[cfg(feature = "tracing")]
-    Tracing(SpanContainer<tracing::FieldBehavior>),
 }
 
 impl Parse for FieldAttribute {
@@ -550,19 +532,6 @@ impl Parse for FieldAttribute {
 
                 Ok(FieldAttribute::Default(Box::new(default_expr)))
             }
-            #[cfg(feature = "tracing")]
-            "tracing" => {
-                let content;
-                syn::parenthesized!(content in input);
-                let behavior = content.parse_any_ident()?;
-                tracing::FieldBehavior::from_ident(&behavior).map(|val| {
-                    FieldAttribute::Tracing(SpanContainer::new(
-                        ident.span(),
-                        Some(behavior.span()),
-                        val,
-                    ))
-                })
-            }
             _ => Err(syn::Error::new(ident.span(), "unknown attribute")),
         }
     }
@@ -579,10 +548,6 @@ pub struct FieldAttributes {
     pub arguments: HashMap<String, FieldAttributeArgument>,
     /// Only relevant for object input objects.
     pub default: Option<SpanContainer<Option<syn::Expr>>>,
-
-    // Only relevant for GraphQLObject derive and graphql_object attribute.
-    #[cfg(feature = "tracing")]
-    pub tracing: Option<tracing::FieldBehavior>,
 }
 
 impl Parse for FieldAttributes {
@@ -611,8 +576,6 @@ impl Parse for FieldAttributes {
                 FieldAttribute::Default(expr) => {
                     output.default = Some(*expr);
                 }
-                #[cfg(feature = "tracing")]
-                FieldAttribute::Tracing(tracing) => output.tracing = Some(*tracing),
             }
         }
 
@@ -673,12 +636,6 @@ pub struct GraphQLTypeDefinitionField {
     pub is_async: bool,
     pub default: Option<TokenStream>,
     pub span: Span,
-
-    // Relevant only for `#[graphql_object]` and `#[derive(GraphQLObject)]`
-    #[cfg(feature = "tracing")]
-    pub tracing_behavior: Option<tracing::FieldBehavior>,
-    #[cfg(feature = "tracing")]
-    pub instrument_attr: Option<tracing::Attr>,
 }
 
 impl syn::spanned::Spanned for GraphQLTypeDefinitionField {
@@ -720,10 +677,6 @@ pub struct GraphQLTypeDefinition {
     pub generic_scalar: bool,
     // FIXME: make this redundant.
     pub no_async: bool,
-
-    // Only relevant for GraphQL Objects.
-    #[cfg(feature = "tracing")]
-    pub tracing_rule: Option<tracing::Rule>,
 }
 
 impl GraphQLTypeDefinition {

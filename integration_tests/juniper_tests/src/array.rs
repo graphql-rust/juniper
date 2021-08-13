@@ -36,12 +36,12 @@ mod as_output_field {
 mod as_input_field {
     use super::*;
 
-    #[derive(GraphQLInputObject)]
+    #[derive(Debug, GraphQLInputObject)]
     struct Input {
         two: [bool; 2],
     }
 
-    #[derive(GraphQLInputObject)]
+    #[derive(Debug, GraphQLInputObject)]
     struct InputSingle {
         one: [bool; 1],
     }

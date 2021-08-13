@@ -365,9 +365,12 @@ impl OnMethod {
         }
     }
 
+    /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
+    /// which assigns the value of this [`OnMethod`] argument to local variable.
+    ///
+    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
     pub(crate) fn method_resolve_arg_getter_tokens(&self, scalar: &scalar::Type) -> TokenStream {
-
         match self {
             Self::Regular(arg) => {
                 let (name, raw_name, ty) = (&arg.name, &arg.raw_name, &arg.ty);

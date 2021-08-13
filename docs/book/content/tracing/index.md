@@ -133,26 +133,58 @@ impl User {
 
 Manually setting `#[graphql(tracing(ignore))]` to avoid tracing of all, let's say for
 example synchronous field resolvers is rather inefficient when you have GraphQL
-object with too much fields. In this case you can use `tracing` argument on
-top-level `#[graphql_object]`, `#[graphql_interface]` or `#[graphql]` (when it
-used with `#[derive(GraphQLObject)]`) attributes to trace specific group of
-fields or not to trace at all. `tracing` argument can be used with one of the
-following arguments: `sync`, `async`, `only` or `skip_all`.
- - Use `sync` to trace only synchronous part (struct fields and `fn`s).
- - Use `async` to trace only asynchronous part (`async fn`s) and
+object with too much fields. In this case you can use `tracing` attribute on
+top-level to skip tracing of specific field group or not to trace at all.
+`tracing` attribute can be used with one of the following arguments:
+`sync`, `async`, `only` or `skip_all`.
+ - Use `sync` to trace only synchronous resolvers (struct fields and `fn`s).
+ - Use `async` to trace only asynchronous resolvers (`async fn`s) and
 subscriptions.
  - Use `only` to trace only fields marked with `#[graphql(tracing(only))]`
  - Use `skip_all` to skip tracing of all fields.
+
+### Example
+
+```rust
+# extern crate juniper;
+# use juniper::graphql_object;
+# fn main() {}
+
+struct MagicOfTracing;
+
+#[graphql_object]
+#[tracing(async)]
+impl MagicOfTracing {
+    // Won't produce span because it's sync resolver
+    fn my_sync_fn(&self) -> String {
+        "Woah sync resolver!!".to_owned()
+    }
+
+    // Will produce span `MagicOfTracing.myAsyncFn`.
+    async fn my_async_fn(&self) -> String {
+        "Woah async resolver with traces!!".to_owned()
+    }
+
+    // Won't produce span because even though this is an async resolver
+    // it's also marked with `#[graphql(tracing(ignore))]`.
+    #[graphql(tracing(ignore))]
+    async fn non_traced_async_fn(&self) -> String {
+        "Leave no traces".to_owned()
+    }
+}
+```
 
 **Note:** using of `tracing(sync)` with derived struct is no-op because all
 resolvers within derived GraphQL object is considered to be synchronous, also
 because of this `tracing(async)` will result in no traces.
 
-In addition you can use `#[graphql(tracing(ignore))]` with `skip` and `async`
+In addition you can use `#[graphql(tracing(ignore))]` with `sync` and `async`
 variants to exclude field from tracing even if it belongs to traced group.
 
 **Be careful when skipping trace as it can lead to bad structured span trees,
-disabling of tracing on one level won't disable tracing in it's child methods.**
+disabling of tracing on one level won't disable tracing in it's child methods.
+As a rule of thumb you should trace all field resolvers which may produce child
+spans.**
 
 If resolving of certain field requires additional arguments (when used `fn`s or
 `async fn`s) they also will be included in resulted trace (except `self` and
@@ -163,9 +195,6 @@ If resolving of certain field requires additional arguments (when used `fn`s or
 # use juniper::{graphql_object, GraphQLObject};
 #
 # fn main() {}
-#
-# struct Context;
-# impl juniper::Context for Context {}
 #
 # type Filter = i32;
 #
@@ -200,8 +229,6 @@ this field with `fields(field_name = some_value)` like shown bellow.
 #
 # fn main() {}
 #
-# struct Context;
-# impl juniper::Context for Context {}
 # struct Query;
 
 #[derive(Clone, juniper::GraphQLInputObject)]
@@ -220,9 +247,42 @@ fn my_query(&self, non_debug: NonDebug) -> i32 {
 # }
 ```
 
-Custom fields generated this way are context aware and can use both `context` and `self`
-even if they're not implicitly passed to resolver. In case when resolver is `fn` with not
-only `self` and `context` arguments they're also available to interact with as shown above.
+Custom fields generated this way are aware of `self` and can use `self` even if it not implicitly passed
+to resolver. In case when resolver is `fn` with not only `self` arguments they're also available
+to interact with as shown above. You can also access `executor` and `Context` as a result.
+
+### Example
+```rust
+# extern crate juniper;
+# use juniper::graphql_object;
+#
+# fn main() {}
+#
+struct Context {
+    data: i32,
+}
+
+impl juniper::Context for Context {}
+
+struct Query {
+    data: i32,
+}
+
+#[graphql_object(context = Context)]
+impl Query {
+#[instrument(fields(ctx.data = executor.context().data))]
+fn my_query(&self) -> i32 {
+    // Some query
+#    unimplemented!()
+}
+
+#[instrument(fields(data = self.data))]
+fn self_aware() -> i32 {
+    // Some query
+#   unimplemented!()
+}
+# }
+```
 
 ## `#[instrument]` attribute
 

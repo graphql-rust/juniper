@@ -15,6 +15,7 @@ use crate::{
     result::GraphQLScope,
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
+
 #[cfg(feature = "tracing")]
 use crate::tracing;
 
@@ -132,7 +133,7 @@ where
         _operation: PhantomData,
 
         #[cfg(feature = "tracing")]
-        tracing: attr.tracing_rule.map(|t| t.into_inner())
+        tracing: tracing::Rule::from_attrs_and_strip("tracing", &mut ast.attrs)?,
     };
 
     Ok(quote! {

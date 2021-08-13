@@ -5,12 +5,8 @@
 pub mod attr;
 pub mod derive;
 
-#[cfg(feature = "tracing")]
-mod tracing;
+use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::PhantomData};
 
-use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::PhantomData, str::FromStr as _};
-
-use proc_macro_error::abort;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
@@ -32,6 +28,9 @@ use crate::{
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
+
+#[cfg(feature = "tracing")]
+use crate::tracing;
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
 /// when generating code for [GraphQL object][1] type.
@@ -95,9 +94,6 @@ pub(crate) struct Attr {
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
     pub(crate) is_internal: bool,
-
-    #[cfg(feature = "tracing")]
-    pub(crate) tracing_rule: Option<SpanContainer<tracing::Rule>>
 }
 
 impl Parse for Attr {
@@ -168,27 +164,6 @@ impl Parse for Attr {
                 "internal" => {
                     out.is_internal = true;
                 }
-                #[cfg(feature = "tracing")]
-                "tracing" => {
-                    let content;
-                    syn::parenthesized!(content in input);
-                    let tracing = content.parse_any_ident()?;
-                    let tracing_rule = tracing::Rule::from_str(tracing.to_string().as_str());
-                    match tracing_rule {
-                        Ok(rule) => out
-                            .tracing_rule
-                            .replace(SpanContainer::new(ident.span(), Some(tracing.span()), rule))
-                            .none_or_else(|_| err::dup_arg(ident.span()))?,
-                        Err(_) => abort!(syn::Error::new(
-                            tracing.span(),
-                            format!(
-                                "Unknown tracing rule: {}, \
-                                 known values: sync, async, skip-all and complex",
-                                tracing,
-                            )
-                        )),
-                    }
-                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -211,7 +186,6 @@ impl Attr {
             interfaces: try_merge_hashset!(interfaces: self, another => span_joined),
             rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
-            tracing_rule: try_merge_opt!(tracing_rule: self, another),
         })
     }
 
@@ -295,8 +269,13 @@ pub(crate) struct Definition<Operation: ?Sized> {
     /// [3]: https://spec.graphql.org/June2018/#sec-Subscription
     pub(crate) _operation: PhantomData<Box<Operation>>,
 
+    /// Explicitly specified rule, that used to define which [`GraphQL field`][1]s
+    /// of this [`GraphQL object`][2] should be traced.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[cfg(feature = "tracing")]
-    pub(crate) tracing: Option<tracing::Rule>,
+    pub(crate) tracing: tracing::Rule,
 }
 
 impl<Operation: ?Sized + 'static> Definition<Operation> {

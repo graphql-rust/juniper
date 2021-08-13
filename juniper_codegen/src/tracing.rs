@@ -1,4 +1,4 @@
-use std::{collections::HashMap, mem, str::FromStr};
+use std::{collections::HashMap, mem};
 
 use proc_macro2::TokenStream;
 use proc_macro_error::abort;
@@ -9,8 +9,11 @@ use syn::{
     token,
 };
 
+use crate::common::parse::ParseBufferExt as _;
+
 pub const ATTR_NAME: &'static str = "instrument";
 
+/// `#[instrument]` attribute placed on field resolver.
 #[derive(Debug, Default)]
 pub struct Attr {
     /// Optional span rename, if `None` method name should be used instead.
@@ -30,8 +33,8 @@ pub struct Attr {
 }
 
 impl Attr {
-    /// Parses [`TracingAttr`] from `method`s attributes and removes itself from
-    /// `method.attrs` if present.
+    /// Parses [`Attr`] from trait `method`s attributes and removes itself
+    /// from `method.attrs` if present.
     pub fn from_trait_method(method: &mut syn::TraitItemMethod) -> Option<Self> {
         let attr = method
             .attrs
@@ -51,6 +54,8 @@ impl Attr {
         }
     }
 
+    /// Parses [`Attr`] from impl `method`s attributes and removes itself
+    /// from `method.attrs` if present.
     pub fn from_method(method: &mut syn::ImplItemMethod) -> Option<Self> {
         let attr = method
             .attrs
@@ -70,6 +75,7 @@ impl Attr {
         }
     }
 
+    /// Parses [`Attr`] from structure `field`s attributes if present.
     pub fn from_field(field: &syn::Field) -> Option<Self> {
         let attr = field
             .attrs
@@ -146,11 +152,39 @@ pub enum Rule {
     /// Trace all fields that can be synchronously resolved.
     Sync,
 
-    /// Trace only fields that marked with `#[tracing(complex)]`.
-    Complex,
+    /// Trace only fields that marked with `#[tracing(only)]`.
+    Only,
 
     /// Skip tracing of all fields.
     SkipAll,
+}
+
+impl Rule {
+    /// Constructs [`Rule`] from attribute with given name. If attribute with
+    /// `attr_name` is not present then returns default [`Rule`].
+    pub fn from_attrs(attr_name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        Ok(
+            attrs.iter()
+                .find_map(|attr| attr.path.is_ident(attr_name)
+                    .then(|| attr.parse_args()))
+                .transpose()?
+                .unwrap_or_else(Self::default)
+        )
+    }
+
+    /// Constructs [`Rule`] from attribute with given name, and strips it from list.
+    /// If attribute with `attr_name` is not present then returns default [`Rule`].
+    pub fn from_attrs_and_strip(
+        attr_name: &str,
+        attrs: &mut Vec<syn::Attribute>,
+    ) -> syn::Result<Self> {
+        let attr = Self::from_attrs(attr_name, &attrs)?;
+        *attrs = std::mem::take(attrs)
+            .into_iter()
+            .filter(|attr| !attr.path.is_ident(attr_name))
+            .collect();
+        Ok(attr)
+    }
 }
 
 impl Default for Rule {
@@ -159,16 +193,24 @@ impl Default for Rule {
     }
 }
 
-impl FromStr for Rule {
-    type Err = ();
-
-    fn from_str(rule: &str) -> Result<Self, Self::Err> {
-        match rule {
+impl Parse for Rule {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let ident = input.parse_any_ident()?;
+        match ident.to_string().as_str() {
             "async" => Ok(Self::Async),
             "sync" => Ok(Self::Sync),
             "skip_all" => Ok(Self::SkipAll),
-            "only" => Ok(Self::Complex),
-            _ => Err(()),
+            "only" => Ok(Self::Only),
+            tracing => Err(
+                syn::Error::new(
+                    ident.span(),
+                    format!(
+                        "Unknown tracing rule: {}, \
+                         known values: sync, async, skip-all and complex",
+                        tracing,
+                    )
+                )
+            ),
         }
     }
 }
@@ -190,6 +232,7 @@ pub enum FieldBehavior {
 }
 
 impl FieldBehavior {
+    /// Tries to construct [`FieldBehaviour`] from [`syn::Ident`].
     pub fn from_ident(ident: &syn::Ident) -> syn::Result<Self> {
         match ident.to_string().as_str() {
             "only" => Ok(Self::Only),
@@ -207,9 +250,8 @@ impl FieldBehavior {
 
 /// Generalisation of type that can be traced.
 pub trait TracedType {
-    /// Optional [`TracingRule`] read from attributes `#[graphql_object(trace = "...")]`
-    /// on impl block, `#[graphql(trace = "...")]` on derived GraphQLObject or
-    /// `#[graphql_interface(trace = "...")]` on trait definition.
+    /// Optional [`Rule`] read from attributes `#[tracing(...)]` object or interface
+    /// definition.
     fn tracing_rule(&self) -> Rule;
 
     /// Name of this type.
@@ -227,7 +269,7 @@ pub trait TracedField {
     /// Returns parsed `#[tracing]` attribute.
     fn instrument(&self) -> Option<&Attr>;
 
-    /// Returns [`FieldBehaviour`] parsed from `#[graphql(tracing = ...)]`
+    /// Returns [`FieldBehaviour`] parsed from `#[graphql(tracing(...))]`
     fn tracing_behavior(&self) -> FieldBehavior;
 
     /// Whether this field relies on async resolver.
@@ -240,12 +282,16 @@ pub trait TracedField {
     fn args(&self) -> Vec<&Self::Arg>;
 }
 
+/// Argument of traced field resolver.
 pub trait TracedArgument {
-    fn ty(&self) -> &syn::Type;
+    /// Name of the argument in camel case.
     fn name(&self) -> &str;
+
+    /// Raw name identifier, parsed from `fn`s args.
     fn raw_name(&self) -> &syn::Ident;
 }
 
+/// Checks whether the `field` of `ty` should be traced.
 fn is_traced(ty: &impl TracedType, field: &impl TracedField) -> bool {
     let rule = ty.tracing_rule();
 
@@ -253,12 +299,12 @@ fn is_traced(ty: &impl TracedType, field: &impl TracedField) -> bool {
         Rule::All => field.tracing_behavior() != FieldBehavior::Ignore,
         Rule::Sync if !field.is_async() => field.tracing_behavior() != FieldBehavior::Ignore,
         Rule::Async if field.is_async() => field.tracing_behavior() != FieldBehavior::Ignore,
-        Rule::Complex => field.tracing_behavior() == FieldBehavior::Only,
+        Rule::Only => field.tracing_behavior() == FieldBehavior::Only,
         _ => false,
     }
 }
 
-// Returns code that constructs `span` required for tracing
+/// Returns code that constructs `span` required for tracing
 pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
     if !is_traced(ty, field) {
         return quote!();
@@ -271,7 +317,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
     let args = field.args().into_iter().filter_map(|arg| {
         let name = arg.name();
         let raw_name = arg.raw_name();
-        let arg_name = syn::LitStr::new(name, arg.ty().span());
+        let arg_name = syn::LitStr::new(name, raw_name.span());
 
         field
             .instrument()
@@ -331,7 +377,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
     )
 }
 
-// Returns code to start tracing of async future
+/// Returns code to start tracing of async future
 pub fn async_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
     if !is_traced(ty, field) {
         return quote!();
@@ -341,7 +387,7 @@ pub fn async_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStre
     )
 }
 
-// Returns code to start tracing of sync block
+/// Returns code to start tracing of sync block
 pub fn sync_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
     if !is_traced(ty, field) {
         return quote!();
@@ -349,17 +395,28 @@ pub fn sync_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
     quote!(let _tracing_guard = _tracing_span.enter();)
 }
 
-mod graphql_object {
-    use crate::util::{
-        GraphQLTypeDefinition, GraphQLTypeDefinitionField, GraphQLTypeDefinitionFieldArg,
-    };
+mod impls {
+    use crate::{common::field, graphql_interface as interface, graphql_object as object};
 
-    use super::{Attr, Rule, TracedArgument, TracedField, TracedType};
-    use crate::tracing::FieldBehavior;
+    use super::{Attr, FieldBehavior, Rule, TracedArgument, TracedField, TracedType};
 
-    impl TracedType for GraphQLTypeDefinition {
+    impl<T: ?Sized> TracedType for object::Definition<T> {
         fn tracing_rule(&self) -> Rule {
-            self.tracing_rule.unwrap_or(Rule::All)
+            self.tracing
+        }
+
+        fn name(&self) -> &str {
+            &self.name
+        }
+
+        fn scalar(&self) -> Option<syn::Type> {
+            Some(self.scalar.ty())
+        }
+    }
+
+    impl TracedType for interface::Definition {
+        fn tracing_rule(&self) -> Rule {
+            self.tracing_rule
         }
 
         fn name(&self) -> &str {
@@ -367,19 +424,23 @@ mod graphql_object {
         }
 
         fn scalar(&self) -> Option<syn::Type> {
-            self.scalar.clone()
+            Some(self.scalar.ty())
         }
     }
 
-    impl TracedField for GraphQLTypeDefinitionField {
-        type Arg = GraphQLTypeDefinitionFieldArg;
+    impl TracedField for field::Definition {
+        type Arg = field::arg::OnField;
 
         fn instrument(&self) -> Option<&Attr> {
-            self.instrument_attr.as_ref()
+            self.instrument.as_ref()
         }
 
         fn tracing_behavior(&self) -> FieldBehavior {
-            self.tracing_behavior.unwrap_or(FieldBehavior::Default)
+            self.tracing.unwrap_or(FieldBehavior::Default)
+        }
+
+        fn is_async(&self) -> bool {
+            self.is_async
         }
 
         fn name(&self) -> &str {
@@ -387,19 +448,17 @@ mod graphql_object {
         }
 
         fn args(&self) -> Vec<&Self::Arg> {
-            self.args.iter().collect()
-        }
-
-        fn is_async(&self) -> bool {
-            self.is_async
+            self.arguments
+                .as_ref()
+                .map_or_else(
+                    || vec![],
+                    |args| args.iter()
+                        .filter_map(|arg| arg.as_regular())
+                        .collect())
         }
     }
 
-    impl TracedArgument for GraphQLTypeDefinitionFieldArg {
-        fn ty(&self) -> &syn::Type {
-            &self._type
-        }
-
+    impl TracedArgument for field::arg::OnField {
         fn name(&self) -> &str {
             self.name.as_str()
         }

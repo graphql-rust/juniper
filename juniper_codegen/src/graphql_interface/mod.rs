@@ -3,8 +3,6 @@
 //! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 
 pub mod attr;
-#[cfg(feature = "tracing")]
-mod tracing;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -32,6 +30,8 @@ use crate::{
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
+#[cfg(feature = "tracing")]
+use crate::tracing;
 
 /// Available arguments behind `#[graphql_interface]` attribute placed on a
 /// trait definition, when generating code for [GraphQL interface][1] type.
@@ -249,32 +249,6 @@ impl Parse for TraitAttr {
                 "internal" => {
                     out.is_internal = true;
                 }
-                #[cfg(feature = "tracing")]
-                "tracing" => {
-                    use std::str::FromStr as _;
-
-                    use proc_macro_error::abort;
-
-                    let span = ident.span();
-                    let content;
-                    syn::parenthesized!(content in input);
-                    let tracing = content.parse_any_ident()?;
-                    let tracing_rule = tracing::Rule::from_str(tracing.to_string().as_str());
-                    match tracing_rule {
-                        Ok(rule) => out
-                            .tracing_rule
-                            .replace(SpanContainer::new(span, Some(tracing.span()), rule))
-                            .none_or_else(|_| err::dup_arg(span))?,
-                        Err(_) => abort!(syn::Error::new(
-                            tracing.span(),
-                            format!(
-                                "Unknown tracing rule: {}, \
-                                 known values: sync, async, skip-all and complex",
-                                tracing,
-                            )
-                        )),
-                    }
-                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -430,7 +404,7 @@ impl ImplAttr {
 /// Definition of [GraphQL interface][1] for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-struct Definition {
+pub(crate) struct Definition {
     /// Rust type that this [GraphQL interface][1] is represented with.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -439,12 +413,12 @@ struct Definition {
     /// Name of this [GraphQL interface][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    name: String,
+    pub(crate) name: String,
 
     /// Description of this [GraphQL interface][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    description: Option<String>,
+    pub(crate) description: Option<String>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL interface][1].
@@ -452,7 +426,7 @@ struct Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    context: syn::Type,
+    pub(crate) context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
     /// implementation with for this [GraphQL interface][1].
@@ -460,13 +434,13 @@ struct Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    scalar: scalar::Type,
+    pub(crate) scalar: scalar::Type,
 
     /// Defined [GraphQL fields][2] of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    fields: Vec<field::Definition>,
+    pub(crate) fields: Vec<field::Definition>,
 
     /// Defined [`Implementer`]s of this [GraphQL interface][1].
     ///
@@ -478,8 +452,11 @@ struct Definition {
     ///
     /// If it's absent and `tracing` feature is enabled all [field][2]s not marked
     /// with `#[tracing(no_trace)]` will be traced.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[cfg(feature = "tracing")]
-    tracing_rule: Option<tracing::Rule>,
+    pub(crate) tracing_rule: tracing::Rule,
 }
 
 impl ToTokens for Definition {

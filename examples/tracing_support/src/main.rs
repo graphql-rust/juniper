@@ -31,7 +31,7 @@ struct User {
 #[graphql_object(Context = Context)]
 impl User {
     // `id` can be resolved pretty straightforward so we mark it with `no_trace`
-    #[tracing(no_trace)]
+    #[graphql(tracing(ignore))]
     fn id(&self) -> i32 {
         self.id
     }
@@ -58,7 +58,8 @@ struct SyncTracedUser {
 
 // Only sync `fn`s will be traced if they're not marked with `#[tracing(no_trace)]`
 // it works similarly with `#[graphql_interface]`
-#[graphql_object(Context = Context, tracing(sync))]
+#[graphql_object(Context = Context)]
+#[tracing(sync)]
 impl SyncTracedUser {
     // Won't be traced because it's marked with `no_trace`
     #[graphql(tracing(ignore))]
@@ -78,14 +79,14 @@ impl SyncTracedUser {
 }
 
 #[derive(Clone, Debug, GraphQLObject)]
-#[graphql(tracing(only))]
+#[tracing(only)]
 struct ComplexDerivedUser {
-    // This shouldn't be traced because it's not marked with `#[tracing(complex)]`
+    // This shouldn't be traced because it's not marked with `#[tracing(only)]`
     id: i32,
-    // This is the only field that will be traced because it's marked with `#[tracing(complex)]`
+    // This is the only field that will be traced because it's marked with `#[tracing(only)]`
     #[graphql(tracing(only))]
     kind: UserKind,
-    // This shouldn't be traced because of `no_trace`.
+    // This shouldn't be traced because of `ignore`.
     #[graphql(tracing(ignore))]
     name: String,
 }

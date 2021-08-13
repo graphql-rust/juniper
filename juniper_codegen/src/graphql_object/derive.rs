@@ -12,6 +12,7 @@ use crate::{
     result::GraphQLScope,
     util::{span_container::SpanContainer, RenameRule},
 };
+
 #[cfg(feature = "tracing")]
 use crate::tracing;
 
@@ -33,7 +34,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
 /// Expands into generated code a `#[derive(GraphQLObject)]` macro placed on a
 /// Rust struct.
-fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
+fn expand_struct(mut ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
     let attr = Attr::from_attrs("graphql", &ast.attrs)?;
 
     let struct_span = ast.span();
@@ -109,7 +110,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
         _operation: PhantomData,
 
         #[cfg(feature = "tracing")]
-        tracing: attr.tracing_rule.map(|t| t.into_inner()),
+        tracing: tracing::Rule::from_attrs_and_strip("tracing", &mut ast.attrs)?,
     })
 }
 
