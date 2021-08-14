@@ -74,6 +74,7 @@ your Schemas automatically.
 - [chrono][chrono]
 - [chrono-tz][chrono-tz]
 - [bson][bson]
+- [serde_json][serde_json]
 
 ### Web Frameworks
 
@@ -120,3 +121,4 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [chrono-tz]: https://crates.io/crates/chrono-tz
 [bson]: https://crates.io/crates/bson
 [juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
+[serde_json]: https://crates.io/crates/serde_json

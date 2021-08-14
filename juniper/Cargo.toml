@@ -25,11 +25,13 @@ default = [
     "schema-language",
     "url",
     "uuid",
+    "json",
 ]
 expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
 scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
+json = ["serde_json"]
 
 [dependencies]
 juniper_codegen = { version = "0.15.7", path = "../juniper_codegen"  }

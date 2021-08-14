@@ -12,3 +12,5 @@ pub mod serde;
 pub mod url;
 #[cfg(feature = "uuid")]
 pub mod uuid;
+#[cfg(feature = "json")]
+pub mod json;
