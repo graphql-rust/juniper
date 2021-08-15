@@ -8,11 +8,11 @@ use graphql_parser::{
 use juniper::{
     meta::{Field, MetaType},
     Arguments, ExecutionResult, Executor, FieldError, GraphQLType, GraphQLValue, Registry,
-    ScalarValue, Selection, Value,
+    ScalarValue, Selection, Value, GraphQLValueAsync, BoxFuture,
 };
 use serde_json::Value as Json;
 
-use crate::{types::base::resolve_selection_set_into, GraphQLValueAsync};
+use crate::{types::base::resolve_selection_set_into};
 
 // Used to describe the graphql type of a `serde_json::Value` using the GraphQL
 // schema definition language.
@@ -29,8 +29,8 @@ pub struct TypeInfo {
 
 impl TypeInfo {
     fn meta<'r, S>(&self, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: ScalarValue + 'r,
+        where
+            S: ScalarValue + 'r,
     {
         let mut fields = Vec::new();
         let s = self.schema.clone().unwrap_or_default();
@@ -67,9 +67,9 @@ impl TypeInfo {
         type_ref: Type<'t, T>,
         nullable: bool,
     ) -> Field<'r, S>
-    where
-        S: 'r + ScalarValue,
-        T: Text<'t>,
+        where
+            S: 'r + ScalarValue,
+            T: Text<'t>,
     {
         match type_ref {
             Type::NamedType(type_name) => match type_name.as_ref() {
@@ -115,7 +115,11 @@ impl TypeInfo {
             },
             Type::ListType(nested_type) => {
                 let mut field = self.build_field(registry, field_name, *nested_type, true);
-                field.field_type = juniper::Type::List(Box::new(field.field_type), None);
+                if nullable {
+                    field.field_type = juniper::Type::List(Box::new(field.field_type), None);
+                } else {
+                    field.field_type = juniper::Type::NonNullList(Box::new(field.field_type), None);
+                }
                 field
             }
             Type::NonNullType(nested_type) => {
@@ -131,8 +135,8 @@ impl<S: ScalarValue> GraphQLType<S> for Json {
     }
 
     fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
+        where
+            S: 'r,
     {
         info.meta(registry)
     }
@@ -224,6 +228,38 @@ impl<S: ScalarValue> GraphQLValue<S> for Json {
         }
     }
 }
+
+
+impl<S> GraphQLValueAsync<S> for Json
+    where
+        Self::TypeInfo: Sync,
+        Self::Context: Sync,
+        S: ScalarValue + Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        Box::pin(async move {
+            <Json as GraphQLValue<S>>::resolve(self, info, selection_set, executor)
+        })
+    }
+
+    fn resolve_field_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        field_name: &'a str,
+        arguments: &'a Arguments<S>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        Box::pin(async move {
+            <Json as GraphQLValue<S>>::resolve_field(self, info, field_name, arguments, executor)
+        })
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -422,4 +458,50 @@ mod tests {
             )),
         );
     }
+
+    #[tokio::test]
+    async fn test_async() {
+        let sdl = r#"
+            type Query {
+                hero: Hero
+            }
+            type Hero {
+                id: String
+                name: String
+            }
+        "#;
+        let data = json!({
+            "hero": {
+                "id": "2001",
+                "name": "R2-D2",
+            },
+        });
+
+        let schema: RootNode<_, _, _> = RootNode::new_with_info(
+            data,
+            EmptyMutation::new(),
+            EmptySubscription::new(),
+            TypeInfo {
+                name: "Query".to_string(),
+                schema: Some(sdl.to_string()),
+            },
+            (),
+            (),
+        );
+
+        let doc = r#"{
+            hero {
+                id
+                name
+            }
+        }"#;
+        assert_eq!(
+            crate::execute(doc, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"hero": {"id": "2001", "name": "R2-D2"}}),
+                vec![],
+            )),
+        );
+    }
 }
+
