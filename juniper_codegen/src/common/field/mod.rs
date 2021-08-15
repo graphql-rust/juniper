@@ -536,7 +536,13 @@ impl Definition {
             (quote! { &self.#ident }, quote!())
         };
         if !self.is_async {
-            fut = quote! { ::juniper::futures::future::ready(#fut) };
+            let trace_sync = if_tracing_enabled!(tracing::sync_tokens(traced_ty, self));
+            fut = quote! {
+                ::juniper::futures::future::ready({
+                    #trace_sync
+                    #fut
+                })
+            };
         }
 
         let trace_async = if_tracing_enabled!(tracing::async_tokens(traced_ty, self));

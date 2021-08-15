@@ -570,3 +570,87 @@ async fn subscription_tracing() {
         )
         .close_exited("Subscriptions.barSub");
 }
+
+#[tokio::test]
+async fn sub_resolvers() {
+    let doc_async = r#"
+        {
+            subResolver
+            subAsyncResolver
+        }
+        "#;
+    let schema = init_schema();
+    let database = Database::new();
+    let (mut handle, _guard) = init_tracer();
+
+    let res = juniper::execute(doc_async, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
+
+    handle
+        .assert()
+        .enter_new_span("execute")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query_async")
+        .enter_new_span("Query.subResolver")
+        // Sync sub resolver in async context
+        .simple_span("resolve_sync")
+        .close_exited("Query.subResolver")
+        .enter_new_span("Query.subAsyncResolver")
+        // Async sub resolver in async context
+        .simple_span("resolve_async")
+        .close_exited("Query.subAsyncResolver")
+        .close_exited("execute_validated_query_async")
+        .close_exited("execute");
+
+    handle.clear();
+
+    let doc_sync = r#"
+        {
+            subResolver
+        }
+        "#;
+
+    let res = juniper::execute_sync(doc_sync, None, &schema, &Variables::new(), &database);
+    assert!(res.is_ok(), "Should be ok");
+
+    handle
+        .assert()
+        .enter_new_span("execute_sync")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query")
+        .enter_new_span("Query.subResolver")
+        // Sync sub resolver in sync context
+        .simple_span("resolve_sync")
+        .close_exited("Query.subResolver")
+        .close_exited("execute_validated_query")
+        .close_exited("execute_sync");
+}
+
+#[tokio::test]
+async fn tracing_compat_sigil() {
+    let doc_async = r#"
+        {
+            debugSigil
+            displaySigil
+        }
+        "#;
+    let schema = init_schema();
+    let database = Database::new();
+    let (handle, _guard) = init_tracer();
+
+    let res = juniper::execute(doc_async, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
+
+    handle
+        .assert()
+        .enter_new_span("execute")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query_async")
+        .simple_span(&"Query.debugSigil".with_field("sigil", "Debug Sigil"))
+        .simple_span(&"Query.displaySigil".with_field("sigil", "Display Sigil"))
+        .close_exited("execute_validated_query_async")
+        .close_exited("execute");
+}

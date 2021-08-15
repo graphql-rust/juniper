@@ -37,12 +37,15 @@ impl Foo {
         self.value
     }
     
-    // Here we'll record span and it will have field with name "another" and value we passed.
+    // Multiplying is much harder, so we'll trace it, recorded span will also
+    // contain value of `another`.
     fn multiply_values(&self, another: i32) -> i32 {
         self.value * another
     }
     
-    // Here we'll record span and it will have field with name "self.value"
+    // Squaring is also hard but we don't know the value we squared so we can
+    // validate the results. In this case we can use `fields` argument to pass
+    // additional fields, that also will be included in span.
     #[instrument(fields(self.value = self.value))]
     fn square_value(&self) -> i32 {
         self.value * self.value
@@ -131,10 +134,10 @@ impl User {
 }
 ```
 
-Manually setting `#[graphql(tracing(ignore))]` to avoid tracing of all, let's say for
-example synchronous field resolvers is rather inefficient when you have GraphQL
-object with too much fields. In this case you can use `tracing` attribute on
-top-level to skip tracing of specific field group or not to trace at all.
+Manually setting `#[graphql(tracing(ignore))]` to prevent tracing of all, let's
+say for example synchronous field resolvers is rather inefficient when you have 
+GraphQL object with too much fields. In this case you can use `tracing` attribute
+on top-level to trace specific group of fields or not to trace at all.
 `tracing` attribute can be used with one of the following arguments:
 `sync`, `async`, `only` or `skip_all`.
  - Use `sync` to trace only synchronous resolvers (struct fields and `fn`s).
@@ -216,10 +219,10 @@ impl Catalog {
 In example above both `filter` and `count` of `products` field will be recorded
 in produced [`Span`]. All fields will be recorded using their `fmt::Debug`
 implementation, if your field doesn't implement `fmt::Debug` you'll get compile
-time error. In this case ypu should either implement `fmt::Debug` or skip it
+time error. In this case you should either implement `fmt::Debug` or skip it
 using `#[instrument(skip(<fields to skip>))]` if you still want to record it but
-for some reason you don't want to implement `fmt::Debug` trait, consider reintroducing
-this field with `fields(field_name = some_value)` like shown bellow.
+for some reason you don't want to (or cannot) implement `fmt::Debug` trait, consider
+reintroducing this field with `fields(field_name = some_value)` like shown bellow.
 
 
 ### Example
@@ -287,9 +290,9 @@ fn self_aware() -> i32 {
 ## `#[instrument]` attribute
 
 In most aspects it mimics behavior of the original `#[instrument]` attribute
-from [tracing] crate and you could use it as a reference. With the only key
-deference you should understand, it applied implicitly to all resolvers if the
-`tracing` feature is enabled.
+from [tracing] crate including fields, sigils, and you could use it as a reference.
+The only key deference you should remember, `#[instrument]` applied implicitly to
+all resolvers if the `tracing` feature is enabled.
 
 [tracing]: https://crates.io/crates/tracing
 [`skip`]: https://docs.rs/tracing/0.1.26/tracing/attr.instrument.html#skipping-fields

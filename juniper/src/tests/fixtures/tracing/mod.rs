@@ -104,11 +104,16 @@ impl TestSubscriber {
     }
 
     /// Creates [`SubscriberAssert`] used to validated constructed spans.
-    pub fn assert(self) -> SubscriberAssert {
+    pub fn assert(&self) -> SubscriberAssert {
         SubscriberAssert {
             name_to_span: HashMap::new(),
             events: self.events.borrow().clone(),
         }
+    }
+
+    /// Clears shared buffer of events.
+    pub fn clear(&mut self) {
+        self.events.borrow_mut().clear()
     }
 }
 

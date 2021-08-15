@@ -2,11 +2,11 @@ use std::{collections::HashMap, mem};
 
 use proc_macro2::TokenStream;
 use proc_macro_error::abort;
-use quote::quote;
+use quote::{quote, ToTokens, TokenStreamExt as _};
 use syn::{
     parse::{Parse, ParseStream},
     spanned::Spanned as _,
-    token,
+    Token,
 };
 
 use crate::common::parse::ParseBufferExt as _;
@@ -14,7 +14,7 @@ use crate::common::parse::ParseBufferExt as _;
 pub const ATTR_NAME: &'static str = "instrument";
 
 /// `#[instrument]` attribute placed on field resolver.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Attr {
     /// Optional span rename, if `None` method name should be used instead.
     name: Option<syn::LitStr>,
@@ -29,7 +29,7 @@ pub struct Attr {
     skip: HashMap<String, syn::Ident>,
 
     /// Custom fields.
-    fields: Vec<syn::ExprAssign>,
+    fields: Vec<Field>,
 }
 
 impl Attr {
@@ -100,15 +100,15 @@ impl Parse for Attr {
 
             match name.to_string().as_str() {
                 "name" => {
-                    input.parse::<token::Eq>()?;
+                    input.parse::<Token![=]>()?;
                     attr.name = Some(input.parse()?);
                 }
                 "level" => {
-                    input.parse::<token::Eq>()?;
+                    input.parse::<Token![=]>()?;
                     attr.level = Some(input.parse()?);
                 }
                 "target" => {
-                    input.parse::<token::Eq>()?;
+                    input.parse::<Token![=]>()?;
                     attr.target = Some(input.parse()?);
                 }
                 "skip" => {
@@ -118,7 +118,7 @@ impl Parse for Attr {
                         let field: syn::Ident = skipped_fields.parse()?;
                         attr.skip.insert(field.to_string(), field);
 
-                        skipped_fields.parse::<token::Comma>().ok();
+                        skipped_fields.parse::<Token![,]>().ok();
                     }
                 }
                 "fields" => {
@@ -127,16 +127,158 @@ impl Parse for Attr {
                     while !fields.is_empty() {
                         attr.fields.push(fields.parse()?);
 
-                        fields.parse::<token::Comma>().ok();
+                        fields.parse::<Token![,]>().ok();
                     }
                 }
                 _ => return Err(syn::Error::new(name.span(), "unknown attribute")),
             }
 
             // Discard trailing comma.
-            input.parse::<token::Comma>().ok();
+            input.parse::<Token![,]>().ok();
         }
         Ok(attr)
+    }
+}
+
+/// Custom field that should be recorded in span, explicitly defined by user.
+#[derive(Clone, Debug)]
+pub struct Field {
+    /// Left part of this [`Field`], represents name of recorded field.
+    left: FieldName,
+
+    /// Eq sign between left and right parts.
+    eq_sign: Option<Token![=]>,
+
+    /// Sigil that determines how to display this [`Field`]
+    sigil: Option<Sigil>,
+
+    /// Right part of this [`Field`] represents value that should be recorded.
+    right: Option<syn::Expr>,
+}
+
+impl Parse for Field {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        // If sigil is present at this point we're dealing with `%self.field`
+        // so there should be nothing after `left`.
+        let sigil = Sigil::try_parse(input);
+        let left = input.parse()?;
+
+        if sigil.is_none() && input.lookahead1().peek(Token![=]) {
+            Ok(Self {
+                left,
+                eq_sign: Some(input.parse()?),
+                sigil: Sigil::try_parse(input),
+                right: Some(input.parse()?),
+            })
+        } else {
+            Ok(Self {
+                left,
+                sigil,
+                eq_sign: None,
+                right: None,
+            })
+        }
+    }
+}
+
+impl ToTokens for Field {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if self.right.is_none() {
+            // If we don't have right part we're dealing with field of type `var.name`.
+            let sigil = &self.sigil;
+            let left = &self.left;
+            tokens.append_all(quote! { #sigil #left })
+        } else {
+            // Otherwise we're dealing with field of type `var.name = other.value`.
+            let left = &self.left;
+            let eq_sign = &self.eq_sign;
+            let sigil = &self.sigil;
+            let right = &self.right;
+            tokens.append_all(quote! { #left #eq_sign #sigil #right })
+        }
+    }
+}
+
+/// Possible values of [`Field`] names.
+#[derive(Clone, Debug)]
+pub enum FieldName {
+    /// Idents divided by dots, `var.name.and.even.more`
+    ExprField(syn::punctuated::Punctuated<syn::Ident, syn::Token![.]>),
+
+    /// Single ident like `self`, `var_name`.
+    Ident(syn::Ident),
+
+    /// String literal.
+    LitStr(syn::LitStr),
+}
+
+impl ToTokens for FieldName {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append_all(match self {
+            Self::Ident(ident) => quote!(#ident),
+            Self::LitStr(lit) => quote!(#lit),
+            Self::ExprField(expr) => quote!(#expr),
+        })
+    }
+}
+
+impl Parse for FieldName {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.peek(syn::LitStr) {
+            return Ok(Self::LitStr(input.parse()?));
+        }
+
+        let ident = input.parse_any_ident()?;
+
+        Ok(if input.peek(Token![.]) {
+            let mut idents = syn::punctuated::Punctuated::new();
+            idents.push_value(ident);
+            while input.peek(Token![.]) {
+                idents.push_punct(input.parse::<Token![.]>()?);
+                idents.push_value(input.parse_any_ident()?);
+            }
+            Self::ExprField(idents)
+        } else {
+            Self::Ident(ident)
+        })
+    }
+}
+
+/// Short markers that used to enforce certain formatting on custom [`Field`].
+#[derive(Clone, Debug)]
+pub enum Sigil {
+    /// [`Field`] should be formatted as [`fmt::Debug`].
+    ///
+    /// [`fmt::Debug`]: std::fmt::Debug
+    Debug(Token![?]),
+
+    /// [`Field`] should be formatted as [`fmt::Display`].
+    ///
+    /// [`fmt::Display`]: std::fmt::Display
+    Display(Token![%]),
+}
+
+impl ToTokens for Sigil {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Self::Debug(t) => tokens.append_all(quote!(#t)),
+            Self::Display(t) => tokens.append_all(quote!(#t)),
+        }
+    }
+}
+
+impl Sigil {
+    /// Tries to parse [`Sigil`] from the given `stream`.
+    fn try_parse(stream: ParseStream) -> Option<Self> {
+        let lookahead = stream.lookahead1();
+
+        if lookahead.peek(syn::Token![?]) {
+            return Some(Self::Debug(stream.parse().unwrap()));
+        }
+        if lookahead.peek(syn::Token![%]) {
+            return Some(Self::Display(stream.parse().unwrap()));
+        }
+        None
     }
 }
 
@@ -328,11 +470,7 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
     });
 
     let args: Vec<_> = if let Some(tracing) = field.instrument() {
-        let additional_fields = tracing.fields.iter().map(|f| {
-            let name = &f.left;
-            let right = &f.right;
-            quote!(#name = ::juniper::tracing::field::debug(#right))
-        });
+        let additional_fields = tracing.fields.iter().map(|f| quote!(#f));
 
         args.chain(additional_fields).collect()
     } else {

@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 
 use futures::stream::{self, BoxStream, StreamExt as _};
+use tracing::instrument;
 
 use crate::{
     graphql_interface, graphql_object, graphql_subscription, tracing, Context, GraphQLObject,
@@ -26,7 +27,7 @@ impl Database {
     }
 
     /// Query mock, instrumented by [`tracing`] crate.
-    #[tracing::instrument(skip(self))]
+    #[instrument(skip(self))]
     pub fn traced_query(&self, id: i32) -> Option<String> {
         self.inner.get(&id).cloned()
     }
@@ -34,6 +35,20 @@ impl Database {
     /// Non traced query mock.
     pub fn non_traced_query(&self, id: i32) -> Option<String> {
         self.inner.get(&id).cloned()
+    }
+}
+
+pub struct Resolver;
+
+impl Resolver {
+    #[instrument]
+    pub fn resolve_sync() -> i32 {
+        1
+    }
+
+    #[instrument]
+    pub async fn resolve_async() -> i32 {
+        1
     }
 }
 
@@ -158,6 +173,28 @@ impl Query {
     /// Returns GraphQL object wrapped in GraphQL interface marked with `tracing(complex)`.
     fn erased_complex() -> InterfacedComplexValue {
         InterfacedComplexValue::Complex(Complex)
+    }
+
+    /// Sync fn that uses instrumented function under the hood.
+    fn sub_resolver() -> i32 {
+        Resolver::resolve_sync()
+    }
+
+    /// Async fn that uses instrumented function under the hood.
+    async fn sub_async_resolver() -> i32 {
+        Resolver::resolve_async().await
+    }
+
+    /// Fn that has custom field marked with debug sigil (`?`).
+    #[instrument(fields(sigil = ?Sigil))]
+    fn debug_sigil() -> i32 {
+        1
+    }
+
+    /// Fn that has custom field marked with display sigil (`%`).
+    #[instrument(fields(sigil = %Sigil))]
+    fn display_sigil() -> i32 {
+        1
     }
 }
 
@@ -533,4 +570,18 @@ trait InterfacedComplex {
     fn sync_fn(&self) -> i32;
     #[graphql(tracing(only))]
     async fn async_fn(&self) -> i32;
+}
+
+struct Sigil;
+
+impl std::fmt::Debug for Sigil {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.write_str("Debug Sigil")
+    }
+}
+
+impl std::fmt::Display for Sigil {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.write_str("Display Sigil")
+    }
 }
