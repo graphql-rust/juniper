@@ -654,3 +654,40 @@ async fn tracing_compat_sigil() {
         .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
+
+#[tokio::test]
+async fn tracing_compat_empty_field() {
+    let doc = r#"
+    {
+        emptyField
+    }
+    "#;
+    let schema = init_schema();
+    let database = Database::new();
+    let (handle, _guard) = init_tracer();
+
+    let res = juniper::execute(doc, None, &schema, &Variables::new(), &database).await;
+    assert!(res.is_ok(), "Should be ok");
+
+    handle
+        .assert()
+        .enter_new_span("execute")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query_async")
+        .enter_new_span(
+            &"Query.emptyField"
+                .with_field("magic", "\"really magic\"")
+                .with_strict_fields(true),
+        )
+        // This happens because we're passing owned copy of `Span` in
+        // `empty_field`, and `Span` attempts to close itself because
+        // of `Drop` implementation.
+        .try_close("Query.emptyField")
+        // At this point we resolved `Query.emptyField` and all of it's childs
+        // (which don't exists, in this test case) and it's now safe to exit
+        // and close it.
+        .close_exited("Query.emptyField")
+        .close_exited("execute_validated_query_async")
+        .close_exited("execute");
+}

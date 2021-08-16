@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use futures::stream::{self, BoxStream, StreamExt as _};
-use tracing::instrument;
+use tracing::{field, instrument};
 
 use crate::{
     graphql_interface, graphql_object, graphql_subscription, tracing, Context, GraphQLObject,
@@ -194,6 +194,13 @@ impl Query {
     /// Fn that has custom field marked with display sigil (`%`).
     #[instrument(fields(sigil = %Sigil))]
     fn display_sigil() -> i32 {
+        1
+    }
+
+    /// Fn that has custom field that's can be recorded later.
+    #[instrument(fields(magic = field::Empty))]
+    async fn empty_field(tracing_span: tracing::Span) -> i32 {
+        tracing_span.record("magic", &"really magic");
         1
     }
 }

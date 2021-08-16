@@ -236,7 +236,7 @@ reintroducing this field with `fields(field_name = some_value)` like shown bello
 
 #[derive(Clone, juniper::GraphQLInputObject)]
 struct NonDebug {
-    important_field: String,
+    important_field: i32,
 }
 
 # #[graphql_object]
@@ -287,6 +287,58 @@ fn self_aware() -> i32 {
 # }
 ```
 
+## `Empty` fields
+
+Field names may also be specified without values. Doing so will result in an
+empty field whose value may be recorded later within the function body. This
+can be done by adding field with value `Empty` (see [`field::Empty`]) and passing
+[`Span`] to the resolver function.
+
+### Example
+
+```rust
+# extern crate juniper;
+# use juniper::graphql_object;
+#
+# fn main() {}
+#
+use tracing::field; // alternatively you can use `juniper::tracing::field`
+
+#[derive(Debug)]
+struct Foo;
+
+struct Query {
+    data: i32,
+}
+
+# #[graphql_object]
+# impl Query {
+#[instrument(fields(later = field::Empty))]
+async fn empty_field(tracing_span: tracing::Span) -> i32 {
+    // Use `record("<field_name>", &value)`.
+    tracing_span.record("later", &"see ya later!");
+    // resolver code
+#   unimplemented!()
+}
+#[instrument(fields(msg = "Everything is OK."))]
+async fn override_field(tracing_span: tracing::Span) -> i32 {
+    // We can override `msg` with the same syntax as we recorded `later` in
+    // example above. In fact `Empty` field is a special case of overriding.
+    tracing_span.record("msg", &"Everything is Perfect!");
+    // In cases when you want to record a non-standard value to span you may
+    // use `field::debug(...)` and `field::display(...)`, to set proper formatting.
+    tracing_span.record("msg", &field::debug(&Foo));
+    // Doing `tracing_span.record("msg", Foo)` will result in compile error.
+#   unimplemented!()
+}
+# }
+```
+
+**Note:** To avoid collision with variable names [`Span`] should bee passed with
+one of the following variable names: `tracing_span`, `_span` and `_tracing_span`.
+Also keep in mind that if `Empty` field wasn't recorded it won't be included in
+span.
+
 ## `#[instrument]` attribute
 
 In most aspects it mimics behavior of the original `#[instrument]` attribute
@@ -297,3 +349,4 @@ all resolvers if the `tracing` feature is enabled.
 [tracing]: https://crates.io/crates/tracing
 [`skip`]: https://docs.rs/tracing/0.1.26/tracing/attr.instrument.html#skipping-fields
 [`Span`]: https://docs.rs/tracing/0.1.26/tracing/struct.Span.html
+[`field::Empty`]: https://docs.rs/tracing/0.1.26/tracing/field/struct.Empty.html

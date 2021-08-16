@@ -41,9 +41,6 @@ enum SubscriberEvent {
     /// `exit` method.
     Exit(span::Id),
 
-    /// `clone_span` method.
-    CloneSpan(span::Id),
-
     /// `try_close` method.
     TryClose(span::Id),
 
@@ -141,7 +138,21 @@ impl Subscriber for TestSubscriber {
         id
     }
 
-    fn record(&self, _: &span::Id, _: &Record<'_>) {}
+    fn record(&self, id: &span::Id, record: &Record<'_>) {
+        self.events.borrow_mut().iter_mut().for_each(|ev| match ev {
+            SubscriberEvent::NewSpan(s) if &s.id == id => {
+                let mut visit = Visitor(HashMap::new());
+                record.record(&mut visit);
+                for (key, value) in visit.0 {
+                    assert!(
+                        s.fields.insert(key, value).is_none(),
+                        "Cannot override non-existing field",
+                    )
+                }
+            }
+            _ => {}
+        })
+    }
 
     fn record_follows_from(&self, _: &span::Id, _: &span::Id) {}
 
@@ -164,9 +175,6 @@ impl Subscriber for TestSubscriber {
     }
 
     fn clone_span(&self, id: &span::Id) -> span::Id {
-        self.events
-            .borrow_mut()
-            .push(SubscriberEvent::CloneSpan(id.clone()));
         id.clone()
     }
 

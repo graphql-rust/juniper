@@ -277,6 +277,13 @@ pub(crate) enum OnMethod {
     /// [`Executor`]: juniper::Executor
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     Executor,
+
+    /// [`Span`] passed into a [GraphQL field][2] resolving method.
+    ///
+    /// [`Span`]: tracing::Span
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    #[cfg(feature = "tracing")]
+    Span,
 }
 
 impl OnMethod {
@@ -362,6 +369,9 @@ impl OnMethod {
             },
 
             Self::Executor => quote! { &executor },
+
+            #[cfg(feature = "tracing")]
+            Self::Span => quote! { _tracing_span.clone() },
         }
     }
 
@@ -386,6 +396,8 @@ impl OnMethod {
                 }
             }
             Self::Context(_) | Self::Executor => quote!(),
+            #[cfg(feature = "tracing")]
+            Self::Span => quote!(),
         }
     }
 
@@ -423,6 +435,8 @@ impl OnMethod {
                     Some(Self::Context(argument.ty.unreferenced().clone()))
                 }
                 "executor" | "_executor" => Some(Self::Executor),
+                #[cfg(feature = "tracing")]
+                "tracing_span" | "_span" | "_tracing_span" => Some(Self::Span),
                 _ => None,
             };
             if arg.is_some() {
