@@ -1,19 +1,21 @@
 //! GraphQL support for [`serde_json::Value`].
 
+use std::marker::PhantomData;
+
 use graphql_parser::{
     parse_schema,
     query::{Text, Type},
     schema::{Definition, TypeDefinition},
 };
-use juniper::{
-    marker::{IsOutputType, IsInputType},
-    meta::{Field, MetaType, Argument},
-    types::base::resolve_selection_set_into,
-    Arguments, ExecutionResult, Executor, FieldError, GraphQLType, GraphQLValue, Registry,
-    ScalarValue, Selection, Value, GraphQLValueAsync, BoxFuture, FromInputValue, InputValue,
-};
 use serde_json::Value as Json;
 
+use juniper::{
+    Arguments,
+    BoxFuture,
+    ExecutionResult,
+    Executor, FieldError, FromInputValue, GraphQLType, GraphQLValue, GraphQLValueAsync, InputValue,
+    marker::{IsInputType, IsOutputType}, meta::{Argument, Field, MetaType}, Registry, ScalarValue, Selection, types::base::resolve_selection_set_into, Value,
+};
 
 // Used to describe the graphql type of a `serde_json::Value` using the GraphQL
 // schema definition language.
@@ -337,19 +339,89 @@ impl<S> GraphQLValueAsync<S> for Json
     }
 }
 
+trait TypedJsonInfo: Send + Sync {
+    fn type_name() -> &'static str;
+    fn schema() -> &'static str;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct TypedJson<T: TypedJsonInfo> {
+    value: serde_json::Value,
+    phantom: PhantomData<T>,
+}
+
+impl<T, S> IsOutputType<S> for TypedJson<T> where
+    S: ScalarValue,
+    T: TypedJsonInfo,
+{}
+
+impl<T, S> IsInputType<S> for TypedJson<T> where
+    S: ScalarValue,
+    T: TypedJsonInfo,
+{}
+
+impl<T, S> FromInputValue<S> for TypedJson<T> where
+    S: ScalarValue,
+    T: TypedJsonInfo,
+{
+    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
+        <serde_json::Value as FromInputValue<S>>::from_input_value(v).map(|x| TypedJson { value: x, phantom: PhantomData })
+    }
+}
+
+impl<T, S> GraphQLValueAsync<S> for TypedJson<T> where
+    S: ScalarValue + Send + Sync,
+    T: TypedJsonInfo
+{}
+
+impl<T, S> GraphQLType<S> for TypedJson<T> where
+    S: ScalarValue,
+    T: TypedJsonInfo,
+{
+    fn name(_info: &Self::TypeInfo) -> Option<&str> {
+        Some(T::type_name())
+    }
+    fn meta<'r>(_info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where S: 'r,
+    {
+        TypeInfo
+        {
+            name: T::type_name().to_string(),
+            schema: Some(T::schema().to_string()),
+        }.meta(registry)
+    }
+}
+
+impl<T, S> GraphQLValue<S> for TypedJson<T>
+    where S: ScalarValue,
+          T: TypedJsonInfo,
+{
+    type Context = ();
+    type TypeInfo = ();
+    fn type_name<'i>(&self, _info: &'i Self::TypeInfo) -> Option<&'i str> {
+        Some(T::type_name())
+    }
+    fn resolve(
+        &self,
+        _info: &Self::TypeInfo,
+        _selection: Option<&[Selection<S>]>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        executor.resolve(&TypeInfo { schema: None, name: T::type_name().to_string() }, &self.value)
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use juniper::{
-        marker::{IsOutputType, IsInputType},
-        meta::MetaType,
-        integrations::json::TypeInfo,
-        execute_sync, graphql_object, graphql_value, EmptyMutation, EmptySubscription, RootNode, Variables,
-        ScalarValue, GraphQLValue, GraphQLType, Selection, Executor, ExecutionResult, FieldResult,
-        GraphQLValueAsync, Registry, ToInputValue, FromInputValue, InputValue,
-    };
+    use std::marker::PhantomData;
+
     use serde_json::json;
 
+    use juniper::{
+        integrations::json::{TypedJson, TypedJsonInfo, TypeInfo},
+        EmptyMutation, EmptySubscription, execute_sync, FieldResult, graphql_object, graphql_value,
+        RootNode, ToInputValue, Variables,
+    };
 
     #[test]
     fn sdl_type_info() {
@@ -588,51 +660,27 @@ mod tests {
     #[test]
     fn test_as_field_of_output_type() {
         // We need a Foo wrapper associate a static SDL to the Foo type which
-        // wraps the serde_json::Value. Would be nice if a macro could code gen this.
-        struct Foo(serde_json::Value);
-        impl<S> IsOutputType<S> for Foo where S: ScalarValue {}
-        impl<S> GraphQLValueAsync<S> for Foo where S: ScalarValue + Send + Sync {}
-        impl<S> GraphQLType<S> for Foo where S: ScalarValue
+        struct Foo;
+        impl TypedJsonInfo for Foo
         {
-            fn name(_info: &Self::TypeInfo) -> Option<&str> {
-                Some("Foo")
+            fn type_name() -> &'static str {
+                "Foo"
             }
-            fn meta<'r>(_info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-                where S: 'r,
-            {
-                TypeInfo {
-                    name: "Foo".to_string(),
-                    schema: Some(r#"
-                        type Foo {
-                            message: [String]
-                        }
-                    "#.to_string()),
-                }.meta(registry)
-            }
-        }
-        impl<S> GraphQLValue<S> for Foo where S: ScalarValue
-        {
-            type Context = ();
-            type TypeInfo = ();
-            fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
-                <Self as GraphQLType>::name(info)
-            }
-            fn resolve(
-                &self,
-                _info: &Self::TypeInfo,
-                _selection: Option<&[Selection<S>]>,
-                executor: &Executor<Self::Context, S>,
-            ) -> ExecutionResult<S> {
-                executor.resolve(&TypeInfo { schema: None, name: "Foo".to_string() }, &self.0)
+            fn schema() -> &'static str {
+                r#"
+                type Foo {
+                    message: [String]
+                }
+                "#
             }
         }
 
         struct Query;
         #[graphql_object()]
         impl Query {
-            fn foo() -> FieldResult<Foo> {
+            fn foo() -> FieldResult<TypedJson<Foo>> {
                 let data = json!({"message": ["Hello", "World"] });
-                Ok(Foo(data))
+                Ok(TypedJson { value: data, phantom: PhantomData })
             }
         }
         let schema = juniper::RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
@@ -657,58 +705,27 @@ mod tests {
 
     #[test]
     fn test_as_field_of_input_type() {
-        // We need a Foo wrapper associate a static SDL to the Foo type which
-        // wraps the serde_json::Value. Would be nice if a macro could code gen this.
-
         #[derive(Debug, Clone, PartialEq)]
-        struct Foo(serde_json::Value);
-        impl<S> IsInputType<S> for Foo where S: ScalarValue {}
-        impl<S> GraphQLValueAsync<S> for Foo where S: ScalarValue + Send + Sync {}
-        impl<S> FromInputValue<S> for Foo where S: ScalarValue {
-            fn from_input_value(v: &InputValue<S>) -> Option<Self> {
-                <serde_json::Value as FromInputValue<S>>::from_input_value(v).map(|x| Foo(x))
-            }
-        }
-        impl<S> GraphQLType<S> for Foo where S: ScalarValue
+        struct Foo;
+        impl TypedJsonInfo for Foo
         {
-            fn name(_info: &Self::TypeInfo) -> Option<&str> {
-                Some("Foo")
+            fn type_name() -> &'static str {
+                "Foo"
             }
-            fn meta<'r>(_info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-                where S: 'r,
-            {
-                TypeInfo {
-                    name: "Foo".to_string(),
-                    schema: Some(r#"
-                        input Foo {
-                            message: [String]
-                        }
-                    "#.to_string()),
-                }.meta(registry)
-            }
-        }
-        impl<S> GraphQLValue<S> for Foo where S: ScalarValue
-        {
-            type Context = ();
-            type TypeInfo = ();
-            fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
-                <Self as GraphQLType>::name(info)
-            }
-            fn resolve(
-                &self,
-                _info: &Self::TypeInfo,
-                _selection: Option<&[Selection<S>]>,
-                executor: &Executor<Self::Context, S>,
-            ) -> ExecutionResult<S> {
-                executor.resolve(&TypeInfo { schema: None, name: "Foo".to_string() }, &self.0)
+            fn schema() -> &'static str {
+                r#"
+                input Foo {
+                    message: [String]
+                }
+                "#
             }
         }
 
         struct Query;
         #[graphql_object()]
         impl Query {
-            fn foo(value: Foo) -> FieldResult<bool> {
-                Ok(value == Foo(json!({"message":["Hello", "World"]})))
+            fn foo(value: TypedJson<Foo>) -> FieldResult<bool> {
+                Ok(value == TypedJson { value: json!({"message":["Hello", "World"]}), phantom: PhantomData })
             }
         }
         let schema = juniper::RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
@@ -737,4 +754,5 @@ mod tests {
         );
     }
 }
+
 
