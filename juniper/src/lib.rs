@@ -148,6 +148,9 @@ pub mod tests;
 #[cfg(test)]
 mod executor_tests;
 
+// Needs to be public because macros use it.
+pub use crate::util::to_camel_case;
+
 use crate::{
     executor::{execute_validated_query, get_operation},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},

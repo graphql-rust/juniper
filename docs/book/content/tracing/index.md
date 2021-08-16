@@ -99,6 +99,15 @@ async fn main() {
 }
 ```
 
+# `#[instrument]` attribute
+
+Juniper has it's own `#[instrument]` attribute, that can only be used with
+GraphQL Objects and Interfaces. In most aspects it mimics behavior of the original
+`#[instrument]` attribute from [tracing] crate including fields, sigils, and you
+could use it as a reference. First and the only key deference you should keep in
+mind, `#[instrument]` applied implicitly to **all** resolvers if the `tracing`
+feature is enabled.
+
 ## Skipping field resolvers
 
 In certain scenarios you may want to skip tracing of some fields because it too
@@ -134,7 +143,7 @@ impl User {
 }
 ```
 
-Manually setting `#[graphql(tracing(ignore))]` to prevent tracing of all, let's
+Manually setting `#[graphql(tracing(ignore))]` to skip tracing of all, let's
 say for example synchronous field resolvers is rather inefficient when you have 
 GraphQL object with too much fields. In this case you can use `tracing` attribute
 on top-level to trace specific group of fields or not to trace at all.
@@ -291,8 +300,8 @@ fn self_aware() -> i32 {
 
 Field names may also be specified without values. Doing so will result in an
 empty field whose value may be recorded later within the function body. This
-can be done by adding field with value `Empty` (see [`field::Empty`]) and passing
-[`Span`] to the resolver function.
+can be done by adding field with value `Empty` (see [`field::Empty`]) and 
+accessing `tracing::Span::current()` within resolver body.
 
 ### Example
 
@@ -307,44 +316,109 @@ use tracing::field; // alternatively you can use `juniper::tracing::field`
 #[derive(Debug)]
 struct Foo;
 
-struct Query {
-    data: i32,
-}
+struct Query;
 
 # #[graphql_object]
 # impl Query {
 #[instrument(fields(later = field::Empty))]
-async fn empty_field(tracing_span: tracing::Span) -> i32 {
-    // Use `record("<field_name>", &value)`.
-    tracing_span.record("later", &"see ya later!");
+async fn empty_field() -> i32 {
+    // Use `record("<field_name>", &value)` to record value into empty field.
+    tracing::Span::current().record("later", &"see ya later!");
     // resolver code
 #   unimplemented!()
 }
+
 #[instrument(fields(msg = "Everything is OK."))]
-async fn override_field(tracing_span: tracing::Span) -> i32 {
+async fn override_field() -> i32 {
     // We can override `msg` with the same syntax as we recorded `later` in
     // example above. In fact `Empty` field is a special case of overriding.
-    tracing_span.record("msg", &"Everything is Perfect!");
+    tracing::Span::current().record("msg", &"Everything is Perfect!");
     // In cases when you want to record a non-standard value to span you may
     // use `field::debug(...)` and `field::display(...)`, to set proper formatting.
-    tracing_span.record("msg", &field::debug(&Foo));
+    tracing::Span::current().record("msg", &field::debug(&Foo));
     // Doing `tracing_span.record("msg", Foo)` will result in compile error.
 #   unimplemented!()
 }
 # }
 ```
 
-**Note:** To avoid collision with variable names [`Span`] should bee passed with
-one of the following variable names: `tracing_span`, `_span` and `_tracing_span`.
-Also keep in mind that if `Empty` field wasn't recorded it won't be included in
-span.
+## Error handling
 
-## `#[instrument]` attribute
+When resolver returns `Result<T, E>`, you can add `err` argument to `#[instrument]`
+attribute, doing so you will create empty field `err` that will be recorded if your
+resolver function will return `Result::Err(...)`. If it used with any type other than
+`Result<T, E>` it will result in compilation error.
 
-In most aspects it mimics behavior of the original `#[instrument]` attribute
-from [tracing] crate including fields, sigils, and you could use it as a reference.
-The only key deference you should remember, `#[instrument]` applied implicitly to
-all resolvers if the `tracing` feature is enabled.
+Additionally you could do this manually using the `Empty` field and manual recording.
+This is more versatile solution and as a tradeoff, it applies additional responsibility
+on user code so should be used with care.
+
+### Example
+
+```rust
+# extern crate juniper;
+# use std::fmt;
+# use juniper::graphql_object;
+#
+# fn main() {}
+#
+# struct Query;
+use tracing::field;
+
+#[derive(Debug)]
+struct Foo;
+
+struct MyError;
+
+impl fmt::Display for MyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Definitely not an error, trust me")
+    }
+}
+
+# #[graphql_object]
+# impl Query {
+// Under the hood it will create `Empty` field with name "err", and will record
+// it within `resolve_field` or `resolve_field_async`.
+#[instrument(err)]
+async fn my_calculation() -> Result<i32, MyError> {
+    Err(MyError)
+}
+
+// Here we have manually created `Empty` field with name "err".
+#[instrument(fields(err = field::Empty))]
+async fn conditional_error() -> Result<i32, MyError> {
+    let res = Err(MyError);
+#   let condition = false;
+    // At this point we manually check whether result is error or not and if
+    // condition is met and only then record error.
+    if let Err(err) = &res && condition {
+        tracing::Span::current().record("err", &field::display(err));
+    }
+    res
+}
+# }
+```
+
+## Subscriptions and tracing
+
+Subscriptions a little bit harder to trace than futures and other resolvers,
+they can (and in most cases will) produce sequences of results and resolving
+will produce multiple almost identical groups of spans, to address this issue
+Juniper has two layers of [`Span`]s, first a global one, represents whole
+subscription from start and until last result (or first Error). And local
+second layer, it represents **field resolution process** of a single value
+returned by subscription. It won't capture how object is queried, but stream
+**may** do this under some conditions.
+
+For example you have subscription that queries database once a second for each
+subscriber, in this case you can easily trace every individual step. But once
+we introduce more users following the best practices we should perform this
+queries in some sort of a batch. Juniper offers coordinators which perform some
+magic under the hood to manage all subscriptions. For example scheduling multiple
+subscription to single database query. This raises a question, which span should
+be picked as parent for this query, and answer is implementation dependent, so
+should be handled manually. 
 
 [tracing]: https://crates.io/crates/tracing
 [`skip`]: https://docs.rs/tracing/0.1.26/tracing/attr.instrument.html#skipping-fields

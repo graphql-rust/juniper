@@ -28,6 +28,10 @@ pub struct Attr {
     /// Skipped arguments on `fn` resolvers.
     skip: HashMap<String, syn::Ident>,
 
+    // Only relevant when returned type is `Result<Ok, Err>`.
+    /// Whether error returned by resolver should be recorded in [`Span`].
+    record_err: bool,
+
     /// Custom fields.
     fields: Vec<Field>,
 }
@@ -110,6 +114,9 @@ impl Parse for Attr {
                 "target" => {
                     input.parse::<Token![=]>()?;
                     attr.target = Some(input.parse()?);
+                }
+                "err" => {
+                    attr.record_err = true;
                 }
                 "skip" => {
                     let skipped_fields;
@@ -452,30 +459,40 @@ pub fn span_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
     let span_name = format!("{}.{}", ty.name(), name);
     let span_name = syn::LitStr::new(&span_name, name.span());
 
-    let args = field.args().into_iter().filter_map(|arg| {
-        let name = arg.name();
-        let raw_name = arg.raw_name();
-        let arg_name = syn::LitStr::new(name, raw_name.span());
+    let mut args: Vec<_> = field
+        .args()
+        .into_iter()
+        .filter_map(|arg| {
+            let name = arg.name();
+            let raw_name = arg.raw_name();
+            let arg_name = syn::LitStr::new(name, raw_name.span());
 
-        field
-            .instrument()
-            .map(|t| t.skip.get(&raw_name.to_string()))
-            .flatten()
-            .is_none()
-            .then(|| {
-                quote!(
-                    #arg_name = ::juniper::tracing::field::debug(&#raw_name)
-                )
-            })
-    });
+            field
+                .instrument()
+                .map(|t| t.skip.get(&raw_name.to_string()))
+                .flatten()
+                .is_none()
+                .then(|| {
+                    quote!(
+                        #arg_name = ::juniper::tracing::field::debug(&#raw_name)
+                    )
+                })
+        })
+        .collect();
 
-    let args: Vec<_> = if let Some(tracing) = field.instrument() {
+    if field
+        .instrument()
+        .map(|attr| attr.record_err)
+        .unwrap_or(false)
+    {
+        args.push(quote!(err = ::juniper::tracing::field::Empty));
+    }
+
+    if let Some(tracing) = field.instrument() {
         let additional_fields = tracing.fields.iter().map(|f| quote!(#f));
 
-        args.chain(additional_fields).collect()
-    } else {
-        args.collect()
-    };
+        args.extend(additional_fields);
+    }
 
     let level = field
         .instrument()
@@ -521,12 +538,99 @@ pub fn async_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStre
     )
 }
 
+pub fn record_err_async(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
+    if !is_traced(ty, field)
+        || !field
+            .instrument()
+            .map(|attr| attr.record_err)
+            .unwrap_or(false)
+    {
+        return quote!();
+    }
+    quote! (
+        let fut = <_ as ::juniper::futures::TryFutureExt>::map_err(fut, |e| {
+            ::juniper::tracing::Span::current()
+                .record("err", &::juniper::tracing::field::display(&e));
+            e
+        });
+    )
+}
+
+/// Returns code to start tracing of a single iteration within `Stream`, unlike
+/// simple resolvers subscriptions have two layers of `Span`s, one to the whole
+/// `Stream` that represents this subscription and the second one is for individual
+/// resolvers.
+pub fn stream_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
+    if !is_traced(ty, field) {
+        return quote!();
+    }
+    // Sub span should have same level.
+    let level = field
+        .instrument()
+        .map(|t| t.level.as_ref())
+        .flatten()
+        .map(|l| match l.value().as_str() {
+            "trace" => quote!(TRACE),
+            "debug" => quote!(DEBUG),
+            "info" => quote!(INFO),
+            "warn" => quote!(WARN),
+            "error" => quote!(ERROR),
+            l => abort!(syn::Error::new(
+                l.span(),
+                format!(
+                    "Unsupported tracing level: {}, \
+                     supported values: trace, debug, info, warn, error",
+                    l,
+                ),
+            )),
+        })
+        .unwrap_or_else(|| quote!(INFO));
+    quote!(
+        let fut = <_ as ::juniper::tracing_futures::Instrument>::instrument(
+            fut,
+            ::juniper::tracing::span!(::juniper::tracing::Level::#level, "next"),
+        );
+    )
+}
+
+pub fn record_err_stream(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
+    if !is_traced(ty, field)
+        || !field
+            .instrument()
+            .map(|attr| attr.record_err)
+            .unwrap_or(false)
+    {
+        return quote!();
+    }
+    quote! (
+        let res = <_ as ::juniper::futures::TryStreamExt>::map_err(res, |e| {
+            ::juniper::tracing::Span::current()
+                .record("err", &::juniper::tracing::field::display(&e));
+            e
+        });
+    )
+}
+
 /// Returns code to start tracing of sync block
 pub fn sync_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
     if !is_traced(ty, field) {
         return quote!();
     }
     quote!(let _tracing_guard = _tracing_span.enter();)
+}
+
+pub fn record_err_sync(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
+    if !is_traced(ty, field)
+        || !field
+            .instrument()
+            .map(|attr| attr.record_err)
+            .unwrap_or(false)
+    {
+        return quote!();
+    }
+    quote!(if let Err(e) = &res {
+        ::juniper::tracing::Span::current().record("err", &::juniper::tracing::field::display(&e));
+    })
 }
 
 mod impls {

@@ -6,18 +6,19 @@ pub mod schema;
 
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
 
-use tracing_core::{span, Subscriber};
+// use tracing_core::Subscriber;
 
 use crate::tracing::{
     field::{Field, Visit},
-    span::{Attributes, Record},
-    Event, Level, Metadata,
+    span::{self, Attributes, Record},
+    Event, Level, Metadata, Subscriber,
 };
 
 /// Information about `tracing` span recorded within tests.
 #[derive(Clone, Debug)]
 struct TestSpan {
     id: span::Id,
+    parent: Option<span::Id>,
     fields: HashMap<String, String>,
     metadata: &'static Metadata<'static>,
 }
@@ -83,6 +84,10 @@ pub struct TestSubscriber {
     /// Counter used to create unique [`span::Id`]s.
     counter: Rc<RefCell<u64>>,
 
+    current_span: Rc<RefCell<Option<span::Id>>>,
+
+    spans: Rc<RefCell<HashMap<span::Id, TestSpan>>>,
+
     /// Log of method calls to this subscriber.
     events: Rc<RefCell<Vec<SubscriberEvent>>>,
 }
@@ -96,6 +101,8 @@ impl TestSubscriber {
     pub fn new() -> Self {
         TestSubscriber {
             counter: Rc::new(RefCell::new(1)),
+            current_span: Rc::new(RefCell::new(None)),
+            spans: Rc::new(RefCell::new(HashMap::new())),
             events: Rc::new(RefCell::new(Vec::new())),
         }
     }
@@ -129,9 +136,13 @@ impl Subscriber for TestSubscriber {
         let id = span::Id::from_u64(id);
         let test_span = TestSpan {
             id: id.clone(),
+            parent: self.current_span.borrow().clone(),
             metadata: attrs.metadata(),
             fields: visitor.0,
         };
+        self.spans
+            .borrow_mut()
+            .insert(id.clone(), test_span.clone());
         self.events
             .borrow_mut()
             .push(SubscriberEvent::NewSpan(test_span));
@@ -163,12 +174,14 @@ impl Subscriber for TestSubscriber {
     }
 
     fn enter(&self, id: &span::Id) {
+        *self.current_span.borrow_mut() = Some(id.clone());
         self.events
             .borrow_mut()
             .push(SubscriberEvent::Enter(id.clone()))
     }
 
     fn exit(&self, id: &span::Id) {
+        *self.current_span.borrow_mut() = self.spans.borrow().get(id).unwrap().parent.clone();
         self.events
             .borrow_mut()
             .push(SubscriberEvent::Exit(id.clone()))
@@ -181,6 +194,18 @@ impl Subscriber for TestSubscriber {
     fn try_close(&self, id: span::Id) -> bool {
         self.events.borrow_mut().push(SubscriberEvent::TryClose(id));
         false
+    }
+
+    fn current_span(&self) -> tracing_core::span::Current {
+        let current_id = self.current_span.borrow();
+
+        current_id
+            .as_ref()
+            .map(|id| {
+                let span = self.spans.borrow().get(&id).unwrap().clone();
+                tracing_core::span::Current::new(span.id, span.metadata)
+            })
+            .unwrap_or_else(tracing_core::span::Current::none)
     }
 }
 

@@ -1,13 +1,14 @@
 //! Schema that contains all the necessities to test integration with
 //! [`tracing`] crate.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 use futures::stream::{self, BoxStream, StreamExt as _};
-use tracing::{field, instrument};
 
 use crate::{
-    graphql_interface, graphql_object, graphql_subscription, tracing, Context, GraphQLObject,
+    graphql_interface, graphql_object, graphql_subscription,
+    tracing::{self, field, instrument},
+    Context, FieldError, GraphQLObject,
 };
 
 /// Test database.
@@ -199,9 +200,44 @@ impl Query {
 
     /// Fn that has custom field that's can be recorded later.
     #[instrument(fields(magic = field::Empty))]
-    async fn empty_field(tracing_span: tracing::Span) -> i32 {
-        tracing_span.record("magic", &"really magic");
+    async fn empty_field() -> i32 {
+        tracing::Span::current().record("magic", &"really magic");
         1
+    }
+
+    /// Async fn that will record it's error.
+    #[instrument(err)]
+    async fn record_err_async(should_err: bool) -> Result<i32, Error> {
+        if should_err {
+            Err(Error)
+        } else {
+            Ok(1)
+        }
+    }
+
+    /// Async fn that will record it's error.
+    #[instrument(err)]
+    fn record_err_sync(should_err: bool) -> Result<i32, Error> {
+        if should_err {
+            Err(Error)
+        } else {
+            Ok(1)
+        }
+    }
+}
+
+/// Custom error used to test `#[instrument(err)]` functionality.
+pub struct Error;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Definitely not an error, trust me")
+    }
+}
+
+impl<S> juniper::IntoFieldError<S> for Error {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::new(self, juniper::Value::Null)
     }
 }
 
@@ -212,6 +248,14 @@ pub struct Subscriptions;
 impl Subscriptions {
     async fn bar_sub(id: i32) -> BoxStream<'static, Bar> {
         let items = [Bar { id: id + 1 }, Bar { id: id + 2 }];
+
+        stream::iter(items).boxed()
+    }
+
+    /// Subscription that emits `Result<T, E>`.
+    #[instrument(err)]
+    async fn err_sub() -> BoxStream<'static, Result<i32, Error>> {
+        let items = [Err(Error)];
 
         stream::iter(items).boxed()
     }

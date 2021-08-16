@@ -538,7 +538,6 @@ async fn subscription_tracing() {
         }
     }
 
-    // Required argument
     handle
         .assert()
         .enter_new_span("resolve_into_stream")
@@ -553,6 +552,7 @@ async fn subscription_tracing() {
         .close_exited("resolve_validated_subscription")
         .close_exited("resolve_into_stream")
         .enter("Subscriptions.barSub")
+        .enter_new_span("next")
         .simple_span(&"Bar.id".with_field("self.id", "11"))
         .simple_span(
             &"Bar.defaultArg"
@@ -560,7 +560,9 @@ async fn subscription_tracing() {
                 .with_field("another", "-1")
                 .with_strict_fields(true),
         )
+        .close_exited("next")
         .re_enter("Subscriptions.barSub")
+        .enter_new_span("next")
         .simple_span(&"Bar.id".with_field("self.id", "12"))
         .simple_span(
             &"Bar.defaultArg"
@@ -568,6 +570,7 @@ async fn subscription_tracing() {
                 .with_field("another", "-1")
                 .with_strict_fields(true),
         )
+        .close_exited("next")
         .close_exited("Subscriptions.barSub");
 }
 
@@ -684,10 +687,188 @@ async fn tracing_compat_empty_field() {
         // `empty_field`, and `Span` attempts to close itself because
         // of `Drop` implementation.
         .try_close("Query.emptyField")
-        // At this point we resolved `Query.emptyField` and all of it's childs
-        // (which don't exists, in this test case) and it's now safe to exit
-        // and close it.
+        // At this point we resolved `Query.emptyField` and all of it's child
+        // spans (which don't exists, in this test case) and it's now safe to
+        // exit and close it.
         .close_exited("Query.emptyField")
         .close_exited("execute_validated_query_async")
         .close_exited("execute");
+}
+
+#[tokio::test]
+async fn tracing_compat_err_recording() {
+    let doc_sync = r#"
+    {
+        ok: recordErrSync(shouldErr: false)
+        err: recordErrSync(shouldErr: true)
+    }
+    "#;
+    let schema = init_schema();
+    let database = Database::new();
+    let (mut handle, _guard) = init_tracer();
+
+    let _ = juniper::execute(doc_sync, None, &schema, &Variables::new(), &database).await;
+
+    // Sync in async context.
+    handle
+        .assert()
+        .enter_new_span("execute")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query_async")
+        .simple_span(
+            &"Query.recordErrSync"
+                .with_field("shouldErr", "false")
+                // Should be exactly 1 field because err was not recorded.
+                .with_strict_fields(true),
+        )
+        .enter_new_span(
+            &"Query.recordErrSync"
+                .with_field("shouldErr", "true")
+                .with_field("err", "Definitely not an error, trust me")
+                // Here should be present both fields because error was returned.
+                .with_strict_fields(true),
+        )
+        .try_close("Query.recordErrSync")
+        .close_exited("Query.recordErrSync")
+        .close_exited("execute_validated_query_async")
+        .close_exited("execute");
+
+    handle.clear();
+
+    let _ = juniper::execute_sync(doc_sync, None, &schema, &Variables::new(), &database);
+
+    // Sync in sync context
+    handle
+        .assert()
+        .enter_new_span("execute_sync")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query")
+        .simple_span(
+            &"Query.recordErrSync"
+                .with_field("shouldErr", "false")
+                // Should be exactly 1 field because err was not recorded.
+                .with_strict_fields(true),
+        )
+        .enter_new_span(
+            &"Query.recordErrSync"
+                .with_field("shouldErr", "true")
+                .with_field("err", "Definitely not an error, trust me")
+                // Here should be present both fields because error was returned.
+                .with_strict_fields(true),
+        )
+        .try_close("Query.recordErrSync")
+        .close_exited("Query.recordErrSync")
+        .close_exited("execute_validated_query")
+        .close_exited("execute_sync");
+
+    handle.clear();
+
+    let doc_async = r#"
+    {
+        ok: recordErrAsync(shouldErr: false)
+        err: recordErrAsync(shouldErr: true)
+    }
+    "#;
+    let schema = init_schema();
+    let database = Database::new();
+    let (handle, _guard) = init_tracer();
+
+    let _ = juniper::execute(doc_async, None, &schema, &Variables::new(), &database).await;
+
+    // Async in async context
+    handle
+        .assert()
+        .enter_new_span("execute")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("execute_validated_query_async")
+        .simple_span(
+            &"Query.recordErrAsync"
+                .with_field("shouldErr", "false")
+                // Should be exactly 1 field because err was not recorded.
+                .with_strict_fields(true),
+        )
+        .enter_new_span(
+            &"Query.recordErrAsync"
+                .with_field("shouldErr", "true")
+                .with_field("err", "Definitely not an error, trust me")
+                // Here should be present both fields because error was returned.
+                .with_strict_fields(true),
+        )
+        .try_close("Query.recordErrAsync")
+        .close_exited("Query.recordErrAsync")
+        .close_exited("execute_validated_query_async")
+        .close_exited("execute");
+}
+
+#[tokio::test]
+async fn tracing_compat_err_on_subscriptions() {
+    let doc = r#"
+        subscription {
+            errSub
+        }
+        "#;
+    let schema = init_schema();
+    let database = Database::new();
+    let (handle, _guard) = init_tracer();
+
+    let request = crate::http::GraphQLRequest::new(doc.to_owned(), None, None);
+
+    let response = crate::http::resolve_into_stream(&request, &schema, &database).await;
+
+    assert!(response.is_ok());
+
+    let (values, errors) = response.unwrap();
+
+    assert_eq!(errors.len(), 0, "Should return no errors");
+
+    // cannot compare with `assert_eq` because
+    // stream does not implement Debug
+    let response_value_object = match values {
+        juniper::Value::Object(o) => Some(o),
+        _ => None,
+    };
+
+    assert!(response_value_object.is_some());
+
+    let response_returned_object = response_value_object.unwrap();
+
+    let fields = response_returned_object.into_iter();
+
+    let mut names = vec![];
+    let mut collected_values = vec![];
+
+    for (name, stream_val) in fields {
+        names.push(name.clone());
+
+        // since macro returns Value::Scalar(iterator) every time,
+        // other variants may be skipped
+        match stream_val {
+            juniper::Value::Scalar(stream) => {
+                let collected = stream.collect::<Vec<_>>().await;
+                collected_values.push(collected);
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    handle
+        .assert()
+        .enter_new_span("resolve_into_stream")
+        .simple_span("validate_document")
+        .simple_span("validate_input_values")
+        .enter_new_span("resolve_validated_subscription")
+        .new_span(
+            &"Subscriptions.errSub"
+                .with_field("err", "Definitely not an error, trust me")
+                .with_strict_fields(true),
+        )
+        .close_exited("resolve_validated_subscription")
+        .close_exited("resolve_into_stream")
+        .enter("Subscriptions.errSub")
+        .try_close("Subscriptions.errSub")
+        .simple_span("next")
+        .close_exited("Subscriptions.errSub");
 }

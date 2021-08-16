@@ -447,8 +447,8 @@ impl Definition {
 
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
-        let (res, getters) = if self.is_method() {
-            let (args, getters): (Vec<_>, Vec<_>) = self
+        let (res, args) = if self.is_method() {
+            let (args, arg_getters): (Vec<_>, Vec<_>) = self
                 .arguments
                 .as_ref()
                 .unwrap()
@@ -470,7 +470,7 @@ impl Definition {
             } else {
                 quote! { Self::#ident(#rcv #( #args ),*) }
             };
-            (res, quote!(#( #getters )*))
+            (res, quote!(#( #arg_getters )*))
         } else {
             ty = parse_quote! { _ };
             (quote! { &self.#ident }, quote!())
@@ -479,14 +479,16 @@ impl Definition {
         let resolving_code = gen::sync_resolving_code();
         let span = if_tracing_enabled!(tracing::span_tokens(traced_ty, self));
         let trace_sync = if_tracing_enabled!(tracing::sync_tokens(traced_ty, self));
+        let record_err = if_tracing_enabled!(tracing::record_err_sync(traced_ty, self));
 
         Some(quote! {
             #name => {
-                #getters
+                #args
                 #span
                 #trace_sync
 
                 let res: #ty = #res;
+                #record_err
                 #resolving_code
             }
         })
@@ -507,8 +509,8 @@ impl Definition {
     ) -> TokenStream {
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
-        let (mut fut, fields) = if self.is_method() {
-            let (args, getters): (Vec<_>, Vec<_>) = self
+        let (mut fut, args) = if self.is_method() {
+            let (args, arg_getters): (Vec<_>, Vec<_>) = self
                 .arguments
                 .as_ref()
                 .unwrap()
@@ -530,7 +532,7 @@ impl Definition {
             } else {
                 quote! { Self::#ident(#rcv #( #args ),*) }
             };
-            (fut, quote!( #( #getters )*))
+            (fut, quote!( #( #arg_getters )*))
         } else {
             ty = parse_quote! { _ };
             (quote! { &self.#ident }, quote!())
@@ -547,15 +549,17 @@ impl Definition {
 
         let trace_async = if_tracing_enabled!(tracing::async_tokens(traced_ty, self));
         let span = if_tracing_enabled!(tracing::span_tokens(traced_ty, self));
+        let record_err = if_tracing_enabled!(tracing::record_err_async(traced_ty, self));
 
         let resolving_code = gen::async_resolving_code(Some(&ty), trace_async);
 
         quote! {
             #name => {
-                #fields
+                #args
                 #span
 
                 let fut = #fut;
+                #record_err
                 #resolving_code
             }
         }
@@ -577,7 +581,7 @@ impl Definition {
         let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
         let (mut fut, args) = if self.is_method() {
-            let (args, getters): (Vec<_>, Vec<_>) = self
+            let (args, arg_getters): (Vec<_>, Vec<_>) = self
                 .arguments
                 .as_ref()
                 .unwrap()
@@ -596,7 +600,7 @@ impl Definition {
 
             (
                 quote! { Self::#ident(#rcv #( #args ),*) },
-                quote! { #( #getters )* },
+                quote! { #( #arg_getters )* },
             )
         } else {
             ty = parse_quote! { _ };
@@ -608,6 +612,8 @@ impl Definition {
 
         let span = if_tracing_enabled!(tracing::span_tokens(traced_ty, self));
         let trace_async = if_tracing_enabled!(tracing::async_tokens(traced_ty, self));
+        let trace_stream = if_tracing_enabled!(tracing::stream_tokens(traced_ty, self));
+        let record_err = if_tracing_enabled!(tracing::record_err_stream(traced_ty, self));
 
         quote! {
             #name => {
@@ -616,13 +622,14 @@ impl Definition {
 
                 ::juniper::futures::FutureExt::boxed(async move {
                     let res: #ty = #fut.await;
+                    #record_err
                     let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
                     let executor = executor.as_owned_executor();
                     let f = ::juniper::futures::StreamExt::then(res, move |res| {
                         let executor = executor.clone();
                         let res2: ::juniper::FieldResult<_, #scalar> =
                             ::juniper::IntoResolvable::into(res, executor.context());
-                        async move {
+                        let fut = async move {
                             let ex = executor.as_executor();
                             match res2 {
                                 Ok(Some((ctx, r))) => {
@@ -632,9 +639,13 @@ impl Definition {
                                         .map_err(|e| ex.new_error(e))
                                 }
                                 Ok(None) => Ok(::juniper::Value::null()),
-                                Err(e) => Err(ex.new_error(e)),
+                                Err(e) => {
+                                    Err(ex.new_error(e))
+                                },
                             }
-                        }
+                        };
+                        #trace_stream
+                        fut
                     });
                     #trace_async
                     Ok(::juniper::Value::Scalar::<
