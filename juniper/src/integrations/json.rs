@@ -10,11 +10,11 @@ use graphql_parser::{
 use serde_json::Value as Json;
 
 use juniper::{
-    Arguments,
-    BoxFuture,
-    ExecutionResult,
-    Executor, FieldError, FromInputValue, GraphQLType, GraphQLValue, GraphQLValueAsync, InputValue,
-    marker::{IsInputType, IsOutputType}, meta::{Argument, Field, MetaType}, Registry, ScalarValue, Selection, types::base::resolve_selection_set_into, Value,
+    marker::{IsInputType, IsOutputType},
+    meta::{Argument, Field, MetaType},
+    types::base::resolve_selection_set_into,
+    Arguments, BoxFuture, ExecutionResult, Executor, FieldError, FromInputValue, GraphQLType,
+    GraphQLValue, GraphQLValueAsync, InputValue, Registry, ScalarValue, Selection, Value,
 };
 
 // Used to describe the graphql type of a `serde_json::Value` using the GraphQL
@@ -32,8 +32,8 @@ pub struct TypeInfo {
 
 impl TypeInfo {
     fn meta<'r, S>(&self, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: ScalarValue + 'r,
+    where
+        S: ScalarValue + 'r,
     {
         let mut fields = Vec::new();
         let mut input_fields = Vec::new();
@@ -98,9 +98,9 @@ impl TypeInfo {
         type_ref: Type<'t, T>,
         nullable: bool,
     ) -> Field<'r, S>
-        where
-            S: 'r + ScalarValue,
-            T: Text<'t>,
+    where
+        S: 'r + ScalarValue,
+        T: Text<'t>,
     {
         match type_ref {
             Type::NamedType(type_name) => match type_name.as_ref() {
@@ -166,8 +166,8 @@ impl<S: ScalarValue> GraphQLType<S> for Json {
     }
 
     fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
+    where
+        S: 'r,
     {
         info.meta(registry)
     }
@@ -177,29 +177,25 @@ impl<S> IsOutputType<S> for Json where S: ScalarValue {}
 
 impl<S> IsInputType<S> for Json where S: ScalarValue {}
 
-impl<S> FromInputValue<S> for Json where S: ScalarValue
+impl<S> FromInputValue<S> for Json
+where
+    S: ScalarValue,
 {
     fn from_input_value(v: &InputValue<S>) -> Option<Self> {
         match v {
-            InputValue::Null => {
-                Some(Json::Null)
-            }
-            InputValue::Scalar(x) => {
-                Some(if let Some(i) = x.as_int() {
-                    Json::Number(serde_json::Number::from(i))
-                } else if let Some(f) = x.as_float() {
-                    Json::Number(serde_json::Number::from_f64(f).expect("f64 to convert"))
-                } else if let Some(b) = x.as_boolean() {
-                    Json::Bool(b)
-                } else if let Some(s) = x.as_str() {
-                    Json::String(s.to_string())
-                } else {
-                    unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
-                })
-            }
-            InputValue::Enum(x) => {
-                Some(Json::String(x.clone()))
-            }
+            InputValue::Null => Some(Json::Null),
+            InputValue::Scalar(x) => Some(if let Some(i) = x.as_int() {
+                Json::Number(serde_json::Number::from(i))
+            } else if let Some(f) = x.as_float() {
+                Json::Number(serde_json::Number::from_f64(f).expect("f64 to convert"))
+            } else if let Some(b) = x.as_boolean() {
+                Json::Bool(b)
+            } else if let Some(s) = x.as_str() {
+                Json::String(s.to_string())
+            } else {
+                unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
+            }),
+            InputValue::Enum(x) => Some(Json::String(x.clone())),
             InputValue::List(ls) => {
                 let v: Vec<Json> = ls.iter().filter_map(|i| i.item.convert()).collect();
                 Some(Json::Array(v))
@@ -214,9 +210,7 @@ impl<S> FromInputValue<S> for Json where S: ScalarValue
                 }
                 Some(Json::Object(obj))
             }
-            InputValue::Variable(_) => {
-                None
-            }
+            InputValue::Variable(_) => None,
         }
     }
 }
@@ -308,12 +302,11 @@ impl<S: ScalarValue> GraphQLValue<S> for Json {
     }
 }
 
-
 impl<S> GraphQLValueAsync<S> for Json
-    where
-        Self::TypeInfo: Sync,
-        Self::Context: Sync,
-        S: ScalarValue + Send + Sync,
+where
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
+    S: ScalarValue + Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
@@ -321,9 +314,9 @@ impl<S> GraphQLValueAsync<S> for Json
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
-        Box::pin(async move {
-            <Json as GraphQLValue<S>>::resolve(self, info, selection_set, executor)
-        })
+        Box::pin(
+            async move { <Json as GraphQLValue<S>>::resolve(self, info, selection_set, executor) },
+        )
     }
 
     fn resolve_field_async<'a>(
@@ -339,42 +332,61 @@ impl<S> GraphQLValueAsync<S> for Json
     }
 }
 
-trait TypedJsonInfo: Send + Sync {
+/// Trait used to provide the type information for a
+/// serde_json::Value
+pub trait TypedJsonInfo: Send + Sync {
+    /// the GraphQL type name
     fn type_name() -> &'static str;
+
+    /// schema returns the GrpahQL Schema Definition language that contains the type_name
     fn schema() -> &'static str;
 }
 
+/// Wrapper generic type for serde_json::Value that associates
+/// type information.
 #[derive(Debug, Clone, PartialEq)]
-struct TypedJson<T: TypedJsonInfo> {
-    value: serde_json::Value,
+pub struct TypedJson<T: TypedJsonInfo> {
+    /// the wrapped json value
+    pub json: serde_json::Value,
     phantom: PhantomData<T>,
 }
 
-impl<T, S> IsOutputType<S> for TypedJson<T> where
+impl<T: TypedJsonInfo> TypedJson<T> {
+    /// creates a new TypedJson from a serde_json::Value
+    pub fn new(v: serde_json::Value) -> TypedJson<T> {
+        TypedJson {
+            json: v,
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<T, S> IsOutputType<S> for TypedJson<T>
+where
     S: ScalarValue,
     T: TypedJsonInfo,
-{}
+{
+}
 
-impl<T, S> IsInputType<S> for TypedJson<T> where
+impl<T, S> IsInputType<S> for TypedJson<T>
+where
     S: ScalarValue,
     T: TypedJsonInfo,
-{}
+{
+}
 
-impl<T, S> FromInputValue<S> for TypedJson<T> where
+impl<T, S> FromInputValue<S> for TypedJson<T>
+where
     S: ScalarValue,
     T: TypedJsonInfo,
 {
     fn from_input_value(v: &InputValue<S>) -> Option<Self> {
-        <serde_json::Value as FromInputValue<S>>::from_input_value(v).map(|x| TypedJson { value: x, phantom: PhantomData })
+        <serde_json::Value as FromInputValue<S>>::from_input_value(v).map(|x| TypedJson::new(x))
     }
 }
 
-impl<T, S> GraphQLValueAsync<S> for TypedJson<T> where
-    S: ScalarValue + Send + Sync,
-    T: TypedJsonInfo
-{}
-
-impl<T, S> GraphQLType<S> for TypedJson<T> where
+impl<T, S> GraphQLType<S> for TypedJson<T>
+where
     S: ScalarValue,
     T: TypedJsonInfo,
 {
@@ -382,19 +394,21 @@ impl<T, S> GraphQLType<S> for TypedJson<T> where
         Some(T::type_name())
     }
     fn meta<'r>(_info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where S: 'r,
+    where
+        S: 'r,
     {
-        TypeInfo
-        {
+        TypeInfo {
             name: T::type_name().to_string(),
             schema: Some(T::schema().to_string()),
-        }.meta(registry)
+        }
+        .meta(registry)
     }
 }
 
 impl<T, S> GraphQLValue<S> for TypedJson<T>
-    where S: ScalarValue,
-          T: TypedJsonInfo,
+where
+    S: ScalarValue,
+    T: TypedJsonInfo,
 {
     type Context = ();
     type TypeInfo = ();
@@ -407,7 +421,54 @@ impl<T, S> GraphQLValue<S> for TypedJson<T>
         _selection: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
-        executor.resolve(&TypeInfo { schema: None, name: T::type_name().to_string() }, &self.value)
+        executor.resolve(
+            &TypeInfo {
+                schema: None,
+                name: T::type_name().to_string(),
+            },
+            &self.json,
+        )
+    }
+}
+
+impl<T, S> GraphQLValueAsync<S> for TypedJson<T>
+where
+    Self::TypeInfo: Sync,
+    Self::Context: Sync,
+    S: ScalarValue + Send + Sync,
+    T: TypedJsonInfo,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        _info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        Box::pin(async move {
+            let info = TypeInfo {
+                schema: None,
+                name: T::type_name().to_string(),
+            };
+            <Json as GraphQLValue<S>>::resolve(&self.json, &info, selection_set, executor)
+        })
+    }
+
+    fn resolve_field_async<'a>(
+        &'a self,
+        _info: &'a Self::TypeInfo,
+        field_name: &'a str,
+        arguments: &'a Arguments<S>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        Box::pin(async move {
+            let info = TypeInfo {
+                schema: None,
+                name: T::type_name().to_string(),
+            };
+            <Json as GraphQLValue<S>>::resolve_field(
+                &self.json, &info, field_name, arguments, executor,
+            )
+        })
     }
 }
 
@@ -417,11 +478,16 @@ mod tests {
 
     use serde_json::json;
 
-    use juniper::{
-        integrations::json::{TypedJson, TypedJsonInfo, TypeInfo},
-        EmptyMutation, EmptySubscription, execute_sync, FieldResult, graphql_object, graphql_value,
-        RootNode, ToInputValue, Variables,
+    use crate::{
+        resolve_into_stream, ExecutionError, Executor, GraphQLError, ScalarValue, Value,
+        ValuesStream,
     };
+    use juniper::{
+        execute_sync, graphql_object, graphql_subscription, graphql_value,
+        integrations::json::{TypeInfo, TypedJson, TypedJsonInfo},
+        EmptyMutation, EmptySubscription, FieldResult, RootNode, ToInputValue, Variables,
+    };
+    use std::pin::Pin;
 
     #[test]
     fn sdl_type_info() {
@@ -661,8 +727,7 @@ mod tests {
     fn test_as_field_of_output_type() {
         // We need a Foo wrapper associate a static SDL to the Foo type which
         struct Foo;
-        impl TypedJsonInfo for Foo
-        {
+        impl TypedJsonInfo for Foo {
             fn type_name() -> &'static str {
                 "Foo"
             }
@@ -680,7 +745,7 @@ mod tests {
         impl Query {
             fn foo() -> FieldResult<TypedJson<Foo>> {
                 let data = json!({"message": ["Hello", "World"] });
-                Ok(TypedJson { value: data, phantom: PhantomData })
+                Ok(TypedJson::new(data))
             }
         }
         let schema = juniper::RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
@@ -691,7 +756,8 @@ mod tests {
             &schema,
             &Variables::new(),
             &(),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Ensure the value matches.
         assert_eq!(
@@ -702,13 +768,11 @@ mod tests {
         );
     }
 
-
     #[test]
     fn test_as_field_of_input_type() {
         #[derive(Debug, Clone, PartialEq)]
         struct Foo;
-        impl TypedJsonInfo for Foo
-        {
+        impl TypedJsonInfo for Foo {
             fn type_name() -> &'static str {
                 "Foo"
             }
@@ -725,16 +789,20 @@ mod tests {
         #[graphql_object()]
         impl Query {
             fn foo(value: TypedJson<Foo>) -> FieldResult<bool> {
-                Ok(value == TypedJson { value: json!({"message":["Hello", "World"]}), phantom: PhantomData })
+                Ok(value == TypedJson::new(json!({"message":["Hello", "World"]})))
             }
         }
         let schema = juniper::RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
-        let vars = vec![("value".to_owned(), graphql_value!({
+        let vars = vec![(
+            "value".to_owned(),
+            graphql_value!({
                 "message":["Hello", "World"],
-            }).to_input_value())]
-            .into_iter()
-            .collect();
+            })
+            .to_input_value(),
+        )]
+        .into_iter()
+        .collect();
 
         // Run the executor.
         let (res, _errors) = juniper::execute_sync(
@@ -743,7 +811,8 @@ mod tests {
             &schema,
             &vars,
             &(),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Ensure the value matches.
         assert_eq!(
@@ -754,5 +823,3 @@ mod tests {
         );
     }
 }
-
-
