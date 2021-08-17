@@ -617,8 +617,6 @@ impl FieldAttributes {
 #[derive(Debug)]
 pub struct GraphQLTypeDefinitionFieldArg {
     pub name: String,
-    pub raw_name: syn::Ident,
-    pub resolver_code: TokenStream,
     pub description: Option<String>,
     pub default: Option<syn::Expr>,
     pub _type: Box<syn::Type>,
@@ -1128,9 +1126,8 @@ impl GraphQLTypeDefinition {
 
 #[cfg(test)]
 mod test {
-    use syn::{Ident, LitStr};
-
     use super::*;
+    use syn::{Ident, LitStr};
 
     fn strs_to_strings(source: Vec<&str>) -> Vec<String> {
         source

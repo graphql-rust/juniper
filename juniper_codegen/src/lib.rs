@@ -7,30 +7,6 @@
 #![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.7")]
 #![recursion_limit = "1024"]
 
-use proc_macro::TokenStream;
-
-use proc_macro_error::{proc_macro_error, ResultExt as _};
-use result::GraphQLScope;
-
-// NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust
-//         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,
-//         and so we cannot move the definition into a sub-module and use the `#[macro_export]`
-//         attribute. Also it should be declared before `util` mod because `util` relies on it.
-/// Expands to `$expr` if `tracing` feature of this crate is enabled, otherwise returns an
-/// empty [`TokenStream`].
-macro_rules! if_tracing_enabled {
-    ($code: expr) => {{
-        #[cfg(feature = "tracing")]
-        {
-            $code
-        }
-        #[cfg(not(feature = "tracing"))]
-        {
-            ::quote::quote!()
-        }
-    }};
-}
-
 mod result;
 mod util;
 
@@ -142,6 +118,10 @@ mod graphql_subscription;
 mod graphql_union;
 #[cfg(feature = "tracing")]
 mod tracing;
+
+use proc_macro::TokenStream;
+use proc_macro_error::{proc_macro_error, ResultExt as _};
+use result::GraphQLScope;
 
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
@@ -817,7 +797,14 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql, instrument, tracing))]
+#[cfg_attr(
+    feature = "tracing",
+    proc_macro_derive(GraphQLObject, attributes(graphql, instrument, tracing))
+)]
+#[cfg_attr(
+    not(feature = "tracing"),
+    proc_macro_derive(GraphQLObject, attributes(graphql))
+)]
 pub fn derive_object(body: TokenStream) -> TokenStream {
     self::graphql_object::derive::expand(body.into())
         .unwrap_or_abort()

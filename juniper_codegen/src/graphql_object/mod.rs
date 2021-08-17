@@ -272,8 +272,8 @@ pub(crate) struct Definition<Operation: ?Sized> {
     /// Explicitly specified rule, that used to define which [`GraphQL field`][1]s
     /// of this [`GraphQL object`][2] should be traced.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     #[cfg(feature = "tracing")]
     pub(crate) tracing: tracing::Rule,
 }

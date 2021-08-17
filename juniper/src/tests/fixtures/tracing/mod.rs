@@ -6,8 +6,6 @@ pub mod schema;
 
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
 
-// use tracing_core::Subscriber;
-
 use crate::tracing::{
     field::{Field, Visit},
     span::{self, Attributes, Record},
@@ -209,7 +207,7 @@ impl Subscriber for TestSubscriber {
     }
 }
 
-/// Wrapper representing span tree received from [`TestSubscriber`].
+/// Wrapper that represents tree of [`Span`]s collected by [`TestSubscriber`].
 #[derive(Debug)]
 pub struct SubscriberAssert {
     name_to_span: HashMap<span::Id, String>,
@@ -405,7 +403,7 @@ impl SubscriberAssert {
             .try_close(span)
     }
 
-    /// Checks whether next to steps is creation of a new span with the given
+    /// Checks whether next two steps is creation of a new span with the given
     /// name and entering it.
     pub fn enter_new_span<S: AsSpan + ?Sized>(self, span: &S) -> Self {
         self.new_span(span).enter(span).re_enter(span)
@@ -419,9 +417,6 @@ impl SubscriberAssert {
 
     /// Checks whether next two steps is exiting and re-entering the same span
     /// with the given name.
-    ///
-    /// This may be useful in case of tracing when sync object is resolved in
-    /// async context.
     pub fn re_enter<S: AsSpan + ?Sized>(self, span: &S) -> Self {
         use SubscriberEvent as Ev;
 

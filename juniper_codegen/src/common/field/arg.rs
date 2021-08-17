@@ -232,11 +232,14 @@ pub(crate) struct OnField {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
     pub(crate) ty: syn::Type,
 
-    /// Name of this [GraphQL field argument][2] in GraphQL schema.
+    /// Name of this [GraphQL field argument][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
     pub(crate) name: String,
 
+    /// Raw name identifier of this [Graphql field argument][1] in GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
     pub(crate) raw_name: syn::Ident,
 
     /// [Description][2] of this [GraphQL field argument][1] to put into GraphQL

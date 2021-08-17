@@ -1,6 +1,6 @@
 # Tracing
 
-Juniper has optional support for the [tracing] crate for instrumentation.
+Starting from version `0.15.8` Juniper has optional support for the [tracing] crate for instrumentation.
 
 This feature is off by default and can be enabled via the `tracing` feature.
 
@@ -103,10 +103,25 @@ async fn main() {
 
 Juniper has it's own `#[instrument]` attribute, that can only be used with
 GraphQL Objects and Interfaces. In most aspects it mimics behavior of the original
-`#[instrument]` attribute from [tracing] crate including fields, sigils, and you
-could use it as a reference. First and the only key deference you should keep in
-mind, `#[instrument]` applied implicitly to **all** resolvers if the `tracing`
-feature is enabled.
+`#[instrument]` attribute from [tracing] crate including fields, sigils, so you
+could use it as a reference. First key deference you should keep in mind, `#[instrument]`
+applied implicitly to **all** resolvers if the `tracing` feature is enabled.
+Second and most significant difference is generated [`Span`]s. To fully understand
+this you should know how GraphQL Objects/Interfaces are actually resolved under
+the hood, long story short there is a lot of generated code and two methods
+`resolve_field` and `resolve_field_async` that map your resolvers to fields,
+and then recursively resolve fields of returned value (if it's not a `Scalar`).
+`#[instrument]` from [tracing] knows nothing about Juniper and  this, so it will
+only wrap method in [`Span`], ignoring recursive part capturing tip of the
+iceberg, so this will lead to plain sequence of resolver [`Span`]s, where you
+could hardly understand order and relations between each  resolver. On the other
+hand `#[instrument]` from Juniper is part of top-level macro so it's aware of
+all tricks performed by Juniper and will be expanded as part of `resolve_field`
+or `resolve_field_async`, [`Span`]s generated this way will capture full lifespan
+of value, including how it's fields resolved which results in more tree-like
+[`Span`] structure where you could easily navigate through, using tools like
+[Jaeger]. As a bonus you'll get [`Span`] names, which refer to your schema instead
+of code.
 
 ## Skipping field resolvers
 
@@ -152,7 +167,7 @@ on top-level to trace specific group of fields or not to trace at all.
  - Use `sync` to trace only synchronous resolvers (struct fields and `fn`s).
  - Use `async` to trace only asynchronous resolvers (`async fn`s) and
 subscriptions.
- - Use `only` to trace only fields marked with `#[graphql(tracing(only))]`
+ - Use `only` to trace only fields marked with `#[graphql(tracing(only))]`.
  - Use `skip_all` to skip tracing of all fields.
 
 ### Example
@@ -358,7 +373,7 @@ on user code so should be used with care.
 ```rust
 # extern crate juniper;
 # use std::fmt;
-# use juniper::graphql_object;
+# use juniper::{graphql_object, FieldError};
 #
 # fn main() {}
 #
@@ -373,6 +388,12 @@ struct MyError;
 impl fmt::Display for MyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Definitely not an error, trust me")
+    }
+}
+
+impl<S> juniper::IntoFieldError<S> for MyError {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::new(self, juniper::Value::Null)
     }
 }
 
@@ -392,9 +413,11 @@ async fn conditional_error() -> Result<i32, MyError> {
 #   let condition = false;
     // At this point we manually check whether result is error or not and if
     // condition is met and only then record error.
-    if let Err(err) = &res && condition {
-        tracing::Span::current().record("err", &field::display(err));
-    }
+    if condition {
+        if let Err(err) = &res  {
+            tracing::Span::current().record("err", &field::display(err));
+        }
+    } 
     res
 }
 # }
@@ -424,3 +447,4 @@ should be handled manually.
 [`skip`]: https://docs.rs/tracing/0.1.26/tracing/attr.instrument.html#skipping-fields
 [`Span`]: https://docs.rs/tracing/0.1.26/tracing/struct.Span.html
 [`field::Empty`]: https://docs.rs/tracing/0.1.26/tracing/field/struct.Empty.html
+[Jaeger]: https://www.jaegertracing.io

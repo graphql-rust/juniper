@@ -13,10 +13,12 @@ use crate::{
 
 type TestSchema<'a> = RootNode<'a, Query, EmptyMutation<Database>, Subscriptions>;
 
+/// Shorthand to [`TestSchema`] initialization.
 fn init_schema<'a>() -> TestSchema<'a> {
     TestSchema::new(Query, EmptyMutation::<Database>::new(), Subscriptions)
 }
 
+/// Initializes new tracer, sets it as default and returns guard.
 fn init_tracer() -> (TestSubscriber, DefaultGuard) {
     let subscriber = TestSubscriber::new();
 
@@ -121,7 +123,7 @@ async fn records_sub_spans() {
 }
 
 #[tokio::test]
-async fn test_no_trace_field() {
+async fn test_ignored_field() {
     let doc = r#"
         {
             foo {
@@ -368,14 +370,14 @@ async fn graphql_object_trace_arg() {
             skipAllDerived {
                 sync
             }
-            complexSync {
+            onlySync {
                 syncFn
                 asyncFn
                 simpleField
             }
-            complexDerived {
-                complex
-                anotherComplex
+            onlyDerived {
+                only
+                anotherOnly
                 sync
             }
         }
@@ -409,20 +411,20 @@ async fn graphql_object_trace_arg() {
         // There shouldn't be any spans because `SkipAll` and `SkipAllDerived` marked with "skip-all"
         .simple_span("Query.skipAll")
         .simple_span("Query.skipAllDerived")
-        .enter_new_span("Query.complexSync")
-        .simple_span("Complex.syncFn")
-        .simple_span("Complex.asyncFn")
+        .enter_new_span("Query.onlySync")
+        .simple_span("Only.syncFn")
+        .simple_span("Only.asyncFn")
         // There shouldn't be any span for `simpleField`
-        .close_exited("Query.complexSync")
-        .enter_new_span("Query.complexDerived")
-        .simple_span("DerivedComplex.complex")
+        .close_exited("Query.onlySync")
+        .enter_new_span("Query.onlyDerived")
+        .simple_span("DerivedOnly.only")
         .simple_span(
-            &"DerivedComplex.anotherComplex"
+            &"DerivedOnly.anotherOnly"
                 .with_field("test", "\"magic\"")
                 .with_strict_fields(true),
         )
-        // There shouldn't be span for `sync` because it's not marked with `#[tracing(complex)]`
-        .close_exited("Query.complexDerived")
+        // There shouldn't be span for `sync` because it's not marked with `#[tracing(only)]`
+        .close_exited("Query.onlyDerived")
         .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
@@ -447,7 +449,7 @@ async fn graphql_interface_trace_arg() {
                 syncFn
                 asyncFn
             }
-            erasedComplex {
+            erasedOnly {
                 syncFn
                 asyncFn
             }
@@ -477,9 +479,9 @@ async fn graphql_interface_trace_arg() {
         .simple_span("InterfacedAsync.asyncFn")
         .close_exited("Query.erasedAsync")
         .simple_span("Query.erasedSkipAll")
-        .enter_new_span("Query.erasedComplex")
-        .simple_span("InterfacedComplex.asyncFn")
-        .close_exited("Query.erasedComplex")
+        .enter_new_span("Query.erasedOnly")
+        .simple_span("InterfacedOnly.asyncFn")
+        .close_exited("Query.erasedOnly")
         .close_exited("execute_validated_query_async")
         .close_exited("execute");
 }
@@ -499,13 +501,9 @@ async fn subscription_tracing() {
     let (handle, _guard) = init_tracer();
 
     let request = crate::http::GraphQLRequest::new(doc.to_owned(), None, None);
-
     let response = crate::http::resolve_into_stream(&request, &schema, &database).await;
-
     assert!(response.is_ok());
-
     let (values, errors) = response.unwrap();
-
     assert_eq!(errors.len(), 0, "Should return no errors");
 
     // cannot compare with `assert_eq` because
@@ -516,9 +514,7 @@ async fn subscription_tracing() {
     };
 
     assert!(response_value_object.is_some());
-
     let response_returned_object = response_value_object.unwrap();
-
     let fields = response_returned_object.into_iter();
 
     let mut names = vec![];
@@ -597,22 +593,18 @@ async fn sub_resolvers() {
         .enter_new_span("execute_validated_query_async")
         .enter_new_span("Query.subResolver")
         // Sync sub resolver in async context
-        .simple_span("resolve_sync")
+        .simple_span("traced_query")
         .close_exited("Query.subResolver")
         .enter_new_span("Query.subAsyncResolver")
         // Async sub resolver in async context
-        .simple_span("resolve_async")
+        .simple_span("async_traced_query")
         .close_exited("Query.subAsyncResolver")
         .close_exited("execute_validated_query_async")
         .close_exited("execute");
 
     handle.clear();
 
-    let doc_sync = r#"
-        {
-            subResolver
-        }
-        "#;
+    let doc_sync = r#"{ subResolver }"#;
 
     let res = juniper::execute_sync(doc_sync, None, &schema, &Variables::new(), &database);
     assert!(res.is_ok(), "Should be ok");
@@ -625,7 +617,7 @@ async fn sub_resolvers() {
         .enter_new_span("execute_validated_query")
         .enter_new_span("Query.subResolver")
         // Sync sub resolver in sync context
-        .simple_span("resolve_sync")
+        .simple_span("traced_query")
         .close_exited("Query.subResolver")
         .close_exited("execute_validated_query")
         .close_exited("execute_sync");
@@ -660,11 +652,7 @@ async fn tracing_compat_sigil() {
 
 #[tokio::test]
 async fn tracing_compat_empty_field() {
-    let doc = r#"
-    {
-        emptyField
-    }
-    "#;
+    let doc = r#"{ emptyField }"#;
     let schema = init_schema();
     let database = Database::new();
     let (handle, _guard) = init_tracer();
@@ -683,9 +671,9 @@ async fn tracing_compat_empty_field() {
                 .with_field("magic", "\"really magic\"")
                 .with_strict_fields(true),
         )
-        // This happens because we're passing owned copy of `Span` in
-        // `empty_field`, and `Span` attempts to close itself because
-        // of `Drop` implementation.
+        // This happens because we're creating owned copy of `Span` with
+        // `tracing::Span::current()` inside `empty_field` resolver, and
+        // once `Span` attempts to close itself because of `Drop`.
         .try_close("Query.emptyField")
         // At this point we resolved `Query.emptyField` and all of it's child
         // spans (which don't exists, in this test case) and it's now safe to
@@ -719,14 +707,14 @@ async fn tracing_compat_err_recording() {
         .simple_span(
             &"Query.recordErrSync"
                 .with_field("shouldErr", "false")
-                // Should be exactly 1 field because err was not recorded.
+                // Should be exactly one field because err was not recorded.
                 .with_strict_fields(true),
         )
         .enter_new_span(
             &"Query.recordErrSync"
                 .with_field("shouldErr", "true")
                 .with_field("err", "Definitely not an error, trust me")
-                // Here should be present both fields because error was returned.
+                // Here should be present exactly two fields because error was returned.
                 .with_strict_fields(true),
         )
         .try_close("Query.recordErrSync")
@@ -748,14 +736,14 @@ async fn tracing_compat_err_recording() {
         .simple_span(
             &"Query.recordErrSync"
                 .with_field("shouldErr", "false")
-                // Should be exactly 1 field because err was not recorded.
+                // Should be exactly one field because err was not recorded.
                 .with_strict_fields(true),
         )
         .enter_new_span(
             &"Query.recordErrSync"
                 .with_field("shouldErr", "true")
                 .with_field("err", "Definitely not an error, trust me")
-                // Here should be present both fields because error was returned.
+                // Here should be present exactly two fields because error was returned.
                 .with_strict_fields(true),
         )
         .try_close("Query.recordErrSync")
@@ -787,14 +775,14 @@ async fn tracing_compat_err_recording() {
         .simple_span(
             &"Query.recordErrAsync"
                 .with_field("shouldErr", "false")
-                // Should be exactly 1 field because err was not recorded.
+                // Should be exactly one field because err was not recorded.
                 .with_strict_fields(true),
         )
         .enter_new_span(
             &"Query.recordErrAsync"
                 .with_field("shouldErr", "true")
                 .with_field("err", "Definitely not an error, trust me")
-                // Here should be present both fields because error was returned.
+                // Here should be exactly two fields because error was returned.
                 .with_strict_fields(true),
         )
         .try_close("Query.recordErrAsync")
@@ -805,23 +793,15 @@ async fn tracing_compat_err_recording() {
 
 #[tokio::test]
 async fn tracing_compat_err_on_subscriptions() {
-    let doc = r#"
-        subscription {
-            errSub
-        }
-        "#;
+    let doc = r#"subscription { errSub }"#;
     let schema = init_schema();
     let database = Database::new();
     let (handle, _guard) = init_tracer();
 
     let request = crate::http::GraphQLRequest::new(doc.to_owned(), None, None);
-
     let response = crate::http::resolve_into_stream(&request, &schema, &database).await;
-
     assert!(response.is_ok());
-
     let (values, errors) = response.unwrap();
-
     assert_eq!(errors.len(), 0, "Should return no errors");
 
     // cannot compare with `assert_eq` because
@@ -832,9 +812,7 @@ async fn tracing_compat_err_on_subscriptions() {
     };
 
     assert!(response_value_object.is_some());
-
     let response_returned_object = response_value_object.unwrap();
-
     let fields = response_returned_object.into_iter();
 
     let mut names = vec![];

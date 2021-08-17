@@ -30,7 +30,7 @@ struct User {
 
 #[graphql_object(Context = Context)]
 impl User {
-    // `id` can be resolved pretty straightforward so we mark it with `no_trace`
+    // `id` can be resolved pretty straight-forward so we mark it with `ignore`
     #[graphql(tracing(ignore))]
     fn id(&self) -> i32 {
         self.id
@@ -56,12 +56,11 @@ struct SyncTracedUser {
     name: String,
 }
 
-// Only sync `fn`s will be traced if they're not marked with `#[tracing(no_trace)]`
-// it works similarly with `#[graphql_interface]`
+// Only sync `fn`s will be traced if they're not marked with `#[graphql(tracing(ignore))]`.
 #[graphql_object(Context = Context)]
 #[tracing(sync)]
 impl SyncTracedUser {
-    // Won't be traced because it's marked with `no_trace`
+    // Won't be traced because it's marked with `ignore`
     #[graphql(tracing(ignore))]
     fn id(&self) -> i32 {
         self.id
@@ -81,13 +80,12 @@ impl SyncTracedUser {
 #[derive(Clone, Debug, GraphQLObject)]
 #[tracing(only)]
 struct ComplexDerivedUser {
-    // This shouldn't be traced because it's not marked with `#[tracing(only)]`
+    // This shouldn't be traced because it's not marked with `tracing(only)`
     id: i32,
-    // This is the only field that will be traced because it's marked with `#[tracing(only)]`
+    // This is the only field that will be traced because it's marked with `tracing(only)`
     #[graphql(tracing(only))]
     kind: UserKind,
-    // This shouldn't be traced because of `ignore`.
-    #[graphql(tracing(ignore))]
+    // This also shouldn't be traced because there is no `tracing(only)`.
     name: String,
 }
 
@@ -138,7 +136,6 @@ impl Query {
         }
     }
 
-    /// Double the provided number.
     async fn double(x: i32) -> Result<i32, FieldError> {
         Ok(x * 2)
     }
@@ -193,7 +190,7 @@ async fn main() {
     // If you use tracing with something like `jaeger_opentracing` span with name
     // 'Query.guest' which has field 'name' with value '"Not Bob"' and 1 child span
     // 'User.kind'. There won't be traces to 'User.id' because we marked it with
-    // `#[tracing(no_trace)]`
+    // `#[graphql(tracing(ignore))]`
     let query = "{ guest(id: 1, name: \"Not Bob\") { id  kind} }";
     let (_, _errors) = juniper::execute(query, None, &root, &vars, &ctx)
         .await
@@ -201,15 +198,15 @@ async fn main() {
 
     // Here you'll see span 'Query.syncUser' with one child span
     // 'SyncTracedUser.kind' because it's synchronous and not marked with
-    // `#[tracing(no_trace)]`.
+    // `#[graphql(tracing(ignore))]`.
     let query = "{ syncUser { id name kind} }";
     let (_, _errors) = juniper::execute(query, None, &root, &vars, &ctx)
         .await
         .unwrap();
 
     // Here you'll see span 'Query.complexUser' with one child span
-    // 'ComplexDerivedUser.kind' because it's marked with `#[tracing(complex)]`
-    // and not marked with `#[tracing(no_trace)]`.
+    // 'ComplexDerivedUser.kind' because it's marked with
+    // `#[graphql(tracing(only))]`.
     let query = "{ complexUser { id name kind }}";
     let (_, _errors) = juniper::execute(query, None, &root, &vars, &ctx)
         .await

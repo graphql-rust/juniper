@@ -29,6 +29,21 @@ use crate::{
 #[cfg(feature = "tracing")]
 use crate::tracing;
 
+/// Expands to `code` if `tracing` feature of this crate is enabled, otherwise returns an
+/// empty [`TokenStream`].
+macro_rules! if_tracing_enabled {
+    ($code: expr) => {{
+        #[cfg(feature = "tracing")]
+        {
+            $code
+        }
+        #[cfg(not(feature = "tracing"))]
+        {
+            ::quote::quote!()
+        }
+    }};
+}
+
 pub(crate) use self::arg::OnMethod as MethodArgument;
 
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a
@@ -611,8 +626,8 @@ impl Definition {
         }
 
         let span = if_tracing_enabled!(tracing::span_tokens(traced_ty, self));
-        let trace_async = if_tracing_enabled!(tracing::async_tokens(traced_ty, self));
         let trace_stream = if_tracing_enabled!(tracing::stream_tokens(traced_ty, self));
+        let trace_resolver = if_tracing_enabled!(tracing::stream_next_tokens(traced_ty, self));
         let record_err = if_tracing_enabled!(tracing::record_err_stream(traced_ty, self));
 
         quote! {
@@ -625,7 +640,7 @@ impl Definition {
                     #record_err
                     let res = ::juniper::IntoFieldResult::<_, #scalar>::into_result(res)?;
                     let executor = executor.as_owned_executor();
-                    let f = ::juniper::futures::StreamExt::then(res, move |res| {
+                    let stream = ::juniper::futures::StreamExt::then(res, move |res| {
                         let executor = executor.clone();
                         let res2: ::juniper::FieldResult<_, #scalar> =
                             ::juniper::IntoResolvable::into(res, executor.context());
@@ -639,18 +654,16 @@ impl Definition {
                                         .map_err(|e| ex.new_error(e))
                                 }
                                 Ok(None) => Ok(::juniper::Value::null()),
-                                Err(e) => {
-                                    Err(ex.new_error(e))
-                                },
+                                Err(e) => Err(ex.new_error(e)),
                             }
                         };
-                        #trace_stream
+                        #trace_resolver
                         fut
                     });
-                    #trace_async
+                    #trace_stream
                     Ok(::juniper::Value::Scalar::<
                         ::juniper::ValuesStream::<#scalar>
-                    >(::juniper::futures::StreamExt::boxed(f)))
+                    >(::juniper::futures::StreamExt::boxed(stream)))
                 })
             }
         }

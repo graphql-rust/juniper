@@ -37,19 +37,11 @@ impl Database {
     pub fn non_traced_query(&self, id: i32) -> Option<String> {
         self.inner.get(&id).cloned()
     }
-}
 
-pub struct Resolver;
-
-impl Resolver {
-    #[instrument]
-    pub fn resolve_sync() -> i32 {
-        1
-    }
-
-    #[instrument]
-    pub async fn resolve_async() -> i32 {
-        1
+    /// Sync query mock, instrumented by [`tracing`] crate.
+    #[instrument(skip(self))]
+    pub async fn async_traced_query(&self, id: i32) -> Option<String> {
+        self.inner.get(&id).cloned()
     }
 }
 
@@ -132,21 +124,21 @@ impl Query {
         SkipAllDerived::default()
     }
 
-    /// Returns GraphQL object marked with `tracing(complex)` in sync manner.
-    fn complex_sync() -> Complex {
-        Complex
+    /// Returns GraphQL object marked with `tracing(only)` in sync manner.
+    fn only_sync() -> Only {
+        Only
     }
 
-    /// Returns GraphQL object marked with `tracing(complex)` in async manner.
-    async fn complex_async() -> Complex {
-        Complex
+    /// Returns GraphQL object marked with `tracing(only)` in async manner.
+    async fn only_async() -> Only {
+        Only
     }
 
-    /// Returns derived GraphQL object marked with `tracing(complex)`.
-    fn complex_derived() -> DerivedComplex {
-        DerivedComplex {
-            complex: false,
-            another_complex: false,
+    /// Returns derived GraphQL object marked with `tracing(only)`.
+    fn only_derived() -> DerivedOnly {
+        DerivedOnly {
+            only: false,
+            another_only: false,
             sync: 0,
         }
     }
@@ -171,19 +163,19 @@ impl Query {
         InterfacedSkipAllValue::SkipAll(SkipAll)
     }
 
-    /// Returns GraphQL object wrapped in GraphQL interface marked with `tracing(complex)`.
-    fn erased_complex() -> InterfacedComplexValue {
-        InterfacedComplexValue::Complex(Complex)
+    /// Returns GraphQL object wrapped in GraphQL interface marked with `tracing(only)`.
+    fn erased_only() -> InterfacedOnlyValue {
+        InterfacedOnlyValue::Only(Only)
     }
 
     /// Sync fn that uses instrumented function under the hood.
-    fn sub_resolver() -> i32 {
-        Resolver::resolve_sync()
+    fn sub_resolver(context: &Database) -> Option<String> {
+        context.traced_query(42)
     }
 
     /// Async fn that uses instrumented function under the hood.
-    async fn sub_async_resolver() -> i32 {
-        Resolver::resolve_async().await
+    async fn sub_async_resolver(context: &Database) -> Option<String> {
+        context.async_traced_query(42).await
     }
 
     /// Fn that has custom field marked with debug sigil (`?`).
@@ -246,6 +238,7 @@ pub struct Subscriptions;
 
 #[graphql_subscription(context = Database)]
 impl Subscriptions {
+    /// Subscription that emits `Bar`s.
     async fn bar_sub(id: i32) -> BoxStream<'static, Bar> {
         let items = [Bar { id: id + 1 }, Bar { id: id + 2 }];
 
@@ -549,11 +542,11 @@ pub struct SkipAllDerived {
 }
 
 /// GraphQL object marked with `tracing(only)`.
-pub struct Complex;
+pub struct Only;
 
-#[graphql_object(impl = [InterfacedComplexValue])]
+#[graphql_object(impl = [InterfacedOnlyValue])]
 #[tracing(only)]
-impl Complex {
+impl Only {
     #[graphql(tracing(only))]
     pub fn sync_fn(&self) -> i32 {
         1
@@ -569,17 +562,17 @@ impl Complex {
     }
 }
 
-build_impl!(Complex, InterfacedComplex);
+build_impl!(Only, InterfacedOnly);
 
 /// Derived GraphQL object marked with `tracing(only)`.
 #[derive(GraphQLObject)]
 #[tracing(only)]
-pub struct DerivedComplex {
+pub struct DerivedOnly {
     #[graphql(tracing(only))]
-    complex: bool,
+    only: bool,
     #[graphql(tracing(only))]
     #[instrument(fields(test = "magic"))]
-    another_complex: bool,
+    another_only: bool,
 
     /// Simple field
     sync: i32,
@@ -615,24 +608,25 @@ trait InterfacedSkipAll {
     async fn async_fn(&self) -> i32;
 }
 
-#[graphql_interface(for = [Complex], async)]
+#[graphql_interface(for = [Only], async)]
 #[tracing(only)]
-trait InterfacedComplex {
+trait InterfacedOnly {
     fn sync_fn(&self) -> i32;
     #[graphql(tracing(only))]
     async fn async_fn(&self) -> i32;
 }
 
+/// Value that used to test debug and display sigils.
 struct Sigil;
 
-impl std::fmt::Debug for Sigil {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for Sigil {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.write_str("Debug Sigil")
     }
 }
 
-impl std::fmt::Display for Sigil {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Sigil {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.write_str("Display Sigil")
     }
 }

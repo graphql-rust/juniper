@@ -301,7 +301,7 @@ pub enum Rule {
     /// Trace all fields that can be synchronously resolved.
     Sync,
 
-    /// Trace only fields that marked with `#[tracing(only)]`.
+    /// Trace only fields that marked with `#[graphql(tracing(only))]`.
     Only,
 
     /// Skip tracing of all fields.
@@ -395,7 +395,7 @@ impl FieldBehavior {
 
 /// Generalisation of type that can be traced.
 pub trait TracedType {
-    /// Optional [`Rule`] read from attributes `#[tracing(...)]` object or interface
+    /// Optional [`Rule`] read from attributes `#[graphql(tracing(...))]` object or interface
     /// definition.
     fn tracing_rule(&self) -> Rule;
 
@@ -411,7 +411,7 @@ pub trait TracedField {
     /// Type of argument used by this field.
     type Arg: TracedArgument;
 
-    /// Returns parsed `#[tracing]` attribute.
+    /// Returns `#[instrument]` attribute, parsed from field resolver definition.
     fn instrument(&self) -> Option<&Attr>;
 
     /// Returns [`FieldBehaviour`] parsed from `#[graphql(tracing(...))]`
@@ -556,14 +556,30 @@ pub fn record_err_async(ty: &impl TracedType, field: &impl TracedField) -> Token
     )
 }
 
-/// Returns code to start tracing of a single iteration within `Stream`, unlike
-/// simple resolvers subscriptions have two layers of `Span`s, one to the whole
-/// `Stream` that represents this subscription and the second one is for individual
-/// resolvers.
+/// Returns code to start tracing of a [GraphQL subscription][1].
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
 pub fn stream_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
     if !is_traced(ty, field) {
         return quote!();
     }
+    quote! (
+        let stream = <_ as ::juniper::tracing_futures::Instrument>::instrument(
+            stream,
+            _tracing_span,
+        );
+    )
+}
+
+/// Returns code to start tracing of a single iteration within `Stream`, unlike
+/// simple resolvers subscriptions have two layers of `Span`s, one to the whole
+/// `Stream` that represents this subscription and the second one is for individual
+/// resolvers.
+pub fn stream_next_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
+    if !is_traced(ty, field) {
+        return quote!();
+    }
+
     // Sub span should have same level.
     let level = field
         .instrument()

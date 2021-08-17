@@ -141,8 +141,8 @@ struct TraitAttr {
 
     /// Explicitly specified rule for tracing of fields that belong to this [GraphQL interface][1].
     ///
-    /// If absent and `tracing` feature enabled all fields not marked with `#[tracing(no_trace)]`
-    /// will be traced.
+    /// If absent and `tracing` feature enabled all fields not marked with
+    /// `#[graphql(tracing(ignore))]` will be traced.
     ///
     /// If it present but feature `tracing` disabled it will cause compilation error.
     ///
@@ -418,7 +418,7 @@ pub(crate) struct Definition {
     /// Description of this [GraphQL interface][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub(crate) description: Option<String>,
+    description: Option<String>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL interface][1].
@@ -426,7 +426,7 @@ pub(crate) struct Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    pub(crate) context: syn::Type,
+    context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
     /// implementation with for this [GraphQL interface][1].
@@ -440,7 +440,7 @@ pub(crate) struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    pub(crate) fields: Vec<field::Definition>,
+    fields: Vec<field::Definition>,
 
     /// Defined [`Implementer`]s of this [GraphQL interface][1].
     ///
@@ -451,7 +451,7 @@ pub(crate) struct Definition {
     /// [GraphQL interface][1].
     ///
     /// If it's absent and `tracing` feature is enabled all [field][2]s not marked
-    /// with `#[tracing(no_trace)]` will be traced.
+    /// with `#[graphql(tracing(ignore))]` will be traced.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
@@ -905,6 +905,7 @@ impl Implementer {
         let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
+
         let resolving_code = gen::async_resolving_code(None, quote!());
 
         Some(quote! {
