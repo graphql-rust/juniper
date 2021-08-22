@@ -9,3 +9,4 @@ The chapters below cover some more advanced scenarios.
 - [Multiple operations per request](multiple_ops_per_request.md)
 - [Dataloaders](dataloaders.md)
 - [Subscriptions](subscriptions.md)
+- [Json Support](serde_json.md)

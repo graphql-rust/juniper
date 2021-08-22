@@ -6,10 +6,10 @@ pub mod bson;
 pub mod chrono;
 #[cfg(feature = "chrono-tz")]
 pub mod chrono_tz;
-#[cfg(feature = "json")]
-pub mod json;
 #[doc(hidden)]
 pub mod serde;
+#[cfg(feature = "serde_json")]
+pub mod serde_json;
 #[cfg(feature = "url")]
 pub mod url;
 #[cfg(feature = "uuid")]

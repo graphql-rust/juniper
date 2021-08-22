@@ -474,20 +474,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::marker::PhantomData;
-
-    use serde_json::json;
-
-    use crate::{
-        resolve_into_stream, ExecutionError, Executor, GraphQLError, ScalarValue, Value,
-        ValuesStream,
-    };
     use juniper::{
-        execute_sync, graphql_object, graphql_subscription, graphql_value,
-        integrations::json::{TypeInfo, TypedJson, TypedJsonInfo},
+        execute_sync, graphql_object, graphql_value,
+        integrations::serde_json::{TypeInfo, TypedJson, TypedJsonInfo},
         EmptyMutation, EmptySubscription, FieldResult, RootNode, ToInputValue, Variables,
     };
-    use std::pin::Pin;
+    use serde_json::json;
 
     #[test]
     fn sdl_type_info() {
