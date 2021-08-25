@@ -128,7 +128,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .service(
-                web::resource("/graphgl")
+                web::resource("/graphql")
                     .route(web::post().to(graphql_route))
                     .route(web::get().to(graphql_route)),
             )
