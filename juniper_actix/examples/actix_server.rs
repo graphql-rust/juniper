@@ -94,10 +94,10 @@ fn schema() -> Schema {
 }
 
 async fn graphiql_route() -> Result<HttpResponse, Error> {
-    graphiql_handler("/graphgl", None).await
+    graphiql_handler("/graphql", None).await
 }
 async fn playground_route() -> Result<HttpResponse, Error> {
-    playground_handler("/graphgl", None).await
+    playground_handler("/graphql", None).await
 }
 async fn graphql_route(
     req: actix_web::HttpRequest,
