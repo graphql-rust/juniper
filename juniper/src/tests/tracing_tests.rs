@@ -408,7 +408,8 @@ async fn graphql_object_trace_arg() {
         .enter_new_span("Query.derivedSync")
         .simple_span("SyncDerived.sync")
         .close_exited("Query.derivedSync")
-        // There shouldn't be any spans because `SkipAll` and `SkipAllDerived` marked with "skip-all"
+        // There shouldn't be any spans because `SkipAll` and `SkipAllDerived`
+        // marked with "skip-all"
         .simple_span("Query.skipAll")
         .simple_span("Query.skipAllDerived")
         .enter_new_span("Query.onlySync")
@@ -423,7 +424,8 @@ async fn graphql_object_trace_arg() {
                 .with_field("test", "\"magic\"")
                 .with_strict_fields(true),
         )
-        // There shouldn't be span for `sync` because it's not marked with `#[tracing(only)]`
+        // There shouldn't be span for `sync` because it's not marked with
+        // `#[graphql(tracing(only))]`
         .close_exited("Query.onlyDerived")
         .close_exited("execute_validated_query_async")
         .close_exited("execute");

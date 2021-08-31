@@ -110,7 +110,6 @@ impl Query {
         }
     }
 
-    /// Create guest user with the given `id` and `name`.
     #[instrument(skip(id))] // Here we skip `id` from being recorded into spans fields
     fn guest(id: i32, name: String) -> User {
         User {

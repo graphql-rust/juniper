@@ -43,9 +43,10 @@ impl Foo {
         self.value * another
     }
     
-    // Squaring is also hard but we don't know the value we squared so we can
-    // validate the results. In this case we can use `fields` argument to pass
-    // additional fields, that also will be included in span.
+    // Squaring is also hard, and for the scientific needs we're interested in
+    // the value that was squared so we should record it. In this case we can
+    // use `fields` argument to pass additional fields, that also will be
+    // included in span.
     #[instrument(fields(self.value = self.value))]
     fn square_value(&self) -> i32 {
         self.value * self.value
@@ -104,28 +105,28 @@ async fn main() {
 Juniper has it's own `#[instrument]` attribute, that can only be used with
 GraphQL Objects and Interfaces. In most aspects it mimics behavior of the original
 `#[instrument]` attribute from [tracing] crate including fields, sigils, so you
-could use it as a reference. First key deference you should keep in mind, `#[instrument]`
+could use it as a reference. First key deference you should keep in mind: `#[instrument]`
 applied implicitly to **all** resolvers if the `tracing` feature is enabled.
 Second and most significant difference is generated [`Span`]s. To fully understand
 this you should know how GraphQL Objects/Interfaces are actually resolved under
 the hood, long story short there is a lot of generated code and two methods
 `resolve_field` and `resolve_field_async` that map your resolvers to fields,
 and then recursively resolve fields of returned value (if it's not a `Scalar`).
-`#[instrument]` from [tracing] knows nothing about Juniper and  this, so it will
-only wrap method in [`Span`], ignoring recursive part capturing tip of the
-iceberg, so this will lead to plain sequence of resolver [`Span`]s, where you
-could hardly understand order and relations between each  resolver. On the other
-hand `#[instrument]` from Juniper is part of top-level macro so it's aware of
-all tricks performed by Juniper and will be expanded as part of `resolve_field`
-or `resolve_field_async`, [`Span`]s generated this way will capture full lifespan
-of value, including how it's fields resolved which results in more tree-like
-[`Span`] structure where you could easily navigate through, using tools like
+`#[instrument]` from [tracing] knows nothing about Juniper and all dark magic
+performed, so it will only wrap method in [`Span`], ignoring recursive part,
+effectively capturing only tip of the iceberg, so this will lead to plain sequence
+of resolver [`Span`]s, where you could hardly understand order and relations between
+each  resolver. On the other hand `#[instrument]` from Juniper is part of top-level
+macro so it's aware of all tricks performed by Juniper and will be expanded as part
+of `resolve_field` or `resolve_field_async`, [`Span`]s generated this way will capture
+full lifespan of value, including how it's fields resolved which results in more tree-like
+[`Span`] structure in which you could easily navigate through, using tools like
 [Jaeger]. As a bonus you'll get [`Span`] names, which refer to your schema instead
 of code.
 
 ## Skipping field resolvers
 
-In certain scenarios you may want to skip tracing of some fields because it too
+In certain scenarios you may want to skip tracing of some fields because it's too
 simple and straight-forward, that tracing preparations of this resolver would actually
 take more time then execution. In this cases you can use `tracing(ignore)` argument of
 `#[graphql]` attribute to completely disable tracing of this field resolver.
@@ -146,11 +147,13 @@ struct User {
 
 #[graphql_object(context = Context)]
 impl User {
+    // This won't produce span because it's marked with `tracing(ignore)`
     #[graphql(tracing(ignore))]
     fn id(&self) -> i32 {
         self.id
     }
 
+    // This will still produce span
     async fn friends(&self, context: &Context) -> Vec<User> {
         // Some async query in which you're actually interested.
 #       unimplemented!()
@@ -159,7 +162,7 @@ impl User {
 ```
 
 Manually setting `#[graphql(tracing(ignore))]` to skip tracing of all, let's
-say for example synchronous field resolvers is rather inefficient when you have 
+say for example, synchronous field resolvers is rather inefficient when you have 
 GraphQL object with too much fields. In this case you can use `tracing` attribute
 on top-level to trace specific group of fields or not to trace at all.
 `tracing` attribute can be used with one of the following arguments:
@@ -276,7 +279,7 @@ fn my_query(&self, non_debug: NonDebug) -> i32 {
 
 Custom fields generated this way are aware of `self` and can use `self` even if it not implicitly passed
 to resolver. In case when resolver is `fn` with not only `self` arguments they're also available
-to interact with as shown above. You can also access `executor` and `Context` as a result.
+to interact with as shown above. You can also access `executor` and a `Context` as a result.
 
 ### Example
 ```rust
@@ -351,7 +354,8 @@ async fn override_field() -> i32 {
     // In cases when you want to record a non-standard value to span you may
     // use `field::debug(...)` and `field::display(...)`, to set proper formatting.
     tracing::Span::current().record("msg", &field::debug(&Foo));
-    // Doing `tracing_span.record("msg", Foo)` will result in compile error.
+    // Doing `tracing::Span::current().record("msg", Foo)` will result in
+    // compilation error.
 #   unimplemented!()
 }
 # }

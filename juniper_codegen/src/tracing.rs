@@ -147,7 +147,7 @@ impl Parse for Attr {
     }
 }
 
-/// Custom field that should be recorded in span, explicitly defined by user.
+/// Custom field that should be recorded in span, explicitly specified by user.
 #[derive(Clone, Debug)]
 pub struct Field {
     /// Left part of this [`Field`], represents name of recorded field.
@@ -352,7 +352,7 @@ impl Parse for Rule {
                 ident.span(),
                 format!(
                     "Unknown tracing rule: {}, \
-                         known values: sync, async, skip-all and complex",
+                     known values: `sync`, `async`, `skip_all` and `only`.",
                     tracing,
                 ),
             )),
@@ -395,8 +395,8 @@ impl FieldBehavior {
 
 /// Generalisation of type that can be traced.
 pub trait TracedType {
-    /// Optional [`Rule`] read from attributes `#[graphql(tracing(...))]` object or interface
-    /// definition.
+    /// Optional [`Rule`] read from attributes `#[graphql(tracing(...))]` object
+    /// or interface definition.
     fn tracing_rule(&self) -> Rule;
 
     /// Name of this type.
@@ -406,7 +406,7 @@ pub trait TracedType {
     fn scalar(&self) -> Option<syn::Type>;
 }
 
-/// Trait that marks type that this is field that can be traced.
+/// Trait that marks type of field that can be traced.
 pub trait TracedField {
     /// Type of argument used by this field.
     type Arg: TracedArgument;
@@ -609,6 +609,7 @@ pub fn stream_next_tokens(ty: &impl TracedType, field: &impl TracedField) -> Tok
     )
 }
 
+/// Returns code that will record error within subscription.
 pub fn record_err_stream(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
     if !is_traced(ty, field)
         || !field
@@ -635,6 +636,7 @@ pub fn sync_tokens(ty: &impl TracedType, field: &impl TracedField) -> TokenStrea
     quote!(let _tracing_guard = _tracing_span.enter();)
 }
 
+/// Returns code that will record error within sync code block.
 pub fn record_err_sync(ty: &impl TracedType, field: &impl TracedField) -> TokenStream {
     if !is_traced(ty, field)
         || !field
