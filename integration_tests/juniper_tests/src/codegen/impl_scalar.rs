@@ -222,11 +222,11 @@ async fn default_name_introspection() {
     run_type_info_query(doc, |type_info| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("DefaultName"))
+            Some(&graphql_value!("DefaultName")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
     })
     .await;
@@ -246,11 +246,11 @@ async fn other_order_introspection() {
     run_type_info_query(doc, |type_info| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("OtherOrder"))
+            Some(&graphql_value!("OtherOrder")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
     })
     .await;
@@ -270,11 +270,11 @@ async fn named_introspection() {
     run_type_info_query(doc, |type_info| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("ANamedScalar"))
+            Some(&graphql_value!("ANamedScalar")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
     })
     .await;
@@ -294,11 +294,13 @@ async fn scalar_description_introspection() {
     run_type_info_query(doc, |type_info| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("ScalarDescription"))
+            Some(&graphql_value!("ScalarDescription")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::scalar("A sample scalar, represented as an integer"))
+            Some(&graphql_value!(
+                "A sample scalar, represented as an integer"
+            )),
         );
     })
     .await;
@@ -318,11 +320,11 @@ async fn generated_scalar_introspection() {
     run_type_info_query(doc, |type_info| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("Generated"))
+            Some(&graphql_value!("Generated")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
     })
     .await;

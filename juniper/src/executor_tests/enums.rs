@@ -5,7 +5,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
-    value::{DefaultScalarValue, Object, Value},
+    value::{DefaultScalarValue, Object},
     GraphQLEnum,
     GraphQLError::ValidationError,
 };
@@ -64,7 +64,7 @@ async fn accepts_enum_literal() {
     run_query("{ toString(color: RED) }", |result| {
         assert_eq!(
             result.get_field_value("toString"),
-            Some(&Value::scalar("Color::Red"))
+            Some(&graphql_value!("Color::Red")),
         );
     })
     .await;
@@ -75,7 +75,7 @@ async fn serializes_as_output() {
     run_query("{ aColor }", |result| {
         assert_eq!(
             result.get_field_value("aColor"),
-            Some(&Value::scalar("RED"))
+            Some(&graphql_value!("RED")),
         );
     })
     .await;
@@ -115,7 +115,7 @@ async fn accepts_strings_in_variables() {
         |result| {
             assert_eq!(
                 result.get_field_value("toString"),
-                Some(&Value::scalar("Color::Red"))
+                Some(&graphql_value!("Color::Red")),
             );
         },
     )

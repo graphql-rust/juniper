@@ -1,5 +1,6 @@
 use crate::{
     executor::Variables,
+    graphql_value,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
@@ -142,36 +143,28 @@ async fn default_name_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("DefaultName"))
+            Some(&graphql_value!("DefaultName")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(values.len(), 2);
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("FOO")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "FOO",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("BAR")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "BAR",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
     })
     .await;
 }
@@ -196,36 +189,28 @@ async fn named_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("ANamedEnum"))
+            Some(&graphql_value!("ANamedEnum")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(values.len(), 2);
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("FOO")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "FOO",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("BAR")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "BAR",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
     })
     .await;
 }
@@ -250,36 +235,28 @@ async fn no_trailing_comma_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("NoTrailingComma"))
+            Some(&graphql_value!("NoTrailingComma")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(values.len(), 2);
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("FOO")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "FOO",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("BAR")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "BAR",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
     })
     .await;
 }
@@ -304,36 +281,28 @@ async fn enum_description_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("EnumDescription"))
+            Some(&graphql_value!("EnumDescription")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::scalar("A description of the enum itself"))
+            Some(&graphql_value!("A description of the enum itself")),
         );
 
         assert_eq!(values.len(), 2);
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("FOO")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "FOO",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("BAR")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "BAR",
+            "description": None,
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
     })
     .await;
 }
@@ -358,36 +327,28 @@ async fn enum_value_description_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("EnumValueDescription"))
+            Some(&graphql_value!("EnumValueDescription")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(values.len(), 2);
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("FOO")),
-                ("description", Value::scalar("The FOO value")),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "FOO",
+            "description": "The FOO value",
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("BAR")),
-                ("description", Value::scalar("The BAR value")),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "BAR",
+            "description": "The BAR value",
+            "isDeprecated": false,
+            "deprecationReason": None,
+        })));
     })
     .await;
 }
@@ -412,42 +373,28 @@ async fn enum_deprecation_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("EnumDeprecation"))
+            Some(&graphql_value!("EnumDeprecation")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(values.len(), 2);
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("FOO")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(true)),
-                (
-                    "deprecationReason",
-                    Value::scalar("Please don't use FOO any more"),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "FOO",
+            "description": None,
+            "isDeprecated": true,
+            "deprecationReason": "Please don't use FOO any more",
+        })));
 
-        assert!(values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("BAR")),
-                ("description", Value::scalar("The BAR value")),
-                ("isDeprecated", Value::scalar(true)),
-                (
-                    "deprecationReason",
-                    Value::scalar("Please don't use BAR any more"),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-        )));
+        assert!(values.contains(&graphql_value!({
+            "name": "BAR",
+            "description": "The BAR value",
+            "isDeprecated": true,
+            "deprecationReason": "Please don't use BAR any more",
+        })));
     })
     .await;
 }
@@ -472,11 +419,11 @@ async fn enum_deprecation_no_values_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::scalar("EnumDeprecation"))
+            Some(&graphql_value!("EnumDeprecation")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::null())
+            Some(&graphql_value!(None)),
         );
 
         assert_eq!(values.len(), 0);

@@ -78,7 +78,7 @@ impl<S> IntoIterator for Object<S> {
 
 impl<S> From<Object<S>> for Value<S> {
     fn from(o: Object<S>) -> Self {
-        Value::Object(o)
+        Self::Object(o)
     }
 }
 

@@ -1,7 +1,4 @@
-use crate::value::{
-    self,
-    Value::{self, Null},
-};
+use crate::value::Value;
 
 // Sort a nested schema Value.
 // In particular, lists are sorted by the "name" key of children, if present.
@@ -36,14 +33,14 @@ pub(super) fn sort_schema_value(value: &mut Value) {
     }
 }
 
-pub(crate) fn schema_introspection_result() -> value::Value {
+pub(crate) fn schema_introspection_result() -> Value {
     let mut v = graphql_value!({
         "__schema": {
           "queryType": {
             "name": "Query"
           },
-          "mutationType": Null,
-          "subscriptionType": Null,
+          "mutationType": None,
+          "subscriptionType": None,
           "types": [
             {
               "kind": "OBJECT",
@@ -56,15 +53,15 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "name",
@@ -73,10 +70,10 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "friends",
@@ -84,23 +81,23 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "INTERFACE",
                           "name": "Character",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "appearsIn",
@@ -108,23 +105,23 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "Episode",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "homePlanet",
@@ -133,559 +130,559 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [
                 {
                   "kind": "INTERFACE",
                   "name": "Character",
-                  "ofType": Null
+                  "ofType": None
                 }
               ],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "SCALAR",
               "name": "Boolean",
-              "description": Null,
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
-              "enumValues": Null,
-              "possibleTypes": Null
+              "description": None,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
               "name": "__InputValue",
-              "description": Null,
+              "description": None,
               "fields": [
                 {
                   "name": "name",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "type",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "OBJECT",
                       "name": "__Type",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "defaultValue",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "SCALAR",
               "name": "String",
-              "description": Null,
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
-              "enumValues": Null,
-              "possibleTypes": Null
+              "description": None,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
               "name": "__Field",
-              "description": Null,
+              "description": None,
               "fields": [
                 {
                   "name": "name",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "args",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__InputValue",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "type",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "OBJECT",
                       "name": "__Type",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "isDeprecated",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "deprecationReason",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "ENUM",
               "name": "__TypeKind",
               "description": "GraphQL type kind\n\nThe GraphQL specification defines a number of type kinds - the meta type of a type.",
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
               "enumValues": [
                 {
                   "name": "SCALAR",
                   "description": "## Scalar types\n\nScalar types appear as the leaf nodes of GraphQL queries. Strings, numbers, and booleans are the built in types, and while it's possible to define your own, it's relatively uncommon.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "OBJECT",
                   "description": "## Object types\n\nThe most common type to be implemented by users. Objects have fields and can implement interfaces.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "INTERFACE",
                   "description": "## Interface types\n\nInterface types are used to represent overlapping fields between multiple types, and can be queried for their concrete type.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "UNION",
                   "description": "## Union types\n\nUnions are similar to interfaces but can not contain any fields on their own.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "ENUM",
                   "description": "## Enum types\n\nLike scalars, enum types appear as the leaf nodes of GraphQL queries.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "INPUT_OBJECT",
                   "description": "## Input objects\n\nRepresents complex values provided in queries _into_ the system.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "LIST",
                   "description": "## List types\n\nRepresent lists of other types. This library provides implementations for vectors and slices, but other Rust types can be extended to serve as GraphQL lists.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "NON_NULL",
                   "description": "## Non-null types\n\nIn GraphQL, nullable types are the default. By putting a `!` after a type, it becomes non-nullable.",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "possibleTypes": Null
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
               "name": "__Type",
-              "description": Null,
+              "description": None,
               "fields": [
                 {
                   "name": "name",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "kind",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "ENUM",
                       "name": "__TypeKind",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "fields",
-                  "description": Null,
+                  "description": None,
                   "args": [
                     {
                       "name": "includeDeprecated",
-                      "description": Null,
+                      "description": None,
                       "type": {
                         "kind": "SCALAR",
                         "name": "Boolean",
-                        "ofType": Null
+                        "ofType": None
                       },
                       "defaultValue": "false"
                     }
                   ],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__Field",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "ofType",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "OBJECT",
                     "name": "__Type",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "inputFields",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__InputValue",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "interfaces",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__Type",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "possibleTypes",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__Type",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "enumValues",
-                  "description": Null,
+                  "description": None,
                   "args": [
                     {
                       "name": "includeDeprecated",
-                      "description": Null,
+                      "description": None,
                       "type": {
                         "kind": "SCALAR",
                         "name": "Boolean",
-                        "ofType": Null
+                        "ofType": None
                       },
                       "defaultValue": "false"
                     }
                   ],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__EnumValue",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
               "name": "__Schema",
-              "description": Null,
+              "description": None,
               "fields": [
                 {
                   "name": "types",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__Type",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "queryType",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "OBJECT",
                       "name": "__Type",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "mutationType",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "OBJECT",
                     "name": "__Type",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "subscriptionType",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "OBJECT",
                     "name": "__Type",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "directives",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__Directive",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -698,15 +695,15 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "name",
@@ -715,10 +712,10 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "friends",
@@ -726,23 +723,23 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "INTERFACE",
                           "name": "Character",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "appearsIn",
@@ -750,23 +747,23 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "Episode",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "primaryFunction",
@@ -775,22 +772,22 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [
                 {
                   "kind": "INTERFACE",
                   "name": "Character",
-                  "ofType": Null
+                  "ofType": None
                 }
               ],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -799,62 +796,62 @@ pub(crate) fn schema_introspection_result() -> value::Value {
               "fields": [
                 {
                   "name": "human",
-                  "description": Null,
+                  "description": None,
                   "args": [
                     {
                       "name": "id",
                       "description": "id of the human",
                       "type": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "SCALAR",
                           "name": "String",
-                          "ofType": Null
+                          "ofType": None
                         }
                       },
-                      "defaultValue": Null
+                      "defaultValue": None
                     }
                   ],
                   "type": {
                     "kind": "OBJECT",
                     "name": "Human",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "droid",
-                  "description": Null,
+                  "description": None,
                   "args": [
                     {
                       "name": "id",
-                      "description": Null,
+                      "description": None,
                       "description": "id of the droid",
                       "type": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "SCALAR",
                           "name": "String",
-                          "ofType": Null
+                          "ofType": None
                         }
                       },
-                      "defaultValue": Null
+                      "defaultValue": None
                     }
                   ],
                   "type": {
                     "kind": "OBJECT",
                     "name": "Droid",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "hero",
-                  "description": Null,
+                  "description": None,
                   "args": [
                     {
                       "name": "episode",
@@ -862,173 +859,173 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                       "type": {
                         "kind": "ENUM",
                         "name": "Episode",
-                        "ofType": Null
+                        "ofType": None
                       },
-                      "defaultValue": Null
+                      "defaultValue": None
                     }
                   ],
                   "type": {
                     "kind": "INTERFACE",
                     "name": "Character",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
               "name": "__EnumValue",
-              "description": Null,
+              "description": None,
               "fields": [
                 {
                   "name": "name",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "isDeprecated",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "deprecationReason",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "ENUM",
               "name": "Episode",
-              "description": Null,
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
+              "description": None,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
               "enumValues": [
                 {
                   "name": "NEW_HOPE",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "EMPIRE",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "JEDI",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "possibleTypes": Null
+              "possibleTypes": None
             },
             {
               "kind": "ENUM",
               "name": "__DirectiveLocation",
-              "description": Null,
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
+              "description": None,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
               "enumValues": [
                 {
                   "name": "QUERY",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "MUTATION",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "SUBSCRIPTION",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "FIELD",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "FRAGMENT_DEFINITION",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "FRAGMENT_SPREAD",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "INLINE_FRAGMENT",
-                  "description": Null,
+                  "description": None,
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "possibleTypes": Null
+              "possibleTypes": None
             },
             {
               "kind": "INTERFACE",
@@ -1041,15 +1038,15 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "name",
@@ -1058,10 +1055,10 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "friends",
@@ -1069,23 +1066,23 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "INTERFACE",
                           "name": "Character",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "appearsIn",
@@ -1093,133 +1090,133 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "Episode",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
-              "interfaces": Null,
-              "enumValues": Null,
+              "inputFields": None,
+              "interfaces": None,
+              "enumValues": None,
               "possibleTypes": [
                 {
                   "kind": "OBJECT",
                   "name": "Human",
-                  "ofType": Null
+                  "ofType": None
                 },
                 {
                   "kind": "OBJECT",
                   "name": "Droid",
-                  "ofType": Null
+                  "ofType": None
                 }
               ]
             },
             {
               "kind": "OBJECT",
               "name": "__Directive",
-              "description": Null,
+              "description": None,
               "fields": [
                 {
                   "name": "name",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "locations",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "__DirectiveLocation",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "args",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__InputValue",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "onOperation",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": true,
@@ -1227,15 +1224,15 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                 },
                 {
                   "name": "onFragment",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": true,
@@ -1243,31 +1240,31 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                 },
                 {
                   "name": "onField",
-                  "description": Null,
+                  "description": None,
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": true,
                   "deprecationReason": "Use the locations array instead"
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             }
           ],
           "directives": [
             {
               "name": "skip",
-              "description": Null,
+              "description": None,
               "locations": [
                 "FIELD",
                 "FRAGMENT_SPREAD",
@@ -1276,23 +1273,23 @@ pub(crate) fn schema_introspection_result() -> value::Value {
               "args": [
                 {
                   "name": "if",
-                  "description": Null,
+                  "description": None,
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
-                  "defaultValue": Null
+                  "defaultValue": None
                 }
               ]
             },
             {
               "name": "include",
-              "description": Null,
+              "description": None,
               "locations": [
                 "FIELD",
                 "FRAGMENT_SPREAD",
@@ -1301,17 +1298,17 @@ pub(crate) fn schema_introspection_result() -> value::Value {
               "args": [
                 {
                   "name": "if",
-                  "description": Null,
+                  "description": None,
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
-                  "defaultValue": Null
+                  "defaultValue": None
                 }
               ]
             }
@@ -1322,14 +1319,14 @@ pub(crate) fn schema_introspection_result() -> value::Value {
     v
 }
 
-pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value {
+pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
     let mut v = graphql_value!({
         "__schema": {
           "queryType": {
             "name": "Query"
           },
-          "mutationType": Null,
-          "subscriptionType": Null,
+          "mutationType": None,
+          "subscriptionType": None,
           "types": [
             {
               "kind": "OBJECT",
@@ -1340,15 +1337,15 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "name",
@@ -1356,56 +1353,56 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "friends",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "INTERFACE",
                           "name": "Character",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "appearsIn",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "Episode",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "homePlanet",
@@ -1413,31 +1410,31 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [
                 {
                   "kind": "INTERFACE",
                   "name": "Character",
-                  "ofType": Null
+                  "ofType": None
                 }
               ],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "SCALAR",
               "name": "Boolean",
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
-              "enumValues": Null,
-              "possibleTypes": Null
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -1448,15 +1445,15 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
@@ -1464,25 +1461,25 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "type",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "OBJECT",
                       "name": "__Type",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "defaultValue",
@@ -1490,25 +1487,25 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "SCALAR",
               "name": "String",
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
-              "enumValues": Null,
-              "possibleTypes": Null
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -1519,15 +1516,15 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
@@ -1535,63 +1532,63 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "args",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__InputValue",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "type",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "OBJECT",
                       "name": "__Type",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "isDeprecated",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "deprecationReason",
@@ -1599,66 +1596,66 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "ENUM",
               "name": "__TypeKind",
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
               "enumValues": [
                 {
                   "name": "SCALAR",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "OBJECT",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "INTERFACE",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "UNION",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "ENUM",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "INPUT_OBJECT",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "LIST",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "NON_NULL",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "possibleTypes": Null
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -1670,10 +1667,10 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
@@ -1681,25 +1678,25 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "kind",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "ENUM",
                       "name": "__TypeKind",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "fields",
@@ -1709,26 +1706,26 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                       "type": {
                         "kind": "SCALAR",
                         "name": "Boolean",
-                        "ofType": Null
+                        "ofType": None
                       },
                       "defaultValue": "false"
                     }
                   ],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__Field",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "ofType",
@@ -1736,67 +1733,67 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "OBJECT",
                     "name": "__Type",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "inputFields",
                   "args": [],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__InputValue",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "interfaces",
                   "args": [],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__Type",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "possibleTypes",
                   "args": [],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__Type",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "enumValues",
@@ -1806,32 +1803,32 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                       "type": {
                         "kind": "SCALAR",
                         "name": "Boolean",
-                        "ofType": Null
+                        "ofType": None
                       },
                       "defaultValue": "false"
                     }
                   ],
                   "type": {
                     "kind": "LIST",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "NON_NULL",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "OBJECT",
                         "name": "__EnumValue",
-                        "ofType": Null
+                        "ofType": None
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -1842,38 +1839,38 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__Type",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "queryType",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "OBJECT",
                       "name": "__Type",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "mutationType",
@@ -1881,10 +1878,10 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "OBJECT",
                     "name": "__Type",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "subscriptionType",
@@ -1892,39 +1889,39 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "OBJECT",
                     "name": "__Type",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "directives",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__Directive",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -1935,15 +1932,15 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "name",
@@ -1951,56 +1948,56 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "friends",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "INTERFACE",
                           "name": "Character",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "appearsIn",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "Episode",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "primaryFunction",
@@ -2008,22 +2005,22 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [
                 {
                   "kind": "INTERFACE",
                   "name": "Character",
-                  "ofType": Null
+                  "ofType": None
                 }
               ],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -2036,23 +2033,23 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                       "name": "id",
                       "type": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "SCALAR",
                           "name": "String",
-                          "ofType": Null
+                          "ofType": None
                         }
                       },
-                      "defaultValue": Null
+                      "defaultValue": None
                     }
                   ],
                   "type": {
                     "kind": "OBJECT",
                     "name": "Human",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "droid",
@@ -2061,23 +2058,23 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                       "name": "id",
                       "type": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "SCALAR",
                           "name": "String",
-                          "ofType": Null
+                          "ofType": None
                         }
                       },
-                      "defaultValue": Null
+                      "defaultValue": None
                     }
                   ],
                   "type": {
                     "kind": "OBJECT",
                     "name": "Droid",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "hero",
@@ -2087,24 +2084,24 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                       "type": {
                         "kind": "ENUM",
                         "name": "Episode",
-                        "ofType": Null
+                        "ofType": None
                       },
-                      "defaultValue": Null
+                      "defaultValue": None
                     }
                   ],
                   "type": {
                     "kind": "INTERFACE",
                     "name": "Character",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "OBJECT",
@@ -2115,15 +2112,15 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
@@ -2131,25 +2128,25 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "isDeprecated",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "deprecationReason",
@@ -2157,86 +2154,86 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             },
             {
               "kind": "ENUM",
               "name": "Episode",
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
               "enumValues": [
                 {
                   "name": "NEW_HOPE",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "EMPIRE",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "JEDI",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "possibleTypes": Null
+              "possibleTypes": None
             },
             {
               "kind": "ENUM",
               "name": "__DirectiveLocation",
-              "fields": Null,
-              "inputFields": Null,
-              "interfaces": Null,
+              "fields": None,
+              "inputFields": None,
+              "interfaces": None,
               "enumValues": [
                 {
                   "name": "QUERY",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "MUTATION",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "SUBSCRIPTION",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "FIELD",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "FRAGMENT_DEFINITION",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "FRAGMENT_SPREAD",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "INLINE_FRAGMENT",
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "possibleTypes": Null
+              "possibleTypes": None
             },
             {
               "kind": "INTERFACE",
@@ -2247,15 +2244,15 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "name",
@@ -2263,71 +2260,71 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "friends",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "INTERFACE",
                           "name": "Character",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "appearsIn",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "Episode",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 }
               ],
-              "inputFields": Null,
-              "interfaces": Null,
-              "enumValues": Null,
+              "inputFields": None,
+              "interfaces": None,
+              "enumValues": None,
               "possibleTypes": [
                 {
                   "kind": "OBJECT",
                   "name": "Human",
-                  "ofType": Null
+                  "ofType": None
                 },
                 {
                   "kind": "OBJECT",
                   "name": "Droid",
-                  "ofType": Null
+                  "ofType": None
                 }
               ]
             },
@@ -2340,15 +2337,15 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "String",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "description",
@@ -2356,67 +2353,67 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
-                    "ofType": Null
+                    "ofType": None
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "locations",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "ENUM",
                           "name": "__DirectiveLocation",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "args",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "LIST",
-                      "name": Null,
+                      "name": None,
                       "ofType": {
                         "kind": "NON_NULL",
-                        "name": Null,
+                        "name": None,
                         "ofType": {
                           "kind": "OBJECT",
                           "name": "__InputValue",
-                          "ofType": Null
+                          "ofType": None
                         }
                       }
                     }
                   },
                   "isDeprecated": false,
-                  "deprecationReason": Null
+                  "deprecationReason": None
                 },
                 {
                   "name": "onOperation",
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": true,
@@ -2427,11 +2424,11 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": true,
@@ -2442,21 +2439,21 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "args": [],
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
                   "isDeprecated": true,
                   "deprecationReason": "Use the locations array instead"
                 }
               ],
-              "inputFields": Null,
+              "inputFields": None,
               "interfaces": [],
-              "enumValues": Null,
-              "possibleTypes": Null
+              "enumValues": None,
+              "possibleTypes": None
             }
           ],
           "directives": [
@@ -2472,14 +2469,14 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "name": "if",
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
-                  "defaultValue": Null
+                  "defaultValue": None
                 }
               ]
             },
@@ -2495,14 +2492,14 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                   "name": "if",
                   "type": {
                     "kind": "NON_NULL",
-                    "name": Null,
+                    "name": None,
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
-                      "ofType": Null
+                      "ofType": None
                     }
                   },
-                  "defaultValue": Null
+                  "defaultValue": None
                 }
               ]
             }

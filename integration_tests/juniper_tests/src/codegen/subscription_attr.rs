@@ -2,13 +2,14 @@
 
 use std::pin::Pin;
 
-use futures::{future, stream, FutureExt as _, StreamExt as _};
+use futures::{future, stream, FutureExt as _};
 use juniper::{
     execute, graphql_object, graphql_subscription, graphql_value, resolve_into_stream,
-    DefaultScalarValue, EmptyMutation, ExecutionError, Executor, FieldError, FieldResult,
-    GraphQLError, GraphQLInputObject, GraphQLType, IntoFieldError, RootNode, ScalarValue, Value,
-    ValuesStream, Variables,
+    DefaultScalarValue, EmptyMutation, Executor, FieldError, FieldResult, GraphQLInputObject,
+    GraphQLType, IntoFieldError, RootNode, ScalarValue, Variables,
 };
+
+use crate::util::extract_next;
 
 struct Query;
 
@@ -43,29 +44,6 @@ where
 }
 
 type Stream<'a, I> = Pin<Box<dyn futures::Stream<Item = I> + Send + 'a>>;
-
-async fn extract_next<'a, S: ScalarValue>(
-    input: Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>> {
-    let (stream, errs) = input?;
-    if !errs.is_empty() {
-        return Ok((Value::Null, errs));
-    }
-
-    if let Value::Object(obj) = stream {
-        for (name, mut val) in obj {
-            if let Value::Scalar(ref mut stream) = val {
-                return match stream.next().await {
-                    Some(Ok(val)) => Ok((graphql_value!({ name: val }), vec![])),
-                    Some(Err(e)) => Ok((Value::Null, vec![e])),
-                    None => Ok((Value::Null, vec![])),
-                };
-            }
-        }
-    }
-
-    panic!("Expected to get Value::Object containing a Stream")
-}
 
 mod trivial {
     use super::*;

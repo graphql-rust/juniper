@@ -254,17 +254,17 @@ where
 #[cfg(test)]
 mod whole_responses_stream {
     use futures::{stream, StreamExt as _};
-    use juniper::{DefaultScalarValue, ExecutionError, FieldError};
+    use juniper::{graphql_value, DefaultScalarValue, ExecutionError, FieldError};
 
     use super::*;
 
     #[tokio::test]
     async fn with_error() {
-        let expected = vec![ExecutionOutput {
-            data: Value::<DefaultScalarValue>::Null,
+        let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![ExecutionOutput {
+            data: graphql_value!(None),
             errors: vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
-                Value::Null,
+                graphql_value!(None),
             ))],
         }];
         let expected = serde_json::to_string(&expected).unwrap();
@@ -273,7 +273,7 @@ mod whole_responses_stream {
             Value::Null,
             vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
-                Value::Null,
+                graphql_value!(None),
             ))],
         )
         .collect::<Vec<_>>()
@@ -285,9 +285,8 @@ mod whole_responses_stream {
 
     #[tokio::test]
     async fn value_null() {
-        let expected = vec![ExecutionOutput::from_data(
-            Value::<DefaultScalarValue>::Null,
-        )];
+        let expected: Vec<ExecutionOutput<DefaultScalarValue>> =
+            vec![ExecutionOutput::from_data(graphql_value!(None))];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![])
@@ -302,12 +301,12 @@ mod whole_responses_stream {
 
     #[tokio::test]
     async fn value_scalar() {
-        let expected = vec![
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(1i32))),
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(2i32))),
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(3i32))),
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(4i32))),
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(5i32))),
+        let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![
+            ExecutionOutput::from_data(graphql_value!(1)),
+            ExecutionOutput::from_data(graphql_value!(2)),
+            ExecutionOutput::from_data(graphql_value!(3)),
+            ExecutionOutput::from_data(graphql_value!(4)),
+            ExecutionOutput::from_data(graphql_value!(5)),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
@@ -317,7 +316,7 @@ mod whole_responses_stream {
                 return Poll::Ready(None);
             }
             counter += 1;
-            Poll::Ready(Some(Ok(Value::Scalar(DefaultScalarValue::Int(counter)))))
+            Poll::Ready(Some(Ok(graphql_value!(counter))))
         });
 
         let result =
@@ -331,24 +330,24 @@ mod whole_responses_stream {
 
     #[tokio::test]
     async fn value_list() {
-        let expected = vec![
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(1i32))),
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(2i32))),
-            ExecutionOutput::from_data(Value::null()),
-            ExecutionOutput::from_data(Value::Scalar(DefaultScalarValue::Int(4i32))),
+        let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![
+            ExecutionOutput::from_data(graphql_value!(1)),
+            ExecutionOutput::from_data(graphql_value!(2)),
+            ExecutionOutput::from_data(graphql_value!(None)),
+            ExecutionOutput::from_data(graphql_value!(4)),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let streams: Vec<Value<ValuesStream>> = vec![
             Value::Scalar(Box::pin(stream::once(async {
-                PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(1i32)))
+                PollResult::Ok(graphql_value!(1))
             }))),
             Value::Scalar(Box::pin(stream::once(async {
-                PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(2i32)))
+                PollResult::Ok(graphql_value!(2))
             }))),
             Value::Null,
             Value::Scalar(Box::pin(stream::once(async {
-                PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(4i32)))
+                PollResult::Ok(graphql_value!(4))
             }))),
         ];
 
@@ -362,21 +361,9 @@ mod whole_responses_stream {
 
     #[tokio::test]
     async fn value_object() {
-        let expected = vec![
-            ExecutionOutput::from_data(Value::Object(Object::from_iter(
-                vec![
-                    ("one", Value::Scalar(DefaultScalarValue::Int(1i32))),
-                    ("two", Value::Scalar(DefaultScalarValue::Int(1i32))),
-                ]
-                .into_iter(),
-            ))),
-            ExecutionOutput::from_data(Value::Object(Object::from_iter(
-                vec![
-                    ("one", Value::Scalar(DefaultScalarValue::Int(2i32))),
-                    ("two", Value::Scalar(DefaultScalarValue::Int(2i32))),
-                ]
-                .into_iter(),
-            ))),
+        let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![
+            ExecutionOutput::from_data(graphql_value!({"one": 1, "two": 1})),
+            ExecutionOutput::from_data(graphql_value!({"one": 2, "two": 2})),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
@@ -386,7 +373,7 @@ mod whole_responses_stream {
                 return Poll::Ready(None);
             }
             counter += 1;
-            Poll::Ready(Some(Ok(Value::Scalar(DefaultScalarValue::Int(counter)))))
+            Poll::Ready(Some(Ok(graphql_value!(counter))))
         });
 
         let mut counter = 0;
@@ -395,7 +382,7 @@ mod whole_responses_stream {
                 return Poll::Ready(None);
             }
             counter += 1;
-            Poll::Ready(Some(Ok(Value::Scalar(DefaultScalarValue::Int(counter)))))
+            Poll::Ready(Some(Ok(graphql_value!(counter))))
         });
 
         let vals: Vec<(&str, Value<ValuesStream>)> = vec![

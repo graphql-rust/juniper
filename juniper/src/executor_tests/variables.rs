@@ -1,12 +1,12 @@
 use crate::{
     ast::InputValue,
     executor::Variables,
-    graphql_object, graphql_scalar,
+    graphql_object, graphql_scalar, graphql_value,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue},
     GraphQLError::ValidationError,
     GraphQLInputObject,
 };
@@ -17,7 +17,7 @@ struct TestComplexScalar;
 #[graphql_scalar]
 impl<S: ScalarValue> GraphQLScalar for TestComplexScalar {
     fn resolve(&self) -> Value {
-        Value::scalar(String::from("SerializedValue"))
+        graphql_value!("SerializedValue")
     }
 
     fn from_input_value(v: &InputValue) -> Option<TestComplexScalar> {
@@ -157,7 +157,7 @@ async fn inline_complex_input() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::scalar(
+                Some(&graphql_value!(
                     r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#
                 ))
             );
@@ -172,7 +172,7 @@ async fn inline_parse_single_value_to_list() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::scalar(
+                Some(&graphql_value!(
                     r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#
                 ))
             );
@@ -187,7 +187,7 @@ async fn inline_runs_from_input_value_on_scalar() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::scalar(
+                Some(&graphql_value!(
                     r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#
                 ))
             );
@@ -216,7 +216,7 @@ async fn variable_complex_input() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::scalar(
+                Some(&graphql_value!(
                     r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#
                 ))
             );
@@ -245,7 +245,7 @@ async fn variable_parse_single_value_to_list() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::scalar(
+                Some(&graphql_value!(
                     r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#
                 ))
             );
@@ -273,7 +273,7 @@ async fn variable_runs_from_input_value_on_scalar() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::scalar(
+                Some(&graphql_value!(
                     r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#
                 ))
             );
@@ -468,7 +468,7 @@ async fn allow_nullable_inputs_to_be_omitted() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::scalar(r#"None"#))
+                Some(&graphql_value!(r#"None"#))
             );
         },
     )
@@ -482,7 +482,7 @@ async fn allow_nullable_inputs_to_be_omitted_in_variable() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::scalar(r#"None"#))
+                Some(&graphql_value!(r#"None"#))
             );
         },
     )
@@ -496,7 +496,7 @@ async fn allow_nullable_inputs_to_be_explicitly_null() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::scalar(r#"None"#))
+                Some(&graphql_value!(r#"None"#))
             );
         },
     )
@@ -513,7 +513,7 @@ async fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::scalar(r#"None"#))
+                Some(&graphql_value!(r#"None"#))
             );
         },
     )
@@ -530,7 +530,7 @@ async fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::scalar(r#"Some("a")"#))
+                Some(&graphql_value!(r#"Some("a")"#))
             );
         },
     )
@@ -544,7 +544,7 @@ async fn allow_nullable_inputs_to_be_set_to_value_directly() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::scalar(r#"Some("a")"#))
+                Some(&graphql_value!(r#"Some("a")"#))
             );
         },
     )
@@ -611,7 +611,7 @@ async fn allow_non_nullable_inputs_to_be_set_to_value_in_variable() {
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithNonNullableStringInput"),
-                Some(&Value::scalar(r#""a""#))
+                Some(&graphql_value!(r#""a""#))
             );
         },
     )
@@ -625,7 +625,7 @@ async fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNonNullableStringInput"),
-                Some(&Value::scalar(r#""a""#))
+                Some(&graphql_value!(r#""a""#))
             );
         },
     )
@@ -642,7 +642,7 @@ async fn allow_lists_to_be_null() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("list"),
-                Some(&Value::scalar(r#"None"#))
+                Some(&graphql_value!(r#"None"#))
             );
         },
     )
@@ -662,7 +662,7 @@ async fn allow_lists_to_contain_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
-                Some(&Value::scalar(r#"Some([Some("A")])"#))
+                Some(&graphql_value!(r#"Some([Some("A")])"#))
             );
         },
     )
@@ -686,7 +686,7 @@ async fn allow_lists_to_contain_null() {
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
-                Some(&Value::scalar(r#"Some([Some("A"), None, Some("B")])"#))
+                Some(&graphql_value!(r#"Some([Some("A"), None, Some("B")])"#))
             );
         },
     )
@@ -732,7 +732,7 @@ async fn allow_non_null_lists_to_contain_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("nnList"),
-                Some(&Value::scalar(r#"[Some("A")]"#))
+                Some(&graphql_value!(r#"[Some("A")]"#))
             );
         },
     )
@@ -755,7 +755,7 @@ async fn allow_non_null_lists_to_contain_null() {
         |result| {
             assert_eq!(
                 result.get_field_value("nnList"),
-                Some(&Value::scalar(r#"[Some("A"), None, Some("B")]"#))
+                Some(&graphql_value!(r#"[Some("A"), None, Some("B")]"#))
             );
         },
     )
@@ -772,7 +772,7 @@ async fn allow_lists_of_non_null_to_be_null() {
         |result| {
             assert_eq!(
                 result.get_field_value("listNn"),
-                Some(&Value::scalar(r#"None"#))
+                Some(&graphql_value!(r#"None"#)),
             );
         },
     )
@@ -792,7 +792,7 @@ async fn allow_lists_of_non_null_to_contain_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("listNn"),
-                Some(&Value::scalar(r#"Some(["A"])"#))
+                Some(&graphql_value!(r#"Some(["A"])"#)),
             );
         },
     )
@@ -904,7 +904,7 @@ async fn allow_non_null_lists_of_non_null_to_contain_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("nnListNn"),
-                Some(&Value::scalar(r#"["A"]"#))
+                Some(&graphql_value!(r#"["A"]"#)),
             );
         },
     )
@@ -916,7 +916,7 @@ async fn default_argument_when_not_provided() {
     run_query(r#"{ fieldWithDefaultArgumentValue }"#, |result| {
         assert_eq!(
             result.get_field_value("fieldWithDefaultArgumentValue"),
-            Some(&Value::scalar(r#""Hello World""#))
+            Some(&graphql_value!(r#""Hello World""#)),
         );
     })
     .await;
@@ -929,7 +929,7 @@ async fn default_argument_when_nullable_variable_not_provided() {
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&Value::scalar(r#""Hello World""#))
+                Some(&graphql_value!(r#""Hello World""#)),
             );
         },
     )
@@ -946,7 +946,7 @@ async fn default_argument_when_nullable_variable_set_to_null() {
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&Value::scalar(r#""Hello World""#))
+                Some(&graphql_value!(r#""Hello World""#)),
             );
         },
     )
@@ -958,7 +958,7 @@ async fn nullable_input_object_arguments_successful_without_variables() {
     run_query(r#"{ exampleInput(arg: {a: "abc", b: 123}) }"#, |result| {
         assert_eq!(
             result.get_field_value("exampleInput"),
-            Some(&Value::scalar(r#"a: Some("abc"), b: 123"#))
+            Some(&graphql_value!(r#"a: Some("abc"), b: 123"#)),
         );
     })
     .await;
@@ -966,7 +966,7 @@ async fn nullable_input_object_arguments_successful_without_variables() {
     run_query(r#"{ exampleInput(arg: {a: null, b: 1}) }"#, |result| {
         assert_eq!(
             result.get_field_value("exampleInput"),
-            Some(&Value::scalar(r#"a: None, b: 1"#))
+            Some(&graphql_value!(r#"a: None, b: 1"#)),
         );
     })
     .await;
@@ -982,7 +982,7 @@ async fn nullable_input_object_arguments_successful_with_variables() {
         |result| {
             assert_eq!(
                 result.get_field_value("exampleInput"),
-                Some(&Value::scalar(r#"a: None, b: 123"#))
+                Some(&graphql_value!(r#"a: None, b: 123"#)),
             );
         },
     )
@@ -996,7 +996,7 @@ async fn nullable_input_object_arguments_successful_with_variables() {
         |result| {
             assert_eq!(
                 result.get_field_value("exampleInput"),
-                Some(&Value::scalar(r#"a: None, b: 1"#))
+                Some(&graphql_value!(r#"a: None, b: 1"#)),
             );
         },
     )
@@ -1008,7 +1008,7 @@ async fn nullable_input_object_arguments_successful_with_variables() {
         |result| {
             assert_eq!(
                 result.get_field_value("exampleInput"),
-                Some(&Value::scalar(r#"a: None, b: 1"#))
+                Some(&graphql_value!(r#"a: None, b: 1"#)),
             );
         },
     )
@@ -1118,7 +1118,7 @@ async fn input_object_with_default_values() {
     run_query(r#"{ inputWithDefaults(arg: {a: 1}) }"#, |result| {
         assert_eq!(
             result.get_field_value("inputWithDefaults"),
-            Some(&Value::scalar(r#"a: 1"#))
+            Some(&graphql_value!(r#"a: 1"#)),
         );
     })
     .await;
@@ -1131,7 +1131,7 @@ async fn input_object_with_default_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("inputWithDefaults"),
-                Some(&Value::scalar(r#"a: 1"#))
+                Some(&graphql_value!(r#"a: 1"#)),
             );
         },
     )
@@ -1143,7 +1143,7 @@ async fn input_object_with_default_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("inputWithDefaults"),
-                Some(&Value::scalar(r#"a: 1"#))
+                Some(&graphql_value!(r#"a: 1"#)),
             );
         },
     )
@@ -1157,7 +1157,7 @@ async fn input_object_with_default_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("inputWithDefaults"),
-                Some(&Value::scalar(r#"a: 2"#))
+                Some(&graphql_value!(r#"a: 2"#)),
             );
         },
     )
@@ -1177,7 +1177,7 @@ mod integers {
             |result| {
                 assert_eq!(
                     result.get_field_value("integerInput"),
-                    Some(&Value::scalar(r#"value: 1"#))
+                    Some(&graphql_value!(r#"value: 1"#)),
                 );
             },
         )
@@ -1191,7 +1191,7 @@ mod integers {
             |result| {
                 assert_eq!(
                     result.get_field_value("integerInput"),
-                    Some(&Value::scalar(r#"value: -1"#))
+                    Some(&graphql_value!(r#"value: -1"#)),
                 );
             },
         )
@@ -1264,7 +1264,7 @@ mod floats {
             |result| {
                 assert_eq!(
                     result.get_field_value("floatInput"),
-                    Some(&Value::scalar(r#"value: 10"#))
+                    Some(&graphql_value!(r#"value: 10"#)),
                 );
             },
         )
@@ -1281,7 +1281,7 @@ mod floats {
             |result| {
                 assert_eq!(
                     result.get_field_value("floatInput"),
-                    Some(&Value::scalar(r#"value: -1"#))
+                    Some(&graphql_value!(r#"value: -1"#)),
                 );
             },
         )

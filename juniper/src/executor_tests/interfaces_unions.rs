@@ -3,7 +3,6 @@ mod interface {
         graphql_interface, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     #[graphql_interface(for = [Cat, Dog])]
@@ -126,31 +125,15 @@ mod interface {
 
         assert_eq!(
             result,
-            Value::object(
-                vec![(
-                    "pets",
-                    Value::list(vec![
-                        Value::object(
-                            vec![
-                                ("name", Value::scalar("Odie")),
-                                ("woofs", Value::scalar(true)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                        Value::object(
-                            vec![
-                                ("name", Value::scalar("Garfield")),
-                                ("meows", Value::scalar(false)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ]),
-                )]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "pets": [{
+                    "name": "Odie",
+                    "woofs": true,
+                }, {
+                    "name": "Garfield",
+                    "meows": false,
+                }],
+            }),
         );
     }
 }
@@ -160,7 +143,6 @@ mod union {
         graphql_object, graphql_union,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     #[graphql_union]
@@ -271,33 +253,17 @@ mod union {
 
         assert_eq!(
             result,
-            Value::object(
-                vec![(
-                    "pets",
-                    Value::list(vec![
-                        Value::object(
-                            vec![
-                                ("__typename", Value::scalar("Dog")),
-                                ("name", Value::scalar("Odie")),
-                                ("woofs", Value::scalar(true)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                        Value::object(
-                            vec![
-                                ("__typename", Value::scalar("Cat")),
-                                ("name", Value::scalar("Garfield")),
-                                ("meows", Value::scalar(false)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ]),
-                )]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "pets": [{
+                    "__typename": "Dog",
+                    "name": "Odie",
+                    "woofs": true,
+                }, {
+                    "__typename": "Cat",
+                    "name": "Garfield",
+                    "meows": false,
+                }],
+            }),
         );
     }
 }
