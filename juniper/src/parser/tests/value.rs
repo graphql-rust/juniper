@@ -12,22 +12,23 @@ use crate::{
     GraphQLEnum, GraphQLInputObject,
 };
 
-#[derive(GraphQLEnum)]
+#[derive(Debug, GraphQLEnum)]
 enum Enum {
     EnumValue,
 }
 
-#[derive(GraphQLInputObject)]
+#[derive(Debug, GraphQLInputObject)]
 struct Bar {
     foo: String,
 }
 
-#[derive(GraphQLInputObject)]
+#[derive(Debug, GraphQLInputObject)]
 struct Foo {
     key: i32,
     other: Bar,
 }
 
+#[derive(Debug)]
 struct Query;
 
 #[crate::graphql_object]

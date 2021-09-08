@@ -10,6 +10,7 @@ use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::Phan
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
@@ -27,7 +28,9 @@ use crate::{
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
-use syn::ext::IdentExt;
+
+#[cfg(feature = "tracing")]
+use crate::tracing;
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
 /// when generating code for [GraphQL object][1] type.
@@ -265,6 +268,14 @@ pub(crate) struct Definition<Operation: ?Sized> {
     /// [2]: https://spec.graphql.org/June2018/#sec-Query
     /// [3]: https://spec.graphql.org/June2018/#sec-Subscription
     pub(crate) _operation: PhantomData<Box<Operation>>,
+
+    /// Explicitly specified rule, that used to define which [`GraphQL field`][1]s
+    /// of this [`GraphQL object`][2] should be traced.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
+    #[cfg(feature = "tracing")]
+    pub(crate) tracing: tracing::Rule,
 }
 
 impl<Operation: ?Sized + 'static> Definition<Operation> {
@@ -489,10 +500,14 @@ impl Definition<Query> {
 
         let name = &self.name;
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(scalar, None));
+        let fields_resolvers = self.fields.iter().filter_map(|f| {
+            f.method_resolve_field_tokens(
+                scalar,
+                None,
+                #[cfg(feature = "tracing")]
+                self,
+            )
+        });
         let async_fields_panic = {
             let names = self
                 .fields
@@ -554,10 +569,14 @@ impl Definition<Query> {
         let (impl_generics, where_clause) = self.impl_generics(true);
         let ty = &self.ty;
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .map(|f| f.method_resolve_field_async_tokens(scalar, None));
+        let fields_resolvers = self.fields.iter().map(|f| {
+            f.method_resolve_field_async_tokens(
+                scalar,
+                None,
+                #[cfg(feature = "tracing")]
+                self,
+            )
+        });
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         quote! {

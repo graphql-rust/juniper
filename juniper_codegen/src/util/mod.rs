@@ -652,7 +652,7 @@ impl<'a> syn::spanned::Spanned for &'a GraphQLTypeDefinitionField {
 /// by various macros.
 /// The definition can be rendered to Rust code.
 #[derive(Debug)]
-pub struct GraphQLTypeDefiniton {
+pub struct GraphQLTypeDefinition {
     pub name: String,
     pub _type: syn::Type,
     pub context: Option<syn::Type>,
@@ -677,7 +677,7 @@ pub struct GraphQLTypeDefiniton {
     pub no_async: bool,
 }
 
-impl GraphQLTypeDefiniton {
+impl GraphQLTypeDefinition {
     #[allow(unused)]
     fn has_async_field(&self) -> bool {
         self.fields.iter().any(|field| field.is_async)

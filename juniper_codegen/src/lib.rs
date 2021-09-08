@@ -116,6 +116,8 @@ mod graphql_interface;
 mod graphql_object;
 mod graphql_subscription;
 mod graphql_union;
+#[cfg(feature = "tracing")]
+mod tracing;
 
 use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
@@ -795,7 +797,14 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [1]: https://spec.graphql.org/June2018/#sec-Objects
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+#[cfg_attr(
+    feature = "tracing",
+    proc_macro_derive(GraphQLObject, attributes(graphql, instrument, tracing))
+)]
+#[cfg_attr(
+    not(feature = "tracing"),
+    proc_macro_derive(GraphQLObject, attributes(graphql))
+)]
 pub fn derive_object(body: TokenStream) -> TokenStream {
     self::graphql_object::derive::expand(body.into())
         .unwrap_or_abort()

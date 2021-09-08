@@ -9,7 +9,7 @@ impl juniper::Context for Context {}
 
 pub struct Query;
 
-#[derive(GraphQLInputObject)]
+#[derive(Debug, GraphQLInputObject)]
 struct ObjectInput {
     field: Nullable<i32>,
 }

@@ -27,14 +27,19 @@ pub(crate) fn sync_resolving_code() -> TokenStream {
 /// Optional `ty` argument may be used to annotate a concrete type of the resolving
 /// [GraphQL type][1] (the [`Future::Output`]).
 ///
+/// `trace_async` may be used to pass extension to trace code execution.
+///
 /// [`Future`]: std::future::Future
 /// [`Future::Output`]: std::future::Future::Output
 /// [1]: https://spec.graphql.org/June2018/#sec-Types
-pub(crate) fn async_resolving_code(ty: Option<&syn::Type>) -> TokenStream {
+pub(crate) fn async_resolving_code(
+    ty: Option<&syn::Type>,
+    trace_async: TokenStream,
+) -> TokenStream {
     let ty = ty.map(|t| quote! { : #t });
 
     quote! {
-        Box::pin(::juniper::futures::FutureExt::then(fut, move |res #ty| async move {
+        let f = ::juniper::futures::FutureExt::then(fut, move |res #ty| async move {
             match ::juniper::IntoResolvable::into(res, executor.context())? {
                 Some((ctx, r)) => {
                     let subexec = executor.replaced_context(ctx);
@@ -42,6 +47,9 @@ pub(crate) fn async_resolving_code(ty: Option<&syn::Type>) -> TokenStream {
                 },
                 None => Ok(::juniper::Value::null()),
             }
-        }))
+        });
+
+        #trace_async
+        Box::pin(f)
     }
 }

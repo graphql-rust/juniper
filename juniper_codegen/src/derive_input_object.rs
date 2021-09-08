@@ -133,7 +133,7 @@ pub fn impl_input_object(ast: syn::DeriveInput, error: GraphQLScope) -> syn::Res
 
     proc_macro_error::abort_if_dirty();
 
-    let definition = util::GraphQLTypeDefiniton {
+    let definition = util::GraphQLTypeDefinition {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),

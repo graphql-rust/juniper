@@ -72,7 +72,7 @@ pub trait Character {
     fn friends_ids(&self) -> &[String];
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Human {
     id: String,
     name: String,

@@ -5,6 +5,7 @@ members = [
   "juniper_codegen",
   "juniper",
   "examples/basic_subscriptions",
+  "examples/tracing_support",
   "examples/warp_async",
   "examples/warp_subscriptions",
   "examples/actix_subscriptions",

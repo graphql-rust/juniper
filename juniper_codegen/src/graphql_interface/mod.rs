@@ -19,6 +19,8 @@ use syn::{
     token,
 };
 
+#[cfg(feature = "tracing")]
+use crate::tracing;
 use crate::{
     common::{
         field, gen,
@@ -136,6 +138,17 @@ struct TraitAttr {
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
     is_internal: bool,
+
+    /// Explicitly specified rule for tracing of fields that belong to this [GraphQL interface][1].
+    ///
+    /// If absent and `tracing` feature enabled all fields not marked with
+    /// `#[graphql(tracing(ignore))]` will be traced.
+    ///
+    /// If it present but feature `tracing` disabled it will cause compilation error.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    #[cfg(feature = "tracing")]
+    tracing_rule: Option<SpanContainer<tracing::Rule>>,
 }
 
 impl Parse for TraitAttr {
@@ -264,6 +277,8 @@ impl TraitAttr {
             ),
             rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
+            #[cfg(feature = "tracing")]
+            tracing_rule: try_merge_opt!(tracing_rule: self, another),
         })
     }
 
@@ -389,7 +404,7 @@ impl ImplAttr {
 /// Definition of [GraphQL interface][1] for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-struct Definition {
+pub(crate) struct Definition {
     /// Rust type that this [GraphQL interface][1] is represented with.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -398,7 +413,7 @@ struct Definition {
     /// Name of this [GraphQL interface][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    name: String,
+    pub(crate) name: String,
 
     /// Description of this [GraphQL interface][1] to put into GraphQL schema.
     ///
@@ -419,7 +434,7 @@ struct Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    scalar: scalar::Type,
+    pub(crate) scalar: scalar::Type,
 
     /// Defined [GraphQL fields][2] of this [GraphQL interface][1].
     ///
@@ -431,6 +446,17 @@ struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implementers: Vec<Implementer>,
+
+    /// Explicitly defined rules of [GraphQL field][2]s that belongs to this
+    /// [GraphQL interface][1].
+    ///
+    /// If it's absent and `tracing` feature is enabled all [field][2]s not marked
+    /// with `#[graphql(tracing(ignore))]` will be traced.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    #[cfg(feature = "tracing")]
+    pub(crate) tracing_rule: tracing::Rule,
 }
 
 impl ToTokens for Definition {
@@ -574,10 +600,14 @@ impl Definition {
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(scalar, Some(&trait_ty)));
+        let fields_resolvers = self.fields.iter().filter_map(|f| {
+            f.method_resolve_field_tokens(
+                scalar,
+                Some(&trait_ty),
+                #[cfg(feature = "tracing")]
+                self,
+            )
+        });
         let async_fields_panic = {
             let names = self
                 .fields
@@ -664,10 +694,14 @@ impl Definition {
         let ty = self.ty.ty_tokens();
         let trait_ty = self.ty.trait_ty();
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .map(|f| f.method_resolve_field_async_tokens(scalar, Some(&trait_ty)));
+        let fields_resolvers = self.fields.iter().map(|f| {
+            f.method_resolve_field_async_tokens(
+                scalar,
+                Some(&trait_ty),
+                #[cfg(feature = "tracing")]
+                self,
+            )
+        });
         let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
 
         let custom_downcasts = self
@@ -872,12 +906,15 @@ impl Implementer {
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
 
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = gen::async_resolving_code(None, quote!());
 
         Some(quote! {
             if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
                 let fut = ::juniper::futures::future::ready(#downcast);
-                return #resolving_code;
+                let f = {
+                    #resolving_code
+                };
+                return f;
             }
         })
     }
@@ -1362,7 +1399,7 @@ impl EnumType {
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = gen::async_resolving_code(None, quote!());
 
         let match_arms = self.variants.iter().map(|ty| {
             let variant = Self::variant_ident(ty);
@@ -1559,7 +1596,7 @@ impl TraitObjectType {
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = gen::async_resolving_code(None, quote!());
 
         quote! {
             let fut = ::juniper::futures::future::ready(self.as_dyn_graphql_value_async());

@@ -16,6 +16,9 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
+#[cfg(feature = "tracing")]
+use crate::tracing;
+
 use super::{Attr, Definition, Query};
 
 /// [`GraphQLScope`] of errors for `#[graphql_object]` macro.
@@ -128,6 +131,9 @@ where
             .map(|ty| ty.as_ref().clone())
             .collect(),
         _operation: PhantomData,
+
+        #[cfg(feature = "tracing")]
+        tracing: tracing::Rule::from_attrs_and_strip("tracing", &mut ast.attrs)?,
     };
 
     Ok(quote! {
@@ -231,6 +237,11 @@ fn parse_field(
         arguments: Some(arguments),
         has_receiver: method.sig.receiver().is_some(),
         is_async: method.sig.asyncness.is_some(),
+
+        #[cfg(feature = "tracing")]
+        instrument: tracing::Attr::from_method(method),
+        #[cfg(feature = "tracing")]
+        tracing: attr.tracing_behavior.map(|t| t.into_inner()),
     })
 }
 

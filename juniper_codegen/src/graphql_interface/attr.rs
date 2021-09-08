@@ -16,6 +16,9 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
+#[cfg(feature = "tracing")]
+use crate::tracing;
+
 use super::{
     inject_async_trait, Definition, EnumType, ImplAttr, Implementer, ImplementerDowncast,
     TraitAttr, TraitObjectType, Type,
@@ -29,6 +32,10 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
     if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body.clone()) {
         let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
         ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
+        #[cfg(feature = "tracing")]
+        {
+            ast.attrs = parse::attr::strip("tracing", ast.attrs);
+        }
         return expand_on_trait(trait_attrs, ast);
     } else if let Ok(mut ast) = syn::parse2::<syn::ItemImpl>(body) {
         if ast.trait_.is_some() {
@@ -198,6 +205,9 @@ fn expand_on_trait(
 
         fields,
         implementers,
+
+        #[cfg(feature = "tracing")]
+        tracing_rule: tracing::Rule::from_attrs("tracing", &attrs)?,
     };
 
     // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
@@ -308,7 +318,7 @@ fn expand_on_impl(attrs: Vec<syn::Attribute>, mut ast: syn::ItemImpl) -> syn::Re
 }
 
 /// Representation of parsed Rust trait method for `#[graphql_interface]` macro code generation.
-enum TraitMethod {
+pub(super) enum TraitMethod {
     /// Method represents a [`Field`] of [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -470,6 +480,11 @@ impl TraitMethod {
             arguments: Some(arguments),
             has_receiver: method.sig.receiver().is_some(),
             is_async: method.sig.asyncness.is_some(),
+
+            #[cfg(feature = "tracing")]
+            instrument: tracing::Attr::from_trait_method(method),
+            #[cfg(feature = "tracing")]
+            tracing: attr.tracing_behavior.map(|t| t.into_inner()),
         })
     }
 }

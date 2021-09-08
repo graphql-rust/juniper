@@ -11,6 +11,7 @@
 - Support using Rust array as GraphQL list. ([#966](https://github.com/graphql-rust/juniper/pull/966), [#918](https://github.com/graphql-rust/juniper/issues/918))
 - Expose `GraphQLRequest` fields. ([#750](https://github.com/graphql-rust/juniper/issues/750))
 - `#[graphql_interface]` macro now supports `rename_all = "<policy>"` argument influencing its fields and their arguments. ([#971](https://github.com/graphql-rust/juniper/pull/971)
+- Add optional `tracing` integration ([#972](https://github.com/graphql-rust/juniper/pull/972))
 
 ## Fixes
 

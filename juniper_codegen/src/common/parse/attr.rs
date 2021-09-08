@@ -53,6 +53,13 @@ pub(crate) mod err {
         )
     }
 
+    /// Creates "tracing feature disabled" [`syn::Error`] pointing to the given `span`.
+    #[cfg(not(feature = "tracing"))]
+    #[must_use]
+    pub(crate) fn tracing_disabled<S: AsSpan>(span: S) -> syn::Error {
+        syn::Error::new(span.as_span(), "`tracing` feature disabled")
+    }
+
     /// Helper coercion for [`Span`] and [`Spanned`] types to use in function arguments.
     pub(crate) trait AsSpan {
         /// Returns the coerced [`Span`].

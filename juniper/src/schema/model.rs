@@ -607,29 +607,30 @@ mod test {
 
         #[test]
         fn schema_language() {
-            #[derive(GraphQLObject, Default)]
+            #[derive(Debug, GraphQLObject, Default)]
             struct Cake {
                 fresh: bool,
             }
-            #[derive(GraphQLObject, Default)]
+            #[derive(Debug, GraphQLObject, Default)]
             struct IceCream {
                 cold: bool,
             }
-            #[derive(GraphQLUnion)]
+            #[derive(Debug, GraphQLUnion)]
             enum GlutenFree {
                 Cake(Cake),
                 IceCream(IceCream),
             }
-            #[derive(GraphQLEnum)]
+            #[derive(Debug, GraphQLEnum)]
             enum Fruit {
                 Apple,
                 Orange,
             }
-            #[derive(GraphQLInputObject)]
+            #[derive(Debug, GraphQLInputObject)]
             struct Coordinate {
                 latitude: f64,
                 longitude: f64,
             }
+            #[derive(Debug)]
             struct Query;
             #[graphql_object]
             impl Query {

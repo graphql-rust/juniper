@@ -9,5 +9,7 @@ mod query_tests;
 mod schema_introspection;
 #[cfg(test)]
 mod subscriptions;
+#[cfg(all(test, feature = "tracing"))]
+mod tracing_tests;
 #[cfg(test)]
 mod type_info_tests;
