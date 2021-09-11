@@ -59,6 +59,7 @@ impl<T> Spanning<T> {
     }
 
     #[doc(hidden)]
+    #[allow(clippy::self_named_constructors)]
     pub fn spanning(v: Vec<Spanning<T>>) -> Option<Spanning<Vec<Spanning<T>>>> {
         if let (Some(start), Some(end)) = (v.first().map(|s| s.start), v.last().map(|s| s.end)) {
             Some(Spanning {

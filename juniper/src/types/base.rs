@@ -520,7 +520,7 @@ where
                 let type_name = instance.type_name(info);
                 if executor
                     .schema()
-                    .is_named_subtype(&concrete_type_name, &fragment.type_condition.item)
+                    .is_named_subtype(&concrete_type_name, fragment.type_condition.item)
                     || Some(fragment.type_condition.item) == type_name
                 {
                     let sub_result = instance.resolve_into_type(
@@ -558,7 +558,7 @@ where
                     let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
                     if executor
                         .schema()
-                        .is_named_subtype(&concrete_type_name, &type_condition.item)
+                        .is_named_subtype(&concrete_type_name, type_condition.item)
                     {
                         let sub_result = instance.resolve_into_type(
                             info,
