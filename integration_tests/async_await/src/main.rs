@@ -1,7 +1,4 @@
-use juniper::{
-    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLError,
-    RootNode, Value,
-};
+use juniper::{graphql_object, GraphQLEnum};
 
 #[derive(GraphQLEnum)]
 enum UserKind {
