@@ -115,11 +115,10 @@ where
 
         if let Some(directive_type) = ctx.schema.directive_by_name(directive_name) {
             if let Some(current_location) = self.location_stack.last() {
-                if directive_type
+                if !directive_type
                     .locations
                     .iter()
-                    .find(|l| l == &current_location)
-                    .is_none()
+                    .any(|l| l == current_location)
                 {
                     ctx.report_error(
                         &misplaced_error_message(directive_name, current_location),

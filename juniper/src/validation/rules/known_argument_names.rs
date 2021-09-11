@@ -74,7 +74,7 @@ where
         &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some((ref pos, args)) = self.current_args {
-            if args.iter().find(|a| a.name == arg_name.item).is_none() {
+            if !args.iter().any(|a| a.name == arg_name.item) {
                 let message = match *pos {
                     ArgumentPosition::Field(field_name, type_name) => {
                         field_error_message(arg_name.item, field_name, type_name)
