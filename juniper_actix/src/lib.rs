@@ -318,8 +318,9 @@ pub mod subscriptions {
         I: Init<S, CtxT> + Send,
     {
         fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-            let msg = msg.map(|r| Message(r));
+            let msg = msg.map(Message);
 
+            #[allow(clippy::single_match)]
             match msg {
                 Ok(msg) => {
                     let tx = self.graphql_tx.clone();
@@ -413,7 +414,6 @@ pub mod subscriptions {
                     ctx.close(Some(reason))
                 }
             };
-            ()
         }
     }
     #[derive(Message)]
@@ -434,7 +434,7 @@ pub mod subscriptions {
         fn try_from(msg: Message) -> Result<Self, Self::Error> {
             match msg.0 {
                 ws::Message::Text(text) => {
-                    serde_json::from_slice(text.as_bytes()).map_err(|e| Error::Serde(e))
+                    serde_json::from_slice(text.as_bytes()).map_err(Error::Serde)
                 }
                 ws::Message::Close(_) => Ok(ClientMessage::ConnectionTerminate),
                 _ => Err(Error::UnexpectedClientMessage),

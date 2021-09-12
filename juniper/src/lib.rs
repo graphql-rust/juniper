@@ -335,7 +335,7 @@ where
     let operation = get_operation(&document, operation_name)?;
 
     {
-        let errors = validate_input_values(&variables, operation, &root_node.schema);
+        let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
             return Err(GraphQLError::ValidationError(errors));

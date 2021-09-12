@@ -87,7 +87,7 @@ where
 
     /// The argument's name
     pub fn name(&'a self) -> &str {
-        &self.name
+        self.name
     }
 
     /// The value of the argument
@@ -289,7 +289,7 @@ where
                         fragments,
                     );
                     assert!(s.is_none());
-                    if let Some(ref c) = inline.item.type_condition.as_ref().map(|t| t.item) {
+                    if let Some(c) = inline.item.type_condition.as_ref().map(|t| t.item) {
                         if let Some(p) = parent.children.last_mut() {
                             p.applies_for = Applies::OnlyType(c);
                         }
@@ -308,7 +308,7 @@ where
                 .children
                 .iter()
                 .filter_map(|c| match c.applies_for {
-                    Applies::OnlyType(ref t) if *t == type_name => {
+                    Applies::OnlyType(t) if t == type_name => {
                         Some(c.inner.for_explicit_type(type_name))
                     }
                     Applies::All => Some(c.inner.for_explicit_type(type_name)),

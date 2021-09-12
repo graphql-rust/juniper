@@ -399,7 +399,7 @@ impl<'a, S> MetaType<'a, S> {
                         .iter()
                         .filter_map(|n| schema.concrete_type_by_name(n))
                         .filter_map(|t| t.fields(schema))
-                        .flat_map(|f| f)
+                        .flatten()
                         .collect(),
                 ),
                 _ => None,

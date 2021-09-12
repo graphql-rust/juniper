@@ -361,6 +361,7 @@ impl Database {
     }
 
     pub fn get_character(&self, id: &str) -> Option<CharacterValue> {
+        #[allow(clippy::manual_map)]
         if let Some(h) = self.humans.get(id) {
             Some(h.clone().into())
         } else if let Some(d) = self.droids.get(id) {

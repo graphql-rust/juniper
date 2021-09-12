@@ -194,7 +194,6 @@ impl Attr {
 
     /// Checks whether this [`Attr`] doesn't contain arguments related to an
     /// [`OnField`] argument.
-    #[must_use]
     fn ensure_no_regular_arguments(&self) -> syn::Result<()> {
         if let Some(span) = &self.name {
             return Err(Self::err_disallowed(&span, "name"));
