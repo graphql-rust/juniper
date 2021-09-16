@@ -22,14 +22,13 @@ travis-ci = { repository = "graphql-rust/juniper" }
 default = [
     "bson",
     "chrono",
-    "json",
+    "serde_json",
     "schema-language",
     "url",
     "uuid",
 ]
 expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
-json = ["serde_json"]
 scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
 
