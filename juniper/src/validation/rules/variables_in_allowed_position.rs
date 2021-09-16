@@ -20,6 +20,7 @@ pub enum Scope<'a> {
 pub struct VariableInAllowedPosition<'a, S: Debug + 'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
     variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String>, Type<'a>)>>,
+    #[allow(clippy::type_complexity)]
     variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
     current_scope: Option<Scope<'a>>,
 }

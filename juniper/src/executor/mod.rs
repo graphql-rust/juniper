@@ -689,7 +689,7 @@ where
                     }
                 });
                 if let Some(p) = found_field {
-                    LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
+                    LookAheadSelection::build_from_selection(p, self.variables, self.fragments)
                 } else {
                     None
                 }

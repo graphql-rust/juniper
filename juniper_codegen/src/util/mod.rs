@@ -552,7 +552,7 @@ pub struct FieldAttributes {
 
 impl Parse for FieldAttributes {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let items = Punctuated::<FieldAttribute, token::Comma>::parse_terminated(&input)?;
+        let items = Punctuated::<FieldAttribute, token::Comma>::parse_terminated(input)?;
 
         let mut output = Self::default();
 
@@ -592,8 +592,8 @@ impl FieldAttributes {
         attrs: &[syn::Attribute],
         _mode: FieldAttributeParseMode,
     ) -> syn::Result<Self> {
-        let doc_comment = get_doc_comment(&attrs);
-        let deprecation = get_deprecated(&attrs);
+        let doc_comment = get_doc_comment(attrs);
+        let deprecation = get_deprecated(attrs);
 
         let attr_opt = attrs.iter().find(|attr| attr.path.is_ident("graphql"));
 

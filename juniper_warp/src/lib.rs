@@ -462,11 +462,11 @@ pub mod subscriptions {
         let (ws_tx, ws_rx) = websocket.split();
         let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split();
 
-        let ws_rx = ws_rx.map(|r| r.map(|msg| Message(msg)));
+        let ws_rx = ws_rx.map(|r| r.map(Message));
         let s_rx = s_rx.map(|msg| {
             serde_json::to_string(&msg)
-                .map(|t| warp::ws::Message::text(t))
-                .map_err(|e| Error::Serde(e))
+                .map(warp::ws::Message::text)
+                .map_err(Error::Serde)
         });
 
         match future::select(

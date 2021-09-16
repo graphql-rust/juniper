@@ -256,7 +256,7 @@ impl GraphQLParserTranslator {
             .map(|a| {
                 a.iter()
                     .filter(|x| !x.is_builtin())
-                    .map(|x| GraphQLParserTranslator::translate_argument(&x))
+                    .map(|x| GraphQLParserTranslator::translate_argument(x))
                     .collect()
             })
             .unwrap_or_else(Vec::new);
@@ -300,7 +300,7 @@ fn generate_directives<'a, T>(status: &DeprecationStatus) -> Vec<ExternalDirecti
 where
     T: Text<'a>,
 {
-    if let Some(d) = deprecation_to_directive(&status) {
+    if let Some(d) = deprecation_to_directive(status) {
         vec![d]
     } else {
         vec![]

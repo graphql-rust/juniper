@@ -287,7 +287,7 @@ where
                 start: ref start_pos,
                 ..
             }) => {
-                if is_excluded(&f.directives, &executor.variables()) {
+                if is_excluded(&f.directives, executor.variables()) {
                     continue;
                 }
 
@@ -327,7 +327,7 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(&exec_vars)))
+                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
                             .collect()
                     }),
                     &meta_field.arguments,
@@ -361,7 +361,7 @@ where
                 start: ref start_pos,
                 ..
             }) => {
-                if is_excluded(&spread.directives, &executor.variables()) {
+                if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
 
@@ -400,7 +400,7 @@ where
                 start: ref start_pos,
                 ..
             }) => {
-                if is_excluded(&fragment.directives, &executor.variables()) {
+                if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
                 }
 

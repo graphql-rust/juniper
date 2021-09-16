@@ -47,7 +47,7 @@ where
 {
     // TODO: Remove in 0.17 `juniper` version.
     /// Returns the `operation_name` associated with this request.
-    #[deprecated(since = "0.16", note = "Use the direct field access instead.")]
+    #[deprecated(since = "0.16.0", note = "Use the direct field access instead.")]
     pub fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_deref()
     }
