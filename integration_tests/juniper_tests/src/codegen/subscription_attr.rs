@@ -1800,7 +1800,7 @@ mod executor {
 
     #[tokio::test]
     async fn test_integration_json() {
-        use juniper::integrations::serde_json::{TypedJson, TypedJsonInfo};
+        use juniper::integrations::json::{TypedJson, TypedJsonInfo};
         use serde_json::json;
 
         struct Foo;

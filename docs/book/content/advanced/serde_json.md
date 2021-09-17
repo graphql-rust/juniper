@@ -1,10 +1,7 @@
-# Json Support
+Dynamic JSON value
+==================
 
-## Using Json with a Dynamic GraphQL Schema
-
-The following example shows you how to run a GraphQL query against json data held in a
-`serde_json::Value`.  To make this work you have to construct the `RootNode` using the
-`new_with_info` method so that you can describe the GraphQL schema of the json data.
+The following example shows you how to run a GraphQL query against JSON data held in a `serde_json::Value`. To make this work you have to construct the `RootNode` using the `new_with_info` method so that you can describe the GraphQL schema of the JSON data.
 
 ```rust
 use serde_json::json;
@@ -14,8 +11,7 @@ use juniper::{
 };
 
 fn main() {
-
-    // Use SDL to define the structure of the JSON data
+    // Use SDL to define the structure of the JSON data.
     let type_info = TypeInfo {
         name: "Query".to_string(),
         schema: Some(r#"
@@ -30,18 +26,16 @@ fn main() {
         "#.to_string()),
     };
 
-    // some example json data the matches the SDL
     let data = json!({
-            "bar": {
-                    "name": "Cheers",
-                    "capacity": 80,
-                    "open": true,
-                },
-        });
+        "bar": {
+            "name": "Cheers",
+            "capacity": 80,
+            "open": true,
+        },
+    });
 
 
-    // create a root node using the json data and the SDL info
-    let root = <RootNode<_, _, _>>::new_with_info(
+    let schema = RootNode::new_with_info(
         data,
         EmptyMutation::new(),
         EmptySubscription::new(),
@@ -49,12 +43,11 @@ fn main() {
         (),
         (),
     );
-
-    // Run the executor.
+    
     let (res, _errors) = juniper::execute_sync(
         "query { bar { name} }",
         None,
-        &root,
+        &schema,
         &Variables::new(),
         &(),
     ).unwrap();
@@ -116,9 +109,8 @@ impl TypedJsonInfo for DetailInput {
 
 struct Query;
 
-#[graphql_object()]
+#[graphql_object]
 impl Query {
-    
     // define a field that uses both Json input type and output type.
     pub fn favorite_person(details: TypedJson<DetailInput>) -> FieldResult<TypedJson<Person>> {
         let ever = details.json.get("ever").unwrap().as_bool().unwrap();
@@ -137,23 +129,23 @@ fn main() {
 
     // Run the executor.
     let (res, _errors) = juniper::execute_sync(r#"
-            query {
-                favoritePerson( details: { ever: true }) {
-                    name, age
-                }
-            }"#,
-                                               None,
-                                               root_node,
-                                               &Variables::new(),
-                                               &(),
+        query {
+            favoritePerson( details: { ever: true }) {
+                name, age
+            }
+        }"#,
+        None,
+        root_node,
+        &Variables::new(),
+        &(),
     ).unwrap();
 
     // Ensure the value matches.
     assert_eq!(
         res,
         graphql_value!({
-                "favoritePerson": {"name": "Destiny", "age":29},
-            })
+            "favoritePerson": {"name": "Destiny", "age":29},
+        }),
     );
 }
 ```

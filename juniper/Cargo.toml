@@ -22,13 +22,13 @@ travis-ci = { repository = "graphql-rust/juniper" }
 default = [
     "bson",
     "chrono",
-    "serde_json",
     "schema-language",
     "url",
     "uuid",
 ]
 expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
+json = ["ref-cast", "serde_json", "smartstring/serde"]
 scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
 
@@ -45,6 +45,7 @@ futures = { version = "0.3.1", features = ["alloc"], default-features = false }
 futures-enum = { version = "0.1.12", default-features = false }
 graphql-parser = { version = "0.3", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
+ref-cast = { version = "1.0.6", optional = true }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
 smartstring = "0.2.6"

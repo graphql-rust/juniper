@@ -21,13 +21,24 @@ where
         let error = if let (Some(field_type), Some(field_type_literal)) =
             (ctx.current_type(), ctx.current_type_literal())
         {
-            match (field_type.is_leaf(), &field.item.selection_set) {
-                (true, &Some(_)) => Some(RuleError::new(
-                    &no_allowed_error_message(field_name, &format!("{}", field_type_literal)),
-                    &[field.start],
-                )),
-                (false, &None) => Some(RuleError::new(
-                    &required_error_message(field_name, &format!("{}", field_type_literal)),
+            match (field_type.is_leaf(), field.item.selection_set.is_some()) {
+                (true, true) => {
+                    let field_type = field_type_literal.to_string();
+                    let field_type = field_type.as_str();
+                    // This hack is required as Juniper doesn't allow at the
+                    // moment for custom defined types to tweak into validation.
+                    // TODO: Redesign validation layer to allow such things.
+                    if cfg!(feature = "json") && (field_type == "Json" || field_type == "Json!") {
+                        None
+                    } else {
+                        Some(RuleError::new(
+                            &no_allowed_error_message(field_name, field_type),
+                            &[field.start],
+                        ))
+                    }
+                }
+                (false, false) => Some(RuleError::new(
+                    &required_error_message(field_name, &field_type_literal.to_string()),
                     &[field.start],
                 )),
                 _ => None,

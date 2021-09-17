@@ -115,6 +115,17 @@ where
         ) => Ok(parser
             .next_token()?
             .map(|_| InputValue::enum_value(name.to_owned()))),
+        // This hack is required as Juniper doesn't allow at the moment
+        // for custom defined types to tweak into parsing.
+        // TODO: Redesign parsing layer to allow such things.
+        #[cfg(feature = "json")]
+        (
+            &Spanning {
+                item: Token::CurlyOpen,
+                ..
+            },
+            Some(&MetaType::Scalar(ref s)),
+        ) if s.name == "Json" => parse_object_literal(parser, is_const, schema, None),
         _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
     }
 }

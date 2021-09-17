@@ -1,7 +1,7 @@
 use crate::{
     ast::InputValue,
     schema::{
-        meta::{EnumMeta, InputObjectMeta, MetaType},
+        meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta},
         model::{SchemaType, TypeType},
     },
     value::ScalarValue,
@@ -16,18 +16,32 @@ pub fn is_valid_literal_value<S>(
 where
     S: ScalarValue,
 {
-    match *arg_type {
-        TypeType::NonNull(ref inner) => {
+    match arg_type {
+        TypeType::NonNull(inner) => {
             if arg_value.is_null() {
+                // This hack is required as Juniper doesn't allow at the moment
+                // for custom defined types to tweak into parsing validation.
+                // TODO: Redesign parsing layer to allow such things.
+                #[cfg(feature = "json")]
+                if let TypeType::Concrete(t) = &**inner {
+                    if let MetaType::Scalar(ScalarMeta { name, .. }) = t {
+                        if name == "Json" {
+                            if let Some(parse_fn) = t.input_value_parse_fn() {
+                                return parse_fn(arg_value);
+                            }
+                        }
+                    }
+                }
+
                 false
             } else {
                 is_valid_literal_value(schema, inner, arg_value)
             }
         }
-        TypeType::List(ref inner, expected_size) => match *arg_value {
-            InputValue::List(ref items) => {
+        TypeType::List(inner, expected_size) => match arg_value {
+            InputValue::List(items) => {
                 if let Some(expected) = expected_size {
-                    if items.len() != expected {
+                    if items.len() != *expected {
                         return false;
                     }
                 }
@@ -35,9 +49,9 @@ where
                     .iter()
                     .all(|i| is_valid_literal_value(schema, inner, &i.item))
             }
-            ref v => {
+            v => {
                 if let Some(expected) = expected_size {
-                    if expected != 1 {
+                    if *expected != 1 {
                         return false;
                     }
                 }
@@ -47,13 +61,23 @@ where
         TypeType::Concrete(t) => {
             // Even though InputValue::String can be parsed into an enum, they
             // are not valid as enum *literals* in a GraphQL query.
-            if let (&InputValue::Scalar(_), Some(&MetaType::Enum(EnumMeta { .. }))) =
-                (arg_value, arg_type.to_concrete())
-            {
+            if let (&InputValue::Scalar(_), MetaType::Enum(EnumMeta { .. })) = (arg_value, t) {
                 return false;
             }
 
-            match *arg_value {
+            // This hack is required as Juniper doesn't allow at the moment
+            // for custom defined types to tweak into parsing validation.
+            // TODO: Redesign parsing layer to allow such things.
+            #[cfg(feature = "json")]
+            if let MetaType::Scalar(ScalarMeta { name, .. }) = t {
+                if name == "Json" {
+                    if let Some(parse_fn) = t.input_value_parse_fn() {
+                        return parse_fn(arg_value);
+                    }
+                }
+            }
+
+            match arg_value {
                 InputValue::Null | InputValue::Variable(_) => true,
                 ref v @ InputValue::Scalar(_) | ref v @ InputValue::Enum(_) => {
                     if let Some(parse_fn) = t.input_value_parse_fn() {
@@ -63,11 +87,8 @@ where
                     }
                 }
                 InputValue::List(_) => false,
-                InputValue::Object(ref obj) => {
-                    if let MetaType::InputObject(InputObjectMeta {
-                        ref input_fields, ..
-                    }) = *t
-                    {
+                InputValue::Object(obj) => {
+                    if let MetaType::InputObject(InputObjectMeta { input_fields, .. }) = t {
                         let mut remaining_required_fields = input_fields
                             .iter()
                             .filter_map(|f| {
@@ -81,13 +102,13 @@ where
 
                         let all_types_ok = obj.iter().all(|&(ref key, ref value)| {
                             remaining_required_fields.remove(&key.item);
-                            if let Some(ref arg_type) = input_fields
+                            if let Some(arg_type) = input_fields
                                 .iter()
                                 .filter(|f| f.name == key.item)
                                 .map(|f| schema.make_type(&f.arg_type))
                                 .next()
                             {
-                                is_valid_literal_value(schema, arg_type, &value.item)
+                                is_valid_literal_value(schema, &arg_type, &value.item)
                             } else {
                                 false
                             }
