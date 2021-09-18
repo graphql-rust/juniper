@@ -59,14 +59,13 @@ struct User {
 // Assign Database as the context type for User
 #[graphql_object(context = Database)]
 impl User {
-    // 3. Inject the context by specifying an argument
+    // Inject the context by specifying an argument
     //    with the context type.
     // Note: 
     //   - the type must be a reference
     //   - the name of the argument SHOULD be `context`
     fn friends<'db>(&self, context: &'db Database) -> Vec<&'db User> {
-
-        // 5. Use the database to lookup users
+        // Use the database to lookup users
         self.friend_ids.iter()
             .map(|id| context.users.get(id).expect("Could not find user with ID"))
             .collect()
@@ -87,4 +86,55 @@ impl User {
 You only get an immutable reference to the context, so if you want to affect
 change to the execution, you'll need to use [interior
 mutability](https://doc.rust-lang.org/book/first-edition/mutability.html#interior-vs-exterior-mutability)
-using e.g. `RwLock` or `RefCell`.
+using e.g. `RwLock` or `RefCell`. \
+If you are using async runtime like `tokio` for mutable references you will need to use a corresponding async version of RwLock:
+```rust
+# extern crate juniper;
+# use std::collections::HashMap;
+# use juniper::graphql_object;
+# use tokio::sync::RwLock;
+#
+// This struct represents our context.
+struct Database {
+    requested_count: HashMap<i32, i32>,
+}
+
+// Mark the Database as a valid context type for Juniper
+impl juniper::Context for Database {}
+
+struct User {
+    id: i32,
+    name: String,
+    times_requested: i32,
+}
+
+// Assign Database as the context type for User and envelope it in RwLock
+#[graphql_object(context = RwLock<Database>)]
+impl User {
+    // Inject the context by specifying an argument
+    //    with the context type.
+    // Note: 
+    //   - the type must be a reference
+    //   - the name of the argument SHOULD be `context`
+    fn times_requested<'db>(&self, context: &'db RwLock<Database>) -> Vec<&'db User> {
+        // Acquire a mutable reference and await if async RwLock is used,
+        // which is neccessary if context consists async operations
+        // like querying remote databases
+        // If context is immutable use .read() on RwLock
+        let mut context = context.write().await;
+        // Preform a mutable operation
+        context.requested_count.entry(0).and_modify(|e| { *e += 1 }).or_insert(1)
+    }
+
+    fn name(&self) -> &str { 
+        self.name.as_str() 
+    }
+
+    fn id(&self) -> i32 { 
+        self.id 
+    }
+}
+#
+# fn main() { }
+```
+Replace `tokio::sync::RwLock` with `std::sync::RwLock` if async runtime is not intended
