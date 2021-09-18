@@ -123,7 +123,7 @@ impl User {
         // If context is immutable use .read() on RwLock
         let mut context = context.write().await;
         // Preform a mutable operation
-        context.requested_count.entry(0).and_modify(|e| { *e += 1 }).or_insert(1)
+        context.requested_count.entry(self.id).and_modify(|e| { *e += 1 }).or_insert(1)
     }
 
     fn name(&self) -> &str { 
