@@ -105,24 +105,21 @@ struct Database {
     requested_count: HashMap<i32, i32>,
 }
 
-impl juniper::Context for Database {}
-
 struct User {
     id: i32,
-    name: String,
-    times_requested: i32,
+    name: String
 }
 
-#[graphql_object(context = RwLock<Database>)]
+#[graphql_object(context=RwLock<Database>)]
 impl User {
-    async fn times_requested<'db>(&self, context: &'db RwLock<Database>) -> Vec<&'db User> {
+    async fn times_requested<'db>(&self, context: &'db RwLock<Database>) -> i32 {
         // Acquire a mutable reference and await if async RwLock is used,
         // which is necessary if context consists async operations like 
         // querying remote databases.
         // If context is immutable use .read() on RwLock.
         let mut context = context.write().await;
         // Preform a mutable operation.
-        context.requested_count.entry(self.id).and_modify(|e| { *e += 1 }).or_insert(1)
+        context.requested_count.entry(self.id).and_modify(|e| { *e += 1 }).or_insert(1).clone()
     }
 
     fn name(&self) -> &str { 
