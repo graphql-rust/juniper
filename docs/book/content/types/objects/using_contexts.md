@@ -101,6 +101,8 @@ For example, when using async runtime with [work stealing][2] (like `tokio`), wh
 # use juniper::graphql_object;
 use tokio::sync::RwLock;
 
+impl juniper::Context for Database {}
+
 struct Database {
     requested_count: HashMap<i32, i32>,
 }
