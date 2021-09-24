@@ -101,23 +101,29 @@ For example, when using async runtime with [work stealing][2] (like `tokio`), wh
 # use juniper::graphql_object;
 use tokio::sync::RwLock;
 
-impl juniper::Context for Database {}
-
 struct Database {
     requested_count: HashMap<i32, i32>,
 }
+
+// Since we cannot directly implement juniper::Context
+// for RwLock we use the newtype idiom
+struct DatabaseContext(RwLock<Database>)
+
+impl juniper::Context for DatabaseContext {}
 
 struct User {
     id: i32,
     name: String
 }
 
-#[graphql_object(context=RwLock<Database>)]
+#[graphql_object(context=DatabaseContext)]
 impl User {
-    async fn times_requested<'db>(&self, context: &'db RwLock<Database>) -> i32 {
+    async fn times_requested<'db>(&self, context: &'db DatabaseContext) -> i32 {
         // Acquire a mutable reference and await if async RwLock is used,
         // which is necessary if context consists async operations like 
         // querying remote databases.
+        // Obtain base type
+        let DatabaseContext(context) = context;
         // If context is immutable use .read() on RwLock.
         let mut context = context.write().await;
         // Preform a mutable operation.
