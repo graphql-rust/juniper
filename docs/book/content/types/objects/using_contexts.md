@@ -107,7 +107,7 @@ struct Database {
 
 // Since we cannot directly implement juniper::Context
 // for RwLock we use the newtype idiom
-struct DatabaseContext(RwLock<Database>)
+struct DatabaseContext(RwLock<Database>);
 
 impl juniper::Context for DatabaseContext {}
 
