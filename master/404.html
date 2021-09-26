@@ -3,8 +3,9 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Introduction - Juniper - GraphQL Server for Rust</title>
-                
+        <title></title>
+                        <base href="/">
+        
 
         <!-- Custom HTML head -->
         
@@ -82,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html" class="active">Introduction</a></li><li class="chapter-item expanded affix "><a href="quickstart.html">Quickstart</a></li><li class="chapter-item expanded affix "><a href="types/index.html">Type System</a></li><li class="chapter-item expanded "><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="chapter-item expanded "><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="chapter-item expanded "><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="chapter-item expanded "><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="chapter-item expanded "><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="quickstart.html">Quickstart</a></li><li class="chapter-item expanded affix "><a href="types/index.html">Type System</a></li><li class="chapter-item expanded "><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="chapter-item expanded "><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="chapter-item expanded "><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="chapter-item expanded "><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="chapter-item expanded "><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,60 +144,14 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="juniper"><a class="header" href="#juniper">Juniper</a></h1>
-<p>Juniper is a <a href="http://graphql.org">GraphQL</a> server library for Rust. Build type-safe and fast API
-servers with minimal boilerplate and configuration.</p>
-<p><a href="http://graphql.org">GraphQL</a> is a data query language developed by Facebook intended to
-serve mobile and web application frontends.</p>
-<p><em>Juniper</em> makes it possible to write GraphQL servers in Rust that are
-type-safe and blazingly fast. We also try to make declaring and resolving
-GraphQL schemas as convenient as possible as Rust will allow.</p>
-<p>Juniper does not include a web server - instead it provides building blocks to
-make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the <a href="https://hyper.rs">Hyper</a>, <a href="https://github.com/iron/iron">Iron</a>, <a href="https://rocket.rs">Rocket</a>, and <a href="https://github.com/seanmonstar/warp">Warp</a> frameworks, including
-embedded <a href="https://github.com/graphql/graphiql">Graphiql</a> for easy debugging.</p>
-<ul>
-<li><a href="https://crates.io/crates/juniper">Cargo crate</a></li>
-<li><a href="https://docs.rs/juniper">API Reference</a></li>
-</ul>
-<h2 id="features"><a class="header" href="#features">Features</a></h2>
-<p>Juniper supports the full GraphQL query language according to the
-<a href="http://facebook.github.io/graphql">specification</a>, including interfaces, unions, schema
-introspection, and validations.
-It does not, however, support the schema language.</p>
-<p>As an exception to other GraphQL libraries for other languages, Juniper builds
-non-null types by default. A field of type <code>Vec&lt;Episode&gt;</code> will be converted into
-<code>[Episode!]!</code>. The corresponding Rust type for e.g. <code>[Episode]</code> would be
-<code>Option&lt;Vec&lt;Option&lt;Episode&gt;&gt;&gt;</code>.</p>
-<h2 id="integrations"><a class="header" href="#integrations">Integrations</a></h2>
-<h3 id="data-types"><a class="header" href="#data-types">Data types</a></h3>
-<p>Juniper has automatic integration with some very common Rust crates to make
-building schemas a breeze. The types from these crates will be usable in
-your Schemas automatically.</p>
-<ul>
-<li><a href="https://crates.io/crates/uuid">uuid</a></li>
-<li><a href="https://crates.io/crates/url">url</a></li>
-<li><a href="https://crates.io/crates/chrono">chrono</a></li>
-<li><a href="https://crates.io/crates/bson">bson</a></li>
-</ul>
-<h3 id="web-frameworks"><a class="header" href="#web-frameworks">Web Frameworks</a></h3>
-<ul>
-<li><a href="https://hyper.rs">hyper</a></li>
-<li><a href="https://rocket.rs">rocket</a></li>
-<li><a href="https://github.com/iron/iron">iron</a></li>
-<li><a href="https://github.com/seanmonstar/warp">warp</a></li>
-</ul>
-<h2 id="api-stability"><a class="header" href="#api-stability">API Stability</a></h2>
-<p>Juniper has not reached 1.0 yet, thus some API instability should be expected.</p>
+                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
+<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                                                    <a rel="next" href="quickstart.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
                         
                         <div style="clear: both"></div>
                     </nav>
@@ -205,9 +160,6 @@ your Schemas automatically.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                                    <a rel="next" href="quickstart.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
                             </nav>
 
         </div>
