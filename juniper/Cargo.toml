@@ -56,7 +56,7 @@ getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 bencher = "0.1.2"
-pretty_assertions = "0.7.1"
+pretty_assertions = "1.0.0"
 serde_json = "1.0.2"
 tokio = { version = "1", features = ["macros", "time", "rt-multi-thread"] }
 
