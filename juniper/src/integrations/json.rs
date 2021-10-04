@@ -13,14 +13,13 @@ use graphql_parser::{
     schema::{Definition, TypeDefinition},
 };
 use ref_cast::RefCast;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     ast,
     marker::{IsInputType, IsOutputType},
-    meta::{Argument, Field, MetaType},
+    meta::MetaType,
     parser::ScalarToken,
-    types::base::resolve_selection_set_into,
     Arguments, BoxFuture, ExecutionResult, Executor, FieldError, FromInputValue, GraphQLType,
     GraphQLValue, GraphQLValueAsync, InputValue, IntoFieldError, ParseScalarResult,
     ParseScalarValue, Registry, ScalarValue, Selection, Spanning, ToInputValue,
@@ -252,24 +251,165 @@ impl<S: ScalarValue> ParseScalarValue<S> for Value {
     }
 }
 
+#[derive(Clone, Copy, Debug, RefCast)]
+#[repr(transparent)]
+pub struct Json<T: ?Sized = Value>(pub T);
+
+impl<T> From<T> for Json<T> {
+    fn from(val: T) -> Self {
+        Self(val)
+    }
+}
+
+impl<T: ?Sized> Deref for Json<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: ?Sized> DerefMut for Json<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T, S> IsInputType<S> for Json<T>
+where
+    T: DeserializeOwned + Serialize,
+    S: ScalarValue,
+{
+}
+
+impl<T, S> IsOutputType<S> for Json<T>
+where
+    T: Serialize + ?Sized,
+    S: ScalarValue,
+{
+}
+
+impl<T, S> GraphQLType<S> for Json<T>
+where
+    T: Serialize + ?Sized,
+    S: ScalarValue,
+{
+    fn name(info: &Self::TypeInfo) -> Option<&str> {
+        <Value as GraphQLType<S>>::name(info)
+    }
+
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        <Value as GraphQLType<S>>::meta(info, registry)
+    }
+}
+
+impl<T, S> GraphQLValue<S> for Json<T>
+where
+    T: Serialize + ?Sized,
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+
+    fn resolve(
+        &self,
+        info: &Self::TypeInfo,
+        selection: Option<&[Selection<S>]>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        serde_json::to_value(&self.0)?.resolve(info, selection, executor)
+    }
+
+    fn resolve_field(
+        &self,
+        info: &Self::TypeInfo,
+        field_name: &str,
+        args: &Arguments<S>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        serde_json::to_value(&self.0)?.resolve_field(info, field_name, args, executor)
+    }
+}
+
+impl<T, S> GraphQLValueAsync<S> for Json<T>
+where
+    T: Serialize + Sync + ?Sized,
+    S: ScalarValue + Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        Box::pin(future::ready(self.resolve(info, selection, executor)))
+    }
+
+    fn resolve_field_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        field_name: &'a str,
+        arguments: &'a Arguments<S>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        Box::pin(future::ready(
+            self.resolve_field(info, field_name, arguments, executor),
+        ))
+    }
+}
+
+impl<T, S> ToInputValue<S> for Json<T>
+where
+    T: Serialize,
+    S: ScalarValue,
+{
+    fn to_input_value(&self) -> InputValue<S> {
+        serde_json::to_value(&self.0)
+            .expect("Failed to serialize")
+            .to_input_value()
+    }
+}
+
+impl<T, S> FromInputValue<S> for Json<T>
+where
+    T: DeserializeOwned,
+    S: ScalarValue,
+{
+    fn from_input_value(val: &InputValue<S>) -> Option<Self> {
+        serde_json::from_value(<Value as FromInputValue<S>>::from_input_value(val)?)
+            .ok()
+            .map(Self)
+    }
+}
+
+impl<T, S> ParseScalarValue<S> for Json<T>
+where
+    T: ?Sized,
+    S: ScalarValue,
+{
+    fn from_str(val: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <Value as ParseScalarValue<S>>::from_str(val)
+    }
+}
+
 #[cfg(test)]
 mod value_test {
-    use futures::StreamExt as _;
-
-    use crate::{ExecutionError, GraphQLError, ScalarValue, ValuesStream};
-
     mod as_output {
-        use std::pin::Pin;
-
-        use futures::{future, stream, FutureExt as _};
+        use futures::FutureExt as _;
         use serde_json::{json, Value};
 
         use crate::{
             execute, execute_sync, graphql_object, graphql_subscription, resolve_into_stream,
+            tests::util::{extract_next, stream, Stream},
             EmptyMutation, EmptySubscription, FieldResult, RootNode, Variables,
         };
-
-        use super::extract_next;
 
         struct Query;
 
@@ -317,12 +457,6 @@ mod value_test {
                     "body": "Ambarendya!",
                 }})
             }
-        }
-
-        type Stream<I> = Pin<Box<dyn futures::Stream<Item = I> + Send>>;
-
-        fn stream<T: Send + 'static>(val: T) -> Stream<T> {
-            Box::pin(stream::once(future::ready(val)))
         }
 
         struct Subscription;
@@ -1054,34 +1188,879 @@ mod value_test {
             );
         }
     }
+}
 
-    /// Extracts a single next value from the result returned by
-    /// [`juniper::resolve_into_stream()`] and transforms it into a regular
-    /// [`Value`].
-    async fn extract_next<'a, S: ScalarValue>(
-        input: Result<
-            (crate::Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>),
-            GraphQLError<'a>,
-        >,
-    ) -> Result<(crate::Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>> {
-        let (stream, errs) = input?;
-        if !errs.is_empty() {
-            return Ok((crate::Value::Null, errs));
+#[cfg(test)]
+mod json_test {
+    mod as_output {
+        use futures::FutureExt as _;
+        use serde::{Deserialize, Serialize};
+        use serde_json::Value;
+
+        use crate::{
+            execute, execute_sync, graphql_object, graphql_subscription, resolve_into_stream,
+            tests::util::{extract_next, stream, Stream},
+            EmptyMutation, EmptySubscription, FieldResult, RootNode, Variables,
+        };
+
+        use super::super::Json;
+
+        #[derive(Debug, Deserialize, Serialize)]
+        struct Message {
+            message: Vec<String>,
         }
 
-        if let crate::Value::Object(obj) = stream {
-            for (name, mut val) in obj {
-                if let crate::Value::Scalar(ref mut stream) = val {
-                    return match stream.next().await {
-                        Some(Ok(val)) => Ok((graphql_value!({ name: val }), vec![])),
-                        Some(Err(e)) => Ok((crate::Value::Null, vec![e])),
-                        None => Ok((crate::Value::Null, vec![])),
-                    };
-                }
+        #[derive(Debug, Deserialize, Serialize)]
+        struct Envelope {
+            envelope: Message,
+        }
+
+        struct Query;
+
+        #[graphql_object]
+        impl Query {
+            fn null() -> Json {
+                Value::Null.into()
+            }
+
+            fn bool() -> Json<bool> {
+                Json(true)
+            }
+
+            fn int() -> Json<i32> {
+                Json(42)
+            }
+
+            fn float() -> Json<f64> {
+                Json(3.14)
+            }
+
+            fn string() -> Json<&'static str> {
+                Json("Galadriel")
+            }
+
+            fn array() -> Json<Vec<&'static str>> {
+                Json(vec!["Ai", "Ambarendya!"])
+            }
+
+            fn object() -> Json<Message> {
+                Json(Message {
+                    message: vec!["Ai".into(), "Ambarendya!".into()],
+                })
+            }
+
+            fn nullable() -> Option<Json<Message>> {
+                Some(Json(Message {
+                    message: vec!["Ai".into(), "Ambarendya!".into()],
+                }))
+            }
+
+            fn fallible() -> FieldResult<Json<Message>> {
+                Ok(Json(Message {
+                    message: vec!["Ai".into(), "Ambarendya!".into()],
+                }))
+            }
+
+            fn nested() -> Json<Envelope> {
+                Json(Envelope {
+                    envelope: Message {
+                        message: vec!["Ai".into(), "Ambarendya!".into()],
+                    },
+                })
             }
         }
 
-        panic!("Expected to get Value::Object containing a Stream")
+        struct Subscription;
+
+        #[graphql_subscription]
+        impl Subscription {
+            async fn null() -> Stream<Json> {
+                stream(Value::Null.into())
+            }
+
+            async fn bool() -> Stream<Json<bool>> {
+                stream(Json(true))
+            }
+
+            async fn int() -> Stream<Json<i32>> {
+                stream(Json(42))
+            }
+
+            async fn float() -> Stream<Json<f64>> {
+                stream(Json(3.14))
+            }
+
+            async fn string() -> Stream<Json<String>> {
+                stream(Json("Galadriel".into()))
+            }
+
+            async fn array() -> Stream<Json<Vec<&'static str>>> {
+                stream(Json(vec!["Ai", "Ambarendya!"]))
+            }
+
+            async fn object() -> Stream<Json<Message>> {
+                stream(Json(Message {
+                    message: vec!["Ai".into(), "Ambarendya!".into()],
+                }))
+            }
+
+            async fn nullable() -> Stream<Option<Json<Message>>> {
+                stream(Some(Json(Message {
+                    message: vec!["Ai".into(), "Ambarendya!".into()],
+                })))
+            }
+
+            async fn fallible() -> FieldResult<Stream<FieldResult<Json<Message>>>> {
+                Ok(stream(Ok(Json(Message {
+                    message: vec!["Ai".into(), "Ambarendya!".into()],
+                }))))
+            }
+
+            async fn nested() -> Stream<Json<Envelope>> {
+                stream(Json(Envelope {
+                    envelope: Message {
+                        message: vec!["Ai".into(), "Ambarendya!".into()],
+                    },
+                }))
+            }
+        }
+
+        #[tokio::test]
+        async fn resolves_null() {
+            const QRY: &str = "{ null }";
+            const SUB: &str = "subscription { null }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_bool() {
+            const QRY: &str = "{ bool }";
+            const SUB: &str = "subscription { bool }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"bool": true}), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({"bool": true}), vec![])),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({"bool": true}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_int() {
+            const QRY: &str = "{ int }";
+            const SUB: &str = "subscription { int }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"int": 42}), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({"int": 42}), vec![])),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({"int": 42}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_float() {
+            const QRY: &str = "{ float }";
+            const SUB: &str = "subscription { float }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"float": 3.14}), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({"float": 3.14}), vec![])),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({"float": 3.14}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_string() {
+            const QRY: &str = "{ string }";
+            const SUB: &str = "subscription { string }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"string": "Galadriel"}), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({"string": "Galadriel"}), vec![])),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({"string": "Galadriel"}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_array() {
+            const QRY: &str = "{ array }";
+            const SUB: &str = "subscription { array }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_object() {
+            const QRY: &str = "{ object }";
+            const SUB: &str = "subscription { object }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "object": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "object": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "object": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_nullable() {
+            const QRY: &str = "{ nullable }";
+            const SUB: &str = "subscription { nullable }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "nullable": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "nullable": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "nullable": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_fallible() {
+            const QRY: &str = "{ fallible }";
+            const SUB: &str = "subscription { fallible }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "fallible": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "fallible": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "fallible": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_fields() {
+            const QRY: &str = r#"{
+                object { message }
+                nullable { message }
+                fallible { message }
+            }"#;
+            const SUB1: &str = r#"subscription {
+                object { message }
+            }"#;
+            const SUB2: &str = r#"subscription {
+                nullable { message }
+            }"#;
+            const SUB3: &str = r#"subscription {
+                fallible { message }
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "object": {"message": ["Ai", "Ambarendya!"]},
+                        "nullable": {"message": ["Ai", "Ambarendya!"]},
+                        "fallible": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "object": {"message": ["Ai", "Ambarendya!"]},
+                        "nullable": {"message": ["Ai", "Ambarendya!"]},
+                        "fallible": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "object": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                resolve_into_stream(SUB2, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "nullable": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                resolve_into_stream(SUB3, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "fallible": {"message": ["Ai", "Ambarendya!"]},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_unknown_fields_as_null() {
+            const QRY: &str = r#"{
+                object { message, friend }
+                nullable { message, mellon }
+                fallible { message, freund }
+            }"#;
+            const SUB1: &str = r#"subscription {
+                object { message, friend }
+            }"#;
+            const SUB2: &str = r#"subscription {
+                nullable { message, mellon }
+            }"#;
+            const SUB3: &str = r#"subscription {
+                fallible { message, freund }
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "object": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "friend": None,
+                        },
+                        "nullable": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "mellon": None,
+                        },
+                        "fallible": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "freund": None,
+                        },
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "object": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "friend": None,
+                        },
+                        "nullable": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "mellon": None,
+                        },
+                        "fallible": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "freund": None,
+                        },
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "object": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "friend": None,
+                        },
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                resolve_into_stream(SUB2, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "nullable": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "mellon": None,
+                        },
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                resolve_into_stream(SUB3, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "fallible": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "freund": None,
+                        },
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_nested_object_fields() {
+            const QRY: &str = "{ nested { envelope { message } } }";
+            const SUB: &str = "subscription { nested { envelope { message } } }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "nested": {"envelope": {"message": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "nested": {"envelope": {"message": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "nested": {"envelope": {"message": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_nested_unknown_object_fields() {
+            const QRY: &str = "{ nested { envelope { message, foo } } }";
+            const SUB: &str = "subscription { nested { envelope { message, foo } } }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "nested": {"envelope": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "foo": None,
+                        }},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "nested": {"envelope": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "foo": None,
+                        }},
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "nested": {"envelope": {
+                            "message": ["Ai", "Ambarendya!"],
+                            "foo": None,
+                        }},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_nested_aliased_object_fields() {
+            const QRY: &str = "{ nested { e: envelope { m: message } } }";
+            const SUB: &str = "subscription { nested { e: envelope { m: message } } }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "nested": {"e": {"m": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((
+                    graphql_value!({
+                        "nested": {"e": {"m": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "nested": {"e": {"m": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+    }
+
+    mod as_input {
+        use serde::{Deserialize, Serialize};
+
+        use crate::{
+            execute, graphql_object, EmptyMutation, EmptySubscription, RootNode, Variables,
+        };
+
+        use super::super::Json;
+
+        #[derive(Debug, Deserialize, Serialize)]
+        struct Message {
+            message: Vec<String>,
+        }
+
+        #[derive(Debug, Deserialize, Serialize)]
+        struct Envelope {
+            envelope: Message,
+        }
+
+        struct Query;
+
+        #[graphql_object]
+        impl Query {
+            fn any(arg: Json) -> Json {
+                arg
+            }
+
+            fn bool(arg: Json<bool>) -> Json<bool> {
+                arg
+            }
+
+            fn int(arg: Json<i32>) -> Json<i32> {
+                arg
+            }
+
+            fn float(arg: Json<f64>) -> Json<f64> {
+                arg
+            }
+
+            fn string(arg: Json<String>) -> Json<String> {
+                arg
+            }
+
+            fn array(arg: Json<Vec<String>>) -> Json<Vec<String>> {
+                arg
+            }
+
+            fn object(arg: Json<Envelope>) -> Json<Envelope> {
+                arg
+            }
+        }
+
+        #[tokio::test]
+        async fn accepts_null() {
+            const DOC: &str = r#"{
+                null: any(arg: null)
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn accepts_bool() {
+            const DOC: &str = r#"{
+                bool(arg: true)
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"bool": true}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn accepts_int() {
+            const DOC: &str = r#"{
+                int(arg: 42)
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"int": 42}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn accepts_float() {
+            const DOC: &str = r#"{
+                float(arg: 3.14)
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"float": 3.14}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn accepts_string() {
+            const DOC: &str = r#"{
+                string(arg: "Galadriel")
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"string": "Galadriel"}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn accepts_array() {
+            const DOC: &str = r#"{
+                array(arg: ["Ai", "Ambarendya!"])
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn accepts_object() {
+            const DOC: &str = r#"{
+                object(arg: {envelope: {message: ["Ai", "Ambarendya!"]}})
+            }"#;
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "object": {"envelope": {"message": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_on_invalid_object() {
+            const DOC: &str = r#"{
+                object(arg: {envelope: ["Ai", "Ambarendya!"]})
+            }"#;
+
+
+            // TODO: should not panic!
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                Ok((
+                    graphql_value!({
+                        "object": {"envelope": {"message": ["Ai", "Ambarendya!"]}},
+                    }),
+                    vec![],
+                )),
+            );
+        }
     }
 }
 
