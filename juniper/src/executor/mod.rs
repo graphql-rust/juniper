@@ -573,6 +573,34 @@ where
         }
     }
 
+    // This hack is required as Juniper doesn't allow at the
+    // moment for custom defined types to tweak into executor.
+    // TODO: Redesign executor layer to allow such things.
+    #[cfg(feature = "json")]
+    #[doc(hidden)]
+    pub(crate) fn field_with_parent_type_sub_executor<'s>(
+        &'s self,
+        field_alias: &'a str,
+        location: SourcePosition,
+        selection_set: Option<&'s [Selection<'a, S>]>,
+    ) -> Executor<'s, 'a, CtxT, S> {
+        Executor {
+            fragments: self.fragments,
+            variables: self.variables,
+            current_selection_set: selection_set,
+            parent_selection_set: self.current_selection_set,
+            current_type: self.current_type.clone(),
+            schema: self.schema,
+            context: self.context,
+            errors: self.errors,
+            field_path: Arc::new(FieldPath::Field(
+                field_alias,
+                location,
+                Arc::clone(&self.field_path),
+            )),
+        }
+    }
+
     #[doc(hidden)]
     pub fn type_sub_executor<'s>(
         &'s self,
