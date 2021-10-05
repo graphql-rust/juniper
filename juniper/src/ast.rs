@@ -150,19 +150,26 @@ pub type Document<'a, S> = [Definition<'a, S>];
 #[doc(hidden)]
 pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
-/// Parse an unstructured input value into a Rust data type.
+/// Parse an unstructured [`InputValue`] into a concrete Rust data type.
 ///
-/// The conversion _can_ fail, and must in that case return None. Implemented
-/// automatically by the convenience proc macro `graphql_scalar` or by deriving GraphQLEnum.
+/// The conversion _can_ fail, and must in that case return [`Err`].
 ///
-/// Must be implemented manually when manually exposing new enums or scalars.
+/// Implemented automatically by the convenience proc macro [`graphql_scalar`]
+/// or by deriving [`GraphQLEnum`].
+///
+/// Must be implemented manually when manually exposing new GraphQL enums or
+/// scalars.
+///
+/// [`graphql_scalar`]: macro@crate::graphql_scalar
+/// [`GraphQLEnum`]: macro@crate::GraphQLEnum
 pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn from_input_value(v: &InputValue<S>) -> Option<Self>;
 
-    /// Performs the conversion from an absent value (e.g. to distinguish between
-    /// implicit and explicit null). The default implementation just uses
-    /// `from_input_value` as if an explicit null were provided.
+    /// Performs the conversion from an absent value (e.g. to distinguish
+    /// between implicit and explicit `null`). The default implementation just
+    /// uses [`FromInputValue::from_input_value()`] as if an explicit `null`
+    /// were provided.
     ///
     /// This conversion must not fail.
     fn from_implicit_null() -> Option<Self> {
@@ -322,7 +329,7 @@ where
         }
     }
 
-    /// Shorthand form of invoking `FromInputValue::from()`.
+    /// Shorthand form of invoking [`FromInputValue::from_input_value()`].
     pub fn convert<T>(&self) -> Option<T>
     where
         T: FromInputValue<S>,

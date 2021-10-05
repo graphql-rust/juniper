@@ -96,15 +96,15 @@ where
             }
         }
 
-        Arguments { args }
+        Self { args }
     }
 
-    /// Get and convert an argument into the desired type.
+    /// Gets and converts an argument into the desired type.
     ///
-    /// If the argument is found, or a default argument has been provided,
-    /// the `InputValue` will be converted into the type `T`.
+    /// If the argument has been found, or a default argument has been provided,
+    /// the [`InputValue`] will be converted into the type `T`.
     ///
-    /// Returns `Some` if the argument is present _and_ type conversion
+    /// Returns [`Some`] if the argument is present _and_ type conversion
     /// succeeds.
     pub fn get<T>(&self, key: &str) -> Option<T>
     where

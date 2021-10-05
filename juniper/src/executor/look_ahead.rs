@@ -38,26 +38,21 @@ where
 {
     fn from_input_value(input_value: &'a InputValue<S>, vars: &'a Variables<S>) -> Self {
         match *input_value {
-            InputValue::Null => LookAheadValue::Null,
-            InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
-            InputValue::Enum(ref e) => LookAheadValue::Enum(e),
+            InputValue::Null => Self::Null,
+            InputValue::Scalar(ref s) => Self::Scalar(s),
+            InputValue::Enum(ref e) => Self::Enum(e),
             InputValue::Variable(ref name) => vars
                 .get(name)
                 .map(|v| Self::from_input_value(v, vars))
-                .unwrap_or(LookAheadValue::Null),
-            InputValue::List(ref l) => LookAheadValue::List(
+                .unwrap_or(Self::Null),
+            InputValue::List(ref l) => Self::List(
                 l.iter()
-                    .map(|i| LookAheadValue::from_input_value(&i.item, vars))
+                    .map(|i| Self::from_input_value(&i.item, vars))
                     .collect(),
             ),
-            InputValue::Object(ref o) => LookAheadValue::Object(
+            InputValue::Object(ref o) => Self::Object(
                 o.iter()
-                    .map(|&(ref n, ref i)| {
-                        (
-                            &n.item as &str,
-                            LookAheadValue::from_input_value(&i.item, vars),
-                        )
-                    })
+                    .map(|&(ref n, ref i)| (&n.item as &str, Self::from_input_value(&i.item, vars)))
                     .collect(),
             ),
         }
