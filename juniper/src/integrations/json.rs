@@ -285,6 +285,15 @@ impl<T, I: ?Sized> Json<T, I> {
     pub fn into_inner(self) -> T {
         self.val
     }
+
+    /// Maps the inner value of this [`Json`] wrapper with the given function.
+    #[must_use]
+    pub fn map<To>(self, f: impl FnOnce(T) -> To) -> Json<To, I> {
+        Json {
+            _type: PhantomData,
+            val: f(self.val),
+        }
+    }
 }
 
 impl<T: ?Sized, I: ?Sized> Deref for Json<T, I> {
@@ -469,17 +478,23 @@ pub struct Info {
 }
 
 impl Info {
-    pub fn parse<N: Into<String>, S: AsRef<str>>(name: N, sdl: S) -> Result<Self, ParseError> {
+    pub fn try_new<N: Into<String>>(
+        name: N,
+        schema: Schema<'_, String>,
+    ) -> Result<Self, ParseError> {
         // SAFETY: Same as `query::Document::into_static()`, see:
         //         https://docs.rs/graphql-parser/0.3.0/src/graphql_parser/query/ast.rs.html#18-33
         // TODO: Use `.into_static()` on `graphql_parser` 0.3.1 release.
-        let schema =
-            unsafe { mem::transmute(graphql_parser::parse_schema::<String>(sdl.as_ref())?) };
+        let schema = unsafe { mem::transmute(schema) };
         let name = name.into();
 
         // TODO: validate `name` is contained in `schema`.
 
         Ok(Self { schema, name })
+    }
+
+    pub fn parse<N: Into<String>, S: AsRef<str>>(name: N, sdl: S) -> Result<Self, ParseError> {
+        Self::try_new(name, graphql_parser::parse_schema::<String>(sdl.as_ref())?)
     }
 
     /// Returns type name of a [`GraphQLValue`] using this [`Info`].
@@ -626,6 +641,9 @@ impl TypeInfo for Info {
     }
 }
 
+/// Dynamic [`Json`] value typed by an [`Info`].
+pub type Typed<T: ?Sized = Value> = Json<T, Info>;
+
 #[cfg(test)]
 mod value_test {
     mod as_output {
@@ -739,7 +757,8 @@ mod value_test {
             const QRY: &str = "{ null }";
             const SUB: &str = "subscription { null }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({ "null": None }), vec![])),
@@ -748,8 +767,6 @@ mod value_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({ "null": None }), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -763,7 +780,8 @@ mod value_test {
             const QRY: &str = "{ bool }";
             const SUB: &str = "subscription { bool }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"bool": true}), vec![])),
@@ -772,8 +790,6 @@ mod value_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"bool": true}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -787,7 +803,8 @@ mod value_test {
             const QRY: &str = "{ int }";
             const SUB: &str = "subscription { int }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"int": 42}), vec![])),
@@ -796,8 +813,6 @@ mod value_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"int": 42}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -811,7 +826,8 @@ mod value_test {
             const QRY: &str = "{ float }";
             const SUB: &str = "subscription { float }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"float": 3.14}), vec![])),
@@ -820,8 +836,6 @@ mod value_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"float": 3.14}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -835,7 +849,8 @@ mod value_test {
             const QRY: &str = "{ string }";
             const SUB: &str = "subscription { string }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
@@ -844,8 +859,6 @@ mod value_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -859,7 +872,8 @@ mod value_test {
             const QRY: &str = "{ array }";
             const SUB: &str = "subscription { array }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
@@ -868,8 +882,6 @@ mod value_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -883,7 +895,8 @@ mod value_test {
             const QRY: &str = "{ object }";
             const SUB: &str = "subscription { object }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -902,8 +915,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -922,7 +933,8 @@ mod value_test {
             const QRY: &str = "{ nullable }";
             const SUB: &str = "subscription { nullable }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -941,8 +953,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -961,7 +971,8 @@ mod value_test {
             const QRY: &str = "{ fallible }";
             const SUB: &str = "subscription { fallible }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -980,8 +991,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1012,7 +1021,8 @@ mod value_test {
                 fallible { message }
             }"#;
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1035,8 +1045,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1089,7 +1097,8 @@ mod value_test {
                 fallible { message, freund }
             }"#;
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1130,8 +1139,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1181,7 +1188,8 @@ mod value_test {
             const QRY: &str = "{ nested { message { body } } }";
             const SUB: &str = "subscription { nested { message { body } } }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1200,8 +1208,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1220,7 +1226,8 @@ mod value_test {
             const QRY: &str = "{ nested { message { body, foo } } }";
             const SUB: &str = "subscription { nested { message { body, foo } } }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1245,8 +1252,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1268,7 +1273,8 @@ mod value_test {
             const QRY: &str = "{ nested { m: message { b: body } } }";
             const SUB: &str = "subscription { nested { m: message { b: body } } }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1287,8 +1293,6 @@ mod value_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1307,7 +1311,8 @@ mod value_test {
             const QRY: &str = "{ null { message } }";
             const SUB: &str = "subscription { null { message } }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({ "null": None }), vec![])),
@@ -1316,8 +1321,6 @@ mod value_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({ "null": None }), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1328,6 +1331,8 @@ mod value_test {
 
         #[tokio::test]
         async fn errors_selecting_fields_on_leaf_value() {
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             for qry in [
                 "{ bool { message } }",
                 "{ int { message } }",
@@ -1337,7 +1342,6 @@ mod value_test {
                 "{ object { message { body } } }",
                 "{ nested { message { body { theme } } } }",
             ] {
-                let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
                 let res = execute(qry, None, &schema, &Variables::new(), &()).await;
                 assert_eq!(
                     res.as_ref()
@@ -1347,6 +1351,7 @@ mod value_test {
                     qry,
                     res,
                 );
+
                 let res = execute_sync(qry, None, &schema, &Variables::new(), &());
                 assert_eq!(
                     res.as_ref()
@@ -1357,7 +1362,6 @@ mod value_test {
                     res,
                 );
 
-                let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
                 let sub = format!("subscription {}", qry);
                 let res = resolve_into_stream(&sub, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1397,6 +1401,7 @@ mod value_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({ "null": None }), vec![])),
@@ -1410,6 +1415,7 @@ mod value_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"bool": true}), vec![])),
@@ -1423,6 +1429,7 @@ mod value_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"int": 42}), vec![])),
@@ -1436,6 +1443,7 @@ mod value_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"float": 3.14}), vec![])),
@@ -1449,6 +1457,7 @@ mod value_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
@@ -1462,6 +1471,7 @@ mod value_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
@@ -1475,6 +1485,7 @@ mod value_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1628,7 +1639,8 @@ mod json_test {
             const QRY: &str = "{ null }";
             const SUB: &str = "subscription { null }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({ "null": None }), vec![])),
@@ -1637,8 +1649,6 @@ mod json_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({ "null": None }), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1652,7 +1662,8 @@ mod json_test {
             const QRY: &str = "{ bool }";
             const SUB: &str = "subscription { bool }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"bool": true}), vec![])),
@@ -1661,8 +1672,6 @@ mod json_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"bool": true}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1676,7 +1685,8 @@ mod json_test {
             const QRY: &str = "{ int }";
             const SUB: &str = "subscription { int }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"int": 42}), vec![])),
@@ -1685,8 +1695,6 @@ mod json_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"int": 42}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1700,7 +1708,8 @@ mod json_test {
             const QRY: &str = "{ float }";
             const SUB: &str = "subscription { float }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"float": 3.14}), vec![])),
@@ -1709,8 +1718,6 @@ mod json_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"float": 3.14}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1724,7 +1731,8 @@ mod json_test {
             const QRY: &str = "{ string }";
             const SUB: &str = "subscription { string }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
@@ -1733,8 +1741,6 @@ mod json_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1748,7 +1754,8 @@ mod json_test {
             const QRY: &str = "{ array }";
             const SUB: &str = "subscription { array }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
@@ -1757,8 +1764,6 @@ mod json_test {
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1772,7 +1777,8 @@ mod json_test {
             const QRY: &str = "{ object }";
             const SUB: &str = "subscription { object }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1791,8 +1797,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1811,7 +1815,8 @@ mod json_test {
             const QRY: &str = "{ nullable }";
             const SUB: &str = "subscription { nullable }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1830,8 +1835,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1850,7 +1853,8 @@ mod json_test {
             const QRY: &str = "{ fallible }";
             const SUB: &str = "subscription { fallible }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1869,8 +1873,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1901,7 +1903,8 @@ mod json_test {
                 fallible { message }
             }"#;
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -1924,8 +1927,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -1978,7 +1979,8 @@ mod json_test {
                 fallible { message, freund }
             }"#;
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -2019,8 +2021,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -2070,7 +2070,8 @@ mod json_test {
             const QRY: &str = "{ nested { envelope { message } } }";
             const SUB: &str = "subscription { nested { envelope { message } } }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -2089,8 +2090,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -2109,7 +2108,8 @@ mod json_test {
             const QRY: &str = "{ nested { envelope { message, foo } } }";
             const SUB: &str = "subscription { nested { envelope { message, foo } } }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -2134,8 +2134,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -2157,7 +2155,8 @@ mod json_test {
             const QRY: &str = "{ nested { e: envelope { m: message } } }";
             const SUB: &str = "subscription { nested { e: envelope { m: message } } }";
 
-            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -2176,8 +2175,6 @@ mod json_test {
                     vec![],
                 )),
             );
-
-            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
@@ -2189,6 +2186,77 @@ mod json_test {
                     vec![],
                 )),
             );
+        }
+
+        #[tokio::test]
+        async fn allows_fields_on_null() {
+            const QRY: &str = "{ null { message } }";
+            const SUB: &str = "subscription { null { message } }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_selecting_fields_on_leaf_value() {
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
+            for qry in [
+                "{ bool { message } }",
+                "{ int { message } }",
+                "{ float { message } }",
+                "{ string { message } }",
+                "{ array { message } }",
+                "{ object { message { body } } }",
+                "{ nested { envelope { message { theme } } } }",
+            ] {
+                let res = execute(qry, None, &schema, &Variables::new(), &()).await;
+                assert_eq!(
+                    res.as_ref()
+                        .map(|(_, errs)| errs.first().map(|e| e.error().message())),
+                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    "query: {}\nactual result: {:?}",
+                    qry,
+                    res,
+                );
+
+                let res = execute_sync(qry, None, &schema, &Variables::new(), &());
+                assert_eq!(
+                    res.as_ref()
+                        .map(|(_, errs)| errs.first().map(|e| e.error().message())),
+                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    "query: {}\nactual result: {:?}",
+                    qry,
+                    res,
+                );
+
+                let sub = format!("subscription {}", qry);
+                let res = resolve_into_stream(&sub, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await;
+                assert_eq!(
+                    res.as_ref()
+                        .map(|(_, errs)| errs.first().map(|e| e.error().message())),
+                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    "query: {}\nactual result: {:?}",
+                    qry,
+                    res,
+                );
+            }
         }
     }
 
@@ -2251,6 +2319,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({ "null": None }), vec![])),
@@ -2264,6 +2333,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"bool": true}), vec![])),
@@ -2277,6 +2347,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"int": 42}), vec![])),
@@ -2290,6 +2361,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"float": 3.14}), vec![])),
@@ -2303,6 +2375,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
@@ -2316,6 +2389,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
@@ -2329,6 +2403,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -2349,6 +2424,7 @@ mod json_test {
             }"#;
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+
             assert_eq!(
                 execute(DOC, None, &schema, &Variables::new(), &()).await,
                 Ok((
@@ -2363,21 +2439,61 @@ mod json_test {
     }
 }
 
+#[cfg(test)]
+mod typed_test {
+    mod as_output {
+        use serde_json::{json, Value};
+
+        use crate::{graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode};
+
+        use super::super::{Info, Typed};
+
+        struct Query;
+
+        const SDL: &str = r#"
+            type Bar {
+                location: String
+                capacity: Int
+                open: Boolean!
+                rating: Float
+                foo: Foo
+            }
+            type Foo {
+                message: String
+                bar: Bar
+            }
+        "#;
+
+        #[test]
+        fn resolves() {
+            let info = Info::parse("Foo", SDL).unwrap();
+            let data = Typed::wrap(json!({
+                "message": "hello world",
+                "bar": {
+                    "location": "downtown",
+                    "capacity": 80,
+                    "open": true,
+                    "rating": 4.5,
+                    "foo": {
+                        "message": "drink more",
+                    }
+                },
+            }));
+            let schema = RootNode::new_with_info(
+                data,
+                EmptyMutation::new(),
+                EmptySubscription::new(),
+                info,
+                (),
+                (),
+            );
+        }
+    }
+}
+
 //------------------------------------------------------------------------------
 
 /*
-// Used to describe the graphql type of a `serde_json::Value` using the GraphQL
-// schema definition language.
-/// [`GraphQLValue::TypeInfo`] of [`Json`] using the GraphQL schema definition
-/// language.
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypeInfo {
-    /// Schema definition language containing a definition of the type name.
-    pub schema: Option<String>,
-
-    /// Type name of the GraphQL value
-    pub name: String,
-}
 
 impl<S: ScalarValue> GraphQLValue<S> for Json {
     type Context = ();
@@ -2465,35 +2581,6 @@ impl<S: ScalarValue> GraphQLValue<S> for Json {
         }
     }
 }
-
-/// Trait used to provide the type information for a [`serde_json::Value`].
-pub trait TypedJsonInfo: Send + Sync {
-    /// the GraphQL type name
-    fn type_name() -> &'static str;
-
-    /// schema returns the GrpahQL Schema Definition language that contains the type_name
-    fn schema() -> &'static str;
-}
-
-/// Wrapper generic type for [`serde_json::Value`] that associates type
-/// information.
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypedJson<T: TypedJsonInfo> {
-    /// the wrapped json value
-    pub json: serde_json::Value,
-    phantom: PhantomData<T>,
-}
-
-impl<T: TypedJsonInfo> TypedJson<T> {
-    /// creates a new TypedJson from a serde_json::Value
-    pub fn new(v: serde_json::Value) -> TypedJson<T> {
-        TypedJson {
-            json: v,
-            phantom: PhantomData,
-        }
-    }
-}
-
 */
 /*
 #[cfg(test)]
@@ -2689,51 +2776,6 @@ mod tests {
                         "location": ["Tampa"],
                     }],
                 }),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn test_async() {
-        let sdl = r#"
-            type Query {
-                hero: Hero
-            }
-            type Hero {
-                id: String
-                name: String
-            }
-        "#;
-        let data = json!({
-            "hero": {
-                "id": "2001",
-                "name": "R2-D2",
-            },
-        });
-
-        let schema: RootNode<_, _, _> = RootNode::new_with_info(
-            data,
-            EmptyMutation::new(),
-            EmptySubscription::new(),
-            TypeInfo {
-                name: "Query".to_string(),
-                schema: Some(sdl.to_string()),
-            },
-            (),
-            (),
-        );
-
-        let doc = r#"{
-            hero {
-                id
-                name
-            }
-        }"#;
-        assert_eq!(
-            crate::execute(doc, None, &schema, &Variables::new(), &()).await,
-            Ok((
-                graphql_value!({"hero": {"id": "2001", "name": "R2-D2"}}),
                 vec![],
             )),
         );
