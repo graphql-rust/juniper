@@ -67,6 +67,14 @@ impl<S: ScalarValue> GraphQLValue<S> for Value {
     ) -> ExecutionResult<S> {
         use serde::ser::Error as _;
 
+        if selection.is_some() && matches!(self, Self::Bool(_) | Self::Number(_) | Self::String(_))
+        {
+            return Err(FieldError::new(
+                "cannot select fields on a leaf opaque JSON value",
+                crate::Value::null(),
+            ));
+        }
+
         match self {
             Self::Null => Ok(crate::Value::null()),
             Self::Bool(b) => executor.resolve(&(), &b),
@@ -453,24 +461,37 @@ impl TypeInfo for () {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Info {
-    /// Schema definition language containing a definition of the GraphQL type.
+    /// Parsed [`Schema`] containing a definition of the GraphQL type.
     schema: Schema<'static, String>,
 
-    /// Type name of the [`GraphQLValue`] using this [`Info`].
+    /// Type name of a [`GraphQLValue`] using this [`Info`].
     name: String,
 }
 
 impl Info {
-    pub fn try_new<N: Into<String>, S: AsRef<str>>(name: N, sdl: S) -> Result<Self, ParseError> {
-        Ok(Self {
-            // SAFETY: Same as `query::Document::into_static()`, see:
-            //         https://docs.rs/graphql-parser/0.3.0/src/graphql_parser/query/ast.rs.html#18-33
-            // TODO: Use `.into_static()` on `graphql_parser` 0.3.1 release.
-            schema: unsafe {
-                mem::transmute(graphql_parser::parse_schema::<String>(sdl.as_ref())?)
-            },
-            name: name.into(),
-        })
+    pub fn parse<N: Into<String>, S: AsRef<str>>(name: N, sdl: S) -> Result<Self, ParseError> {
+        // SAFETY: Same as `query::Document::into_static()`, see:
+        //         https://docs.rs/graphql-parser/0.3.0/src/graphql_parser/query/ast.rs.html#18-33
+        // TODO: Use `.into_static()` on `graphql_parser` 0.3.1 release.
+        let schema =
+            unsafe { mem::transmute(graphql_parser::parse_schema::<String>(sdl.as_ref())?) };
+        let name = name.into();
+
+        // TODO: validate `name` is contained in `schema`.
+
+        Ok(Self { schema, name })
+    }
+
+    /// Returns type name of a [`GraphQLValue`] using this [`Info`].
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns parsed [`Schema`] defining this [`Info`].
+    #[must_use]
+    pub fn schema(&self) -> &Schema<'static, String> {
+        &self.schema
     }
 
     fn build_field<'r, 't, S>(
@@ -514,18 +535,15 @@ impl Info {
                     }
                 }
                 _ => {
-                    todo!()
-                    /*
-                    let field_node_type_info = &TypeInfo {
+                    let field_type_info = Info {
                         schema: self.schema.clone(),
-                        name: type_name.clone().as_ref().to_string(),
+                        name: n.clone(),
                     };
                     if nullable {
-                        registry.field::<Option<Json>>(field_name, field_node_type_info)
+                        registry.field::<Option<Json<Value, Info>>>(field_name, &field_type_info)
                     } else {
-                        registry.field::<Json>(field_name, field_node_type_info)
+                        registry.field::<Json<Value, Info>>(field_name, &field_type_info)
                     }
-                     */
                 }
             },
             SchemaType::ListType(ty) => {
@@ -571,6 +589,7 @@ impl TypeInfo for Info {
                                     true,
                                 ));
                             }
+                            break;
                         }
                     }
                     TypeDefinition::InputObject(o) => {
@@ -585,9 +604,13 @@ impl TypeInfo for Info {
                                     default_value: None,
                                 });
                             }
+                            break;
                         }
                     }
-                    _ => todo!(),
+                    // We do just nothing in other cases, as at this point the
+                    // `self.schema` has been validated already in
+                    // `Info::parse()` to contain the necessary types.
+                    _ => {}
                 },
                 _ => {}
             }
@@ -1278,6 +1301,77 @@ mod value_test {
                 )),
             );
         }
+
+        #[tokio::test]
+        async fn allows_fields_on_null() {
+            const QRY: &str = "{ null { message } }";
+            const SUB: &str = "subscription { null { message } }";
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+            assert_eq!(
+                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+
+            let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+            assert_eq!(
+                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await,
+                Ok((graphql_value!({ "null": None }), vec![])),
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_selecting_fields_on_leaf_value() {
+            for qry in [
+                "{ bool { message } }",
+                "{ int { message } }",
+                "{ float { message } }",
+                "{ string { message } }",
+                "{ array { message } }",
+                "{ object { message { body } } }",
+                "{ nested { message { body { theme } } } }",
+            ] {
+                let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+                let res = execute(qry, None, &schema, &Variables::new(), &()).await;
+                assert_eq!(
+                    res.as_ref()
+                        .map(|(_, errs)| errs.first().map(|e| e.error().message())),
+                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    "query: {}\nactual result: {:?}",
+                    qry,
+                    res,
+                );
+                let res = execute_sync(qry, None, &schema, &Variables::new(), &());
+                assert_eq!(
+                    res.as_ref()
+                        .map(|(_, errs)| errs.first().map(|e| e.error().message())),
+                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    "query: {}\nactual result: {:?}",
+                    qry,
+                    res,
+                );
+
+                let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+                let sub = format!("subscription {}", qry);
+                let res = resolve_into_stream(&sub, None, &schema, &Variables::new(), &())
+                    .then(|s| extract_next(s))
+                    .await;
+                assert_eq!(
+                    res.as_ref()
+                        .map(|(_, errs)| errs.first().map(|e| e.error().message())),
+                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    "query: {}\nactual result: {:?}",
+                    qry,
+                    res,
+                );
+            }
+        }
     }
 
     mod as_input {
@@ -1439,12 +1533,12 @@ mod json_test {
                 3.14.into()
             }
 
-            fn string() -> Json<&'static str> {
-                "Galadriel".into()
+            fn string() -> Json<String> {
+                Json::wrap("Galadriel".into())
             }
 
-            fn array() -> Json<Vec<&'static str>> {
-                vec!["Ai", "Ambarendya!"].into()
+            fn array() -> Json<Vec<String>> {
+                vec!["Ai".into(), "Ambarendya!".into()].into()
             }
 
             fn object() -> Json<Message> {
@@ -1498,8 +1592,8 @@ mod json_test {
                 stream(Json::wrap("Galadriel".into()))
             }
 
-            async fn array() -> Stream<Json<Vec<&'static str>>> {
-                stream(Json::wrap(vec!["Ai", "Ambarendya!"]))
+            async fn array() -> Stream<Json<Vec<String>>> {
+                stream(Json::wrap(vec!["Ai".into(), "Ambarendya!".into()]))
             }
 
             async fn object() -> Stream<Json<Message>> {
@@ -2285,188 +2379,6 @@ pub struct TypeInfo {
     pub name: String,
 }
 
-impl TypeInfo {
-    fn meta<'r, S>(&self, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: ScalarValue + 'r,
-    {
-        let mut fields = Vec::new();
-        let mut input_fields = Vec::new();
-        let s = self.schema.clone().unwrap_or_default();
-        let ast = parse_schema::<&str>(s.as_str()).unwrap();
-        let mut is_input_object = false;
-        for d in &ast.definitions {
-            match &d {
-                Definition::TypeDefinition(d) => match d {
-                    TypeDefinition::Object(d) => {
-                        if d.name == self.name {
-                            for field in &d.fields {
-                                fields.push(self.build_field(
-                                    registry,
-                                    field.name,
-                                    field.field_type.clone(),
-                                    true,
-                                ));
-                            }
-                        }
-                    }
-                    TypeDefinition::InputObject(d) => {
-                        if d.name == self.name {
-                            is_input_object = true;
-                            for field in &d.fields {
-                                let f = self.build_field(
-                                    registry,
-                                    field.name,
-                                    field.value_type.clone(),
-                                    true,
-                                );
-
-                                input_fields.push(Argument {
-                                    name: field.name.to_string(),
-                                    description: field.description.clone(),
-                                    arg_type: f.field_type,
-                                    default_value: None,
-                                });
-                            }
-                        }
-                    }
-                    _ => todo!(),
-                },
-                _ => {}
-            }
-        }
-        if is_input_object {
-            registry
-                .build_input_object_type::<Json>(self, &input_fields)
-                .into_meta()
-        } else {
-            registry
-                .build_object_type::<Json>(self, &fields)
-                .into_meta()
-        }
-    }
-
-    fn build_field<'r, 't, S, T>(
-        &self,
-        registry: &mut Registry<'r, S>,
-        field_name: &str,
-        type_ref: Type<'t, T>,
-        nullable: bool,
-    ) -> Field<'r, S>
-    where
-        S: 'r + ScalarValue,
-        T: Text<'t>,
-    {
-        match type_ref {
-            Type::NamedType(type_name) => match type_name.as_ref() {
-                "String" => {
-                    if nullable {
-                        registry.field::<Option<String>>(field_name, &())
-                    } else {
-                        registry.field::<String>(field_name, &())
-                    }
-                }
-                "Int" => {
-                    if nullable {
-                        registry.field::<Option<i32>>(field_name, &())
-                    } else {
-                        registry.field::<i32>(field_name, &())
-                    }
-                }
-                "Float" => {
-                    if nullable {
-                        registry.field::<Option<f64>>(field_name, &())
-                    } else {
-                        registry.field::<f64>(field_name, &())
-                    }
-                }
-                "Boolean" => {
-                    if nullable {
-                        registry.field::<Option<bool>>(field_name, &())
-                    } else {
-                        registry.field::<bool>(field_name, &())
-                    }
-                }
-                _ => {
-                    let field_node_type_info = &TypeInfo {
-                        schema: self.schema.clone(),
-                        name: type_name.clone().as_ref().to_string(),
-                    };
-                    if nullable {
-                        registry.field::<Option<Json>>(field_name, field_node_type_info)
-                    } else {
-                        registry.field::<Json>(field_name, field_node_type_info)
-                    }
-                }
-            },
-            Type::ListType(nested_type) => {
-                let mut field = self.build_field(registry, field_name, *nested_type, true);
-                if nullable {
-                    field.field_type = juniper::Type::List(Box::new(field.field_type), None);
-                } else {
-                    field.field_type = juniper::Type::NonNullList(Box::new(field.field_type), None);
-                }
-                field
-            }
-            Type::NonNullType(nested_type) => {
-                self.build_field(registry, field_name, *nested_type, false)
-            }
-        }
-    }
-}
-
-impl<S: ScalarValue> GraphQLType<S> for Json {
-    fn name(info: &Self::TypeInfo) -> Option<&str> {
-        Some(info.name.as_str())
-    }
-
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        info.meta(registry)
-    }
-}
-
-impl<S: ScalarValue> IsOutputType<S> for Json {}
-
-impl<S: ScalarValue> IsInputType<S> for Json {}
-
-impl<S: ScalarValue> FromInputValue<S> for Json {
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
-        match v {
-            InputValue::Null => Some(Json::Null),
-            InputValue::Scalar(x) => Some(if let Some(i) = x.as_int() {
-                Json::Number(serde_json::Number::from(i))
-            } else if let Some(f) = x.as_float() {
-                Json::Number(serde_json::Number::from_f64(f).expect("f64 to convert"))
-            } else if let Some(b) = x.as_boolean() {
-                Json::Bool(b)
-            } else if let Some(s) = x.as_str() {
-                Json::String(s.to_string())
-            } else {
-                unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
-            }),
-            InputValue::Enum(x) => Some(Json::String(x.clone())),
-            InputValue::List(ls) => {
-                let v: Vec<Json> = ls.iter().filter_map(|i| i.item.convert()).collect();
-                Some(Json::Array(v))
-            }
-            InputValue::Object(fields) => {
-                let mut obj = serde_json::Map::new();
-                for field in fields {
-                    let v: Option<Json> = field.1.item.convert();
-                    if let Some(v) = v {
-                        obj.insert(field.0.item.clone(), v);
-                    }
-                }
-                Some(Json::Object(obj))
-            }
-            InputValue::Variable(_) => None,
-        }
-    }
-}
-
 impl<S: ScalarValue> GraphQLValue<S> for Json {
     type Context = ();
     type TypeInfo = TypeInfo;
@@ -2582,116 +2494,6 @@ impl<T: TypedJsonInfo> TypedJson<T> {
     }
 }
 
-impl<T, S> IsOutputType<S> for TypedJson<T>
-where
-    S: ScalarValue,
-    T: TypedJsonInfo,
-{
-}
-
-impl<T, S> IsInputType<S> for TypedJson<T>
-where
-    S: ScalarValue,
-    T: TypedJsonInfo,
-{
-}
-
-impl<T, S> FromInputValue<S> for TypedJson<T>
-where
-    S: ScalarValue,
-    T: TypedJsonInfo,
-{
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
-        <serde_json::Value as FromInputValue<S>>::from_input_value(v).map(|x| TypedJson::new(x))
-    }
-}
-
-impl<T, S> GraphQLType<S> for TypedJson<T>
-where
-    S: ScalarValue,
-    T: TypedJsonInfo,
-{
-    fn name(_info: &Self::TypeInfo) -> Option<&str> {
-        Some(T::type_name())
-    }
-    fn meta<'r>(_info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        TypeInfo {
-            name: T::type_name().to_string(),
-            schema: Some(T::schema().to_string()),
-        }
-        .meta(registry)
-    }
-}
-
-impl<T, S> GraphQLValue<S> for TypedJson<T>
-where
-    S: ScalarValue,
-    T: TypedJsonInfo,
-{
-    type Context = ();
-    type TypeInfo = ();
-    fn type_name<'i>(&self, _info: &'i Self::TypeInfo) -> Option<&'i str> {
-        Some(T::type_name())
-    }
-    fn resolve(
-        &self,
-        _info: &Self::TypeInfo,
-        _selection: Option<&[Selection<S>]>,
-        executor: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
-        executor.resolve(
-            &TypeInfo {
-                schema: None,
-                name: T::type_name().to_string(),
-            },
-            &self.json,
-        )
-    }
-}
-
-impl<T, S> GraphQLValueAsync<S> for TypedJson<T>
-where
-    Self::TypeInfo: Sync,
-    Self::Context: Sync,
-    S: ScalarValue + Send + Sync,
-    T: TypedJsonInfo,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        _info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, ExecutionResult<S>> {
-        Box::pin(async move {
-            let info = TypeInfo {
-                schema: None,
-                name: T::type_name().to_string(),
-            };
-            <Json as GraphQLValue<S>>::resolve(&self.json, &info, selection_set, executor)
-        })
-    }
-
-    fn resolve_field_async<'a>(
-        &'a self,
-        _info: &'a Self::TypeInfo,
-        field_name: &'a str,
-        arguments: &'a Arguments<S>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, ExecutionResult<S>> {
-        Box::pin(async move {
-            let info = TypeInfo {
-                schema: None,
-                name: T::type_name().to_string(),
-            };
-            <Json as GraphQLValue<S>>::resolve_field(
-                &self.json, &info, field_name, arguments, executor,
-            )
-        })
-    }
-}
 */
 /*
 #[cfg(test)]
