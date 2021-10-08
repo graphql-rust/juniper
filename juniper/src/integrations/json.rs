@@ -26,7 +26,7 @@ use crate::{
     ParseScalarValue, Registry, ScalarValue, Selection, Spanning, ToInputValue,
 };
 
-pub use serde_json::{Error, Value};
+pub use serde_json::{json, Error, Value};
 
 impl<S: ScalarValue> IntoFieldError<S> for Error {
     fn into_field_error(self) -> FieldError<S> {
@@ -253,6 +253,121 @@ impl<S: ScalarValue> ParseScalarValue<S> for Value {
             ScalarToken::String(_) => <String as ParseScalarValue<S>>::from_str(val),
             ScalarToken::Float(_) => <f64 as ParseScalarValue<S>>::from_str(val),
             ScalarToken::Int(_) => <i32 as ParseScalarValue<S>>::from_str(val),
+        }
+    }
+}
+/*
+impl ScalarValue for Value {
+    type Visitor =
+
+    fn as_int(&self) -> Option<i32> {
+        match *self {
+            Self::Int(ref i) => Some(*i),
+            _ => None,
+        }
+        match self {
+            Self::Number(n) => (n.as_u64().map(i32::try_from))
+                .or_else(|| n.as_i64().map(i32::try_from))
+                .transpose()
+                .expect("i32 number"),
+            _ => None,
+        }
+    }
+
+    fn as_float(&self) -> Option<f64> {
+        match self {
+            Self::Number(n) => (n.as_u64().map(f64::from))
+                .or_else(|| n.as_i64().map(f64::from))
+                .or_else(|| n.as_f64()),
+            _ => None,
+        }
+    }
+
+    fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(s) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
+    fn as_string(&self) -> Option<String> {
+        match self {
+            Self::String(s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    fn into_string(self) -> Option<String> {
+        match self {
+            Self::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    fn as_boolean(&self) -> Option<bool> {
+        match self {
+            Self::Bool(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    fn into_another<S: ScalarValue>(self) -> S {
+        match self {
+            Self::Bool(b) => S::from(b),
+            Self::Number(n) => {
+                if let Some(n) = n.as_u64() {
+                    S::from(i32::try_from(n).expect("i32 number"))
+                } else if let Some(n) = n.as_i64() {
+                    S::from(i32::try_from(n).expect("i32 number"))
+                } else if let Some(n) = n.as_f64() {
+                    S::from(n)
+                } else {
+                    unreachable!("serde_json::Number has only 3 number variants")
+                }
+            }
+            Self::String(s) => S::from(s),
+            _ => unreachable!("not a leaf serde_json::Value"),
+        }
+    }
+}
+
+ */
+
+impl<S: ScalarValue> From<crate::Value<S>> for Value {
+    fn from(val: crate::Value<S>) -> Self {
+        match val {
+            crate::Value::Null => Self::Null,
+            crate::Value::Scalar(s) => todo!(),
+            crate::Value::List(l) => Self::Array(l.into_iter().map(Self::from).collect()),
+            crate::Value::Object(o) => {
+                Self::Object(o.into_iter().map(|k, v| (k, Self::from(v))).collect())
+            }
+        }
+    }
+}
+
+impl<S: ScalarValue> From<Value> for crate::Value<S> {
+    fn from(val: Value) -> Self {
+        match val {
+            Value::Null => Self::Null,
+            // TODO: Reuse `ScalarValue::into_another()`.
+            Value::Bool(b) => Self::scalar(b),
+            Value::Number(n) => {
+                if let Some(n) = n.as_u64() {
+                    Self::scalar(i32::try_from(n).expect("i32 number"))
+                } else if let Some(n) = n.as_i64() {
+                    Self::scalar(i32::try_from(n).expect("i32 number"))
+                } else if let Some(n) = n.as_f64() {
+                    Self::scalar(n)
+                } else {
+                    unreachable!("serde_json::Number has only 3 number variants")
+                }
+            }
+            Value::String(s) => Self::scalar(s),
+            Value::Array(a) => Self::List(a.into_iter().map(Self::from).collect()),
+            Value::Object(o) => {
+                Self::Object(o.into_iter().map(|k, v| (k, Self::from(v))).collect())
+            }
         }
     }
 }
@@ -642,7 +757,7 @@ impl TypeInfo for Info {
 }
 
 /// Dynamic [`Json`] value typed by an [`Info`].
-pub type Typed<T: ?Sized = Value> = Json<T, Info>;
+pub type Typed<T = Value> = Json<T, Info>;
 
 #[cfg(test)]
 mod value_test {
@@ -2195,25 +2310,29 @@ mod json_test {
 
             let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
 
+            let expected = Ok((graphql_value!({ "null": None }), vec![]));
+
             assert_eq!(
                 execute(QRY, None, &schema, &Variables::new(), &()).await,
-                Ok((graphql_value!({ "null": None }), vec![])),
+                expected,
             );
             assert_eq!(
                 execute_sync(QRY, None, &schema, &Variables::new(), &()),
-                Ok((graphql_value!({ "null": None }), vec![])),
+                expected,
             );
             assert_eq!(
                 resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
                     .then(|s| extract_next(s))
                     .await,
-                Ok((graphql_value!({ "null": None }), vec![])),
+                expected,
             );
         }
 
         #[tokio::test]
         async fn errors_selecting_fields_on_leaf_value() {
             let schema = RootNode::new(Query, EmptyMutation::new(), Subscription);
+
+            let expected = Ok(Some("cannot select fields on a leaf opaque JSON value"));
 
             for qry in [
                 "{ bool { message } }",
@@ -2228,7 +2347,7 @@ mod json_test {
                 assert_eq!(
                     res.as_ref()
                         .map(|(_, errs)| errs.first().map(|e| e.error().message())),
-                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    expected,
                     "query: {}\nactual result: {:?}",
                     qry,
                     res,
@@ -2238,7 +2357,7 @@ mod json_test {
                 assert_eq!(
                     res.as_ref()
                         .map(|(_, errs)| errs.first().map(|e| e.error().message())),
-                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    expected,
                     "query: {}\nactual result: {:?}",
                     qry,
                     res,
@@ -2251,7 +2370,7 @@ mod json_test {
                 assert_eq!(
                     res.as_ref()
                         .map(|(_, errs)| errs.first().map(|e| e.error().message())),
-                    Ok(Some("cannot select fields on a leaf opaque JSON value")),
+                    expected,
                     "query: {}\nactual result: {:?}",
                     qry,
                     res,
@@ -2444,11 +2563,12 @@ mod typed_test {
     mod as_output {
         use serde_json::{json, Value};
 
-        use crate::{graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode};
+        use crate::{
+            execute, execute_sync, graphql_object, graphql_value, DefaultScalarValue,
+            EmptyMutation, EmptySubscription, FieldResult, RootNode, Variables,
+        };
 
         use super::super::{Info, Typed};
-
-        struct Query;
 
         const SDL: &str = r#"
             type Bar {
@@ -2464,9 +2584,21 @@ mod typed_test {
             }
         "#;
 
-        #[test]
-        fn resolves() {
-            let info = Info::parse("Foo", SDL).unwrap();
+        #[tokio::test]
+        async fn resolves() {
+            const QRY: &str = r#"{
+                message
+                bar {
+                    location
+                    capacity
+                    open
+                    rating
+                    foo {
+                        message
+                    }
+                }
+            }"#;
+
             let data = Typed::wrap(json!({
                 "message": "hello world",
                 "bar": {
@@ -2476,16 +2608,38 @@ mod typed_test {
                     "rating": 4.5,
                     "foo": {
                         "message": "drink more",
-                    }
+                    },
                 },
             }));
             let schema = RootNode::new_with_info(
                 data,
                 EmptyMutation::new(),
                 EmptySubscription::new(),
-                info,
+                Info::parse("Foo", SDL).unwrap(),
                 (),
                 (),
+            );
+
+            //let expected = data.into_inner().to;
+
+            assert_eq!(
+                execute::<DefaultScalarValue, _, _, _>(QRY, None, &schema, &Variables::new(), &())
+                    .await,
+                Ok((
+                    graphql_value!({
+                        "message": "hello world",
+                        "bar": {
+                            "location": "downtown",
+                            "capacity": 80,
+                            "open": true,
+                            "rating": 4.5,
+                            "foo": {
+                                "message": "drink more",
+                            },
+                        },
+                    }),
+                    vec![],
+                )),
             );
         }
     }

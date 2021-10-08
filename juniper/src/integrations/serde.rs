@@ -1,11 +1,11 @@
+use std::{fmt, marker::PhantomData};
+
 use indexmap::IndexMap;
 use serde::{
-    de,
-    ser::{self, SerializeMap},
-    Serialize,
+    de::{self, Deserializer, IntoDeserializer as _},
+    ser::{SerializeMap as _, Serializer},
+    serde_if_integer128, Deserialize, Serialize,
 };
-
-use std::fmt;
 
 use crate::{
     ast::InputValue,
@@ -20,15 +20,9 @@ struct SerializeHelper {
     message: &'static str,
 }
 
-impl<T> ser::Serialize for ExecutionError<T>
-where
-    T: ScalarValue,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(4))?;
+impl<T> Serialize for ExecutionError<T> {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        let mut map = ser.serialize_map(Some(4))?;
 
         map.serialize_key("message")?;
         map.serialize_value(self.error().message())?;
@@ -49,274 +43,179 @@ where
     }
 }
 
-impl<'a> ser::Serialize for GraphQLError<'a> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        match *self {
-            GraphQLError::ParseError(ref err) => vec![err].serialize(serializer),
-            GraphQLError::ValidationError(ref errs) => errs.serialize(serializer),
-            GraphQLError::NoOperationProvided => [SerializeHelper {
+impl<'a> Serialize for GraphQLError<'a> {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Self::ParseError(e) => vec![e].serialize(ser),
+            Self::ValidationError(es) => es.serialize(ser),
+            Self::NoOperationProvided => [SerializeHelper {
                 message: "Must provide an operation",
             }]
-            .serialize(serializer),
-            GraphQLError::MultipleOperationsProvided => [SerializeHelper {
+            .serialize(ser),
+            Self::MultipleOperationsProvided => [SerializeHelper {
                 message: "Must provide operation name \
                           if query contains multiple operations",
             }]
-            .serialize(serializer),
-            GraphQLError::UnknownOperationName => [SerializeHelper {
+            .serialize(ser),
+            Self::UnknownOperationName => [SerializeHelper {
                 message: "Unknown operation",
             }]
-            .serialize(serializer),
-            GraphQLError::IsSubscription => [SerializeHelper {
+            .serialize(ser),
+            Self::IsSubscription => [SerializeHelper {
                 message: "Expected query, got subscription",
             }]
-            .serialize(serializer),
-            GraphQLError::NotSubscription => [SerializeHelper {
+            .serialize(ser),
+            Self::NotSubscription => [SerializeHelper {
                 message: "Expected subscription, got query",
             }]
-            .serialize(serializer),
+            .serialize(ser),
         }
     }
 }
 
-impl<'de, S> de::Deserialize<'de> for InputValue<S>
-where
-    S: ScalarValue,
-{
-    fn deserialize<D>(deserializer: D) -> Result<InputValue<S>, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        struct InputValueVisitor<S: ScalarValue>(S::Visitor);
+impl<'de, S: Deserialize<'de>> Deserialize<'de> for InputValue<S> {
+    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        struct Visitor<S: ?Sized>(PhantomData<S>);
 
-        impl<S: ScalarValue> Default for InputValueVisitor<S> {
-            fn default() -> Self {
-                InputValueVisitor(S::Visitor::default())
-            }
-        }
-
-        impl<'de, S> de::Visitor<'de> for InputValueVisitor<S>
-        where
-            S: ScalarValue,
-        {
+        impl<'de, S: Deserialize<'de>> de::Visitor<'de> for Visitor<S> {
             type Value = InputValue<S>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a valid input value")
             }
 
-            fn visit_bool<E>(self, value: bool) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_bool(value).map(InputValue::Scalar)
+            fn visit_bool<E: de::Error>(self, b: bool) -> Result<Self::Value, E> {
+                S::deserialize(b.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_i8<E>(self, value: i8) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_i8(value).map(InputValue::Scalar)
+            fn visit_i8<E: de::Error>(self, n: i8) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_i16<E>(self, value: i16) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_i16(value).map(InputValue::Scalar)
+            fn visit_i16<E: de::Error>(self, n: i16) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_i32<E>(self, value: i32) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_i32(value).map(InputValue::Scalar)
+            fn visit_i32<E: de::Error>(self, n: i32) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_i64<E>(self, value: i64) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_i64(value).map(InputValue::Scalar)
+            fn visit_i64<E: de::Error>(self, n: i64) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            serde::serde_if_integer128! {
-                fn visit_i128<E>(self, value: i128) -> Result<InputValue<S>, E>
-                where
-                    E: de::Error,
-                {
-                    self.0.visit_i128(value).map(InputValue::Scalar)
+            serde_if_integer128! {
+                fn visit_i128<E: de::Error>(self, n: i128) ->  Result<Self::Value, E> {
+                    S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
                 }
             }
 
-            fn visit_u8<E>(self, value: u8) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_u8(value).map(InputValue::Scalar)
+            fn visit_u8<E: de::Error>(self, n: u8) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_u16<E>(self, value: u16) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_u16(value).map(InputValue::Scalar)
+            fn visit_u16<E: de::Error>(self, n: u16) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_u32<E>(self, value: u32) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_u32(value).map(InputValue::Scalar)
+            fn visit_u32<E: de::Error>(self, n: u32) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_u64<E>(self, value: u64) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_u64(value).map(InputValue::Scalar)
+            fn visit_u64<E: de::Error>(self, n: u64) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            serde::serde_if_integer128! {
-                fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
-                where
-                    E: de::Error,
-                {
-                    self.0.visit_u128(value).map(InputValue::Scalar)
+            serde_if_integer128! {
+                fn visit_u128<E: de::Error>(self, n: u128) ->  Result<Self::Value, E> {
+                    S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
                 }
             }
 
-            fn visit_f32<E>(self, value: f32) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_f32(value).map(InputValue::Scalar)
+            fn visit_f32<E: de::Error>(self, n: f32) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_f64<E>(self, value: f64) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_f64(value).map(InputValue::Scalar)
+            fn visit_f64<E: de::Error>(self, n: f64) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_char<E>(self, value: char) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_char(value).map(InputValue::Scalar)
+            fn visit_char<E: de::Error>(self, c: char) -> Result<Self::Value, E> {
+                S::deserialize(c.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_str<E>(self, value: &str) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_str(value).map(InputValue::Scalar)
+            fn visit_str<E: de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                S::deserialize(s.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_string<E>(self, value: String) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_string(value).map(InputValue::Scalar)
+            fn visit_string<E: de::Error>(self, s: String) -> Result<Self::Value, E> {
+                S::deserialize(s.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_bytes(bytes).map(InputValue::Scalar)
+            fn visit_bytes<E: de::Error>(self, b: &[u8]) -> Result<Self::Value, E> {
+                S::deserialize(b.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_byte_buf<E>(self, bytes: Vec<u8>) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_byte_buf(bytes).map(InputValue::Scalar)
+            fn visit_byte_buf<E: de::Error>(self, b: Vec<u8>) -> Result<Self::Value, E> {
+                S::deserialize(b.into_deserializer()).map(InputValue::Scalar)
             }
 
-            fn visit_none<E>(self) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                Ok(InputValue::null())
+            fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(InputValue::Null)
             }
 
-            fn visit_unit<E>(self) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                Ok(InputValue::null())
+            fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(InputValue::Null)
             }
 
-            fn visit_seq<V>(self, mut visitor: V) -> Result<InputValue<S>, V::Error>
+            fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
             where
                 V: de::SeqAccess<'de>,
             {
-                let mut values = Vec::new();
-
-                while let Some(el) = visitor.next_element()? {
-                    values.push(el);
+                let mut vals = Vec::new();
+                while let Some(v) = visitor.next_element()? {
+                    vals.push(v);
                 }
-
-                Ok(InputValue::list(values))
+                Ok(InputValue::list(vals))
             }
 
-            fn visit_map<V>(self, mut visitor: V) -> Result<InputValue<S>, V::Error>
+            fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
             where
                 V: de::MapAccess<'de>,
             {
-                let mut object = IndexMap::<String, InputValue<S>>::with_capacity(
+                let mut obj = IndexMap::<String, InputValue<S>>::with_capacity(
                     visitor.size_hint().unwrap_or(0),
                 );
-
-                while let Some((key, value)) = visitor.next_entry()? {
-                    object.insert(key, value);
+                while let Some((key, val)) = visitor.next_entry()? {
+                    obj.insert(key, val);
                 }
-
-                Ok(InputValue::object(object))
+                Ok(InputValue::object(obj))
             }
         }
 
-        deserializer.deserialize_any(InputValueVisitor::default())
+        de.deserialize_any(Visitor(PhantomData))
     }
 }
 
-impl<T> ser::Serialize for InputValue<T>
-where
-    T: ScalarValue,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        match *self {
-            InputValue::Null | InputValue::Variable(_) => serializer.serialize_unit(),
-            InputValue::Scalar(ref s) => s.serialize(serializer),
-            InputValue::Enum(ref v) => serializer.serialize_str(v),
-            InputValue::List(ref v) => v
+impl<T: Serialize> Serialize for InputValue<T> {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Self::Null | Self::Variable(_) => ser.serialize_unit(),
+            Self::Scalar(s) => s.serialize(ser),
+            Self::Enum(e) => ser.serialize_str(e),
+            Self::List(l) => l.iter().map(|x| &x.item).collect::<Vec<_>>().serialize(ser),
+            Self::Object(o) => o
                 .iter()
-                .map(|x| x.item.clone())
-                .collect::<Vec<_>>()
-                .serialize(serializer),
-            InputValue::Object(ref v) => v
-                .iter()
-                .map(|&(ref k, ref v)| (k.item.clone(), v.item.clone()))
+                .map(|(k, v)| (k.item.as_str(), &v.item))
                 .collect::<IndexMap<_, _>>()
-                .serialize(serializer),
+                .serialize(ser),
         }
     }
 }
 
-impl ser::Serialize for RuleError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(2))?;
+impl Serialize for RuleError {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        let mut map = ser.serialize_map(Some(2))?;
 
         map.serialize_key("message")?;
         map.serialize_value(self.message())?;
@@ -328,12 +227,9 @@ impl ser::Serialize for RuleError {
     }
 }
 
-impl ser::Serialize for SourcePosition {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(2))?;
+impl Serialize for SourcePosition {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        let mut map = ser.serialize_map(Some(2))?;
 
         let line = self.line() + 1;
         map.serialize_key("line")?;
@@ -347,23 +243,19 @@ impl ser::Serialize for SourcePosition {
     }
 }
 
-impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(2))?;
+impl<'a> Serialize for Spanning<ParseError<'a>> {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        let mut map = ser.serialize_map(Some(2))?;
 
-        let message = format!("{}", self.item);
+        let msg = format!("{}", self.item);
         map.serialize_key("message")?;
-        map.serialize_value(&message)?;
+        map.serialize_value(&msg)?;
 
-        let mut location = IndexMap::new();
-        location.insert("line".to_owned(), self.start.line() + 1);
-        location.insert("column".to_owned(), self.start.column() + 1);
+        let mut loc = IndexMap::new();
+        loc.insert("line".to_owned(), self.start.line() + 1);
+        loc.insert("column".to_owned(), self.start.column() + 1);
 
-        let locations = vec![location];
-
+        let locations = vec![loc];
         map.serialize_key("locations")?;
         map.serialize_value(&locations)?;
 
@@ -371,57 +263,45 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
     }
 }
 
-impl<T> ser::Serialize for Object<T>
-where
-    T: ser::Serialize,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(self.field_count()))?;
-
-        for (ref f, ref v) in self.iter() {
+impl<T: Serialize> Serialize for Object<T> {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        let mut map = ser.serialize_map(Some(self.field_count()))?;
+        for (f, v) in self.iter() {
             map.serialize_key(f)?;
             map.serialize_value(v)?;
         }
-
         map.end()
     }
 }
 
-impl<T> ser::Serialize for Value<T>
-where
-    T: ser::Serialize,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        match *self {
-            Value::Null => serializer.serialize_unit(),
-            Value::Scalar(ref s) => s.serialize(serializer),
-            Value::List(ref v) => v.serialize(serializer),
-            Value::Object(ref v) => v.serialize(serializer),
+impl<T: Serialize> Serialize for Value<T> {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Self::Null => ser.serialize_unit(),
+            Self::Scalar(s) => s.serialize(ser),
+            Self::List(l) => l.serialize(ser),
+            Self::Object(o) => o.serialize(ser),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ExecutionError, GraphQLError};
+    use serde_json::{from_str, to_string};
+
     use crate::{
         ast::InputValue,
         value::{DefaultScalarValue, Object},
         FieldError, Value,
     };
-    use serde_json::{from_str, to_string};
+
+    use super::{ExecutionError, GraphQLError};
 
     #[test]
     fn int() {
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("1235").unwrap(),
-            InputValue::scalar(1235)
+            InputValue::scalar(1235),
         );
     }
 
@@ -429,12 +309,12 @@ mod tests {
     fn float() {
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("2.0").unwrap(),
-            InputValue::scalar(2.0)
+            InputValue::scalar(2.0),
         );
         // large value without a decimal part is also float
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
-            InputValue::scalar(123_567_890_123.0)
+            InputValue::scalar(123_567_890_123.0),
         );
     }
 
@@ -442,7 +322,7 @@ mod tests {
     fn errors() {
         assert_eq!(
             to_string(&GraphQLError::UnknownOperationName).unwrap(),
-            r#"[{"message":"Unknown operation"}]"#
+            r#"[{"message":"Unknown operation"}]"#,
         );
     }
 
@@ -456,7 +336,7 @@ mod tests {
                 Value::Object(obj),
             )))
             .unwrap(),
-            r#"{"message":"foo error","locations":[{"line":1,"column":1}],"path":[],"extensions":{"foo":"bar"}}"#
+            r#"{"message":"foo error","locations":[{"line":1,"column":1}],"path":[],"extensions":{"foo":"bar"}}"#,
         );
     }
 }
