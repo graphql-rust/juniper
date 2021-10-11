@@ -78,6 +78,7 @@ pub struct Human {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
+    #[allow(dead_code)]
     secret_backstory: Option<String>,
     home_planet: Option<String>,
 }
@@ -164,6 +165,7 @@ pub struct Droid {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
+    #[allow(dead_code)]
     secret_backstory: Option<String>,
     primary_function: Option<String>,
 }
