@@ -1,5 +1,6 @@
-use serde::Serialize;
 use std::fmt;
+
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     parser::{ParseError, ScalarToken},
@@ -162,6 +163,8 @@ pub trait ScalarValue:
     + fmt::Display
     + PartialEq
     + Clone
+    + DeserializeOwned
+    + Serialize
     + From<String>
     + From<bool>
     + From<i32>

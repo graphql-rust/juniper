@@ -40,13 +40,14 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
+use std::{collections::HashMap, str, sync::Arc};
+
 use anyhow::anyhow;
 use futures::{FutureExt as _, TryFutureExt};
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
 };
-use std::{collections::HashMap, str, sync::Arc};
 use tokio::task;
 use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 
@@ -381,6 +382,8 @@ fn playground_response(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
+    use std::{convert::Infallible, fmt, sync::Arc};
+
     use juniper::{
         futures::{
             future::{self, Either},
@@ -390,7 +393,6 @@ pub mod subscriptions {
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
-    use std::{convert::Infallible, fmt, sync::Arc};
 
     struct Message(warp::ws::Message);
 
