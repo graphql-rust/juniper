@@ -1,15 +1,16 @@
-use std::{fmt, pin::Pin};
+use std::{convert::TryInto as _, fmt, pin::Pin};
 
 use futures::{stream, Stream};
 use juniper::{
     execute, graphql_object, graphql_scalar, graphql_subscription,
     parser::{ParseError, ScalarToken, Spanning, Token},
-    serde::de,
+    serde::{de, Deserialize, Deserializer, Serialize},
     EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
     RootNode, ScalarValue, Value, Variables,
 };
 
-#[derive(GraphQLScalarValue, Clone, Debug, PartialEq)]
+#[derive(GraphQLScalarValue, Clone, Debug, PartialEq, Serialize)]
+#[serde(untagged)]
 pub(crate) enum MyScalarValue {
     Int(i32),
     Long(i64),
@@ -19,18 +20,16 @@ pub(crate) enum MyScalarValue {
 }
 
 impl ScalarValue for MyScalarValue {
-    type Visitor = MyScalarValueVisitor;
-
     fn as_int(&self) -> Option<i32> {
-        match *self {
-            Self::Int(ref i) => Some(*i),
+        match self {
+            Self::Int(i) => Some(*i),
             _ => None,
         }
     }
 
     fn as_string(&self) -> Option<String> {
-        match *self {
-            Self::String(ref s) => Some(s.clone()),
+        match self {
+            Self::String(s) => Some(s.clone()),
             _ => None,
         }
     }
@@ -43,100 +42,92 @@ impl ScalarValue for MyScalarValue {
     }
 
     fn as_str(&self) -> Option<&str> {
-        match *self {
-            Self::String(ref s) => Some(s.as_str()),
+        match self {
+            Self::String(s) => Some(s.as_str()),
             _ => None,
         }
     }
 
     fn as_float(&self) -> Option<f64> {
-        match *self {
-            Self::Int(ref i) => Some(f64::from(*i)),
-            Self::Float(ref f) => Some(*f),
+        match self {
+            Self::Int(i) => Some(f64::from(*i)),
+            Self::Float(f) => Some(*f),
             _ => None,
         }
     }
 
     fn as_boolean(&self) -> Option<bool> {
-        match *self {
-            Self::Boolean(ref b) => Some(*b),
+        match self {
+            Self::Boolean(b) => Some(*b),
             _ => None,
         }
     }
 }
 
-#[derive(Debug, Default)]
-pub(crate) struct MyScalarValueVisitor;
+impl<'de> Deserialize<'de> for MyScalarValue {
+    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        struct Visitor;
 
-impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
-    type Value = MyScalarValue;
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = MyScalarValue;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a valid input value")
-    }
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.write_str("a valid input value")
+            }
 
-    fn visit_bool<E>(self, value: bool) -> Result<MyScalarValue, E> {
-        Ok(MyScalarValue::Boolean(value))
-    }
+            fn visit_bool<E: de::Error>(self, b: bool) -> Result<Self::Value, E> {
+                Ok(MyScalarValue::Boolean(b))
+            }
 
-    fn visit_i32<E>(self, value: i32) -> Result<MyScalarValue, E>
-    where
-        E: de::Error,
-    {
-        Ok(MyScalarValue::Int(value))
-    }
+            fn visit_i32<E: de::Error>(self, n: i32) -> Result<Self::Value, E> {
+                Ok(MyScalarValue::Int(n))
+            }
 
-    fn visit_i64<E>(self, value: i64) -> Result<MyScalarValue, E>
-    where
-        E: de::Error,
-    {
-        if value <= i64::from(i32::max_value()) {
-            self.visit_i32(value as i32)
-        } else {
-            Ok(MyScalarValue::Long(value))
+            fn visit_i64<E: de::Error>(self, b: i64) -> Result<Self::Value, E> {
+                if b <= i64::from(i32::MAX) {
+                    self.visit_i32(b.try_into().unwrap())
+                } else {
+                    Ok(MyScalarValue::Long(b))
+                }
+            }
+
+            fn visit_u32<E: de::Error>(self, n: u32) -> Result<Self::Value, E> {
+                if n <= i32::MAX as u32 {
+                    self.visit_i32(n.try_into().unwrap())
+                } else {
+                    self.visit_u64(n.into())
+                }
+            }
+
+            fn visit_u64<E: de::Error>(self, n: u64) -> Result<Self::Value, E> {
+                if n <= i64::MAX as u64 {
+                    self.visit_i64(n.try_into().unwrap())
+                } else {
+                    // Browser's `JSON.stringify()` serializes all numbers
+                    // having no fractional part as integers (no decimal point),
+                    // so we must parse large integers as floating point,
+                    // otherwise we would error on transferring large floating
+                    // point numbers.
+                    // TODO: Use `FloatToInt` conversion once stabilized:
+                    //       https://github.com/rust-lang/rust/issues/67057
+                    Ok(MyScalarValue::Float(n as f64))
+                }
+            }
+
+            fn visit_f64<E: de::Error>(self, f: f64) -> Result<Self::Value, E> {
+                Ok(MyScalarValue::Float(f))
+            }
+
+            fn visit_str<E: de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                self.visit_string(s.into())
+            }
+
+            fn visit_string<E: de::Error>(self, s: String) -> Result<Self::Value, E> {
+                Ok(MyScalarValue::String(s))
+            }
         }
-    }
 
-    fn visit_u32<E>(self, value: u32) -> Result<MyScalarValue, E>
-    where
-        E: de::Error,
-    {
-        if value <= i32::max_value() as u32 {
-            self.visit_i32(value as i32)
-        } else {
-            self.visit_u64(value as u64)
-        }
-    }
-
-    fn visit_u64<E>(self, value: u64) -> Result<MyScalarValue, E>
-    where
-        E: de::Error,
-    {
-        if value <= i64::max_value() as u64 {
-            self.visit_i64(value as i64)
-        } else {
-            // Browser's JSON.stringify serialize all numbers having no
-            // fractional part as integers (no decimal point), so we
-            // must parse large integers as floating point otherwise
-            // we would error on transferring large floating point
-            // numbers.
-            Ok(MyScalarValue::Float(value as f64))
-        }
-    }
-
-    fn visit_f64<E>(self, value: f64) -> Result<MyScalarValue, E> {
-        Ok(MyScalarValue::Float(value))
-    }
-
-    fn visit_str<E>(self, value: &str) -> Result<MyScalarValue, E>
-    where
-        E: de::Error,
-    {
-        self.visit_string(value.into())
-    }
-
-    fn visit_string<E>(self, value: String) -> Result<MyScalarValue, E> {
-        Ok(MyScalarValue::String(value))
+        de.deserialize_any(Visitor)
     }
 }
 
@@ -169,7 +160,7 @@ struct TestType;
 #[graphql_object(scalar = MyScalarValue)]
 impl TestType {
     fn long_field() -> i64 {
-        i64::from(i32::max_value()) + 1
+        i64::from(i32::MAX) + 1
     }
 
     fn long_with_arg(long_arg: i64) -> i64 {

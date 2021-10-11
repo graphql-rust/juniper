@@ -185,15 +185,12 @@ fn parse_variable_param<S>(params: Option<Vec<String>>) -> IronResult<Option<Inp
 where
     S: ScalarValue,
 {
-    if let Some(values) = params {
-        Ok(
-            serde_json::from_str::<InputValue<S>>(get_single_value(values)?.as_ref())
-                .map(Some)
-                .map_err(GraphQLIronError::Serde)?,
-        )
-    } else {
-        Ok(None)
-    }
+    params
+        .map(|vals| {
+            serde_json::from_str::<InputValue<S>>(get_single_value(vals)?.as_ref())
+                .map_err(|e| GraphQLIronError::Serde(e).into())
+        })
+        .transpose()
 }
 
 impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>

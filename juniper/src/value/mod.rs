@@ -35,36 +35,12 @@ pub enum Value<S = DefaultScalarValue> {
     Object(Object<S>),
 }
 
-impl<S: ScalarValue> Value<S> {
+impl<S> Value<S> {
     // CONSTRUCTORS
 
     /// Construct a null value.
     pub fn null() -> Self {
         Self::Null
-    }
-
-    /// Construct an integer value.
-    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
-    pub fn int(i: i32) -> Self {
-        Self::scalar(i)
-    }
-
-    /// Construct a floating point value.
-    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
-    pub fn float(f: f64) -> Self {
-        Self::scalar(f)
-    }
-
-    /// Construct a string value.
-    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
-    pub fn string(s: &str) -> Self {
-        Self::scalar(s.to_owned())
-    }
-
-    /// Construct a boolean value.
-    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
-    pub fn boolean(b: bool) -> Self {
-        Self::scalar(b)
     }
 
     /// Construct a list value.
@@ -80,7 +56,7 @@ impl<S: ScalarValue> Value<S> {
     /// Construct a scalar value
     pub fn scalar<T>(s: T) -> Self
     where
-        T: Into<S>,
+        S: From<T>,
     {
         Self::Scalar(s.into())
     }
@@ -95,26 +71,29 @@ impl<S: ScalarValue> Value<S> {
     /// View the underlying scalar value if present
     pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
     where
-        &'a S: Into<Option<&'a T>>,
+        Option<&'a T>: From<&'a S>,
     {
-        match *self {
-            Self::Scalar(ref s) => s.into(),
+        match self {
+            Self::Scalar(s) => s.into(),
             _ => None,
         }
     }
 
     /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64> {
+    pub fn as_float_value(&self) -> Option<f64>
+    where
+        S: ScalarValue,
+    {
         match self {
-            Self::Scalar(ref s) => s.as_float(),
+            Self::Scalar(s) => s.as_float(),
             _ => None,
         }
     }
 
     /// View the underlying object value, if present.
     pub fn as_object_value(&self) -> Option<&Object<S>> {
-        match *self {
-            Self::Object(ref o) => Some(o),
+        match self {
+            Self::Object(o) => Some(o),
             _ => None,
         }
     }
@@ -131,24 +110,24 @@ impl<S: ScalarValue> Value<S> {
 
     /// Mutable view into the underlying object value, if present.
     pub fn as_mut_object_value(&mut self) -> Option<&mut Object<S>> {
-        match *self {
-            Self::Object(ref mut o) => Some(o),
+        match self {
+            Self::Object(o) => Some(o),
             _ => None,
         }
     }
 
     /// View the underlying list value, if present.
     pub fn as_list_value(&self) -> Option<&Vec<Self>> {
-        match *self {
-            Self::List(ref l) => Some(l),
+        match self {
+            Self::List(l) => Some(l),
             _ => None,
         }
     }
 
     /// View the underlying scalar value, if present
     pub fn as_scalar(&self) -> Option<&S> {
-        match *self {
-            Self::Scalar(ref s) => Some(s),
+        match self {
+            Self::Scalar(s) => Some(s),
             _ => None,
         }
     }
@@ -158,11 +137,15 @@ impl<S: ScalarValue> Value<S> {
     where
         Option<&'a String>: From<&'a S>,
     {
-        self.as_scalar_value::<String>().map(|s| s as &str)
+        self.as_scalar_value::<String>().map(String::as_str)
     }
 
     /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.
-    pub fn map_scalar_value<Into: ScalarValue>(self) -> Value<Into> {
+    pub fn map_scalar_value<Into>(self) -> Value<Into>
+    where
+        S: ScalarValue,
+        Into: ScalarValue,
+    {
         if TypeId::of::<Into>() == TypeId::of::<S>() {
             // SAFETY: This is safe, because we're transmuting the value into
             //         itself, so no invariants may change and we're just
@@ -187,17 +170,17 @@ impl<S: ScalarValue> Value<S> {
     }
 }
 
-impl<S: ScalarValue> ToInputValue<S> for Value<S> {
+impl<S: Clone> ToInputValue<S> for Value<S> {
     fn to_input_value(&self) -> InputValue<S> {
-        match *self {
-            Value::Null => InputValue::Null,
-            Value::Scalar(ref s) => InputValue::Scalar(s.clone()),
-            Value::List(ref l) => InputValue::List(
+        match self {
+            Self::Null => InputValue::Null,
+            Self::Scalar(s) => InputValue::Scalar(s.clone()),
+            Self::List(l) => InputValue::List(
                 l.iter()
                     .map(|x| Spanning::unlocated(x.to_input_value()))
                     .collect(),
             ),
-            Value::Object(ref o) => InputValue::Object(
+            Self::Object(o) => InputValue::Object(
                 o.iter()
                     .map(|(k, v)| {
                         (
@@ -214,15 +197,15 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
 impl<S: ScalarValue> Display for Value<S> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Value::Null => write!(f, "null"),
-            Value::Scalar(s) => {
+            Self::Null => write!(f, "null"),
+            Self::Scalar(s) => {
                 if let Some(string) = s.as_string() {
                     write!(f, "\"{}\"", string)
                 } else {
                     write!(f, "{}", s)
                 }
             }
-            Value::List(list) => {
+            Self::List(list) => {
                 write!(f, "[")?;
                 for (idx, item) in list.iter().enumerate() {
                     write!(f, "{}", item)?;
@@ -234,7 +217,7 @@ impl<S: ScalarValue> Display for Value<S> {
 
                 Ok(())
             }
-            Value::Object(obj) => {
+            Self::Object(obj) => {
                 write!(f, "{{")?;
                 for (idx, (key, value)) in obj.iter().enumerate() {
                     write!(f, "\"{}\": {}", key, value)?;
@@ -253,59 +236,43 @@ impl<S: ScalarValue> Display for Value<S> {
 
 impl<S, T> From<Option<T>> for Value<S>
 where
-    S: ScalarValue,
-    Value<S>: From<T>,
+    Self: From<T>,
 {
-    fn from(v: Option<T>) -> Value<S> {
+    fn from(v: Option<T>) -> Self {
         match v {
             Some(v) => v.into(),
-            None => Value::null(),
+            None => Self::Null,
         }
     }
 }
 
-impl<'a, S> From<&'a str> for Value<S>
-where
-    S: ScalarValue,
-{
+impl<'a, S: From<String>> From<&'a str> for Value<S> {
     fn from(s: &'a str) -> Self {
-        Value::scalar(s.to_owned())
+        Self::scalar(s.to_owned())
     }
 }
 
-impl<S> From<String> for Value<S>
-where
-    S: ScalarValue,
-{
+impl<S: From<String>> From<String> for Value<S> {
     fn from(s: String) -> Self {
-        Value::scalar(s)
+        Self::scalar(s)
     }
 }
 
-impl<S> From<i32> for Value<S>
-where
-    S: ScalarValue,
-{
+impl<S: From<i32>> From<i32> for Value<S> {
     fn from(i: i32) -> Self {
-        Value::scalar(i)
+        Self::scalar(i)
     }
 }
 
-impl<S> From<f64> for Value<S>
-where
-    S: ScalarValue,
-{
+impl<S: From<f64>> From<f64> for Value<S> {
     fn from(f: f64) -> Self {
-        Value::scalar(f)
+        Self::scalar(f)
     }
 }
 
-impl<S> From<bool> for Value<S>
-where
-    S: ScalarValue,
-{
+impl<S: From<bool>> From<bool> for Value<S> {
     fn from(b: bool) -> Self {
-        Value::scalar(b)
+        Self::scalar(b)
     }
 }
 
