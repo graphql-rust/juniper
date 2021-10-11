@@ -1,5 +1,5 @@
-use std::fmt;
 use serde::Serialize;
+use std::fmt;
 
 use crate::{
     parser::{ParseError, ScalarToken},
@@ -260,7 +260,6 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Int
     Int(i32),
-
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
     /// specified by [IEEE 754].

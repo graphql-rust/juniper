@@ -20,7 +20,7 @@ pub(crate) enum MyScalarValue {
 }
 
 impl ScalarValue for MyScalarValue {
-    fn as_int(self) -> Option<i32> {
+    fn as_int(&self) -> Option<i32> {
         match self {
             Self::Int(i) => Some(*i),
             _ => None,
@@ -64,7 +64,7 @@ impl ScalarValue for MyScalarValue {
     }
 }
 
-impl<'de> Deserialize<'de> for MyScalarValueVisitor {
+impl<'de> Deserialize<'de> for MyScalarValue {
     fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
         struct Visitor;
 
@@ -108,7 +108,9 @@ impl<'de> Deserialize<'de> for MyScalarValueVisitor {
                     // so we must parse large integers as floating point,
                     // otherwise we would error on transferring large floating
                     // point numbers.
-                    Ok(MyScalarValue::Float(n.into()))
+                    // TODO: Use `FloatToInt` conversion once stabilized:
+                    //       https://github.com/rust-lang/rust/issues/67057
+                    Ok(MyScalarValue::Float(n as f64))
                 }
             }
 
