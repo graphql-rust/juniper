@@ -236,14 +236,11 @@ fn impl_scalar_enum(
         .map(|v| derive_from_variant(v, ident, &error))
         .collect::<Result<Vec<_>, _>>()?;
 
-    let serialize = derive_serialize(data.variants.iter(), ident);
-
     let display = derive_display(data.variants.iter(), ident);
 
     Ok(quote! {
         #(#froms)*
 
-        #serialize
         #display
     })
 }
@@ -260,28 +257,6 @@ where
     quote! {
         impl std::fmt::Display for #ident {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                match *self {
-                    #(#arms)*
-                }
-            }
-        }
-    }
-}
-
-fn derive_serialize<'a, I>(variants: I, ident: &Ident) -> TokenStream
-where
-    I: Iterator<Item = &'a Variant>,
-{
-    let arms = variants.map(|v| {
-        let variant = &v.ident;
-        quote!(#ident::#variant(ref v) => v.serialize(serializer),)
-    });
-
-    quote! {
-        impl ::juniper::serde::Serialize for #ident {
-            fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
-            where S: ::juniper::serde::Serializer
-            {
                 match *self {
                     #(#arms)*
                 }
