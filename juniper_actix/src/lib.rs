@@ -211,10 +211,7 @@ pub async fn playground_handler(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use std::{
-        fmt,
-        sync::{Arc, Mutex},
-    };
+    use std::{fmt, sync::Arc};
 
     use actix::{prelude::*, Actor, StreamHandler};
     use actix_web::{
@@ -222,7 +219,6 @@ pub mod subscriptions {
         web, HttpRequest, HttpResponse,
     };
     use actix_web_actors::ws;
-
     use juniper::{
         futures::{
             stream::{SplitSink, SplitStream, StreamExt},
@@ -231,6 +227,7 @@ pub mod subscriptions {
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
+    use tokio::sync::Mutex;
 
     /// Serves the graphql-ws protocol over a WebSocket connection.
     ///
@@ -326,8 +323,9 @@ pub mod subscriptions {
                     let tx = self.graphql_tx.clone();
 
                     async move {
-                        let mut tx = tx.lock().unwrap();
-                        tx.send(msg)
+                        tx.lock()
+                            .await
+                            .send(msg)
                             .await
                             .expect("Infallible: this should not happen");
                     }
@@ -363,7 +361,7 @@ pub mod subscriptions {
             let addr = ctx.address();
 
             let fut = async move {
-                let mut stream = stream.lock().unwrap();
+                let mut stream = stream.lock().await;
                 while let Some(message) = stream.next().await {
                     // sending the message to self so that it can be forwarded back to the client
                     addr.do_send(ServerMessageWrapper { message });
