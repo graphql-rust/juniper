@@ -209,9 +209,9 @@ fn default_name_input_value() {
         .collect(),
     );
 
-    let dv: Option<DefaultName> = FromInputValue::from_input_value(&iv);
+    let dv = DefaultName::from_input_value(&iv);
 
-    assert!(dv.is_some());
+    assert!(dv.is_ok(), "error: {}", dv.unwrap_err());
 
     let dv = dv.unwrap();
 

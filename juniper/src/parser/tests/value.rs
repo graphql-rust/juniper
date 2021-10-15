@@ -55,7 +55,7 @@ impl Query {
 
 fn scalar_meta<T>(name: &'static str) -> MetaType<DefaultScalarValue>
 where
-    T: FromInputValue<DefaultScalarValue> + ParseScalarValue<DefaultScalarValue> + 'static,
+    T: FromInputValue<DefaultScalarValue> + ParseScalarValue<DefaultScalarValue>,
 {
     MetaType::Scalar(ScalarMeta::new::<T>(name.into()))
 }

@@ -152,20 +152,34 @@ pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
 /// Parse an unstructured input value into a Rust data type.
 ///
-/// The conversion _can_ fail, and must in that case return None. Implemented
-/// automatically by the convenience proc macro `graphql_scalar` or by deriving GraphQLEnum.
+/// The conversion _can_ fail, and must in that case return [`Err`]. Thus not
+/// restricted in the definition of this trait, the returned [`Err`] should be
+/// convertible with [`IntoFieldError`] to fit well into the library machinery.
+///
+/// Implemented automatically by the convenience proc macro [`graphql_scalar!`]
+/// or by deriving `GraphQLEnum`.
 ///
 /// Must be implemented manually when manually exposing new enums or scalars.
+///
+/// [`graphql_scalar!`]: macro@crate::graphql_scalar
+/// [`IntoFieldError`]: crate::IntoFieldError
 pub trait FromInputValue<S = DefaultScalarValue>: Sized {
-    /// Performs the conversion.
-    fn from_input_value(v: &InputValue<S>) -> Option<Self>;
-
-    /// Performs the conversion from an absent value (e.g. to distinguish between
-    /// implicit and explicit null). The default implementation just uses
-    /// `from_input_value` as if an explicit null were provided.
+    /// Type of this conversion error.
     ///
-    /// This conversion must not fail.
-    fn from_implicit_null() -> Option<Self> {
+    /// Thus not restricted, it should be convertible with [`IntoFieldError`] to
+    /// fit well into the library machinery.
+    type Error;
+
+    /// Performs the conversion.
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error>;
+
+    /// Performs the conversion from an absent value (e.g. to distinguish
+    /// between implicit and explicit `null`).
+    ///
+    /// The default implementation just calls
+    /// [`FromInputValue::from_input_value()`] as if an explicit `null` was
+    /// provided.
+    fn from_implicit_null() -> Result<Self, Self::Error> {
         Self::from_input_value(&InputValue::<S>::Null)
     }
 }
@@ -298,12 +312,9 @@ impl<S> InputValue<S> {
         }
     }
 
-    /// Shorthand form of invoking [`FromInputValue::from()`].
-    pub fn convert<T>(&self) -> Option<T>
-    where
-        T: FromInputValue<S>,
-    {
-        <T as FromInputValue<S>>::from_input_value(self)
+    /// Shorthand form of invoking [`FromInputValue::from_input_value()`].
+    pub fn convert<T: FromInputValue<S>>(&self) -> Result<T, T::Error> {
+        T::from_input_value(self)
     }
 
     /// Does the value represent a `null`?

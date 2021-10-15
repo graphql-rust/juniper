@@ -68,7 +68,7 @@ where
                 .replaced_context(&self.schema)
                 .resolve(&(), &self.schema),
             "__type" => {
-                let type_name: String = args.get("name").unwrap();
+                let type_name: String = args.get("name")?.unwrap();
                 executor
                     .replaced_context(&self.schema)
                     .resolve(&(), &self.schema.type_by_name(&type_name))

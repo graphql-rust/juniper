@@ -149,47 +149,38 @@ where
 ///     Ok(s)
 /// }
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FieldError<S = DefaultScalarValue> {
     message: String,
     extensions: Value<S>,
 }
 
-impl<T: Display, S> From<T> for FieldError<S>
-where
-    S: crate::value::ScalarValue,
-{
-    fn from(e: T) -> FieldError<S> {
-        FieldError {
-            message: format!("{}", e),
-            extensions: Value::null(),
+impl<T: Display, S> From<T> for FieldError<S> {
+    fn from(e: T) -> Self {
+        Self {
+            message: e.to_string(),
+            extensions: Value::Null,
         }
     }
 }
 
 impl<S> FieldError<S> {
-    /// Construct a new error with additional data
+    /// Construct a new [`FieldError`] with additional data.
     ///
-    /// You can use the `graphql_value!` macro to construct an error:
-    ///
+    /// You can use the [`graphql_value!`] macro to construct an error:
     /// ```rust
-    /// use juniper::FieldError;
     /// # use juniper::DefaultScalarValue;
-    /// use juniper::graphql_value;
+    /// use juniper::{graphql_value, FieldError};
     ///
-    /// # fn sample() {
     /// # let _: FieldError<DefaultScalarValue> =
     /// FieldError::new(
     ///     "Could not open connection to the database",
-    ///     graphql_value!({ "internal_error": "Connection refused" })
+    ///     graphql_value!({"internal_error": "Connection refused"}),
     /// );
-    /// # }
-    /// # fn main() { }
     /// ```
     ///
-    /// The `extensions` parameter will be added to the `"extensions"` field of the error
-    /// object in the JSON response:
-    ///
+    /// The `extensions` parameter will be added to the `"extensions"` field of
+    /// the `"errors"` object in response:
     /// ```json
     /// {
     ///   "errors": [
@@ -202,25 +193,34 @@ impl<S> FieldError<S> {
     /// }
     /// ```
     ///
-    /// If the argument is `Value::null()`, no extra data will be included.
-    pub fn new<T: Display>(e: T, extensions: Value<S>) -> FieldError<S> {
-        FieldError {
-            message: format!("{}", e),
+    /// If the argument is [`Value::Null`], then no extra data will be included.
+    ///
+    /// [`graphql_value!`]: macro@crate::graphql_value
+    #[must_use]
+    pub fn new<T: Display>(e: T, extensions: Value<S>) -> Self {
+        Self {
+            message: e.to_string(),
             extensions,
         }
     }
 
-    #[doc(hidden)]
+    /// Returns `"message"` field of this [`FieldError`].
+    #[must_use]
     pub fn message(&self) -> &str {
         &self.message
     }
 
-    #[doc(hidden)]
+    /// Returns `"extensions"` field of this [`FieldError`].
+    ///
+    /// If there is none `"extensions"` then [`Value::Null`] will be returned.
+    #[must_use]
     pub fn extensions(&self) -> &Value<S> {
         &self.extensions
     }
 
-    /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified one.
+    /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified
+    /// one.
+    #[must_use]
     pub fn map_scalar_value<Into>(self) -> FieldError<Into>
     where
         S: ScalarValue,
@@ -246,17 +246,18 @@ pub type ValuesStream<'a, S = DefaultScalarValue> =
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
 
-/// Custom error handling trait to enable Error types other than `FieldError` to be specified
-/// as return value.
+/// Custom error handling trait to enable error types other than [`FieldError`]
+/// to be specified as return value.
 ///
-/// Any custom error type should implement this trait to convert it to `FieldError`.
+/// Any custom error type should implement this trait to convert itself to a
+/// [`FieldError`].
 pub trait IntoFieldError<S = DefaultScalarValue> {
-    #[doc(hidden)]
+    /// Performs the custom conversion into a [`FieldError`].
+    #[must_use]
     fn into_field_error(self) -> FieldError<S>;
 }
 
 impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
-    #[inline]
     fn into_field_error(self) -> FieldError<S2> {
         self.map_scalar_value()
     }
@@ -1125,22 +1126,21 @@ where
     Ok((value, errors))
 }
 
-impl<'r, S> Registry<'r, S>
-where
-    S: ScalarValue + 'r,
-{
-    /// Construct a new registry
-    pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Registry<'r, S> {
-        Registry { types }
+impl<'r, S: 'r> Registry<'r, S> {
+    /// Constructs a new [`Registry`] out of the given `types`.
+    pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Self {
+        Self { types }
     }
 
-    /// Get the `Type` instance for a given GraphQL type
+    /// Returns a [`Type`] instance for the given [`GraphQLType`], registered in
+    /// this [`Registry`].
     ///
-    /// If the registry hasn't seen a type with this name before, it will
-    /// construct its metadata and store it.
+    /// If this [`Registry`] hasn't seen a [`Type`] with such
+    /// [`GraphQLType::name`] before, it will construct the one and store it.
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         if let Some(name) = T::name(info) {
             let validated_name = name.parse::<Name>().unwrap();
@@ -1158,10 +1158,11 @@ where
         }
     }
 
-    /// Create a field with the provided name
+    /// Creates a [`Field`] with the provided `name`.
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         Field {
             name: smartstring::SmartString::from(name),
@@ -1180,6 +1181,7 @@ where
     ) -> Field<'r, S>
     where
         I: GraphQLType<S>,
+        S: ScalarValue,
     {
         Field {
             name: smartstring::SmartString::from(name),
@@ -1190,18 +1192,19 @@ where
         }
     }
 
-    /// Create an argument with the provided name
+    /// Creates an [`Argument`] with the provided `name`.
     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
     where
-        T: GraphQLType<S> + FromInputValue<S> + ?Sized,
+        T: GraphQLType<S> + FromInputValue<S>,
+        S: ScalarValue,
     {
         Argument::new(name, self.get_type::<T>(info))
     }
 
-    /// Create an argument with a default value
+    /// Creates an [`Argument`] with the provided default `value`.
     ///
-    /// When called with type `T`, the actual argument will be given the type
-    /// `Option<T>`.
+    /// When called with type `T`, the actual [`Argument`] will be given the
+    /// type `Option<T>`.
     pub fn arg_with_default<T>(
         &mut self,
         name: &str,
@@ -1209,7 +1212,8 @@ where
         info: &T::TypeInfo,
     ) -> Argument<'r, S>
     where
-        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S> + ?Sized,
+        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
+        S: ScalarValue,
     {
         Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
     }
@@ -1220,40 +1224,45 @@ where
             .or_insert(MetaType::Placeholder(PlaceholderMeta { of_type }));
     }
 
-    /// Create a scalar meta type
-    ///
-    /// This expects the type to implement `FromInputValue`.
+    /// Creates a [`ScalarMeta`] type.
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + ?Sized + 'r,
+        T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S> + 'r,
+        S: ScalarValue,
     {
-        let name = T::name(info).expect("Scalar types must be named. Implement name()");
+        let name = T::name(info).expect("Scalar types must be named. Implement `name()`");
+
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
-    /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType<S> + ?Sized>(
+    /// Creates a [`ListMeta`] type.
+    ///
+    /// Specifying `expected_size` will be used to ensure that values of this
+    /// type will always match it.
+    pub fn build_list_type<T>(
         &mut self,
         info: &T::TypeInfo,
         expected_size: Option<usize>,
-    ) -> ListMeta<'r> {
+    ) -> ListMeta<'r>
+    where
+        T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
+    {
         let of_type = self.get_type::<T>(info);
         ListMeta::new(of_type, expected_size)
     }
 
-    /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType<S> + ?Sized>(
-        &mut self,
-        info: &T::TypeInfo,
-    ) -> NullableMeta<'r> {
+    /// Creates a [`NullableMeta`] type.
+    pub fn build_nullable_type<T>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
+    where
+        T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
+    {
         let of_type = self.get_type::<T>(info);
         NullableMeta::new(of_type)
     }
 
-    /// Create an object meta type
-    ///
-    /// To prevent infinite recursion by enforcing ordering, this returns a
-    /// function that needs to be called with the list of fields on the object.
+    /// Creates an [`ObjectMeta`] type with the given `fields`.
     pub fn build_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
@@ -1261,6 +1270,7 @@ where
     ) -> ObjectMeta<'r, S>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
@@ -1269,22 +1279,22 @@ where
         ObjectMeta::new(Cow::Owned(name.to_string()), &v)
     }
 
-    /// Create an enum meta type
+    /// Creates an [`EnumMeta`] type out of the provided `values`.
     pub fn build_enum_type<T>(
         &mut self,
         info: &T::TypeInfo,
         values: &[EnumValue],
     ) -> EnumMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
+        T: GraphQLType<S> + FromInputValue<S>,
+        S: ScalarValue,
     {
-        let name = T::name(info).expect("Enum types must be named. Implement name()");
+        let name = T::name(info).expect("Enum types must be named. Implement `name()`");
 
         EnumMeta::new::<T>(Cow::Owned(name.to_string()), values)
     }
 
-    /// Create an interface meta type,
-    /// by providing a type info object.
+    /// Creates an [`InterfaceMeta`] type with the given `fields`.
     pub fn build_interface_type<T>(
         &mut self,
         info: &T::TypeInfo,
@@ -1292,6 +1302,7 @@ where
     ) -> InterfaceMeta<'r, S>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
@@ -1300,24 +1311,26 @@ where
         InterfaceMeta::new(Cow::Owned(name.to_string()), &v)
     }
 
-    /// Create a union meta type
+    /// Creates an [`UnionMeta`] type of the given `types`.
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
         UnionMeta::new(Cow::Owned(name.to_string()), types)
     }
 
-    /// Create an input object meta type
+    /// Creates an [`InputObjectMeta`] type with the given `args`.
     pub fn build_input_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
         args: &[Argument<'r, S>],
     ) -> InputObjectMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
+        T: GraphQLType<S> + FromInputValue<S>,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 
