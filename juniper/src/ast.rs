@@ -34,7 +34,7 @@ pub enum Type<'a> {
 ///
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
@@ -204,12 +204,12 @@ impl<'a> Type<'a> {
 }
 
 impl<'a> fmt::Display for Type<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Type::Named(ref n) => write!(f, "{}", n),
-            Type::NonNullNamed(ref n) => write!(f, "{}!", n),
-            Type::List(ref t, _) => write!(f, "[{}]", t),
-            Type::NonNullList(ref t, _) => write!(f, "[{}]!", t),
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Named(n) => write!(f, "{}", n),
+            Self::NonNullNamed(n) => write!(f, "{}!", n),
+            Self::List(t, _) => write!(f, "[{}]", t),
+            Self::NonNullList(t, _) => write!(f, "[{}]!", t),
         }
     }
 }
@@ -435,7 +435,7 @@ impl<S> InputValue<S> {
 }
 
 impl<S: ScalarValue> fmt::Display for InputValue<S> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
             Self::Scalar(s) => {
@@ -449,31 +449,66 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
             Self::Variable(v) => write!(f, "${}", v),
             Self::List(v) => {
                 write!(f, "[")?;
-
                 for (i, spanning) in v.iter().enumerate() {
                     spanning.item.fmt(f)?;
                     if i < v.len() - 1 {
                         write!(f, ", ")?;
                     }
                 }
-
                 write!(f, "]")
             }
             Self::Object(o) => {
                 write!(f, "{{")?;
-
-                for (i, &(ref k, ref v)) in o.iter().enumerate() {
+                for (i, (k, v)) in o.iter().enumerate() {
                     write!(f, "{}: ", k.item)?;
                     v.item.fmt(f)?;
                     if i < o.len() - 1 {
                         write!(f, ", ")?;
                     }
                 }
-
                 write!(f, "}}")
             }
         }
     }
+}
+
+/// Construct JSON-like [`InputValue`]s by using JSON syntax.
+///
+/// __Note:__ [`InputValue::List`]s and [`InputValue::Object`]s will be created
+///           in a [`Spanning::unlocated`].
+///
+/// # Example
+///
+/// The resulting JSON will look just like what you passed in.
+/// ```rust
+/// # use juniper::{graphql_input_value, DefaultScalarValue, InputValue};
+/// # type V = InputValue<DefaultScalarValue>;
+/// #
+/// # let _: V =
+/// graphql_input_value!(None);
+/// # let _: V =
+/// graphql_input_value!(1234);
+/// # let _: V =
+/// graphql_input_value!("test");
+/// # let _: V =
+/// graphql_input_value!([1234, "test", true]);
+/// # let _: V =
+/// graphql_input_value!({"key": "value", "foo": 1234});
+/// ```
+#[macro_export]
+macro_rules! graphql_input_value {
+    ([ $($arg:tt),* $(,)* ]) => {
+        $crate::InputValue::list(vec![
+            $( $crate::graphql_input_value!($arg), )*
+        ])
+    };
+    ({ $($key:tt : $val:expr ),* $(,)* }) => {
+        $crate::InputValue::object(::std::array::IntoIter::new([
+            $( ($key, $crate::graphql_input_value!($val)), )*
+        ]).collect())
+    };
+    (None) => ($crate::InputValue::Null);
+    ($e:expr) => ($crate::InputValue::scalar($e))
 }
 
 impl<'a, S> Arguments<'a, S> {

@@ -1,6 +1,6 @@
 use fnv::FnvHashMap;
 use juniper::{
-    marker, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue,
+    graphql_input_value, marker, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue,
     InputValue, Registry, ToInputValue,
 };
 
@@ -119,19 +119,17 @@ fn test_derived_input_object() {
 
     // Test default value injection.
 
-    let input_no_defaults: InputValue = ::serde_json::from_value(serde_json::json!({
+    let input_no_defaults = graphql_input_value!({
         "regularField": "a",
-    }))
-    .unwrap();
-
-    let output_no_defaults: Input = FromInputValue::from_input_value(&input_no_defaults).unwrap();
+    });
+    let output_no_defaults = Input::from_input_value(&input_no_defaults).unwrap();
     assert_eq!(
         output_no_defaults,
         Input {
             regular_field: "a".into(),
             c: 33,
             other: None,
-        }
+        },
     );
 
     // Test with all values supplied.

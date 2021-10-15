@@ -276,18 +276,17 @@ impl<S: From<bool>> From<bool> for Value<S> {
     }
 }
 
-/// Construct JSON-like values by using JSON syntax
+/// Construct JSON-like [`Value`]s by using JSON syntax.
 ///
-/// This macro can be used to create `Value` instances using a JSON syntax.
-/// Value objects are used mostly when creating custom errors from fields.
+/// [`Value`] objects are used mostly when creating custom errors from fields.
 ///
-/// Here are some examples; the resulting JSON will look just like what you
-/// passed in.
+/// # Example
+///
+/// Resulting JSON will look just like what you passed in.
 /// ```rust
-/// # use juniper::{Value, DefaultScalarValue, graphql_value};
+/// # use juniper::{graphql_value, DefaultScalarValue, Value};
 /// # type V = Value<DefaultScalarValue>;
 /// #
-/// # fn main() {
 /// # let _: V =
 /// graphql_value!(None);
 /// # let _: V =
@@ -295,21 +294,20 @@ impl<S: From<bool>> From<bool> for Value<S> {
 /// # let _: V =
 /// graphql_value!("test");
 /// # let _: V =
-/// graphql_value!([ 1234, "test", true ]);
+/// graphql_value!([1234, "test", true]);
 /// # let _: V =
-/// graphql_value!({ "key": "value", "foo": 1234 });
-/// # }
+/// graphql_value!({"key": "value", "foo": 1234});
 /// ```
 #[macro_export]
 macro_rules! graphql_value {
     ([ $($arg:tt),* $(,)* ]) => {
         $crate::Value::list(vec![
-            $( graphql_value!($arg), )*
+            $( $crate::graphql_value!($arg), )*
         ])
     };
     ({ $($key:tt : $val:tt ),* $(,)* }) => {
         $crate::Value::object(vec![
-            $( ($key, graphql_value!($val)), )*
+            $( ($key, $crate::graphql_value!($val)), )*
         ].into_iter().collect())
     };
     (None) => ($crate::Value::null());

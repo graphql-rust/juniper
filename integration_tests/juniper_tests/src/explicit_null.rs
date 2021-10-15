@@ -1,6 +1,6 @@
 use juniper::{
-    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLInputObject,
-    InputValue, Nullable,
+    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription,
+    GraphQLInputObject, InputValue, Nullable,
 };
 
 pub struct Context;
@@ -47,23 +47,15 @@ async fn explicit_null() {
         EmptyMutation::<Context>::new(),
         EmptySubscription::<Context>::new(),
     );
-    let vars = [
-        ("emptyObj".to_string(), InputValue::Object(vec![])),
-        (
-            "literalNullObj".to_string(),
-            InputValue::object(vec![("field", InputValue::null())].into_iter().collect()),
-        ),
-    ];
 
-    let (data, errors) = juniper::execute(
-        query,
-        None,
-        &schema,
-        &vars.iter().cloned().collect(),
-        &Context,
-    )
-    .await
-    .unwrap();
+    let vars = graphql_vars!({
+        "emptyObj": [],
+        "literalNullObj": {"field": None},
+    });
+
+    let (data, errors) = juniper::execute(query, None, &schema, &vars, &Context)
+        .await
+        .unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
@@ -77,6 +69,6 @@ async fn explicit_null() {
             "noFieldIsExplicitNull": false,
             "emptyVariableObjectFieldIsExplicitNull": false,
             "literalNullVariableObjectFieldIsExplicitNull": true,
-        })
+        }),
     );
 }
