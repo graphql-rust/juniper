@@ -80,28 +80,22 @@ where
     }
 }
 
-impl<S, T> FromInputValue<S> for Option<T>
-where
-    T: FromInputValue<S>,
-    S: ScalarValue,
-{
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
+impl<S, T: FromInputValue<S>> FromInputValue<S> for Option<T> {
+    type Error = T::Error;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         match v {
-            &InputValue::Null => Some(None),
+            &InputValue::Null => Ok(None),
             v => v.convert().map(Some),
         }
     }
 }
 
-impl<S, T> ToInputValue<S> for Option<T>
-where
-    T: ToInputValue<S>,
-    S: ScalarValue,
-{
+impl<S, T: ToInputValue<S>> ToInputValue<S> for Option<T> {
     fn to_input_value(&self) -> InputValue<S> {
-        match *self {
-            Some(ref v) => v.to_input_value(),
-            None => InputValue::null(),
+        match self {
+            Some(v) => v.to_input_value(),
+            None => InputValue::Null,
         }
     }
 }
@@ -163,18 +157,16 @@ where
     }
 }
 
-impl<T, S> FromInputValue<S> for Vec<T>
-where
-    T: FromInputValue<S>,
-    S: ScalarValue,
-{
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
-        match *v {
-            InputValue::List(ref ls) => {
-                let v: Vec<_> = ls.iter().filter_map(|i| i.item.convert()).collect();
-                (v.len() == ls.len()).then(|| v)
-            }
-            ref other => other.convert().map(|e| vec![e]),
+impl<S, T: FromInputValue<S>> FromInputValue<S> for Vec<T> {
+    type Error = T::Error;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+        match v {
+            InputValue::List(l) => l.iter().map(|i| i.item.convert()).collect(),
+            // See "Input Coercion" on List types:
+            // https://spec.graphql.org/June2018/#sec-Type-System.List
+            InputValue::Null => Ok(Vec::new()),
+            other => other.convert().map(|e| vec![e]),
         }
     }
 }
@@ -491,4 +483,24 @@ where
     }
 
     Ok(Value::list(values))
+}
+
+#[cfg(test)]
+mod coercion {
+    use crate::{FromInputValue as _, InputValue};
+
+    // See "Input Coercion" examples on List types:
+    // https://spec.graphql.org/June2018/#sec-Type-System.List
+    #[test]
+    fn vec() {
+        assert_eq!(
+            <Vec<i32>>::from_input_value(&InputValue::list(vec![
+                InputValue::scalar(1),
+                InputValue::scalar(2),
+                InputValue::scalar(3)
+            ])),
+            Ok(vec![1, 2, 3]),
+        );
+        // TODO: all examples
+    }
 }
