@@ -467,7 +467,14 @@ pub mod subscriptions {
 #[cfg(test)]
 mod tests {
     use actix_http::body::AnyBody;
-    use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, web::Data, App};
+    use actix_web::{
+        dev::ServiceResponse,
+        http,
+        http::header::CONTENT_TYPE,
+        test::{self, TestRequest},
+        web::Data,
+        App,
+    };
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::fixtures::starwars::schema::{Database, Query},
@@ -509,7 +516,7 @@ mod tests {
         }
         let mut app =
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
-        let req = test::TestRequest::get()
+        let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
@@ -525,7 +532,7 @@ mod tests {
         }
         let mut app =
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
-        let req = test::TestRequest::get()
+        let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
@@ -550,7 +557,7 @@ mod tests {
         }
         let mut app =
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
-        let req = test::TestRequest::get()
+        let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
@@ -566,7 +573,7 @@ mod tests {
         }
         let mut app =
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
-        let req = test::TestRequest::get()
+        let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
@@ -589,7 +596,7 @@ mod tests {
             EmptySubscription::<Database>::new(),
         );
 
-        let req = test::TestRequest::post()
+        let req = TestRequest::post()
             .append_header(("content-type", "application/json; charset=utf-8"))
             .set_payload(
                 r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##,
@@ -625,7 +632,7 @@ mod tests {
             EmptySubscription::<Database>::new(),
         );
 
-        let req = test::TestRequest::get()
+        let req = TestRequest::get()
             .append_header(("content-type", "application/json"))
             .uri("/?query=%7B%20hero%28episode%3A%20NEW_HOPE%29%20%7B%20name%20%7D%20%7D&variables=null")
             .to_request();
@@ -663,7 +670,7 @@ mod tests {
             EmptySubscription::<Database>::new(),
         );
 
-        let req = test::TestRequest::post()
+        let req = TestRequest::post()
             .append_header(("content-type", "application/json"))
             .set_payload(
                 r##"[
@@ -705,7 +712,7 @@ mod tests {
     pub struct TestActixWebIntegration;
 
     impl TestActixWebIntegration {
-        fn make_request(&self, req: test::TestRequest) -> TestResponse {
+        fn make_request(&self, req: TestRequest) -> TestResponse {
             actix_web::rt::System::new().block_on(async move {
                 let schema = Schema::new(
                     Query,
@@ -728,12 +735,12 @@ mod tests {
 
     impl HttpIntegration for TestActixWebIntegration {
         fn get(&self, url: &str) -> TestResponse {
-            self.make_request(test::TestRequest::get().uri(url))
+            self.make_request(TestRequest::get().uri(url))
         }
 
         fn post_json(&self, url: &str, body: &str) -> TestResponse {
             self.make_request(
-                test::TestRequest::post()
+                TestRequest::post()
                     .append_header(("content-type", "application/json"))
                     .set_payload(body.to_string())
                     .uri(url),
@@ -742,7 +749,7 @@ mod tests {
 
         fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
             self.make_request(
-                test::TestRequest::post()
+                TestRequest::post()
                     .append_header(("content-type", "application/graphql"))
                     .set_payload(body.to_string())
                     .uri(url),
