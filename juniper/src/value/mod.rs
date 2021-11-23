@@ -300,24 +300,76 @@ impl<S: From<bool>> From<bool> for Value<S> {
 /// ```
 #[macro_export]
 macro_rules! graphql_value {
-    ([ $($arg:tt),* $(,)* ]) => {
+    // Done with trailing comma.
+    (@array [$($elems:expr,)*]) => {
         $crate::Value::list(vec![
-            $( $crate::graphql_value!($arg), )*
+            $( $crate::graphql_value!($elems), )*
         ])
     };
+
+    // Done without trailing comma.
+    (@array [$($elems:expr),*]) => {
+        $crate::Value::list(vec![
+            $( $crate::graphql_value!($elems), )*
+        ])
+    };
+
+    // Next element is `null`.
+    (@array [$($elems:expr,)*] null $($rest:tt)*) => {
+        $crate::graphql_value!(
+            @array [$($elems,)* $crate::graphql_value!(null)] $($rest)*
+        )
+    };
+
+    // Next element is an array.
+    (@array [$($elems:expr,)*] [$($array:tt)*] $($rest:tt)*) => {
+        $crate::graphql_value!(
+            @array [$($elems,)* $crate::graphql_value!([$($array)*])] $($rest)*
+        )
+    };
+
+    // Next element is a map.
+    (@array [$($elems:expr,)*] {$($map:tt)*} $($rest:tt)*) => {
+        $crate::graphql_value!(
+            @array [$($elems,)* $crate::graphql_value!({$($map)*})] $($rest)*
+        )
+    };
+
+    // Next element is an expression followed by comma.
+    (@array [$($elems:expr,)*] $next:expr, $($rest:tt)*) => {
+        $crate::graphql_value!(
+            @array [$($elems,)* $crate::graphql_value!($next),] $($rest)*
+        )
+    };
+
+    // Last element is an expression with no trailing comma.
+    (@array [$($elems:expr,)*] $last:expr) => {
+        $crate::graphql_value!(
+            @array [$($elems,)* $crate::graphql_value!($last)]
+        )
+    };
+
+    // Comma after the most recent element.
+    (@array [$($elems:expr),*] , $($rest:tt)*) => {
+        $crate::graphql_value!(@array [$($elems,)*] $($rest)*)
+    };
+
+    ([ $($arr:tt)* ]) => {
+        $crate::graphql_value!(@array [] $($arr)*)
+    };
+    (null) => ($crate::Value::null());
+
     ({ $($key:tt : $val:tt ),* $(,)* }) => {
         $crate::Value::object(vec![
             $( ($key, $crate::graphql_value!($val)), )*
         ].into_iter().collect())
     };
-    (null) => ($crate::Value::null());
-    ($e:expr) => ($crate::Value::from($e))
+
+    ($e:expr) => ($crate::Value::from($e));
 }
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
-
     use super::*;
 
     #[test]
@@ -387,11 +439,11 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn value_macro_expr() {
-    //     let s: Value<DefaultScalarValue> = graphql_value!({ "key": 1 + 2 });
-    //     assert_eq!(s, Value::object(iter::once(("key", 3)).collect()));
-    // }
+    #[test]
+    fn value_macro_expr() {
+        let s: Value<DefaultScalarValue> = graphql_value!([1 + 2]);
+        assert_eq!(s, Value::list(vec![3.into()]));
+    }
 
     #[test]
     fn display_null() {
