@@ -6,8 +6,8 @@ authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 publish = false
 
 [dependencies]
-actix-web = "4.0.0-beta.8"
-actix-cors = "0.6.0-beta.2"
+actix-web = "4.0.0-beta.12"
+actix-cors = "0.6.0-beta.4"
 futures = "0.3"
 env_logger = "0.9"
 serde = "1.0"
