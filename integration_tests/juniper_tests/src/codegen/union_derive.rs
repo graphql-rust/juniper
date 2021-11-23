@@ -191,7 +191,7 @@ mod trivial_enum {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
 }
@@ -1532,7 +1532,7 @@ mod trivial_struct {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &db).await,
-            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
 }

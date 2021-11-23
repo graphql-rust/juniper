@@ -107,7 +107,7 @@ mod trivial {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
 }
@@ -578,8 +578,8 @@ mod deprecation_from_attr {
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
-                    {"name": "id", "deprecationReason": None},
-                    {"name": "a", "deprecationReason": None},
+                    {"name": "id", "deprecationReason": null},
+                    {"name": "a", "deprecationReason": null},
                     {"name": "b", "deprecationReason": "Use `id`."},
                 ]}}),
                 vec![],
@@ -693,10 +693,10 @@ mod explicit_name_description_and_deprecation {
                         "description": "My human ID.",
                     }, {
                         "name": "a",
-                        "description": None,
+                        "description": null,
                     }, {
                         "name": "b",
-                        "description": None,
+                        "description": null,
                     }],
                 }}),
                 vec![],
@@ -729,11 +729,11 @@ mod explicit_name_description_and_deprecation {
                     }, {
                         "name": "a",
                         "isDeprecated": true,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }, {
                         "name": "b",
                         "isDeprecated": false,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }],
                 }}),
                 vec![],

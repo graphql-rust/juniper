@@ -116,7 +116,7 @@ mod no_implers {
 
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
-                Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+                Ok((graphql_value!({"__type": {"description": null}}), vec![])),
             );
         }
     }
@@ -463,7 +463,7 @@ mod trivial {
 
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
-                Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+                Ok((graphql_value!({"__type": {"description": null}}), vec![])),
             );
         }
     }
@@ -639,7 +639,7 @@ mod explicit_alias {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
 }
@@ -985,7 +985,7 @@ mod trivial_async {
 
             assert_eq!(
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
-                Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+                Ok((graphql_value!({"__type": {"description": null}}), vec![])),
             );
         }
     }
@@ -2466,8 +2466,8 @@ mod argument {
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
                 Ok((
                     graphql_value!({"__type": {"fields": [
-                        {"args": [{"description": None}]},
-                        {"args": [{"description": None}, {"description": None}]},
+                        {"args": [{"description": null}]},
+                        {"args": [{"description": null}, {"description": null}]},
                     ]}}),
                     vec![],
                 )),
@@ -2497,8 +2497,8 @@ mod argument {
                 execute(&doc, None, &schema, &Variables::new(), &()).await,
                 Ok((
                     graphql_value!({"__type": {"fields": [
-                        {"args": [{"defaultValue": None}]},
-                        {"args": [{"defaultValue": None}, {"defaultValue": None}]},
+                        {"args": [{"defaultValue": null}]},
+                        {"args": [{"defaultValue": null}, {"defaultValue": null}]},
                     ]}}),
                     vec![],
                 )),
@@ -2627,21 +2627,21 @@ mod default_argument {
                     "args": [{
                         "name": "first",
                         "defaultValue": r#""""#,
-                        "type": {"name": "String", "ofType": None},
+                        "type": {"name": "String", "ofType": null},
                     }, {
                         "name": "second",
                         "defaultValue": r#""second""#,
-                        "type": {"name": "String", "ofType": None},
+                        "type": {"name": "String", "ofType": null},
                     }, {
                         "name": "third",
                         "defaultValue": r#""t""#,
-                        "type": {"name": "String", "ofType": None},
+                        "type": {"name": "String", "ofType": null},
                     }],
                 }, {
                     "args": [{
                         "name": "coord",
                         "defaultValue": "{x: 1}",
-                        "type": {"name": "Point", "ofType": None},
+                        "type": {"name": "Point", "ofType": null},
                     }],
                 }]}}),
                 vec![],
@@ -2835,8 +2835,8 @@ mod deprecation_from_attr {
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
-                    {"name": "id", "deprecationReason": None},
-                    {"name": "a", "deprecationReason": None},
+                    {"name": "id", "deprecationReason": null},
+                    {"name": "a", "deprecationReason": null},
                     {"name": "b", "deprecationReason": "Use `id`."},
                 ]}}),
                 vec![],
@@ -2975,11 +2975,11 @@ mod explicit_name_description_and_deprecation {
                         "args": [{"description": "My argument."}],
                     }, {
                         "name": "a",
-                        "description": None,
+                        "description": null,
                         "args": [],
                     }, {
                         "name": "b",
-                        "description": None,
+                        "description": null,
                         "args": [],
                     }],
                 }}),
@@ -3013,11 +3013,11 @@ mod explicit_name_description_and_deprecation {
                     }, {
                         "name": "a",
                         "isDeprecated": true,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }, {
                         "name": "b",
                         "isDeprecated": false,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }],
                 }}),
                 vec![],

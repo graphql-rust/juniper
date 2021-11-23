@@ -288,7 +288,7 @@ impl<S: From<bool>> From<bool> for Value<S> {
 /// # type V = Value<DefaultScalarValue>;
 /// #
 /// # let _: V =
-/// graphql_value!(None);
+/// graphql_value!(null);
 /// # let _: V =
 /// graphql_value!(1234);
 /// # let _: V =
@@ -310,12 +310,14 @@ macro_rules! graphql_value {
             $( ($key, $crate::graphql_value!($val)), )*
         ].into_iter().collect())
     };
-    (None) => ($crate::Value::null());
+    (null) => ($crate::Value::null());
     ($e:expr) => ($crate::Value::from($e))
 }
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use super::*;
 
     #[test]
@@ -346,7 +348,7 @@ mod tests {
     fn value_macro_option() {
         let s: Value<DefaultScalarValue> = graphql_value!(Some("test"));
         assert_eq!(s, Value::scalar("test"));
-        let s: Value<DefaultScalarValue> = graphql_value!(None);
+        let s: Value<DefaultScalarValue> = graphql_value!(null);
         assert_eq!(s, Value::null());
     }
 
@@ -385,9 +387,15 @@ mod tests {
         );
     }
 
+    // #[test]
+    // fn value_macro_expr() {
+    //     let s: Value<DefaultScalarValue> = graphql_value!({ "key": 1 + 2 });
+    //     assert_eq!(s, Value::object(iter::once(("key", 3)).collect()));
+    // }
+
     #[test]
     fn display_null() {
-        let s: Value<DefaultScalarValue> = graphql_value!(None);
+        let s: Value<DefaultScalarValue> = graphql_value!(null);
         assert_eq!("null", format!("{}", s));
     }
 
@@ -420,7 +428,7 @@ mod tests {
 
     #[test]
     fn display_list() {
-        let s: Value<DefaultScalarValue> = graphql_value!([1, None, "foo"]);
+        let s: Value<DefaultScalarValue> = graphql_value!([1, null, "foo"]);
         assert_eq!("[1, null, \"foo\"]", format!("{}", s));
     }
 
@@ -440,7 +448,7 @@ mod tests {
     fn display_object() {
         let s: Value<DefaultScalarValue> = graphql_value!({
             "int": 1,
-            "null": None,
+            "null": null,
             "string": "foo",
         });
         assert_eq!(

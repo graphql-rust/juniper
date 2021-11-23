@@ -226,7 +226,7 @@ async fn default_name_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
     })
     .await;
@@ -250,7 +250,7 @@ async fn other_order_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
     })
     .await;
@@ -274,7 +274,7 @@ async fn named_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
     })
     .await;
@@ -324,7 +324,7 @@ async fn generated_scalar_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
     })
     .await;

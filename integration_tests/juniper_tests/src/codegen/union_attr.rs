@@ -208,7 +208,7 @@ mod trivial {
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
 }

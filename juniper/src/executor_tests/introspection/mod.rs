@@ -154,23 +154,23 @@ async fn enum_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(None))
+        Some(&graphql_value!(null))
     );
 
     let values = type_info
@@ -183,16 +183,16 @@ async fn enum_introspection() {
 
     assert!(values.contains(&graphql_value!({
         "name": "ONE",
-        "description": None,
+        "description": null,
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 
     assert!(values.contains(&graphql_value!({
         "name": "TWO",
-        "description": None,
+        "description": null,
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 }
 
@@ -267,19 +267,19 @@ async fn interface_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(None))
+        Some(&graphql_value!(null))
     );
 
     let possible_types = type_info
@@ -305,7 +305,7 @@ async fn interface_introspection() {
         "description": "A sample field in the interface",
         "args": [],
         "type": {
-            "name": None,
+            "name": null,
             "kind": "NON_NULL",
             "ofType": {
                "name": "SampleEnum",
@@ -313,7 +313,7 @@ async fn interface_introspection() {
             },
         },
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 }
 
@@ -403,19 +403,19 @@ async fn object_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(None))
+        Some(&graphql_value!(null))
     );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
 
     let fields = type_info
@@ -430,10 +430,10 @@ async fn object_introspection() {
 
     assert!(fields.contains(&graphql_value!({
         "name": "sampleEnum",
-        "description": None,
+        "description": null,
         "args": [],
         "type": {
-            "name": None,
+            "name": null,
             "kind": "NON_NULL",
             "ofType": {
                "name": "SampleEnum",
@@ -441,7 +441,7 @@ async fn object_introspection() {
             },
         },
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 
     assert!(fields.contains(&graphql_value!({
@@ -451,27 +451,27 @@ async fn object_introspection() {
             "name": "first",
             "description": "The first number",
             "type": {
-                "name": None,
+                "name": null,
                 "kind": "NON_NULL",
                 "ofType": {
                     "name": "Int",
                     "kind": "SCALAR",
-                    "ofType": None,
+                    "ofType": null,
                 },
             },
-            "defaultValue": None,
+            "defaultValue": null,
         }, {
             "name": "second",
             "description": "The second number",
             "type": {
                 "name": "Int",
                 "kind": "SCALAR",
-                "ofType": None,
+                "ofType": null,
             },
             "defaultValue": "123",
         }],
         "type": {
-            "name": None,
+            "name": null,
             "kind": "NON_NULL",
             "ofType": {
                "name": "SampleScalar",
@@ -479,7 +479,7 @@ async fn object_introspection() {
             },
         },
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 }
 
@@ -525,13 +525,13 @@ async fn scalar_introspection() {
         &graphql_value!({
             "name": "SampleScalar",
             "kind": "SCALAR",
-            "description": None,
-            "fields": None,
-            "interfaces": None,
-            "possibleTypes": None,
-            "enumValues": None,
-            "inputFields": None,
-            "ofType": None,
+            "description": null,
+            "fields": null,
+            "interfaces": null,
+            "possibleTypes": null,
+            "enumValues": null,
+            "inputFields": null,
+            "ofType": null,
         }),
     );
 }

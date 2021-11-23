@@ -681,7 +681,7 @@ mod test {
         async fn error(_context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             stream::once(future::ready(Err(FieldError::new(
                 "field error",
-                graphql_value!(None),
+                graphql_value!(null),
             ))))
             .chain(
                 tokio::time::sleep(Duration::from_secs(10000))
@@ -1044,7 +1044,7 @@ mod test {
                 payload: DataPayload { data, errors },
             } => {
                 assert_eq!(id, "foo");
-                assert_eq!(data, graphql_value!({ "error": None }),);
+                assert_eq!(data, graphql_value!({ "error": null }),);
                 assert_eq!(errors.len(), 1);
             }
             msg @ _ => panic!("expected data, got: {:?}", msg),

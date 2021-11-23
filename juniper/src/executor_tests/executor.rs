@@ -115,13 +115,13 @@ mod field_execution {
                 "deep": {
                     "a": "Already Been Done",
                     "b": "Boring",
-                    "c": ["Contrived", None, "Confusing"],
+                    "c": ["Contrived", null, "Confusing"],
                     "deeper": [
                         {
                             "a": "Apple",
                             "b": "Banana",
                         },
-                        None,
+                        null,
                         {
                             "a": "Apple",
                             "b": "Banana",
@@ -486,7 +486,7 @@ mod dynamic_context_switching {
             result,
             graphql_value!({
                 "first": {"value": "First value"},
-                "missing": None,
+                "missing": null,
             }),
         );
     }
@@ -577,13 +577,13 @@ mod dynamic_context_switching {
             vec![ExecutionError::new(
                 SourcePosition::new(14, 1, 12),
                 &["missing"],
-                FieldError::new("Could not find key 2", graphql_value!(None)),
+                FieldError::new("Could not find key 2", graphql_value!(null)),
             )]
         );
 
         println!("Result: {:#?}", result);
 
-        assert_eq!(result, graphql_value!(None));
+        assert_eq!(result, graphql_value!(null));
     }
 
     #[tokio::test]
@@ -631,7 +631,7 @@ mod dynamic_context_switching {
             [ExecutionError::new(
                 SourcePosition::new(123, 4, 12),
                 &["tooLarge"],
-                FieldError::new("Key too large: 200", graphql_value!(None)),
+                FieldError::new("Key too large: 200", graphql_value!(null)),
             )]
         );
 
@@ -641,8 +641,8 @@ mod dynamic_context_switching {
             result,
             graphql_value!({
                 "first": {"value": "First value"},
-                "missing": None,
-                "tooLarge": None,
+                "missing": null,
+                "tooLarge": null,
             }),
         );
     }
@@ -773,7 +773,7 @@ mod propagates_errors_to_nullable_fields {
 
         assert_eq!(
             result,
-            graphql_value!({ "inner": { "nullableErrorField": None } })
+            graphql_value!({ "inner": { "nullableErrorField": null } })
         );
 
         assert_eq!(
@@ -781,7 +781,7 @@ mod propagates_errors_to_nullable_fields {
             vec![ExecutionError::new(
                 SourcePosition::new(10, 0, 10),
                 &["inner", "nullableErrorField"],
-                FieldError::new("Error for nullableErrorField", graphql_value!(None)),
+                FieldError::new("Error for nullableErrorField", graphql_value!(null)),
             )]
         );
     }
@@ -803,14 +803,14 @@ mod propagates_errors_to_nullable_fields {
 
         println!("Result: {:#?}", result);
 
-        assert_eq!(result, graphql_value!(None));
+        assert_eq!(result, graphql_value!(null));
 
         assert_eq!(
             errs,
             vec![ExecutionError::new(
                 SourcePosition::new(10, 0, 10),
                 &["inner", "nonNullableErrorField"],
-                FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
             )]
         );
     }
@@ -832,7 +832,7 @@ mod propagates_errors_to_nullable_fields {
 
         println!("Result: {:#?}", result);
 
-        assert_eq!(result, graphql_value!(None));
+        assert_eq!(result, graphql_value!(null));
 
         assert_eq!(
             errs,
@@ -863,7 +863,7 @@ mod propagates_errors_to_nullable_fields {
 
         assert_eq!(
             result,
-            graphql_value!({ "inner": { "nullableField": None } })
+            graphql_value!({ "inner": { "nullableField": null } })
         );
 
         assert_eq!(
@@ -871,7 +871,7 @@ mod propagates_errors_to_nullable_fields {
             vec![ExecutionError::new(
                 SourcePosition::new(26, 0, 26),
                 &["inner", "nullableField", "nonNullableErrorField"],
-                FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
             )]
         );
     }
@@ -893,14 +893,14 @@ mod propagates_errors_to_nullable_fields {
 
         println!("Result: {:#?}", result);
 
-        assert_eq!(result, graphql_value!(None));
+        assert_eq!(result, graphql_value!(null));
 
         assert_eq!(
             errs,
             vec![ExecutionError::new(
                 SourcePosition::new(29, 0, 29),
                 &["inner", "nonNullableField", "nonNullableErrorField"],
-                FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
             )]
         );
     }
@@ -924,7 +924,7 @@ mod propagates_errors_to_nullable_fields {
 
         assert_eq!(
             result,
-            graphql_value!({ "inner": { "nonNullableField": { "nullableErrorField": None } } })
+            graphql_value!({ "inner": { "nonNullableField": { "nullableErrorField": null } } })
         );
 
         assert_eq!(
@@ -932,7 +932,7 @@ mod propagates_errors_to_nullable_fields {
             vec![ExecutionError::new(
                 SourcePosition::new(29, 0, 29),
                 &["inner", "nonNullableField", "nullableErrorField"],
-                FieldError::new("Error for nullableErrorField", graphql_value!(None)),
+                FieldError::new("Error for nullableErrorField", graphql_value!(null)),
             )]
         );
     }
@@ -954,14 +954,14 @@ mod propagates_errors_to_nullable_fields {
 
         println!("Result: {:#?}", result);
 
-        assert_eq!(result, graphql_value!(None));
+        assert_eq!(result, graphql_value!(null));
 
         assert_eq!(
             errs,
             vec![ExecutionError::new(
                 SourcePosition::new(11, 0, 11),
                 &["inners", "nonNullableErrorField"],
-                FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
             )]
         );
     }
@@ -985,7 +985,7 @@ mod propagates_errors_to_nullable_fields {
 
         assert_eq!(
             result,
-            graphql_value!({ "nullableInners": [None, None, None, None, None] })
+            graphql_value!({ "nullableInners": [null, null, null, null, null] })
         );
 
         assert_eq!(
@@ -994,27 +994,27 @@ mod propagates_errors_to_nullable_fields {
                 ExecutionError::new(
                     SourcePosition::new(19, 0, 19),
                     &["nullableInners", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
                 ),
                 ExecutionError::new(
                     SourcePosition::new(19, 0, 19),
                     &["nullableInners", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
                 ),
                 ExecutionError::new(
                     SourcePosition::new(19, 0, 19),
                     &["nullableInners", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
                 ),
                 ExecutionError::new(
                     SourcePosition::new(19, 0, 19),
                     &["nullableInners", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
                 ),
                 ExecutionError::new(
                     SourcePosition::new(19, 0, 19),
                     &["nullableInners", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(None)),
+                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
                 ),
             ]
         );

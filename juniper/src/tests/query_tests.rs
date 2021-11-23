@@ -291,7 +291,7 @@ async fn test_query_name_invalid_variable() {
 
     assert_eq!(
         crate::execute(doc, None, &schema, &vars, &database).await,
-        Ok((graphql_value!({ "human": None }), vec![])),
+        Ok((graphql_value!({ "human": null }), vec![])),
     );
 }
 
