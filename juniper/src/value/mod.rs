@@ -300,6 +300,10 @@ impl<S: From<bool>> From<bool> for Value<S> {
 /// ```
 #[macro_export]
 macro_rules! graphql_value {
+    ///////////
+    // Array //
+    ///////////
+
     // Done with trailing comma.
     (@array [$($elems:expr,)*]) => {
         $crate::Value::list(vec![
@@ -354,16 +358,127 @@ macro_rules! graphql_value {
         $crate::graphql_value!(@array [$($elems,)*] $($rest)*)
     };
 
+    // Unexpected token after most recent element.
+    (@array [$($elems:expr),*] $unexpected:tt $($rest:tt)*) => {
+        crate::graphql_value!(@unexpected $unexpected)
+    };
+
+    ////////////
+    // Object //
+    ////////////
+
+    // Done.
+    (@object $object:ident () () ()) => {};
+
+    // Insert the current entry followed by trailing comma.
+    (@object $object:ident [$($key:tt)+] ($value:expr) , $($rest:tt)*) => {
+        let _ = $object.add_field(($($key)+), $value);
+        $crate::graphql_value!(@object $object () ($($rest)*) ($($rest)*));
+    };
+
+    // Current entry followed by unexpected token.
+    (@object $object:ident [$($key:tt)+] ($value:expr) $unexpected:tt $($rest:tt)*) => {
+        $crate::graphql_value!(@unexpected $unexpected);
+    };
+
+    // Insert the last entry without trailing comma.
+    (@object $object:ident [$($key:tt)+] ($value:expr)) => {
+        let _ = $object.add_field(($($key)+), $value);
+    };
+
+    // Next value is `null`.
+    (@object $object:ident ($($key:tt)+) (: null $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!(null)) $($rest)*);
+    };
+
+    // Next value is an array.
+    (@object $object:ident ($($key:tt)+) (: [$($array:tt)*] $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!([$($array)*])) $($rest)*);
+    };
+
+    // Next value is a map.
+    (@object $object:ident ($($key:tt)+) (: {$($map:tt)*} $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!({$($map)*})) $($rest)*);
+    };
+
+    // Next value is an expression followed by comma.
+    (@object $object:ident ($($key:tt)+) (: $value:expr , $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!($value)) , $($rest)*);
+    };
+
+    // Last value is an expression with no trailing comma.
+    (@object $object:ident ($($key:tt)+) (: $value:expr) $copy:tt) => {
+        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!($value)));
+    };
+
+    // Missing value for last entry. Trigger a reasonable error message.
+    (@object $object:ident ($($key:tt)+) (:) $copy:tt) => {
+        // "unexpected end of macro invocation"
+        $crate::graphql_value!();
+    };
+
+    // Missing colon and value for last entry. Trigger a reasonable error
+    // message.
+    (@object $object:ident ($($key:tt)+) () $copy:tt) => {
+        // "unexpected end of macro invocation"
+        $crate::graphql_value!();
+    };
+
+    // Misplaced colon. Trigger a reasonable error message.
+    (@object $object:ident () (: $($rest:tt)*) ($colon:tt $($copy:tt)*)) => {
+        // Takes no arguments so "no rules expected the token `:`".
+        crate::graphql_value!(@unexpected $colon);
+    };
+
+    // Found a comma inside a key. Trigger a reasonable error message.
+    (@object $object:ident ($($key:tt)*) (, $($rest:tt)*) ($comma:tt $($copy:tt)*)) => {
+        // Takes no arguments so "no rules expected the token `,`".
+        crate::graphql_value!(@unexpected $comma);
+    };
+
+    // Key is fully parenthesized. This avoids clippy double_parens false
+    // positives because the parenthesization may be necessary here.
+    (@object $object:ident () (($key:expr) : $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_value!(@object $object ($key) (: $($rest)*) (: $($rest)*));
+    };
+
+    // Refuse to absorb colon token into key expression.
+    (@object $object:ident ($($key:tt)*) (: $($unexpected:tt)+) $copy:tt) => {
+        crate::graphql_value!(@unexpected $($unexpected)+);
+    };
+
+    // Munch a token into the current key.
+    (@object $object:ident ($($key:tt)*) ($tt:tt $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_value!(@object $object ($($key)* $tt) ($($rest)*) ($($rest)*));
+    };
+
+    ////////////
+    // Errors //
+    ////////////
+
+    (@unexpected) => {};
+
+    //////////////
+    // Defaults //
+    //////////////
+
     ([ $($arr:tt)* ]) => {
         $crate::graphql_value!(@array [] $($arr)*)
     };
-    (null) => ($crate::Value::null());
 
-    ({ $($key:tt : $val:tt ),* $(,)* }) => {
-        $crate::Value::object(vec![
-            $( ($key, $crate::graphql_value!($val)), )*
-        ].into_iter().collect())
+    ({}) => {
+        $crate::Value::object($crate::Object::with_capacity(0))
     };
+
+    ({ $($map:tt)+ }) => {
+        $crate::Value::object({
+            let mut object = $crate::Object::with_capacity(0);
+            $crate::graphql_value!(@object object () ($($map)*) ($($map)*));
+            object
+        })
+    };
+
+    (null) => ($crate::Value::null());
 
     ($e:expr) => ($crate::Value::from($e));
 }
@@ -424,6 +539,15 @@ mod tests {
                 Value::scalar(789),
             ])
         );
+        let s: Value<DefaultScalarValue> = graphql_value!([123, [1 + 2], 789]);
+        assert_eq!(
+            s,
+            Value::list(vec![
+                Value::scalar(123),
+                Value::list(vec![Value::scalar(3)]),
+                Value::scalar(789),
+            ])
+        );
     }
 
     #[test]
@@ -437,12 +561,15 @@ mod tests {
                     .collect(),
             )
         );
-    }
-
-    #[test]
-    fn value_macro_expr() {
-        let s: Value<DefaultScalarValue> = graphql_value!([1 + 2]);
-        assert_eq!(s, Value::list(vec![3.into()]));
+        let s: Value<DefaultScalarValue> = graphql_value!({ "key": 1 + 2, "next": true });
+        assert_eq!(
+            s,
+            Value::object(
+                vec![("key", Value::scalar(3)), ("next", Value::scalar(true))]
+                    .into_iter()
+                    .collect(),
+            )
+        );
     }
 
     #[test]
@@ -519,7 +646,7 @@ mod tests {
 
     #[test]
     fn display_object_empty() {
-        let s = Value::<DefaultScalarValue>::object(Object::with_capacity(0));
+        let s: Value<DefaultScalarValue> = graphql_value!({});
         assert_eq!(r#"{}"#, format!("{}", s));
     }
 }

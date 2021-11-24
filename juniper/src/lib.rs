@@ -91,6 +91,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 */
 #![doc(html_root_url = "https://docs.rs/juniper/0.15.7")]
+#![recursion_limit = "256"]
 #![warn(missing_docs)]
 
 // Required for using `juniper_codegen` macros inside this crate to resolve absolute `::juniper`
