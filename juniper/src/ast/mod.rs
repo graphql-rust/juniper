@@ -514,42 +514,31 @@ mod tests {
 
     #[test]
     fn test_input_value_fmt() {
-        let value: InputValue = InputValue::null();
+        let value: InputValue = graphql_input_value!(null);
         assert_eq!(format!("{}", value), "null");
 
-        let value: InputValue = InputValue::scalar(123);
+        let value: InputValue = graphql_input_value!(123);
         assert_eq!(format!("{}", value), "123");
 
-        let value: InputValue = InputValue::scalar(12.3);
+        let value: InputValue = graphql_input_value!(12.3);
         assert_eq!(format!("{}", value), "12.3");
 
-        let value: InputValue = InputValue::scalar("FOO".to_owned());
+        let value: InputValue = graphql_input_value!("FOO");
         assert_eq!(format!("{}", value), "\"FOO\"");
 
-        let value: InputValue = InputValue::scalar(true);
+        let value: InputValue = graphql_input_value!(true);
         assert_eq!(format!("{}", value), "true");
 
-        let value: InputValue = InputValue::enum_value("BAR".to_owned());
+        let value: InputValue = graphql_input_value!(BAR);
         assert_eq!(format!("{}", value), "BAR");
 
-        let value: InputValue = InputValue::variable("baz".to_owned());
+        let value: InputValue = graphql_input_value!(@baz);
         assert_eq!(format!("{}", value), "$baz");
 
-        let list = vec![InputValue::scalar(1), InputValue::scalar(2)];
-        let value: InputValue = InputValue::list(list);
+        let value: InputValue = graphql_input_value!([1, 2]);
         assert_eq!(format!("{}", value), "[1, 2]");
 
-        let object = vec![
-            (
-                Spanning::unlocated("foo".to_owned()),
-                Spanning::unlocated(InputValue::scalar(1)),
-            ),
-            (
-                Spanning::unlocated("bar".to_owned()),
-                Spanning::unlocated(InputValue::scalar(2)),
-            ),
-        ];
-        let value: InputValue = InputValue::parsed_object(object);
+        let value: InputValue = graphql_input_value!({ "foo": 1, "bar": 2 });
         assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
     }
 }

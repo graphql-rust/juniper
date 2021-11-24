@@ -200,14 +200,10 @@ async fn default_name_introspection() {
 
 #[test]
 fn default_name_input_value() {
-    let iv: InputValue<DefaultScalarValue> = InputValue::object(
-        vec![
-            ("fieldOne", InputValue::scalar("number one")),
-            ("fieldTwo", InputValue::scalar("number two")),
-        ]
-        .into_iter()
-        .collect(),
-    );
+    let iv: InputValue = graphql_input_value!({
+        "fieldOne": "number one",
+        "fieldTwo": "number two",
+    });
 
     let dv: Option<DefaultName> = FromInputValue::from_input_value(&iv);
 

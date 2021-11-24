@@ -66,7 +66,7 @@ mod test {
     #[test]
     fn objectid_from_input_value() {
         let raw = "53e37d08776f724e42000000";
-        let input = InputValue::<DefaultScalarValue>::scalar(raw.to_string());
+        let input = InputValue::<DefaultScalarValue>::scalar(raw);
 
         let parsed: ObjectId = FromInputValue::from_input_value(&input).unwrap();
         let id = ObjectId::parse_str(raw).unwrap();
@@ -77,7 +77,7 @@ mod test {
     #[test]
     fn utcdatetime_from_input_value() {
         let raw = "2020-03-23T17:38:32.446+00:00";
-        let input = InputValue::<DefaultScalarValue>::scalar(raw.to_string());
+        let input = InputValue::<DefaultScalarValue>::scalar(raw);
 
         let parsed: UtcDateTime = FromInputValue::from_input_value(&input).unwrap();
         let date_time = UtcDateTime::from_chrono(

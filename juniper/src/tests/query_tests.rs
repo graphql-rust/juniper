@@ -262,7 +262,7 @@ async fn test_query_name_variable() {
         EmptySubscription::<Database>::new(),
     );
 
-    let vars = vec![("someId".to_owned(), InputValue::scalar("1000"))]
+    let vars = vec![("someId".to_owned(), graphql_input_value!("1000"))]
         .into_iter()
         .collect();
 
@@ -285,7 +285,7 @@ async fn test_query_name_invalid_variable() {
         EmptySubscription::<Database>::new(),
     );
 
-    let vars = vec![("someId".to_owned(), InputValue::scalar("some invalid id"))]
+    let vars = vec![("someId".to_owned(), graphql_input_value!("some invalid id"))]
         .into_iter()
         .collect();
 

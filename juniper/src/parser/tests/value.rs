@@ -79,7 +79,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(3, 0, 3),
-            InputValue::scalar(123)
+            graphql_input_value!(123)
         )
     );
     assert_eq!(
@@ -87,7 +87,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(6, 0, 6),
-            InputValue::scalar(123.45)
+            graphql_input_value!(123.45)
         )
     );
     assert_eq!(
@@ -95,7 +95,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(4, 0, 4),
-            InputValue::scalar(true)
+            graphql_input_value!(true)
         )
     );
     assert_eq!(
@@ -103,7 +103,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(5, 0, 5),
-            InputValue::scalar(false)
+            graphql_input_value!(false)
         )
     );
     assert_eq!(
@@ -111,7 +111,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(6, 0, 6),
-            InputValue::scalar("test")
+            graphql_input_value!("test")
         )
     );
     let values = &[EnumValue::new("enum_value")];
@@ -122,7 +122,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(10, 0, 10),
-            InputValue::enum_value("enum_value")
+            graphql_input_value!(enum_value)
         )
     );
     assert_eq!(
@@ -130,7 +130,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(9, 0, 9),
-            InputValue::variable("variable")
+            graphql_input_value!(@variable)
         )
     );
     assert_eq!(
@@ -138,7 +138,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
-            InputValue::list(vec![])
+            graphql_input_value!([]),
         )
     );
     assert_eq!(
@@ -181,7 +181,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
-            InputValue::object(IndexMap::<String, InputValue<DefaultScalarValue>>::new())
+            graphql_input_value!({}),
         )
     );
 

@@ -201,15 +201,11 @@ async fn variable_complex_input() {
         r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#,
         vec![(
             "input".to_owned(),
-            InputValue::object(
-                vec![
-                    ("a", InputValue::scalar("foo")),
-                    ("b", InputValue::list(vec![InputValue::scalar("bar")])),
-                    ("c", InputValue::scalar("baz")),
-                ]
-                .into_iter()
-                .collect(),
-            ),
+            graphql_input_value!({
+                "a": "foo",
+                "b": ["bar"],
+                "c": "baz",
+            }),
         )]
         .into_iter()
         .collect(),
@@ -230,15 +226,11 @@ async fn variable_parse_single_value_to_list() {
         r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#,
         vec![(
             "input".to_owned(),
-            InputValue::object(
-                vec![
-                    ("a", InputValue::scalar("foo")),
-                    ("b", InputValue::scalar("bar")),
-                    ("c", InputValue::scalar("baz")),
-                ]
-                .into_iter()
-                .collect(),
-            ),
+            graphql_input_value!({
+                "a": "foo",
+                "b": "bar",
+                "c": "baz",
+            }),
         )]
         .into_iter()
         .collect(),
@@ -259,14 +251,10 @@ async fn variable_runs_from_input_value_on_scalar() {
         r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#,
         vec![(
             "input".to_owned(),
-            InputValue::object(
-                vec![
-                    ("c", InputValue::scalar("baz")),
-                    ("d", InputValue::scalar("SerializedValue")),
-                ]
-                .into_iter()
-                .collect(),
-            ),
+            graphql_input_value!({
+                "c": "baz",
+                "d": "SerializedValue",
+            }),
         )]
         .into_iter()
         .collect(),
@@ -292,15 +280,11 @@ async fn variable_error_on_nested_non_null() {
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
         "input".to_owned(),
-        InputValue::object(
-            vec![
-                ("a", InputValue::scalar("foo")),
-                ("b", InputValue::scalar("bar")),
-                ("c", InputValue::null()),
-            ]
-            .into_iter()
-            .collect(),
-        ),
+        graphql_input_value!({
+            "a": "foo",
+            "b": "bar",
+            "c": null,
+        }),
     )]
     .into_iter()
     .collect();
@@ -327,7 +311,7 @@ async fn variable_error_on_incorrect_type() {
     );
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
-    let vars = vec![("input".to_owned(), InputValue::scalar("foo bar"))]
+    let vars = vec![("input".to_owned(), graphql_input_value!("foo bar"))]
         .into_iter()
         .collect();
 
@@ -355,14 +339,10 @@ async fn variable_error_on_omit_non_null() {
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
         "input".to_owned(),
-        InputValue::object(
-            vec![
-                ("a", InputValue::scalar("foo")),
-                ("b", InputValue::scalar("bar")),
-            ]
-            .into_iter()
-            .collect(),
-        ),
+        graphql_input_value!({
+            "a": "foo",
+            "b": "bar",
+        }),
     )]
     .into_iter()
     .collect();
@@ -392,14 +372,9 @@ async fn variable_multiple_errors_with_nesting() {
         r#"query q($input: TestNestedInputObject) { fieldWithNestedObjectInput(input: $input) }"#;
     let vars = vec![(
         "input".to_owned(),
-        InputValue::object(
-            vec![(
-                "na",
-                InputValue::object(vec![("a", InputValue::scalar("foo"))].into_iter().collect()),
-            )]
-            .into_iter()
-            .collect(),
-        ),
+        graphql_input_value!({
+            "na": { "a": "foo" },
+        }),
     )]
     .into_iter()
     .collect();
@@ -434,16 +409,12 @@ async fn variable_error_on_additional_field() {
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
         "input".to_owned(),
-        InputValue::object(
-            vec![
-                ("a", InputValue::scalar("foo")),
-                ("b", InputValue::scalar("bar")),
-                ("c", InputValue::scalar("baz")),
-                ("extra", InputValue::scalar("dog")),
-            ]
-            .into_iter()
-            .collect(),
-        ),
+        graphql_input_value!({
+            "a": "foo",
+            "b": "bar",
+            "c": "baz",
+            "extra": "dog",
+        }),
     )]
     .into_iter()
     .collect();
@@ -507,7 +478,7 @@ async fn allow_nullable_inputs_to_be_explicitly_null() {
 async fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
     run_variable_query(
         r#"query q($value: String) { fieldWithNullableStringInput(input: $value) }"#,
-        vec![("value".to_owned(), InputValue::null())]
+        vec![("value".to_owned(), graphql_input_value!(null))]
             .into_iter()
             .collect(),
         |result: &Object<DefaultScalarValue>| {
@@ -524,7 +495,7 @@ async fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
 async fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
     run_variable_query(
         r#"query q($value: String) { fieldWithNullableStringInput(input: $value) }"#,
-        vec![("value".to_owned(), InputValue::scalar("a"))]
+        vec![("value".to_owned(), graphql_input_value!("a"))]
             .into_iter()
             .collect(),
         |result: &Object<DefaultScalarValue>| {
@@ -584,7 +555,7 @@ async fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
     );
 
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
-    let vars = vec![("value".to_owned(), InputValue::null())]
+    let vars = vec![("value".to_owned(), graphql_input_value!(null))]
         .into_iter()
         .collect();
 
@@ -605,7 +576,7 @@ async fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
 async fn allow_non_nullable_inputs_to_be_set_to_value_in_variable() {
     run_variable_query(
         r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#,
-        vec![("value".to_owned(), InputValue::scalar("a"))]
+        vec![("value".to_owned(), graphql_input_value!("a"))]
             .into_iter()
             .collect(),
         |result| {
@@ -636,7 +607,7 @@ async fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
 async fn allow_lists_to_be_null() {
     run_variable_query(
         r#"query q($input: [String]) { list(input: $input) }"#,
-        vec![("input".to_owned(), InputValue::null())]
+        vec![("input".to_owned(), graphql_input_value!(null))]
             .into_iter()
             .collect(),
         |result: &Object<DefaultScalarValue>| {
@@ -653,12 +624,9 @@ async fn allow_lists_to_be_null() {
 async fn allow_lists_to_contain_values() {
     run_variable_query(
         r#"query q($input: [String]) { list(input: $input) }"#,
-        vec![(
-            "input".to_owned(),
-            InputValue::list(vec![InputValue::scalar("A")]),
-        )]
-        .into_iter()
-        .collect(),
+        vec![("input".to_owned(), graphql_input_value!(["A"]))]
+            .into_iter()
+            .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
@@ -673,16 +641,9 @@ async fn allow_lists_to_contain_values() {
 async fn allow_lists_to_contain_null() {
     run_variable_query(
         r#"query q($input: [String]) { list(input: $input) }"#,
-        vec![(
-            "input".to_owned(),
-            InputValue::list(vec![
-                InputValue::scalar("A"),
-                InputValue::null(),
-                InputValue::scalar("B"),
-            ]),
-        )]
-        .into_iter()
-        .collect(),
+        vec![("input".to_owned(), graphql_input_value!(["A", null, "B"]))]
+            .into_iter()
+            .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
@@ -702,7 +663,7 @@ async fn does_not_allow_non_null_lists_to_be_null() {
     );
 
     let query = r#"query q($input: [String]!) { nnList(input: $input) }"#;
-    let vars = vec![("input".to_owned(), InputValue::null())]
+    let vars = vec![("input".to_owned(), graphql_input_value!(null))]
         .into_iter()
         .collect();
 
@@ -723,12 +684,9 @@ async fn does_not_allow_non_null_lists_to_be_null() {
 async fn allow_non_null_lists_to_contain_values() {
     run_variable_query(
         r#"query q($input: [String]!) { nnList(input: $input) }"#,
-        vec![(
-            "input".to_owned(),
-            InputValue::list(vec![InputValue::scalar("A")]),
-        )]
-        .into_iter()
-        .collect(),
+        vec![("input".to_owned(), graphql_input_value!(["A"]))]
+            .into_iter()
+            .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("nnList"),
@@ -742,16 +700,9 @@ async fn allow_non_null_lists_to_contain_values() {
 async fn allow_non_null_lists_to_contain_null() {
     run_variable_query(
         r#"query q($input: [String]!) { nnList(input: $input) }"#,
-        vec![(
-            "input".to_owned(),
-            InputValue::list(vec![
-                InputValue::scalar("A"),
-                InputValue::null(),
-                InputValue::scalar("B"),
-            ]),
-        )]
-        .into_iter()
-        .collect(),
+        vec![("input".to_owned(), graphql_input_value!(["A", null, "B"]))]
+            .into_iter()
+            .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("nnList"),
@@ -766,7 +717,7 @@ async fn allow_non_null_lists_to_contain_null() {
 async fn allow_lists_of_non_null_to_be_null() {
     run_variable_query(
         r#"query q($input: [String!]) { listNn(input: $input) }"#,
-        vec![("input".to_owned(), InputValue::null())]
+        vec![("input".to_owned(), graphql_input_value!(null))]
             .into_iter()
             .collect(),
         |result| {
@@ -783,12 +734,9 @@ async fn allow_lists_of_non_null_to_be_null() {
 async fn allow_lists_of_non_null_to_contain_values() {
     run_variable_query(
         r#"query q($input: [String!]) { listNn(input: $input) }"#,
-        vec![(
-            "input".to_owned(),
-            InputValue::list(vec![InputValue::scalar("A")]),
-        )]
-        .into_iter()
-        .collect(),
+        vec![("input".to_owned(), graphql_input_value!(["A"]))]
+            .into_iter()
+            .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("listNn"),
@@ -808,16 +756,9 @@ async fn does_not_allow_lists_of_non_null_to_contain_null() {
     );
 
     let query = r#"query q($input: [String!]) { listNn(input: $input) }"#;
-    let vars = vec![(
-        "input".to_owned(),
-        InputValue::list(vec![
-            InputValue::scalar("A"),
-            InputValue::null(),
-            InputValue::scalar("B"),
-        ]),
-    )]
-    .into_iter()
-    .collect();
+    let vars = vec![("input".to_owned(), graphql_input_value!(["A", null, "B"]))]
+        .into_iter()
+        .collect();
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -841,16 +782,9 @@ async fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
     );
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
-    let vars = vec![(
-        "input".to_owned(),
-        InputValue::list(vec![
-            InputValue::scalar("A"),
-            InputValue::null(),
-            InputValue::scalar("B"),
-        ]),
-    )]
-    .into_iter()
-    .collect();
+    let vars = vec![("input".to_owned(), graphql_input_value!(["A", null, "B"]))]
+        .into_iter()
+        .collect();
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -874,7 +808,7 @@ async fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
     );
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
-    let vars = vec![("value".to_owned(), InputValue::null())]
+    let vars = vec![("value".to_owned(), graphql_input_value!(null))]
         .into_iter()
         .collect();
 
@@ -895,12 +829,9 @@ async fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
 async fn allow_non_null_lists_of_non_null_to_contain_values() {
     run_variable_query(
         r#"query q($input: [String!]!) { nnListNn(input: $input) }"#,
-        vec![(
-            "input".to_owned(),
-            InputValue::list(vec![InputValue::scalar("A")]),
-        )]
-        .into_iter()
-        .collect(),
+        vec![("input".to_owned(), graphql_input_value!(["A"]))]
+            .into_iter()
+            .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("nnListNn"),
@@ -940,7 +871,7 @@ async fn default_argument_when_nullable_variable_not_provided() {
 async fn default_argument_when_nullable_variable_set_to_null() {
     run_variable_query(
         r#"query q($input: String) { fieldWithDefaultArgumentValue(input: $input) }"#,
-        vec![("input".to_owned(), InputValue::null())]
+        vec![("input".to_owned(), graphql_input_value!(null))]
             .into_iter()
             .collect(),
         |result| {
@@ -976,7 +907,7 @@ async fn nullable_input_object_arguments_successful_without_variables() {
 async fn nullable_input_object_arguments_successful_with_variables() {
     run_variable_query(
         r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#,
-        vec![("var".to_owned(), InputValue::scalar(123))]
+        vec![("var".to_owned(), graphql_input_value!(123))]
             .into_iter()
             .collect(),
         |result| {
@@ -990,7 +921,7 @@ async fn nullable_input_object_arguments_successful_with_variables() {
 
     run_variable_query(
         r#"query q($var: String) { exampleInput(arg: {a: $var, b: 1}) }"#,
-        vec![("var".to_owned(), InputValue::null())]
+        vec![("var".to_owned(), graphql_input_value!(null))]
             .into_iter()
             .collect(),
         |result| {
@@ -1096,7 +1027,7 @@ async fn does_not_allow_null_variable_for_required_field() {
     );
 
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
-    let vars = vec![("var".to_owned(), InputValue::null())]
+    let vars = vec![("var".to_owned(), graphql_input_value!(null))]
         .into_iter()
         .collect();
 
@@ -1125,7 +1056,7 @@ async fn input_object_with_default_values() {
 
     run_variable_query(
         r#"query q($var: Int!) { inputWithDefaults(arg: {a: $var}) }"#,
-        vec![("var".to_owned(), InputValue::scalar(1))]
+        vec![("var".to_owned(), graphql_input_value!(1))]
             .into_iter()
             .collect(),
         |result| {
@@ -1151,7 +1082,7 @@ async fn input_object_with_default_values() {
 
     run_variable_query(
         r#"query q($var: Int = 1) { inputWithDefaults(arg: {a: $var}) }"#,
-        vec![("var".to_owned(), InputValue::scalar(2))]
+        vec![("var".to_owned(), graphql_input_value!(2))]
             .into_iter()
             .collect(),
         |result| {
@@ -1171,7 +1102,7 @@ mod integers {
     async fn positive_and_negative_should_work() {
         run_variable_query(
             r#"query q($var: Int!) { integerInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::scalar(1))]
+            vec![("var".to_owned(), graphql_input_value!(1))]
                 .into_iter()
                 .collect(),
             |result| {
@@ -1185,7 +1116,7 @@ mod integers {
 
         run_variable_query(
             r#"query q($var: Int!) { integerInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::scalar(-1))]
+            vec![("var".to_owned(), graphql_input_value!(-1))]
                 .into_iter()
                 .collect(),
             |result| {
@@ -1207,7 +1138,7 @@ mod integers {
         );
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
-        let vars = vec![("var".to_owned(), InputValue::scalar(10.0))]
+        let vars = vec![("var".to_owned(), graphql_input_value!(10.0))]
             .into_iter()
             .collect();
 
@@ -1233,7 +1164,7 @@ mod integers {
         );
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
-        let vars = vec![("var".to_owned(), InputValue::scalar("10"))]
+        let vars = vec![("var".to_owned(), graphql_input_value!("10"))]
             .into_iter()
             .collect();
 
@@ -1258,7 +1189,7 @@ mod floats {
     async fn float_values_should_work() {
         run_variable_query(
             r#"query q($var: Float!) { floatInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::scalar(10.0))]
+            vec![("var".to_owned(), graphql_input_value!(10.0))]
                 .into_iter()
                 .collect(),
             |result| {
@@ -1275,7 +1206,7 @@ mod floats {
     async fn coercion_from_integers_should_work() {
         run_variable_query(
             r#"query q($var: Float!) { floatInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::scalar(-1))]
+            vec![("var".to_owned(), graphql_input_value!(-1))]
                 .into_iter()
                 .collect(),
             |result| {
@@ -1297,7 +1228,7 @@ mod floats {
         );
 
         let query = r#"query q($var: Float!) { floatInput(value: $var) }"#;
-        let vars = vec![("var".to_owned(), InputValue::scalar("10"))]
+        let vars = vec![("var".to_owned(), graphql_input_value!("10"))]
             .into_iter()
             .collect();
 

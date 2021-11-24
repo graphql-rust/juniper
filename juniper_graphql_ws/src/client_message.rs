@@ -53,8 +53,9 @@ pub enum ClientMessage<S> {
 
 #[cfg(test)]
 mod test {
+    use juniper::{graphql_input_value, DefaultScalarValue, InputValue};
+
     use super::*;
-    use juniper::{DefaultScalarValue, InputValue};
 
     #[test]
     fn test_deserialization() {
@@ -62,7 +63,7 @@ mod test {
 
         assert_eq!(
             ClientMessage::ConnectionInit {
-                payload: [("foo".to_string(), InputValue::scalar("bar"))]
+                payload: [("foo".to_string(), graphql_input_value!("bar"))]
                     .iter()
                     .cloned()
                     .collect(),
@@ -83,7 +84,7 @@ mod test {
                 id: "foo".to_string(),
                 payload: StartPayload {
                     query: "query MyQuery { __typename }".to_string(),
-                    variables: [("foo".to_string(), InputValue::scalar("bar"))]
+                    variables: [("foo".to_string(), graphql_input_value!("bar"))]
                         .iter()
                         .cloned()
                         .collect(),

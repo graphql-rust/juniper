@@ -90,7 +90,7 @@ mod field_execution {
             }
         ";
 
-        let vars = vec![("size".to_owned(), InputValue::scalar(100))]
+        let vars = vec![("size".to_owned(), graphql_input_value!(100))]
             .into_iter()
             .collect();
 

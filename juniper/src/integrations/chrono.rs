@@ -152,7 +152,7 @@ mod test {
     use chrono::prelude::*;
 
     fn datetime_fixedoffset_test(raw: &'static str) {
-        let input: crate::InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
+        let input: crate::InputValue<DefaultScalarValue> = InputValue::scalar(raw);
 
         let parsed: DateTime<FixedOffset> =
             crate::FromInputValue::from_input_value(&input).unwrap();
@@ -204,8 +204,7 @@ mod test {
 
     #[test]
     fn naivedate_from_input_value() {
-        let input: crate::InputValue<DefaultScalarValue> =
-            InputValue::scalar("1996-12-19".to_string());
+        let input: crate::InputValue = graphql_input_value!("1996-12-19");
         let y = 1996;
         let m = 12;
         let d = 19;
@@ -223,8 +222,7 @@ mod test {
     #[test]
     #[cfg(feature = "scalar-naivetime")]
     fn naivetime_from_input_value() {
-        let input: crate::InputValue<DefaultScalarValue>;
-        input = InputValue::scalar("21:12:19".to_string());
+        let input: crate::InputValue = graphql_input_value!("21:12:19");
         let [h, m, s] = [21, 12, 19];
         let parsed: NaiveTime = crate::FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveTime::from_hms(h, m, s);

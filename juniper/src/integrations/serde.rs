@@ -367,7 +367,7 @@ mod tests {
     fn int() {
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("1235").unwrap(),
-            InputValue::scalar(1235),
+            graphql_input_value!(1235),
         );
     }
 
@@ -375,12 +375,12 @@ mod tests {
     fn float() {
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("2.0").unwrap(),
-            InputValue::scalar(2.0),
+            graphql_input_value!(2.0),
         );
         // large value without a decimal part is also float
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
-            InputValue::scalar(123_567_890_123.0),
+            graphql_input_value!(123_567_890_123.0),
         );
     }
 

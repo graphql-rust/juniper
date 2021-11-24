@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 use juniper::{
-    graphql_object, DefaultScalarValue, FromInputValue, GraphQLObject, GraphQLScalarValue,
-    GraphQLType, InputValue, Registry, ToInputValue,
+    graphql_input_value, graphql_object, DefaultScalarValue, FromInputValue, GraphQLObject,
+    GraphQLScalarValue, GraphQLType, InputValue, Registry, ToInputValue,
 };
 
 #[derive(GraphQLScalarValue, Debug, Eq, PartialEq)]
@@ -50,7 +50,7 @@ fn test_scalar_value_simple() {
 
     let id = UserId("111".into());
     let output = ToInputValue::<DefaultScalarValue>::to_input_value(&id);
-    assert_eq!(output, InputValue::scalar("111"),);
+    assert_eq!(output, graphql_input_value!("111"),);
 }
 
 #[test]
@@ -71,7 +71,7 @@ fn test_scalar_value_custom() {
 
     let id = CustomUserId("111".into());
     let output = ToInputValue::<DefaultScalarValue>::to_input_value(&id);
-    assert_eq!(output, InputValue::scalar("111"),);
+    assert_eq!(output, graphql_input_value!("111"),);
 }
 
 #[test]

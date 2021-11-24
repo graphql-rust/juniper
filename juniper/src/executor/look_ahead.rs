@@ -743,7 +743,7 @@ query Hero($episode: Episode) {
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let mut vars = Variables::default();
-            vars.insert("episode".into(), InputValue::Enum("JEDI".into()));
+            vars.insert("episode".into(), graphql_input_value!(JEDI));
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -1113,7 +1113,7 @@ fragment comparisonFields on Character {
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let mut vars = Variables::default();
-            vars.insert("id".into(), InputValue::Scalar(DefaultScalarValue::Int(42)));
+            vars.insert("id".into(), graphql_input_value!(42));
             // This will normally be there
             vars.insert(
                 "withFriends".into(),

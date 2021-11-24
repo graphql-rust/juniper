@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 use juniper::{
-    graphql_input_value, marker, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue,
-    InputValue, Registry, ToInputValue,
+    graphql_input_value, marker, DefaultScalarValue, FromInputValue, GraphQLInputObject,
+    GraphQLType, GraphQLValue, InputValue, Registry, ToInputValue,
 };
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -65,7 +65,7 @@ impl<'a> FromInputValue for &'a Fake {
 
 impl<'a> ToInputValue for &'a Fake {
     fn to_input_value(&self) -> InputValue {
-        InputValue::scalar("this is fake")
+        graphql_input_value!("this is fake")
     }
 }
 

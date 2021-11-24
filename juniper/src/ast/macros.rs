@@ -228,6 +228,10 @@ macro_rules! graphql_input_value {
 
     (null) => ($crate::InputValue::null());
 
+    (true) => ($crate::InputValue::scalar(true));
+
+    (false) => ($crate::InputValue::scalar(false));
+
     (@$var:ident) => ($crate::InputValue::variable(stringify!($var)));
 
     ($enum:ident) => ($crate::InputValue::enum_value(stringify!($enum)));

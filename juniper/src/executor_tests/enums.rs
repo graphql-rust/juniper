@@ -109,7 +109,7 @@ async fn does_not_accept_string_literals() {
 async fn accepts_strings_in_variables() {
     run_variable_query(
         "query q($color: Color!) { toString(color: $color) }",
-        vec![("color".to_owned(), InputValue::scalar("RED"))]
+        vec![("color".to_owned(), graphql_input_value!("RED"))]
             .into_iter()
             .collect(),
         |result| {
@@ -131,7 +131,7 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), InputValue::scalar("BLURPLE"))]
+    let vars = vec![("color".to_owned(), graphql_input_value!("BLURPLE"))]
         .into_iter()
         .collect();
 
@@ -157,7 +157,7 @@ async fn does_not_accept_incorrect_type_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), InputValue::scalar(123))]
+    let vars = vec![("color".to_owned(), graphql_input_value!(123))]
         .into_iter()
         .collect();
 
