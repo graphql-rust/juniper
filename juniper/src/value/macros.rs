@@ -209,88 +209,103 @@ macro_rules! graphql_value {
 mod tests {
     use crate::{DefaultScalarValue, Value};
 
+    type V = Value<DefaultScalarValue>;
+
     #[test]
-    fn value_macro_string() {
-        let s: Value<DefaultScalarValue> = graphql_value!("test");
-        assert_eq!(s, Value::scalar("test"));
+    fn null() {
+        assert_eq!(graphql_value!(null), V::Null);
     }
 
     #[test]
-    fn value_macro_int() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123);
-        assert_eq!(s, Value::scalar(123));
+    fn scalar() {
+        let val = 42;
+        assert_eq!(graphql_value!(1), V::scalar(1));
+        assert_eq!(graphql_value!("val"), V::scalar("val"));
+        assert_eq!(graphql_value!(1.34), V::scalar(1.34));
+        assert_eq!(graphql_value!(false), V::scalar(false));
+        assert_eq!(graphql_value!(1 + 2), V::scalar(3));
+        assert_eq!(graphql_value!(val), V::scalar(42));
     }
 
     #[test]
-    fn value_macro_float() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123.5);
-        assert_eq!(s, Value::scalar(123.5));
-    }
+    fn lists() {
+        let val = 42;
+        assert_eq!(graphql_value!([]), V::list(vec![]));
 
-    #[test]
-    fn value_macro_boolean() {
-        let s: Value<DefaultScalarValue> = graphql_value!(false);
-        assert_eq!(s, Value::scalar(false));
-    }
+        assert_eq!(graphql_value!([null]), V::list(vec![V::Null]));
 
-    #[test]
-    fn value_macro_option() {
-        let s: Value<DefaultScalarValue> = graphql_value!(Some("test"));
-        assert_eq!(s, Value::scalar("test"));
-        let s: Value<DefaultScalarValue> = graphql_value!(null);
-        assert_eq!(s, Value::null());
-    }
+        assert_eq!(graphql_value!([1]), V::list(vec![V::scalar(1)]));
+        assert_eq!(graphql_value!([1 + 2]), V::list(vec![V::scalar(3)]));
+        assert_eq!(graphql_value!([val]), V::list(vec![V::scalar(42)]));
 
-    #[test]
-    fn value_macro_list() {
-        let s: Value<DefaultScalarValue> = graphql_value!([123, "Test", false]);
         assert_eq!(
-            s,
-            Value::list(vec![
-                Value::scalar(123),
-                Value::scalar("Test"),
-                Value::scalar(false),
-            ])
+            graphql_value!([1, [2], 3]),
+            V::list(vec![
+                V::scalar(1),
+                V::list(vec![V::scalar(2)]),
+                V::scalar(3),
+            ]),
         );
-        let s: Value<DefaultScalarValue> = graphql_value!([123, [456], 789]);
         assert_eq!(
-            s,
-            Value::list(vec![
-                Value::scalar(123),
-                Value::list(vec![Value::scalar(456)]),
-                Value::scalar(789),
-            ])
-        );
-        let s: Value<DefaultScalarValue> = graphql_value!([123, [1 + 2], 789]);
-        assert_eq!(
-            s,
-            Value::list(vec![
-                Value::scalar(123),
-                Value::list(vec![Value::scalar(3)]),
-                Value::scalar(789),
-            ])
+            graphql_value!(["string", [2 + 3], true,]),
+            V::list(vec![
+                V::scalar("string"),
+                V::list(vec![V::scalar(5)]),
+                V::scalar(true),
+            ]),
         );
     }
 
     #[test]
-    fn value_macro_object() {
-        let s: Value<DefaultScalarValue> = graphql_value!({ "key": 123, "next": true });
+    fn objects() {
+        let val = 42;
         assert_eq!(
-            s,
-            Value::object(
-                vec![("key", Value::scalar(123)), ("next", Value::scalar(true))]
+            graphql_value!({}),
+            V::object(Vec::<(String, _)>::new().into_iter().collect())
+        );
+        assert_eq!(
+            graphql_value!({ "key": null }),
+            V::object(vec![("key", V::Null)].into_iter().collect()),
+        );
+        assert_eq!(
+            graphql_value!({ "key": 123 }),
+            V::object(vec![("key", V::scalar(123))].into_iter().collect()),
+        );
+        assert_eq!(
+            graphql_value!({ "key": 1 + 2 }),
+            V::object(vec![("key", V::scalar(3))].into_iter().collect()),
+        );
+        assert_eq!(
+            graphql_value!({ "key": [] }),
+            V::object(vec![("key", V::list(vec![]))].into_iter().collect()),
+        );
+        assert_eq!(
+            graphql_value!({ "key": [null] }),
+            V::object(vec![("key", V::list(vec![V::Null]))].into_iter().collect()),
+        );
+        assert_eq!(
+            graphql_value!({ "key": [1] }),
+            V::object(
+                vec![("key", V::list(vec![V::scalar(1)]))]
                     .into_iter()
-                    .collect(),
-            )
+                    .collect()
+            ),
         );
-        let s: Value<DefaultScalarValue> = graphql_value!({ "key": 1 + 2, "next": true });
         assert_eq!(
-            s,
-            Value::object(
-                vec![("key", Value::scalar(3)), ("next", Value::scalar(true))]
+            graphql_value!({ "key": [1 + 2] }),
+            V::object(
+                vec![("key", V::list(vec![V::scalar(3)]))]
                     .into_iter()
-                    .collect(),
-            )
+                    .collect()
+            ),
+        );
+        assert_eq!(
+            graphql_value!({ "key": [val] }),
+            V::object(
+                vec![("key", V::list(vec![V::scalar(42)]))]
+                    .into_iter()
+                    .collect()
+            ),
         );
     }
 }
