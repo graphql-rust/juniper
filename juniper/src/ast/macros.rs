@@ -232,28 +232,247 @@ macro_rules! graphql_input_value {
 
     ($enum:ident) => ($crate::InputValue::enum_value(stringify!($enum)));
 
+    (($e:expr)) => ($crate::InputValue::scalar($e));
+
     ($e:expr) => ($crate::InputValue::scalar($e));
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
+    use indexmap::{indexmap, IndexMap};
+
     use crate::{DefaultScalarValue, InputValue};
 
+    type V = InputValue<DefaultScalarValue>;
+
     #[test]
-    fn test() {
+    fn null() {
+        assert_eq!(graphql_input_value!(null), V::Null);
+    }
+
+    #[test]
+    fn scalar() {
+        let val = 42;
+        assert_eq!(graphql_input_value!(1), V::scalar(1));
+        assert_eq!(graphql_input_value!("val"), V::scalar("val"));
+        assert_eq!(graphql_input_value!(1 + 2), V::scalar(3));
+        assert_eq!(graphql_input_value!((val)), V::scalar(42));
+    }
+
+    #[test]
+    fn enums() {
+        assert_eq!(graphql_input_value!(ENUM), V::enum_value("ENUM"));
+        assert_eq!(graphql_input_value!(lowercase), V::enum_value("lowercase"));
+    }
+
+    #[test]
+    fn variables() {
+        assert_eq!(graphql_input_value!(@var), V::variable("var"));
+        assert_eq!(graphql_input_value!(@array), V::variable("array"));
+        assert_eq!(graphql_input_value!(@object), V::variable("object"));
+    }
+
+    #[test]
+    fn lists() {
+        let val = 42;
+        assert_eq!(graphql_input_value!([]), V::list(vec![]));
+
+        assert_eq!(graphql_input_value!([null]), V::list(vec![V::Null]));
+
+        assert_eq!(graphql_input_value!([1]), V::list(vec![V::scalar(1)]));
+        assert_eq!(graphql_input_value!([1 + 2]), V::list(vec![V::scalar(3)]));
+        assert_eq!(graphql_input_value!([(val)]), V::list(vec![V::scalar(42)]));
+
         assert_eq!(
-            InputValue::<DefaultScalarValue>::variable("var"),
-            graphql_input_value!(@var),
+            graphql_input_value!([ENUM]),
+            V::list(vec![V::enum_value("ENUM")]),
         );
         assert_eq!(
-            InputValue::<DefaultScalarValue>::enum_value("ENUM"),
-            graphql_input_value!(ENUM),
+            graphql_input_value!([lowercase]),
+            V::list(vec![V::enum_value("lowercase")]),
         );
 
-        let _: InputValue<DefaultScalarValue> = graphql_input_value!({ "key": @var });
-        let _: InputValue<DefaultScalarValue> = graphql_input_value!({ "key": @var, });
-        let _: InputValue<DefaultScalarValue> = graphql_input_value!({ "key": @var, "k": 1 + 2 });
-        let _: InputValue<DefaultScalarValue> = graphql_input_value!([@var]);
-        let _: InputValue<DefaultScalarValue> = graphql_input_value!([]);
+        assert_eq!(
+            graphql_input_value!([@var]),
+            V::list(vec![V::variable("var")]),
+        );
+        assert_eq!(
+            graphql_input_value!([@array]),
+            V::list(vec![V::variable("array")]),
+        );
+        assert_eq!(
+            graphql_input_value!([@object]),
+            V::list(vec![V::variable("object")]),
+        );
+
+        assert_eq!(
+            graphql_input_value!([1, [2], 3]),
+            V::list(vec![
+                V::scalar(1),
+                V::list(vec![V::scalar(2)]),
+                V::scalar(3),
+            ]),
+        );
+        assert_eq!(
+            graphql_input_value!([1, [2 + 3], 3]),
+            V::list(vec![
+                V::scalar(1),
+                V::list(vec![V::scalar(5)]),
+                V::scalar(3),
+            ]),
+        );
+        assert_eq!(
+            graphql_input_value!([1, [ENUM], (val),]),
+            V::list(vec![
+                V::scalar(1),
+                V::list(vec![V::enum_value("ENUM")]),
+                V::scalar(42),
+            ]),
+        );
+        assert_eq!(
+            graphql_input_value!([1 + 2, [(val)], @val,]),
+            V::list(vec![
+                V::scalar(3),
+                V::list(vec![V::scalar(42)]),
+                V::variable("val"),
+            ]),
+        );
+        assert_eq!(
+            graphql_input_value!([1, [@val], ENUM,]),
+            V::list(vec![
+                V::scalar(1),
+                V::list(vec![V::variable("val")]),
+                V::enum_value("ENUM"),
+            ]),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": ENUM }),
+            V::object(indexmap! { "key" => V::enum_value("ENUM") }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": lowercase }),
+            V::object(indexmap! { "key" => V::enum_value("lowercase") }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": @var }),
+            V::object(indexmap! { "key" => V::variable("var") }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": @array }),
+            V::object(indexmap! { "key" => V::variable("array") }),
+        );
+    }
+
+    #[test]
+    fn objects() {
+        let val = 42;
+        assert_eq!(
+            graphql_input_value!({}),
+            V::object(IndexMap::<String, _>::new()),
+        );
+
+        assert_eq!(
+            graphql_input_value!({ "key": null }),
+            V::object(indexmap! { "key" => V::Null }),
+        );
+
+        assert_eq!(
+            graphql_input_value!({ "key": 123 }),
+            V::object(indexmap! { "key" => V::scalar(123) }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": 1 + 2 }),
+            V::object(indexmap! { "key" => V::scalar(3) }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": (val) }),
+            V::object(indexmap! { "key" => V::scalar(42) }),
+        );
+
+        assert_eq!(
+            graphql_input_value!({ "key": [] }),
+            V::object(indexmap! { "key" => V::list(vec![]) }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": [null] }),
+            V::object(indexmap! { "key" => V::list(vec![V::Null]) }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": [1] }),
+            V::object(indexmap! { "key" => V::list(vec![V::scalar(1)]) }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": [1 + 2] }),
+            V::object(indexmap! { "key" => V::list(vec![V::scalar(3)]) }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": [(val)] }),
+            V::object(indexmap! { "key" => V::list(vec![V::scalar(42)]) }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": ENUM }),
+            V::object(indexmap! { "key" => V::enum_value("ENUM") }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": lowercase }),
+            V::object(indexmap! { "key" => V::enum_value("lowercase") }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": @val }),
+            V::object(indexmap! { "key" => V::variable("val") }),
+        );
+        assert_eq!(
+            graphql_input_value!({ "key": @array }),
+            V::object(indexmap! { "key" => V::variable("array") }),
+        );
+
+        assert_eq!(
+            graphql_input_value!({
+                "inner": {
+                    "key1": (val),
+                    "key2": "val",
+                    "key3": [
+                        {
+                            "inner": 42,
+                        },
+                        {
+                            "inner": ENUM,
+                            "even-more": {
+                                "var": @var,
+                            },
+                        }
+                    ],
+                    "key4": [1, ["val", 1 + 3], null, @array],
+                },
+                "more": @var,
+            }),
+            V::object(indexmap! {
+                "inner" => V::object(indexmap! {
+                    "key1" => V::scalar(42),
+                    "key2" => V::scalar("val"),
+                    "key3" => V::list(vec![
+                        V::object(indexmap! {
+                            "inner" => V::scalar(42),
+                        }),
+                        V::object(indexmap! {
+                            "inner" => V::enum_value("ENUM"),
+                            "even-more" => V::object(indexmap! {
+                                "var" => V::variable("var"),
+                            })
+                        }),
+                    ]),
+                    "key4" => V::list(vec![
+                        V::scalar(1),
+                        V::list(vec![
+                            V::scalar("val"),
+                            V::scalar(4),
+                        ]),
+                        V::Null,
+                        V::variable("array"),
+                    ]),
+                }),
+                "more" => V::variable("var"),
+            }),
+        );
     }
 }
