@@ -53,7 +53,7 @@ pub enum ClientMessage<S> {
 
 #[cfg(test)]
 mod test {
-    use juniper::{graphql_input_value, DefaultScalarValue, InputValue};
+    use juniper::{graphql_input_value, DefaultScalarValue};
 
     use super::*;
 
