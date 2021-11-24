@@ -255,6 +255,8 @@ mod tests {
         let val = 42;
         assert_eq!(graphql_input_value!(1), V::scalar(1));
         assert_eq!(graphql_input_value!("val"), V::scalar("val"));
+        assert_eq!(graphql_input_value!(1.34), V::scalar(1.34));
+        assert_eq!(graphql_input_value!(false), V::scalar(false));
         assert_eq!(graphql_input_value!(1 + 2), V::scalar(3));
         assert_eq!(graphql_input_value!((val)), V::scalar(42));
     }

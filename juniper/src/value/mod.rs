@@ -277,3 +277,86 @@ impl<S: From<bool>> From<bool> for Value<S> {
         Self::scalar(b)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{DefaultScalarValue, Value};
+
+    #[test]
+    fn display_null() {
+        let s: Value<DefaultScalarValue> = graphql_value!(null);
+        assert_eq!("null", format!("{}", s));
+    }
+
+    #[test]
+    fn display_int() {
+        let s: Value<DefaultScalarValue> = graphql_value!(123);
+        assert_eq!("123", format!("{}", s));
+    }
+
+    #[test]
+    fn display_float() {
+        let s: Value<DefaultScalarValue> = graphql_value!(123.456);
+        assert_eq!("123.456", format!("{}", s));
+    }
+
+    #[test]
+    fn display_string() {
+        let s: Value<DefaultScalarValue> = graphql_value!("foo");
+        assert_eq!("\"foo\"", format!("{}", s));
+    }
+
+    #[test]
+    fn display_bool() {
+        let s: Value<DefaultScalarValue> = graphql_value!(false);
+        assert_eq!("false", format!("{}", s));
+
+        let s: Value<DefaultScalarValue> = graphql_value!(true);
+        assert_eq!("true", format!("{}", s));
+    }
+
+    #[test]
+    fn display_list() {
+        let s: Value<DefaultScalarValue> = graphql_value!([1, null, "foo"]);
+        assert_eq!("[1, null, \"foo\"]", format!("{}", s));
+    }
+
+    #[test]
+    fn display_list_one_element() {
+        let s: Value<DefaultScalarValue> = graphql_value!([1]);
+        assert_eq!("[1]", format!("{}", s));
+    }
+
+    #[test]
+    fn display_list_empty() {
+        let s: Value<DefaultScalarValue> = graphql_value!([]);
+        assert_eq!("[]", format!("{}", s));
+    }
+
+    #[test]
+    fn display_object() {
+        let s: Value<DefaultScalarValue> = graphql_value!({
+            "int": 1,
+            "null": null,
+            "string": "foo",
+        });
+        assert_eq!(
+            r#"{"int": 1, "null": null, "string": "foo"}"#,
+            format!("{}", s)
+        );
+    }
+
+    #[test]
+    fn display_object_one_field() {
+        let s: Value<DefaultScalarValue> = graphql_value!({
+            "int": 1,
+        });
+        assert_eq!(r#"{"int": 1}"#, format!("{}", s));
+    }
+
+    #[test]
+    fn display_object_empty() {
+        let s: Value<DefaultScalarValue> = graphql_value!({});
+        assert_eq!(r#"{}"#, format!("{}", s));
+    }
+}
