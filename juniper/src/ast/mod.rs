@@ -1,3 +1,6 @@
+#[macro_use]
+mod macros;
+
 use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
 
 use indexmap::IndexMap;
@@ -470,45 +473,6 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
             }
         }
     }
-}
-
-/// Construct JSON-like [`InputValue`]s by using JSON syntax.
-///
-/// __Note:__ [`InputValue::List`]s and [`InputValue::Object`]s will be created
-///           in a [`Spanning::unlocated`].
-///
-/// # Example
-///
-/// The resulting JSON will look just like what you passed in.
-/// ```rust
-/// # use juniper::{graphql_input_value, DefaultScalarValue, InputValue};
-/// # type V = InputValue<DefaultScalarValue>;
-/// #
-/// # let _: V =
-/// graphql_input_value!(None);
-/// # let _: V =
-/// graphql_input_value!(1234);
-/// # let _: V =
-/// graphql_input_value!("test");
-/// # let _: V =
-/// graphql_input_value!([1234, "test", true]);
-/// # let _: V =
-/// graphql_input_value!({"key": "value", "foo": 1234});
-/// ```
-#[macro_export]
-macro_rules! graphql_input_value {
-    ([ $($arg:tt),* $(,)* ]) => {
-        $crate::InputValue::list(vec![
-            $( $crate::graphql_input_value!($arg), )*
-        ])
-    };
-    ({ $($key:tt : $val:expr ),* $(,)* }) => {
-        $crate::InputValue::object(::std::array::IntoIter::new([
-            $( ($key, $crate::graphql_input_value!($val)), )*
-        ]).collect())
-    };
-    (None) => ($crate::InputValue::Null);
-    ($e:expr) => ($crate::InputValue::scalar($e))
 }
 
 impl<'a, S> Arguments<'a, S> {

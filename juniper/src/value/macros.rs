@@ -1,5 +1,3 @@
-use super::{DefaultScalarValue, Value};
-
 /// Construct JSON-like [`Value`]s by using JSON syntax.
 ///
 /// [`Value`] objects are used mostly when creating custom errors from fields.
@@ -31,7 +29,7 @@ macro_rules! graphql_value {
     // Done with trailing comma.
     (@array [$($elems:expr,)*]) => {
         $crate::Value::list(vec![
-            $( $crate::graphql_value!($elems), )*
+            $( $elems, )*
         ])
     };
 
@@ -84,7 +82,7 @@ macro_rules! graphql_value {
 
     // Unexpected token after most recent element.
     (@array [$($elems:expr),*] $unexpected:tt $($rest:tt)*) => {
-        crate::graphql_value!(@unexpected $unexpected)
+        $crate::graphql_value!(@unexpected $unexpected)
     };
 
     ////////////
@@ -151,13 +149,13 @@ macro_rules! graphql_value {
     // Misplaced colon. Trigger a reasonable error message.
     (@object $object:ident () (: $($rest:tt)*) ($colon:tt $($copy:tt)*)) => {
         // Takes no arguments so "no rules expected the token `:`".
-        crate::graphql_value!(@unexpected $colon);
+        $crate::graphql_value!(@unexpected $colon);
     };
 
     // Found a comma inside a key. Trigger a reasonable error message.
     (@object $object:ident ($($key:tt)*) (, $($rest:tt)*) ($comma:tt $($copy:tt)*)) => {
         // Takes no arguments so "no rules expected the token `,`".
-        crate::graphql_value!(@unexpected $comma);
+        $crate::graphql_value!(@unexpected $comma);
     };
 
     // Key is fully parenthesized. This avoids clippy double_parens false
@@ -168,7 +166,7 @@ macro_rules! graphql_value {
 
     // Refuse to absorb colon token into key expression.
     (@object $object:ident ($($key:tt)*) (: $($unexpected:tt)+) $copy:tt) => {
-        crate::graphql_value!(@unexpected $($unexpected)+);
+        $crate::graphql_value!(@unexpected $($unexpected)+);
     };
 
     // Munch a token into the current key.
@@ -209,7 +207,7 @@ macro_rules! graphql_value {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{DefaultScalarValue, Value};
 
     #[test]
     fn value_macro_string() {

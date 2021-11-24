@@ -120,6 +120,7 @@ pub use juniper_codegen::{
 mod value;
 #[macro_use]
 mod macros;
+#[macro_use]
 mod ast;
 pub mod executor;
 mod introspection;
