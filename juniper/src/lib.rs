@@ -90,8 +90,9 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [bson]: https://crates.io/crates/bson
 
 */
+// Due to `schema_introspection` test.
+#![cfg_attr(test, recursion_limit = "256")]
 #![doc(html_root_url = "https://docs.rs/juniper/0.15.7")]
-#![recursion_limit = "256"]
 #![warn(missing_docs)]
 
 // Required for using `juniper_codegen` macros inside this crate to resolve absolute `::juniper`
