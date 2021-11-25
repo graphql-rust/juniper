@@ -14,7 +14,7 @@
 - Expose `GraphQLRequest` fields. ([#750](https://github.com/graphql-rust/juniper/issues/750))
 - `#[graphql_interface]` macro now supports `rename_all = "<policy>"` argument influencing its fields and their arguments. ([#971](https://github.com/graphql-rust/juniper/pull/971))
 - Use `null` in addition to `None` to create `Value::Null` in `graphql_value!` macro to mirror `serde_json::json!`. ([#996](https://github.com/graphql-rust/juniper/pull/996))
-- Add `From` impls to `InputValue`, that mirror `Value` and provide better support for `Option` handling. ([#996](https://github.com/graphql-rust/juniper/pull/996))
+- Add `From` impls to `InputValue` mirroring the ones for `Value` and provide better support for `Option` handling. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 - Implement `graphql_input_value!` and `graphql_vars!` macros. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 
 ## Fixes

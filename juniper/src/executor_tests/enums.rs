@@ -1,5 +1,6 @@
 use crate::{
     executor::Variables,
+    graphql_value, graphql_vars,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
@@ -15,6 +16,7 @@ enum Color {
     Green,
     Blue,
 }
+
 struct TestType;
 
 #[crate::graphql_object]
@@ -89,7 +91,7 @@ async fn does_not_accept_string_literals() {
     );
 
     let query = r#"{ toString(color: "RED") }"#;
-    let vars = vec![].into_iter().collect();
+    let vars = graphql_vars! {};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -108,9 +110,7 @@ async fn does_not_accept_string_literals() {
 async fn accepts_strings_in_variables() {
     run_variable_query(
         "query q($color: Color!) { toString(color: $color) }",
-        vec![("color".to_owned(), graphql_input_value!("RED"))]
-            .into_iter()
-            .collect(),
+        graphql_vars! {"color": "RED"},
         |result| {
             assert_eq!(
                 result.get_field_value("toString"),
@@ -130,9 +130,7 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), graphql_input_value!("BLURPLE"))]
-        .into_iter()
-        .collect();
+    let vars = graphql_vars! {"color": "BLURPLE"};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -143,7 +141,7 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
         ValidationError(vec![RuleError::new(
             r#"Variable "$color" got invalid value. Invalid value for enum "Color"."#,
             &[SourcePosition::new(8, 0, 8)],
-        )])
+        )]),
     );
 }
 
@@ -156,9 +154,7 @@ async fn does_not_accept_incorrect_type_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), graphql_input_value!(123))]
-        .into_iter()
-        .collect();
+    let vars = graphql_vars! {"color": 123};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -169,6 +165,6 @@ async fn does_not_accept_incorrect_type_in_variables() {
         ValidationError(vec![RuleError::new(
             r#"Variable "$color" got invalid value. Expected "Color", found not a string or enum."#,
             &[SourcePosition::new(8, 0, 8)],
-        )])
+        )]),
     );
 }

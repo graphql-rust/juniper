@@ -3,7 +3,7 @@
 use crate::{
     ast::{FromInputValue, InputValue},
     executor::Variables,
-    graphql_object, graphql_value,
+    graphql_input_value, graphql_object, graphql_value,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},

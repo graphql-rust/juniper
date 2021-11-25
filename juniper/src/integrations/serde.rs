@@ -357,6 +357,7 @@ mod tests {
 
     use crate::{
         ast::InputValue,
+        graphql_input_value,
         value::{DefaultScalarValue, Object},
         FieldError, Value,
     };
@@ -366,7 +367,7 @@ mod tests {
     #[test]
     fn int() {
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("1235").unwrap(),
+            from_str::<InputValue>("1235").unwrap(),
             graphql_input_value!(1235),
         );
     }
@@ -374,12 +375,12 @@ mod tests {
     #[test]
     fn float() {
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("2.0").unwrap(),
+            from_str::<InputValue>("2.0").unwrap(),
             graphql_input_value!(2.0),
         );
         // large value without a decimal part is also float
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
+            from_str::<InputValue>("123567890123").unwrap(),
             graphql_input_value!(123_567_890_123.0),
         );
     }

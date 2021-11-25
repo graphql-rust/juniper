@@ -91,21 +91,21 @@ where
                 ..
             },
             _,
-        ) => Ok(parser.next_token()?.map(|_| graphql_input_value!(true))),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::scalar(true))),
         (
             &Spanning {
                 item: Token::Name("false"),
                 ..
             },
             _,
-        ) => Ok(parser.next_token()?.map(|_| graphql_input_value!(false))),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::scalar(false))),
         (
             &Spanning {
                 item: Token::Name("null"),
                 ..
             },
             _,
-        ) => Ok(parser.next_token()?.map(|_| graphql_input_value!(null))),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::null())),
         (
             &Spanning {
                 item: Token::Name(name),

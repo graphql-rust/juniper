@@ -548,6 +548,8 @@ impl<'a, S> VariableDefinitions<'a, S> {
 
 #[cfg(test)]
 mod tests {
+    use crate::graphql_input_value;
+
     use super::InputValue;
 
     #[test]
@@ -576,7 +578,7 @@ mod tests {
         let value: InputValue = graphql_input_value!([1, 2]);
         assert_eq!(format!("{}", value), "[1, 2]");
 
-        let value: InputValue = graphql_input_value!({ "foo": 1, "bar": 2 });
+        let value: InputValue = graphql_input_value!({"foo": 1,"bar": 2});
         assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
     }
 }
