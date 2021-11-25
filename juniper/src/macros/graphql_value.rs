@@ -1,4 +1,8 @@
-/// Construct [`Value`]s by using JSON syntax.
+//! [`graphql_value!`] macro implementation.
+//!
+//! [`graphql_value!`]: graphql_value
+
+/// Constructs [`Value`]s via JSON-like syntax.
 ///
 /// [`Value`] objects are used mostly when creating custom errors from fields.
 ///
@@ -7,7 +11,7 @@
 /// # use juniper::{graphql_value, Value};
 /// #
 /// let code = 200;
-/// let features = vec!["key", "value"];
+/// let features = ["key", "value"];
 ///
 /// let value: Value = graphql_value!({
 ///     "code": code,
@@ -23,6 +27,7 @@
 /// Resulting JSON will look just like what you passed in.
 /// ```rust
 /// # use juniper::{graphql_value, DefaultScalarValue, Value};
+/// #
 /// # type V = Value<DefaultScalarValue>;
 /// #
 /// # let _: V =
@@ -213,7 +218,7 @@ macro_rules! graphql_value {
         $crate::graphql_value!(@unexpected $comma);
     };
 
-    // Key is fully parenthesized. This avoids clippy double_parens false
+    // Key is fully parenthesized. This avoids `clippy::double_parens` false
     // positives because the parenthesization may be necessary here.
     (@object $object:ident () (($key:expr) : $($rest:tt)*) $copy:tt) => {
         $crate::graphql_value!(@object $object ($key) (: $($rest)*) (: $($rest)*));
@@ -278,6 +283,7 @@ mod tests {
     #[test]
     fn scalar() {
         let val = 42;
+
         assert_eq!(graphql_value!(1), V::scalar(1));
         assert_eq!(graphql_value!("val"), V::scalar("val"));
         assert_eq!(graphql_value!(1.34), V::scalar(1.34));
@@ -287,8 +293,9 @@ mod tests {
     }
 
     #[test]
-    fn lists() {
+    fn list() {
         let val = 42;
+
         assert_eq!(graphql_value!([]), V::list(vec![]));
 
         assert_eq!(graphql_value!([null]), V::list(vec![V::Null]));
@@ -306,7 +313,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_value!(["string", [2 + 3], true,]),
+            graphql_value!(["string", [2 + 3], true]),
             V::list(vec![
                 V::scalar("string"),
                 V::list(vec![V::scalar(5)]),
@@ -316,11 +323,12 @@ mod tests {
     }
 
     #[test]
-    fn objects() {
+    fn object() {
         let val = 42;
+
         assert_eq!(
             graphql_value!({}),
-            V::object(Vec::<(String, _)>::new().into_iter().collect())
+            V::object(Vec::<(String, _)>::new().into_iter().collect()),
         );
         assert_eq!(
             graphql_value!({ "key": null }),
@@ -347,7 +355,7 @@ mod tests {
             V::object(
                 vec![("key", V::list(vec![V::scalar(1)]))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ),
         );
         assert_eq!(
@@ -355,7 +363,7 @@ mod tests {
             V::object(
                 vec![("key", V::list(vec![V::scalar(3)]))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ),
         );
         assert_eq!(
@@ -363,14 +371,15 @@ mod tests {
             V::object(
                 vec![("key", V::list(vec![V::scalar(42)]))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ),
         );
     }
 
     #[test]
-    fn option_support() {
+    fn option() {
         let val = Some(42);
+
         assert_eq!(graphql_value!(None), V::Null);
         assert_eq!(graphql_value!(Some(42)), V::scalar(42));
         assert_eq!(graphql_value!(val), V::scalar(42));

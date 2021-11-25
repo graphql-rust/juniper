@@ -1,4 +1,8 @@
-/// Construct [`InputValue`]s by using JSON-like syntax.
+//! [`graphql_input_value!`] macro implementation.
+//!
+//! [`graphql_input_value!`]: graphql_input_value
+
+/// Constructs [`InputValue`]s via JSON-like syntax.
 ///
 /// # Differences from [`graphql_value!`]
 ///
@@ -45,13 +49,14 @@
 /// });
 /// ```
 ///
-/// __Note:__ [`InputValue::List`]s and [`InputValue::Object`]s will be created
-///           in a [`Spanning::unlocated`].
+/// > __NOTE:__ [`InputValue::List`]s and [`InputValue::Object`]s will be
+/// >           created in a [`Spanning::unlocated`].
 ///
 /// # Example
 ///
 /// ```rust
 /// # use juniper::{graphql_input_value, InputValue};
+/// #
 /// # type V = InputValue;
 /// #
 /// # let _: V =
@@ -309,7 +314,7 @@ macro_rules! graphql_input_value {
         $crate::graphql_input_value!(@unexpected $comma);
     };
 
-    // Key is fully parenthesized. This avoids clippy double_parens false
+    // Key is fully parenthesized. This avoids `clippy::double_parens` false
     // positives because the parenthesization may be necessary here.
     (@@object $object:ident () (($key:expr) : $($rest:tt)*) $copy:tt) => {
         $crate::graphql_input_value!(
@@ -399,21 +404,22 @@ mod tests {
     }
 
     #[test]
-    fn enums() {
+    fn r#enum() {
         assert_eq!(graphql_input_value!(ENUM), V::enum_value("ENUM"));
         assert_eq!(graphql_input_value!(lowercase), V::enum_value("lowercase"));
     }
 
     #[test]
-    fn variables() {
+    fn variable() {
         assert_eq!(graphql_input_value!(@var), V::variable("var"));
         assert_eq!(graphql_input_value!(@array), V::variable("array"));
         assert_eq!(graphql_input_value!(@object), V::variable("object"));
     }
 
     #[test]
-    fn lists() {
+    fn list() {
         let val = 42;
+
         assert_eq!(graphql_input_value!([]), V::list(vec![]));
 
         assert_eq!(graphql_input_value!([null]), V::list(vec![V::Null]));
@@ -461,7 +467,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_input_value!([1, [ENUM], (val),]),
+            graphql_input_value!([1, [ENUM], (val)]),
             V::list(vec![
                 V::scalar(1),
                 V::list(vec![V::enum_value("ENUM")]),
@@ -469,7 +475,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_input_value!([1 + 2, [(val)], @val,]),
+            graphql_input_value!([1 + 2, [(val)], @val]),
             V::list(vec![
                 V::scalar(3),
                 V::list(vec![V::scalar(42)]),
@@ -477,7 +483,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_input_value!([1, [@val], ENUM,]),
+            graphql_input_value!([1, [@val], ENUM]),
             V::list(vec![
                 V::scalar(1),
                 V::list(vec![V::variable("val")]),
@@ -487,7 +493,7 @@ mod tests {
     }
 
     #[test]
-    fn objects() {
+    fn object() {
         let val = 42;
         assert_eq!(
             graphql_input_value!({}),
@@ -496,57 +502,57 @@ mod tests {
 
         assert_eq!(
             graphql_input_value!({ "key": null }),
-            V::object(indexmap! { "key" => V::Null }),
+            V::object(indexmap! {"key" => V::Null}),
         );
 
         assert_eq!(
-            graphql_input_value!({ "key": 123 }),
-            V::object(indexmap! { "key" => V::scalar(123) }),
+            graphql_input_value!({"key": 123}),
+            V::object(indexmap! {"key" => V::scalar(123)}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": 1 + 2 }),
-            V::object(indexmap! { "key" => V::scalar(3) }),
+            graphql_input_value!({"key": 1 + 2}),
+            V::object(indexmap! {"key" => V::scalar(3)}),
         );
         assert_eq!(
             graphql_input_value!({ "key": (val) }),
-            V::object(indexmap! { "key" => V::scalar(42) }),
+            V::object(indexmap! {"key" => V::scalar(42)}),
         );
 
         assert_eq!(
-            graphql_input_value!({ "key": [] }),
-            V::object(indexmap! { "key" => V::list(vec![]) }),
+            graphql_input_value!({"key": []}),
+            V::object(indexmap! {"key" => V::list(vec![])}),
         );
         assert_eq!(
             graphql_input_value!({ "key": [null] }),
-            V::object(indexmap! { "key" => V::list(vec![V::Null]) }),
+            V::object(indexmap! {"key" => V::list(vec![V::Null])}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": [1] }),
-            V::object(indexmap! { "key" => V::list(vec![V::scalar(1)]) }),
+            graphql_input_value!({"key": [1] }),
+            V::object(indexmap! {"key" => V::list(vec![V::scalar(1)])}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": [1 + 2] }),
-            V::object(indexmap! { "key" => V::list(vec![V::scalar(3)]) }),
+            graphql_input_value!({"key": [1 + 2] }),
+            V::object(indexmap! {"key" => V::list(vec![V::scalar(3)])}),
         );
         assert_eq!(
             graphql_input_value!({ "key": [(val)] }),
-            V::object(indexmap! { "key" => V::list(vec![V::scalar(42)]) }),
+            V::object(indexmap! {"key" => V::list(vec![V::scalar(42)])}),
         );
         assert_eq!(
             graphql_input_value!({ "key": ENUM }),
-            V::object(indexmap! { "key" => V::enum_value("ENUM") }),
+            V::object(indexmap! {"key" => V::enum_value("ENUM")}),
         );
         assert_eq!(
             graphql_input_value!({ "key": lowercase }),
-            V::object(indexmap! { "key" => V::enum_value("lowercase") }),
+            V::object(indexmap! {"key" => V::enum_value("lowercase")}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": @val }),
-            V::object(indexmap! { "key" => V::variable("val") }),
+            graphql_input_value!({"key": @val}),
+            V::object(indexmap! {"key" => V::variable("val")}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": @array }),
-            V::object(indexmap! { "key" => V::variable("array") }),
+            graphql_input_value!({"key": @array }),
+            V::object(indexmap! {"key" => V::variable("array")}),
         );
 
         assert_eq!(
@@ -554,17 +560,14 @@ mod tests {
                 "inner": {
                     "key1": (val),
                     "key2": "val",
-                    "key3": [
-                        {
-                            "inner": 42,
+                    "key3": [{
+                        "inner": 42,
+                    }, {
+                        "inner": ENUM,
+                        "even-more": {
+                            "var": @var,
                         },
-                        {
-                            "inner": ENUM,
-                            "even-more": {
-                                "var": @var,
-                            },
-                        }
-                    ],
+                    }],
                     "key4": [1, ["val", 1 + 3], null, @array],
                 },
                 "more": @var,
@@ -581,7 +584,7 @@ mod tests {
                             "inner" => V::enum_value("ENUM"),
                             "even-more" => V::object(indexmap! {
                                 "var" => V::variable("var"),
-                            })
+                            }),
                         }),
                     ]),
                     "key4" => V::list(vec![
@@ -600,8 +603,9 @@ mod tests {
     }
 
     #[test]
-    fn option_support() {
+    fn option() {
         let val = Some(42);
+
         assert_eq!(graphql_input_value!(None), V::Null);
         assert_eq!(graphql_input_value!(Some(42)), V::scalar(42));
         assert_eq!(graphql_input_value!((val)), V::scalar(42));

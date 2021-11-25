@@ -1,5 +1,3 @@
-#[macro_use]
-mod macros;
 mod object;
 mod scalar;
 

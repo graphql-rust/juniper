@@ -1,6 +1,3 @@
-#[macro_use]
-mod macros;
-
 use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
 
 use indexmap::IndexMap;

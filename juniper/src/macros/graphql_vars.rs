@@ -1,4 +1,8 @@
-/// Construct [`Variables`] by using JSON-like syntax.
+//! [`graphql_vars!`] macro implementation.
+//!
+//! [`graphql_vars!`]: graphql_vars
+
+/// Constructs [`Variables`] via JSON-like syntax.
 ///
 /// [`Variables`] key should implement [`Into`]`<`[`String`]`>`.
 /// ```rust
@@ -20,6 +24,7 @@
 ///
 /// See [`graphql_input_value!`] for more info on syntax of value after `:`.
 ///
+/// [`graphql_input_value!`]: crate::graphql_input_value
 /// [`Variables`]: crate::Variables
 #[macro_export]
 macro_rules! graphql_vars {
@@ -207,32 +212,33 @@ mod tests {
     #[test]
     fn scalar() {
         let val = 42;
+
         assert_eq!(
-            graphql_vars!({ "key": 123 }),
+            graphql_vars!({"key": 123}),
             vec![("key".to_owned(), IV::scalar(123))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": "val" }),
+            graphql_vars!({"key": "val"}),
             vec![("key".to_owned(), IV::scalar("val"))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": 1.23 }),
+            graphql_vars!({"key": 1.23}),
             vec![("key".to_owned(), IV::scalar(1.23))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": 1 + 2 }),
+            graphql_vars!({"key": 1 + 2}),
             vec![("key".to_owned(), IV::scalar(3))]
                 .into_iter()
                 .collect(),
         );
         assert_eq!(
-            graphql_vars!({ "key": false }),
+            graphql_vars!({"key": false}),
             vec![("key".to_owned(), IV::scalar(false))]
                 .into_iter()
                 .collect::<V>(),
@@ -246,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn enums() {
+    fn r#enum() {
         assert_eq!(
             graphql_vars!({ "key": ENUM }),
             vec![("key".to_owned(), IV::enum_value("ENUM"))]
@@ -262,21 +268,21 @@ mod tests {
     }
 
     #[test]
-    fn variables() {
+    fn variable() {
         assert_eq!(
-            graphql_vars!({ "key": @var }),
+            graphql_vars!({"key": @var}),
             vec![("key".to_owned(), IV::variable("var"))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": @array }),
+            graphql_vars!({"key": @array}),
             vec![("key".to_owned(), IV::variable("array"))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": @object }),
+            graphql_vars!({"key": @object}),
             vec![("key".to_owned(), IV::variable("object"))]
                 .into_iter()
                 .collect::<V>(),
@@ -284,10 +290,11 @@ mod tests {
     }
 
     #[test]
-    fn lists() {
+    fn list() {
         let val = 42;
+
         assert_eq!(
-            graphql_vars!({ "key": [] }),
+            graphql_vars!({"key": []}),
             vec![("key".to_owned(), IV::list(vec![]))]
                 .into_iter()
                 .collect::<V>(),
@@ -301,13 +308,13 @@ mod tests {
         );
 
         assert_eq!(
-            graphql_vars!({ "key": [1] }),
+            graphql_vars!({"key": [1]}),
             vec![("key".to_owned(), IV::list(vec![IV::scalar(1)]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": [1 + 2] }),
+            graphql_vars!({"key": [1 + 2]}),
             vec![("key".to_owned(), IV::list(vec![IV::scalar(3)]))]
                 .into_iter()
                 .collect::<V>(),
@@ -336,85 +343,85 @@ mod tests {
         );
 
         assert_eq!(
-            graphql_vars!({ "key": [@var] }),
+            graphql_vars!({"key": [@var]}),
             vec![("key".to_owned(), IV::list(vec![IV::variable("var")]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": [@array] }),
+            graphql_vars!({"key": [@array]}),
             vec![("key".to_owned(), IV::list(vec![IV::variable("array")]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": [@object] }),
+            graphql_vars!({"key": [@object]}),
             vec![("key".to_owned(), IV::list(vec![IV::variable("object")]))]
                 .into_iter()
                 .collect::<V>(),
         );
 
         assert_eq!(
-            graphql_vars!({ "key": [1, [2], 3] }),
+            graphql_vars!({"key": [1, [2], 3]}),
             vec![(
                 "key".to_owned(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::scalar(2)]),
                     IV::scalar(3),
-                ])
+                ]),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": [1, [2 + 3], 3] }),
+            graphql_vars!({"key": [1, [2 + 3], 3]}),
             vec![(
                 "key".to_owned(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::scalar(5)]),
                     IV::scalar(3),
-                ])
+                ]),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": [1, [ENUM], (val)] }),
+            graphql_vars!({"key": [1, [ENUM], (val)]}),
             vec![(
                 "key".to_owned(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::enum_value("ENUM")]),
                     IV::scalar(42),
-                ])
+                ]),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": [1 + 2, [(val)], @val,] }),
+            graphql_vars!({"key": [1 + 2, [(val)], @val]}),
             vec![(
                 "key".to_owned(),
                 IV::list(vec![
                     IV::scalar(3),
                     IV::list(vec![IV::scalar(42)]),
                     IV::variable("val"),
-                ])
+                ]),
             )]
             .into_iter()
-            .collect::<V>()
+            .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": [1, [@val], ENUM,], }),
+            graphql_vars!({"key": [1, [@val], ENUM]}),
             vec![(
                 "key".to_owned(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::variable("val")]),
                     IV::enum_value("ENUM"),
-                ])
+                ]),
             )]
             .into_iter()
             .collect::<V>(),
@@ -422,151 +429,145 @@ mod tests {
     }
 
     #[test]
-    fn objects() {
+    fn object() {
         let val = 42;
+
         assert_eq!(
-            graphql_vars!({ "key": {} }),
+            graphql_vars!({"key": {}}),
             vec![("key".to_owned(), IV::object(IndexMap::<String, _>::new()))]
                 .into_iter()
                 .collect::<V>(),
         );
 
         assert_eq!(
-            graphql_vars!({ "key": { "key": null } }),
+            graphql_vars!({"key": {"key": null}}),
+            vec![("key".to_owned(), IV::object(indexmap! {"key" => IV::Null}),)]
+                .into_iter()
+                .collect::<V>(),
+        );
+
+        assert_eq!(
+            graphql_vars!({"key": {"key": 123}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::Null }),
+                IV::object(indexmap! {"key" => IV::scalar(123)}),
+            )]
+            .into_iter()
+            .collect::<V>(),
+        );
+        assert_eq!(
+            graphql_vars!({"key": {"key": 1 + 2}}),
+            vec![(
+                "key".to_owned(),
+                IV::object(indexmap! {"key" => IV::scalar(3)}),
+            )]
+            .into_iter()
+            .collect::<V>(),
+        );
+        assert_eq!(
+            graphql_vars!({"key": {"key": (val)}}),
+            vec![(
+                "key".to_owned(),
+                IV::object(indexmap! {"key" => IV::scalar(42)}),
             )]
             .into_iter()
             .collect::<V>(),
         );
 
         assert_eq!(
-            graphql_vars!({ "key": { "key": 123 } }),
+            graphql_vars!({"key": {"key": []}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::scalar(123) }),
+                IV::object(indexmap! {"key" => IV::list(vec![])}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": 1 + 2 } }),
+            graphql_vars!({"key": {"key": [null]}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::scalar(3) }),
+                IV::object(indexmap! {"key" => IV::list(vec![IV::Null])}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": (val) } }),
+            graphql_vars!({"key": {"key": [1]}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::scalar(42) }),
-            )]
-            .into_iter()
-            .collect::<V>(),
-        );
-
-        assert_eq!(
-            graphql_vars!({ "key": { "key": [] } }),
-            vec![(
-                "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::list(vec![]) }),
+                IV::object(indexmap! {"key" => IV::list(vec![IV::scalar(1)])}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": [null] } }),
+            graphql_vars!({"key": {"key": [1 + 2]}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::list(vec![IV::Null]) }),
+                IV::object(indexmap! {"key" => IV::list(vec![IV::scalar(3)])}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": [1] } }),
+            graphql_vars!({"key": {"key": [(val)]}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::list(vec![IV::scalar(1)]) }),
+                IV::object(indexmap! {"key" => IV::list(vec![IV::scalar(42)])}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": [1 + 2] } }),
+            graphql_vars!({"key": {"key": ENUM}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::list(vec![IV::scalar(3)]) }),
+                IV::object(indexmap! {"key" => IV::enum_value("ENUM")}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": [(val)] } }),
+            graphql_vars!({"key": {"key": lowercase}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::list(vec![IV::scalar(42)]) }),
+                IV::object(indexmap! {"key" => IV::enum_value("lowercase")}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": ENUM } }),
+            graphql_vars!({"key": {"key": @val}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::enum_value("ENUM") }),
+                IV::object(indexmap! {"key" => IV::variable("val")}),
             )]
             .into_iter()
             .collect::<V>(),
         );
         assert_eq!(
-            graphql_vars!({ "key": { "key": lowercase } }),
+            graphql_vars!({"key": {"key": @array}}),
             vec![(
                 "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::enum_value("lowercase") }),
+                IV::object(indexmap! {"key" => IV::variable("array")}),
             )]
             .into_iter()
             .collect::<V>(),
         );
-        assert_eq!(
-            graphql_vars!({ "key": { "key": @val } }),
-            vec![(
-                "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::variable("val") }),
-            )]
-            .into_iter()
-            .collect::<V>(),
-        );
-        assert_eq!(
-            graphql_vars!({ "key": { "key": @array } }),
-            vec![(
-                "key".to_owned(),
-                IV::object(indexmap! { "key" => IV::variable("array") }),
-            )]
-            .into_iter()
-            .collect::<V>(),
-        );
-
         assert_eq!(
             graphql_vars!({
                 "inner": {
                     "key1": (val),
                     "key2": "val",
-                    "key3": [
-                        {
-                            "inner": 42,
+                    "key3": [{
+                        "inner": 42,
+                    }, {
+                        "inner": ENUM,
+                        "even-more": {
+                            "var": @var,
                         },
-                        {
-                            "inner": ENUM,
-                            "even-more": {
-                                "var": @var,
-                            },
-                        }
-                    ],
+                    }],
                     "key4": [1, ["val", 1 + 3], null, @array],
                 },
                 "more": @var,
@@ -585,7 +586,7 @@ mod tests {
                                 "inner" => IV::enum_value("ENUM"),
                                 "even-more" => IV::object(indexmap! {
                                     "var" => IV::variable("var"),
-                                })
+                                }),
                             }),
                         ]),
                         "key4" => IV::list(vec![

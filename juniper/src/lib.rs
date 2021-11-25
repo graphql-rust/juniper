@@ -117,10 +117,7 @@ pub use juniper_codegen::{
 };
 
 #[macro_use]
-mod value;
-#[macro_use]
 mod macros;
-#[macro_use]
 mod ast;
 pub mod executor;
 mod introspection;
@@ -129,6 +126,7 @@ pub(crate) mod schema;
 mod types;
 mod util;
 pub mod validation;
+mod value;
 // This needs to be public until docs have support for private modules:
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod http;

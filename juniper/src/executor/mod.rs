@@ -45,8 +45,6 @@ pub use self::{
 
 mod look_ahead;
 mod owned_executor;
-#[macro_use]
-mod macros;
 
 /// A type registry used to build schemas
 ///
