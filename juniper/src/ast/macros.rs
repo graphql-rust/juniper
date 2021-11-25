@@ -1,14 +1,38 @@
-/// Construct JSON-like [`InputValue`]s by using JSON syntax.
+/// Construct JSON-like [`InputValue`]s by using JSON-like syntax.
+///
+/// # Differences from [`graphql_value!`]
+///
+/// - [`InputValue::Enum`] is constructed with `ident`, so to capture outer
+///   variable surround it with parens: `(var)`.
+/// ```rust
+/// # use juniper::{graphql_input_value, graphql_value};
+/// #
+/// # type InputValue = juniper::InputValue;
+/// # type Value = juniper::Value;
+/// #
+/// const OUTER_VAR: i32 = 42;
+/// assert_eq!(graphql_value!(OUTER_VAR), Value::scalar(42));
+/// assert_eq!(graphql_input_value!(OUTER_VAR), InputValue::enum_value("OUTER_VAR"));
+/// assert_eq!(graphql_input_value!((OUTER_VAR)), InputValue::scalar(42));
+/// ```
+///
+/// - [`InputValue::Variable`] is constructed by prefixing `ident` with `@`.
+/// ```rust
+/// # use juniper::graphql_input_value;
+/// #
+/// # type InputValue = juniper::InputValue;
+/// #
+/// assert_eq!(graphql_input_value!(@var), InputValue::variable("var"));
+/// ```
 ///
 /// __Note:__ [`InputValue::List`]s and [`InputValue::Object`]s will be created
 ///           in a [`Spanning::unlocated`].
 ///
 /// # Example
 ///
-/// The resulting JSON will look just like what you passed in.
 /// ```rust
-/// # use juniper::{graphql_input_value, DefaultScalarValue, InputValue};
-/// # type V = InputValue<DefaultScalarValue>;
+/// # use juniper::{graphql_input_value, InputValue};
+/// # type V = InputValue;
 /// #
 /// # let _: V =
 /// graphql_input_value!(null);
@@ -20,7 +44,21 @@
 /// graphql_input_value!([1234, "test", true]);
 /// # let _: V =
 /// graphql_input_value!({"key": "value", "foo": 1234});
+/// # let _: V =
+/// graphql_input_value!({"key": ENUM});
+/// let captured_var = 42;
+/// # let _: V =
+/// graphql_input_value!({"key": (captured_var)});
+/// # let _: V =
+/// graphql_input_value!({"key": @variable});
 /// ```
+///
+/// [`InputValue`]: crate::InputValue
+/// [`InputValue::Enum`]: crate::InputValue::Enum
+/// [`InputValue::List`]: crate::InputValue::List
+/// [`InputValue::Object`]: crate::InputValue::Object
+/// [`InputValue::Variable`]: crate::InputValue::Variable
+/// [`Spanning::unlocated`]: crate::Spanning::unlocated
 #[macro_export]
 macro_rules! graphql_input_value {
     ///////////
@@ -48,14 +86,14 @@ macro_rules! graphql_input_value {
         )
     };
 
-    // Next element is `variable`.
+    // Next element is a variable.
     (@@array [$($elems:expr,)*] @$var:ident $($rest:tt)*) => {
         $crate::graphql_input_value!(
             @@array [$($elems,)* $crate::graphql_input_value!(@$var)] $($rest)*
         )
     };
 
-    // Next element is `enum`.
+    // Next element is `true`, `false` or enum.
     (@@array [$($elems:expr,)*] $enum:ident $($rest:tt)*) => {
         $crate::graphql_input_value!(
             @@array [$($elems,)* $crate::graphql_input_value!($enum)] $($rest)*
@@ -129,12 +167,12 @@ macro_rules! graphql_input_value {
         $crate::graphql_input_value!(@@object $object [$($key)+] ($crate::graphql_input_value!(null)) $($rest)*);
     };
 
-    // Next value is `variable`.
+    // Next value is a variable.
     (@@object $object:ident ($($key:tt)+) (: @$var:ident $($rest:tt)*) $copy:tt) => {
         $crate::graphql_input_value!(@@object $object [$($key)+] ($crate::graphql_input_value!(@$var)) $($rest)*);
     };
 
-    // Next value is `enum`.
+    // Next value is `true`, `false` or enum.
     (@@object $object:ident ($($key:tt)+) (: $enum:ident $($rest:tt)*) $copy:tt) => {
         $crate::graphql_input_value!(@@object $object [$($key)+] ($crate::graphql_input_value!($enum)) $($rest)*);
     };
@@ -245,9 +283,7 @@ macro_rules! graphql_input_value {
 mod tests {
     use indexmap::{indexmap, IndexMap};
 
-    use crate::{DefaultScalarValue, InputValue};
-
-    type V = InputValue<DefaultScalarValue>;
+    type V = crate::InputValue;
 
     #[test]
     fn null() {
@@ -350,22 +386,6 @@ mod tests {
                 V::list(vec![V::variable("val")]),
                 V::enum_value("ENUM"),
             ]),
-        );
-        assert_eq!(
-            graphql_input_value!({ "key": ENUM }),
-            V::object(indexmap! { "key" => V::enum_value("ENUM") }),
-        );
-        assert_eq!(
-            graphql_input_value!({ "key": lowercase }),
-            V::object(indexmap! { "key" => V::enum_value("lowercase") }),
-        );
-        assert_eq!(
-            graphql_input_value!({ "key": @var }),
-            V::object(indexmap! { "key" => V::variable("var") }),
-        );
-        assert_eq!(
-            graphql_input_value!({ "key": @array }),
-            V::object(indexmap! { "key" => V::variable("array") }),
         );
     }
 

@@ -45,6 +45,8 @@ pub use self::{
 
 mod look_ahead;
 mod owned_executor;
+#[macro_use]
+mod macros;
 
 /// A type registry used to build schemas
 ///
@@ -245,31 +247,6 @@ pub type ValuesStream<'a, S = DefaultScalarValue> =
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
-
-/// Construct JSON-like [`Variables`] by using JSON syntax.
-///
-/// __Note:__ [`InputValue::List`]s and [`InputValue::Object`]s will be created
-///           in a [`Spanning::unlocated`].
-///
-/// # Example
-///
-/// The resulting JSON will look just like what you passed in.
-/// ```rust
-/// # use juniper::{graphql_vars, DefaultScalarValue, Variables};
-/// # type V = Variables<DefaultScalarValue>;
-/// #
-/// # let _: V =
-/// graphql_vars!({"key": "value", "foo": 1234});
-/// ```
-#[macro_export]
-macro_rules! graphql_vars {
-    ({ $($key:tt : $val:expr ),* $(,)* }) => {
-        ::std::array::IntoIter::new([
-            $( ($key.to_string(), $crate::graphql_input_value!($val)), )*
-        ])
-        .collect::<$crate::Variables>()
-    }
-}
 
 /// Custom error handling trait to enable Error types other than `FieldError` to be specified
 /// as return value.

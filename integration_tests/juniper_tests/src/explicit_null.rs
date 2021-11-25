@@ -50,7 +50,7 @@ async fn explicit_null() {
 
     let vars = graphql_vars!({
         "emptyObj": [],
-        "literalNullObj": {"field": None},
+        "literalNullObj": {"field": null},
     });
 
     let (data, errors) = juniper::execute(query, None, &schema, &vars, &Context)

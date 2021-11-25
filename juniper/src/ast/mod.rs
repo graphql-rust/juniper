@@ -301,7 +301,7 @@ impl<S> InputValue<S> {
         }
     }
 
-    /// Shorthand form of invoking [`FromInputValue::from()`].
+    /// Shorthand form of invoking [`FromInputValue::from_input_value()`].
     pub fn convert<T>(&self) -> Option<T>
     where
         T: FromInputValue<S>,

@@ -20,6 +20,8 @@
 /// # let _: V =
 /// graphql_value!({"key": "value", "foo": 1234});
 /// ```
+///
+/// [`Value`]: crate::Value
 #[macro_export]
 macro_rules! graphql_value {
     ///////////
@@ -207,9 +209,7 @@ macro_rules! graphql_value {
 
 #[cfg(test)]
 mod tests {
-    use crate::{DefaultScalarValue, Value};
-
-    type V = Value<DefaultScalarValue>;
+    type V = crate::Value;
 
     #[test]
     fn null() {

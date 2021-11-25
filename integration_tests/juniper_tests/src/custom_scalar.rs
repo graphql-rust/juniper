@@ -235,7 +235,7 @@ async fn querying_long_variable() {
         "query q($test: Long!){ longWithArg(longArg: $test) }",
         vec![(
             "test".to_owned(),
-            graphql_input_value!(MyScalarValue::Long(i64::from(i32::MAX) + 42)),
+            graphql_input_value!(i64::from(i32::MAX) + 42),
         )]
         .into_iter()
         .collect(),
@@ -256,7 +256,7 @@ fn deserialize_variable() {
     assert_eq!(
         serde_json::from_str::<InputValue<MyScalarValue>>(&json).unwrap(),
         graphql_input_value!({
-            "field": MyScalarValue::Long(i64::from(i32::MAX) + 42),
+            "field": i64::from(i32::MAX) + 42,
         }),
     );
 }
