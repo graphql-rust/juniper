@@ -107,6 +107,13 @@ macro_rules! graphql_input_value {
         )
     };
 
+    // Next element is `None`.
+    (@@array [$($elems:expr,)*] None $($rest:tt)*) => {
+        $crate::graphql_input_value!(
+            @@array [$($elems,)* $crate::graphql_input_value!(None)] $($rest)*
+        )
+    };
+
     // Next element is a variable.
     (@@array [$($elems:expr,)*] @$var:ident $($rest:tt)*) => {
         $crate::graphql_input_value!(
@@ -202,6 +209,15 @@ macro_rules! graphql_input_value {
             @@object $object
             [$($key)+]
             ($crate::graphql_input_value!(null)) $($rest)*
+        );
+    };
+
+    // Next value is `None`.
+    (@@object $object:ident ($($key:tt)+) (: None $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_input_value!(
+            @@object $object
+            [$($key)+]
+            ($crate::graphql_input_value!(None)) $($rest)*
         );
     };
 
@@ -345,17 +361,19 @@ macro_rules! graphql_input_value {
 
     (null) => ($crate::InputValue::null());
 
-    (true) => ($crate::InputValue::scalar(true));
+    (None) => ($crate::InputValue::null());
 
-    (false) => ($crate::InputValue::scalar(false));
+    (true) => ($crate::InputValue::from(true));
+
+    (false) => ($crate::InputValue::from(false));
 
     (@$var:ident) => ($crate::InputValue::variable(stringify!($var)));
 
     ($enum:ident) => ($crate::InputValue::enum_value(stringify!($enum)));
 
-    (($e:expr)) => ($crate::InputValue::scalar($e));
+    (($e:expr)) => ($crate::InputValue::from($e));
 
-    ($e:expr) => ($crate::InputValue::scalar($e));
+    ($e:expr) => ($crate::InputValue::from($e));
 }
 
 #[cfg(test)]
@@ -579,5 +597,13 @@ mod tests {
                 "more" => V::variable("var"),
             }),
         );
+    }
+
+    #[test]
+    fn option_support() {
+        let val = Some(42);
+        assert_eq!(graphql_input_value!(None), V::Null);
+        assert_eq!(graphql_input_value!(Some(42)), V::scalar(42));
+        assert_eq!(graphql_input_value!((val)), V::scalar(42));
     }
 }

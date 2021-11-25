@@ -475,6 +475,48 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
     }
 }
 
+impl<S, T> From<Option<T>> for InputValue<S>
+where
+    Self: From<T>,
+{
+    fn from(v: Option<T>) -> Self {
+        match v {
+            Some(v) => v.into(),
+            None => Self::Null,
+        }
+    }
+}
+
+impl<'a, S: From<String>> From<&'a str> for InputValue<S> {
+    fn from(s: &'a str) -> Self {
+        Self::scalar(s.to_owned())
+    }
+}
+
+impl<S: From<String>> From<String> for InputValue<S> {
+    fn from(s: String) -> Self {
+        Self::scalar(s)
+    }
+}
+
+impl<S: From<i32>> From<i32> for InputValue<S> {
+    fn from(i: i32) -> Self {
+        Self::scalar(i)
+    }
+}
+
+impl<S: From<f64>> From<f64> for InputValue<S> {
+    fn from(f: f64) -> Self {
+        Self::scalar(f)
+    }
+}
+
+impl<S: From<bool>> From<bool> for InputValue<S> {
+    fn from(b: bool) -> Self {
+        Self::scalar(b)
+    }
+}
+
 impl<'a, S> Arguments<'a, S> {
     pub fn into_iter(self) -> vec::IntoIter<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.into_iter()

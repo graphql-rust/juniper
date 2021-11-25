@@ -66,6 +66,13 @@ macro_rules! graphql_value {
         )
     };
 
+    // Next element is `None`.
+    (@array [$($elems:expr,)*] None $($rest:tt)*) => {
+        $crate::graphql_value!(
+            @array [$($elems,)* $crate::graphql_value!(None)] $($rest)*
+        )
+    };
+
     // Next element is an array.
     (@array [$($elems:expr,)*] [$($array:tt)*] $($rest:tt)*) => {
         $crate::graphql_value!(
@@ -133,6 +140,15 @@ macro_rules! graphql_value {
             @object $object
             [$($key)+]
             ($crate::graphql_value!(null)) $($rest)*
+        );
+    };
+
+    // Next value is `None`.
+    (@object $object:ident ($($key:tt)+) (: None $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_value!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_value!(None)) $($rest)*
         );
     };
 
@@ -245,6 +261,8 @@ macro_rules! graphql_value {
 
     (null) => ($crate::Value::null());
 
+    (None) => ($crate::Value::null());
+
     ($e:expr) => ($crate::Value::from($e));
 }
 
@@ -348,5 +366,13 @@ mod tests {
                     .collect()
             ),
         );
+    }
+
+    #[test]
+    fn option_support() {
+        let val = Some(42);
+        assert_eq!(graphql_value!(None), V::Null);
+        assert_eq!(graphql_value!(Some(42)), V::scalar(42));
+        assert_eq!(graphql_value!(val), V::scalar(42));
     }
 }

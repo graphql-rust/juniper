@@ -55,6 +55,15 @@ macro_rules! graphql_vars {
         );
     };
 
+    // Next value is `None`.
+    (@object $object:ident ($($key:tt)+) (: None $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!(None)) $($rest)*
+        );
+    };
+
     // Next value is a variable.
     (@object $object:ident ($($key:tt)+) (: @$var:ident $($rest:tt)*) $copy:tt) => {
         $crate::graphql_vars!(
