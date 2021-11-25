@@ -7,16 +7,19 @@
 - `#[graphql_object]` and `#[graphql_subscription]` macros expansion now preserves defined `impl` blocks "as is" and reuses defined methods in opaque way. ([#971](https://github.com/graphql-rust/juniper/pull/971))
 - `rename = "<policy>"` attribute's argument renamed to `rename_all = "<policy>"`. ([#971](https://github.com/graphql-rust/juniper/pull/971))
 - Upgrade `bson` feature to [2.0 version of its crate](https://github.com/mongodb/bson-rust/releases/tag/v2.0.0). ([#979](https://github.com/graphql-rust/juniper/pull/979))
+- Use `null` instead of `None` to create `Value::Null` in `graphql_value!` macro to mirror `serde_json::json!`. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 
 ## Features
 
 - Support using Rust array as GraphQL list. ([#966](https://github.com/graphql-rust/juniper/pull/966), [#918](https://github.com/graphql-rust/juniper/issues/918))
 - Expose `GraphQLRequest` fields. ([#750](https://github.com/graphql-rust/juniper/issues/750))
 - `#[graphql_interface]` macro now supports `rename_all = "<policy>"` argument influencing its fields and their arguments. ([#971](https://github.com/graphql-rust/juniper/pull/971))
+- Implement `graphql_input_value!` and `graphql_vars!` macros. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 
 ## Fixes
 
 - Allow spreading interface fragments on unions and other interfaces. ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
+- Support expressions in `graphql_value!` macro. ([#996](https://github.com/graphql-rust/juniper/pull/996), [#503](https://github.com/graphql-rust/juniper/issues/503))
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 
