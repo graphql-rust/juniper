@@ -148,7 +148,7 @@ fn test_derived_input_object() {
             regular_field: "a".into(),
             c: 55,
             other: Some(true),
-        }
+        },
     );
 
     // Test disable renaming

@@ -1,6 +1,6 @@
 use juniper::{
     graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription,
-    GraphQLInputObject, InputValue, Nullable,
+    GraphQLInputObject, Nullable, Variables,
 };
 
 pub struct Context;
@@ -48,7 +48,7 @@ async fn explicit_null() {
         EmptySubscription::<Context>::new(),
     );
 
-    let vars = graphql_vars!({
+    let vars: Variables = graphql_vars!({
         "emptyObj": [],
         "literalNullObj": {"field": null},
     });

@@ -3,6 +3,7 @@ use std::{convert::TryInto as _, fmt, pin::Pin};
 use futures::{stream, Stream};
 use juniper::{
     execute, graphql_input_value, graphql_object, graphql_scalar, graphql_subscription,
+    graphql_vars,
     parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
     EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
@@ -233,16 +234,11 @@ async fn querying_long_arg() {
 async fn querying_long_variable() {
     run_variable_query(
         "query q($test: Long!){ longWithArg(longArg: $test) }",
-        vec![(
-            "test".to_owned(),
-            graphql_input_value!(i64::from(i32::MAX) + 42),
-        )]
-        .into_iter()
-        .collect(),
+        graphql_vars! {"test": MyScalarValue::Long(i64::from(i32::MAX) + 42)},
         |result| {
             assert_eq!(
                 result.get_field_value("longWithArg"),
-                Some(&Value::scalar(i64::from(i32::MAX) + 42))
+                Some(&Value::scalar(i64::from(i32::MAX) + 42)),
             );
         },
     )
@@ -256,7 +252,7 @@ fn deserialize_variable() {
     assert_eq!(
         serde_json::from_str::<InputValue<MyScalarValue>>(&json).unwrap(),
         graphql_input_value!({
-            "field": i64::from(i32::MAX) + 42,
+            "field": MyScalarValue::Long(i64::from(i32::MAX) + 42),
         }),
     );
 }
