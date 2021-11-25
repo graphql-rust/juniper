@@ -510,7 +510,6 @@ impl<'a, S> VariableDefinitions<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::InputValue;
-    use crate::parser::Spanning;
 
     #[test]
     fn test_input_value_fmt() {

@@ -1,5 +1,4 @@
 use crate::{
-    ast::InputValue,
     executor::Variables,
     graphql_object, graphql_scalar, graphql_value,
     parser::SourcePosition,

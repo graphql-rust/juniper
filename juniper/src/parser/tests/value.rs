@@ -1,5 +1,3 @@
-use indexmap::IndexMap;
-
 use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},

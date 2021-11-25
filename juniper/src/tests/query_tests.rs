@@ -1,5 +1,4 @@
 use crate::{
-    ast::InputValue,
     executor::Variables,
     graphql_value,
     schema::model::RootNode,

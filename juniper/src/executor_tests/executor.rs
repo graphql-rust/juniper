@@ -1,6 +1,5 @@
 mod field_execution {
     use crate::{
-        ast::InputValue,
         graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},

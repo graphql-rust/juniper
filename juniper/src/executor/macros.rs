@@ -1,16 +1,24 @@
-/// Construct JSON-like [`Variables`] by using JSON-like syntax.
+/// Construct [`Variables`] by using JSON-like syntax.
+///
+/// [`Variables`] key should implement [`Into`]`<`[`String`]`>`.
+/// ```rust
+/// # use std::borrow::Cow;
+/// #
+/// # use juniper::{graphql_vars, Variables};
+/// #
+/// let code = 200;
+/// let features = vec!["key", "value"];
+/// let key: Cow<'static, str> = "key".into();
+///
+/// let value: Variables = graphql_vars!({
+///     "code": code,
+///     "success": code == 200,
+///     features[0]: features[1],
+///     key: @var,
+/// });
+/// ```
 ///
 /// See [`graphql_input_value!`] for more info on syntax of value after `:`.
-///
-/// # Example
-///
-/// ```rust
-/// # use juniper::{graphql_vars, Variables};
-/// # type V = Variables;
-/// #
-/// # let _: V =
-/// graphql_vars!({ "key": "value", "foo": 1234, "var": @var });
-/// ```
 ///
 /// [`Variables`]: crate::Variables
 #[macro_export]
@@ -40,37 +48,74 @@ macro_rules! graphql_vars {
 
     // Next value is `null`.
     (@object $object:ident ($($key:tt)+) (: null $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_vars!(@object $object [$($key)+] ($crate::graphql_input_value!(null)) $($rest)*);
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!(null)) $($rest)*
+        );
     };
 
     // Next value is a variable.
     (@object $object:ident ($($key:tt)+) (: @$var:ident $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_vars!(@object $object [$($key)+] ($crate::graphql_input_value!(@$var)) $($rest)*);
-    };
-
-    // Next value is `true`, `false` or enum.
-    (@object $object:ident ($($key:tt)+) (: $enum:ident $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_vars!(@object $object [$($key)+] ($crate::graphql_input_value!($enum)) $($rest)*);
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!(@$var)) $($rest)*
+        );
     };
 
     // Next value is an array.
     (@object $object:ident ($($key:tt)+) (: [$($array:tt)*] $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_vars!(@object $object [$($key)+] ($crate::graphql_input_value!([$($array)*])) $($rest)*);
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!([$($array)*])) $($rest)*
+        );
     };
 
     // Next value is a map.
     (@object $object:ident ($($key:tt)+) (: {$($map:tt)*} $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_vars!(@object $object [$($key)+] ($crate::graphql_input_value!({$($map)*})) $($rest)*);
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!({$($map)*})) $($rest)*
+        );
+    };
+
+    // Next value is `true`, `false` or enum ident followed by a comma.
+    (@object $object:ident ($($key:tt)+) (: $ident:ident , $($rest:tt)*) $copy:tt) => {
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!($ident)) , $($rest)*
+        );
+    };
+
+    // Next value is `true`, `false` or enum ident without trailing comma.
+    (@object $object:ident ($($key:tt)+) (: $last:ident ) $copy:tt) => {
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!($last))
+        );
     };
 
     // Next value is an expression followed by comma.
     (@object $object:ident ($($key:tt)+) (: $value:expr , $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_vars!(@object $object [$($key)+] ($crate::graphql_input_value!($value)) , $($rest)*);
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!($value)) , $($rest)*
+        );
     };
 
     // Last value is an expression with no trailing comma.
     (@object $object:ident ($($key:tt)+) (: $value:expr) $copy:tt) => {
-        $crate::graphql_vars!(@object $object [$($key)+] ($crate::graphql_input_value!($value)));
+        $crate::graphql_vars!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_input_value!($value))
+        );
     };
 
     // Missing value for last entry. Trigger a reasonable error message.
@@ -111,7 +156,11 @@ macro_rules! graphql_vars {
 
     // Munch a token into the current key.
     (@object $object:ident ($($key:tt)*) ($tt:tt $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_vars!(@object $object ($($key)* $tt) ($($rest)*) ($($rest)*));
+        $crate::graphql_vars!(
+            @object $object
+            ($($key)* $tt)
+            ($($rest)*) ($($rest)*)
+        );
     };
 
     ////////////
@@ -124,10 +173,10 @@ macro_rules! graphql_vars {
     // Defaults //
     //////////////
 
-    ({}) => {{ ::std::collections::HashMap::new() }};
+    ({}) => {{ ::std::collections::HashMap::<::std::string::String, _>::new() }};
 
     ({ $($map:tt)* }) => {{
-        let mut object = ::std::collections::HashMap::new();
+        let mut object = ::std::collections::HashMap::<::std::string::String, _>::new();
         $crate::graphql_vars!(@object object () ($($map)*) ($($map)*));
         object
     }};

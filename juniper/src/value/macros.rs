@@ -1,6 +1,22 @@
-/// Construct JSON-like [`Value`]s by using JSON syntax.
+/// Construct [`Value`]s by using JSON syntax.
 ///
 /// [`Value`] objects are used mostly when creating custom errors from fields.
+///
+/// [`Value::Object`] key should implement [`AsRef`]`<`[`str`]`>`.
+/// ```rust
+/// # use juniper::{graphql_value, Value};
+/// #
+/// let code = 200;
+/// let features = vec!["key", "value"];
+///
+/// let value: Value = graphql_value!({
+///     "code": code,
+///     "success": code == 200,
+///     "payload": {
+///         features[0]: features[1],
+///     },
+/// });
+/// ```
 ///
 /// # Example
 ///
@@ -22,6 +38,7 @@
 /// ```
 ///
 /// [`Value`]: crate::Value
+/// [`Value::Object`]: crate::Value::Object
 #[macro_export]
 macro_rules! graphql_value {
     ///////////
@@ -112,27 +129,47 @@ macro_rules! graphql_value {
 
     // Next value is `null`.
     (@object $object:ident ($($key:tt)+) (: null $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!(null)) $($rest)*);
+        $crate::graphql_value!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_value!(null)) $($rest)*
+        );
     };
 
     // Next value is an array.
     (@object $object:ident ($($key:tt)+) (: [$($array:tt)*] $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!([$($array)*])) $($rest)*);
+        $crate::graphql_value!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_value!([$($array)*])) $($rest)*
+        );
     };
 
     // Next value is a map.
     (@object $object:ident ($($key:tt)+) (: {$($map:tt)*} $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!({$($map)*})) $($rest)*);
+        $crate::graphql_value!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_value!({$($map)*})) $($rest)*
+        );
     };
 
     // Next value is an expression followed by comma.
     (@object $object:ident ($($key:tt)+) (: $value:expr , $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!($value)) , $($rest)*);
+        $crate::graphql_value!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_value!($value)) , $($rest)*
+        );
     };
 
     // Last value is an expression with no trailing comma.
     (@object $object:ident ($($key:tt)+) (: $value:expr) $copy:tt) => {
-        $crate::graphql_value!(@object $object [$($key)+] ($crate::graphql_value!($value)));
+        $crate::graphql_value!(
+            @object $object
+            [$($key)+]
+            ($crate::graphql_value!($value))
+        );
     };
 
     // Missing value for last entry. Trigger a reasonable error message.
@@ -173,7 +210,11 @@ macro_rules! graphql_value {
 
     // Munch a token into the current key.
     (@object $object:ident ($($key:tt)*) ($tt:tt $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_value!(@object $object ($($key)* $tt) ($($rest)*) ($($rest)*));
+        $crate::graphql_value!(
+            @object $object
+            ($($key)* $tt)
+            ($($rest)*) ($($rest)*)
+        );
     };
 
     ////////////

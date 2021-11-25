@@ -1,5 +1,4 @@
 use crate::{
-    ast::InputValue,
     executor::Variables,
     parser::SourcePosition,
     schema::model::RootNode,
