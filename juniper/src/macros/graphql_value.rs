@@ -248,15 +248,15 @@ macro_rules! graphql_value {
     // Defaults //
     //////////////
 
-    ([ $($arr:tt)* ]) => {
+    ([ $($arr:tt)* ]$(,)?) => {
         $crate::graphql_value!(@array [] $($arr)*)
     };
 
-    ({}) => {
+    ({}$(,)?) => {
         $crate::Value::object($crate::Object::with_capacity(0))
     };
 
-    ({ $($map:tt)+ }) => {
+    ({ $($map:tt)+ }$(,)?) => {
         $crate::Value::object({
             let mut object = $crate::Object::with_capacity(0);
             $crate::graphql_value!(@object object () ($($map)*) ($($map)*));
@@ -264,11 +264,11 @@ macro_rules! graphql_value {
         })
     };
 
-    (null) => ($crate::Value::null());
+    (null$(,)?) => ($crate::Value::null());
 
-    (None) => ($crate::Value::null());
+    (None$(,)?) => ($crate::Value::null());
 
-    ($e:expr) => ($crate::Value::from($e));
+    ($e:expr$(,)?) => ($crate::Value::from($e));
 }
 
 #[cfg(test)]

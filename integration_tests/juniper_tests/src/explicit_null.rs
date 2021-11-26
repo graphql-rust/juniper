@@ -48,27 +48,25 @@ async fn explicit_null() {
         EmptySubscription::<Context>::new(),
     );
 
-    let vars: Variables = graphql_vars!({
-        "emptyObj": [],
+    let vars: Variables = graphql_vars! {
+        "emptyObj": {},
         "literalNullObj": {"field": null},
-    });
+    };
 
-    let (data, errors) = juniper::execute(query, None, &schema, &vars, &Context)
-        .await
-        .unwrap();
-
-    assert_eq!(errors.len(), 0);
     assert_eq!(
-        data,
-        graphql_value!({
-            "literalOneIsExplicitNull": false,
-            "literalNullIsExplicitNull": true,
-            "noArgIsExplicitNull": false,
-            "literalOneFieldIsExplicitNull": false,
-            "literalNullFieldIsExplicitNull": true,
-            "noFieldIsExplicitNull": false,
-            "emptyVariableObjectFieldIsExplicitNull": false,
-            "literalNullVariableObjectFieldIsExplicitNull": true,
-        }),
+        juniper::execute(query, None, &schema, &vars, &Context).await,
+        Ok((
+            graphql_value!({
+                "literalOneIsExplicitNull": false,
+                "literalNullIsExplicitNull": true,
+                "noArgIsExplicitNull": false,
+                "literalOneFieldIsExplicitNull": false,
+                "literalNullFieldIsExplicitNull": true,
+                "noFieldIsExplicitNull": false,
+                "emptyVariableObjectFieldIsExplicitNull": false,
+                "literalNullVariableObjectFieldIsExplicitNull": true,
+            }),
+            vec![],
+        )),
     );
 }

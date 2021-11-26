@@ -1,6 +1,6 @@
 use juniper::{
-    execute, graphql_object, graphql_scalar, graphql_value, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, Object, ParseScalarResult, ParseScalarValue, RootNode, Value, Variables,
+    execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, DefaultScalarValue,
+    EmptyMutation, EmptySubscription, Object, ParseScalarResult, ParseScalarValue, RootNode, Value,
 };
 
 use crate::custom_scalar::MyScalarValue;
@@ -169,7 +169,7 @@ where
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -299,7 +299,7 @@ async fn scalar_description_introspection() {
         assert_eq!(
             type_info.get_field_value("description"),
             Some(&graphql_value!(
-                "A sample scalar, represented as an integer"
+                "A sample scalar, represented as an integer",
             )),
         );
     })
@@ -341,7 +341,7 @@ async fn resolves_with_custom_scalar_value() {
     );
 
     assert_eq!(
-        execute(DOC, None, &schema, &Variables::new(), &()).await,
+        execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
         Ok((graphql_value!({"withCustomScalarValue": 0}), vec![])),
     );
 }

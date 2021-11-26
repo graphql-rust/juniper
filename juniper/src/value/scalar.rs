@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -349,6 +349,12 @@ impl ScalarValue for DefaultScalarValue {
 
 impl<'a> From<&'a str> for DefaultScalarValue {
     fn from(s: &'a str) -> Self {
+        Self::String(s.into())
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for DefaultScalarValue {
+    fn from(s: Cow<'a, str>) -> Self {
         Self::String(s.into())
     }
 }

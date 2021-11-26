@@ -3,8 +3,8 @@
 use std::marker::PhantomData;
 
 use juniper::{
-    execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
-    GraphQLObject, GraphQLType, GraphQLUnion, RootNode, ScalarValue, Variables,
+    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, EmptyMutation,
+    EmptySubscription, GraphQLObject, GraphQLType, GraphQLUnion, RootNode, ScalarValue,
 };
 
 #[derive(GraphQLObject)]
@@ -126,7 +126,7 @@ mod trivial_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -139,7 +139,7 @@ mod trivial_enum {
         let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -158,7 +158,7 @@ mod trivial_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"kind": "UNION"}}), vec![])),
         );
     }
@@ -174,7 +174,7 @@ mod trivial_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -190,7 +190,7 @@ mod trivial_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
@@ -246,7 +246,7 @@ mod generic_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -259,7 +259,7 @@ mod generic_enum {
         let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -278,7 +278,7 @@ mod generic_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -340,7 +340,7 @@ mod generic_lifetime_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32"}}),
                 vec![],
@@ -353,7 +353,7 @@ mod generic_lifetime_enum {
         let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99"}}),
                 vec![],
@@ -372,7 +372,7 @@ mod generic_lifetime_enum {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -414,7 +414,7 @@ mod description_from_doc_comments {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -433,7 +433,7 @@ mod description_from_doc_comments {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"description": "Rust docs."}}),
                 vec![],
@@ -478,7 +478,7 @@ mod explicit_name_and_description {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -497,7 +497,7 @@ mod explicit_name_and_description {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "MyChar"}}), vec![])),
         );
     }
@@ -513,7 +513,7 @@ mod explicit_name_and_description {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"description": "My character."}}),
                 vec![],
@@ -571,7 +571,7 @@ mod explicit_scalar {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -584,7 +584,7 @@ mod explicit_scalar {
         let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -644,7 +644,7 @@ mod custom_scalar {
         let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -657,7 +657,7 @@ mod custom_scalar {
         let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -717,7 +717,7 @@ mod explicit_generic_scalar {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -730,7 +730,7 @@ mod explicit_generic_scalar {
         let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -788,7 +788,7 @@ mod bounded_generic_scalar {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -801,7 +801,7 @@ mod bounded_generic_scalar {
         let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -857,7 +857,7 @@ mod custom_context {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Human).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -870,7 +870,7 @@ mod custom_context {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Droid).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -926,7 +926,7 @@ mod different_context {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Human).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -939,7 +939,7 @@ mod different_context {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Droid).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -986,7 +986,7 @@ mod ignored_enum_variants {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1007,7 +1007,7 @@ mod ignored_enum_variants {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"possibleTypes": [{"name": "Human"}]}}),
                 vec![],
@@ -1080,7 +1080,7 @@ mod external_resolver_enum {
         let db = Database { droid: None };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1099,7 +1099,7 @@ mod external_resolver_enum {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -1174,7 +1174,7 @@ mod external_resolver_enum_variant {
         let db = Database { droid: None };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1193,7 +1193,7 @@ mod external_resolver_enum_variant {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -1287,7 +1287,7 @@ mod full_featured_enum {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Human).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Human).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1300,7 +1300,7 @@ mod full_featured_enum {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Droid).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Droid).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -1313,7 +1313,7 @@ mod full_featured_enum {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Ewok).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Ewok).await,
             Ok((
                 graphql_value!({"character": {"ewokId": "ewok-1", "funny": true}}),
                 vec![],
@@ -1332,7 +1332,7 @@ mod full_featured_enum {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Ewok).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Ewok).await,
             Ok((graphql_value!({"__type": {"name": "MyChar"}}), vec![])),
         );
     }
@@ -1348,7 +1348,7 @@ mod full_featured_enum {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &CustomContext::Ewok).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext::Ewok).await,
             Ok((
                 graphql_value!({"__type": {"description": "My character."}}),
                 vec![],
@@ -1439,7 +1439,7 @@ mod trivial_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1459,7 +1459,7 @@ mod trivial_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -1485,7 +1485,7 @@ mod trivial_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((graphql_value!({"__type": {"kind": "UNION"}}), vec![])),
         );
     }
@@ -1508,7 +1508,7 @@ mod trivial_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -1531,7 +1531,7 @@ mod trivial_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
@@ -1596,7 +1596,7 @@ mod generic_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1616,7 +1616,7 @@ mod generic_struct {
         let db = Database { human: None };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -1709,7 +1709,7 @@ mod full_featured_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1729,7 +1729,7 @@ mod full_featured_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -1752,7 +1752,7 @@ mod full_featured_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((graphql_value!({"__type": {"name": "MyChar"}}), vec![])),
         );
     }
@@ -1772,7 +1772,7 @@ mod full_featured_struct {
         };
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &db).await,
             Ok((
                 graphql_value!({"__type": {"description": "My character."}}),
                 vec![],
@@ -1833,7 +1833,7 @@ mod issue_845 {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
                 vec![],
@@ -1846,7 +1846,7 @@ mod issue_845 {
         let schema = schema(QueryRoot::Droid);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
@@ -1865,7 +1865,7 @@ mod issue_845 {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"kind": "UNION"}}), vec![])),
         );
     }

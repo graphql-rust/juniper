@@ -232,13 +232,14 @@ async fn querying_long_arg() {
 
 #[tokio::test]
 async fn querying_long_variable() {
+    let num = i64::from(i32::MAX) + 42;
     run_variable_query(
         "query q($test: Long!){ longWithArg(longArg: $test) }",
-        graphql_vars! {"test": MyScalarValue::Long(i64::from(i32::MAX) + 42)},
+        graphql_vars! {"test": InputValue::<_>::scalar(num)},
         |result| {
             assert_eq!(
                 result.get_field_value("longWithArg"),
-                Some(&Value::scalar(i64::from(i32::MAX) + 42)),
+                Some(&Value::scalar(num)),
             );
         },
     )
@@ -252,7 +253,7 @@ fn deserialize_variable() {
     assert_eq!(
         serde_json::from_str::<InputValue<MyScalarValue>>(&json).unwrap(),
         graphql_input_value!({
-            "field": MyScalarValue::Long(i64::from(i32::MAX) + 42),
+            "field": InputValue::<_>::scalar(i64::from(i32::MAX) + 42),
         }),
     );
 }

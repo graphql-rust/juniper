@@ -348,15 +348,15 @@ macro_rules! graphql_input_value {
     // Defaults //
     //////////////
 
-    ([ $($arr:tt)* ]) => {
+    ([ $($arr:tt)* ]$(,)?) => {
         $crate::graphql_input_value!(@@array [] $($arr)*)
     };
 
-    ({}) => {
+    ({}$(,)?) => {
         $crate::InputValue::parsed_object(vec![])
     };
 
-    ({ $($map:tt)+ }) => {
+    ({ $($map:tt)+ }$(,)?) => {
         $crate::InputValue::parsed_object({
             let mut object = vec![];
             $crate::graphql_input_value!(@@object object () ($($map)*) ($($map)*));
@@ -364,21 +364,21 @@ macro_rules! graphql_input_value {
         })
     };
 
-    (null) => ($crate::InputValue::null());
+    (null$(,)?) => ($crate::InputValue::null());
 
-    (None) => ($crate::InputValue::null());
+    (None$(,)?) => ($crate::InputValue::null());
 
-    (true) => ($crate::InputValue::from(true));
+    (true$(,)?) => ($crate::InputValue::from(true));
 
-    (false) => ($crate::InputValue::from(false));
+    (false$(,)?) => ($crate::InputValue::from(false));
 
-    (@$var:ident) => ($crate::InputValue::variable(stringify!($var)));
+    (@$var:ident$(,)?) => ($crate::InputValue::variable(stringify!($var)));
 
-    ($enum:ident) => ($crate::InputValue::enum_value(stringify!($enum)));
+    ($enum:ident$(,)?) => ($crate::InputValue::enum_value(stringify!($enum)));
 
-    (($e:expr)) => ($crate::InputValue::from($e));
+    (($e:expr)$(,)?) => ($crate::InputValue::from($e));
 
-    ($e:expr) => ($crate::InputValue::from($e));
+    ($e:expr$(,)?) => ($crate::InputValue::from($e));
 }
 
 #[cfg(test)]

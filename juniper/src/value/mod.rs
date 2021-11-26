@@ -1,11 +1,7 @@
 mod object;
 mod scalar;
 
-use std::{
-    any::TypeId,
-    fmt::{self, Display, Formatter},
-    mem,
-};
+use std::{any::TypeId, borrow::Cow, fmt, mem};
 
 use crate::{
     ast::{InputValue, ToInputValue},
@@ -194,8 +190,8 @@ impl<S: Clone> ToInputValue<S> for Value<S> {
     }
 }
 
-impl<S: ScalarValue> Display for Value<S> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+impl<S: ScalarValue> fmt::Display for Value<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
             Self::Scalar(s) => {
@@ -249,6 +245,12 @@ where
 impl<'a, S: From<String>> From<&'a str> for Value<S> {
     fn from(s: &'a str) -> Self {
         Self::scalar(s.to_owned())
+    }
+}
+
+impl<'a, S: From<String>> From<Cow<'a, str>> for Value<S> {
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::scalar(s.into_owned())
     }
 }
 

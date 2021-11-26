@@ -490,6 +490,12 @@ impl<'a, S: From<String>> From<&'a str> for InputValue<S> {
     }
 }
 
+impl<'a, S: From<String>> From<Cow<'a, str>> for InputValue<S> {
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::scalar(s.into_owned())
+    }
+}
+
 impl<S: From<String>> From<String> for InputValue<S> {
     fn from(s: String) -> Self {
         Self::scalar(s)

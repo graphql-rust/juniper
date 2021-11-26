@@ -163,7 +163,7 @@ fn test_derived_input_object() {
         output,
         NoRenameInput {
             regular_field: "hello".into(),
-        }
+        },
     );
 }
 

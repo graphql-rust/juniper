@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 use juniper::{
-    graphql_input_value, DefaultScalarValue, FromInputValue, GraphQLEnum, GraphQLType,
-    Registry, ToInputValue,
+    graphql_input_value, DefaultScalarValue, FromInputValue, GraphQLEnum, GraphQLType, Registry,
+    ToInputValue,
 };
 
 pub struct CustomContext {}
@@ -74,13 +74,13 @@ fn test_derived_enum() {
     // Test no rename variant.
     assert_eq!(
         <_ as ToInputValue>::to_input_value(&NoRenameEnum::AnotherVariant),
-        graphql_input_value!(AnotherVariant),
+        graphql_input_value!("AnotherVariant"),
     );
 
     // Test Regular variant.
     assert_eq!(
         <_ as ToInputValue>::to_input_value(&SomeEnum::Regular),
-        graphql_input_value!(REGULAR),
+        graphql_input_value!("REGULAR"),
     );
     assert_eq!(
         FromInputValue::<DefaultScalarValue>::from_input_value(&graphql_input_value!(REGULAR)),
@@ -90,7 +90,7 @@ fn test_derived_enum() {
     // Test FULL variant.
     assert_eq!(
         <_ as ToInputValue>::to_input_value(&SomeEnum::Full),
-        graphql_input_value!(FULL),
+        graphql_input_value!("FULL"),
     );
     assert_eq!(
         FromInputValue::<DefaultScalarValue>::from_input_value(&graphql_input_value!(FULL)),
