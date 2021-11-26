@@ -39,10 +39,10 @@ mod test {
     mod from_input_value {
         use chrono_tz::Tz;
 
-        use crate::{DefaultScalarValue, FromInputValue, InputValue};
+        use crate::{graphql_input_value, FromInputValue, InputValue};
 
         fn tz_input_test(raw: &'static str, expected: Option<Tz>) {
-            let input = <InputValue<DefaultScalarValue>>::scalar(raw.to_string());
+            let input: InputValue = graphql_input_value!((raw));
             let parsed: Option<Tz> = FromInputValue::from_input_value(&input);
 
             assert_eq!(parsed, expected);

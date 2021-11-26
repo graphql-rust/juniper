@@ -4,7 +4,7 @@
 //! Original author of this test is [@davidpdrsn](https://github.com/davidpdrsn).
 
 use juniper::{
-    graphql_object, EmptyMutation, EmptySubscription, Executor, RootNode, ScalarValue, Variables,
+    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, Executor, RootNode, ScalarValue,
 };
 
 struct Query;
@@ -66,7 +66,7 @@ async fn lookahead_from_fragment_with_nested_type() {
         "#,
         None,
         &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
-        &Variables::new(),
+        &graphql_vars! {},
         &(),
     )
     .await

@@ -202,7 +202,7 @@ async fn run_query<F>(query: &str, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
-    run_variable_query(query, Variables::new(), f).await;
+    run_variable_query(query, graphql_vars! {}, f).await;
 }
 
 #[tokio::test]

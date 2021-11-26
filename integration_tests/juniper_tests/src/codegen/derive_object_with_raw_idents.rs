@@ -1,6 +1,6 @@
 use juniper::{
-    execute, graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLInputObject,
-    RootNode, Value, Variables,
+    execute, graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription,
+    GraphQLInputObject, RootNode, Value,
 };
 
 pub struct Query;
@@ -93,7 +93,7 @@ async fn run_type_info_query(doc: &str) -> Value {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 

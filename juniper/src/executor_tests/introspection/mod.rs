@@ -6,8 +6,7 @@ mod input_object;
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    executor::Variables,
-    graphql_interface, graphql_object, graphql_scalar, graphql_value,
+    graphql_interface, graphql_object, graphql_scalar, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{ParseScalarResult, ParseScalarValue, ScalarValue, Value},
@@ -83,7 +82,7 @@ async fn test_execution() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -128,7 +127,7 @@ async fn enum_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -237,7 +236,7 @@ async fn interface_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -369,7 +368,7 @@ async fn object_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -506,7 +505,7 @@ async fn scalar_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 

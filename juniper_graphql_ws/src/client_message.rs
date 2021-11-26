@@ -71,7 +71,7 @@ mod test {
 
         assert_eq!(
             ClientMessage::ConnectionInit {
-                payload: Variables::default(),
+                payload: graphql_vars! {},
             },
             serde_json::from_str(r##"{"type": "connection_init"}"##).unwrap(),
         );

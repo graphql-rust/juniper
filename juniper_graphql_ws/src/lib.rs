@@ -633,7 +633,7 @@ mod test {
 
     use juniper::{
         futures::sink::SinkExt,
-        graphql_object, graphql_subscription, graphql_value, graphql_vars,
+        graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
         parser::{ParseError, Spanning, Token},
         DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode,
     };
@@ -707,7 +707,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -718,7 +718,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "{context}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -752,7 +752,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -763,7 +763,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "subscription Foo {context}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -785,7 +785,7 @@ mod test {
             id: "bar".to_string(),
             payload: StartPayload {
                 query: "subscription Bar {context}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -820,7 +820,7 @@ mod test {
     #[tokio::test]
     async fn test_init_params_ok() {
         let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
-            assert_eq!(params.get("foo"), Some(&InputValue::scalar("bar")));
+            assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Ok(ConnectionConfig::new(Context(1))) as Result<_, Infallible>
         });
 
@@ -836,7 +836,7 @@ mod test {
     #[tokio::test]
     async fn test_init_params_error() {
         let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
-            assert_eq!(params.get("foo"), Some(&InputValue::scalar("bar")));
+            assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Err(io::Error::new(io::ErrorKind::Other, "init error"))
         });
 
@@ -952,7 +952,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -975,7 +975,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
