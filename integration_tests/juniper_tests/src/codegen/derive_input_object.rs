@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 use juniper::{
-    marker, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLValue,
-    InputValue, Registry, ToInputValue,
+    graphql_input_value, marker, DefaultScalarValue, FromInputValue, GraphQLInputObject,
+    GraphQLType, GraphQLValue, InputValue, Registry, ToInputValue,
 };
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -65,7 +65,7 @@ impl<'a> FromInputValue for &'a Fake {
 
 impl<'a> ToInputValue for &'a Fake {
     fn to_input_value(&self) -> InputValue {
-        InputValue::scalar("this is fake")
+        graphql_input_value!("this is fake")
     }
 }
 
@@ -119,19 +119,17 @@ fn test_derived_input_object() {
 
     // Test default value injection.
 
-    let input_no_defaults: InputValue = ::serde_json::from_value(serde_json::json!({
+    let input_no_defaults = graphql_input_value!({
         "regularField": "a",
-    }))
-    .unwrap();
-
-    let output_no_defaults: Input = FromInputValue::from_input_value(&input_no_defaults).unwrap();
+    });
+    let output_no_defaults = Input::from_input_value(&input_no_defaults).unwrap();
     assert_eq!(
         output_no_defaults,
         Input {
             regular_field: "a".into(),
             c: 33,
             other: None,
-        }
+        },
     );
 
     // Test with all values supplied.
@@ -150,7 +148,7 @@ fn test_derived_input_object() {
             regular_field: "a".into(),
             c: 55,
             other: Some(true),
-        }
+        },
     );
 
     // Test disable renaming
@@ -165,7 +163,7 @@ fn test_derived_input_object() {
         output,
         NoRenameInput {
             regular_field: "hello".into(),
-        }
+        },
     );
 }
 

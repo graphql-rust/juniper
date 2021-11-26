@@ -1,6 +1,6 @@
 use juniper::{
-    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLInputObject,
-    InputValue, Nullable,
+    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription,
+    GraphQLInputObject, Nullable, Variables,
 };
 
 pub struct Context;
@@ -47,36 +47,26 @@ async fn explicit_null() {
         EmptyMutation::<Context>::new(),
         EmptySubscription::<Context>::new(),
     );
-    let vars = [
-        ("emptyObj".to_string(), InputValue::Object(vec![])),
-        (
-            "literalNullObj".to_string(),
-            InputValue::object(vec![("field", InputValue::null())].into_iter().collect()),
-        ),
-    ];
 
-    let (data, errors) = juniper::execute(
-        query,
-        None,
-        &schema,
-        &vars.iter().cloned().collect(),
-        &Context,
-    )
-    .await
-    .unwrap();
+    let vars: Variables = graphql_vars! {
+        "emptyObj": {},
+        "literalNullObj": {"field": null},
+    };
 
-    assert_eq!(errors.len(), 0);
     assert_eq!(
-        data,
-        graphql_value!({
-            "literalOneIsExplicitNull": false,
-            "literalNullIsExplicitNull": true,
-            "noArgIsExplicitNull": false,
-            "literalOneFieldIsExplicitNull": false,
-            "literalNullFieldIsExplicitNull": true,
-            "noFieldIsExplicitNull": false,
-            "emptyVariableObjectFieldIsExplicitNull": false,
-            "literalNullVariableObjectFieldIsExplicitNull": true,
-        })
+        juniper::execute(query, None, &schema, &vars, &Context).await,
+        Ok((
+            graphql_value!({
+                "literalOneIsExplicitNull": false,
+                "literalNullIsExplicitNull": true,
+                "noArgIsExplicitNull": false,
+                "literalOneFieldIsExplicitNull": false,
+                "literalNullFieldIsExplicitNull": true,
+                "noFieldIsExplicitNull": false,
+                "emptyVariableObjectFieldIsExplicitNull": false,
+                "literalNullVariableObjectFieldIsExplicitNull": true,
+            }),
+            vec![],
+        )),
     );
 }

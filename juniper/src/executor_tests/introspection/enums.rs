@@ -1,6 +1,5 @@
 use crate::{
-    executor::Variables,
-    graphql_value,
+    graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
@@ -98,7 +97,7 @@ where
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -147,23 +146,23 @@ async fn default_name_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(values.len(), 2);
 
         assert!(values.contains(&graphql_value!({
             "name": "FOO",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
 
         assert!(values.contains(&graphql_value!({
             "name": "BAR",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
     })
     .await;
@@ -193,23 +192,23 @@ async fn named_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(values.len(), 2);
 
         assert!(values.contains(&graphql_value!({
             "name": "FOO",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
 
         assert!(values.contains(&graphql_value!({
             "name": "BAR",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
     })
     .await;
@@ -239,23 +238,23 @@ async fn no_trailing_comma_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(values.len(), 2);
 
         assert!(values.contains(&graphql_value!({
             "name": "FOO",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
 
         assert!(values.contains(&graphql_value!({
             "name": "BAR",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
     })
     .await;
@@ -292,16 +291,16 @@ async fn enum_description_introspection() {
 
         assert!(values.contains(&graphql_value!({
             "name": "FOO",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
 
         assert!(values.contains(&graphql_value!({
             "name": "BAR",
-            "description": None,
+            "description": null,
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
     })
     .await;
@@ -331,7 +330,7 @@ async fn enum_value_description_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(values.len(), 2);
@@ -340,14 +339,14 @@ async fn enum_value_description_introspection() {
             "name": "FOO",
             "description": "The FOO value",
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
 
         assert!(values.contains(&graphql_value!({
             "name": "BAR",
             "description": "The BAR value",
             "isDeprecated": false,
-            "deprecationReason": None,
+            "deprecationReason": null,
         })));
     })
     .await;
@@ -377,14 +376,14 @@ async fn enum_deprecation_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(values.len(), 2);
 
         assert!(values.contains(&graphql_value!({
             "name": "FOO",
-            "description": None,
+            "description": null,
             "isDeprecated": true,
             "deprecationReason": "Please don't use FOO any more",
         })));
@@ -423,7 +422,7 @@ async fn enum_deprecation_no_values_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(values.len(), 0);

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -196,6 +196,8 @@ pub trait ScalarValue:
     /// This function is used for implementing [`GraphQLValue`] for [`i32`] for
     /// all possible [`ScalarValue`]s. Implementations should convert all the
     /// supported integer types with 32 bit or less to an integer, if requested.
+    ///
+    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
     fn as_int(&self) -> Option<i32>;
 
@@ -203,6 +205,8 @@ pub trait ScalarValue:
     ///
     /// This function is used for implementing [`GraphQLValue`] for [`String`]
     /// for all possible [`ScalarValue`]s.
+    ///
+    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
     fn as_string(&self) -> Option<String>;
 
@@ -217,6 +221,8 @@ pub trait ScalarValue:
     ///
     /// This function is used for implementing [`GraphQLValue`] for [`str`] for
     /// all possible [`ScalarValue`]s.
+    ///
+    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
     fn as_str(&self) -> Option<&str>;
 
@@ -226,6 +232,8 @@ pub trait ScalarValue:
     /// all possible [`ScalarValue`]s. Implementations should convert all
     /// supported integer types with 64 bit or less and all floating point
     /// values with 64 bit or less to a float, if requested.
+    ///
+    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
     fn as_float(&self) -> Option<f64>;
 
@@ -233,6 +241,8 @@ pub trait ScalarValue:
     ///
     /// This function is used for implementing [`GraphQLValue`] for [`bool`] for
     /// all possible [`ScalarValue`]s.
+    ///
+    /// [`GraphQLValue`]: crate::GraphQLValue
     fn as_boolean(&self) -> Option<bool>;
 
     /// Converts this [`ScalarValue`] into another one.
@@ -339,6 +349,12 @@ impl ScalarValue for DefaultScalarValue {
 
 impl<'a> From<&'a str> for DefaultScalarValue {
     fn from(s: &'a str) -> Self {
+        Self::String(s.into())
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for DefaultScalarValue {
+    fn from(s: Cow<'a, str>) -> Self {
         Self::String(s.into())
     }
 }

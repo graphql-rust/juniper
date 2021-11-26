@@ -1,10 +1,10 @@
 use futures::{Stream, StreamExt, TryFutureExt};
 use juniper::{
     executor::{execute_validated_query_async, get_operation, resolve_validated_subscription},
-    graphql_object, graphql_subscription,
+    graphql_object, graphql_subscription, graphql_vars,
     parser::parse_document_source,
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
-    EmptyMutation, FieldError, OperationType, RootNode, Variables,
+    EmptyMutation, FieldError, OperationType, RootNode,
 };
 use std::pin::Pin;
 
@@ -61,14 +61,14 @@ async fn query_document_can_be_pre_parsed() {
     let operation = get_operation(&document, None).unwrap();
     assert!(operation.item.operation_type == OperationType::Query);
 
-    let errors = validate_input_values(&juniper::Variables::new(), operation, &root_node.schema);
+    let errors = validate_input_values(&graphql_vars! {}, operation, &root_node.schema);
     assert!(errors.is_empty());
 
     let (_, errors) = execute_validated_query_async(
         &document,
         operation,
         root_node,
-        &Variables::new(),
+        &graphql_vars! {},
         &Context {},
     )
     .await
@@ -91,7 +91,7 @@ async fn subscription_document_can_be_pre_parsed() {
         &document,
         &operation,
         &root_node,
-        &Variables::new(),
+        &graphql_vars! {},
         &Context {},
     )
     .map_ok(|(stream, errors)| juniper_subscriptions::Connection::from_stream(stream, errors))

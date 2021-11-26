@@ -29,12 +29,12 @@ where
 mod test {
     use url::Url;
 
-    use crate::{DefaultScalarValue, InputValue};
+    use crate::{graphql_input_value, InputValue};
 
     #[test]
     fn url_from_input_value() {
         let raw = "https://example.net/";
-        let input = <InputValue<DefaultScalarValue>>::scalar(raw.to_string());
+        let input: InputValue = graphql_input_value!((raw));
 
         let parsed: Url = crate::FromInputValue::from_input_value(&input).unwrap();
         let url = Url::parse(raw).unwrap();

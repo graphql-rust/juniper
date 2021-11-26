@@ -2,8 +2,9 @@ use std::{convert::TryInto as _, fmt, pin::Pin};
 
 use futures::{stream, Stream};
 use juniper::{
-    execute, graphql_object, graphql_scalar, graphql_subscription,
-    parser::{ParseError, ScalarToken, Spanning, Token},
+    execute, graphql_input_value, graphql_object, graphql_scalar, graphql_subscription,
+    graphql_vars,
+    parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
     EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
     RootNode, ScalarValue, Value, Variables,
@@ -201,7 +202,7 @@ async fn run_query<F>(query: &str, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
-    run_variable_query(query, Variables::new(), f).await;
+    run_variable_query(query, graphql_vars! {}, f).await;
 }
 
 #[tokio::test]
@@ -231,18 +232,14 @@ async fn querying_long_arg() {
 
 #[tokio::test]
 async fn querying_long_variable() {
+    let num = i64::from(i32::MAX) + 42;
     run_variable_query(
         "query q($test: Long!){ longWithArg(longArg: $test) }",
-        vec![(
-            "test".to_owned(),
-            InputValue::Scalar(MyScalarValue::Long(i64::from(i32::MAX) + 42)),
-        )]
-        .into_iter()
-        .collect(),
+        graphql_vars! {"test": InputValue::<_>::scalar(num)},
         |result| {
             assert_eq!(
                 result.get_field_value("longWithArg"),
-                Some(&Value::scalar(i64::from(i32::MAX) + 42))
+                Some(&Value::scalar(num)),
             );
         },
     )
@@ -253,14 +250,10 @@ async fn querying_long_variable() {
 fn deserialize_variable() {
     let json = format!("{{\"field\": {}}}", i64::from(i32::MAX) + 42);
 
-    let input_value: InputValue<MyScalarValue> = serde_json::from_str(&json).unwrap();
     assert_eq!(
-        input_value,
-        InputValue::Object(vec![(
-            Spanning::unlocated("field".into()),
-            Spanning::unlocated(InputValue::Scalar(MyScalarValue::Long(
-                i64::from(i32::MAX) + 42
-            )))
-        )])
+        serde_json::from_str::<InputValue<MyScalarValue>>(&json).unwrap(),
+        graphql_input_value!({
+            "field": InputValue::<_>::scalar(i64::from(i32::MAX) + 42),
+        }),
     );
 }

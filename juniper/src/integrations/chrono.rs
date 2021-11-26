@@ -148,14 +148,14 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::{value::DefaultScalarValue, InputValue};
     use chrono::prelude::*;
 
-    fn datetime_fixedoffset_test(raw: &'static str) {
-        let input: crate::InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
+    use crate::{graphql_input_value, FromInputValue, InputValue};
 
-        let parsed: DateTime<FixedOffset> =
-            crate::FromInputValue::from_input_value(&input).unwrap();
+    fn datetime_fixedoffset_test(raw: &'static str) {
+        let input: InputValue = graphql_input_value!((raw));
+
+        let parsed: DateTime<FixedOffset> = FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw).unwrap();
 
         assert_eq!(parsed, expected);
@@ -177,9 +177,9 @@ mod test {
     }
 
     fn datetime_utc_test(raw: &'static str) {
-        let input = <InputValue<DefaultScalarValue>>::scalar(raw.to_string());
+        let input: InputValue = graphql_input_value!((raw));
 
-        let parsed: DateTime<Utc> = crate::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: DateTime<Utc> = FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw)
             .unwrap()
             .with_timezone(&Utc);
@@ -204,13 +204,12 @@ mod test {
 
     #[test]
     fn naivedate_from_input_value() {
-        let input: crate::InputValue<DefaultScalarValue> =
-            InputValue::scalar("1996-12-19".to_string());
+        let input: InputValue = graphql_input_value!("1996-12-19");
         let y = 1996;
         let m = 12;
         let d = 19;
 
-        let parsed: NaiveDate = crate::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: NaiveDate = FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveDate::from_ymd(y, m, d);
 
         assert_eq!(parsed, expected);
@@ -223,10 +222,9 @@ mod test {
     #[test]
     #[cfg(feature = "scalar-naivetime")]
     fn naivetime_from_input_value() {
-        let input: crate::InputValue<DefaultScalarValue>;
-        input = InputValue::scalar("21:12:19".to_string());
+        let input: InputValue = graphql_input_value!("21:12:19");
         let [h, m, s] = [21, 12, 19];
-        let parsed: NaiveTime = crate::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: NaiveTime = FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveTime::from_hms(h, m, s);
         assert_eq!(parsed, expected);
         assert_eq!(parsed.hour(), h);
@@ -237,9 +235,9 @@ mod test {
     #[test]
     fn naivedatetime_from_input_value() {
         let raw = 1_000_000_000_f64;
-        let input = <InputValue<DefaultScalarValue>>::scalar(raw);
+        let input: InputValue = graphql_input_value!((raw));
 
-        let parsed: NaiveDateTime = crate::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: NaiveDateTime = FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveDateTime::from_timestamp_opt(raw as i64, 0).unwrap();
 
         assert_eq!(parsed, expected);
@@ -252,8 +250,7 @@ mod integration_test {
     use chrono::{prelude::*, Utc};
 
     use crate::{
-        executor::Variables,
-        graphql_object, graphql_value,
+        graphql_object, graphql_value, graphql_vars,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
@@ -322,7 +319,7 @@ mod integration_test {
             EmptySubscription::<()>::new(),
         );
 
-        let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
             .await
             .expect("Execution failed");
 

@@ -4,8 +4,8 @@
 
 use futures::stream::BoxStream;
 use juniper::{
-    graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLObject,
-    IntoFieldError, Object, ScalarValue, Value, Variables,
+    graphql_object, graphql_subscription, graphql_value, graphql_vars, EmptyMutation, FieldError,
+    GraphQLObject, IntoFieldError, Object, ScalarValue, Value,
 };
 
 #[derive(GraphQLObject)]
@@ -59,7 +59,7 @@ async fn error_extensions() {
     "#;
 
     let schema = Schema::new(Query, EmptyMutation::new(), SubscriptionsRoot);
-    let (_, errors) = juniper::resolve_into_stream(sub, None, &schema, &Variables::new(), &())
+    let (_, errors) = juniper::resolve_into_stream(sub, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
 

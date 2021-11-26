@@ -1,8 +1,8 @@
 use bencher::{benchmark_group, benchmark_main, Bencher};
 use juniper::{
-    execute_sync,
+    execute_sync, graphql_vars,
     tests::fixtures::starwars::schema::{Database, Query},
-    DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode, Variables,
+    DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode,
 };
 
 fn query_type_name(b: &mut Bencher) {
@@ -27,7 +27,7 @@ fn query_type_name(b: &mut Bencher) {
           }
         }"#;
 
-    b.iter(|| execute_sync(doc, None, &schema, &Variables::new(), &database));
+    b.iter(|| execute_sync(doc, None, &schema, &graphql_vars! {}, &database));
 }
 
 fn introspection_query(b: &mut Bencher) {
@@ -137,7 +137,7 @@ fn introspection_query(b: &mut Bencher) {
   }
 "#;
 
-    b.iter(|| execute_sync(doc, None, &schema, &Variables::new(), &database));
+    b.iter(|| execute_sync(doc, None, &schema, &graphql_vars! {}, &database));
 }
 
 benchmark_group!(queries, query_type_name, introspection_query);

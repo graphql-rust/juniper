@@ -1,8 +1,8 @@
 use indexmap::IndexMap;
 
 use crate::{
-    executor::{ExecutionResult, Executor, Registry, Variables},
-    graphql_value,
+    executor::{ExecutionResult, Executor, Registry},
+    graphql_value, graphql_vars,
     schema::{meta::MetaType, model::RootNode},
     types::{
         base::{Arguments, GraphQLType, GraphQLValue},
@@ -94,7 +94,7 @@ fn test_node() {
     );
 
     assert_eq!(
-        crate::execute_sync(doc, None, &schema, &Variables::new(), &()),
+        crate::execute_sync(doc, None, &schema, &graphql_vars! {}, &()),
         Ok((
             graphql_value!({
                 "foo": "1",

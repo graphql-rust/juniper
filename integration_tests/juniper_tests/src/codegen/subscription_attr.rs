@@ -4,9 +4,9 @@ use std::pin::Pin;
 
 use futures::{future, stream, FutureExt as _};
 use juniper::{
-    execute, graphql_object, graphql_subscription, graphql_value, resolve_into_stream,
-    DefaultScalarValue, EmptyMutation, Executor, FieldError, FieldResult, GraphQLInputObject,
-    GraphQLType, IntoFieldError, RootNode, ScalarValue, Variables,
+    execute, graphql_object, graphql_subscription, graphql_value, graphql_vars,
+    resolve_into_stream, DefaultScalarValue, EmptyMutation, Executor, FieldError, FieldResult,
+    GraphQLInputObject, GraphQLType, IntoFieldError, RootNode, ScalarValue,
 };
 
 use crate::util::extract_next;
@@ -71,7 +71,7 @@ mod trivial {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -87,7 +87,7 @@ mod trivial {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
@@ -105,7 +105,7 @@ mod trivial {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"kind": "OBJECT"}}), vec![])),
         );
     }
@@ -121,7 +121,7 @@ mod trivial {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Human"}}), vec![])),
         );
     }
@@ -137,8 +137,8 @@ mod trivial {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
 }
@@ -168,7 +168,7 @@ mod raw_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"myId": "human-32"}), vec![])),
@@ -184,7 +184,7 @@ mod raw_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"async": "async-32"}), vec![])),
@@ -206,7 +206,7 @@ mod raw_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "name": "Human",
@@ -246,7 +246,7 @@ mod ignored_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -266,7 +266,7 @@ mod ignored_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [{"name": "id"}]}}),
                 vec![],
@@ -308,7 +308,7 @@ mod fallible_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -324,7 +324,7 @@ mod fallible_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
@@ -352,7 +352,7 @@ mod fallible_method {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "name": "Human",
@@ -403,7 +403,7 @@ mod argument {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -419,7 +419,7 @@ mod argument {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"homePlanet": "earth,None"}), vec![])),
@@ -442,7 +442,7 @@ mod argument {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "args": [{"name": "arg"}]},
@@ -468,11 +468,11 @@ mod argument {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
-                    {"args": [{"description": None}]},
-                    {"args": [{"description": None}, {"description": None}]},
+                    {"args": [{"description": null}]},
+                    {"args": [{"description": null}, {"description": null}]},
                 ]}}),
                 vec![],
             )),
@@ -494,11 +494,11 @@ mod argument {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
-                    {"args": [{"defaultValue": None}]},
-                    {"args": [{"defaultValue": None}, {"defaultValue": None}]},
+                    {"args": [{"defaultValue": null}]},
+                    {"args": [{"defaultValue": null}, {"defaultValue": null}]},
                 ]}}),
                 vec![],
             )),
@@ -552,7 +552,7 @@ mod default_argument {
             let expected: &str = *expected;
 
             assert_eq!(
-                resolve_into_stream(*input, None, &schema, &Variables::new(), &())
+                resolve_into_stream(*input, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((graphql_value!({ "id": expected }), vec![])),
@@ -571,7 +571,7 @@ mod default_argument {
             let expected: i32 = *expected;
 
             assert_eq!(
-                resolve_into_stream(*input, None, &schema, &Variables::new(), &())
+                resolve_into_stream(*input, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((graphql_value!({ "info": expected }), vec![])),
@@ -601,27 +601,27 @@ mod default_argument {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [{
                     "args": [{
                         "name": "arg1",
                         "defaultValue": "0",
-                        "type": {"name": "Int", "ofType": None},
+                        "type": {"name": "Int", "ofType": null},
                     }, {
                         "name": "arg2",
                         "defaultValue": r#""second""#,
-                        "type": {"name": "String", "ofType": None},
+                        "type": {"name": "String", "ofType": null},
                     }, {
                         "name": "arg3",
                         "defaultValue": "true",
-                        "type": {"name": "Boolean", "ofType": None},
+                        "type": {"name": "Boolean", "ofType": null},
                     }],
                 }, {
                     "args": [{
                         "name": "coord",
                         "defaultValue": "{x: 1}",
-                        "type": {"name": "Point", "ofType": None},
+                        "type": {"name": "Point", "ofType": null},
                     }],
                 }]}}),
                 vec![],
@@ -667,7 +667,7 @@ mod generic {
         );
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": 34}), vec![])),
@@ -689,7 +689,7 @@ mod generic {
         );
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -713,7 +713,7 @@ mod generic {
         );
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Human"}}), vec![])),
         );
     }
@@ -767,7 +767,7 @@ mod generic_lifetime {
         );
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": 34}), vec![])),
@@ -789,7 +789,7 @@ mod generic_lifetime {
         );
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"planet": "earth"}), vec![])),
@@ -811,7 +811,7 @@ mod generic_lifetime {
         );
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -833,7 +833,7 @@ mod generic_lifetime {
         );
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"planet": "mars"}), vec![])),
@@ -857,7 +857,7 @@ mod generic_lifetime {
         );
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Human"}}), vec![])),
         );
     }
@@ -892,7 +892,7 @@ mod description_from_doc_comment {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "description": "Rust docs.",
@@ -935,7 +935,7 @@ mod deprecation_from_attr {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -951,7 +951,7 @@ mod deprecation_from_attr {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"a": "a"}), vec![])),
@@ -967,7 +967,7 @@ mod deprecation_from_attr {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"b": "b"}), vec![])),
@@ -988,7 +988,7 @@ mod deprecation_from_attr {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "isDeprecated": false},
@@ -1014,11 +1014,11 @@ mod deprecation_from_attr {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
-                    {"name": "id", "deprecationReason": None},
-                    {"name": "a", "deprecationReason": None},
+                    {"name": "id", "deprecationReason": null},
+                    {"name": "a", "deprecationReason": null},
                     {"name": "b", "deprecationReason": "Use `id`."},
                 ]}}),
                 vec![],
@@ -1064,7 +1064,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"myId": "human-32"}), vec![])),
@@ -1080,7 +1080,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"a": "a"}), vec![])),
@@ -1096,7 +1096,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"b": "b"}), vec![])),
@@ -1120,7 +1120,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "name": "MyHuman",
@@ -1153,7 +1153,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "description": "My human.",
@@ -1163,11 +1163,11 @@ mod explicit_name_description_and_deprecation {
                         "args": [{"description": "My argument."}],
                     }, {
                         "name": "a",
-                        "description": None,
+                        "description": null,
                         "args": [],
                     }, {
                         "name": "b",
-                        "description": None,
+                        "description": null,
                         "args": [],
                     }],
                 }}),
@@ -1191,7 +1191,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "fields": [{
@@ -1201,11 +1201,11 @@ mod explicit_name_description_and_deprecation {
                     }, {
                         "name": "a",
                         "isDeprecated": true,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }, {
                         "name": "b",
                         "isDeprecated": false,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }],
                 }}),
                 vec![],
@@ -1243,7 +1243,7 @@ mod renamed_all_fields_and_args {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -1259,7 +1259,7 @@ mod renamed_all_fields_and_args {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"home_planet": "earth"}), vec![])),
@@ -1275,7 +1275,7 @@ mod renamed_all_fields_and_args {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"async_info": 3}), vec![])),
@@ -1298,7 +1298,7 @@ mod renamed_all_fields_and_args {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "args": []},
@@ -1336,7 +1336,7 @@ mod explicit_scalar {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -1352,7 +1352,7 @@ mod explicit_scalar {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
@@ -1387,7 +1387,7 @@ mod custom_scalar {
         let schema = schema_with_scalar::<MyScalarValue, _, _, _>(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -1403,7 +1403,7 @@ mod custom_scalar {
         let schema = schema_with_scalar::<MyScalarValue, _, _, _>(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
@@ -1438,7 +1438,7 @@ mod explicit_generic_scalar {
         let schema = schema(Query, Human::<DefaultScalarValue>(PhantomData));
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -1454,7 +1454,7 @@ mod explicit_generic_scalar {
         let schema = schema(Query, Human::<DefaultScalarValue>(PhantomData));
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
@@ -1489,7 +1489,7 @@ mod bounded_generic_scalar {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
@@ -1505,7 +1505,7 @@ mod bounded_generic_scalar {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
@@ -1558,7 +1558,7 @@ mod explicit_custom_context {
         let ctx = CustomContext("ctx!".into());
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &ctx)
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "ctx!"}), vec![])),
@@ -1575,7 +1575,7 @@ mod explicit_custom_context {
         let ctx = CustomContext("ctx!".into());
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &ctx)
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"info": "human being"}), vec![])),
@@ -1592,7 +1592,7 @@ mod explicit_custom_context {
         let ctx = CustomContext("ctx!".into());
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &ctx)
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"more": "ctx!"}), vec![])),
@@ -1645,7 +1645,7 @@ mod inferred_custom_context_from_field {
         let ctx = CustomContext("ctx!".into());
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &ctx)
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "ctx!"}), vec![])),
@@ -1662,7 +1662,7 @@ mod inferred_custom_context_from_field {
         let ctx = CustomContext("ctx!".into());
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &ctx)
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"info": "human being"}), vec![])),
@@ -1679,7 +1679,7 @@ mod inferred_custom_context_from_field {
         let ctx = CustomContext("ctx!".into());
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &ctx)
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"more": "ctx!"}), vec![])),
@@ -1731,7 +1731,7 @@ mod executor {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"id": "id"}), vec![])),
@@ -1747,7 +1747,7 @@ mod executor {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"info": "input!"}), vec![])),
@@ -1763,7 +1763,7 @@ mod executor {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+            resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
                 .then(|s| extract_next(s))
                 .await,
             Ok((graphql_value!({"info2": "no info"}), vec![])),
@@ -1786,7 +1786,7 @@ mod executor {
         let schema = schema(Query, Human);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "args": []},

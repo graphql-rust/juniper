@@ -2,8 +2,8 @@
 //! See [#798](https://github.com/graphql-rust/juniper/issues/798) for details.
 
 use juniper::{
-    graphql_interface, graphql_object, graphql_value, EmptyMutation, EmptySubscription,
-    GraphQLObject, GraphQLUnion, RootNode, Variables,
+    graphql_interface, graphql_object, graphql_value, graphql_vars, EmptyMutation,
+    EmptySubscription, GraphQLObject, GraphQLUnion, RootNode,
 };
 
 #[graphql_interface(for = [Human, Droid])]
@@ -89,7 +89,7 @@ async fn interface_inline_fragment_on_union() {
     "#;
 
     let schema = Schema::new(Query::Human, EmptyMutation::new(), EmptySubscription::new());
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+    let (res, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
 
@@ -107,7 +107,7 @@ async fn interface_inline_fragment_on_union() {
 
     let schema = Schema::new(Query::Droid, EmptyMutation::new(), EmptySubscription::new());
     let (res, errors) =
-        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
+        juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()).unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
@@ -144,7 +144,7 @@ async fn interface_fragment_on_union() {
     "#;
 
     let schema = Schema::new(Query::Human, EmptyMutation::new(), EmptySubscription::new());
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+    let (res, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
 
@@ -162,7 +162,7 @@ async fn interface_fragment_on_union() {
 
     let schema = Schema::new(Query::Droid, EmptyMutation::new(), EmptySubscription::new());
     let (res, errors) =
-        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
+        juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()).unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
