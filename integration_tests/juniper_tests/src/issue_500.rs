@@ -1,7 +1,9 @@
 //! Checks that using nested fragments works okay.
 //! See [#500](https://github.com/graphql-rust/juniper/issues/500) for details.
 
-use juniper::{graphql_object, EmptyMutation, EmptySubscription, Executor, ScalarValue, Variables};
+use juniper::{
+    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, Executor, ScalarValue,
+};
 
 struct Query;
 
@@ -82,7 +84,7 @@ async fn nested_fragments() {
     "#;
 
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
-    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+    let (_, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
 

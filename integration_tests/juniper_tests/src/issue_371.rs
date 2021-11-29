@@ -5,8 +5,8 @@
 //! Original author of this test is [@davidpdrsn](https://github.com/davidpdrsn).
 
 use juniper::{
-    graphql_object, EmptyMutation, EmptySubscription, Executor, LookAheadMethods as _, RootNode,
-    ScalarValue, Variables,
+    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, Executor,
+    LookAheadMethods as _, RootNode, ScalarValue,
 };
 
 pub struct Context;
@@ -57,7 +57,7 @@ async fn users() {
     let query = "{ users { id } }";
 
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
-    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+    let (_, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &Context)
         .await
         .unwrap();
 
@@ -69,7 +69,7 @@ async fn countries() {
     let query = "{ countries { id } }";
 
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
-    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+    let (_, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &Context)
         .await
         .unwrap();
 
@@ -84,7 +84,7 @@ async fn both() {
     }";
 
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
-    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+    let (_, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &Context)
         .await
         .unwrap();
 
@@ -99,7 +99,7 @@ async fn both_in_different_order() {
     }";
 
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
-    let (_, errors) = juniper::execute(query, None, &schema, &Variables::new(), &Context)
+    let (_, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &Context)
         .await
         .unwrap();
 

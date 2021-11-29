@@ -1,6 +1,6 @@
 use fnv::FnvHashMap;
 use juniper::{
-    DefaultScalarValue, FromInputValue, GraphQLEnum, GraphQLType, InputValue, Registry,
+    graphql_input_value, DefaultScalarValue, FromInputValue, GraphQLEnum, GraphQLType, Registry,
     ToInputValue,
 };
 
@@ -74,26 +74,26 @@ fn test_derived_enum() {
     // Test no rename variant.
     assert_eq!(
         <_ as ToInputValue>::to_input_value(&NoRenameEnum::AnotherVariant),
-        InputValue::scalar("AnotherVariant")
+        graphql_input_value!("AnotherVariant"),
     );
 
     // Test Regular variant.
     assert_eq!(
         <_ as ToInputValue>::to_input_value(&SomeEnum::Regular),
-        InputValue::scalar("REGULAR")
+        graphql_input_value!("REGULAR"),
     );
     assert_eq!(
-        FromInputValue::<DefaultScalarValue>::from_input_value(&InputValue::scalar("REGULAR")),
-        Some(SomeEnum::Regular)
+        FromInputValue::<DefaultScalarValue>::from_input_value(&graphql_input_value!(REGULAR)),
+        Some(SomeEnum::Regular),
     );
 
     // Test FULL variant.
     assert_eq!(
         <_ as ToInputValue>::to_input_value(&SomeEnum::Full),
-        InputValue::scalar("FULL")
+        graphql_input_value!("FULL"),
     );
     assert_eq!(
-        FromInputValue::<DefaultScalarValue>::from_input_value(&InputValue::scalar("FULL")),
+        FromInputValue::<DefaultScalarValue>::from_input_value(&graphql_input_value!(FULL)),
         Some(SomeEnum::Full)
     );
 }

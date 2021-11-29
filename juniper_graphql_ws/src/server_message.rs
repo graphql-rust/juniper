@@ -159,7 +159,7 @@ mod test {
             serde_json::to_string(&ServerMessage::Data {
                 id: "foo".to_string(),
                 payload: DataPayload {
-                    data: graphql_value!(None),
+                    data: graphql_value!(null),
                     errors: vec![],
                 },
             })

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    executor::Variables,
+    graphql_vars,
     introspection::IntrospectionFormat,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
@@ -28,7 +28,7 @@ async fn test_introspection_query_type_name() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
         Ok((
             graphql_value!({
                 "__schema": {
@@ -59,7 +59,7 @@ async fn test_introspection_type_name() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -89,7 +89,7 @@ async fn test_introspection_specific_object_type_name_and_kind() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -120,7 +120,7 @@ async fn test_introspection_specific_interface_type_name_and_kind() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -151,7 +151,7 @@ async fn test_introspection_documentation() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
+        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -184,7 +184,7 @@ async fn test_introspection_directives() {
         EmptySubscription::<Database>::new(),
     );
 
-    let mut result = crate::execute(q, None, &schema, &Variables::new(), &database)
+    let mut result = crate::execute(q, None, &schema, &graphql_vars! {}, &database)
         .await
         .unwrap();
     sort_schema_value(&mut result.0);
@@ -234,7 +234,7 @@ async fn test_introspection_possible_types() {
         EmptySubscription::<Database>::new(),
     );
 
-    let result = crate::execute(doc, None, &schema, &Variables::new(), &database).await;
+    let result = crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await;
 
     let (result, errors) = result.ok().expect("Query returned error");
 
