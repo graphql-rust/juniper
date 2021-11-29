@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
-    executor::{ExecutionResult, Executor, Registry},
+    executor::{ExecutionResult, Executor, FieldError, IntoFieldError, Registry},
     schema::meta::MetaType,
     types::{
         async_await::GraphQLValueAsync,
@@ -305,12 +305,63 @@ where
     }
 }
 
+/// Error converting [`InputValue`] into exact-size [`array`](prim@array).
+pub enum FromInputValueArrayError<T, S>
+where
+    T: FromInputValue<S>,
+    S: ScalarValue,
+{
+    /// Not enough elements.
+    NotEnough(usize),
+
+    /// Too many elements. Value is [`Vec`] of __all__ [`InputValue`] elements.
+    TooMuch(Vec<S>),
+
+    /// Underlying [`ScalarValue`] conversion error.
+    Scalar(T::Error),
+}
+
+impl<T, S> From<T::Error> for FromInputValueArrayError<T, S>
+where
+    T: FromInputValue<S>,
+    S: ScalarValue,
+{
+    fn from(err: T::Error) -> Self {
+        Self::Scalar(err)
+    }
+}
+
+impl<T, S> IntoFieldError for FromInputValueArrayError<T, S>
+where
+    T: FromInputValue<S>,
+    T::Error: IntoFieldError,
+    S: ScalarValue,
+{
+    fn into_field_error(self) -> FieldError<S> {
+        const ERROR_PREFIX: &str = "Failed to convert into exact-size array";
+
+        match self {
+            Self::NotEnough(len) => FieldError::new(
+                format!("{}: required {} more elements", ERROR_PREFIX, len),
+                graphql_value!(null),
+            ),
+            Self::TooMuch(el) => FieldError::new(
+                format!("{}: too much elements: {}", ERROR_PREFIX, el.len()),
+                graphql_value!(null),
+            ),
+            Self::Scalar(s) => s.into_field_error(),
+        }
+    }
+}
+
 impl<T, S, const N: usize> FromInputValue<S> for [T; N]
 where
     T: FromInputValue<S>,
     S: ScalarValue,
 {
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
+    type Error = FromInputValueArrayError<T, S>;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         struct PartiallyInitializedArray<T, const N: usize> {
             arr: [MaybeUninit<T>; N],
             init_len: usize,
@@ -355,19 +406,14 @@ where
                     no_drop: false,
                 };
 
-                let mut items = ls.iter().filter_map(|i| i.item.convert());
-                for elem in &mut out.arr[..] {
-                    if let Some(i) = items.next() {
+                let mut items = ls.iter().map(|i| i.item.convert());
+                for (id, elem) in out.arr.iter_mut().enumerate() {
+                    if let Some(i) = items.next().transpose()? {
                         *elem = MaybeUninit::new(i);
                         out.init_len += 1;
                     } else {
-                        // There is not enough `items` to fill the array.
-                        return None;
+                        return Err(FromInputValueArrayError::NotEnough(N - id));
                     }
-                }
-                if items.next().is_some() {
-                    // There is too much `items` to fit into the array.
-                    return None;
                 }
 
                 // Do not drop collected `items`, because we're going to return
@@ -383,10 +429,18 @@ where
                 //         we won't have a double-free when `T: Drop` here,
                 //         because original array elements are `MaybeUninit`, so
                 //         do nothing on `Drop`.
-                Some(unsafe { mem::transmute_copy::<_, Self>(&out.arr) })
+                let arr = unsafe { mem::transmute_copy::<_, Self>(&out.arr) };
+
+                if !items.is_empty() {
+                    return Err(FromInputValueArrayError::TooMuch(
+                        arr.into_iter().map(Ok).chain(items).collect()?,
+                    ));
+                }
+
+                Ok(arr)
             }
             ref other => {
-                other.convert().and_then(|e: T| {
+                other.convert().map_err(Into::into).and_then(|e: T| {
                     // TODO: Use `mem::transmute` instead of
                     //       `mem::transmute_copy` below, once it's allowed for
                     //       const generics:
@@ -399,11 +453,11 @@ where
                         //         `T: Drop` here, because original `e: T` value
                         //         is wrapped into `mem::ManuallyDrop`, so does
                         //         nothing on `Drop`.
-                        Some(unsafe {
-                            mem::transmute_copy::<_, Self>(&[mem::ManuallyDrop::new(e)])
-                        })
+                        Ok(unsafe { mem::transmute_copy::<_, Self>(&[mem::ManuallyDrop::new(e)]) })
+                    } else if N == 0 {
+                        Err(FromInputValueArrayError::TooMuch(vec![e]))
                     } else {
-                        None
+                        Err(FromInputValueArrayError::NotEnough(N - 1))
                     }
                 })
             }
