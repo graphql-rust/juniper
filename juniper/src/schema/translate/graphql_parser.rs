@@ -190,7 +190,7 @@ impl GraphQLParserTranslator {
                 position: Pos::default(),
                 description: x.description.as_ref().map(|s| From::from(s.as_str())),
                 name: From::from(x.name.as_ref()),
-                // TODO: Support this with GraphQL October 2021 Edition
+                // TODO: Support this with GraphQL October 2021 Edition.
                 implements_interfaces: vec![],
                 directives: vec![],
                 fields: x
