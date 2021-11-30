@@ -42,7 +42,7 @@ chrono-tz = { version = "0.6", default-features = false, optional = true }
 fnv = "1.0.3"
 futures = { version = "0.3.1", features = ["alloc"], default-features = false }
 futures-enum = { version = "0.1.12", default-features = false }
-graphql-parser = { version = "0.3", optional = true }
+graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
