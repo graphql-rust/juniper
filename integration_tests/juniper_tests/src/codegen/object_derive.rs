@@ -1,8 +1,8 @@
 //! Tests for `#[derive(GraphQLObject)]` macro.
 
 use juniper::{
-    execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
-    GraphQLObject, GraphQLType, RootNode, ScalarValue, Variables,
+    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, EmptyMutation,
+    EmptySubscription, GraphQLObject, GraphQLType, RootNode, ScalarValue,
 };
 
 fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -58,7 +58,7 @@ mod trivial {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -74,7 +74,7 @@ mod trivial {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"kind": "OBJECT"}}), vec![])),
         );
     }
@@ -90,7 +90,7 @@ mod trivial {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Human"}}), vec![])),
         );
     }
@@ -106,8 +106,8 @@ mod trivial {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
-            Ok((graphql_value!({"__type": {"description": None}}), vec![])),
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
 }
@@ -142,7 +142,7 @@ mod raw_field {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"async": "human-32"}}), vec![])),
         );
     }
@@ -162,7 +162,7 @@ mod raw_field {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "name": "Human",
@@ -209,7 +209,7 @@ mod ignored_field {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -227,7 +227,7 @@ mod ignored_field {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [{"name": "id"}]}}),
                 vec![],
@@ -269,7 +269,7 @@ mod generic {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -285,7 +285,7 @@ mod generic {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Human"}}), vec![])),
         );
     }
@@ -324,7 +324,7 @@ mod generic_lifetime {
         let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "mars"}}), vec![])),
         );
     }
@@ -340,7 +340,7 @@ mod generic_lifetime {
         let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Human"}}), vec![])),
         );
     }
@@ -391,7 +391,7 @@ mod nested_generic_lifetime_async {
         let schema = schema(QueryRoot("mars".into()));
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"human": {
                     "id": 32,
@@ -420,7 +420,7 @@ mod nested_generic_lifetime_async {
 
             let expected_name: &str = *object;
             assert_eq!(
-                execute(&doc, None, &schema, &Variables::new(), &()).await,
+                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"__type": {"name": expected_name}}), vec![])),
             );
         }
@@ -464,7 +464,7 @@ mod description_from_doc_comment {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "description": "Rust docs. Here.",
@@ -513,7 +513,7 @@ mod deprecation_from_attr {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -530,7 +530,7 @@ mod deprecation_from_attr {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"a": "a", "b": "b"}}), vec![])),
         );
     }
@@ -549,7 +549,7 @@ mod deprecation_from_attr {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "isDeprecated": false},
@@ -575,11 +575,11 @@ mod deprecation_from_attr {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
-                    {"name": "id", "deprecationReason": None},
-                    {"name": "a", "deprecationReason": None},
+                    {"name": "id", "deprecationReason": null},
+                    {"name": "a", "deprecationReason": null},
                     {"name": "b", "deprecationReason": "Use `id`."},
                 ]}}),
                 vec![],
@@ -632,7 +632,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"human": {"myId": "human-32", "a": "a", "b": "b"}}),
                 vec![],
@@ -654,7 +654,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "name": "MyHuman",
@@ -684,7 +684,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "description": "My human.",
@@ -693,10 +693,10 @@ mod explicit_name_description_and_deprecation {
                         "description": "My human ID.",
                     }, {
                         "name": "a",
-                        "description": None,
+                        "description": null,
                     }, {
                         "name": "b",
-                        "description": None,
+                        "description": null,
                     }],
                 }}),
                 vec![],
@@ -719,7 +719,7 @@ mod explicit_name_description_and_deprecation {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "fields": [{
@@ -729,11 +729,11 @@ mod explicit_name_description_and_deprecation {
                     }, {
                         "name": "a",
                         "isDeprecated": true,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }, {
                         "name": "b",
                         "isDeprecated": false,
-                        "deprecationReason": None,
+                        "deprecationReason": null,
                     }],
                 }}),
                 vec![],
@@ -779,7 +779,7 @@ mod renamed_all_fields {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"human": {
                     "id": "human-32",
@@ -804,7 +804,7 @@ mod renamed_all_fields {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id"},
@@ -846,7 +846,7 @@ mod explicit_scalar {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -883,7 +883,7 @@ mod custom_scalar {
         let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -925,7 +925,7 @@ mod explicit_generic_scalar {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -960,7 +960,7 @@ mod bounded_generic_scalar {
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"human": {"id": "human-32"}}), vec![])),
         );
     }
@@ -1000,7 +1000,7 @@ mod explicit_custom_context {
         let ctx = CustomContext("ctx!".into());
 
         assert_eq!(
-            execute(DOC, None, &schema, &Variables::new(), &ctx).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &ctx).await,
             Ok((graphql_value!({"human": {"id": "ctx!"}}), vec![])),
         );
     }

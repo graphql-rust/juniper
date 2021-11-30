@@ -261,10 +261,10 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn with_error() {
         let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![ExecutionOutput {
-            data: graphql_value!(None),
+            data: graphql_value!(null),
             errors: vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
-                graphql_value!(None),
+                graphql_value!(null),
             ))],
         }];
         let expected = serde_json::to_string(&expected).unwrap();
@@ -273,7 +273,7 @@ mod whole_responses_stream {
             Value::Null,
             vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
-                graphql_value!(None),
+                graphql_value!(null),
             ))],
         )
         .collect::<Vec<_>>()
@@ -286,7 +286,7 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn value_null() {
         let expected: Vec<ExecutionOutput<DefaultScalarValue>> =
-            vec![ExecutionOutput::from_data(graphql_value!(None))];
+            vec![ExecutionOutput::from_data(graphql_value!(null))];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![])
@@ -333,7 +333,7 @@ mod whole_responses_stream {
         let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![
             ExecutionOutput::from_data(graphql_value!(1)),
             ExecutionOutput::from_data(graphql_value!(2)),
-            ExecutionOutput::from_data(graphql_value!(None)),
+            ExecutionOutput::from_data(graphql_value!(null)),
             ExecutionOutput::from_data(graphql_value!(4)),
         ];
         let expected = serde_json::to_string(&expected).unwrap();

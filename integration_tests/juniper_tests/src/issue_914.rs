@@ -1,7 +1,7 @@
 //! Checks that multiple fragments on sub types don't override each other.
 //! See [#914](https://github.com/graphql-rust/juniper/issues/914) for details.
 
-use juniper::{graphql_object, EmptyMutation, EmptySubscription, GraphQLObject, Variables};
+use juniper::{graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLObject};
 
 struct Query;
 
@@ -77,13 +77,13 @@ async fn fragments_with_nested_objects_dont_override_previous_selections() {
 
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
-    let (async_value, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+    let (async_value, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
     assert_eq!(errors.len(), 0);
 
     let (sync_value, errors) =
-        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
+        juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()).unwrap();
     assert_eq!(errors.len(), 0);
 
     assert_eq!(async_value, sync_value);

@@ -34,7 +34,7 @@ pub enum Type<'a> {
 ///
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
@@ -204,12 +204,12 @@ impl<'a> Type<'a> {
 }
 
 impl<'a> fmt::Display for Type<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Type::Named(ref n) => write!(f, "{}", n),
-            Type::NonNullNamed(ref n) => write!(f, "{}!", n),
-            Type::List(ref t, _) => write!(f, "[{}]", t),
-            Type::NonNullList(ref t, _) => write!(f, "[{}]!", t),
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Named(n) => write!(f, "{}", n),
+            Self::NonNullNamed(n) => write!(f, "{}!", n),
+            Self::List(t, _) => write!(f, "[{}]", t),
+            Self::NonNullList(t, _) => write!(f, "[{}]!", t),
         }
     }
 }
@@ -298,7 +298,7 @@ impl<S> InputValue<S> {
         }
     }
 
-    /// Shorthand form of invoking [`FromInputValue::from()`].
+    /// Shorthand form of invoking [`FromInputValue::from_input_value()`].
     pub fn convert<T>(&self) -> Option<T>
     where
         T: FromInputValue<S>,
@@ -435,7 +435,7 @@ impl<S> InputValue<S> {
 }
 
 impl<S: ScalarValue> fmt::Display for InputValue<S> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
             Self::Scalar(s) => {
@@ -449,30 +449,74 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
             Self::Variable(v) => write!(f, "${}", v),
             Self::List(v) => {
                 write!(f, "[")?;
-
                 for (i, spanning) in v.iter().enumerate() {
                     spanning.item.fmt(f)?;
                     if i < v.len() - 1 {
                         write!(f, ", ")?;
                     }
                 }
-
                 write!(f, "]")
             }
             Self::Object(o) => {
                 write!(f, "{{")?;
-
-                for (i, &(ref k, ref v)) in o.iter().enumerate() {
+                for (i, (k, v)) in o.iter().enumerate() {
                     write!(f, "{}: ", k.item)?;
                     v.item.fmt(f)?;
                     if i < o.len() - 1 {
                         write!(f, ", ")?;
                     }
                 }
-
                 write!(f, "}}")
             }
         }
+    }
+}
+
+impl<S, T> From<Option<T>> for InputValue<S>
+where
+    Self: From<T>,
+{
+    fn from(v: Option<T>) -> Self {
+        match v {
+            Some(v) => v.into(),
+            None => Self::Null,
+        }
+    }
+}
+
+impl<'a, S: From<String>> From<&'a str> for InputValue<S> {
+    fn from(s: &'a str) -> Self {
+        Self::scalar(s.to_owned())
+    }
+}
+
+impl<'a, S: From<String>> From<Cow<'a, str>> for InputValue<S> {
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::scalar(s.into_owned())
+    }
+}
+
+impl<S: From<String>> From<String> for InputValue<S> {
+    fn from(s: String) -> Self {
+        Self::scalar(s)
+    }
+}
+
+impl<S: From<i32>> From<i32> for InputValue<S> {
+    fn from(i: i32) -> Self {
+        Self::scalar(i)
+    }
+}
+
+impl<S: From<f64>> From<f64> for InputValue<S> {
+    fn from(f: f64) -> Self {
+        Self::scalar(f)
+    }
+}
+
+impl<S: From<bool>> From<bool> for InputValue<S> {
+    fn from(b: bool) -> Self {
+        Self::scalar(b)
     }
 }
 
@@ -510,47 +554,37 @@ impl<'a, S> VariableDefinitions<'a, S> {
 
 #[cfg(test)]
 mod tests {
+    use crate::graphql_input_value;
+
     use super::InputValue;
-    use crate::parser::Spanning;
 
     #[test]
     fn test_input_value_fmt() {
-        let value: InputValue = InputValue::null();
+        let value: InputValue = graphql_input_value!(null);
         assert_eq!(format!("{}", value), "null");
 
-        let value: InputValue = InputValue::scalar(123);
+        let value: InputValue = graphql_input_value!(123);
         assert_eq!(format!("{}", value), "123");
 
-        let value: InputValue = InputValue::scalar(12.3);
+        let value: InputValue = graphql_input_value!(12.3);
         assert_eq!(format!("{}", value), "12.3");
 
-        let value: InputValue = InputValue::scalar("FOO".to_owned());
+        let value: InputValue = graphql_input_value!("FOO");
         assert_eq!(format!("{}", value), "\"FOO\"");
 
-        let value: InputValue = InputValue::scalar(true);
+        let value: InputValue = graphql_input_value!(true);
         assert_eq!(format!("{}", value), "true");
 
-        let value: InputValue = InputValue::enum_value("BAR".to_owned());
+        let value: InputValue = graphql_input_value!(BAR);
         assert_eq!(format!("{}", value), "BAR");
 
-        let value: InputValue = InputValue::variable("baz".to_owned());
+        let value: InputValue = graphql_input_value!(@baz);
         assert_eq!(format!("{}", value), "$baz");
 
-        let list = vec![InputValue::scalar(1), InputValue::scalar(2)];
-        let value: InputValue = InputValue::list(list);
+        let value: InputValue = graphql_input_value!([1, 2]);
         assert_eq!(format!("{}", value), "[1, 2]");
 
-        let object = vec![
-            (
-                Spanning::unlocated("foo".to_owned()),
-                Spanning::unlocated(InputValue::scalar(1)),
-            ),
-            (
-                Spanning::unlocated("bar".to_owned()),
-                Spanning::unlocated(InputValue::scalar(2)),
-            ),
-        ];
-        let value: InputValue = InputValue::parsed_object(object);
+        let value: InputValue = graphql_input_value!({"foo": 1,"bar": 2});
         assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
     }
 }

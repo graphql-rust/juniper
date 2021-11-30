@@ -1,11 +1,7 @@
 mod object;
 mod scalar;
 
-use std::{
-    any::TypeId,
-    fmt::{self, Display, Formatter},
-    mem,
-};
+use std::{any::TypeId, borrow::Cow, fmt, mem};
 
 use crate::{
     ast::{InputValue, ToInputValue},
@@ -194,8 +190,8 @@ impl<S: Clone> ToInputValue<S> for Value<S> {
     }
 }
 
-impl<S: ScalarValue> Display for Value<S> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+impl<S: ScalarValue> fmt::Display for Value<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
             Self::Scalar(s) => {
@@ -252,6 +248,12 @@ impl<'a, S: From<String>> From<&'a str> for Value<S> {
     }
 }
 
+impl<'a, S: From<String>> From<Cow<'a, str>> for Value<S> {
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::scalar(s.into_owned())
+    }
+}
+
 impl<S: From<String>> From<String> for Value<S> {
     fn from(s: String) -> Self {
         Self::scalar(s)
@@ -276,173 +278,68 @@ impl<S: From<bool>> From<bool> for Value<S> {
     }
 }
 
-/// Construct JSON-like values by using JSON syntax
-///
-/// This macro can be used to create `Value` instances using a JSON syntax.
-/// Value objects are used mostly when creating custom errors from fields.
-///
-/// Here are some examples; the resulting JSON will look just like what you
-/// passed in.
-/// ```rust
-/// # use juniper::{Value, DefaultScalarValue, graphql_value};
-/// # type V = Value<DefaultScalarValue>;
-/// #
-/// # fn main() {
-/// # let _: V =
-/// graphql_value!(None);
-/// # let _: V =
-/// graphql_value!(1234);
-/// # let _: V =
-/// graphql_value!("test");
-/// # let _: V =
-/// graphql_value!([ 1234, "test", true ]);
-/// # let _: V =
-/// graphql_value!({ "key": "value", "foo": 1234 });
-/// # }
-/// ```
-#[macro_export]
-macro_rules! graphql_value {
-    ([ $($arg:tt),* $(,)* ]) => {
-        $crate::Value::list(vec![
-            $( graphql_value!($arg), )*
-        ])
-    };
-    ({ $($key:tt : $val:tt ),* $(,)* }) => {
-        $crate::Value::object(vec![
-            $( ($key, graphql_value!($val)), )*
-        ].into_iter().collect())
-    };
-    (None) => ($crate::Value::null());
-    ($e:expr) => ($crate::Value::from($e))
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::graphql_value;
 
-    #[test]
-    fn value_macro_string() {
-        let s: Value<DefaultScalarValue> = graphql_value!("test");
-        assert_eq!(s, Value::scalar("test"));
-    }
-
-    #[test]
-    fn value_macro_int() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123);
-        assert_eq!(s, Value::scalar(123));
-    }
-
-    #[test]
-    fn value_macro_float() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123.5);
-        assert_eq!(s, Value::scalar(123.5));
-    }
-
-    #[test]
-    fn value_macro_boolean() {
-        let s: Value<DefaultScalarValue> = graphql_value!(false);
-        assert_eq!(s, Value::scalar(false));
-    }
-
-    #[test]
-    fn value_macro_option() {
-        let s: Value<DefaultScalarValue> = graphql_value!(Some("test"));
-        assert_eq!(s, Value::scalar("test"));
-        let s: Value<DefaultScalarValue> = graphql_value!(None);
-        assert_eq!(s, Value::null());
-    }
-
-    #[test]
-    fn value_macro_list() {
-        let s: Value<DefaultScalarValue> = graphql_value!([123, "Test", false]);
-        assert_eq!(
-            s,
-            Value::list(vec![
-                Value::scalar(123),
-                Value::scalar("Test"),
-                Value::scalar(false),
-            ])
-        );
-        let s: Value<DefaultScalarValue> = graphql_value!([123, [456], 789]);
-        assert_eq!(
-            s,
-            Value::list(vec![
-                Value::scalar(123),
-                Value::list(vec![Value::scalar(456)]),
-                Value::scalar(789),
-            ])
-        );
-    }
-
-    #[test]
-    fn value_macro_object() {
-        let s: Value<DefaultScalarValue> = graphql_value!({ "key": 123, "next": true });
-        assert_eq!(
-            s,
-            Value::object(
-                vec![("key", Value::scalar(123)), ("next", Value::scalar(true))]
-                    .into_iter()
-                    .collect(),
-            )
-        );
-    }
+    use super::Value;
 
     #[test]
     fn display_null() {
-        let s: Value<DefaultScalarValue> = graphql_value!(None);
+        let s: Value = graphql_value!(null);
         assert_eq!("null", format!("{}", s));
     }
 
     #[test]
     fn display_int() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123);
+        let s: Value = graphql_value!(123);
         assert_eq!("123", format!("{}", s));
     }
 
     #[test]
     fn display_float() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123.456);
+        let s: Value = graphql_value!(123.456);
         assert_eq!("123.456", format!("{}", s));
     }
 
     #[test]
     fn display_string() {
-        let s: Value<DefaultScalarValue> = graphql_value!("foo");
+        let s: Value = graphql_value!("foo");
         assert_eq!("\"foo\"", format!("{}", s));
     }
 
     #[test]
     fn display_bool() {
-        let s: Value<DefaultScalarValue> = graphql_value!(false);
+        let s: Value = graphql_value!(false);
         assert_eq!("false", format!("{}", s));
 
-        let s: Value<DefaultScalarValue> = graphql_value!(true);
+        let s: Value = graphql_value!(true);
         assert_eq!("true", format!("{}", s));
     }
 
     #[test]
     fn display_list() {
-        let s: Value<DefaultScalarValue> = graphql_value!([1, None, "foo"]);
+        let s: Value = graphql_value!([1, null, "foo"]);
         assert_eq!("[1, null, \"foo\"]", format!("{}", s));
     }
 
     #[test]
     fn display_list_one_element() {
-        let s: Value<DefaultScalarValue> = graphql_value!([1]);
+        let s: Value = graphql_value!([1]);
         assert_eq!("[1]", format!("{}", s));
     }
 
     #[test]
     fn display_list_empty() {
-        let s: Value<DefaultScalarValue> = graphql_value!([]);
+        let s: Value = graphql_value!([]);
         assert_eq!("[]", format!("{}", s));
     }
 
     #[test]
     fn display_object() {
-        let s: Value<DefaultScalarValue> = graphql_value!({
+        let s: Value = graphql_value!({
             "int": 1,
-            "null": None,
+            "null": null,
             "string": "foo",
         });
         assert_eq!(
@@ -453,7 +350,7 @@ mod tests {
 
     #[test]
     fn display_object_one_field() {
-        let s: Value<DefaultScalarValue> = graphql_value!({
+        let s: Value = graphql_value!({
             "int": 1,
         });
         assert_eq!(r#"{"int": 1}"#, format!("{}", s));
@@ -461,7 +358,7 @@ mod tests {
 
     #[test]
     fn display_object_empty() {
-        let s = Value::<DefaultScalarValue>::object(Object::with_capacity(0));
+        let s: Value = graphql_value!({});
         assert_eq!(r#"{}"#, format!("{}", s));
     }
 }

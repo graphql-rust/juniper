@@ -90,6 +90,8 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [bson]: https://crates.io/crates/bson
 
 */
+// Due to `schema_introspection` test.
+#![cfg_attr(test, recursion_limit = "256")]
 #![doc(html_root_url = "https://docs.rs/juniper/0.15.7")]
 #![warn(missing_docs)]
 
@@ -115,8 +117,6 @@ pub use juniper_codegen::{
 };
 
 #[macro_use]
-mod value;
-#[macro_use]
 mod macros;
 mod ast;
 pub mod executor;
@@ -126,6 +126,7 @@ pub(crate) mod schema;
 mod types;
 mod util;
 pub mod validation;
+mod value;
 // This needs to be public until docs have support for private modules:
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod http;

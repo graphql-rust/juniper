@@ -2,8 +2,8 @@
 //! See [#922](https://github.com/graphql-rust/juniper/issues/922) for details.
 
 use juniper::{
-    graphql_interface, graphql_object, graphql_value, EmptyMutation, EmptySubscription,
-    GraphQLObject, Variables,
+    graphql_interface, graphql_object, graphql_value, graphql_vars, EmptyMutation,
+    EmptySubscription, GraphQLObject,
 };
 
 struct Query;
@@ -93,7 +93,7 @@ async fn fragment_on_interface() {
 
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
-    let (res, errors) = juniper::execute(query, None, &schema, &Variables::new(), &())
+    let (res, errors) = juniper::execute(query, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
 
@@ -109,7 +109,7 @@ async fn fragment_on_interface() {
     );
 
     let (res, errors) =
-        juniper::execute_sync(query, None, &schema, &Variables::new(), &()).unwrap();
+        juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()).unwrap();
 
     assert_eq!(errors.len(), 0);
     assert_eq!(
