@@ -10,7 +10,7 @@ use crate::{
     parser::{ParseError, ScalarToken},
     schema::model::SchemaType,
     types::base::TypeKind,
-    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
+    value::{DefaultScalarValue, ParseScalarValue},
 };
 
 /// Whether an item is deprecated, with context.
@@ -467,7 +467,10 @@ impl<'a> NullableMeta<'a> {
 
 impl<'a, S> ObjectMeta<'a, S> {
     /// Build a new [`ObjectMeta`] type with the specified `name` and `fields`.
-    pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self {
+    pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self
+    where
+        S: Clone,
+    {
         Self {
             name,
             description: None,
@@ -533,11 +536,14 @@ impl<'a, S> EnumMeta<'a, S> {
 impl<'a, S> InterfaceMeta<'a, S> {
     /// Builds a new [`InterfaceMeta`] type with the specified `name` and
     /// `fields`.
-    pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self {
+    pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self
+    where
+        S: Clone,
+    {
         Self {
             name,
             description: None,
-            fields: fields.to_owned(),
+            fields: fields.to_vec(),
         }
     }
 
@@ -589,11 +595,12 @@ impl<'a, S> InputObjectMeta<'a, S> {
     pub fn new<T>(name: Cow<'a, str>, input_fields: &[Argument<'a, S>]) -> Self
     where
         T: FromInputValue<S>,
+        S: Clone,
     {
         Self {
             name,
             description: None,
-            input_fields: input_fields.to_owned(),
+            input_fields: input_fields.to_vec(),
             try_parse_fn: try_parse_fn::<S, T>,
         }
     }

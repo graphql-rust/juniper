@@ -100,7 +100,7 @@ impl Definition<Subscription> {
             .fields
             .iter()
             .map(|f| f.method_resolve_field_into_stream_tokens(scalar));
-        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
+        let no_field_err = field::Definition::method_resolve_field_err_no_field_tokens(scalar);
 
         quote! {
             #[allow(deprecated)]
@@ -130,7 +130,7 @@ impl Definition<Subscription> {
                 {
                     match field {
                         #( #fields_resolvers )*
-                        _ => #no_field_panic,
+                        _ => Box::pin(async move { #no_field_err }),
                     }
                 }
             }

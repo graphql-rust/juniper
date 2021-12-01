@@ -1,8 +1,5 @@
 use crate::{
-    ast::{
-        Arguments, Definition, Field, InputValue, Operation, OperationType, OwnedDocument,
-        Selection,
-    },
+    ast::{Arguments, Definition, Field, Operation, OperationType, OwnedDocument, Selection},
     graphql_input_value,
     parser::{document::parse_document_source, ParseError, SourcePosition, Spanning, Token},
     schema::model::SchemaType,

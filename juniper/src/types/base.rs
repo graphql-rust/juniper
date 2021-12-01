@@ -6,7 +6,7 @@ use crate::{
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
-    GraphQLEnum, IntoFieldError, FieldResult
+    FieldResult, GraphQLEnum, IntoFieldError,
 };
 
 /// GraphQL type kind
@@ -78,7 +78,10 @@ impl<'a, S> Arguments<'a, S> {
     pub fn new(
         mut args: Option<IndexMap<&'a str, InputValue<S>>>,
         meta_args: &'a Option<Vec<Argument<S>>>,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Clone,
+    {
         if meta_args.is_some() && args.is_none() {
             args = Some(IndexMap::new());
         }
@@ -87,7 +90,7 @@ impl<'a, S> Arguments<'a, S> {
             for arg in meta_args {
                 let arg_name = arg.name.as_str();
                 if args.get(arg_name).map_or(true, InputValue::is_null) {
-                    if let Some(val) = &arg.default_value {
+                    if let Some(val) = arg.default_value.as_ref() {
                         args.insert(arg_name, val.clone());
                     }
                 }

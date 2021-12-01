@@ -6,8 +6,8 @@ use juniper::{
     graphql_vars,
     parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
-    EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
-    RootNode, ScalarValue, Value, Variables,
+    EmptyMutation, FieldError, FieldResult, GraphQLScalarValue, InputValue, Object,
+    ParseScalarResult, RootNode, ScalarValue, Value, Variables,
 };
 
 #[derive(GraphQLScalarValue, Clone, Debug, PartialEq, Serialize)]
@@ -138,11 +138,11 @@ impl GraphQLScalar for i64 {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<i64> {
-        match *v {
-            InputValue::Scalar(MyScalarValue::Long(i)) => Some(i),
-            _ => None,
-        }
+    fn from_input_value(v: &InputValue) -> Result<i64, FieldError> {
+        v.as_scalar_value::<i64>()
+            .copied()
+            .ok_or_else(|| format!("Expected MyScalarValue::Long(), found: {}", v))
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {

@@ -9,7 +9,7 @@ use crate::{
     graphql_scalar,
     parser::{ParseError, ScalarToken, Token},
     value::ParseScalarResult,
-    Value,
+    FieldError, Value,
 };
 
 #[graphql_scalar(name = "Tz", description = "Timezone")]
@@ -21,8 +21,14 @@ where
         Value::scalar(self.name().to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<Tz> {
-        v.as_string_value().and_then(|s| s.parse::<Tz>().ok())
+    fn from_input_value(v: &InputValue) -> Result<Tz, FieldError> {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected String, found: {}", v))
+            .and_then(|s| {
+                s.parse::<Tz>()
+                    .map_err(|e| format!("Failed to parse Timezone: {}", e))
+            })
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(val: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -39,23 +45,24 @@ mod test {
     mod from_input_value {
         use chrono_tz::Tz;
 
-        use crate::{graphql_input_value, FromInputValue, InputValue};
+        use crate::{graphql_input_value, FieldError, FromInputValue, InputValue};
 
-        fn tz_input_test(raw: &'static str, expected: Option<Tz>) {
+        fn tz_input_test(raw: &'static str, expected: Result<Tz, &str>) {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed: Option<Tz> = FromInputValue::from_input_value(&input);
+            let parsed =
+                FromInputValue::from_input_value(&input).map_err(|e: FieldError| e.message);
 
-            assert_eq!(parsed, expected);
+            assert_eq!(parsed, expected.map_err(str::to_owned));
         }
 
         #[test]
         fn europe_zone() {
-            tz_input_test("Europe/London", Some(chrono_tz::Europe::London));
+            tz_input_test("Europe/London", Ok(chrono_tz::Europe::London));
         }
 
         #[test]
         fn etc_minus() {
-            tz_input_test("Etc/GMT-3", Some(chrono_tz::Etc::GMTMinus3));
+            tz_input_test("Etc/GMT-3", Ok(chrono_tz::Etc::GMTMinus3));
         }
 
         mod invalid {
@@ -63,17 +70,26 @@ mod test {
 
             #[test]
             fn forward_slash() {
-                tz_input_test("Abc/Xyz", None);
+                tz_input_test(
+                    "Abc/Xyz",
+                    Err("Failed to parse Timezone: received invalid timezone"),
+                );
             }
 
             #[test]
             fn number() {
-                tz_input_test("8086", None);
+                tz_input_test(
+                    "8086",
+                    Err("Failed to parse Timezone: received invalid timezone"),
+                );
             }
 
             #[test]
             fn no_forward_slash() {
-                tz_input_test("AbcXyz", None);
+                tz_input_test(
+                    "AbcXyz",
+                    Err("Failed to parse Timezone: received invalid timezone"),
+                );
             }
         }
     }

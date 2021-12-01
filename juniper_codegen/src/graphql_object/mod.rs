@@ -500,10 +500,10 @@ impl Definition<Query> {
                 .filter_map(|f| f.is_async.then(|| f.name.as_str()))
                 .collect::<Vec<_>>();
             (!names.is_empty()).then(|| {
-                field::Definition::method_resolve_field_panic_async_field_tokens(&names, scalar)
+                field::Definition::method_resolve_field_err_async_field_tokens(&names, scalar)
             })
         };
-        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
+        let no_field_err = field::Definition::method_resolve_field_err_no_field_tokens(scalar);
 
         quote! {
             #[allow(deprecated)]
@@ -527,7 +527,7 @@ impl Definition<Query> {
                     match field {
                         #( #fields_resolvers )*
                         #async_fields_panic
-                        _ => #no_field_panic,
+                        _ => #no_field_err,
                     }
                 }
 
@@ -558,7 +558,7 @@ impl Definition<Query> {
             .fields
             .iter()
             .map(|f| f.method_resolve_field_async_tokens(scalar, None));
-        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
+        let no_field_err = field::Definition::method_resolve_field_err_no_field_tokens(scalar);
 
         quote! {
             #[allow(deprecated, non_snake_case)]
@@ -574,7 +574,7 @@ impl Definition<Query> {
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
-                        _ => #no_field_panic,
+                        _ => Box::pin(async move { #no_field_err }),
                     }
                 }
             }

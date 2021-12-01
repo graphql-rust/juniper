@@ -230,8 +230,10 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///         juniper::Value::scalar(self.0.to_owned())
 ///     }
 ///
-///     fn from_input_value(value: &juniper::InputValue) -> Option<UserID> {
-///         value.as_string_value().map(|s| UserID(s.to_owned()))
+///     fn from_input_value(value: &juniper::InputValue) -> Result<UserID, juniper::FieldError> {
+///         Ok(value.as_string_value()
+///             .map(|s| UserID(s.to_owned()))
+///             .ok_or_else(|| format!("Expected String, found: {}", v))?)
 ///     }
 ///
 ///     fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {

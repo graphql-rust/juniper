@@ -351,14 +351,63 @@ impl OnMethod {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
-                let err_text = format!(
-                    "Internal error: missing argument `{}` - validation must have failed",
-                    &name,
-                );
+                let err_text = format!("Missing argument `{}`: {{}}", &name);
                 quote! {
                     args.get::<#ty>(#name)
-                        .or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null)
-                        .expect(#err_text)
+                        .and_then(|opt| {
+                            opt.map_or_else(
+                                || {
+                                    <#ty as ::juniper::FromInputValue<#scalar>>::from_implicit_null()
+                                        .map_err(|e| {
+                                            let mut e = ::juniper::IntoFieldError::into_field_error(e);
+                                            e.message = format!(#err_text, e.message);
+                                            e
+                                        })
+                                },
+                                Ok,
+                            )
+                        })?
+                }
+            }
+
+            Self::Context(_) => quote! {
+                ::juniper::FromContext::from(executor.context())
+            },
+
+            Self::Executor => quote! { &executor },
+        }
+    }
+
+    /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
+    /// which provides the value of this [`OnMethod`] argument to be passed into
+    /// a trait method call.
+    ///
+    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
+    #[must_use]
+    pub(crate) fn method_resolve_field_async_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Regular(arg) => {
+                let (name, ty) = (&arg.name, &arg.ty);
+                let err_text = format!("Missing argument `{}`: {{}}", &name);
+                quote! {
+                    match args.get::<#ty>(#name)
+                        .and_then(|opt| {
+                            opt.map_or_else(
+                                || {
+                                    <#ty as ::juniper::FromInputValue<#scalar>>::from_implicit_null()
+                                        .map_err(|e| {
+                                            let mut e = ::juniper::IntoFieldError::into_field_error(e);
+                                            e.message = format!(#err_text, e.message);
+                                            e
+                                        })
+                                },
+                                Ok,
+                            )
+                        })
+                    {
+                        Ok(ok) => ok,
+                        Err(err) => return Box::pin(async { Err(err) }),
+                    }
                 }
             }
 

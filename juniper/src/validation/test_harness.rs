@@ -2,7 +2,7 @@ use std::mem;
 
 use crate::{
     ast::{FromInputValue, InputValue},
-    executor::Registry,
+    executor::{FieldError, Registry},
     parser::parse_document_source,
     schema::{
         meta::{EnumValue, MetaType},
@@ -208,12 +208,14 @@ impl<S> FromInputValue<S> for DogCommand
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand> {
+    type Error = FieldError<S>;
+
+    fn from_input_value<'a>(v: &InputValue<S>) -> Result<DogCommand, Self::Error> {
         match v.as_enum_value() {
-            Some("SIT") => Some(DogCommand::Sit),
-            Some("HEEL") => Some(DogCommand::Heel),
-            Some("DOWN") => Some(DogCommand::Down),
-            _ => None,
+            Some("SIT") => Ok(DogCommand::Sit),
+            Some("HEEL") => Ok(DogCommand::Heel),
+            Some("DOWN") => Ok(DogCommand::Down),
+            _ => Err("Unknown command".into()),
         }
     }
 }
@@ -314,13 +316,15 @@ impl<S> FromInputValue<S> for FurColor
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor> {
+    type Error = FieldError<S>;
+
+    fn from_input_value<'a>(v: &InputValue<S>) -> Result<FurColor, Self::Error> {
         match v.as_enum_value() {
-            Some("BROWN") => Some(FurColor::Brown),
-            Some("BLACK") => Some(FurColor::Black),
-            Some("TAN") => Some(FurColor::Tan),
-            Some("SPOTTED") => Some(FurColor::Spotted),
-            _ => None,
+            Some("BROWN") => Ok(FurColor::Brown),
+            Some("BLACK") => Ok(FurColor::Black),
+            Some("TAN") => Ok(FurColor::Tan),
+            Some("SPOTTED") => Ok(FurColor::Spotted),
+            _ => Err("Unknown color".into()),
         }
     }
 }
@@ -612,21 +616,37 @@ impl<S> FromInputValue<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput> {
-        let obj = match v.to_object_value() {
-            Some(o) => o,
-            None => return None,
-        };
+    type Error = FieldError<S>;
 
-        Some(ComplexInput {
-            required_field: match obj.get("requiredField").and_then(|v| v.convert()) {
-                Some(f) => f,
-                None => return None,
-            },
-            int_field: obj.get("intField").and_then(|v| v.convert()),
-            string_field: obj.get("stringField").and_then(|v| v.convert()),
-            boolean_field: obj.get("booleanField").and_then(|v| v.convert()),
-            string_list_field: obj.get("stringListField").and_then(|v| v.convert()),
+    fn from_input_value<'a>(v: &InputValue<S>) -> Result<ComplexInput, Self::Error> {
+        let obj = v.to_object_value().ok_or("Expected object")?;
+
+        Ok(ComplexInput {
+            required_field: obj
+                .get("requiredField")
+                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .transpose()?
+                .ok_or("Expected requiredField")?,
+            int_field: obj
+                .get("intField")
+                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .transpose()?
+                .ok_or("Expected requiredField")?,
+            string_field: obj
+                .get("stringField")
+                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .transpose()?
+                .ok_or("Expected requiredField")?,
+            boolean_field: obj
+                .get("booleanField")
+                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .transpose()?
+                .ok_or("Expected requiredField")?,
+            string_list_field: obj
+                .get("stringListField")
+                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .transpose()?
+                .ok_or("Expected requiredField")?,
         })
     }
 }

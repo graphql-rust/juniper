@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
-    executor::{ExecutionResult, Executor, Registry},
+    executor::{ExecutionResult, Executor, FieldError, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::{
@@ -59,14 +59,13 @@ where
         Value::scalar(self.0.clone())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<ID> {
-        match *v {
-            InputValue::Scalar(ref s) => s
-                .as_string()
-                .or_else(|| s.as_int().map(|i| i.to_string()))
-                .map(ID),
-            _ => None,
-        }
+    fn from_input_value(v: &InputValue) -> Result<ID, FieldError> {
+        v.as_string_value()
+            .map(str::to_owned)
+            .or_else(|| v.as_int_value().map(|i| i.to_string()))
+            .ok_or_else(|| format!("Expected String or Int, found: {}", v))
+            .map(ID)
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -86,11 +85,11 @@ where
         Value::scalar(self.clone())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<String> {
-        match *v {
-            InputValue::Scalar(ref s) => s.as_string(),
-            _ => None,
-        }
+    fn from_input_value(v: &InputValue) -> Result<String, FieldError> {
+        v.as_string_value()
+            .map(str::to_owned)
+            .ok_or_else(|| format!("Expected String, found: {}", v))
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -275,11 +274,11 @@ where
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<bool> {
-        match *v {
-            InputValue::Scalar(ref b) => b.as_boolean(),
-            _ => None,
-        }
+    fn from_input_value(v: &InputValue) -> Result<bool, FieldError> {
+        v.as_scalar_value()
+            .and_then(ScalarValue::as_boolean)
+            .ok_or_else(|| format!("Expected Boolean, found: {}", v))
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -297,11 +296,10 @@ where
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<i32> {
-        match *v {
-            InputValue::Scalar(ref i) => i.as_int(),
-            _ => None,
-        }
+    fn from_input_value(v: &InputValue) -> Result<i32, FieldError> {
+        v.as_int_value()
+            .ok_or_else(|| format!("Expected Int, found: {}", v))
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -324,11 +322,10 @@ where
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<f64> {
-        match *v {
-            InputValue::Scalar(ref s) => s.as_float(),
-            _ => None,
-        }
+    fn from_input_value(v: &InputValue) -> Result<f64, FieldError> {
+        v.as_float_value()
+            .ok_or_else(|| format!("Expected Float, found: {}", v))
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
