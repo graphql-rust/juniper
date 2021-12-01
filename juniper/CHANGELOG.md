@@ -7,6 +7,8 @@
 - `#[graphql_object]` and `#[graphql_subscription]` macros expansion now preserves defined `impl` blocks "as is" and reuses defined methods in opaque way. ([#971](https://github.com/graphql-rust/juniper/pull/971))
 - `rename = "<policy>"` attribute's argument renamed to `rename_all = "<policy>"`. ([#971](https://github.com/graphql-rust/juniper/pull/971))
 - Upgrade `bson` feature to [2.0 version of its crate](https://github.com/mongodb/bson-rust/releases/tag/v2.0.0). ([#979](https://github.com/graphql-rust/juniper/pull/979))
+- Make `FromInputValue` methods fallible to allow post-validation. ([#987](https://github.com/graphql-rust/juniper/pull/987))
+- Change `Option` to `Result` in `#[graphql_scalar]` macro in `from_input_value()` return type. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 
 ## Features
 
