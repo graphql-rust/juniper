@@ -357,11 +357,14 @@ impl OnMethod {
                         .and_then(|opt| {
                             opt.map_or_else(
                                 || {
-                                    <#ty as ::juniper::FromInputValue<#scalar>>::from_implicit_null()
+                                    <#ty as ::juniper::FromInputValue<#scalar>>::
+                                        from_implicit_null()
                                         .map_err(|e| {
-                                            let mut e = ::juniper::IntoFieldError::into_field_error(e);
-                                            e.message = format!(#err_text, e.message);
-                                            e
+                                            let e = ::juniper::IntoFieldError::into_field_error(e);
+                                            ::juniper::FieldError::new(
+                                                format!(#err_text, e.message()),
+                                                e.extensions().clone(),
+                                            )
                                         })
                                 },
                                 Ok,
@@ -394,11 +397,14 @@ impl OnMethod {
                         .and_then(|opt| {
                             opt.map_or_else(
                                 || {
-                                    <#ty as ::juniper::FromInputValue<#scalar>>::from_implicit_null()
+                                    <#ty as ::juniper::FromInputValue<#scalar>>::
+                                        from_implicit_null()
                                         .map_err(|e| {
-                                            let mut e = ::juniper::IntoFieldError::into_field_error(e);
-                                            e.message = format!(#err_text, e.message);
-                                            e
+                                            let e = ::juniper::IntoFieldError::into_field_error(e);
+                                            ::juniper::FieldError::new(
+                                                format!(#err_text, e.message()),
+                                                e.extensions().clone(),
+                                            )
                                         })
                                 },
                                 Ok,

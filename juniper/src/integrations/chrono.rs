@@ -37,12 +37,13 @@ where
     }
 
     fn from_input_value(v: &InputValue) -> Result<DateTime<FixedOffset>, FieldError> {
-        Ok(v.as_string_value()
+        v.as_string_value()
             .ok_or_else(|| format!("Expected String, found: {}", v))
             .and_then(|s| {
                 DateTime::parse_from_rfc3339(s)
                     .map_err(|e| format!("Failed to parse DateTimeFixedOffset: {}", e))
-            })?)
+            })
+            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

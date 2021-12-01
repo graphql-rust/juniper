@@ -215,7 +215,7 @@ where
             Some("SIT") => Ok(DogCommand::Sit),
             Some("HEEL") => Ok(DogCommand::Heel),
             Some("DOWN") => Ok(DogCommand::Down),
-            _ => Err("Unknown command".into()),
+            _ => Err("Unknown DogCommand".into()),
         }
     }
 }
@@ -324,7 +324,7 @@ where
             Some("BLACK") => Ok(FurColor::Black),
             Some("TAN") => Ok(FurColor::Tan),
             Some("SPOTTED") => Ok(FurColor::Spotted),
-            _ => Err("Unknown color".into()),
+            _ => Err("Unknown FurColor".into()),
         }
     }
 }
@@ -631,22 +631,22 @@ where
                 .get("intField")
                 .map(|v| v.convert().map_err(FieldError::map_scalar_value))
                 .transpose()?
-                .ok_or("Expected requiredField")?,
+                .ok_or("Expected intField")?,
             string_field: obj
                 .get("stringField")
                 .map(|v| v.convert().map_err(FieldError::map_scalar_value))
                 .transpose()?
-                .ok_or("Expected requiredField")?,
+                .ok_or("Expected stringField")?,
             boolean_field: obj
                 .get("booleanField")
                 .map(|v| v.convert().map_err(FieldError::map_scalar_value))
                 .transpose()?
-                .ok_or("Expected requiredField")?,
+                .ok_or("Expected booleanField")?,
             string_list_field: obj
                 .get("stringListField")
                 .map(|v| v.convert().map_err(FieldError::map_scalar_value))
                 .transpose()?
-                .ok_or("Expected requiredField")?,
+                .ok_or("Expected stringListField")?,
         })
     }
 }

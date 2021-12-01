@@ -63,9 +63,8 @@ where
         v.as_string_value()
             .map(str::to_owned)
             .or_else(|| v.as_int_value().map(|i| i.to_string()))
-            .ok_or_else(|| format!("Expected String or Int, found: {}", v))
+            .ok_or_else(|| format!("Expected String or Int, found: {}", v).into())
             .map(ID)
-            .map_err(Into::into)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -88,8 +87,7 @@ where
     fn from_input_value(v: &InputValue) -> Result<String, FieldError> {
         v.as_string_value()
             .map(str::to_owned)
-            .ok_or_else(|| format!("Expected String, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected String, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -277,8 +275,7 @@ where
     fn from_input_value(v: &InputValue) -> Result<bool, FieldError> {
         v.as_scalar_value()
             .and_then(ScalarValue::as_boolean)
-            .ok_or_else(|| format!("Expected Boolean, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Boolean, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -298,8 +295,7 @@ where
 
     fn from_input_value(v: &InputValue) -> Result<i32, FieldError> {
         v.as_int_value()
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -324,8 +320,7 @@ where
 
     fn from_input_value(v: &InputValue) -> Result<f64, FieldError> {
         v.as_float_value()
-            .ok_or_else(|| format!("Expected Float, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Float, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

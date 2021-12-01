@@ -315,7 +315,7 @@ where
     /// Not enough elements.
     NotEnough(usize),
 
-    /// Too many elements. Value is [`Vec`] of __all__ [`InputValue`] elements.
+    /// Too many elements. Contains __all__ [`InputValue`] elements.
     TooMuch(Vec<T>),
 
     /// Underlying [`ScalarValue`] conversion error.
@@ -333,10 +333,10 @@ where
 
         match self {
             Self::NotEnough(len) => {
-                FieldError::<S>::from(format!("{}: required {} more elements", ERROR_PREFIX, len))
+                format!("{}: required {} more elements", ERROR_PREFIX, len).into()
             }
             Self::TooMuch(el) => {
-                FieldError::<S>::from(format!("{}: too much elements: {}", ERROR_PREFIX, el.len()))
+                format!("{}: too much elements: {}", ERROR_PREFIX, el.len()).into()
             }
             Self::Scalar(s) => s.into_field_error(),
         }

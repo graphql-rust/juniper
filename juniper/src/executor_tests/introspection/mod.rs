@@ -31,8 +31,7 @@ impl<S: ScalarValue> GraphQLScalar for Scalar {
     fn from_input_value(v: &InputValue) -> Result<Scalar, FieldError> {
         v.as_int_value()
             .map(Scalar)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

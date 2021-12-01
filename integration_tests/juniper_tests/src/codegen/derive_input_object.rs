@@ -61,7 +61,7 @@ impl<'a> FromInputValue for &'a Fake {
     type Error = FieldError;
 
     fn from_input_value(_v: &InputValue) -> Result<&'a Fake, Self::Error> {
-        Err(FieldError::from("This is fake"))
+        Err("This is fake".into())
     }
 }
 

@@ -35,8 +35,7 @@ where
     fn from_input_value(v: &InputValue) -> Result<DefaultName, FieldError> {
         v.as_int_value()
             .map(DefaultName)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -53,8 +52,7 @@ impl GraphQLScalar for OtherOrder {
     fn from_input_value(v: &InputValue) -> Result<OtherOrder, FieldError> {
         v.as_int_value()
             .map(OtherOrder)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
@@ -71,8 +69,7 @@ impl GraphQLScalar for Named {
     fn from_input_value(v: &InputValue) -> Result<Named, FieldError> {
         v.as_int_value()
             .map(Named)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
@@ -89,8 +86,7 @@ impl GraphQLScalar for ScalarDescription {
     fn from_input_value(v: &InputValue) -> Result<ScalarDescription, FieldError> {
         v.as_int_value()
             .map(ScalarDescription)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
@@ -157,8 +153,7 @@ impl GraphQLScalar for WithCustomScalarValue {
     ) -> Result<WithCustomScalarValue, FieldError<MyScalarValue>> {
         v.as_int_value()
             .map(WithCustomScalarValue)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
@@ -217,8 +212,7 @@ fn path_in_resolve_return_type() {
         fn from_input_value(v: &InputValue) -> Result<ResolvePath, FieldError> {
             v.as_int_value()
                 .map(ResolvePath)
-                .ok_or_else(|| format!("Expected Int, found: {}", v))
-                .map_err(Into::into)
+                .ok_or_else(|| format!("Expected Int, found: {}", v).into())
         }
 
         fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {

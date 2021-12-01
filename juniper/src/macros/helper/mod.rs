@@ -33,12 +33,12 @@ pub trait AsDynGraphQLValue<S: ScalarValue = DefaultScalarValue> {
 
 crate::sa::assert_obj_safe!(AsDynGraphQLValue<Context = (), TypeInfo = ()>);
 
-/// This trait is used in `juniper::graphql_scalar` macro to [`Result`]s
-/// [`Error`].
+/// This trait is used in `juniper::graphql_scalar` macro to get [`Error`] type
+/// from a [`Result`].
 ///
 /// [`Error`]: Result::Error
 pub trait ExtractErrorFromResult {
-    /// [`Result`]s [`Error`].
+    /// [`Error`] of a [`Result`].
     ///
     /// [`Error`]: Result::Error
     type Error;

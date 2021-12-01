@@ -268,7 +268,7 @@ impl Definition {
         self.arguments.is_some()
     }
 
-    /// Returns generated code that panics about unknown [GraphQL field][1]
+    /// Returns generated code that errors about unknown [GraphQL field][1]
     /// tried to be resolved in the [`GraphQLValue::resolve_field`] method.
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
@@ -285,7 +285,7 @@ impl Definition {
         }
     }
 
-    /// Returns generated code that panics about [GraphQL fields][1] tried to be
+    /// Returns generated code that errors about [GraphQL fields][1] tried to be
     /// resolved asynchronously in the [`GraphQLValue::resolve_field`] method
     /// (which is synchronous itself).
     ///

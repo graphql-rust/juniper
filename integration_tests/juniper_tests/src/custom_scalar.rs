@@ -141,8 +141,7 @@ impl GraphQLScalar for i64 {
     fn from_input_value(v: &InputValue) -> Result<i64, FieldError> {
         v.as_scalar_value::<i64>()
             .copied()
-            .ok_or_else(|| format!("Expected MyScalarValue::Long(), found: {}", v))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected MyScalarValue::Long(), found: {}", v).into())
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
