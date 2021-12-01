@@ -43,16 +43,20 @@ where
 #[cfg(test)]
 mod test {
     mod from_input_value {
+        use std::ops::Deref;
+
         use chrono_tz::Tz;
 
         use crate::{graphql_input_value, FieldError, FromInputValue, InputValue};
 
         fn tz_input_test(raw: &'static str, expected: Result<Tz, &str>) {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed =
-                FromInputValue::from_input_value(&input).map_err(|e: FieldError| e.message);
+            let parsed = FromInputValue::from_input_value(&input);
 
-            assert_eq!(parsed, expected.map_err(str::to_owned));
+            assert_eq!(
+                parsed.as_ref().map_err(|e: &FieldError| e.message()),
+                expected.as_ref().map_err(Deref::deref),
+            );
         }
 
         #[test]
