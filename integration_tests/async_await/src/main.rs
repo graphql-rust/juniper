@@ -1,7 +1,4 @@
-use juniper::{
-    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLError,
-    RootNode, Value,
-};
+use juniper::{graphql_object, GraphQLEnum};
 
 #[derive(GraphQLEnum)]
 enum UserKind {
@@ -73,10 +70,18 @@ impl Query {
     }
 }
 
-#[tokio::test]
-async fn async_simple() {
-    let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
-    let doc = r#"
+fn main() {}
+
+#[cfg(test)]
+mod tests {
+    use juniper::{graphql_value, EmptyMutation, EmptySubscription, GraphQLError, RootNode, Value};
+
+    use super::Query;
+
+    #[tokio::test]
+    async fn async_simple() {
+        let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+        let doc = r#"
         query {
             fieldSync
             fieldAsyncPlain
@@ -89,35 +94,35 @@ async fn async_simple() {
         }
     "#;
 
-    let vars = Default::default();
-    let (res, errs) = juniper::execute(doc, None, &schema, &vars, &())
-        .await
-        .unwrap();
+        let vars = Default::default();
+        let (res, errs) = juniper::execute(doc, None, &schema, &vars, &())
+            .await
+            .unwrap();
 
-    assert!(errs.is_empty());
+        assert!(errs.is_empty());
 
-    let obj = res.into_object().unwrap();
-    let value = Value::Object(obj);
+        let obj = res.into_object().unwrap();
+        let value = Value::Object(obj);
 
-    assert_eq!(
-        value,
-        graphql_value!({
-            "delayed": true,
-            "fieldAsyncPlain": "field_async_plain",
-            "fieldSync": "field_sync",
-            "user": {
+        assert_eq!(
+            value,
+            graphql_value!({
                 "delayed": true,
-                "kind": "USER",
-                "name": "user1",
-            },
-        }),
-    );
-}
+                "fieldAsyncPlain": "field_async_plain",
+                "fieldSync": "field_sync",
+                "user": {
+                    "delayed": true,
+                    "kind": "USER",
+                    "name": "user1",
+                },
+            }),
+        );
+    }
 
-#[tokio::test]
-async fn async_field_validation_error() {
-    let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
-    let doc = r#"
+    #[tokio::test]
+    async fn async_field_validation_error() {
+        let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+        let doc = r#"
         query {
             nonExistentField
             fieldSync
@@ -131,37 +136,36 @@ async fn async_field_validation_error() {
         }
     "#;
 
-    let vars = Default::default();
-    let result = juniper::execute(doc, None, &schema, &vars, &()).await;
-    assert!(result.is_err());
+        let vars = Default::default();
+        let result = juniper::execute(doc, None, &schema, &vars, &()).await;
+        assert!(result.is_err());
 
-    let error = result.err().unwrap();
-    let is_validation_error = match error {
-        GraphQLError::ValidationError(_) => true,
-        _ => false,
-    };
-    assert!(is_validation_error);
+        let error = result.err().unwrap();
+        let is_validation_error = match error {
+            GraphQLError::ValidationError(_) => true,
+            _ => false,
+        };
+        assert!(is_validation_error);
+    }
+
+    // FIXME: test seems broken by design, re-enable later
+    // #[tokio::test]
+    // async fn resolve_into_stream_validation_error() {
+    //     let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    //     let doc = r#"
+    //         subscription {
+    //             nonExistent
+    //         }
+    //     "#;
+    //     let vars = Default::default();
+    //     let result = juniper::resolve_into_stream(doc, None, &schema, &vars, &()).await;
+    //     assert!(result.is_err());
+
+    //     let error = result.err().unwrap();
+    //     let is_validation_error = match error {
+    //         GraphQLError::ValidationError(_) => true,
+    //         _ => false,
+    //     };
+    //     assert!(is_validation_error);
+    // }
 }
-
-// FIXME: test seems broken by design, re-enable later
-// #[tokio::test]
-// async fn resolve_into_stream_validation_error() {
-//     let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
-//     let doc = r#"
-//         subscription {
-//             nonExistent
-//         }
-//     "#;
-//     let vars = Default::default();
-//     let result = juniper::resolve_into_stream(doc, None, &schema, &vars, &()).await;
-//     assert!(result.is_err());
-
-//     let error = result.err().unwrap();
-//     let is_validation_error = match error {
-//         GraphQLError::ValidationError(_) => true,
-//         _ => false,
-//     };
-//     assert!(is_validation_error);
-// }
-
-fn main() {}

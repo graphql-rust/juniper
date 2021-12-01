@@ -168,6 +168,8 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     ///
     /// Thus not restricted, it should be convertible with [`IntoFieldError`] to
     /// fit well into the library machinery.
+    ///
+    /// [`IntoFieldError`]: crate::IntoFieldError
     type Error;
 
     /// Performs the conversion.
