@@ -60,7 +60,9 @@ impl Definition<Subscription> {
                     _: &::juniper::Arguments<#scalar>,
                     _: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
-                    panic!("Called `resolve_field` on subscription object");
+                    Err(::juniper::FieldError::from(
+                        "Called `resolve_field` on subscription object"
+                    ))
                 }
 
                 fn concrete_type_name(

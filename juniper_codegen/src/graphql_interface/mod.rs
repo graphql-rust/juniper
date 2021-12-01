@@ -578,7 +578,7 @@ impl Definition {
             .fields
             .iter()
             .filter_map(|f| f.method_resolve_field_tokens(scalar, Some(&trait_ty)));
-        let async_fields_panic = {
+        let async_fields_err = {
             let names = self
                 .fields
                 .iter()
@@ -623,7 +623,7 @@ impl Definition {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
-                        #async_fields_panic
+                        #async_fields_err
                         _ => #no_field_err,
                     }
                 }
@@ -847,7 +847,9 @@ impl Implementer {
         let resolving_code = gen::sync_resolving_code();
 
         Some(quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
+            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info)
+                .ok_or_else(|| ::juniper::FieldError::from("This GraphQLType has no name"))?
+            {
                 let res = #downcast;
                 return #resolving_code;
             }
@@ -875,9 +877,16 @@ impl Implementer {
         let resolving_code = gen::async_resolving_code(None);
 
         Some(quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
-                let fut = ::juniper::futures::future::ready(#downcast);
-                return #resolving_code;
+            match <#ty as ::juniper::GraphQLType<#scalar>>::name(info) {
+                Some(name) => {
+                    if type_name == name {
+                        let fut = ::juniper::futures::future::ready(#downcast);
+                        return #resolving_code;
+                    }
+                }
+                None => return Box::pin(::juniper::futures::future::ready(
+                    Err(::juniper::FieldError::from("This GraphQLType has no name"))
+                )),
             }
         })
     }

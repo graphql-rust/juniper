@@ -493,7 +493,7 @@ impl Definition<Query> {
             .fields
             .iter()
             .filter_map(|f| f.method_resolve_field_tokens(scalar, None));
-        let async_fields_panic = {
+        let async_fields_err = {
             let names = self
                 .fields
                 .iter()
@@ -526,7 +526,7 @@ impl Definition<Query> {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
-                        #async_fields_panic
+                        #async_fields_err
                         _ => #no_field_err,
                     }
                 }
