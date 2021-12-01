@@ -1,10 +1,11 @@
 error: GraphQL interface must have at least one field
+
+  = note: https://spec.graphql.org/June2018/#sec-Interfaces
+
   --> $DIR/no_fields.rs:13:1
    |
 13 | trait Character {}
-   | ^^^^^^^^^^^^^^^^^^
-   |
-   = note: https://spec.graphql.org/June2018/#sec-Interfaces
+   | ^^^^^
 
 error[E0412]: cannot find type `CharacterValue` in this scope
  --> $DIR/no_fields.rs:4:18

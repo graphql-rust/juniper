@@ -1,7 +1,8 @@
 error: GraphQL union variant `Human` already has external resolver function `resolve_fn1` declared on the enum
- --> $DIR/enum_external_resolver_fn_conflicts_with_variant_external_resolver_fn.rs:6:15
+
+  = note: https://spec.graphql.org/June2018/#sec-Unions
+
+ --> fail/union/enum_external_resolver_fn_conflicts_with_variant_external_resolver_fn.rs:6:15
   |
 6 |     #[graphql(with = resolve_fn2)]
   |               ^^^^
-  |
-  = note: https://spec.graphql.org/June2018/#sec-Unions

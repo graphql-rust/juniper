@@ -1,7 +1,8 @@
 error: GraphQL input object expects at least one field
- --> $DIR/derive_no_fields.rs:2:1
+
+  = note: https://spec.graphql.org/June2018/#sec-Input-Objects
+
+ --> fail/input-object/derive_no_fields.rs:2:1
   |
 2 | struct Object {}
-  | ^^^^^^^^^^^^^^^^
-  |
-  = note: https://spec.graphql.org/June2018/#sec-Input-Objects
+  | ^^^^^^
