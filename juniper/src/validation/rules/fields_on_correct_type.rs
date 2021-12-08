@@ -4,6 +4,7 @@ use crate::{
     schema::meta::MetaType,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
+    Operation, OperationType, Selection,
 };
 
 pub struct FieldsOnCorrectType;
@@ -16,6 +17,27 @@ impl<'a, S> Visitor<'a, S> for FieldsOnCorrectType
 where
     S: ScalarValue,
 {
+    fn enter_operation_definition(
+        &mut self,
+        context: &mut ValidatorContext<'a, S>,
+        operation: &'a Spanning<Operation<S>>,
+    ) {
+        // https://spec.graphql.org/October2021/#note-bc213
+        if let OperationType::Subscription = operation.item.operation_type {
+            for selection in &operation.item.selection_set {
+                if let Selection::Field(field) = selection {
+                    if field.item.name.item == "__typename" {
+                        context.report_error(
+                            "__typename may not be included as a root \
+                            field in a subscription operation",
+                            &[field.item.name.start],
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     fn enter_field(
         &mut self,
         context: &mut ValidatorContext<'a, S>,
