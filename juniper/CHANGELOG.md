@@ -17,6 +17,7 @@
 - Add `From` impls to `InputValue` mirroring the ones for `Value` and provide better support for `Option` handling. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 - Implement `graphql_input_value!` and `graphql_vars!` macros. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 - Add `specified_by_url` attribute to `GraphQLScalarValue` derive and `graphql_scalar` attribute macros. ([#1003](https://github.com/graphql-rust/juniper/pull/1003), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
+- Support `isRepeatable` field on directives. ([#1003](https://github.com/graphql-rust/juniper/pull/1003), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
 
 ## Fixes
 
