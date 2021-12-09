@@ -28,8 +28,8 @@ where
                 if let Selection::Field(field) = selection {
                     if field.item.name.item == "__typename" {
                         context.report_error(
-                            "__typename may not be included as a root \
-                            field in a subscription operation",
+                            "`__typename` may not be included as a root \
+                             field in a subscription operation",
                             &[field.item.name.start],
                         );
                     }

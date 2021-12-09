@@ -1,10 +1,10 @@
-//! Checks that `__typename` field queries okay on root types.
+//! Checks that `__typename` field queries okay (and not okay) on root types.
 //! See [#372](https://github.com/graphql-rust/juniper/issues/372) for details.
 
 use futures::stream;
 use juniper::{
     execute, graphql_object, graphql_subscription, graphql_value, graphql_vars,
-    resolve_into_stream, RootNode,
+    resolve_into_stream, GraphQLError, RootNode,
 };
 
 pub struct Query;
@@ -96,8 +96,6 @@ async fn explicit_mutation_typename() {
 
 #[tokio::test]
 async fn subscription_typename() {
-    use juniper::GraphQLError;
-
     let query = r#"subscription { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
@@ -109,8 +107,8 @@ async fn subscription_typename() {
             let error = errors.pop().unwrap();
             assert_eq!(
                 error.message(),
-                "__typename may not be included as a root field in a \
-                 subscription operation"
+                "`__typename` may not be included as a root field in a \
+                 subscription operation",
             );
             assert_eq!(error.locations()[0].index(), 15);
             assert_eq!(error.locations()[0].line(), 0);
@@ -122,8 +120,6 @@ async fn subscription_typename() {
 
 #[tokio::test]
 async fn explicit_subscription_typename() {
-    use juniper::GraphQLError;
-
     let query = r#"subscription Subscription { __typename }"#;
 
     let schema = RootNode::new(Query, Mutation, Subscription);
@@ -135,7 +131,7 @@ async fn explicit_subscription_typename() {
             let error = errors.pop().unwrap();
             assert_eq!(
                 error.message(),
-                "__typename may not be included as a root field in a \
+                "`__typename` may not be included as a root field in a \
                  subscription operation"
             );
             assert_eq!(error.locations()[0].index(), 28);
