@@ -46,6 +46,8 @@ pub struct ScalarMeta<'a, S> {
     pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
+    #[doc(hidden)]
+    pub specified_by_url: Option<Cow<'a, str>>,
     pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
     pub(crate) parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
 }
@@ -248,6 +250,18 @@ impl<'a, S> MetaType<'a, S> {
         }
     }
 
+    /// Access the specification url, if applicable
+    ///
+    /// Only custom scalars can have specification url.
+    pub fn specified_by_url(&self) -> Option<&str> {
+        match self {
+            Self::Scalar(ScalarMeta {
+                specified_by_url, ..
+            }) => specified_by_url.as_deref(),
+            _ => None,
+        }
+    }
+
     /// Construct a `TypeKind` for a given type
     ///
     /// # Panics
@@ -419,6 +433,7 @@ where
         ScalarMeta {
             name,
             description: None,
+            specified_by_url: None,
             try_parse_fn: try_parse_fn::<S, T>,
             parse_fn: <T as ParseScalarValue<S>>::from_str,
         }
@@ -429,6 +444,14 @@ where
     /// If a description already was set prior to calling this method, it will be overwritten.
     pub fn description(mut self, description: &str) -> ScalarMeta<'a, S> {
         self.description = Some(description.to_owned());
+        self
+    }
+
+    /// Set the specification url for the given scalar type
+    ///
+    /// If a description already was set prior to calling this method, it will be overwritten.
+    pub fn specified_by_url(mut self, url: impl Into<Cow<'a, str>>) -> ScalarMeta<'a, S> {
+        self.specified_by_url = Some(url.into());
         self
     }
 

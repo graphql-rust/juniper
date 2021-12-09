@@ -835,31 +835,37 @@ where
         "onQuery",
         &[DirectiveLocation::Query],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onMutation",
         &[DirectiveLocation::Mutation],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onField",
         &[DirectiveLocation::Field],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onFragmentDefinition",
         &[DirectiveLocation::FragmentDefinition],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onFragmentSpread",
         &[DirectiveLocation::FragmentSpread],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onInlineFragment",
         &[DirectiveLocation::InlineFragment],
         &[],
+        false,
     ));
 
     let doc =

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use fnv::FnvHashMap;
 #[cfg(feature = "graphql-parser-integration")]
@@ -49,6 +49,7 @@ pub struct RootNode<
 /// Metadata for a schema
 #[derive(Debug)]
 pub struct SchemaType<'a, S> {
+    pub(crate) description: Option<Cow<'a, str>>,
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
     pub(crate) query_type_name: String,
     pub(crate) mutation_type_name: Option<String>,
@@ -71,6 +72,7 @@ pub struct DirectiveType<'a, S> {
     pub description: Option<String>,
     pub locations: Vec<DirectiveLocation>,
     pub arguments: Vec<Argument<'a, S>>,
+    pub is_repeatable: bool,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
@@ -235,6 +237,7 @@ impl<'a, S> SchemaType<'a, S> {
             }
         }
         SchemaType {
+            description: None,
             types: registry.types,
             query_type_name,
             mutation_type_name: if &mutation_type_name != "_EmptyMutation" {
@@ -249,6 +252,11 @@ impl<'a, S> SchemaType<'a, S> {
             },
             directives,
         }
+    }
+
+    /// Add a description.
+    pub fn set_description(&mut self, description: impl Into<Cow<'a, str>>) {
+        self.description = Some(description.into());
     }
 
     /// Add a directive like `skip` or `include`.
@@ -489,12 +497,14 @@ where
         name: &str,
         locations: &[DirectiveLocation],
         arguments: &[Argument<'a, S>],
+        is_repeatable: bool,
     ) -> DirectiveType<'a, S> {
         DirectiveType {
             name: name.to_owned(),
             description: None,
             locations: locations.to_vec(),
             arguments: arguments.to_vec(),
+            is_repeatable,
         }
     }
 
@@ -510,6 +520,7 @@ where
                 DirectiveLocation::InlineFragment,
             ],
             &[registry.arg::<bool>("if", &())],
+            false,
         )
     }
 
@@ -525,6 +536,7 @@ where
                 DirectiveLocation::InlineFragment,
             ],
             &[registry.arg::<bool>("if", &())],
+            false,
         )
     }
 

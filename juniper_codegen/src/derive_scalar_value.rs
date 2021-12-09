@@ -12,6 +12,7 @@ struct TransparentAttributes {
     transparent: Option<bool>,
     name: Option<String>,
     description: Option<String>,
+    specified_by_url: Option<String>,
     scalar: Option<syn::Type>,
 }
 
@@ -21,6 +22,7 @@ impl syn::parse::Parse for TransparentAttributes {
             transparent: None,
             name: None,
             description: None,
+            specified_by_url: None,
             scalar: None,
         };
 
@@ -36,6 +38,11 @@ impl syn::parse::Parse for TransparentAttributes {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
                     output.description = Some(val.value());
+                }
+                "specified_by_url" => {
+                    input.parse::<token::Eq>()?;
+                    let val = input.parse::<syn::LitStr>()?;
+                    output.specified_by_url = Some(val.value());
                 }
                 "transparent" => {
                     output.transparent = Some(true);
@@ -101,10 +108,10 @@ fn impl_scalar_struct(
     let inner_ty = &field.ty;
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
-    let description = match attrs.description {
-        Some(val) => quote!( .description( #val ) ),
-        None => quote!(),
-    };
+    let description = attrs.description.map(|val| quote!( .description( #val ) ));
+    let specified_by_url = attrs
+        .specified_by_url
+        .map(|url| quote!( .specified_by_url( #url ) ));
 
     let scalar = attrs
         .scalar
@@ -159,6 +166,7 @@ fn impl_scalar_struct(
             {
                 registry.build_scalar_type::<Self>(info)
                     #description
+                    #specified_by_url
                     .into_meta()
             }
         }

@@ -14,7 +14,7 @@ struct CustomUserId(String);
 
 /// The doc comment...
 #[derive(GraphQLScalarValue, Debug, Eq, PartialEq)]
-#[graphql(transparent)]
+#[graphql(transparent, specified_by_url = "https://tools.ietf.org/html/rfc4122")]
 struct IdWithDocComment(i32);
 
 #[derive(GraphQLObject)]
@@ -64,6 +64,7 @@ fn test_scalar_value_custom() {
     let meta = CustomUserId::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyUserId"));
     assert_eq!(meta.description(), Some("custom description..."));
+    assert_eq!(meta.specified_by_url(), None);
 
     let input: InputValue = serde_json::from_value(serde_json::json!("userId1")).unwrap();
     let output: CustomUserId = FromInputValue::from_input_value(&input).unwrap();
@@ -79,4 +80,8 @@ fn test_scalar_value_doc_comment() {
     let mut registry: Registry = Registry::new(FnvHashMap::default());
     let meta = IdWithDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some("The doc comment..."));
+    assert_eq!(
+        meta.specified_by_url(),
+        Some("https://tools.ietf.org/html/rfc4122")
+    );
 }
