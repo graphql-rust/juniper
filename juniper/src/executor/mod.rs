@@ -167,12 +167,11 @@ impl<T: Display, S> From<T> for FieldError<S> {
 impl<S> FieldError<S> {
     /// Construct a new [`FieldError`] with additional data.
     ///
-    /// You can use the [`graphql_value!`] macro to construct an error:
+    /// You can use the [`graphql_value!`] macro for construction:
     /// ```rust
-    /// # use juniper::DefaultScalarValue;
     /// use juniper::{graphql_value, FieldError};
     ///
-    /// # let _: FieldError<DefaultScalarValue> =
+    /// # let _: FieldError =
     /// FieldError::new(
     ///     "Could not open connection to the database",
     ///     graphql_value!({"internal_error": "Connection refused"}),
@@ -212,7 +211,7 @@ impl<S> FieldError<S> {
 
     /// Returns `"extensions"` field of this [`FieldError`].
     ///
-    /// If there is none `"extensions"` then [`Value::Null`] will be returned.
+    /// If there is no `"extensions"`, then [`Value::Null`] will be returned.
     #[must_use]
     pub fn extensions(&self) -> &Value<S> {
         &self.extensions
@@ -249,7 +248,7 @@ pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
 /// Custom error handling trait to enable error types other than [`FieldError`]
 /// to be specified as return value.
 ///
-/// Any custom error type should implement this trait to convert itself to a
+/// Any custom error type should implement this trait to convert itself into a
 /// [`FieldError`].
 pub trait IntoFieldError<S = DefaultScalarValue> {
     /// Performs the custom conversion into a [`FieldError`].
@@ -266,6 +265,24 @@ impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
 impl<S> IntoFieldError<S> for std::convert::Infallible {
     fn into_field_error(self) -> FieldError<S> {
         match self {}
+    }
+}
+
+impl<'a, S> IntoFieldError<S> for &'a str {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+impl<S> IntoFieldError<S> for String {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+impl<'a, S> IntoFieldError<S> for Cow<'a, str> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
     }
 }
 
@@ -1228,6 +1245,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
         T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S> + 'r,
+        T::Error: IntoFieldError<S>,
         S: ScalarValue,
     {
         let name = T::name(info).expect("Scalar types must be named. Implement `name()`");
@@ -1287,6 +1305,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     ) -> EnumMeta<'r, S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
         S: ScalarValue,
     {
         let name = T::name(info).expect("Enum types must be named. Implement `name()`");
@@ -1330,6 +1349,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     ) -> InputObjectMeta<'r, S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
         S: ScalarValue,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");

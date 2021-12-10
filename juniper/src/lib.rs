@@ -163,7 +163,7 @@ pub use crate::{
     introspection::IntrospectionFormat,
     macros::helper::{
         subscription::{ExtractTypeFromStream, IntoFieldResult},
-        AsDynGraphQLValue, ExtractErrorFromResult,
+        AsDynGraphQLValue, ExtractError,
     },
     parser::{ParseError, Spanning},
     schema::{

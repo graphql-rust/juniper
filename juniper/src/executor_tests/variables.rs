@@ -6,7 +6,6 @@ use crate::{
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue},
-    FieldError,
     GraphQLError::ValidationError,
     GraphQLInputObject,
 };
@@ -20,11 +19,11 @@ impl<S: ScalarValue> GraphQLScalar for TestComplexScalar {
         graphql_value!("SerializedValue")
     }
 
-    fn from_input_value(v: &InputValue) -> Result<TestComplexScalar, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<TestComplexScalar, String> {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
             .map(|_| TestComplexScalar)
-            .ok_or_else(|| format!("Expected SerializedValue String, found: {}", v).into())
+            .ok_or_else(|| format!("Expected SerializedValue String, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

@@ -707,8 +707,8 @@ impl VariantDefinition {
                         return #resolving_code;
                     }
                 }
-                None => return Box::pin(::juniper::futures::future::ready(
-                    Err(::juniper::FieldError::from("This GraphQLType has no name"))
+                None => return Box::pin(::juniper::futures::future::err(
+                    ::juniper::FieldError::from("This GraphQLType has no name")
                 )),
             }
         }

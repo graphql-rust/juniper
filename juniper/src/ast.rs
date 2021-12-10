@@ -150,7 +150,7 @@ pub type Document<'a, S> = [Definition<'a, S>];
 #[doc(hidden)]
 pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
-/// Parse an unstructured input value into a Rust data type.
+/// Parsing of an unstructured input value into a Rust data type.
 ///
 /// The conversion _can_ fail, and must in that case return [`Err`]. Thus not
 /// restricted in the definition of this trait, the returned [`Err`] should be
@@ -178,9 +178,10 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion from an absent value (e.g. to distinguish
     /// between implicit and explicit `null`).
     ///
-    /// The default implementation just calls
-    /// [`FromInputValue::from_input_value()`] as if an explicit `null` was
-    /// provided.
+    /// The default implementation just calls [`from_input_value()`] as if an
+    /// explicit `null` was provided.
+    ///
+    /// [`from_input_value()`]: FromInputValue::from_input_value
     fn from_implicit_null() -> Result<Self, Self::Error> {
         Self::from_input_value(&InputValue::<S>::Null)
     }

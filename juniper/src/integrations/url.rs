@@ -4,7 +4,7 @@ use url::Url;
 
 use crate::{
     value::{ParseScalarResult, ParseScalarValue},
-    FieldError, Value,
+    Value,
 };
 
 #[crate::graphql_scalar(description = "Url")]
@@ -16,11 +16,10 @@ where
         Value::scalar(self.as_str().to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Url, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<Url, String> {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected String, found: {}", v))
-            .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse Url: {}", e)))
-            .map_err(Into::into)
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse `Url`: {}", e)))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

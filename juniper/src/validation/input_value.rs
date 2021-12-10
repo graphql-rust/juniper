@@ -163,14 +163,16 @@ where
                     if e.is_empty() {
                         // All the fields didn't have errors, see if there is an
                         // overall error when parsing the input value.
-                        if !(iom.try_parse_fn)(value) {
+                        if let Err(e) = (iom.try_parse_fn)(value) {
                             errors.push(unification_error(
                                 var_name,
                                 var_pos,
                                 &path,
                                 &format!(
-                                    r#"Expected input of type "{}". Got: "{}""#,
-                                    iom.name, value
+                                    "Expected input of type `{}`. Got: `{}`. Details: {}",
+                                    iom.name,
+                                    value,
+                                    e.message(),
                                 ),
                             ));
                         }
@@ -193,16 +195,21 @@ fn unify_scalar<'a, S>(
     path: &Path<'a>,
 ) -> Vec<RuleError>
 where
-    S: fmt::Debug,
+    S: ScalarValue,
 {
     let mut errors: Vec<RuleError> = vec![];
 
-    if !(meta.try_parse_fn)(value) {
+    if let Err(e) = (meta.try_parse_fn)(value) {
         return vec![unification_error(
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}""#, meta.name),
+            &format!(
+                "Expected input scalar `{}`. Got: `{}`. Details: {}",
+                meta.name,
+                value,
+                e.message(),
+            ),
         )];
     }
 

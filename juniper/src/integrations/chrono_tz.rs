@@ -9,7 +9,7 @@ use crate::{
     graphql_scalar,
     parser::{ParseError, ScalarToken, Token},
     value::ParseScalarResult,
-    FieldError, Value,
+    Value,
 };
 
 #[graphql_scalar(name = "Tz", description = "Timezone")]
@@ -21,14 +21,13 @@ where
         Value::scalar(self.name().to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Tz, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<Tz, String> {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected String, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
                 s.parse::<Tz>()
-                    .map_err(|e| format!("Failed to parse Timezone: {}", e))
+                    .map_err(|e| format!("Failed to parse `Tz`: {}", e))
             })
-            .map_err(Into::into)
     }
 
     fn from_str<'a>(val: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -76,7 +75,7 @@ mod test {
             fn forward_slash() {
                 tz_input_test(
                     "Abc/Xyz",
-                    Err("Failed to parse Timezone: received invalid timezone"),
+                    Err("Failed to parse `Timezone`: received invalid timezone"),
                 );
             }
 
@@ -84,7 +83,7 @@ mod test {
             fn number() {
                 tz_input_test(
                     "8086",
-                    Err("Failed to parse Timezone: received invalid timezone"),
+                    Err("Failed to parse `Timezone`: received invalid timezone"),
                 );
             }
 
@@ -92,7 +91,7 @@ mod test {
             fn no_forward_slash() {
                 tz_input_test(
                     "AbcXyz",
-                    Err("Failed to parse Timezone: received invalid timezone"),
+                    Err("Failed to parse `Timezone`: received invalid timezone"),
                 );
             }
         }

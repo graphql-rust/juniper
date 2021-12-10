@@ -2,7 +2,7 @@ use std::mem;
 
 use crate::{
     ast::{FromInputValue, InputValue},
-    executor::{FieldError, Registry},
+    executor::Registry,
     parser::parse_document_source,
     schema::{
         meta::{EnumValue, MetaType},
@@ -208,14 +208,14 @@ impl<S> FromInputValue<S> for DogCommand
 where
     S: ScalarValue,
 {
-    type Error = FieldError<S>;
+    type Error = &'static str;
 
     fn from_input_value<'a>(v: &InputValue<S>) -> Result<DogCommand, Self::Error> {
         match v.as_enum_value() {
             Some("SIT") => Ok(DogCommand::Sit),
             Some("HEEL") => Ok(DogCommand::Heel),
             Some("DOWN") => Ok(DogCommand::Down),
-            _ => Err("Unknown DogCommand".into()),
+            _ => Err("Unknown DogCommand"),
         }
     }
 }
@@ -316,7 +316,7 @@ impl<S> FromInputValue<S> for FurColor
 where
     S: ScalarValue,
 {
-    type Error = FieldError<S>;
+    type Error = &'static str;
 
     fn from_input_value<'a>(v: &InputValue<S>) -> Result<FurColor, Self::Error> {
         match v.as_enum_value() {
@@ -324,7 +324,7 @@ where
             Some("BLACK") => Ok(FurColor::Black),
             Some("TAN") => Ok(FurColor::Tan),
             Some("SPOTTED") => Ok(FurColor::Spotted),
-            _ => Err("Unknown FurColor".into()),
+            _ => Err("Unknown FurColor"),
         }
     }
 }
@@ -616,7 +616,7 @@ impl<S> FromInputValue<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    type Error = FieldError<S>;
+    type Error = String;
 
     fn from_input_value<'a>(v: &InputValue<S>) -> Result<ComplexInput, Self::Error> {
         let obj = v.to_object_value().ok_or("Expected object")?;
@@ -624,27 +624,27 @@ where
         Ok(ComplexInput {
             required_field: obj
                 .get("requiredField")
-                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .map(|v| v.convert())
                 .transpose()?
                 .ok_or("Expected requiredField")?,
             int_field: obj
                 .get("intField")
-                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .map(|v| v.convert())
                 .transpose()?
                 .ok_or("Expected intField")?,
             string_field: obj
                 .get("stringField")
-                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .map(|v| v.convert())
                 .transpose()?
                 .ok_or("Expected stringField")?,
             boolean_field: obj
                 .get("booleanField")
-                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .map(|v| v.convert())
                 .transpose()?
                 .ok_or("Expected booleanField")?,
             string_list_field: obj
                 .get("stringListField")
-                .map(|v| v.convert().map_err(FieldError::map_scalar_value))
+                .map(|v| v.convert())
                 .transpose()?
                 .ok_or("Expected stringListField")?,
         })

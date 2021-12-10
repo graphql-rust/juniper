@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
-    executor::{ExecutionResult, Executor, FieldError, Registry},
+    executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::{
@@ -59,12 +59,12 @@ where
         Value::scalar(self.0.clone())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<ID, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<ID, String> {
         v.as_string_value()
             .map(str::to_owned)
             .or_else(|| v.as_int_value().map(|i| i.to_string()))
-            .ok_or_else(|| format!("Expected String or Int, found: {}", v).into())
             .map(ID)
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -84,10 +84,10 @@ where
         Value::scalar(self.clone())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<String, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<String, String> {
         v.as_string_value()
             .map(str::to_owned)
-            .ok_or_else(|| format!("Expected String, found: {}", v).into())
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -272,10 +272,10 @@ where
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<bool, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<bool, String> {
         v.as_scalar_value()
             .and_then(ScalarValue::as_boolean)
-            .ok_or_else(|| format!("Expected Boolean, found: {}", v).into())
+            .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -293,9 +293,9 @@ where
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<i32, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<i32, String> {
         v.as_int_value()
-            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -318,9 +318,9 @@ where
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<f64, FieldError> {
+    fn from_input_value(v: &InputValue) -> Result<f64, String> {
         v.as_float_value()
-            .ok_or_else(|| format!("Expected Float, found: {}", v).into())
+            .ok_or_else(|| format!("Expected `Float`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

@@ -1,5 +1,4 @@
 use std::{
-    array,
     mem::{self, MaybeUninit},
     ptr,
 };
@@ -86,7 +85,7 @@ impl<S, T: FromInputValue<S>> FromInputValue<S> for Option<T> {
 
     fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         match v {
-            &InputValue::Null => Ok(None),
+            InputValue::Null => Ok(None),
             v => v.convert().map(Some),
         }
     }
@@ -166,6 +165,7 @@ impl<S, T: FromInputValue<S>> FromInputValue<S> for Vec<T> {
             InputValue::List(l) => l.iter().map(|i| i.item.convert()).collect(),
             // See "Input Coercion" on List types:
             // https://spec.graphql.org/June2018/#sec-Type-System.List
+            // In reality is intercepted by `Option`.
             InputValue::Null => Ok(Vec::new()),
             other => other.convert().map(|e| vec![e]),
         }
@@ -306,43 +306,6 @@ where
     }
 }
 
-/// Error converting [`InputValue`] into exact-size [`array`](prim@array).
-pub enum FromInputValueArrayError<T, S>
-where
-    T: FromInputValue<S>,
-    S: ScalarValue,
-{
-    /// Not enough elements.
-    NotEnough(usize),
-
-    /// Too many elements. Contains __all__ [`InputValue`] elements.
-    TooMuch(Vec<T>),
-
-    /// Underlying [`ScalarValue`] conversion error.
-    Scalar(T::Error),
-}
-
-impl<T, S> IntoFieldError<S> for FromInputValueArrayError<T, S>
-where
-    T: FromInputValue<S>,
-    T::Error: IntoFieldError<S>,
-    S: ScalarValue,
-{
-    fn into_field_error(self) -> FieldError<S> {
-        const ERROR_PREFIX: &str = "Failed to convert into exact-size array";
-
-        match self {
-            Self::NotEnough(len) => {
-                format!("{}: required {} more elements", ERROR_PREFIX, len).into()
-            }
-            Self::TooMuch(el) => {
-                format!("{}: too much elements: {}", ERROR_PREFIX, el.len()).into()
-            }
-            Self::Scalar(s) => s.into_field_error(),
-        }
-    }
-}
-
 impl<T, S, const N: usize> FromInputValue<S> for [T; N]
 where
     T: FromInputValue<S>,
@@ -377,6 +340,22 @@ where
 
         match *v {
             InputValue::List(ref ls) => {
+                if ls.len() != N {
+                    return Err(FromInputValueArrayError::WrongCount {
+                        actual: ls.len(),
+                        expected: N,
+                    });
+                }
+                if N == 0 {
+                    // TODO: Use `mem::transmute` instead of
+                    //       `mem::transmute_copy` below, once it's allowed
+                    //       for const generics:
+                    //       https://github.com/rust-lang/rust/issues/61956
+                    // SAFETY: `mem::transmute_copy` is safe here, because we
+                    //         check `N` to be `0`. It's no-op, actually.
+                    return Ok(unsafe { mem::transmute_copy::<[T; 0], Self>(&[]) });
+                }
+
                 // SAFETY: The reason we're using a wrapper struct implementing
                 //         `Drop` here is to be panic safe:
                 //         `T: FromInputValue<S>` implementation is not
@@ -396,7 +375,7 @@ where
                 };
 
                 let mut items = ls.iter().map(|i| i.item.convert());
-                for (id, elem) in out.arr.iter_mut().enumerate() {
+                for elem in &mut out.arr[..] {
                     if let Some(i) = items
                         .next()
                         .transpose()
@@ -404,8 +383,6 @@ where
                     {
                         *elem = MaybeUninit::new(i);
                         out.init_len += 1;
-                    } else {
-                        return Err(FromInputValueArrayError::NotEnough(N - id));
                     }
                 }
 
@@ -422,19 +399,19 @@ where
                 //         we won't have a double-free when `T: Drop` here,
                 //         because original array elements are `MaybeUninit`, so
                 //         do nothing on `Drop`.
-                let arr = unsafe { mem::transmute_copy::<_, Self>(&out.arr) };
-
-                if items.len() > 0 {
-                    return Err(FromInputValueArrayError::TooMuch(
-                        array::IntoIter::new(arr)
-                            .map(Ok)
-                            .chain(items)
-                            .collect::<Result<_, _>>()
-                            .map_err(FromInputValueArrayError::Scalar)?,
-                    ));
-                }
-
-                Ok(arr)
+                Ok(unsafe { mem::transmute_copy::<_, Self>(&out.arr) })
+            }
+            // See "Input Coercion" on List types:
+            // https://spec.graphql.org/June2018/#sec-Type-System.List
+            // In reality is intercepted by `Option`.
+            InputValue::Null if N == 0 => {
+                // TODO: Use `mem::transmute` instead of
+                //       `mem::transmute_copy` below, once it's allowed
+                //       for const generics:
+                //       https://github.com/rust-lang/rust/issues/61956
+                // SAFETY: `mem::transmute_copy` is safe here, because we check
+                //         `N` to be `0`. It's no-op, actually.
+                Ok(unsafe { mem::transmute_copy::<[T; 0], Self>(&[]) })
             }
             ref other => {
                 other
@@ -442,24 +419,26 @@ where
                     .map_err(FromInputValueArrayError::Scalar)
                     .and_then(|e: T| {
                         // TODO: Use `mem::transmute` instead of
-                        //       `mem::transmute_copy` below, once it's allowed for
-                        //       const generics:
+                        //       `mem::transmute_copy` below, once it's allowed
+                        //       for const generics:
                         //       https://github.com/rust-lang/rust/issues/61956
                         if N == 1 {
-                            // SAFETY: `mem::transmute_copy` is safe here, because
-                            //         we check `N` to be `1`.
-                            //         Also, despite `mem::transmute_copy` copies
-                            //         the value, we won't have a double-free when
-                            //         `T: Drop` here, because original `e: T` value
-                            //         is wrapped into `mem::ManuallyDrop`, so does
-                            //         nothing on `Drop`.
+                            // SAFETY: `mem::transmute_copy` is safe here,
+                            //         because we check `N` to be `1`.
+                            //         Also, despite `mem::transmute_copy`
+                            //         copies the value, we won't have a
+                            //         double-free when `T: Drop` here, because
+                            //         original `e: T` value is wrapped into
+                            //         `mem::ManuallyDrop`, so does nothing on
+                            //         `Drop`.
                             Ok(unsafe {
                                 mem::transmute_copy::<_, Self>(&[mem::ManuallyDrop::new(e)])
                             })
-                        } else if N == 0 {
-                            Err(FromInputValueArrayError::TooMuch(vec![e]))
                         } else {
-                            Err(FromInputValueArrayError::NotEnough(N - 1))
+                            Err(FromInputValueArrayError::WrongCount {
+                                actual: 1,
+                                expected: N,
+                            })
                         }
                     })
             }
@@ -474,6 +453,44 @@ where
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(T::to_input_value).collect())
+    }
+}
+
+/// Error converting [`InputValue`] into exact-size [`array`](prim@array).
+pub enum FromInputValueArrayError<T, S>
+where
+    T: FromInputValue<S>,
+    S: ScalarValue,
+{
+    /// Wrong count of elements.
+    WrongCount {
+        /// Actual count of elements.
+        actual: usize,
+
+        /// Expected count of elements.
+        expected: usize,
+    },
+
+    /// Underlying [`ScalarValue`] conversion error.
+    Scalar(T::Error),
+}
+
+impl<T, S> IntoFieldError<S> for FromInputValueArrayError<T, S>
+where
+    T: FromInputValue<S>,
+    T::Error: IntoFieldError<S>,
+    S: ScalarValue,
+{
+    fn into_field_error(self) -> FieldError<S> {
+        const ERROR_PREFIX: &str = "Failed to convert into exact-size array";
+        match self {
+            Self::WrongCount { actual, expected } => format!(
+                "{}: wrong elements count: {} instead of {}",
+                ERROR_PREFIX, actual, expected
+            )
+            .into(),
+            Self::Scalar(s) => s.into_field_error(),
+        }
     }
 }
 
@@ -543,7 +560,7 @@ where
 
 #[cfg(test)]
 mod coercion {
-    use crate::{FromInputValue as _, InputValue};
+    use crate::{graphql_input_value, FromInputValue as _, InputValue};
 
     type V = InputValue;
 
@@ -552,7 +569,7 @@ mod coercion {
     #[test]
     fn vec() {
         assert_eq!(
-            <Vec<i32>>::from_input_value(&V::list(vec![V::scalar(1), V::scalar(2), V::scalar(3)])),
+            <Vec<i32>>::from_input_value(&graphql_input_value!([1, 2, 3])),
             Ok(vec![1, 2, 3]),
         );
         // TODO: all examples

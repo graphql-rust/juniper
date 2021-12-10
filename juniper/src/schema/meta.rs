@@ -1,5 +1,6 @@
 //! Types used to describe a `GraphQL` schema
 
+use juniper::IntoFieldError;
 use std::{
     borrow::{Cow, ToOwned},
     fmt,
@@ -11,6 +12,7 @@ use crate::{
     schema::model::SchemaType,
     types::base::TypeKind,
     value::{DefaultScalarValue, ParseScalarValue},
+    FieldError,
 };
 
 /// Whether an item is deprecated, with context.
@@ -46,7 +48,7 @@ pub struct ScalarMeta<'a, S> {
     pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
-    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>,
     pub(crate) parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
 }
 
@@ -88,7 +90,7 @@ pub struct EnumMeta<'a, S> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub values: Vec<EnumValue>,
-    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>,
 }
 
 /// Interface type metadata
@@ -121,7 +123,7 @@ pub struct InputObjectMeta<'a, S> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub input_fields: Vec<Argument<'a, S>>,
-    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>,
 }
 
 /// A placeholder for not-yet-registered types
@@ -323,7 +325,9 @@ impl<'a, S> MetaType<'a, S> {
     /// `true` if it can be parsed as the provided type.
     ///
     /// Only scalars, enums, and input objects have parse functions.
-    pub fn input_value_parse_fn(&self) -> Option<for<'b> fn(&'b InputValue<S>) -> bool> {
+    pub fn input_value_parse_fn(
+        &self,
+    ) -> Option<for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>> {
         match *self {
             MetaType::Scalar(ScalarMeta {
                 ref try_parse_fn, ..
@@ -412,6 +416,7 @@ impl<'a, S> ScalarMeta<'a, S> {
     pub fn new<T>(name: Cow<'a, str>) -> Self
     where
         T: FromInputValue<S> + ParseScalarValue<S>,
+        T::Error: IntoFieldError<S>,
     {
         Self {
             name,
@@ -510,6 +515,7 @@ impl<'a, S> EnumMeta<'a, S> {
     pub fn new<T>(name: Cow<'a, str>, values: &[EnumValue]) -> Self
     where
         T: FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
     {
         Self {
             name,
@@ -595,6 +601,7 @@ impl<'a, S> InputObjectMeta<'a, S> {
     pub fn new<T>(name: Cow<'a, str>, input_fields: &[Argument<'a, S>]) -> Self
     where
         T: FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
         S: Clone,
     {
         Self {
@@ -736,9 +743,12 @@ impl<'a, S: fmt::Debug> fmt::Debug for InputObjectMeta<'a, S> {
     }
 }
 
-fn try_parse_fn<S, T>(v: &InputValue<S>) -> bool
+fn try_parse_fn<S, T>(v: &InputValue<S>) -> Result<(), FieldError<S>>
 where
     T: FromInputValue<S>,
+    T::Error: IntoFieldError<S>,
 {
-    T::from_input_value(v).is_ok()
+    T::from_input_value(v)
+        .map(drop)
+        .map_err(T::Error::into_field_error)
 }

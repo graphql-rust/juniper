@@ -860,18 +860,16 @@ impl GraphQLTypeDefiniton {
             impl#impl_generics ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
-                type Error = ::juniper::FieldError<#scalar>;
+                type Error = ::std::string::String;
 
                 fn from_input_value(
                     v: &::juniper::InputValue<#scalar>
-                ) -> Result<#ty, ::juniper::FieldError<#scalar>> {
+                ) -> Result<#ty, Self::Error> {
                     match v.as_enum_value().or_else(|| {
                         v.as_string_value()
                     }) {
                         #( #from_inputs )*
-                        _ => Err(::juniper::FieldError::<#scalar>::from(
-                            format!("Unknown Enum value: {}", v))
-                        ),
+                        _ => Err(format!("Unknown enum value: {}", v)),
                     }
                 }
             }
@@ -986,7 +984,7 @@ impl GraphQLTypeDefiniton {
                         match obj.get(#field_name) {
                             #from_input_default
                             Some(ref v) => {
-                                ::juniper::FromInputValue::from_input_value(v)
+                                ::juniper::FromInputValue::<#scalar>::from_input_value(v)
                                     .map_err(::juniper::IntoFieldError::into_field_error)?
                             },
                             None => {
@@ -1111,10 +1109,11 @@ impl GraphQLTypeDefiniton {
 
                 fn from_input_value(
                     value: &::juniper::InputValue<#scalar>
-                ) -> Result<Self, ::juniper::FieldError<#scalar>> {
-                    let obj = value.to_object_value()
+                ) -> Result<Self, Self::Error> {
+                    let obj = value
+                        .to_object_value()
                         .ok_or_else(|| ::juniper::FieldError::<#scalar>::from(
-                            format!("Expected Object, found: {}", value))
+                            format!("Expected input object, found: {}", value))
                         )?;
                     Ok(#ty {
                         #( #from_inputs )*
