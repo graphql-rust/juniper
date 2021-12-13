@@ -1,4 +1,3 @@
-use futures::{future, stream};
 use serde::Serialize;
 
 use crate::{
@@ -292,16 +291,6 @@ where
                 }
 
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
-
-                if f.name.item == "__typename" {
-                    let typename =
-                        Value::scalar(instance.concrete_type_name(executor.context(), info));
-                    object.add_field(
-                        response_name,
-                        Value::Scalar(Box::pin(stream::once(future::ok(typename)))),
-                    );
-                    continue;
-                }
 
                 let meta_field = meta_type
                     .field_by_name(f.name.item)
