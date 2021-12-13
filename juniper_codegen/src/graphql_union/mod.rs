@@ -602,13 +602,11 @@ impl Definition {
                     let context = executor.context();
                     #( #variant_async_resolvers )*
 
-                    return ::juniper::macros::helper::boxed_field_err_fut(
-                        format!(
-                            "Concrete type `{}` is not handled by instance \
-                            resolvers on GraphQL union `{}`",
-                            type_name, #name,
-                        )
-                    );
+                    return ::juniper::field_err_boxed_fut(format!(
+                        "Concrete type `{}` is not handled by instance \
+                        resolvers on GraphQL union `{}`",
+                        type_name, #name,
+                    ));
                 }
             }
         }
@@ -707,7 +705,7 @@ impl VariantDefinition {
                         return #resolving_code;
                     }
                 }
-                None => return ::juniper::macros::helper::field_err_boxed_fut(
+                None => return ::juniper::field_err_boxed_fut(
                     "This GraphQLType has no name"
                 ),
             }
