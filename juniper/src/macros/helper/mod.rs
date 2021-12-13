@@ -2,18 +2,21 @@
 
 pub mod subscription;
 
-use std::{fmt::Display, future::Future, pin::Pin};
+use std::fmt::Display;
 
 use futures::future::{self, BoxFuture};
 
 use crate::{DefaultScalarValue, DynGraphQLValue, DynGraphQLValueAsync, FieldError, ScalarValue};
 
-/// Wraps `msg` with [`Display`] implementation into opaque [`Future`] which
-/// immediately resolves into [`FieldError`].
+/// Wraps `msg` with [`Display`] implementation into opaque [`Send`] [`Future`]
+/// which immediately resolves into [`FieldError`].
 #[doc(hidden)]
-pub fn field_err_boxed_fut<'ok, D: Display, Ok: 'ok, S: 'static>(
-    msg: D,
-) -> BoxFuture<'ok, Result<Ok, FieldError<S>>> {
+pub fn field_err_boxed_fut<'ok, D, Ok, S>(msg: D) -> BoxFuture<'ok, Result<Ok, FieldError<S>>>
+where
+    D: Display,
+    Ok: Send + 'ok,
+    S: Send + 'static,
+{
     Box::pin(future::err(FieldError::from(msg)))
 }
 
