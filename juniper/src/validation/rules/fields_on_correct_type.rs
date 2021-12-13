@@ -379,4 +379,28 @@ mod tests {
         "#,
         );
     }
+
+    #[test]
+    fn typename_on_subscription() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"subscription { __typename }"#,
+            &[RuleError::new(
+                "`__typename` may not be included as a root field in a subscription operation",
+                &[SourcePosition::new(15, 0, 15)],
+            )],
+        );
+    }
+
+    #[test]
+    fn typename_on_explicit_subscription() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"subscription SubscriptionRoot { __typename }"#,
+            &[RuleError::new(
+                "`__typename` may not be included as a root field in a subscription operation",
+                &[SourcePosition::new(32, 0, 32)],
+            )],
+        );
+    }
 }
