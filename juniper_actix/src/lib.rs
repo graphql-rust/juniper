@@ -466,9 +466,9 @@ pub mod subscriptions {
 
 #[cfg(test)]
 mod tests {
-    use std::{future::Future, pin::Pin, task};
+    use std::pin::Pin;
 
-    use actix_http::body::{BoxBody, MessageBody};
+    use actix_http::body::MessageBody;
     use actix_web::{
         dev::ServiceResponse,
         http,
@@ -477,7 +477,7 @@ mod tests {
         web::Data,
         App,
     };
-    use bytes::Bytes;
+    use futures::future;
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::fixtures::starwars::schema::{Database, Query},
@@ -490,19 +490,10 @@ mod tests {
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
-    struct BoxBodyFuture(BoxBody);
-
-    impl Future for BoxBodyFuture {
-        type Output = Option<Result<Bytes, actix_http::Error>>;
-
-        fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Self::Output> {
-            Pin::new(&mut self.get_mut().0).poll_next(cx)
-        }
-    }
-
     async fn take_response_body_string(resp: ServiceResponse) -> String {
+        let mut body = resp.into_body();
         String::from_utf8(
-            BoxBodyFuture(resp.into_body())
+            future::poll_fn(|cx| Pin::new(&mut body).poll_next(cx))
                 .await
                 .unwrap()
                 .unwrap()
