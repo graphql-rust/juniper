@@ -568,10 +568,8 @@ mod coercion {
     // https://spec.graphql.org/June2018/#sec-Type-System.List
     #[test]
     fn vec() {
-        assert_eq!(
-            <Vec<i32>>::from_input_value(&graphql_input_value!([1, 2, 3])),
-            Ok(vec![1, 2, 3]),
-        );
+        let v: V = graphql_input_value!([1, 2, 3]);
+        assert_eq!(<Vec<i32>>::from_input_value(&v), Ok(vec![1, 2, 3]),);
         // TODO: all examples
     }
 }

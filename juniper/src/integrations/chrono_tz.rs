@@ -53,7 +53,7 @@ mod test {
             let parsed = FromInputValue::from_input_value(&input);
 
             assert_eq!(
-                parsed.as_ref().map_err(|e: &FieldError| e.message()),
+                parsed.as_ref().map_err(Deref::deref),
                 expected.as_ref().map_err(Deref::deref),
             );
         }
@@ -75,7 +75,7 @@ mod test {
             fn forward_slash() {
                 tz_input_test(
                     "Abc/Xyz",
-                    Err("Failed to parse `Timezone`: received invalid timezone"),
+                    Err("Failed to parse `Tz`: received invalid timezone"),
                 );
             }
 
@@ -83,7 +83,7 @@ mod test {
             fn number() {
                 tz_input_test(
                     "8086",
-                    Err("Failed to parse `Timezone`: received invalid timezone"),
+                    Err("Failed to parse `Tz`: received invalid timezone"),
                 );
             }
 
@@ -91,7 +91,7 @@ mod test {
             fn no_forward_slash() {
                 tz_input_test(
                     "AbcXyz",
-                    Err("Failed to parse `Timezone`: received invalid timezone"),
+                    Err("Failed to parse `Tz`: received invalid timezone"),
                 );
             }
         }

@@ -206,7 +206,7 @@ fn default_name_input_value() {
 
     let dv = DefaultName::from_input_value(&iv);
 
-    assert!(dv.is_ok(), "error: {}", dv.unwrap_err());
+    assert!(dv.is_ok(), "error: {:?}", dv.unwrap_err());
 
     let dv = dv.unwrap();
 

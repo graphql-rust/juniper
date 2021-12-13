@@ -8,7 +8,7 @@ use crate::{
     },
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
-    GraphQLEnum, GraphQLInputObject,
+    GraphQLEnum, GraphQLInputObject, IntoFieldError,
 };
 
 #[derive(GraphQLEnum)]
@@ -52,9 +52,10 @@ impl Query {
     }
 }
 
-fn scalar_meta<T>(name: &'static str) -> MetaType<DefaultScalarValue>
+fn scalar_meta<T>(name: &'static str) -> MetaType
 where
     T: FromInputValue<DefaultScalarValue> + ParseScalarValue<DefaultScalarValue>,
+    T::Error: IntoFieldError,
 {
     MetaType::Scalar(ScalarMeta::new::<T>(name.into()))
 }

@@ -1072,7 +1072,8 @@ mod integers {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                r#"Variable "$var" got invalid value. Expected "Int"."#,
+                "Variable \"$var\" got invalid value. Expected input scalar `Int`. \
+                 Got: `10`. Details: Expected `Int`, found: 10.",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );
@@ -1096,7 +1097,8 @@ mod integers {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                r#"Variable "$var" got invalid value. Expected "Int"."#,
+                "Variable \"$var\" got invalid value. Expected input scalar `Int`. \
+                 Got: `\"10\"`. Details: Expected `Int`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );
@@ -1154,7 +1156,8 @@ mod floats {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                r#"Variable "$var" got invalid value. Expected "Float"."#,
+                "Variable \"$var\" got invalid value. Expected input scalar `Float`. \
+                 Got: `\"10\"`. Details: Expected `Float`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );
