@@ -128,11 +128,11 @@ where
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    fn from_input_value(v: &InputValue) -> Result<Date, FieldError<S>> {
+    // NOTE: The error type should implement `IntoFieldError<S>`.
+    fn from_input_value(v: &InputValue) -> Result<Date, String> {
         v.as_string_value()
         .ok_or_else(|| format!("Expected String, found: {}", v))
         .and_then(|s| s.parse().map_err(|e| format!("Failed to parse Date: {}", e)))
-        .map_err(Into::into)
     }
 
     // Define how to parse a string value.

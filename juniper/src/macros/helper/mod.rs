@@ -2,7 +2,19 @@
 
 pub mod subscription;
 
-use crate::{DefaultScalarValue, DynGraphQLValue, DynGraphQLValueAsync, ScalarValue};
+use std::{fmt::Display, future::Future, pin::Pin};
+
+use futures::future;
+
+use crate::{DefaultScalarValue, DynGraphQLValue, DynGraphQLValueAsync, FieldError, ScalarValue};
+
+/// Wraps `msg` with [`Display`] implementation into opaque [`Future`] which
+/// immediately resolves into [`FieldError`].
+pub fn boxed_field_err_fut<D: Display, Ok, S>(
+    msg: D,
+) -> Pin<Box<dyn Future<Output = Result<Ok, FieldError<S>>>>> {
+    Box::pin(future::err(FieldError::from(msg)))
+}
 
 /// Conversion of a [`GraphQLValue`] to its [trait object][1].
 ///
