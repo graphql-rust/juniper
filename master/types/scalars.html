@@ -1,38 +1,37 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Scalars - Juniper - GraphQL Server for Rust</title>
+        <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
+        <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
         <link rel="stylesheet" href="../css/variables.css">
         <link rel="stylesheet" href="../css/general.css">
         <link rel="stylesheet" href="../css/chrome.css">
         <link rel="stylesheet" href="../css/print.css" media="print">
-
         <!-- Fonts -->
         <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
-
+        <link rel="stylesheet" href="../fonts/fonts.css">
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="../highlight.css">
         <link rel="stylesheet" href="../tomorrow-night.css">
         <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        
-
-        
     </head>
-    <body class="light">
+    <body>
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">var path_to_root = "../";</script>
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -53,10 +52,13 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
-            if (theme === null || theme === undefined) { theme = 'light'; }
-            document.body.className = theme;
-            document.querySelector('html').className = theme + ' js';
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
@@ -72,50 +74,48 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html" class="active"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="../quickstart.html">Quickstart</a></li><li class="chapter-item expanded affix "><a href="../types/index.html">Type System</a></li><li class="chapter-item expanded "><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="chapter-item expanded "><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="chapter-item expanded "><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html" class="active"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                
-                <div id="menu-bar" class="menu-bar">
-                    <div id="menu-bar-sticky-container">
-                        <div class="left-buttons">
-                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                                <i class="fa fa-bars"></i>
-                            </button>
-                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                                <i class="fa fa-paint-brush"></i>
-                            </button>
-                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                            </ul>
-                            
-                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
-                                <i class="fa fa-search"></i>
-                            </button>
-                            
-                        </div>
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
 
-                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1> 
+                    <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1>
 
-                        <div class="right-buttons">
-                            <a href="../print.html" title="Print this book" aria-label="Print this book">
-                                <i id="print-button" class="fa fa-print"></i>
-                            </a>
-                        </div>
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
                     </div>
                 </div>
 
-                
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -123,8 +123,6 @@
                         </ul>
                     </div>
                 </div>
-                
-
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
                 <script type="text/javascript">
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
@@ -136,21 +134,21 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#scalars" id="scalars"><h1>Scalars</h1></a>
+                        <h1 id="scalars"><a class="header" href="#scalars">Scalars</a></h1>
 <p>Scalars are the primitive types at the leaves of a GraphQL query: numbers,
 strings, and booleans. You can create custom scalars to other primitive values,
 but this often requires coordination with the client library intended to consume
 the API you're building.</p>
 <p>Since any value going over the wire is eventually transformed into JSON, you're
-also limited in the data types you can use.</p>
-<p>There are two ways to define custom scalars.</p>
+also limited in the data types you can use. </p>
+<p>There are two ways to define custom scalars. </p>
 <ul>
 <li>For simple scalars that just wrap a primitive type, you can use the newtype pattern with
-a custom derive.</li>
+a custom derive. </li>
 <li>For more advanced use cases with custom validation, you can use
 the <code>graphql_scalar</code> proc macro.</li>
 </ul>
-<a class="header" href="#built-in-scalars" id="built-in-scalars"><h2>Built-in scalars</h2></a>
+<h2 id="built-in-scalars"><a class="header" href="#built-in-scalars">Built-in scalars</a></h2>
 <p>Juniper has built-in support for:</p>
 <ul>
 <li><code>i32</code> as <code>Int</code></li>
@@ -171,12 +169,12 @@ crates. They are enabled via features that are on by default.</p>
 <li>url::Url</li>
 <li>bson::oid::ObjectId</li>
 </ul>
-<a class="header" href="#newtype-pattern" id="newtype-pattern"><h2>newtype pattern</h2></a>
-<p>Often, you might need a custom scalar that just wraps an existing type.</p>
+<h2 id="newtype-pattern"><a class="header" href="#newtype-pattern">newtype pattern</a></h2>
+<p>Often, you might need a custom scalar that just wraps an existing type. </p>
 <p>This can be done with the newtype pattern and a custom derive, similar to how
 serde supports this pattern with <code>#[serde(transparent)]</code>.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-#[derive(juniper::GraphQLScalarValue)]
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>#[derive(juniper::GraphQLScalarValue)]
 pub struct UserId(i32);
 
 #[derive(juniper::GraphQLObject)]
@@ -184,12 +182,12 @@ struct User {
     id: UserId,
 }
 
-# fn main() {}
-</code></pre></pre>
+<span class="boring">fn main() {}
+</span></code></pre></pre>
 <p>That's it, you can now user <code>UserId</code> in your schema.</p>
 <p>The macro also allows for more customization:</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-/// You can use a doc comment to specify a description.
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>/// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalarValue)]
 #[graphql(
     transparent,
@@ -201,34 +199,34 @@ struct User {
 )]
 pub struct UserId(i32);
 
-# fn main() {}
-</code></pre></pre>
-<a class="header" href="#custom-scalars" id="custom-scalars"><h2>Custom scalars</h2></a>
-<p>For more complex situations where you also need custom parsing or validation,
+<span class="boring">fn main() {}
+</span></code></pre></pre>
+<h2 id="custom-scalars"><a class="header" href="#custom-scalars">Custom scalars</a></h2>
+<p>For more complex situations where you also need custom parsing or validation, 
 you can use the <code>graphql_scalar</code> proc macro.</p>
 <p>Typically, you represent your custom scalars as strings.</p>
 <p>The example below implements a custom scalar for a custom <code>Date</code> type.</p>
-<p>Note: juniper already has built-in support for the <code>chrono::DateTime</code> type
-via <code>chrono</code> feature, which is enabled by default and should be used for this
+<p>Note: juniper already has built-in support for the <code>chrono::DateTime</code> type 
+via <code>chrono</code> feature, which is enabled by default and should be used for this 
 purpose.</p>
 <p>The example below is used just for illustration.</p>
 <p><strong>Note</strong>: the example assumes that the <code>Date</code> type implements
 <code>std::fmt::Display</code> and <code>std::str::FromStr</code>.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-# mod date { 
-#    pub struct Date; 
-#    impl std::str::FromStr for Date{ 
-#        type Err = String; fn from_str(_value: &amp;str) -&gt; Result&lt;Self, Self::Err&gt; { unimplemented!() }
-#    }
-#    // And we define how to represent date as a string.
-#    impl std::fmt::Display for Date {
-#        fn fmt(&amp;self, _f: &amp;mut std::fmt::Formatter) -&gt; std::fmt::Result {
-#            unimplemented!()
-#        }
-#    }
-# }
-
-use juniper::{Value, ParseScalarResult, ParseScalarValue};
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span><span class="boring">mod date { 
+</span><span class="boring">   pub struct Date; 
+</span><span class="boring">   impl std::str::FromStr for Date{ 
+</span><span class="boring">       type Err = String; fn from_str(_value: &amp;str) -&gt; Result&lt;Self, Self::Err&gt; { unimplemented!() }
+</span><span class="boring">   }
+</span><span class="boring">   // And we define how to represent date as a string.
+</span><span class="boring">   impl std::fmt::Display for Date {
+</span><span class="boring">       fn fmt(&amp;self, _f: &amp;mut std::fmt::Formatter) -&gt; std::fmt::Result {
+</span><span class="boring">           unimplemented!()
+</span><span class="boring">       }
+</span><span class="boring">   }
+</span><span class="boring">}
+</span><span class="boring">
+</span>use juniper::{Value, ParseScalarResult, ParseScalarValue};
 use date::Date;
 
 #[juniper::graphql_scalar(description = &quot;Date&quot;)]
@@ -242,10 +240,11 @@ where
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    fn from_input_value(v: &amp;InputValue) -&gt; Option&lt;Date&gt; {
-        v.as_scalar_value()
-        .and_then(|v| v.as_str())
-        .and_then(|s| s.parse().ok())
+    // NOTE: The error type should implement `IntoFieldError&lt;S&gt;`.
+    fn from_input_value(v: &amp;InputValue) -&gt; Result&lt;Date, String&gt; {
+        v.as_string_value()
+            .ok_or_else(|| format!(&quot;Expected `String`, found: {}&quot;, v))
+            .and_then(|s| s.parse().map_err(|e| format!(&quot;Failed to parse `Date`: {}&quot;, e)))
     }
 
     // Define how to parse a string value.
@@ -253,67 +252,46 @@ where
         &lt;String as ParseScalarValue&lt;S&gt;&gt;::from_str(value)
     }
 }
-
-# fn main() {}
-</code></pre></pre>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                        
                             <a rel="prev" href="../types/input_objects.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                        
-
-                        
                             <a rel="next" href="../types/unions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
-                        
-
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                
-                    <a href="../types/input_objects.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../types/input_objects.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                
-
-                
-                    <a href="../types/unions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../types/unions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
-                
             </nav>
 
         </div>
 
-        
-
-        
-
-        
-
-        
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
         <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
-        
-
         <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
         <script src="../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
-        
-
-        
-
     </body>
 </html>
