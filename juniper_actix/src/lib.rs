@@ -625,7 +625,6 @@ mod tests {
             resp.headers().get("content-type").unwrap(),
             "application/json",
         );
-
         assert_eq!(
             take_response_body_string(resp).await,
             r#"{"data":{"hero":{"name":"R2-D2"}}}"#
@@ -659,7 +658,6 @@ mod tests {
             resp.headers().get("content-type").unwrap(),
             "application/json",
         );
-
         assert_eq!(
             take_response_body_string(resp).await,
             r#"{"data":{"hero":{"name":"R2-D2"}}}"#

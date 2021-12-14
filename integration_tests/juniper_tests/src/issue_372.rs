@@ -104,15 +104,16 @@ async fn subscription_typename() {
         Err(GraphQLError::ValidationError(mut errors)) => {
             assert_eq!(errors.len(), 1);
 
-            let error = errors.pop().unwrap();
+            let err = errors.pop().unwrap();
+
             assert_eq!(
-                error.message(),
+                err.message(),
                 "`__typename` may not be included as a root field in a \
                  subscription operation",
             );
-            assert_eq!(error.locations()[0].index(), 15);
-            assert_eq!(error.locations()[0].line(), 0);
-            assert_eq!(error.locations()[0].column(), 15);
+            assert_eq!(err.locations()[0].index(), 15);
+            assert_eq!(err.locations()[0].line(), 0);
+            assert_eq!(err.locations()[0].column(), 15);
         }
         _ => panic!("Expected ValidationError"),
     };
@@ -128,15 +129,16 @@ async fn explicit_subscription_typename() {
         Err(GraphQLError::ValidationError(mut errors)) => {
             assert_eq!(errors.len(), 1);
 
-            let error = errors.pop().unwrap();
+            let err = errors.pop().unwrap();
+
             assert_eq!(
-                error.message(),
+                err.message(),
                 "`__typename` may not be included as a root field in a \
                  subscription operation"
             );
-            assert_eq!(error.locations()[0].index(), 28);
-            assert_eq!(error.locations()[0].line(), 0);
-            assert_eq!(error.locations()[0].column(), 28);
+            assert_eq!(err.locations()[0].index(), 28);
+            assert_eq!(err.locations()[0].line(), 0);
+            assert_eq!(err.locations()[0].column(), 28);
         }
         _ => panic!("Expected ValidationError"),
     };
