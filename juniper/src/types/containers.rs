@@ -157,17 +157,22 @@ where
     }
 }
 
-impl<S, T: FromInputValue<S>> FromInputValue<S> for Vec<T> {
-    type Error = T::Error;
+impl<S: ScalarValue, T: FromInputValue<S>> FromInputValue<S> for Vec<T> {
+    type Error = FromInputValueVecError<T, S>;
 
     fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         match v {
-            InputValue::List(l) => l.iter().map(|i| i.item.convert()).collect(),
+            InputValue::List(l) => l
+                .iter()
+                .map(|i| i.item.convert().map_err(FromInputValueVecError::Scalar))
+                .collect(),
             // See "Input Coercion" on List types:
-            // https://spec.graphql.org/June2018/#sec-Type-System.List
-            // In reality is intercepted by `Option`.
-            InputValue::Null => Ok(Vec::new()),
-            other => other.convert().map(|e| vec![e]),
+            // https://spec.graphql.org/October2021/#sec-Combining-List-and-Non-Null
+            InputValue::Null => Err(FromInputValueVecError::Null),
+            other => other
+                .convert()
+                .map(|e| vec![e])
+                .map_err(FromInputValueVecError::Scalar),
         }
     }
 }
@@ -179,6 +184,38 @@ where
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(T::to_input_value).collect())
+    }
+}
+
+/// Error converting [`InputValue`] into [`Vec`].
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum FromInputValueVecError<T, S>
+where
+    T: FromInputValue<S>,
+    S: ScalarValue,
+{
+    /// [`InputValue`] cannot be [`Null`].
+    ///
+    /// <https://spec.graphql.org/October2021/#sec-Combining-List-and-Non-Null>
+    ///
+    /// [`Null`]: [`InputValue::Null`]
+    Null,
+
+    /// Underlying [`ScalarValue`] conversion error.
+    Scalar(T::Error),
+}
+
+impl<T, S> IntoFieldError<S> for FromInputValueVecError<T, S>
+where
+    T: FromInputValue<S>,
+    T::Error: IntoFieldError<S>,
+    S: ScalarValue,
+{
+    fn into_field_error(self) -> FieldError<S> {
+        match self {
+            Self::Null => "Failed to convert into Vec: Value cannot be null".into(),
+            Self::Scalar(s) => s.into_field_error(),
+        }
     }
 }
 
@@ -402,17 +439,8 @@ where
                 Ok(unsafe { mem::transmute_copy::<_, Self>(&out.arr) })
             }
             // See "Input Coercion" on List types:
-            // https://spec.graphql.org/June2018/#sec-Type-System.List
-            // In reality is intercepted by `Option`.
-            InputValue::Null if N == 0 => {
-                // TODO: Use `mem::transmute` instead of
-                //       `mem::transmute_copy` below, once it's allowed
-                //       for const generics:
-                //       https://github.com/rust-lang/rust/issues/61956
-                // SAFETY: `mem::transmute_copy` is safe here, because we check
-                //         `N` to be `0`. It's no-op, actually.
-                Ok(unsafe { mem::transmute_copy::<[T; 0], Self>(&[]) })
-            }
+            // https://spec.graphql.org/October2021/#sec-Combining-List-and-Non-Null
+            InputValue::Null => Err(FromInputValueArrayError::Null),
             ref other => {
                 other
                     .convert()
@@ -457,11 +485,19 @@ where
 }
 
 /// Error converting [`InputValue`] into exact-size [`array`](prim@array).
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FromInputValueArrayError<T, S>
 where
     T: FromInputValue<S>,
     S: ScalarValue,
 {
+    /// [`InputValue`] cannot be [`Null`].
+    ///
+    /// <https://spec.graphql.org/October2021/#sec-Combining-List-and-Non-Null>
+    ///
+    /// [`Null`]: [`InputValue::Null`]
+    Null,
+
     /// Wrong count of elements.
     WrongCount {
         /// Actual count of elements.
@@ -484,6 +520,7 @@ where
     fn into_field_error(self) -> FieldError<S> {
         const ERROR_PREFIX: &str = "Failed to convert into exact-size array";
         match self {
+            Self::Null => format!("{}: Value cannot be null", ERROR_PREFIX).into(),
             Self::WrongCount { actual, expected } => format!(
                 "{}: wrong elements count: {} instead of {}",
                 ERROR_PREFIX, actual, expected
@@ -560,16 +597,230 @@ where
 
 #[cfg(test)]
 mod coercion {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue};
+    use crate::{graphql_input_value, DefaultScalarValue, FromInputValue as _, InputValue};
+
+    use super::{FromInputValueArrayError, FromInputValueVecError};
 
     type V = InputValue;
 
+    #[test]
+    fn option() {
+        let v: V = graphql_input_value!(null);
+        assert_eq!(<Option<i32>>::from_input_value(&v), Ok(None));
+
+        let v: V = graphql_input_value!(1);
+        assert_eq!(<Option<i32>>::from_input_value(&v), Ok(Some(1)));
+    }
+
     // See "Input Coercion" examples on List types:
-    // https://spec.graphql.org/June2018/#sec-Type-System.List
+    // https://spec.graphql.org/October2021/#sec-List.Input-Coercion
     #[test]
     fn vec() {
+        let v: V = graphql_input_value!(null);
+        assert_eq!(
+            <Vec<i32>>::from_input_value(&v),
+            Err(FromInputValueVecError::Null),
+        );
+        assert_eq!(
+            <Vec<Option<i32>>>::from_input_value(&v),
+            Err(FromInputValueVecError::Null),
+        );
+        assert_eq!(<Option<Vec<i32>>>::from_input_value(&v), Ok(None));
+        assert_eq!(<Option<Vec<Option<i32>>>>::from_input_value(&v), Ok(None));
+        assert_eq!(
+            <Vec<Vec<i32>>>::from_input_value(&v),
+            Err(FromInputValueVecError::Null),
+        );
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::from_input_value(&v),
+            Ok(None),
+        );
+
+        let v: V = graphql_input_value!(1);
+        assert_eq!(<Vec<i32>>::from_input_value(&v), Ok(vec![1]));
+        assert_eq!(<Vec<Option<i32>>>::from_input_value(&v), Ok(vec![Some(1)]));
+        assert_eq!(<Option<Vec<i32>>>::from_input_value(&v), Ok(Some(vec![1])));
+        assert_eq!(
+            <Option<Vec<Option<i32>>>>::from_input_value(&v),
+            Ok(Some(vec![Some(1)])),
+        );
+        assert_eq!(<Vec<Vec<i32>>>::from_input_value(&v), Ok(vec![vec![1]]));
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::from_input_value(&v),
+            Ok(Some(vec![Some(vec![Some(1)])])),
+        );
+
         let v: V = graphql_input_value!([1, 2, 3]);
-        assert_eq!(<Vec<i32>>::from_input_value(&v), Ok(vec![1, 2, 3]),);
-        // TODO: all examples
+        assert_eq!(<Vec<i32>>::from_input_value(&v), Ok(vec![1, 2, 3]));
+        assert_eq!(
+            <Option<Vec<i32>>>::from_input_value(&v),
+            Ok(Some(vec![1, 2, 3])),
+        );
+        assert_eq!(
+            <Vec<Option<i32>>>::from_input_value(&v),
+            Ok(vec![Some(1), Some(2), Some(3)]),
+        );
+        assert_eq!(
+            <Option<Vec<Option<i32>>>>::from_input_value(&v),
+            Ok(Some(vec![Some(1), Some(2), Some(3)])),
+        );
+        assert_eq!(
+            <Vec<Vec<i32>>>::from_input_value(&v),
+            Ok(vec![vec![1], vec![2], vec![3]])
+        );
+        // Looks like the spec ambiguity.
+        // https://github.com/graphql/graphql-spec/pull/515
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::from_input_value(&v),
+            Ok(Some(vec![
+                Some(vec![Some(1)]),
+                Some(vec![Some(2)]),
+                Some(vec![Some(3)]),
+            ])),
+        );
+
+        let v: V = graphql_input_value!([1, 2, null]);
+        assert_eq!(
+            <Vec<i32>>::from_input_value(&v),
+            Err(FromInputValueVecError::Scalar(
+                "Expected `Int`, found: null".to_owned(),
+            )),
+        );
+        assert_eq!(
+            <Option<Vec<i32>>>::from_input_value(&v),
+            Err(FromInputValueVecError::Scalar(
+                "Expected `Int`, found: null".to_owned(),
+            )),
+        );
+        assert_eq!(
+            <Vec<Option<i32>>>::from_input_value(&v),
+            Ok(vec![Some(1), Some(2), None]),
+        );
+        assert_eq!(
+            <Option<Vec<Option<i32>>>>::from_input_value(&v),
+            Ok(Some(vec![Some(1), Some(2), None])),
+        );
+        assert_eq!(
+            <Vec<Vec<i32>>>::from_input_value(&v),
+            Err(FromInputValueVecError::Scalar(FromInputValueVecError::Null)),
+        );
+        // Looks like the spec ambiguity.
+        // https://github.com/graphql/graphql-spec/pull/515
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::from_input_value(&v),
+            Ok(Some(vec![Some(vec![Some(1)]), Some(vec![Some(2)]), None])),
+        );
+    }
+
+    // See "Input Coercion" examples on List types:
+    // https://spec.graphql.org/October2021/#sec-List.Input-Coercion
+    #[test]
+    fn array() {
+        let v: V = graphql_input_value!(null);
+        assert_eq!(
+            <[i32; 0]>::from_input_value(&v),
+            Err(FromInputValueArrayError::Null),
+        );
+        assert_eq!(
+            <[i32; 1]>::from_input_value(&v),
+            Err(FromInputValueArrayError::Null),
+        );
+        assert_eq!(
+            <[Option<i32>; 0]>::from_input_value(&v),
+            Err(FromInputValueArrayError::Null),
+        );
+        assert_eq!(
+            <[Option<i32>; 1]>::from_input_value(&v),
+            Err(FromInputValueArrayError::Null),
+        );
+        assert_eq!(<Option<[i32; 0]>>::from_input_value(&v), Ok(None));
+        assert_eq!(<Option<[i32; 1]>>::from_input_value(&v), Ok(None));
+        assert_eq!(<Option<[Option<i32>; 0]>>::from_input_value(&v), Ok(None));
+        assert_eq!(<Option<[Option<i32>; 1]>>::from_input_value(&v), Ok(None));
+        assert_eq!(
+            <[[i32; 1]; 1]>::from_input_value(&v),
+            Err(FromInputValueArrayError::Null),
+        );
+        assert_eq!(
+            <Option<[Option<[Option<i32>; 1]>; 1]>>::from_input_value(&v),
+            Ok(None),
+        );
+
+        let v: V = graphql_input_value!(1);
+        assert_eq!(<[i32; 1]>::from_input_value(&v), Ok([1]));
+        assert_eq!(
+            <[i32; 0]>::from_input_value(&v),
+            Err(FromInputValueArrayError::WrongCount {
+                expected: 0,
+                actual: 1,
+            }),
+        );
+        assert_eq!(<[Option<i32>; 1]>::from_input_value(&v), Ok([Some(1)]));
+        assert_eq!(<Option<[i32; 1]>>::from_input_value(&v), Ok(Some([1])));
+        assert_eq!(
+            <Option<[Option<i32>; 1]>>::from_input_value(&v),
+            Ok(Some([Some(1)])),
+        );
+        assert_eq!(<[[i32; 1]; 1]>::from_input_value(&v), Ok([[1]]));
+        assert_eq!(
+            <Option<[Option<[Option<i32>; 1]>; 1]>>::from_input_value(&v),
+            Ok(Some([Some([Some(1)])])),
+        );
+
+        let v: V = graphql_input_value!([1, 2, 3]);
+        assert_eq!(<[i32; 3]>::from_input_value(&v), Ok([1, 2, 3]));
+        assert_eq!(
+            <Option<[i32; 3]>>::from_input_value(&v),
+            Ok(Some([1, 2, 3])),
+        );
+        assert_eq!(
+            <[Option<i32>; 3]>::from_input_value(&v),
+            Ok([Some(1), Some(2), Some(3)]),
+        );
+        assert_eq!(
+            <Option<[Option<i32>; 3]>>::from_input_value(&v),
+            Ok(Some([Some(1), Some(2), Some(3)])),
+        );
+        assert_eq!(<[[i32; 1]; 3]>::from_input_value(&v), Ok([[1], [2], [3]]));
+        // Looks like the spec ambiguity.
+        // https://github.com/graphql/graphql-spec/pull/515
+        assert_eq!(
+            <Option<[Option<[Option<i32>; 1]>; 3]>>::from_input_value(&v),
+            Ok(Some([Some([Some(1)]), Some([Some(2)]), Some([Some(3)]),])),
+        );
+
+        let v: V = graphql_input_value!([1, 2, null]);
+        assert_eq!(
+            <[i32; 3]>::from_input_value(&v),
+            Err(FromInputValueArrayError::Scalar(
+                "Expected `Int`, found: null".to_owned(),
+            )),
+        );
+        assert_eq!(
+            <Option<[i32; 3]>>::from_input_value(&v),
+            Err(FromInputValueArrayError::Scalar(
+                "Expected `Int`, found: null".to_owned(),
+            )),
+        );
+        assert_eq!(
+            <[Option<i32>; 3]>::from_input_value(&v),
+            Ok([Some(1), Some(2), None]),
+        );
+        assert_eq!(
+            <Option<[Option<i32>; 3]>>::from_input_value(&v),
+            Ok(Some([Some(1), Some(2), None])),
+        );
+        assert_eq!(
+            <[[i32; 1]; 3]>::from_input_value(&v),
+            Err(FromInputValueArrayError::Scalar(
+                FromInputValueArrayError::Null
+            )),
+        );
+        // Looks like the spec ambiguity.
+        // https://github.com/graphql/graphql-spec/pull/515
+        assert_eq!(
+            <Option<[Option<[Option<i32>; 1]>; 3]>>::from_input_value(&v),
+            Ok(Some([Some([Some(1)]), Some([Some(2)]), None])),
+        );
     }
 }
