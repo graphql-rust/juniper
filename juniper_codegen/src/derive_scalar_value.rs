@@ -197,9 +197,13 @@ fn impl_scalar_struct(
         where
             #scalar: ::juniper::ScalarValue,
         {
-            fn from_input_value(v: &::juniper::InputValue<#scalar>) -> Option<#ident> {
+            type Error = <#inner_ty as ::juniper::FromInputValue<#scalar>>::Error;
+
+            fn from_input_value(
+                v: &::juniper::InputValue<#scalar>
+            ) -> Result<#ident, <#inner_ty as ::juniper::FromInputValue<#scalar>>::Error> {
                 let inner: #inner_ty = ::juniper::FromInputValue::<#scalar>::from_input_value(v)?;
-                Some(#ident(inner))
+                Ok(#ident(inner))
             }
         }
 

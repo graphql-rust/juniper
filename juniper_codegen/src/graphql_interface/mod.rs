@@ -572,23 +572,27 @@ impl Definition {
 
         let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
+        let ty_name = ty.to_string();
         let trait_ty = self.ty.trait_ty();
 
         let fields_resolvers = self
             .fields
             .iter()
             .filter_map(|f| f.method_resolve_field_tokens(scalar, Some(&trait_ty)));
-        let async_fields_panic = {
+        let async_fields_err = {
             let names = self
                 .fields
                 .iter()
                 .filter_map(|f| f.is_async.then(|| f.name.as_str()))
                 .collect::<Vec<_>>();
             (!names.is_empty()).then(|| {
-                field::Definition::method_resolve_field_panic_async_field_tokens(&names, scalar)
+                field::Definition::method_resolve_field_err_async_field_tokens(
+                    &names, scalar, &ty_name,
+                )
             })
         };
-        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
+        let no_field_err =
+            field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
         let custom_downcast_checks = self
             .implementers
@@ -623,8 +627,8 @@ impl Definition {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
-                        #async_fields_panic
-                        _ => #no_field_panic,
+                        #async_fields_err
+                        _ => #no_field_err,
                     }
                 }
 
@@ -662,13 +666,15 @@ impl Definition {
 
         let (impl_generics, where_clause) = self.ty.impl_generics(true);
         let ty = self.ty.ty_tokens();
+        let ty_name = ty.to_string();
         let trait_ty = self.ty.trait_ty();
 
         let fields_resolvers = self
             .fields
             .iter()
             .map(|f| f.method_resolve_field_async_tokens(scalar, Some(&trait_ty)));
-        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
+        let no_field_err =
+            field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
         let custom_downcasts = self
             .implementers
@@ -690,7 +696,7 @@ impl Definition {
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
-                        _ => #no_field_panic,
+                        _ => Box::pin(async move { #no_field_err }),
                     }
                 }
 
@@ -840,6 +846,7 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
@@ -847,7 +854,9 @@ impl Implementer {
         let resolving_code = gen::sync_resolving_code();
 
         Some(quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
+            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info)
+                .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?
+            {
                 let res = #downcast;
                 return #resolving_code;
             }
@@ -868,6 +877,7 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
@@ -875,9 +885,14 @@ impl Implementer {
         let resolving_code = gen::async_resolving_code(None);
 
         Some(quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
-                let fut = ::juniper::futures::future::ready(#downcast);
-                return #resolving_code;
+            match <#ty as ::juniper::GraphQLType<#scalar>>::name(info) {
+                Some(name) => {
+                    if type_name == name {
+                        let fut = ::juniper::futures::future::ready(#downcast);
+                        return #resolving_code;
+                    }
+                }
+                None => return ::juniper::macros::helper::err_unnamed_type_fut(#ty_name),
             }
         })
     }

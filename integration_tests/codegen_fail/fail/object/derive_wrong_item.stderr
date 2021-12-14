@@ -1,5 +1,5 @@
 error: GraphQL object can only be derived for structs
- --> $DIR/derive_wrong_item.rs:4:1
+ --> fail/object/derive_wrong_item.rs:4:1
   |
 4 | enum Character {}
-  | ^^^^^^^^^^^^^^^^^
+  | ^^^^

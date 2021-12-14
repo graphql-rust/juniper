@@ -1,7 +1,8 @@
 error: GraphQL object must have at least one field
- --> $DIR/no_fields.rs:6:6
+
+  = note: https://spec.graphql.org/June2018/#sec-Objects
+
+ --> fail/subscription/no_fields.rs:6:6
   |
 6 | impl Obj {}
   |      ^^^
-  |
-  = note: https://spec.graphql.org/June2018/#sec-Objects

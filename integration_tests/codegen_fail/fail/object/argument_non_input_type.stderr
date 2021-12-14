@@ -1,14 +1,18 @@
 error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
-  --> $DIR/argument_non_input_type.rs:10:1
-   |
-10 | #[graphql_object]
-   | ^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
-   |
-   = note: required by `juniper::marker::IsInputType::mark`
-   = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
+   --> fail/object/argument_non_input_type.rs:10:1
+    |
+10  | #[graphql_object]
+    | ^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
+    |
+note: required by `juniper::marker::IsInputType::mark`
+   --> $WORKSPACE/juniper/src/types/marker.rs
+    |
+    |     fn mark() {}
+    |     ^^^^^^^^^
+    = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
-  --> $DIR/argument_non_input_type.rs:10:1
+  --> fail/object/argument_non_input_type.rs:10:1
    |
 10 | #[graphql_object]
    | ^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`

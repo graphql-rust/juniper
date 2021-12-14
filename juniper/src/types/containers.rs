@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
-    executor::{ExecutionResult, Executor, Registry},
+    executor::{ExecutionResult, Executor, FieldError, IntoFieldError, Registry},
     schema::meta::MetaType,
     types::{
         async_await::GraphQLValueAsync,
@@ -80,28 +80,22 @@ where
     }
 }
 
-impl<S, T> FromInputValue<S> for Option<T>
-where
-    T: FromInputValue<S>,
-    S: ScalarValue,
-{
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
+impl<S, T: FromInputValue<S>> FromInputValue<S> for Option<T> {
+    type Error = T::Error;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         match v {
-            &InputValue::Null => Some(None),
+            InputValue::Null => Ok(None),
             v => v.convert().map(Some),
         }
     }
 }
 
-impl<S, T> ToInputValue<S> for Option<T>
-where
-    T: ToInputValue<S>,
-    S: ScalarValue,
-{
+impl<S, T: ToInputValue<S>> ToInputValue<S> for Option<T> {
     fn to_input_value(&self) -> InputValue<S> {
-        match *self {
-            Some(ref v) => v.to_input_value(),
-            None => InputValue::null(),
+        match self {
+            Some(v) => v.to_input_value(),
+            None => InputValue::Null,
         }
     }
 }
@@ -163,18 +157,17 @@ where
     }
 }
 
-impl<T, S> FromInputValue<S> for Vec<T>
-where
-    T: FromInputValue<S>,
-    S: ScalarValue,
-{
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
-        match *v {
-            InputValue::List(ref ls) => {
-                let v: Vec<_> = ls.iter().filter_map(|i| i.item.convert()).collect();
-                (v.len() == ls.len()).then(|| v)
-            }
-            ref other => other.convert().map(|e| vec![e]),
+impl<S, T: FromInputValue<S>> FromInputValue<S> for Vec<T> {
+    type Error = T::Error;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+        match v {
+            InputValue::List(l) => l.iter().map(|i| i.item.convert()).collect(),
+            // See "Input Coercion" on List types:
+            // https://spec.graphql.org/June2018/#sec-Type-System.List
+            // In reality is intercepted by `Option`.
+            InputValue::Null => Ok(Vec::new()),
+            other => other.convert().map(|e| vec![e]),
         }
     }
 }
@@ -318,7 +311,9 @@ where
     T: FromInputValue<S>,
     S: ScalarValue,
 {
-    fn from_input_value(v: &InputValue<S>) -> Option<Self> {
+    type Error = FromInputValueArrayError<T, S>;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         struct PartiallyInitializedArray<T, const N: usize> {
             arr: [MaybeUninit<T>; N],
             init_len: usize,
@@ -345,6 +340,22 @@ where
 
         match *v {
             InputValue::List(ref ls) => {
+                if ls.len() != N {
+                    return Err(FromInputValueArrayError::WrongCount {
+                        actual: ls.len(),
+                        expected: N,
+                    });
+                }
+                if N == 0 {
+                    // TODO: Use `mem::transmute` instead of
+                    //       `mem::transmute_copy` below, once it's allowed
+                    //       for const generics:
+                    //       https://github.com/rust-lang/rust/issues/61956
+                    // SAFETY: `mem::transmute_copy` is safe here, because we
+                    //         check `N` to be `0`. It's no-op, actually.
+                    return Ok(unsafe { mem::transmute_copy::<[T; 0], Self>(&[]) });
+                }
+
                 // SAFETY: The reason we're using a wrapper struct implementing
                 //         `Drop` here is to be panic safe:
                 //         `T: FromInputValue<S>` implementation is not
@@ -363,19 +374,16 @@ where
                     no_drop: false,
                 };
 
-                let mut items = ls.iter().filter_map(|i| i.item.convert());
+                let mut items = ls.iter().map(|i| i.item.convert());
                 for elem in &mut out.arr[..] {
-                    if let Some(i) = items.next() {
+                    if let Some(i) = items
+                        .next()
+                        .transpose()
+                        .map_err(FromInputValueArrayError::Scalar)?
+                    {
                         *elem = MaybeUninit::new(i);
                         out.init_len += 1;
-                    } else {
-                        // There is not enough `items` to fill the array.
-                        return None;
                     }
-                }
-                if items.next().is_some() {
-                    // There is too much `items` to fit into the array.
-                    return None;
                 }
 
                 // Do not drop collected `items`, because we're going to return
@@ -391,29 +399,48 @@ where
                 //         we won't have a double-free when `T: Drop` here,
                 //         because original array elements are `MaybeUninit`, so
                 //         do nothing on `Drop`.
-                Some(unsafe { mem::transmute_copy::<_, Self>(&out.arr) })
+                Ok(unsafe { mem::transmute_copy::<_, Self>(&out.arr) })
+            }
+            // See "Input Coercion" on List types:
+            // https://spec.graphql.org/June2018/#sec-Type-System.List
+            // In reality is intercepted by `Option`.
+            InputValue::Null if N == 0 => {
+                // TODO: Use `mem::transmute` instead of
+                //       `mem::transmute_copy` below, once it's allowed
+                //       for const generics:
+                //       https://github.com/rust-lang/rust/issues/61956
+                // SAFETY: `mem::transmute_copy` is safe here, because we check
+                //         `N` to be `0`. It's no-op, actually.
+                Ok(unsafe { mem::transmute_copy::<[T; 0], Self>(&[]) })
             }
             ref other => {
-                other.convert().and_then(|e: T| {
-                    // TODO: Use `mem::transmute` instead of
-                    //       `mem::transmute_copy` below, once it's allowed for
-                    //       const generics:
-                    //       https://github.com/rust-lang/rust/issues/61956
-                    if N == 1 {
-                        // SAFETY: `mem::transmute_copy` is safe here, because
-                        //         we check `N` to be `1`.
-                        //         Also, despite `mem::transmute_copy` copies
-                        //         the value, we won't have a double-free when
-                        //         `T: Drop` here, because original `e: T` value
-                        //         is wrapped into `mem::ManuallyDrop`, so does
-                        //         nothing on `Drop`.
-                        Some(unsafe {
-                            mem::transmute_copy::<_, Self>(&[mem::ManuallyDrop::new(e)])
-                        })
-                    } else {
-                        None
-                    }
-                })
+                other
+                    .convert()
+                    .map_err(FromInputValueArrayError::Scalar)
+                    .and_then(|e: T| {
+                        // TODO: Use `mem::transmute` instead of
+                        //       `mem::transmute_copy` below, once it's allowed
+                        //       for const generics:
+                        //       https://github.com/rust-lang/rust/issues/61956
+                        if N == 1 {
+                            // SAFETY: `mem::transmute_copy` is safe here,
+                            //         because we check `N` to be `1`.
+                            //         Also, despite `mem::transmute_copy`
+                            //         copies the value, we won't have a
+                            //         double-free when `T: Drop` here, because
+                            //         original `e: T` value is wrapped into
+                            //         `mem::ManuallyDrop`, so does nothing on
+                            //         `Drop`.
+                            Ok(unsafe {
+                                mem::transmute_copy::<_, Self>(&[mem::ManuallyDrop::new(e)])
+                            })
+                        } else {
+                            Err(FromInputValueArrayError::WrongCount {
+                                actual: 1,
+                                expected: N,
+                            })
+                        }
+                    })
             }
         }
     }
@@ -426,6 +453,44 @@ where
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(T::to_input_value).collect())
+    }
+}
+
+/// Error converting [`InputValue`] into exact-size [`array`](prim@array).
+pub enum FromInputValueArrayError<T, S>
+where
+    T: FromInputValue<S>,
+    S: ScalarValue,
+{
+    /// Wrong count of elements.
+    WrongCount {
+        /// Actual count of elements.
+        actual: usize,
+
+        /// Expected count of elements.
+        expected: usize,
+    },
+
+    /// Underlying [`ScalarValue`] conversion error.
+    Scalar(T::Error),
+}
+
+impl<T, S> IntoFieldError<S> for FromInputValueArrayError<T, S>
+where
+    T: FromInputValue<S>,
+    T::Error: IntoFieldError<S>,
+    S: ScalarValue,
+{
+    fn into_field_error(self) -> FieldError<S> {
+        const ERROR_PREFIX: &str = "Failed to convert into exact-size array";
+        match self {
+            Self::WrongCount { actual, expected } => format!(
+                "{}: wrong elements count: {} instead of {}",
+                ERROR_PREFIX, actual, expected
+            )
+            .into(),
+            Self::Scalar(s) => s.into_field_error(),
+        }
     }
 }
 
@@ -491,4 +556,20 @@ where
     }
 
     Ok(Value::list(values))
+}
+
+#[cfg(test)]
+mod coercion {
+    use crate::{graphql_input_value, FromInputValue as _, InputValue};
+
+    type V = InputValue;
+
+    // See "Input Coercion" examples on List types:
+    // https://spec.graphql.org/June2018/#sec-Type-System.List
+    #[test]
+    fn vec() {
+        let v: V = graphql_input_value!([1, 2, 3]);
+        assert_eq!(<Vec<i32>>::from_input_value(&v), Ok(vec![1, 2, 3]),);
+        // TODO: all examples
+    }
 }

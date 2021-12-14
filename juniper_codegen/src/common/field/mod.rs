@@ -268,39 +268,45 @@ impl Definition {
         self.arguments.is_some()
     }
 
-    /// Returns generated code that panics about unknown [GraphQL field][1]
+    /// Returns generated code that errors about unknown [GraphQL field][1]
     /// tried to be resolved in the [`GraphQLValue::resolve_field`] method.
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_resolve_field_panic_no_field_tokens(scalar: &scalar::Type) -> TokenStream {
+    pub(crate) fn method_resolve_field_err_no_field_tokens(
+        scalar: &scalar::Type,
+        ty_name: &str,
+    ) -> TokenStream {
         quote! {
-            panic!(
+            return Err(::juniper::FieldError::from(format!(
                 "Field `{}` not found on type `{}`",
                 field,
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
-            )
+                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?,
+            )))
         }
     }
 
-    /// Returns generated code that panics about [GraphQL fields][1] tried to be
+    /// Returns generated code that errors about [GraphQL fields][1] tried to be
     /// resolved asynchronously in the [`GraphQLValue::resolve_field`] method
     /// (which is synchronous itself).
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_resolve_field_panic_async_field_tokens(
+    pub(crate) fn method_resolve_field_err_async_field_tokens(
         field_names: &[&str],
         scalar: &scalar::Type,
+        ty_name: &str,
     ) -> TokenStream {
         quote! {
-            #( #field_names )|* => panic!(
+            #( #field_names )|* => return Err(::juniper::FieldError::from(format!(
                 "Tried to resolve async field `{}` on type `{}` with a sync resolver",
                 field,
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
-            ),
+                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?,
+            ))),
         }
     }
 
@@ -409,7 +415,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
@@ -455,7 +461,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, true));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
@@ -504,7 +510,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }

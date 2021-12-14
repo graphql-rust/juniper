@@ -278,20 +278,18 @@ where
     }
 }
 
-impl<S, T> FromInputValue<S> for Nullable<T>
-where
-    T: FromInputValue<S>,
-    S: ScalarValue,
-{
-    fn from_input_value(v: &InputValue<S>) -> Option<Nullable<T>> {
+impl<S, T: FromInputValue<S>> FromInputValue<S> for Nullable<T> {
+    type Error = <T as FromInputValue<S>>::Error;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         match v {
-            &InputValue::Null => Some(Self::ExplicitNull),
+            &InputValue::Null => Ok(Self::ExplicitNull),
             v => v.convert().map(Self::Some),
         }
     }
 
-    fn from_implicit_null() -> Option<Self> {
-        Some(Self::ImplicitNull)
+    fn from_implicit_null() -> Result<Self, Self::Error> {
+        Ok(Self::ImplicitNull)
     }
 }
 
