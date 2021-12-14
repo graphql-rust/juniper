@@ -884,9 +884,7 @@ impl Implementer {
                         return #resolving_code;
                     }
                 }
-                None => return Box::pin(::juniper::futures::future::ready(
-                    Err(::juniper::FieldError::from("This GraphQLType has no name"))
-                )),
+                None => return ::juniper::field_err_boxed_fut("This GraphQLType has no name"),
             }
         })
     }
