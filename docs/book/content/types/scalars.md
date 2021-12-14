@@ -114,7 +114,7 @@ The example below is used just for illustration.
 #    }
 # }
 #
-use juniper::{FieldError, Value, ParseScalarResult, ParseScalarValue};
+use juniper::{Value, ParseScalarResult, ParseScalarValue};
 use date::Date;
 
 #[juniper::graphql_scalar(description = "Date")]
@@ -131,8 +131,8 @@ where
     // NOTE: The error type should implement `IntoFieldError<S>`.
     fn from_input_value(v: &InputValue) -> Result<Date, String> {
         v.as_string_value()
-        .ok_or_else(|| format!("Expected `String`, found: {}", v))
-        .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
     }
 
     // Define how to parse a string value.

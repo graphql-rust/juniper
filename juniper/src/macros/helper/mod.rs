@@ -2,23 +2,11 @@
 
 pub mod subscription;
 
-use std::fmt::Display;
+use std::fmt;
 
 use futures::future::{self, BoxFuture};
 
 use crate::{DefaultScalarValue, DynGraphQLValue, DynGraphQLValueAsync, FieldError, ScalarValue};
-
-/// Wraps `msg` with [`Display`] implementation into opaque [`Send`] [`Future`]
-/// which immediately resolves into [`FieldError`].
-#[doc(hidden)]
-pub fn field_err_boxed_fut<'ok, D, Ok, S>(msg: D) -> BoxFuture<'ok, Result<Ok, FieldError<S>>>
-where
-    D: Display,
-    Ok: Send + 'ok,
-    S: Send + 'static,
-{
-    Box::pin(future::err(FieldError::from(msg)))
-}
 
 /// Conversion of a [`GraphQLValue`] to its [trait object][1].
 ///
@@ -63,4 +51,35 @@ pub trait ExtractError {
 
 impl<T, E> ExtractError for Result<T, E> {
     type Error = E;
+}
+
+/// Wraps `msg` with [`Display`] implementation into opaque [`Send`] [`Future`]
+/// which immediately resolves into [`FieldError`].
+pub fn err_fut<'ok, D, Ok, S>(msg: D) -> BoxFuture<'ok, Result<Ok, FieldError<S>>>
+where
+    D: fmt::Display,
+    Ok: Send + 'ok,
+    S: Send + 'static,
+{
+    Box::pin(future::err(FieldError::from(msg)))
+}
+
+/// Generates a [`FieldError`] for the given Rust type expecting to have
+/// [`GraphQLType::name`].
+///
+/// [`GraphQLType::name`]: crate::GraphQLType::name
+pub fn err_unnamed_type<S>(name: &str) -> FieldError<S> {
+    FieldError::from(format!(
+        "Expected `{}` type to implement `GraphQLType::name`",
+        name,
+    ))
+}
+
+/// Returns a [`future::err`] wrapping the [`err_unnamed_type`].
+pub fn err_unnamed_type_fut<'ok, Ok, S>(name: &str) -> BoxFuture<'ok, Result<Ok, FieldError<S>>>
+where
+    Ok: Send + 'ok,
+    S: Send + 'static,
+{
+    Box::pin(future::err(err_unnamed_type(name)))
 }

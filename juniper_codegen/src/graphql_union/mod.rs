@@ -558,7 +558,6 @@ impl Definition {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     let context = executor.context();
                     #( #variant_resolvers )*
-
                     return Err(::juniper::FieldError::from(format!(
                         "Concrete type `{}` is not handled by instance \
                          resolvers on GraphQL union `{}`",
@@ -601,10 +600,9 @@ impl Definition {
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     let context = executor.context();
                     #( #variant_async_resolvers )*
-
-                    return ::juniper::field_err_boxed_fut(format!(
+                    return ::juniper::macros::helper::err_fut(format!(
                         "Concrete type `{}` is not handled by instance \
-                        resolvers on GraphQL union `{}`",
+                         resolvers on GraphQL union `{}`",
                         type_name, #name,
                     ));
                 }
@@ -672,12 +670,13 @@ impl VariantDefinition {
     #[must_use]
     fn method_resolve_into_type_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let expr = &self.resolver_code;
         let resolving_code = gen::sync_resolving_code();
 
         quote! {
             if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info)
-                .ok_or_else(|| ::juniper::FieldError::from("This GraphQLType has no name"))?
+                .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?
             {
                 let res = { #expr };
                 return #resolving_code;
@@ -694,6 +693,7 @@ impl VariantDefinition {
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let expr = &self.resolver_code;
         let resolving_code = gen::async_resolving_code(None);
 
@@ -705,9 +705,7 @@ impl VariantDefinition {
                         return #resolving_code;
                     }
                 }
-                None => return ::juniper::field_err_boxed_fut(
-                    "This GraphQLType has no name"
-                ),
+                None => return ::juniper::macros::helper::err_unnamed_type_fut(#ty_name),
             }
         }
     }

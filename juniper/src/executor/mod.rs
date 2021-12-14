@@ -230,6 +230,15 @@ impl<S> FieldError<S> {
             extensions: self.extensions.map_scalar_value(),
         }
     }
+
+    /// Maps the [`FieldError::message`] with the given function.
+    #[must_use]
+    pub fn map_message(self, f: impl FnOnce(String) -> String) -> Self {
+        Self {
+            message: f(self.message),
+            extensions: self.extensions,
+        }
+    }
 }
 
 /// The result of resolving the value of a field of type `T`

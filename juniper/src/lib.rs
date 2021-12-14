@@ -116,8 +116,9 @@ pub use juniper_codegen::{
     GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
 };
 
+#[doc(hidden)]
 #[macro_use]
-mod macros;
+pub mod macros;
 mod ast;
 pub mod executor;
 mod introspection;
@@ -162,9 +163,8 @@ pub use crate::{
     },
     introspection::IntrospectionFormat,
     macros::helper::{
-        field_err_boxed_fut,
         subscription::{ExtractTypeFromStream, IntoFieldResult},
-        AsDynGraphQLValue, ExtractError,
+        AsDynGraphQLValue,
     },
     parser::{ParseError, Spanning},
     schema::{
