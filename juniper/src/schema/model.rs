@@ -86,6 +86,8 @@ pub enum DirectiveLocation {
     FragmentSpread,
     #[graphql(name = "INLINE_FRAGMENT")]
     InlineFragment,
+    #[graphql(name = "VARIABLE_DEFINITION")]
+    VariableDefinition,
 }
 
 impl<'a, QueryT, MutationT, SubscriptionT>
@@ -544,6 +546,7 @@ impl fmt::Display for DirectiveLocation {
             DirectiveLocation::FragmentDefinition => "fragment definition",
             DirectiveLocation::FragmentSpread => "fragment spread",
             DirectiveLocation::InlineFragment => "inline fragment",
+            DirectiveLocation::VariableDefinition => "variable definition",
         })
     }
 }

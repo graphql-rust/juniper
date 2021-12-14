@@ -17,6 +17,7 @@
 - Use `null` in addition to `None` to create `Value::Null` in `graphql_value!` macro to mirror `serde_json::json!`. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 - Add `From` impls to `InputValue` mirroring the ones for `Value` and provide better support for `Option` handling. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 - Implement `graphql_input_value!` and `graphql_vars!` macros. ([#996](https://github.com/graphql-rust/juniper/pull/996))
+- Add support for directives on variables definitions. ([#1005](https://github.com/graphql-rust/juniper/pull/1005))
 
 ## Fixes
 

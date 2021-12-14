@@ -1023,6 +1023,12 @@ pub(crate) fn schema_introspection_result() -> Value {
                   "description": null,
                   "isDeprecated": false,
                   "deprecationReason": null
+                },
+                {
+                  "name": "VARIABLE_DEFINITION",
+                  "description": null,
+                  "isDeprecated": false,
+                  "deprecationReason": null
                 }
               ],
               "possibleTypes": null
@@ -2229,6 +2235,11 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                 },
                 {
                   "name": "INLINE_FRAGMENT",
+                  "isDeprecated": false,
+                  "deprecationReason": null
+                },
+                {
+                  "name": "VARIABLE_DEFINITION",
                   "isDeprecated": false,
                   "deprecationReason": null
                 }
