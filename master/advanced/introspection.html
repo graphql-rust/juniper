@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Type System - Juniper - GraphQL Server for Rust</title>
+        <title>Introspection - Juniper - GraphQL Server for Rust</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html" class="active">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
+            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html" class="active"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -136,43 +136,92 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#type-system" id="type-system"><h1>Type System</h1></a>
-<p>Most of the work in working with juniper consists of mapping the
-GraphQL type system to the Rust types your application uses.</p>
-<p>Juniper provides some convenient abstractions that try to make this process
-as painless as possible.</p>
-<p>Find out more in the individual chapters below.</p>
-<ul>
-<li><a href="objects/defining_objects.html">Defining objects</a>
-<ul>
-<li><a href="objects/complex_fields.html">Complex fields</a></li>
-<li><a href="objects/using_contexts.html">Using contexts</a></li>
-<li><a href="objects/error_handling.html">Error handling</a></li>
-</ul>
-</li>
-<li><a href="other-index.html">Other types</a>
-<ul>
-<li><a href="enums.html">Enums</a></li>
-<li><a href="interfaces.html">Interfaces</a></li>
-<li><a href="input_objects.html">Input objects</a></li>
-<li><a href="scalars.html">Scalars</a></li>
-<li><a href="unions.html">Unions</a></li>
-</ul>
-</li>
-</ul>
+                        <a class="header" href="#introspection" id="introspection"><h1>Introspection</h1></a>
+<p>GraphQL defines a special built-in top-level field called <code>__schema</code>. Querying
+for this field allows one to <a href="https://graphql.org/learn/introspection/">introspect the schema</a>
+at runtime to see what queries and mutations the GraphQL server supports.</p>
+<p>Because introspection queries are just regular GraphQL queries, Juniper supports
+them natively. For example, to get all the names of the types supported one
+could execute the following query against Juniper:</p>
+<pre><code class="language-graphql">{
+  __schema {
+    types {
+      name
+    }
+  }
+}
+</code></pre>
+<a class="header" href="#schema-introspection-output-as-json" id="schema-introspection-output-as-json"><h2>Schema introspection output as JSON</h2></a>
+<p>Many client libraries and tools in the GraphQL ecosystem require a complete
+representation of the server schema. Often this representation is in JSON and
+referred to as <code>schema.json</code>. A complete representation of the schema can be
+produced by issuing a specially crafted introspection query.</p>
+<p>Juniper provides a convenience function to introspect the entire schema. The
+result can then be converted to JSON for use with tools and libraries such as
+<a href="https://github.com/graphql-rust/graphql-client">graphql-client</a>:</p>
+<pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
+# extern crate juniper;
+# extern crate serde_json;
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
+    GraphQLObject, IntrospectionFormat,
+};
+
+// Define our schema.
+
+#[derive(GraphQLObject)]
+struct Example {
+  id: String,
+}
+
+struct Context;
+impl juniper::Context for Context {}
+
+struct Query;
+
+#[graphql_object(context = Context)]
+impl Query {
+   fn example(id: String) -&gt; FieldResult&lt;Example&gt; {
+       unimplemented!()
+   }
+}
+
+type Schema = juniper::RootNode&lt;
+    'static, 
+    Query, 
+    EmptyMutation&lt;Context&gt;, 
+    EmptySubscription&lt;Context&gt;
+&gt;;
+
+fn main() {
+    // Create a context object.
+    let ctx = Context{};
+
+    // Run the built-in introspection query.
+    let (res, _errors) = juniper::introspect(
+        &amp;Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
+        &amp;ctx,
+        IntrospectionFormat::default(),
+    ).unwrap();
+
+    // Convert introspection result to json.
+    let json_result = serde_json::to_string_pretty(&amp;res);
+    assert!(json_result.is_ok());
+}
+</code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../quickstart.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../advanced/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../types/objects/defining_objects.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../advanced/non_struct_objects.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -184,13 +233,13 @@ as painless as possible.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="../quickstart.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="../advanced/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a href="../types/objects/defining_objects.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="../advanced/non_struct_objects.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
