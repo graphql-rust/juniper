@@ -9,7 +9,7 @@ use crate::{
     graphql_interface, graphql_object, graphql_scalar, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    value::{ParseScalarResult, ParseScalarValue, Value},
     GraphQLEnum,
 };
 

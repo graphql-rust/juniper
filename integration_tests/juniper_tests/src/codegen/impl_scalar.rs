@@ -150,7 +150,7 @@ impl GraphQLScalar for WithCustomScalarValue {
     fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<WithCustomScalarValue, String> {
         v.as_int_value()
             .map(WithCustomScalarValue)
-            .ok_or_else(|| format!("Expected Int, found: {}", v).into())
+            .ok_or_else(|| format!("Expected Int, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {

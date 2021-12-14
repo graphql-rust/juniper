@@ -46,7 +46,7 @@ mod test {
 
         use chrono_tz::Tz;
 
-        use crate::{graphql_input_value, FieldError, FromInputValue, InputValue};
+        use crate::{graphql_input_value, FromInputValue, InputValue};
 
         fn tz_input_test(raw: &'static str, expected: Result<Tz, &str>) {
             let input: InputValue = graphql_input_value!((raw));
