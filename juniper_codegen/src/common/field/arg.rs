@@ -347,73 +347,34 @@ impl OnMethod {
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
-    pub(crate) fn method_resolve_field_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+    pub(crate) fn method_resolve_field_tokens(
+        &self,
+        scalar: &scalar::Type,
+        for_async: bool,
+    ) -> TokenStream {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
                 let err_text = format!("Missing argument `{}`: {{}}", &name);
-                quote! {
-                    args.get::<#ty>(#name)
-                        .and_then(|opt| {
-                            opt.map_or_else(
-                                || {
-                                    <#ty as ::juniper::FromInputValue<#scalar>>::
-                                        from_implicit_null()
-                                        .map_err(|e| {
-                                            let e = ::juniper::IntoFieldError::into_field_error(e);
-                                            ::juniper::FieldError::new(
-                                                format!(#err_text, e.message()),
-                                                e.extensions().clone(),
-                                            )
-                                        })
-                                },
-                                Ok,
-                            )
-                        })?
-                }
-            }
 
-            Self::Context(_) => quote! {
-                ::juniper::FromContext::from(executor.context())
-            },
-
-            Self::Executor => quote! { &executor },
-        }
-    }
-
-    /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
-    /// which provides the value of this [`OnMethod`] argument to be passed into
-    /// a trait method call.
-    ///
-    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
-    #[must_use]
-    pub(crate) fn method_resolve_field_async_tokens(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Regular(arg) => {
-                let (name, ty) = (&arg.name, &arg.ty);
-                let err_text = format!("Missing argument `{}`: {{}}", &name);
-                quote! {
-                    match args.get::<#ty>(#name)
-                        .and_then(|opt| {
-                            opt.map_or_else(
-                                || {
-                                    <#ty as ::juniper::FromInputValue<#scalar>>::
-                                        from_implicit_null()
-                                        .map_err(|e| {
-                                            let e = ::juniper::IntoFieldError::into_field_error(e);
-                                            ::juniper::FieldError::new(
-                                                format!(#err_text, e.message()),
-                                                e.extensions().clone(),
-                                            )
-                                        })
-                                },
-                                Ok,
-                            )
-                        })
-                    {
-                        Ok(ok) => ok,
-                        Err(err) => return Box::pin(async { Err(err) }),
+                let arg = quote! {
+                    args.get::<#ty>(#name).and_then(|opt| opt.map_or_else(|| {
+                        <#ty as ::juniper::FromInputValue<#scalar>>::from_implicit_null()
+                            .map_err(|e| {
+                                ::juniper::IntoFieldError::<#scalar>::into_field_error(e)
+                                    .map_message(|m| format!(#err_text, m))
+                            })
+                    }, Ok))
+                };
+                if for_async {
+                    quote! {
+                        match #arg {
+                            Ok(v) => v,
+                            Err(e) => return Box::pin(async { Err(e) }),
+                        }
                     }
+                } else {
+                    quote! { #arg? }
                 }
             }
 

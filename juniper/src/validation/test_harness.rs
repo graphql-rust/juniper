@@ -14,7 +14,7 @@ use crate::{
     },
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
     value::ScalarValue,
-    FieldError, GraphQLInputObject, IntoFieldError,
+    GraphQLInputObject,
 };
 
 struct Being;
@@ -616,7 +616,7 @@ impl<S> FromInputValue<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    type Error = FieldError<S>;
+    type Error = String;
 
     fn from_input_value<'a>(v: &InputValue<S>) -> Result<ComplexInput, Self::Error> {
         let obj = v.to_object_value().ok_or("Expected object")?;
@@ -644,7 +644,7 @@ where
                 .ok_or("Expected booleanField")?,
             string_list_field: obj
                 .get("stringListField")
-                .map(|v| v.convert().map_err(IntoFieldError::into_field_error))
+                .map(|v| v.convert())
                 .transpose()?
                 .ok_or("Expected stringListField")?,
         })

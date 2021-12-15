@@ -169,7 +169,8 @@ where
                                 var_pos,
                                 &path,
                                 &format!(
-                                    "Expected input of type `{}`. Got: `{}`. Details: {}",
+                                    "Expected input of type `{}`. Got: `{}`. \
+                                     Details: {}",
                                     iom.name,
                                     value,
                                     e.message(),

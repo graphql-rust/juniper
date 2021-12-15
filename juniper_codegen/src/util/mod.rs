@@ -865,9 +865,7 @@ impl GraphQLTypeDefiniton {
                 fn from_input_value(
                     v: &::juniper::InputValue<#scalar>
                 ) -> Result<#ty, Self::Error> {
-                    match v.as_enum_value().or_else(|| {
-                        v.as_string_value()
-                    }) {
+                    match v.as_enum_value().or_else(|| v.as_string_value()) {
                         #( #from_inputs )*
                         _ => Err(format!("Unknown enum value: {}", v)),
                     }

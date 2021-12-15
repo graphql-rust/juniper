@@ -309,7 +309,7 @@ pub fn build_scalar(
         impl#generic_type_decl ::juniper::FromInputValue<#generic_type> for #impl_for_type
         #generic_type_bound
         {
-            type Error = <#from_input_value_result as ::juniper::ExtractError>::Error;
+            type Error = <#from_input_value_result as ::juniper::macros::helper::ExtractError>::Error;
 
             fn from_input_value(#from_input_value_arg: &::juniper::InputValue<#generic_type>) -> #from_input_value_result {
                 #from_input_value_body

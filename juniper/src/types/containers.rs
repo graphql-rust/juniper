@@ -213,7 +213,7 @@ where
 {
     fn into_field_error(self) -> FieldError<S> {
         match self {
-            Self::Null => "Failed to convert into Vec: Value cannot be null".into(),
+            Self::Null => "Failed to convert into `Vec`: Value cannot be `null`".into(),
             Self::Scalar(s) => s.into_field_error(),
         }
     }
@@ -520,7 +520,7 @@ where
     fn into_field_error(self) -> FieldError<S> {
         const ERROR_PREFIX: &str = "Failed to convert into exact-size array";
         match self {
-            Self::Null => format!("{}: Value cannot be null", ERROR_PREFIX).into(),
+            Self::Null => format!("{}: Value cannot be `null`", ERROR_PREFIX).into(),
             Self::WrongCount { actual, expected } => format!(
                 "{}: wrong elements count: {} instead of {}",
                 ERROR_PREFIX, actual, expected

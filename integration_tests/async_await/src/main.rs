@@ -81,8 +81,7 @@ mod tests {
     #[tokio::test]
     async fn async_simple() {
         let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
-        let doc = r#"
-        query {
+        let doc = r#"query {
             fieldSync
             fieldAsyncPlain
             delayed
@@ -91,8 +90,7 @@ mod tests {
                 name
                 delayed
             }
-        }
-    "#;
+        }"#;
 
         let vars = Default::default();
         let (res, errs) = juniper::execute(doc, None, &schema, &vars, &())
@@ -122,8 +120,7 @@ mod tests {
     #[tokio::test]
     async fn async_field_validation_error() {
         let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
-        let doc = r#"
-        query {
+        let doc = r#"query {
             nonExistentField
             fieldSync
             fieldAsyncPlain
@@ -133,8 +130,7 @@ mod tests {
                 name
                 delayed
             }
-        }
-    "#;
+        }"#;
 
         let vars = Default::default();
         let result = juniper::execute(doc, None, &schema, &vars, &()).await;

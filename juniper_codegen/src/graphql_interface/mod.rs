@@ -572,6 +572,7 @@ impl Definition {
 
         let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
+        let ty_name = ty.to_string();
         let trait_ty = self.ty.trait_ty();
 
         let fields_resolvers = self
@@ -585,10 +586,13 @@ impl Definition {
                 .filter_map(|f| f.is_async.then(|| f.name.as_str()))
                 .collect::<Vec<_>>();
             (!names.is_empty()).then(|| {
-                field::Definition::method_resolve_field_err_async_field_tokens(&names, scalar)
+                field::Definition::method_resolve_field_err_async_field_tokens(
+                    &names, scalar, &ty_name,
+                )
             })
         };
-        let no_field_err = field::Definition::method_resolve_field_err_no_field_tokens(scalar);
+        let no_field_err =
+            field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
         let custom_downcast_checks = self
             .implementers
@@ -662,13 +666,15 @@ impl Definition {
 
         let (impl_generics, where_clause) = self.ty.impl_generics(true);
         let ty = self.ty.ty_tokens();
+        let ty_name = ty.to_string();
         let trait_ty = self.ty.trait_ty();
 
         let fields_resolvers = self
             .fields
             .iter()
             .map(|f| f.method_resolve_field_async_tokens(scalar, Some(&trait_ty)));
-        let no_field_err = field::Definition::method_resolve_field_err_no_field_tokens(scalar);
+        let no_field_err =
+            field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
         let custom_downcasts = self
             .implementers
@@ -840,6 +846,7 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
@@ -848,7 +855,7 @@ impl Implementer {
 
         Some(quote! {
             if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info)
-                .ok_or_else(|| ::juniper::FieldError::from("This GraphQLType has no name"))?
+                .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?
             {
                 let res = #downcast;
                 return #resolving_code;
@@ -870,6 +877,7 @@ impl Implementer {
         self.downcast.as_ref()?;
 
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let scalar = &self.scalar;
 
         let downcast = self.downcast_call_tokens(trait_ty, None);
@@ -884,7 +892,7 @@ impl Implementer {
                         return #resolving_code;
                     }
                 }
-                None => return ::juniper::field_err_boxed_fut("This GraphQLType has no name"),
+                None => return ::juniper::macros::helper::err_unnamed_type_fut(#ty_name),
             }
         })
     }

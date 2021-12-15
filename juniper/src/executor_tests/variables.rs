@@ -23,7 +23,7 @@ impl<S: ScalarValue> GraphQLScalar for TestComplexScalar {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
             .map(|_| TestComplexScalar)
-            .ok_or_else(|| format!("Expected SerializedValue String, found: {}", v))
+            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {}"#, v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -1097,8 +1097,9 @@ mod integers {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                "Variable \"$var\" got invalid value. Expected input scalar `Int`. \
-                 Got: `\"10\"`. Details: Expected `Int`, found: \"10\".",
+                "Variable \"$var\" got invalid value. \
+                 Expected input scalar `Int`. Got: `\"10\"`. \
+                 Details: Expected `Int`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );
@@ -1156,8 +1157,9 @@ mod floats {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                "Variable \"$var\" got invalid value. Expected input scalar `Float`. \
-                 Got: `\"10\"`. Details: Expected `Float`, found: \"10\".",
+                "Variable \"$var\" got invalid value. \
+                 Expected input scalar `Float`. Got: `\"10\"`. \
+                 Details: Expected `Float`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );

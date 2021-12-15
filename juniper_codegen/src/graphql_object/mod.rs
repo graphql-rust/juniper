@@ -486,6 +486,7 @@ impl Definition<Query> {
 
         let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
 
         let name = &self.name;
 
@@ -500,10 +501,13 @@ impl Definition<Query> {
                 .filter_map(|f| f.is_async.then(|| f.name.as_str()))
                 .collect::<Vec<_>>();
             (!names.is_empty()).then(|| {
-                field::Definition::method_resolve_field_err_async_field_tokens(&names, scalar)
+                field::Definition::method_resolve_field_err_async_field_tokens(
+                    &names, scalar, &ty_name,
+                )
             })
         };
-        let no_field_err = field::Definition::method_resolve_field_err_no_field_tokens(scalar);
+        let no_field_err =
+            field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
         quote! {
             #[allow(deprecated)]
@@ -553,12 +557,14 @@ impl Definition<Query> {
 
         let (impl_generics, where_clause) = self.impl_generics(true);
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
 
         let fields_resolvers = self
             .fields
             .iter()
             .map(|f| f.method_resolve_field_async_tokens(scalar, None));
-        let no_field_err = field::Definition::method_resolve_field_err_no_field_tokens(scalar);
+        let no_field_err =
+            field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
         quote! {
             #[allow(deprecated, non_snake_case)]

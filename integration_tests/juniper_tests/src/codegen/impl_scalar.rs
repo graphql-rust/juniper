@@ -34,7 +34,7 @@ where
     fn from_input_value(v: &InputValue) -> Result<DefaultName, String> {
         v.as_int_value()
             .map(DefaultName)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -51,7 +51,7 @@ impl GraphQLScalar for OtherOrder {
     fn from_input_value(v: &InputValue) -> Result<OtherOrder, String> {
         v.as_int_value()
             .map(OtherOrder)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
@@ -68,7 +68,7 @@ impl GraphQLScalar for Named {
     fn from_input_value(v: &InputValue) -> Result<Named, String> {
         v.as_int_value()
             .map(Named)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
@@ -85,7 +85,7 @@ impl GraphQLScalar for ScalarDescription {
     fn from_input_value(v: &InputValue) -> Result<ScalarDescription, String> {
         v.as_int_value()
             .map(ScalarDescription)
-            .ok_or_else(|| format!("Expected Int, found: {}", v))
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
@@ -209,7 +209,7 @@ fn path_in_resolve_return_type() {
         fn from_input_value(v: &InputValue) -> Result<ResolvePath, String> {
             v.as_int_value()
                 .map(ResolvePath)
-                .ok_or_else(|| format!("Expected Int, found: {}", v))
+                .ok_or_else(|| format!("Expected `Int`, found: {}", v))
         }
 
         fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {

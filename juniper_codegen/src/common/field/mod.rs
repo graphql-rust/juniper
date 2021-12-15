@@ -274,13 +274,16 @@ impl Definition {
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_resolve_field_err_no_field_tokens(scalar: &scalar::Type) -> TokenStream {
+    pub(crate) fn method_resolve_field_err_no_field_tokens(
+        scalar: &scalar::Type,
+        ty_name: &str,
+    ) -> TokenStream {
         quote! {
-            return Err(::juniper::FieldError::<#scalar>::from(format!(
+            return Err(::juniper::FieldError::from(format!(
                 "Field `{}` not found on type `{}`",
                 field,
                 <Self as ::juniper::GraphQLType<#scalar>>::name(info)
-                    .ok_or_else(|| ::juniper::FieldError::<#scalar>::from("No name for GraphQLType"))?,
+                    .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?,
             )))
         }
     }
@@ -295,16 +298,15 @@ impl Definition {
     pub(crate) fn method_resolve_field_err_async_field_tokens(
         field_names: &[&str],
         scalar: &scalar::Type,
+        ty_name: &str,
     ) -> TokenStream {
         quote! {
-            #( #field_names )|* => return Err(::juniper::FieldError::<#scalar>::from(
-                format!(
-                    "Tried to resolve async field `{}` on type `{}` with a sync resolver",
-                    field,
-                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
-                        .ok_or_else(|| ::juniper::FieldError::<#scalar>::from("No name for GraphQLType"))?,
-                )
-            )),
+            #( #field_names )|* => return Err(::juniper::FieldError::from(format!(
+                "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+                field,
+                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?,
+            ))),
         }
     }
 
@@ -413,7 +415,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
@@ -459,7 +461,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_async_tokens(scalar));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, true));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
@@ -508,7 +510,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
