@@ -163,9 +163,8 @@ pub use crate::{
     },
     introspection::IntrospectionFormat,
     macros::helper::{
-        field_err_boxed_fut,
         subscription::{ExtractTypeFromStream, IntoFieldResult},
-        AsDynGraphQLValue, ExtractError,
+        AsDynGraphQLValue,
     },
     parser::{ParseError, Spanning},
     schema::{
