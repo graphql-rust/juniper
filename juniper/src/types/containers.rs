@@ -597,7 +597,7 @@ where
 
 #[cfg(test)]
 mod coercion {
-    use crate::{graphql_input_value, DefaultScalarValue, FromInputValue as _, InputValue};
+    use crate::{graphql_input_value, FromInputValue as _, InputValue};
 
     use super::{FromInputValueArrayError, FromInputValueVecError};
 
