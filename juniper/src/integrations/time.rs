@@ -650,43 +650,49 @@ mod utc_offset_test {
 
 #[cfg(test)]
 mod integration_test {
-    use time::{
-        format_description::{parse, well_known::Rfc3339},
-        Date, Month, OffsetDateTime, PrimitiveDateTime, Time,
-    };
+    use time::macros::{date, datetime, offset, time};
 
     use crate::{
-        graphql_object, graphql_value, graphql_vars,
+        execute, graphql_object, graphql_value, graphql_vars,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
+    use super::{Date, DateTime, LocalDateTime, LocalTime, UtcOffset};
+
     #[tokio::test]
-    async fn test_serialization() {
+    async fn serializes() {
         struct Root;
 
         #[graphql_object]
         impl Root {
-            fn example_date() -> Date {
-                Date::from_calendar_date(2015, Month::March, 14).unwrap()
+            fn date() -> Date {
+                date!(2015 - 03 - 14)
             }
-            fn example_primitive_date_time() -> PrimitiveDateTime {
-                let description = parse("[year]-[month]-[day] [hour]:[minute]:[second]").unwrap();
-                PrimitiveDateTime::parse("2016-07-08 09:10:11", &description).unwrap()
+
+            fn local_time() -> LocalTime {
+                time!(16:07:08)
             }
-            fn example_time() -> Time {
-                Time::from_hms(16, 7, 8).unwrap()
+
+            fn local_date_time() -> LocalDateTime {
+                datetime!(2016-07-08 09:10:11)
             }
-            fn example_offset_date_time() -> OffsetDateTime {
-                OffsetDateTime::parse("1996-12-19T16:39:57-08:00", &Rfc3339).unwrap()
+
+            fn date_time() -> DateTime {
+                datetime!(1996-12-19 16:39:57 -8)
+            }
+
+            fn utc_offset() -> UtcOffset {
+                offset!(+11:30)
             }
         }
 
-        let doc = r#"{
-            exampleDate,
-            examplePrimitiveDateTime,
-            exampleTime,
-            exampleOffsetDateTime,
+        const DOC: &str = r#"{
+            date
+            localTime
+            localDateTime
+            dateTime,
+            utcOffset,
         }"#;
 
         let schema = RootNode::new(
@@ -695,20 +701,18 @@ mod integration_test {
             EmptySubscription::<()>::new(),
         );
 
-        let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
-            .await
-            .expect("Execution failed");
-
-        assert_eq!(errs, []);
-
         assert_eq!(
-            result,
-            graphql_value!({
-                "exampleDate": "2015-03-14",
-                "examplePrimitiveDateTime": "2016-07-08 09:10:11",
-                "exampleTime": "16:07:08",
-                "exampleOffsetDateTime": "1996-12-19T16:39:57-08:00",
-            }),
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({
+                    "date": "2015-03-14",
+                    "localTime": "16:07:08",
+                    "localDateTime": "2016-07-08 09:10:11",
+                    "dateTime": "1996-12-19T16:39:57-08:00",
+                    "utcOffset": "+11:30",
+                }),
+                vec![],
+            )),
         );
     }
 }
