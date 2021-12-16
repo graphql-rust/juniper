@@ -36,7 +36,7 @@ crates. They are enabled via features that are on by default.
 
 * uuid::Uuid
 * chrono::DateTime
-* time::{Date, OffsetDateTime, PrimitiveDateTime}
+* time::{Date, OffsetDateTime, PrimitiveDateTime, Time}
 * url::Url
 * bson::oid::ObjectId
 
@@ -104,7 +104,7 @@ The example below is used just for illustration.
 # extern crate juniper;
 # mod date {
 #    pub struct Date;
-#    impl std::str::FromStr for Date{
+#    impl std::str::FromStr for Date {
 #        type Err = String; fn from_str(_value: &str) -> Result<Self, Self::Err> { unimplemented!() }
 #    }
 #    // And we define how to represent date as a string.
