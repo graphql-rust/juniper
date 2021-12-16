@@ -19,8 +19,12 @@ where
         Value::scalar(self.to_hex())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<ObjectId> {
-        v.as_string_value().and_then(|s| Self::parse_str(s).ok())
+    fn from_input_value(v: &InputValue) -> Result<ObjectId, String> {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                Self::parse_str(s).map_err(|e| format!("Failed to parse `ObjectId`: {}", e))
+            })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -41,9 +45,13 @@ where
         Value::scalar((*self).to_chrono().to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<UtcDateTime> {
+    fn from_input_value(v: &InputValue) -> Result<UtcDateTime, String> {
         v.as_string_value()
-            .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                s.parse::<DateTime<Utc>>()
+                    .map_err(|e| format!("Failed to parse `UtcDateTime`: {}", e))
+            })
             .map(Self::from_chrono)
     }
 

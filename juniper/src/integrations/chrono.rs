@@ -36,9 +36,13 @@ where
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<DateTime<FixedOffset>> {
+    fn from_input_value(v: &InputValue) -> Result<DateTime<FixedOffset>, String> {
         v.as_string_value()
-            .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .map_err(|e| format!("Failed to parse `DateTimeFixedOffset`: {}", e))
+            })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -59,9 +63,13 @@ where
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<DateTime<Utc>> {
+    fn from_input_value(v: &InputValue) -> Result<DateTime<Utc>, String> {
         v.as_string_value()
-            .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                s.parse::<DateTime<Utc>>()
+                    .map_err(|e| format!("Failed to parse `DateTimeUtc`: {}", e))
+            })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -87,9 +95,13 @@ where
         Value::scalar(self.format("%Y-%m-%d").to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<NaiveDate> {
+    fn from_input_value(v: &InputValue) -> Result<NaiveDate, String> {
         v.as_string_value()
-            .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                    .map_err(|e| format!("Failed to parse `NaiveDate`: {}", e))
+            })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -111,9 +123,13 @@ where
         Value::scalar(self.format("%H:%M:%S").to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<NaiveTime> {
+    fn from_input_value(v: &InputValue) -> Result<NaiveTime, String> {
         v.as_string_value()
-            .and_then(|s| NaiveTime::parse_from_str(s, "%H:%M:%S").ok())
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                NaiveTime::parse_from_str(s, "%H:%M:%S")
+                    .map_err(|e| format!("Failed to parse `NaiveTime`: {}", e))
+            })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -136,9 +152,14 @@ where
         Value::scalar(self.timestamp() as f64)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<NaiveDateTime> {
+    fn from_input_value(v: &InputValue) -> Result<NaiveDateTime, String> {
         v.as_float_value()
-            .and_then(|f| NaiveDateTime::from_timestamp_opt(f as i64, 0))
+            .ok_or_else(|| format!("Expected `Float`, found: {}", v))
+            .and_then(|f| {
+                let secs = f as i64;
+                NaiveDateTime::from_timestamp_opt(secs, 0)
+                    .ok_or_else(|| format!("Out-of-range number of seconds: {}", secs))
+            })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

@@ -767,7 +767,7 @@ impl GraphQLTypeDefiniton {
             let resolver_code = &variant.resolver_code;
 
             quote!(
-                Some(#variant_name) => Some(#resolver_code),
+                Some(#variant_name) => Ok(#resolver_code),
             )
         });
 
@@ -875,13 +875,14 @@ impl GraphQLTypeDefiniton {
             impl#impl_generics ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
-                fn from_input_value(v: &::juniper::InputValue<#scalar>) -> Option<#ty>
-                {
-                    match v.as_enum_value().or_else(|| {
-                        v.as_string_value()
-                    }) {
+                type Error = ::std::string::String;
+
+                fn from_input_value(
+                    v: &::juniper::InputValue<#scalar>
+                ) -> Result<#ty, Self::Error> {
+                    match v.as_enum_value().or_else(|| v.as_string_value()) {
                         #( #from_inputs )*
-                        _ => None,
+                        _ => Err(format!("Unknown enum value: {}", v)),
                     }
                 }
             }
@@ -995,8 +996,14 @@ impl GraphQLTypeDefiniton {
                     #field_ident: {
                         match obj.get(#field_name) {
                             #from_input_default
-                            Some(ref v) => ::juniper::FromInputValue::from_input_value(v)?,
-                            None => ::juniper::FromInputValue::<#scalar>::from_implicit_null()?,
+                            Some(ref v) => {
+                                ::juniper::FromInputValue::<#scalar>::from_input_value(v)
+                                    .map_err(::juniper::IntoFieldError::into_field_error)?
+                            },
+                            None => {
+                                ::juniper::FromInputValue::<#scalar>::from_implicit_null()
+                                    .map_err(::juniper::IntoFieldError::into_field_error)?
+                            },
                         }
                     },
                 )
@@ -1111,10 +1118,17 @@ impl GraphQLTypeDefiniton {
             impl#impl_generics ::juniper::FromInputValue<#scalar> for #ty #type_generics_tokens
                 #where_clause
             {
-                fn from_input_value(value: &::juniper::InputValue<#scalar>) -> Option<Self>
-                {
-                    let obj = value.to_object_value()?;
-                    Some(#ty {
+                type Error = ::juniper::FieldError<#scalar>;
+
+                fn from_input_value(
+                    value: &::juniper::InputValue<#scalar>
+                ) -> Result<Self, Self::Error> {
+                    let obj = value
+                        .to_object_value()
+                        .ok_or_else(|| ::juniper::FieldError::<#scalar>::from(
+                            format!("Expected input object, found: {}", value))
+                        )?;
+                    Ok(#ty {
                         #( #from_inputs )*
                     })
                 }

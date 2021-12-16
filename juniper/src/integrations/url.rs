@@ -16,8 +16,10 @@ where
         Value::scalar(self.as_str().to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<Url> {
-        v.as_string_value().and_then(|s| Url::parse(s).ok())
+    fn from_input_value(v: &InputValue) -> Result<Url, String> {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse `Url`: {}", e)))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

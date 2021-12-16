@@ -1,8 +1,12 @@
 error[E0277]: the trait bound `Test: GraphQLObject<__S>` is not satisfied
- --> $DIR/struct_non_object_variant.rs:9:10
-  |
-9 | #[derive(GraphQLUnion)]
-  |          ^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `Test`
-  |
-  = note: required by `juniper::GraphQLObject::mark`
-  = note: this error originates in the derive macro `GraphQLUnion` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> fail/union/struct_non_object_variant.rs:9:10
+   |
+9  | #[derive(GraphQLUnion)]
+   |          ^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `Test`
+   |
+note: required by `juniper::GraphQLObject::mark`
+  --> $WORKSPACE/juniper/src/types/marker.rs
+   |
+   |     fn mark() {}
+   |     ^^^^^^^^^
+   = note: this error originates in the derive macro `GraphQLUnion` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -113,7 +113,7 @@ The example below is used just for illustration.
 #        }
 #    }
 # }
-
+#
 use juniper::{Value, ParseScalarResult, ParseScalarValue};
 use date::Date;
 
@@ -128,10 +128,11 @@ where
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    fn from_input_value(v: &InputValue) -> Option<Date> {
-        v.as_scalar_value()
-        .and_then(|v| v.as_str())
-        .and_then(|s| s.parse().ok())
+    // NOTE: The error type should implement `IntoFieldError<S>`.
+    fn from_input_value(v: &InputValue) -> Result<Date, String> {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
     }
 
     // Define how to parse a string value.
@@ -139,6 +140,6 @@ where
         <String as ParseScalarValue<S>>::from_str(value)
     }
 }
-
+#
 # fn main() {}
 ```

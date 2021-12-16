@@ -1,13 +1,11 @@
-//! Checks that `__typename` field queries okay on root types.
+//! Checks that `__typename` field queries okay (and not okay) on root types.
 //! See [#372](https://github.com/graphql-rust/juniper/issues/372) for details.
 
-use futures::{stream, FutureExt as _};
+use futures::stream;
 use juniper::{
     execute, graphql_object, graphql_subscription, graphql_value, graphql_vars,
-    resolve_into_stream, RootNode,
+    resolve_into_stream, GraphQLError, RootNode,
 };
-
-use crate::util::extract_next;
 
 pub struct Query;
 
@@ -102,12 +100,23 @@ async fn subscription_typename() {
 
     let schema = RootNode::new(Query, Mutation, Subscription);
 
-    assert_eq!(
-        resolve_into_stream(query, None, &schema, &graphql_vars! {}, &())
-            .then(|s| extract_next(s))
-            .await,
-        Ok((graphql_value!({"__typename": "Subscription"}), vec![])),
-    );
+    match resolve_into_stream(query, None, &schema, &graphql_vars! {}, &()).await {
+        Err(GraphQLError::ValidationError(mut errors)) => {
+            assert_eq!(errors.len(), 1);
+
+            let err = errors.pop().unwrap();
+
+            assert_eq!(
+                err.message(),
+                "`__typename` may not be included as a root field in a \
+                 subscription operation",
+            );
+            assert_eq!(err.locations()[0].index(), 15);
+            assert_eq!(err.locations()[0].line(), 0);
+            assert_eq!(err.locations()[0].column(), 15);
+        }
+        _ => panic!("Expected ValidationError"),
+    };
 }
 
 #[tokio::test]
@@ -116,10 +125,21 @@ async fn explicit_subscription_typename() {
 
     let schema = RootNode::new(Query, Mutation, Subscription);
 
-    assert_eq!(
-        resolve_into_stream(query, None, &schema, &graphql_vars! {}, &())
-            .then(|s| extract_next(s))
-            .await,
-        Ok((graphql_value!({"__typename": "Subscription"}), vec![])),
-    );
+    match resolve_into_stream(query, None, &schema, &graphql_vars! {}, &()).await {
+        Err(GraphQLError::ValidationError(mut errors)) => {
+            assert_eq!(errors.len(), 1);
+
+            let err = errors.pop().unwrap();
+
+            assert_eq!(
+                err.message(),
+                "`__typename` may not be included as a root field in a \
+                 subscription operation"
+            );
+            assert_eq!(err.locations()[0].index(), 28);
+            assert_eq!(err.locations()[0].line(), 0);
+            assert_eq!(err.locations()[0].column(), 28);
+        }
+        _ => panic!("Expected ValidationError"),
+    };
 }
