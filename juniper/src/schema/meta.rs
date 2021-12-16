@@ -452,7 +452,7 @@ impl<'a, S> ScalarMeta<'a, S> {
     /// Set the `specification url` for the given [`ScalarMeta`] type
     ///
     /// Overwrites any previously set specification url.
-    pub fn specified_by_url(mut self, url: impl Into<Cow<'a, str>>) -> ScalarMeta<'a, S> {
+    pub fn specified_by_url(mut self, url: impl Into<Cow<'a, str>>) -> Self {
         self.specified_by_url = Some(url.into());
         self
     }
