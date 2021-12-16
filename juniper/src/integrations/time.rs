@@ -98,8 +98,8 @@ const LOCAL_TIME_FORMAT_NO_MILLIS: &[FormatItem<'_>] =
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]:[minute]");
 
-#[graphql_scalar(
-    description = "The clock time within a given date (without time zone).\
+#[graphql_scalar(description = "Clock time within a given date (without time zone) in \
+                   `HH:mm[:ss[.SSS]]` format.\
                    \n\n\
                    All minutes are assumed to have exactly 60 seconds; no \
                    attempt is made to handle leap seconds (either positive or \
@@ -110,13 +110,16 @@ const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]
                    See also [`time::Time`][2] for details.\
                    \n\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/local-time\n\
-                   [2]: https://docs.rs/time/*/time/struct.Time.html"
-)]
+                   [2]: https://docs.rs/time/*/time/struct.Time.html")]
 impl<S: ScalarValue> GraphQLScalar for LocalTime {
     fn resolve(&self) -> Value {
         Value::scalar(
-            self.format(LOCAL_TIME_FORMAT)
-                .unwrap_or_else(|e| panic!("Failed to format `LocalTime`: {}", e)),
+            if self.millisecond() == 0 {
+                self.format(LOCAL_TIME_FORMAT_NO_MILLIS)
+            } else {
+                self.format(LOCAL_TIME_FORMAT)
+            }
+            .unwrap_or_else(|e| panic!("Failed to format `LocalTime`: {}", e)),
         )
     }
 
@@ -395,9 +398,9 @@ mod local_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (time!(1:02:03.004_005), graphql_input_value!("01:02:03.004")),
-            (time!(0:00), graphql_input_value!("00:00:00.000")),
-            (time!(12:00 pm), graphql_input_value!("12:00:00.000")),
-            (time!(1:02:03), graphql_input_value!("01:02:03.000")),
+            (time!(0:00), graphql_input_value!("00:00:00")),
+            (time!(12:00 pm), graphql_input_value!("12:00:00")),
+            (time!(1:02:03), graphql_input_value!("01:02:03")),
         ] {
             let actual: InputValue = val.to_input_value();
 
