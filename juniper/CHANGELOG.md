@@ -24,7 +24,7 @@
 
 - Allow spreading interface fragments on unions and other interfaces. ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
 - Support expressions in `graphql_value!` macro. ([#996](https://github.com/graphql-rust/juniper/pull/996), [#503](https://github.com/graphql-rust/juniper/issues/503))
-- List coercion rules: `Null` can't be coerced to an `[Int!]!` or `[Int]!` ([#1004](https://github.com/graphql-rust/juniper/pull/1004))
+- List coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004](https://github.com/graphql-rust/juniper/pull/1004))
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 
