@@ -252,9 +252,11 @@ impl<'a, S> MetaType<'a, S> {
         }
     }
 
-    /// Access the specification url, if applicable
+    /// Accesses the [specification URL][0], if applicable.
     ///
-    /// Only custom scalars can have specification url.
+    /// Only custom GraphQL scalars can have a [specification URL][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec--specifiedBy
     pub fn specified_by_url(&self) -> Option<&str> {
         match self {
             Self::Scalar(ScalarMeta {
@@ -267,6 +269,7 @@ impl<'a, S> MetaType<'a, S> {
     /// Construct a `TypeKind` for a given type
     ///
     /// # Panics
+    ///
     /// Panics if the type represents a placeholder or nullable type.
     pub fn type_kind(&self) -> TypeKind {
         match *self {
@@ -449,9 +452,11 @@ impl<'a, S> ScalarMeta<'a, S> {
         self
     }
 
-    /// Set the `specification url` for the given [`ScalarMeta`] type
+    /// Sets the [specification URL][0] for this [`ScalarMeta`] type.
     ///
-    /// Overwrites any previously set specification url.
+    /// Overwrites any previously set [specification URL][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec--specifiedBy
     pub fn specified_by_url(mut self, url: impl Into<Cow<'a, str>>) -> Self {
         self.specified_by_url = Some(url.into());
         self

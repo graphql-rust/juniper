@@ -108,10 +108,10 @@ fn impl_scalar_struct(
     let inner_ty = &field.ty;
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
-    let description = attrs.description.map(|val| quote!( .description( #val ) ));
+    let description = attrs.description.map(|val| quote!(.description(#val)));
     let specified_by_url = attrs
         .specified_by_url
-        .map(|url| quote!( .specified_by_url( #url ) ));
+        .map(|url| quote!(.specified_by_url(#url)));
 
     let scalar = attrs
         .scalar

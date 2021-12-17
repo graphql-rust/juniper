@@ -199,7 +199,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn specified_by_url(&self) -> Option<&str> {
         match self {
             Self::Concrete(t) => t.specified_by_url(),
-            _ => None,
+            Self::NonNull(_) | Self::List(..) => None,
         }
     }
 
