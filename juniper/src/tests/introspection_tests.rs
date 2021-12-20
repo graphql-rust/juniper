@@ -208,6 +208,12 @@ async fn test_introspection_directives() {
                         "INLINE_FRAGMENT",
                     ],
                 },
+                {
+                    "name": "specifiedBy",
+                    "locations": [
+                        "SCALAR",
+                    ],
+                },
             ],
         },
     });

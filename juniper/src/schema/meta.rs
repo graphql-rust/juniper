@@ -48,6 +48,8 @@ pub struct ScalarMeta<'a, S> {
     pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
+    #[doc(hidden)]
+    pub specified_by_url: Option<Cow<'a, str>>,
     pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>,
     pub(crate) parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
 }
@@ -250,9 +252,24 @@ impl<'a, S> MetaType<'a, S> {
         }
     }
 
+    /// Accesses the [specification URL][0], if applicable.
+    ///
+    /// Only custom GraphQL scalars can have a [specification URL][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec--specifiedBy
+    pub fn specified_by_url(&self) -> Option<&str> {
+        match self {
+            Self::Scalar(ScalarMeta {
+                specified_by_url, ..
+            }) => specified_by_url.as_deref(),
+            _ => None,
+        }
+    }
+
     /// Construct a `TypeKind` for a given type
     ///
     /// # Panics
+    ///
     /// Panics if the type represents a placeholder or nullable type.
     pub fn type_kind(&self) -> TypeKind {
         match *self {
@@ -421,6 +438,7 @@ impl<'a, S> ScalarMeta<'a, S> {
         Self {
             name,
             description: None,
+            specified_by_url: None,
             try_parse_fn: try_parse_fn::<S, T>,
             parse_fn: <T as ParseScalarValue<S>>::from_str,
         }
@@ -431,6 +449,16 @@ impl<'a, S> ScalarMeta<'a, S> {
     /// Overwrites any previously set description.
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
+        self
+    }
+
+    /// Sets the [specification URL][0] for this [`ScalarMeta`] type.
+    ///
+    /// Overwrites any previously set [specification URL][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec--specifiedBy
+    pub fn specified_by_url(mut self, url: impl Into<Cow<'a, str>>) -> Self {
+        self.specified_by_url = Some(url.into());
         self
     }
 
