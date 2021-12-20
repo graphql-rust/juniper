@@ -177,6 +177,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///    // A description can also specified in the attribute.
 ///    // This will the doc comment, if one exists.
 ///    description = "...",
+///    // A specification URL.
+///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
 /// )]
 /// struct UserId(String);
 /// ```
@@ -221,7 +223,10 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     name = "MyName",
 ///     // You can also specify a description here.
 ///     // If present, doc comments will be ignored.
-///     description = "An opaque identifier, represented as a string")]
+///     description = "An opaque identifier, represented as a string",
+///    // A specification URL.
+///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
+/// )]
 /// impl<S> GraphQLScalar for UserID
 /// where
 ///     S: juniper::ScalarValue

@@ -6,7 +6,11 @@ use juniper::{
 use crate::custom_scalar::MyScalarValue;
 
 #[derive(Debug, PartialEq, Eq, Hash, juniper::GraphQLScalarValue)]
-#[graphql(transparent, scalar = MyScalarValue)]
+#[graphql(
+    transparent,
+    scalar = MyScalarValue,
+    specified_by_url = "https://tools.ietf.org/html/rfc4122",
+)]
 pub struct LargeId(i64);
 
 #[derive(juniper::GraphQLObject)]
@@ -47,6 +51,29 @@ fn test_scalar_value_large_id() {
     let id = LargeId(num);
     let output = ToInputValue::<MyScalarValue>::to_input_value(&id);
     assert_eq!(output, InputValue::scalar(num));
+}
+
+#[tokio::test]
+async fn test_scalar_value_large_specified_url() {
+    let schema = RootNode::<'_, _, _, _, MyScalarValue>::new_with_scalar_value(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+
+    let doc = r#"{
+        __type(name: "LargeId") {
+            specifiedByUrl
+        }
+    }"#;
+
+    assert_eq!(
+        execute(doc, None, &schema, &Variables::<MyScalarValue>::new(), &()).await,
+        Ok((
+            graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc4122"}}),
+            vec![],
+        )),
+    );
 }
 
 #[tokio::test]

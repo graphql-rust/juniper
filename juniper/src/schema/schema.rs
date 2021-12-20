@@ -137,6 +137,10 @@ where
     internal,
 )]
 impl<'a, S: ScalarValue + 'a> SchemaType<'a, S> {
+    fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
     fn types(&self) -> Vec<TypeType<S>> {
         self.type_list()
             .into_iter()
@@ -189,6 +193,13 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         match self {
             TypeType::Concrete(t) => t.description(),
             _ => None,
+        }
+    }
+
+    fn specified_by_url(&self) -> Option<&str> {
+        match self {
+            Self::Concrete(t) => t.specified_by_url(),
+            Self::NonNull(_) | Self::List(..) => None,
         }
     }
 
@@ -399,6 +410,10 @@ impl<'a, S: ScalarValue + 'a> DirectiveType<'a, S> {
 
     fn locations(&self) -> &[DirectiveLocation] {
         &self.locations
+    }
+
+    fn is_repeatable(&self) -> bool {
+        self.is_repeatable
     }
 
     fn args(&self) -> &[Argument<S>] {
