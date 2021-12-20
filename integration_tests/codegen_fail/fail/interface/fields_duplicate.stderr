@@ -1,11 +1,16 @@
 error: GraphQL interface must have a different name for each field
-
-  = note: https://spec.graphql.org/June2018/#sec-Interfaces
-
   --> fail/interface/fields_duplicate.rs:13:1
    |
-13 | trait Character {
-   | ^^^^^
+13 | / trait Character {
+14 | |     fn id(&self) -> &str {
+15 | |         "funA"
+16 | |     }
+...  |
+21 | |     }
+22 | | }
+   | |_^
+   |
+   = note: https://spec.graphql.org/June2018/#sec-Interfaces
 
 error[E0412]: cannot find type `CharacterValue` in this scope
  --> fail/interface/fields_duplicate.rs:4:18
