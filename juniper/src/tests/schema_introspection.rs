@@ -1051,6 +1051,12 @@ pub(crate) fn schema_introspection_result() -> Value {
                   "deprecationReason": null
                 },
                 {
+                  "name": "FIELD_DEFINITION",
+                  "description": null,
+                  "isDeprecated": false,
+                  "deprecationReason": null
+                },
+                {
                   "name": "FRAGMENT_SPREAD",
                   "description": null,
                   "isDeprecated": false,
@@ -1064,6 +1070,12 @@ pub(crate) fn schema_introspection_result() -> Value {
                 },
                 {
                   "name": "SCALAR",
+                  "description": null,
+                  "isDeprecated": false,
+                  "deprecationReason": null
+                },
+                {
+                  "name": "ENUM_VALUE",
                   "description": null,
                   "isDeprecated": false,
                   "deprecationReason": null
@@ -1369,6 +1381,31 @@ pub(crate) fn schema_introspection_result() -> Value {
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ]
+            },
+            {
+              "name": "deprecated",
+              "description": null,
+              "isRepeatable": false,
+              "locations": [
+                "FIELD_DEFINITION",
+                "ENUM_VALUE"
+              ],
+              "args": [
+                {
+                  "name": "reason",
+                  "description": null,
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
                       "ofType": null
                     }
                   },
@@ -2346,6 +2383,11 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                   "deprecationReason": null
                 },
                 {
+                  "name": "FIELD_DEFINITION",
+                  "isDeprecated": false,
+                  "deprecationReason": null
+                },
+                {
                   "name": "FRAGMENT_SPREAD",
                   "isDeprecated": false,
                   "deprecationReason": null
@@ -2357,6 +2399,11 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                 },
                 {
                   "name": "SCALAR",
+                  "isDeprecated": false,
+                  "deprecationReason": null
+                },
+                {
+                  "name": "ENUM_VALUE",
                   "isDeprecated": false,
                   "deprecationReason": null
                 }
@@ -2643,6 +2690,29 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ]
+            },
+            {
+              "name": "deprecated",
+              "isRepeatable": false,
+              "locations": [
+                "FIELD_DEFINITION",
+                "ENUM_VALUE"
+              ],
+              "args": [
+                {
+                  "name": "reason",
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
                       "ofType": null
                     }
                   },
