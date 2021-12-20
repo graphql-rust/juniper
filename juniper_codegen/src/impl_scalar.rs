@@ -325,6 +325,15 @@ pub fn build_scalar(
                 #from_str_body
             }
         }
+
+        impl#generic_type_decl ::juniper::macros::helper::Type<#generic_type> for #impl_for_type {
+            const NAME: &'static str = #name;
+        }
+
+        impl#generic_type_decl ::juniper::macros::helper::SubTypes<#generic_type> for #impl_for_type {
+            const NAMES: &'static [&'static str] =
+                &[<Self as ::juniper::macros::helper::Type<#generic_type>>::NAME];
+        }
     );
 
     Ok(content)

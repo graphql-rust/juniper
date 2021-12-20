@@ -2,7 +2,7 @@
 
 pub mod subscription;
 
-use std::fmt;
+use std::{fmt, rc::Rc, sync::Arc};
 
 use futures::future::{self, BoxFuture};
 
@@ -101,4 +101,46 @@ pub const fn fnv1a128(str: &str) -> u128 {
         i += 1;
     }
     hash
+}
+
+/// TODO
+pub trait Type<S = DefaultScalarValue> {
+    const NAME: &'static str;
+}
+
+impl<'a, S, T: Type<S> + ?Sized> Type<S> for &'a T {
+    const NAME: &'static str = T::NAME;
+}
+
+impl<S, T: Type<S> + ?Sized> Type<S> for Box<T> {
+    const NAME: &'static str = T::NAME;
+}
+
+impl<S, T: Type<S> + ?Sized> Type<S> for Arc<T> {
+    const NAME: &'static str = T::NAME;
+}
+
+impl<S, T: Type<S> + ?Sized> Type<S> for Rc<T> {
+    const NAME: &'static str = T::NAME;
+}
+
+/// TODO
+pub trait SubTypes<S = DefaultScalarValue> {
+    const NAMES: &'static [&'static str];
+}
+
+impl<'a, S, T: SubTypes<S> + ?Sized> SubTypes<S> for &'a T {
+    const NAMES: &'static [&'static str] = T::NAMES;
+}
+
+impl<S, T: SubTypes<S> + ?Sized> SubTypes<S> for Box<T> {
+    const NAMES: &'static [&'static str] = T::NAMES;
+}
+
+impl<S, T: SubTypes<S> + ?Sized> SubTypes<S> for Arc<T> {
+    const NAMES: &'static [&'static str] = T::NAMES;
+}
+
+impl<S, T: SubTypes<S> + ?Sized> SubTypes<S> for Rc<T> {
+    const NAMES: &'static [&'static str] = T::NAMES;
 }

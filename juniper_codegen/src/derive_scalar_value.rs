@@ -224,6 +224,15 @@ fn impl_scalar_struct(
         impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ident
             where #scalar: ::juniper::ScalarValue,
         { }
+
+        impl#impl_generics ::juniper::macros::helper::Type<#scalar> for #ident {
+            const NAME: &'static str = #name;
+        }
+
+        impl#impl_generics ::juniper::macros::helper::SubTypes<#scalar> for #ident {
+            const NAMES: &'static [&'static str] =
+                &[<Self as ::juniper::macros::helper::Type<#scalar>>::NAME];
+        }
     );
 
     Ok(content)

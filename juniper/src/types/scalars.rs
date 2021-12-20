@@ -202,6 +202,14 @@ where
     })
 }
 
+impl<S> crate::macros::helper::Type<S> for str {
+    const NAME: &'static str = "String";
+}
+
+impl<S> crate::macros::helper::SubTypes<S> for str {
+    const NAMES: &'static [&'static str] = &[<Self as crate::macros::helper::Type>::NAME];
+}
+
 impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,

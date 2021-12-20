@@ -94,38 +94,10 @@ mod new {
         true
     }
 
-    trait Type {
-        const NAME: &'static str;
-    }
-
-    trait PossibleFragments {
-        const POSSIBLE_FRAGMENTS: &'static [&'static str];
-    }
-
-    impl<'a, T: PossibleFragments> PossibleFragments for &T {
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] = T::POSSIBLE_FRAGMENTS;
-    }
-
-    impl Type for String {
-        const NAME: &'static str = "String";
-    }
-
-    impl PossibleFragments for String {
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
-    }
-
-    impl<'a> Type for &'a str {
-        const NAME: &'static str = "String";
-    }
-
-    impl<'a> PossibleFragments for &'a str {
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
-    }
-
     trait Field<S: ScalarValue, const N: u128> {
         type Context;
         type TypeInfo;
-        const POSSIBLE_FRAGMENTS: &'static [&'static str];
+        const SUBTYPES: &'static [&'static str];
 
         fn call(
             &self,
@@ -141,15 +113,15 @@ mod new {
         id: String,
     }
 
-    impl Type for Character {
+    impl<S> juniper::macros::helper::Type<S> for Character {
         const NAME: &'static str = "Character";
     }
 
-    impl PossibleFragments for Character {
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[
-            <Self as Type>::NAME,
-            <Human as Type>::NAME,
-            <Droid as Type>::NAME,
+    impl<S> juniper::macros::helper::SubTypes<S> for Character {
+        const NAMES: &'static [&'static str] = &[
+            <Self as juniper::macros::helper::Type<S>>::NAME,
+            <Human as juniper::macros::helper::Type<S>>::NAME,
+            <Droid as juniper::macros::helper::Type<S>>::NAME,
         ];
     }
 
@@ -175,8 +147,8 @@ mod new {
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for CharacterValue {
         type Context = ();
         type TypeInfo = ();
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] =
-            <String as PossibleFragments>::POSSIBLE_FRAGMENTS;
+        const SUBTYPES: &'static [&'static str] =
+            <String as juniper::macros::helper::SubTypes<S>>::NAMES;
 
         fn call(
             &self,
@@ -187,16 +159,16 @@ mod new {
             match self {
                 CharacterValue::Human(v) => {
                     const _: () = assert!(is_superset(
-                        <String as PossibleFragments>::POSSIBLE_FRAGMENTS,
-                        <Human as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::POSSIBLE_FRAGMENTS,
+                        <String as juniper::macros::helper::SubTypes>::NAMES,
+                        <Human as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::SUBTYPES,
                     ));
 
                     <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
                 }
                 CharacterValue::Droid(v) => {
                     const _: () = assert!(is_superset(
-                        <String as PossibleFragments>::POSSIBLE_FRAGMENTS,
-                        <Droid as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::POSSIBLE_FRAGMENTS,
+                        <String as juniper::macros::helper::SubTypes>::NAMES,
+                        <Droid as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::SUBTYPES,
                     ));
 
                     <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
@@ -400,19 +372,19 @@ mod new {
         home_planet: String,
     }
 
-    impl Type for Human {
+    impl<S> juniper::macros::helper::Type<S> for Human {
         const NAME: &'static str = "Human";
     }
 
-    impl PossibleFragments for Human {
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
+    impl<S> juniper::macros::helper::SubTypes<S> for Human {
+        const NAMES: &'static [&'static str] = &[<Self as juniper::macros::helper::Type<S>>::NAME];
     }
 
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Human {
         type Context = ();
         type TypeInfo = ();
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] =
-            <String as PossibleFragments>::POSSIBLE_FRAGMENTS;
+        const SUBTYPES: &'static [&'static str] =
+            <String as juniper::macros::helper::SubTypes<S>>::NAMES;
 
         fn call(
             &self,
@@ -429,8 +401,6 @@ mod new {
         }
     }
 
-    // #[derive(GraphQLObject)]
-    // #[graphql(impl = CharacterValue)]
     struct Droid {
         id: String,
         primary_function: String,
@@ -447,19 +417,19 @@ mod new {
         }
     }
 
-    impl Type for Droid {
+    impl<S> juniper::macros::helper::Type<S> for Droid {
         const NAME: &'static str = "Droid";
     }
 
-    impl PossibleFragments for Droid {
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
+    impl<S> juniper::macros::helper::SubTypes<S> for Droid {
+        const NAMES: &'static [&'static str] = &[<Self as juniper::macros::helper::Type>::NAME];
     }
 
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Droid {
         type Context = ();
         type TypeInfo = ();
-        const POSSIBLE_FRAGMENTS: &'static [&'static str] =
-            <&str as PossibleFragments>::POSSIBLE_FRAGMENTS;
+        const SUBTYPES: &'static [&'static str] =
+            <&str as juniper::macros::helper::SubTypes<S>>::NAMES;
 
         fn call(
             &self,
