@@ -209,6 +209,13 @@ async fn test_introspection_directives() {
                     ],
                 },
                 {
+                    "name": "deprecated",
+                    "locations": [
+                        "FIELD_DEFINITION",
+                        "ENUM_VALUE",
+                    ],
+                },
+                {
                     "name": "specifiedBy",
                     "locations": [
                         "SCALAR",

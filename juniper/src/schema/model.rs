@@ -85,10 +85,14 @@ pub enum DirectiveLocation {
     Scalar,
     #[graphql(name = "FRAGMENT_DEFINITION")]
     FragmentDefinition,
+    #[graphql(name = "FIELD_DEFINITION")]
+    FieldDefinition,
     #[graphql(name = "FRAGMENT_SPREAD")]
     FragmentSpread,
     #[graphql(name = "INLINE_FRAGMENT")]
     InlineFragment,
+    #[graphql(name = "ENUM_VALUE")]
+    EnumValue,
 }
 
 impl<'a, QueryT, MutationT, SubscriptionT>
@@ -213,6 +217,10 @@ impl<'a, S> SchemaType<'a, S> {
         directives.insert(
             "include".to_owned(),
             DirectiveType::new_include(&mut registry),
+        );
+        directives.insert(
+            "deprecated".to_owned(),
+            DirectiveType::new_deprecated(&mut registry),
         );
         directives.insert(
             "specifiedBy".to_owned(),
@@ -545,6 +553,21 @@ where
         )
     }
 
+    fn new_deprecated(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            "deprecated",
+            &[
+                DirectiveLocation::FieldDefinition,
+                DirectiveLocation::EnumValue,
+            ],
+            &[registry.arg::<String>("reason", &())],
+            false,
+        )
+    }
+
     fn new_specified_by(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
     where
         S: ScalarValue,
@@ -570,10 +593,12 @@ impl fmt::Display for DirectiveLocation {
             DirectiveLocation::Mutation => "mutation",
             DirectiveLocation::Subscription => "subscription",
             DirectiveLocation::Field => "field",
+            DirectiveLocation::FieldDefinition => "field definition",
             DirectiveLocation::FragmentDefinition => "fragment definition",
             DirectiveLocation::FragmentSpread => "fragment spread",
             DirectiveLocation::InlineFragment => "inline fragment",
             DirectiveLocation::Scalar => "scalar",
+            DirectiveLocation::EnumValue => "enum value",
         })
     }
 }
