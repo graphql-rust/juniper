@@ -1,0 +1,5 @@
+error: Failed to parse URL: relative URL without a base
+ --> fail/scalar/derive_wrong_url.rs:2:30
+  |
+2 | #[graphql(specified_by_url = "not an url")]
+  |                              ^^^^^^^^^^^^

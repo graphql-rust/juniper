@@ -1,0 +1,5 @@
+error: Failed to parse URL: relative URL without a base
+ --> fail/scalar/impl_wrong_url.rs:3:27
+  |
+3 | #[juniper::graphql_scalar(specified_by_url = "not an url")]
+  |                           ^^^^^^^^^^^^^^^^

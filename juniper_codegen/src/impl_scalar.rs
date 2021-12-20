@@ -203,9 +203,10 @@ pub fn build_scalar(
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| impl_for_type.ident.to_string());
     let description = attrs.description.map(|val| quote!(.description(#val)));
-    let specified_by_url = attrs
-        .specified_by_url
-        .map(|url| quote!(.specified_by_url(#url)));
+    let specified_by_url = attrs.specified_by_url.map(|url| {
+        let url = url.as_str();
+        quote!(.specified_by_url(#url))
+    });
     let async_generic_type = match input.custom_data_type_is_struct {
         true => quote!(__S),
         _ => quote!(#custom_data_type),

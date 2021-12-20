@@ -6,13 +6,14 @@ use crate::{
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{spanned::Spanned, token, Data, Fields, Ident, Variant};
+use url::Url;
 
 #[derive(Debug, Default)]
 struct TransparentAttributes {
     transparent: Option<bool>,
     name: Option<String>,
     description: Option<String>,
-    specified_by_url: Option<String>,
+    specified_by_url: Option<Url>,
     scalar: Option<syn::Type>,
 }
 
@@ -41,8 +42,10 @@ impl syn::parse::Parse for TransparentAttributes {
                 }
                 "specified_by_url" => {
                     input.parse::<token::Eq>()?;
-                    let val = input.parse::<syn::LitStr>()?;
-                    output.specified_by_url = Some(val.value());
+                    let val: syn::LitStr = input.parse::<syn::LitStr>()?;
+                    output.specified_by_url = Some(val.value().parse().map_err(|e| {
+                        syn::Error::new(val.span(), format!("Failed to parse URL: {}", e))
+                    })?);
                 }
                 "transparent" => {
                     output.transparent = Some(true);
@@ -109,9 +112,10 @@ fn impl_scalar_struct(
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
     let description = attrs.description.map(|val| quote!(.description(#val)));
-    let specified_by_url = attrs
-        .specified_by_url
-        .map(|url| quote!(.specified_by_url(#url)));
+    let specified_by_url = attrs.specified_by_url.map(|url| {
+        let url = url.as_str();
+        quote!(.specified_by_url(#url))
+    });
 
     let scalar = attrs
         .scalar

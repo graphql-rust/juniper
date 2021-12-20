@@ -82,6 +82,7 @@ pub enum DirectiveLocation {
     Mutation,
     Subscription,
     Field,
+    Scalar,
     #[graphql(name = "FRAGMENT_DEFINITION")]
     FragmentDefinition,
     #[graphql(name = "FRAGMENT_SPREAD")]
@@ -212,6 +213,10 @@ impl<'a, S> SchemaType<'a, S> {
         directives.insert(
             "include".to_owned(),
             DirectiveType::new_include(&mut registry),
+        );
+        directives.insert(
+            "specifiedBy".to_owned(),
+            DirectiveType::new_specified_by(&mut registry),
         );
 
         let mut meta_fields = vec![
@@ -540,6 +545,18 @@ where
         )
     }
 
+    fn new_specified_by(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            "specifiedBy",
+            &[DirectiveLocation::Scalar],
+            &[registry.arg::<String>("url", &())],
+            false,
+        )
+    }
+
     pub fn description(mut self, description: &str) -> DirectiveType<'a, S> {
         self.description = Some(description.to_owned());
         self
@@ -556,6 +573,7 @@ impl fmt::Display for DirectiveLocation {
             DirectiveLocation::FragmentDefinition => "fragment definition",
             DirectiveLocation::FragmentSpread => "fragment spread",
             DirectiveLocation::InlineFragment => "inline fragment",
+            DirectiveLocation::Scalar => "scalar",
         })
     }
 }

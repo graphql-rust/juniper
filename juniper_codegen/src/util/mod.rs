@@ -17,6 +17,7 @@ use syn::{
     spanned::Spanned,
     token, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
+use url::Url;
 
 use crate::common::parse::ParseBufferExt as _;
 
@@ -553,7 +554,7 @@ pub struct FieldAttributes {
     pub description: Option<SpanContainer<String>>,
     pub deprecation: Option<SpanContainer<DeprecationAttr>>,
     /// Only relevant for scalar impl macro.
-    pub specified_by_url: Option<SpanContainer<String>>,
+    pub specified_by_url: Option<SpanContainer<Url>>,
     /// Only relevant for GraphQLObject derive.
     pub skip: Option<SpanContainer<syn::Ident>>,
     /// Only relevant for object macro.
@@ -577,7 +578,16 @@ impl Parse for FieldAttributes {
                     output.description = Some(name.map(|val| val.value()));
                 }
                 FieldAttribute::SpecifiedByUrl(url) => {
-                    output.specified_by_url = Some(url.map(|val| val.value()));
+                    output.specified_by_url = Some(
+                        url.map(|val| Url::parse(&val.value()))
+                            .transpose()
+                            .map_err(|e| {
+                                syn::Error::new(
+                                    e.span_ident(),
+                                    format!("Failed to parse URL: {}", e.inner()),
+                                )
+                            })?,
+                    );
                 }
                 FieldAttribute::Deprecation(attr) => {
                     output.deprecation = Some(attr);

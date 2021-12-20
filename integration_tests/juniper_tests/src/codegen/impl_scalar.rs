@@ -100,8 +100,10 @@ impl GraphQLScalar for ScalarSpecifiedByUrl {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<ScalarSpecifiedByUrl> {
-        v.as_scalar_value::<i32>().map(|i| ScalarSpecifiedByUrl(*i))
+    fn from_input_value(v: &InputValue) -> Result<ScalarSpecifiedByUrl, String> {
+        v.as_int_value()
+            .map(ScalarSpecifiedByUrl)
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {

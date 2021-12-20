@@ -1061,6 +1061,12 @@ pub(crate) fn schema_introspection_result() -> Value {
                   "description": null,
                   "isDeprecated": false,
                   "deprecationReason": null
+                },
+                {
+                  "name": "SCALAR",
+                  "description": null,
+                  "isDeprecated": false,
+                  "deprecationReason": null
                 }
               ],
               "possibleTypes": null
@@ -1363,6 +1369,30 @@ pub(crate) fn schema_introspection_result() -> Value {
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ]
+            },
+            {
+              "name": "specifiedBy",
+              "description": null,
+              "isRepeatable": false,
+              "locations": [
+                "SCALAR"
+              ],
+              "args": [
+                {
+                  "name": "url",
+                  "description": null,
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
                       "ofType": null
                     }
                   },
@@ -2324,6 +2354,11 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                   "name": "INLINE_FRAGMENT",
                   "isDeprecated": false,
                   "deprecationReason": null
+                },
+                {
+                  "name": "SCALAR",
+                  "isDeprecated": false,
+                  "deprecationReason": null
                 }
               ],
               "possibleTypes": null
@@ -2608,6 +2643,28 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                     "ofType": {
                       "kind": "SCALAR",
                       "name": "Boolean",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ]
+            },
+            {
+              "name": "specifiedBy",
+              "isRepeatable": false,
+              "locations": [
+                "SCALAR"
+              ],
+              "args": [
+                {
+                  "name": "url",
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
                       "ofType": null
                     }
                   },
