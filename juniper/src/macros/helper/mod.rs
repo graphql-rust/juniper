@@ -83,3 +83,22 @@ where
 {
     Box::pin(future::err(err_unnamed_type(name)))
 }
+
+/// Non-cryptographic hash with good dispersion to use [`str`](prim@str) in
+/// const generics. See [spec] for more info.
+///
+/// [spec]: https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-17.html
+pub const fn fnv1a128(str: &str) -> u128 {
+    const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
+    const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
+
+    let bytes = str.as_bytes();
+    let mut hash = FNV_OFFSET_BASIS;
+    let mut i = 0;
+    while i < bytes.len() {
+        hash ^= bytes[i] as u128;
+        hash = hash.wrapping_mul(FNV_PRIME);
+        i += 1;
+    }
+    hash
+}

@@ -31,6 +31,524 @@ where
     )
 }
 
+mod new {
+    use super::*;
+
+    const fn fnv1a128(str: &str) -> u128 {
+        const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
+        const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
+
+        let bytes = str.as_bytes();
+        let mut hash = FNV_OFFSET_BASIS;
+        let mut i = 0;
+        while i < bytes.len() {
+            hash ^= bytes[i] as u128;
+            hash = hash.wrapping_mul(FNV_PRIME);
+            i += 1;
+        }
+        hash
+    }
+
+    const fn is_superset(superset: &[&str], set: &[&str]) -> bool {
+        const fn str_eq(l: &str, r: &str) -> bool {
+            let (l, r) = (l.as_bytes(), r.as_bytes());
+
+            if l.len() != r.len() {
+                return false;
+            }
+
+            let mut i = 0;
+            while i < l.len() {
+                if l[i] != r[i] {
+                    return false;
+                }
+                i += 1;
+            }
+
+            true
+        }
+
+        const fn find(set: &[&str], elem: &str) -> bool {
+            let mut i = 0;
+            while i < set.len() {
+                if str_eq(elem, set[i]) {
+                    return true;
+                }
+                i += 1;
+            }
+            false
+        }
+
+        if superset.len() < set.len() {
+            return false;
+        }
+
+        let mut i = 0;
+        while i < set.len() {
+            if !find(superset, set[i]) {
+                return false;
+            }
+            i += 1;
+        }
+
+        true
+    }
+
+    trait Type {
+        const NAME: &'static str;
+    }
+
+    trait PossibleFragments {
+        const POSSIBLE_FRAGMENTS: &'static [&'static str];
+    }
+
+    impl<'a, T: PossibleFragments> PossibleFragments for &T {
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] = T::POSSIBLE_FRAGMENTS;
+    }
+
+    impl Type for String {
+        const NAME: &'static str = "String";
+    }
+
+    impl PossibleFragments for String {
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
+    impl<'a> Type for &'a str {
+        const NAME: &'static str = "String";
+    }
+
+    impl<'a> PossibleFragments for &'a str {
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
+    trait Field<S: ScalarValue, const N: u128> {
+        type Context;
+        type TypeInfo;
+        const POSSIBLE_FRAGMENTS: &'static [&'static str];
+
+        fn call(
+            &self,
+            info: &Self::TypeInfo,
+            args: &::juniper::Arguments<S>,
+            executor: &::juniper::Executor<Self::Context, S>,
+        ) -> ::juniper::ExecutionResult<S>;
+    }
+
+    // #[derive(GraphQLInterface)]
+    // #[graphql(for(Human, Droid))]
+    struct Character {
+        id: String,
+    }
+
+    impl Type for Character {
+        const NAME: &'static str = "Character";
+    }
+
+    impl PossibleFragments for Character {
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[
+            <Self as Type>::NAME,
+            <Human as Type>::NAME,
+            <Droid as Type>::NAME,
+        ];
+    }
+
+    enum CharacterEnumValue<I1, I2> {
+        Human(I1),
+        Droid(I2),
+    }
+
+    type CharacterValue = CharacterEnumValue<Human, Droid>;
+
+    impl From<Human> for CharacterValue {
+        fn from(v: Human) -> Self {
+            Self::Human(v)
+        }
+    }
+
+    impl From<Droid> for CharacterValue {
+        fn from(v: Droid) -> Self {
+            Self::Droid(v)
+        }
+    }
+
+    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for CharacterValue {
+        type Context = ();
+        type TypeInfo = ();
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] =
+            <String as PossibleFragments>::POSSIBLE_FRAGMENTS;
+
+        fn call(
+            &self,
+            info: &Self::TypeInfo,
+            args: &juniper::Arguments<S>,
+            executor: &juniper::Executor<Self::Context, S>,
+        ) -> juniper::ExecutionResult<S> {
+            match self {
+                CharacterValue::Human(v) => {
+                    const _: () = assert!(is_superset(
+                        <String as PossibleFragments>::POSSIBLE_FRAGMENTS,
+                        <Human as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::POSSIBLE_FRAGMENTS,
+                    ));
+
+                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
+                }
+                CharacterValue::Droid(v) => {
+                    const _: () = assert!(is_superset(
+                        <String as PossibleFragments>::POSSIBLE_FRAGMENTS,
+                        <Droid as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::POSSIBLE_FRAGMENTS,
+                    ));
+
+                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
+                }
+            }
+        }
+    }
+
+    #[automatically_derived]
+    impl<__S> ::juniper::marker::GraphQLInterface<__S> for CharacterValue
+    where
+        __S: ::juniper::ScalarValue,
+    {
+        fn mark() {
+            const _: fn() = || {
+                trait MutuallyExclusive {}
+                impl MutuallyExclusive for Droid {}
+                impl MutuallyExclusive for Human {}
+            };
+        }
+    }
+
+    #[automatically_derived]
+    impl<__S> ::juniper::marker::IsOutputType<__S> for CharacterValue
+    where
+        __S: ::juniper::ScalarValue,
+    {
+        fn mark() {
+            <<&str as ::juniper::IntoResolvable<
+                '_,
+                __S,
+                _,
+                <Self as ::juniper::GraphQLValue<__S>>::Context,
+            >>::Type as ::juniper::marker::IsOutputType<__S>>::mark();
+            <Droid as ::juniper::marker::IsOutputType<__S>>::mark();
+            <Human as ::juniper::marker::IsOutputType<__S>>::mark();
+        }
+    }
+
+    #[automatically_derived]
+    impl<__S> ::juniper::GraphQLType<__S> for CharacterValue
+    where
+        __S: ::juniper::ScalarValue,
+    {
+        fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+            Some("Character")
+        }
+        fn meta<'r>(
+            info: &Self::TypeInfo,
+            registry: &mut ::juniper::Registry<'r, __S>,
+        ) -> ::juniper::meta::MetaType<'r, __S>
+        where
+            __S: 'r,
+        {
+            let _ = registry.get_type::<Droid>(info);
+            let _ = registry.get_type::<Human>(info);
+            let fields = [registry.field_convert::<&str, _, Self::Context>("id", info)];
+            registry
+                .build_interface_type::<CharacterValue>(info, &fields)
+                .into_meta()
+        }
+    }
+
+    #[allow(deprecated)]
+    #[automatically_derived]
+    impl<__S> ::juniper::GraphQLValue<__S> for CharacterValue
+    where
+        __S: ::juniper::ScalarValue,
+    {
+        type Context = ();
+        type TypeInfo = ();
+
+        fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+            <Self as ::juniper::GraphQLType<__S>>::name(info)
+        }
+        fn resolve_field(
+            &self,
+            info: &Self::TypeInfo,
+            field: &str,
+            args: &::juniper::Arguments<__S>,
+            executor: &::juniper::Executor<Self::Context, __S>,
+        ) -> ::juniper::ExecutionResult<__S> {
+            match field {
+                "id" => <_ as Field<__S, { fnv1a128("id") }>>::call(self, info, args, executor),
+                _ => {
+                    return Err(::juniper::FieldError::from({
+                        format!("Field `{}` not found on type `{}`", field, "CharacterValue",)
+                    }))
+                }
+            }
+        }
+        fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
+            match self {
+                Self::Human(v) => {
+                    <Human as ::juniper::GraphQLValue<__S>>::concrete_type_name(v, context, info)
+                }
+                Self::Droid(v) => {
+                    <Droid as ::juniper::GraphQLValue<__S>>::concrete_type_name(v, context, info)
+                }
+            }
+        }
+        fn resolve_into_type(
+            &self,
+            info: &Self::TypeInfo,
+            type_name: &str,
+            _: Option<&[::juniper::Selection<__S>]>,
+            executor: &::juniper::Executor<Self::Context, __S>,
+        ) -> ::juniper::ExecutionResult<__S> {
+            match self {
+                Self::Human(res) => ::juniper::IntoResolvable::into(res, executor.context())
+                    .and_then(|res| match res {
+                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
+                        None => Ok(::juniper::Value::null()),
+                    }),
+                Self::Droid(res) => ::juniper::IntoResolvable::into(res, executor.context())
+                    .and_then(|res| match res {
+                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
+                        None => Ok(::juniper::Value::null()),
+                    }),
+            }
+        }
+    }
+
+    #[allow(deprecated, non_snake_case)]
+    #[automatically_derived]
+    impl<__S> ::juniper::GraphQLValueAsync<__S> for CharacterValue
+    where
+        __S: ::juniper::ScalarValue,
+        Self: Sync,
+        __S: Send + Sync,
+    {
+        fn resolve_field_async<'b>(
+            &'b self,
+            info: &'b Self::TypeInfo,
+            field: &'b str,
+            args: &'b ::juniper::Arguments<__S>,
+            executor: &'b ::juniper::Executor<Self::Context, __S>,
+        ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<__S>> {
+            match field {
+                "id" => Box::pin(::juniper::futures::future::ready(<_ as Field<
+                    __S,
+                    { fnv1a128("id") },
+                >>::call(
+                    self, info, args, executor,
+                ))),
+                _ => Box::pin(async move {
+                    return Err(::juniper::FieldError::from({
+                        format!("Field `{}` not found on type `{}`", field, "CharacterValue",)
+                    }));
+                }),
+            }
+        }
+        fn resolve_into_type_async<'b>(
+            &'b self,
+            info: &'b Self::TypeInfo,
+            type_name: &str,
+            _: Option<&'b [::juniper::Selection<'b, __S>]>,
+            executor: &'b ::juniper::Executor<'b, 'b, Self::Context, __S>,
+        ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<__S>> {
+            match self {
+                Self::Droid(v) => {
+                    let fut = ::juniper::futures::future::ready(v);
+                    Box::pin(::juniper::futures::FutureExt::then(
+                        fut,
+                        move |res| async move {
+                            match ::juniper::IntoResolvable::into(res, executor.context())? {
+                                Some((ctx, r)) => {
+                                    let subexec = executor.replaced_context(ctx);
+                                    subexec.resolve_with_ctx_async(info, &r).await
+                                }
+                                None => Ok(::juniper::Value::null()),
+                            }
+                        },
+                    ))
+                }
+                Self::Human(v) => {
+                    let fut = ::juniper::futures::future::ready(v);
+                    Box::pin(::juniper::futures::FutureExt::then(
+                        fut,
+                        move |res| async move {
+                            match ::juniper::IntoResolvable::into(res, executor.context())? {
+                                Some((ctx, r)) => {
+                                    let subexec = executor.replaced_context(ctx);
+                                    subexec.resolve_with_ctx_async(info, &r).await
+                                }
+                                None => Ok(::juniper::Value::null()),
+                            }
+                        },
+                    ))
+                }
+            }
+        }
+    }
+
+    // ---------
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = CharacterValue)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    impl Type for Human {
+        const NAME: &'static str = "Human";
+    }
+
+    impl PossibleFragments for Human {
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
+    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Human {
+        type Context = ();
+        type TypeInfo = ();
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] =
+            <String as PossibleFragments>::POSSIBLE_FRAGMENTS;
+
+        fn call(
+            &self,
+            info: &Self::TypeInfo,
+            _: &juniper::Arguments<S>,
+            executor: &juniper::Executor<Self::Context, S>,
+        ) -> juniper::ExecutionResult<S> {
+            let res = &self.id;
+
+            ::juniper::IntoResolvable::into(res, executor.context()).and_then(|res| match res {
+                Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
+                None => Ok(::juniper::Value::null()),
+            })
+        }
+    }
+
+    // #[derive(GraphQLObject)]
+    // #[graphql(impl = CharacterValue)]
+    struct Droid {
+        id: String,
+        primary_function: String,
+    }
+
+    #[graphql_object(impl = CharacterValue)]
+    impl Droid {
+        fn id(&self) -> &str {
+            &self.id
+        }
+
+        fn primary_function(&self) -> &str {
+            &self.primary_function
+        }
+    }
+
+    impl Type for Droid {
+        const NAME: &'static str = "Droid";
+    }
+
+    impl PossibleFragments for Droid {
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
+    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Droid {
+        type Context = ();
+        type TypeInfo = ();
+        const POSSIBLE_FRAGMENTS: &'static [&'static str] =
+            <&str as PossibleFragments>::POSSIBLE_FRAGMENTS;
+
+        fn call(
+            &self,
+            info: &Self::TypeInfo,
+            _: &juniper::Arguments<S>,
+            executor: &juniper::Executor<Self::Context, S>,
+        ) -> juniper::ExecutionResult<S> {
+            let res = self.id();
+
+            ::juniper::IntoResolvable::into(res, executor.context()).and_then(|res| match res {
+                Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
+                None => Ok(::juniper::Value::null()),
+            })
+        }
+    }
+
+    // -----
+
+    #[derive(Clone, Copy)]
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
+            match self {
+                Self::Human => Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }
+                .into(),
+                Self::Droid => Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }
+                .into(),
+            }
+        }
+    }
+
+    // --------------
+
+    #[tokio::test]
+    async fn enum_resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_droid() {
+        const DOC: &str = r#"{
+            character {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod no_implers {
     use super::*;
 
