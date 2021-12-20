@@ -94,10 +94,54 @@ mod new {
         true
     }
 
+    trait IsSubtype<T: ?Sized> {
+        fn mark() {}
+    }
+
+    impl IsSubtype<String> for String {}
+    impl IsSubtype<&'static str> for String {}
+    impl IsSubtype<String> for &'static str {}
+    impl IsSubtype<&'static str> for &'static str {}
+
+    impl<T, S> IsSubtype<Vec<S>> for Vec<T> where T: IsSubtype<S> {}
+    impl<T, S> IsSubtype<Option<S>> for T where T: IsSubtype<S> {}
+
+    impl IsSubtype<()> for () {}
+    impl<S1> IsSubtype<(Option<S1>,)> for () {}
+    impl<S1, S2> IsSubtype<(Option<S1>, Option<S2>)> for () {}
+    impl<S1, S2, S3> IsSubtype<(Option<S1>, Option<S2>, Option<S3>)> for () {}
+
+    impl<T1, S1> IsSubtype<(S1,)> for (T1,) where T1: IsSubtype<S1> {}
+    impl<T1, S1, S2> IsSubtype<(S1, Option<S2>)> for (T1,) where T1: IsSubtype<S1> {}
+    impl<T1, S1, S2, S3> IsSubtype<(S1, Option<S2>, Option<S3>)> for (T1,) where T1: IsSubtype<S1> {}
+
+    impl<T1, T2, S1, S2> IsSubtype<(S1, S2)> for (T1, T2)
+    where
+        T1: IsSubtype<S1>,
+        T2: IsSubtype<S2>,
+    {
+    }
+    impl<T1, T2, S1, S2, S3> IsSubtype<(S1, S2, Option<S3>)> for (T1, T2)
+    where
+        T1: IsSubtype<S1>,
+        T2: IsSubtype<S2>,
+    {
+    }
+
+    impl<T1, T2, T3, S1, S2, S3> IsSubtype<(S1, S2, S3)> for (T1, T2, T3)
+    where
+        T1: IsSubtype<S1>,
+        T2: IsSubtype<S2>,
+        T3: IsSubtype<S3>,
+    {
+    }
+
     trait Field<S: ScalarValue, const N: u128> {
         type Context;
         type TypeInfo;
-        const SUBTYPES: &'static [&'static str];
+        type Ret;
+        type ArgTypes;
+        const ARG_NAMES: &'static [&'static str];
 
         fn call(
             &self,
@@ -113,17 +157,8 @@ mod new {
         id: String,
     }
 
-    impl<S> juniper::macros::helper::Type<S> for Character {
-        const NAME: &'static str = "Character";
-    }
-
-    impl<S> juniper::macros::helper::SubTypes<S> for Character {
-        const NAMES: &'static [&'static str] = &[
-            <Self as juniper::macros::helper::Type<S>>::NAME,
-            <Human as juniper::macros::helper::Type<S>>::NAME,
-            <Droid as juniper::macros::helper::Type<S>>::NAME,
-        ];
-    }
+    impl IsSubtype<Human> for Character {}
+    impl IsSubtype<Droid> for Character {}
 
     enum CharacterEnumValue<I1, I2> {
         Human(I1),
@@ -147,8 +182,9 @@ mod new {
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for CharacterValue {
         type Context = ();
         type TypeInfo = ();
-        const SUBTYPES: &'static [&'static str] =
-            <String as juniper::macros::helper::SubTypes<S>>::NAMES;
+        type Ret = String;
+        type ArgTypes = ();
+        const ARG_NAMES: &'static [&'static str] = &[];
 
         fn call(
             &self,
@@ -158,17 +194,29 @@ mod new {
         ) -> juniper::ExecutionResult<S> {
             match self {
                 CharacterValue::Human(v) => {
+                    let _ = <Self::Ret as IsSubtype<
+                        <Human as Field<S, { fnv1a128("id") }>>::Ret,
+                    >>::mark;
+                    let _ = <Self::ArgTypes as IsSubtype<
+                        <Human as Field<S, { fnv1a128("id") }>>::ArgTypes,
+                    >>::mark;
                     const _: () = assert!(is_superset(
-                        <String as juniper::macros::helper::SubTypes>::NAMES,
-                        <Human as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::SUBTYPES,
+                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
+                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
                     ));
 
                     <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
                 }
                 CharacterValue::Droid(v) => {
+                    let _ = <Self::Ret as IsSubtype<
+                        <Droid as Field<S, { fnv1a128("id") }>>::Ret,
+                    >>::mark;
+                    let _ = <Self::ArgTypes as IsSubtype<
+                        <Droid as Field<S, { fnv1a128("id") }>>::ArgTypes,
+                    >>::mark;
                     const _: () = assert!(is_superset(
-                        <String as juniper::macros::helper::SubTypes>::NAMES,
-                        <Droid as Field<juniper::DefaultScalarValue, { fnv1a128("id") }>>::SUBTYPES,
+                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
+                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
                     ));
 
                     <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
@@ -372,19 +420,12 @@ mod new {
         home_planet: String,
     }
 
-    impl<S> juniper::macros::helper::Type<S> for Human {
-        const NAME: &'static str = "Human";
-    }
-
-    impl<S> juniper::macros::helper::SubTypes<S> for Human {
-        const NAMES: &'static [&'static str] = &[<Self as juniper::macros::helper::Type<S>>::NAME];
-    }
-
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Human {
         type Context = ();
         type TypeInfo = ();
-        const SUBTYPES: &'static [&'static str] =
-            <String as juniper::macros::helper::SubTypes<S>>::NAMES;
+        type Ret = String;
+        type ArgTypes = (Option<i32>,);
+        const ARG_NAMES: &'static [&'static str] = &["optional"];
 
         fn call(
             &self,
@@ -417,19 +458,12 @@ mod new {
         }
     }
 
-    impl<S> juniper::macros::helper::Type<S> for Droid {
-        const NAME: &'static str = "Droid";
-    }
-
-    impl<S> juniper::macros::helper::SubTypes<S> for Droid {
-        const NAMES: &'static [&'static str] = &[<Self as juniper::macros::helper::Type>::NAME];
-    }
-
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Droid {
         type Context = ();
         type TypeInfo = ();
-        const SUBTYPES: &'static [&'static str] =
-            <&str as juniper::macros::helper::SubTypes<S>>::NAMES;
+        type Ret = &'static str;
+        type ArgTypes = ();
+        const ARG_NAMES: &'static [&'static str] = &[];
 
         fn call(
             &self,
