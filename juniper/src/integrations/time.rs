@@ -56,7 +56,8 @@ const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]
                    See also [`time::Date`][2] for details.\
                    \n\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/date\n\
-                   [2]: https://docs.rs/time/*/time/struct.Date.html"
+                   [2]: https://docs.rs/time/*/time/struct.Date.html",
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date"
 )]
 impl<S: ScalarValue> GraphQLScalar for Date {
     fn resolve(&self) -> Value {
@@ -98,7 +99,8 @@ const LOCAL_TIME_FORMAT_NO_MILLIS: &[FormatItem<'_>] =
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]:[minute]");
 
-#[graphql_scalar(description = "Clock time within a given date (without time zone) in \
+#[graphql_scalar(
+    description = "Clock time within a given date (without time zone) in \
                    `HH:mm[:ss[.SSS]]` format.\
                    \n\n\
                    All minutes are assumed to have exactly 60 seconds; no \
@@ -110,7 +112,9 @@ const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]
                    See also [`time::Time`][2] for details.\
                    \n\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/local-time\n\
-                   [2]: https://docs.rs/time/*/time/struct.Time.html")]
+                   [2]: https://docs.rs/time/*/time/struct.Time.html",
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time"
+)]
 impl<S: ScalarValue> GraphQLScalar for LocalTime {
     fn resolve(&self) -> Value {
         Value::scalar(
@@ -198,12 +202,14 @@ impl<S: ScalarValue> GraphQLScalar for LocalDateTime {
                    \n\n\
                    [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/date-time\n\
-                   [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html"
+                   [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html",
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time"
 )]
 impl<S: ScalarValue> GraphQLScalar for DateTime {
     fn resolve(&self) -> Value {
         Value::scalar(
-            self.format(&Rfc3339)
+            self.to_offset(UtcOffset::UTC)
+                .format(&Rfc3339)
                 .unwrap_or_else(|e| panic!("Failed to format `DateTime`: {}", e)),
         )
     }
@@ -214,6 +220,7 @@ impl<S: ScalarValue> GraphQLScalar for DateTime {
             .and_then(|s| {
                 Self::parse(s, &Rfc3339).map_err(|e| format!("Invalid `DateTime`: {}", e))
             })
+            .map(|dt| dt.to_offset(UtcOffset::UTC))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -241,7 +248,8 @@ const UTC_OFFSET_FORMAT: &[FormatItem<'_>] =
                    \n\n\
                    [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/utc-offset\n\
-                   [2]: https://docs.rs/time/*/time/struct.UtcOffset.html"
+                   [2]: https://docs.rs/time/*/time/struct.UtcOffset.html",
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset"
 )]
 impl<S: ScalarValue> GraphQLScalar for UtcOffset {
     fn resolve(&self) -> Value {
@@ -508,7 +516,7 @@ mod date_time_test {
             ),
             (
                 "2014-11-28T21:00:09.05+09:00",
-                datetime!(2014-11-28 21:00:09.05 +9),
+                datetime!(2014-11-28 12:00:09.05 +0),
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
@@ -567,7 +575,7 @@ mod date_time_test {
             ),
             (
                 datetime!(1564-01-30 14:00 +9),
-                graphql_input_value!("1564-01-30T14:00:00+09:00"),
+                graphql_input_value!("1564-01-30T05:00:00Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -711,7 +719,7 @@ mod integration_test {
                     "date": "2015-03-14",
                     "localTime": "16:07:08",
                     "localDateTime": "2016-07-08 09:10:11",
-                    "dateTime": "1996-12-19T16:39:57-08:00",
+                    "dateTime": "1996-12-20T00:39:57Z",
                     "utcOffset": "+11:30",
                 }),
                 vec![],

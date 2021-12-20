@@ -22,7 +22,6 @@ travis-ci = { repository = "graphql-rust/juniper" }
 default = [
     "bson",
     "chrono",
-    "time",
     "schema-language",
     "url",
     "uuid",
