@@ -49,54 +49,11 @@ mod new {
         hash
     }
 
-    const fn is_superset(superset: &[&str], set: &[&str]) -> bool {
-        const fn str_eq(l: &str, r: &str) -> bool {
-            let (l, r) = (l.as_bytes(), r.as_bytes());
-
-            if l.len() != r.len() {
-                return false;
-            }
-
-            let mut i = 0;
-            while i < l.len() {
-                if l[i] != r[i] {
-                    return false;
-                }
-                i += 1;
-            }
-
-            true
-        }
-
-        const fn find(set: &[&str], elem: &str) -> bool {
-            let mut i = 0;
-            while i < set.len() {
-                if str_eq(elem, set[i]) {
-                    return true;
-                }
-                i += 1;
-            }
-            false
-        }
-
-        if superset.len() < set.len() {
-            return false;
-        }
-
-        let mut i = 0;
-        while i < set.len() {
-            if !find(superset, set[i]) {
-                return false;
-            }
-            i += 1;
-        }
-
-        true
-    }
-
     trait IsSubtype<T: ?Sized> {
         fn mark() {}
     }
+
+    struct Parameter<T, const N: u128>(T);
 
     impl IsSubtype<String> for String {}
     impl IsSubtype<&'static str> for String {}
@@ -107,32 +64,64 @@ mod new {
     impl<T, S> IsSubtype<Option<S>> for T where T: IsSubtype<S> {}
 
     impl IsSubtype<()> for () {}
-    impl<S1> IsSubtype<(Option<S1>,)> for () {}
-    impl<S1, S2> IsSubtype<(Option<S1>, Option<S2>)> for () {}
-    impl<S1, S2, S3> IsSubtype<(Option<S1>, Option<S2>, Option<S3>)> for () {}
-
-    impl<T1, S1> IsSubtype<(S1,)> for (T1,) where T1: IsSubtype<S1> {}
-    impl<T1, S1, S2> IsSubtype<(S1, Option<S2>)> for (T1,) where T1: IsSubtype<S1> {}
-    impl<T1, S1, S2, S3> IsSubtype<(S1, Option<S2>, Option<S3>)> for (T1,) where T1: IsSubtype<S1> {}
-
-    impl<T1, T2, S1, S2> IsSubtype<(S1, S2)> for (T1, T2)
-    where
-        T1: IsSubtype<S1>,
-        T2: IsSubtype<S2>,
+    impl<S1, const N1: u128> IsSubtype<(Option<Parameter<S1, N1>>,)> for () {}
+    impl<S1, S2, const N1: u128, const N2: u128>
+        IsSubtype<(Option<Parameter<S1, N1>>, Option<Parameter<S2, N2>>)> for ()
     {
     }
-    impl<T1, T2, S1, S2, S3> IsSubtype<(S1, S2, Option<S3>)> for (T1, T2)
-    where
-        T1: IsSubtype<S1>,
-        T2: IsSubtype<S2>,
+    impl<S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Option<Parameter<S1, N1>>,
+            Option<Parameter<S2, N2>>,
+            Option<Parameter<S3, N3>>,
+        )> for ()
     {
     }
 
-    impl<T1, T2, T3, S1, S2, S3> IsSubtype<(S1, S2, S3)> for (T1, T2, T3)
+    impl<T1, S1, const N1: u128> IsSubtype<(Parameter<S1, N1>,)> for (Parameter<T1, N1>,) where
+        T1: IsSubtype<S1>
+    {
+    }
+    impl<T1, S1, S2, const N1: u128, const N2: u128>
+        IsSubtype<(Parameter<S1, N1>, Option<Parameter<S2, N2>>)> for (Parameter<T1, N1>,)
     where
         T1: IsSubtype<S1>,
-        T2: IsSubtype<S2>,
-        T3: IsSubtype<S3>,
+    {
+    }
+    impl<T1, S1, S2, const N1: u128, const N2: u128>
+        IsSubtype<(Option<Parameter<S2, N2>>, Parameter<S1, N1>)> for (Parameter<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Parameter<S1, N1>,
+            Option<Parameter<S2, N2>>,
+            Option<Parameter<S3, N3>>,
+        )> for (Parameter<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Option<Parameter<S2, N2>>,
+            Parameter<S1, N1>,
+            Option<Parameter<S3, N3>>,
+        )> for (Parameter<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Option<Parameter<S3, N3>>,
+            Option<Parameter<S2, N2>>,
+            Parameter<S1, N1>,
+        )> for (Parameter<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
     {
     }
 
@@ -141,7 +130,6 @@ mod new {
         type TypeInfo;
         type Ret;
         type ArgTypes;
-        const ARG_NAMES: &'static [&'static str];
 
         fn call(
             &self,
@@ -183,8 +171,7 @@ mod new {
         type Context = ();
         type TypeInfo = ();
         type Ret = String;
-        type ArgTypes = ();
-        const ARG_NAMES: &'static [&'static str] = &[];
+        type ArgTypes = (Parameter<String, { fnv1a128("required") }>,);
 
         fn call(
             &self,
@@ -200,10 +187,6 @@ mod new {
                     let _ = <Self::ArgTypes as IsSubtype<
                         <Human as Field<S, { fnv1a128("id") }>>::ArgTypes,
                     >>::mark;
-                    const _: () = assert!(is_superset(
-                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
-                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
-                    ));
 
                     <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
                 }
@@ -214,10 +197,6 @@ mod new {
                     let _ = <Self::ArgTypes as IsSubtype<
                         <Droid as Field<S, { fnv1a128("id") }>>::ArgTypes,
                     >>::mark;
-                    const _: () = assert!(is_superset(
-                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
-                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARG_NAMES,
-                    ));
 
                     <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
                 }
@@ -424,8 +403,10 @@ mod new {
         type Context = ();
         type TypeInfo = ();
         type Ret = String;
-        type ArgTypes = (Option<i32>,);
-        const ARG_NAMES: &'static [&'static str] = &["optional"];
+        type ArgTypes = (
+            Parameter<&'static str, { fnv1a128("required") }>,
+            Option<Parameter<i32, { fnv1a128("optional") }>>,
+        );
 
         fn call(
             &self,
@@ -462,8 +443,7 @@ mod new {
         type Context = ();
         type TypeInfo = ();
         type Ret = &'static str;
-        type ArgTypes = ();
-        const ARG_NAMES: &'static [&'static str] = &[];
+        type ArgTypes = (Parameter<String, { fnv1a128("required") }>,);
 
         fn call(
             &self,
