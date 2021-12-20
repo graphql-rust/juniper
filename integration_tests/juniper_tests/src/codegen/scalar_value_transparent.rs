@@ -82,6 +82,6 @@ fn test_scalar_value_doc_comment() {
     assert_eq!(meta.description(), Some("The doc comment..."));
     assert_eq!(
         meta.specified_by_url(),
-        Some("https://tools.ietf.org/html/rfc4122")
+        Some("https://tools.ietf.org/html/rfc4122"),
     );
 }

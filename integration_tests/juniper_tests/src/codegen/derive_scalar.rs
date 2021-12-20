@@ -62,16 +62,16 @@ async fn test_scalar_value_large_specified_url() {
     );
 
     let doc = r#"{
-          __type(name: "LargeId") {
-              specifiedByUrl
-          }
+        __type(name: "LargeId") {
+            specifiedByUrl
+        }
     }"#;
 
     assert_eq!(
         execute(doc, None, &schema, &Variables::<MyScalarValue>::new(), &()).await,
         Ok((
             graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc4122"}}),
-            vec![]
+            vec![],
         )),
     );
 }

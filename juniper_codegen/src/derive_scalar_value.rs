@@ -43,9 +43,10 @@ impl syn::parse::Parse for TransparentAttributes {
                 "specified_by_url" => {
                     input.parse::<token::Eq>()?;
                     let val: syn::LitStr = input.parse::<syn::LitStr>()?;
-                    output.specified_by_url = Some(val.value().parse().map_err(|e| {
-                        syn::Error::new(val.span(), format!("Failed to parse URL: {}", e))
-                    })?);
+                    output.specified_by_url =
+                        Some(val.value().parse().map_err(|e| {
+                            syn::Error::new(val.span(), format!("Invalid URL: {}", e))
+                        })?);
                 }
                 "transparent" => {
                     output.transparent = Some(true);
@@ -113,8 +114,8 @@ fn impl_scalar_struct(
 
     let description = attrs.description.map(|val| quote!(.description(#val)));
     let specified_by_url = attrs.specified_by_url.map(|url| {
-        let url = url.as_str();
-        quote!(.specified_by_url(#url))
+        let url_lit = url.as_str();
+        quote!(.specified_by_url(#url_lit))
     });
 
     let scalar = attrs

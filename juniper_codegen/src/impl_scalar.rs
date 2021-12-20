@@ -204,8 +204,8 @@ pub fn build_scalar(
         .unwrap_or_else(|| impl_for_type.ident.to_string());
     let description = attrs.description.map(|val| quote!(.description(#val)));
     let specified_by_url = attrs.specified_by_url.map(|url| {
-        let url = url.as_str();
-        quote!(.specified_by_url(#url))
+        let url_lit = url.as_str();
+        quote!(.specified_by_url(#url_lit))
     });
     let async_generic_type = match input.custom_data_type_is_struct {
         true => quote!(__S),

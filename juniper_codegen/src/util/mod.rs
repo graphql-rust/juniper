@@ -584,7 +584,7 @@ impl Parse for FieldAttributes {
                             .map_err(|e| {
                                 syn::Error::new(
                                     e.span_ident(),
-                                    format!("Failed to parse URL: {}", e.inner()),
+                                    format!("Invalid URL: {}", e.inner()),
                                 )
                             })?,
                     );

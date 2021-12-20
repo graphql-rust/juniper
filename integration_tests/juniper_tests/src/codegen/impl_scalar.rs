@@ -344,14 +344,12 @@ async fn scalar_description_introspection() {
 
 #[tokio::test]
 async fn scalar_specified_by_url_introspection() {
-    let doc = r#"
-    {
+    let doc = r#"{
         __type(name: "ScalarSpecifiedByUrl") {
             name
             specifiedByUrl
         }
-    }
-    "#;
+    }"#;
 
     run_type_info_query(doc, |type_info| {
         assert_eq!(

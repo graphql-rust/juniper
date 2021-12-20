@@ -1,6 +1,8 @@
+use juniper::graphql_scalar;
+
 struct ScalarSpecifiedByUrl(i32);
 
-#[juniper::graphql_scalar(specified_by_url = "not an url")]
+#[graphql_scalar(specified_by_url = "not an url")]
 impl GraphQLScalar for ScalarSpecifiedByUrl {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
