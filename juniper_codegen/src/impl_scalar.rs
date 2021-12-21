@@ -202,10 +202,11 @@ pub fn build_scalar(
         .name
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| impl_for_type.ident.to_string());
-    let description = match attrs.description {
-        Some(val) => quote!(.description(#val)),
-        None => quote!(),
-    };
+    let description = attrs.description.map(|val| quote!(.description(#val)));
+    let specified_by_url = attrs.specified_by_url.map(|url| {
+        let url_lit = url.as_str();
+        quote!(.specified_by_url(#url_lit))
+    });
     let async_generic_type = match input.custom_data_type_is_struct {
         true => quote!(__S),
         _ => quote!(#custom_data_type),
@@ -273,6 +274,7 @@ pub fn build_scalar(
             {
                 registry.build_scalar_type::<Self>(info)
                     #description
+                    #specified_by_url
                     .into_meta()
             }
         }
@@ -309,6 +311,8 @@ pub fn build_scalar(
         impl#generic_type_decl ::juniper::FromInputValue<#generic_type> for #impl_for_type
         #generic_type_bound
         {
+            type Error = <#from_input_value_result as ::juniper::macros::helper::ExtractError>::Error;
+
             fn from_input_value(#from_input_value_arg: &::juniper::InputValue<#generic_type>) -> #from_input_value_result {
                 #from_input_value_body
             }

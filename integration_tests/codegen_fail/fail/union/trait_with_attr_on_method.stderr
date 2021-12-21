@@ -1,5 +1,5 @@
 error: GraphQL union cannot use #[graphql(with = ...)] attribute on a trait method
- --> $DIR/trait_with_attr_on_method.rs:5:15
+ --> fail/union/trait_with_attr_on_method.rs:5:15
   |
 5 |     #[graphql(with = something)]
   |               ^^^^

@@ -1,5 +1,5 @@
 error: GraphQL object must have at least one field
- --> $DIR/attr_no_fields.rs:6:6
+ --> fail/object/attr_no_fields.rs:6:6
   |
 6 | impl Obj {}
   |      ^^^

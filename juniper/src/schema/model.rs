@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use fnv::FnvHashMap;
 #[cfg(feature = "graphql-parser-integration")]
@@ -49,6 +49,7 @@ pub struct RootNode<
 /// Metadata for a schema
 #[derive(Debug)]
 pub struct SchemaType<'a, S> {
+    pub(crate) description: Option<Cow<'a, str>>,
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
     pub(crate) query_type_name: String,
     pub(crate) mutation_type_name: Option<String>,
@@ -71,6 +72,7 @@ pub struct DirectiveType<'a, S> {
     pub description: Option<String>,
     pub locations: Vec<DirectiveLocation>,
     pub arguments: Vec<Argument<'a, S>>,
+    pub is_repeatable: bool,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
@@ -80,14 +82,19 @@ pub enum DirectiveLocation {
     Mutation,
     Subscription,
     Field,
+    Scalar,
     #[graphql(name = "FRAGMENT_DEFINITION")]
     FragmentDefinition,
+    #[graphql(name = "FIELD_DEFINITION")]
+    FieldDefinition,
+    #[graphql(name = "VARIABLE_DEFINITION")]
+    VariableDefinition,
     #[graphql(name = "FRAGMENT_SPREAD")]
     FragmentSpread,
     #[graphql(name = "INLINE_FRAGMENT")]
     InlineFragment,
-    #[graphql(name = "VARIABLE_DEFINITION")]
-    VariableDefinition,
+    #[graphql(name = "ENUM_VALUE")]
+    EnumValue,
 }
 
 impl<'a, QueryT, MutationT, SubscriptionT>
@@ -213,6 +220,14 @@ impl<'a, S> SchemaType<'a, S> {
             "include".to_owned(),
             DirectiveType::new_include(&mut registry),
         );
+        directives.insert(
+            "deprecated".to_owned(),
+            DirectiveType::new_deprecated(&mut registry),
+        );
+        directives.insert(
+            "specifiedBy".to_owned(),
+            DirectiveType::new_specified_by(&mut registry),
+        );
 
         let mut meta_fields = vec![
             registry.field::<SchemaType<S>>("__schema", &()),
@@ -237,6 +252,7 @@ impl<'a, S> SchemaType<'a, S> {
             }
         }
         SchemaType {
+            description: None,
             types: registry.types,
             query_type_name,
             mutation_type_name: if &mutation_type_name != "_EmptyMutation" {
@@ -251,6 +267,11 @@ impl<'a, S> SchemaType<'a, S> {
             },
             directives,
         }
+    }
+
+    /// Add a description.
+    pub fn set_description(&mut self, description: impl Into<Cow<'a, str>>) {
+        self.description = Some(description.into());
     }
 
     /// Add a directive like `skip` or `include`.
@@ -491,12 +512,14 @@ where
         name: &str,
         locations: &[DirectiveLocation],
         arguments: &[Argument<'a, S>],
+        is_repeatable: bool,
     ) -> DirectiveType<'a, S> {
         DirectiveType {
             name: name.to_owned(),
             description: None,
             locations: locations.to_vec(),
             arguments: arguments.to_vec(),
+            is_repeatable,
         }
     }
 
@@ -512,6 +535,7 @@ where
                 DirectiveLocation::InlineFragment,
             ],
             &[registry.arg::<bool>("if", &())],
+            false,
         )
     }
 
@@ -527,6 +551,34 @@ where
                 DirectiveLocation::InlineFragment,
             ],
             &[registry.arg::<bool>("if", &())],
+            false,
+        )
+    }
+
+    fn new_deprecated(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            "deprecated",
+            &[
+                DirectiveLocation::FieldDefinition,
+                DirectiveLocation::EnumValue,
+            ],
+            &[registry.arg::<String>("reason", &())],
+            false,
+        )
+    }
+
+    fn new_specified_by(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            "specifiedBy",
+            &[DirectiveLocation::Scalar],
+            &[registry.arg::<String>("url", &())],
+            false,
         )
     }
 
@@ -543,10 +595,13 @@ impl fmt::Display for DirectiveLocation {
             DirectiveLocation::Mutation => "mutation",
             DirectiveLocation::Subscription => "subscription",
             DirectiveLocation::Field => "field",
+            DirectiveLocation::FieldDefinition => "field definition",
             DirectiveLocation::FragmentDefinition => "fragment definition",
             DirectiveLocation::FragmentSpread => "fragment spread",
             DirectiveLocation::InlineFragment => "inline fragment",
             DirectiveLocation::VariableDefinition => "variable definition",
+            DirectiveLocation::Scalar => "scalar",
+            DirectiveLocation::EnumValue => "enum value",
         })
     }
 }

@@ -59,6 +59,7 @@ your Schemas automatically.
 * [uuid][uuid]
 * [url][url]
 * [chrono][chrono]
+* [time][time]
 * [bson][bson]
 
 ### Web Frameworks
@@ -87,6 +88,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [uuid]: https://crates.io/crates/uuid
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
+[time]: https://crates.io/crates/time
 [bson]: https://crates.io/crates/bson
 
 */
@@ -116,8 +118,9 @@ pub use juniper_codegen::{
     GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
 };
 
+#[doc(hidden)]
 #[macro_use]
-mod macros;
+pub mod macros;
 mod ast;
 pub mod executor;
 mod introspection;

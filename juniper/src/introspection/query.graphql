@@ -1,5 +1,6 @@
 query IntrospectionQuery {
   __schema {
+    description
     queryType {
       name
     }
@@ -15,6 +16,7 @@ query IntrospectionQuery {
     directives {
       name
       description
+      isRepeatable
       locations
       args {
         ...InputValue
@@ -26,6 +28,7 @@ fragment FullType on __Type {
   kind
   name
   description
+  specifiedByUrl
   fields(includeDeprecated: true) {
     name
     description

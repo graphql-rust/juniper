@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 use juniper::{
-    graphql_input_value, marker, DefaultScalarValue, FromInputValue, GraphQLInputObject,
-    GraphQLType, GraphQLValue, InputValue, Registry, ToInputValue,
+    graphql_input_value, marker, DefaultScalarValue, FieldError, FromInputValue,
+    GraphQLInputObject, GraphQLType, GraphQLValue, InputValue, Registry, ToInputValue,
 };
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -58,8 +58,10 @@ struct Fake;
 impl<'a> marker::IsInputType<DefaultScalarValue> for &'a Fake {}
 
 impl<'a> FromInputValue for &'a Fake {
-    fn from_input_value(_v: &InputValue) -> Option<&'a Fake> {
-        None
+    type Error = FieldError;
+
+    fn from_input_value(_v: &InputValue) -> Result<&'a Fake, Self::Error> {
+        Err("This is fake".into())
     }
 }
 

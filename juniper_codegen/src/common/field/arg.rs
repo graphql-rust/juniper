@@ -347,18 +347,34 @@ impl OnMethod {
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
-    pub(crate) fn method_resolve_field_tokens(&self, scalar: &scalar::Type) -> TokenStream {
+    pub(crate) fn method_resolve_field_tokens(
+        &self,
+        scalar: &scalar::Type,
+        for_async: bool,
+    ) -> TokenStream {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
-                let err_text = format!(
-                    "Internal error: missing argument `{}` - validation must have failed",
-                    &name,
-                );
-                quote! {
-                    args.get::<#ty>(#name)
-                        .or_else(::juniper::FromInputValue::<#scalar>::from_implicit_null)
-                        .expect(#err_text)
+                let err_text = format!("Missing argument `{}`: {{}}", &name);
+
+                let arg = quote! {
+                    args.get::<#ty>(#name).and_then(|opt| opt.map_or_else(|| {
+                        <#ty as ::juniper::FromInputValue<#scalar>>::from_implicit_null()
+                            .map_err(|e| {
+                                ::juniper::IntoFieldError::<#scalar>::into_field_error(e)
+                                    .map_message(|m| format!(#err_text, m))
+                            })
+                    }, Ok))
+                };
+                if for_async {
+                    quote! {
+                        match #arg {
+                            Ok(v) => v,
+                            Err(e) => return Box::pin(async { Err(e) }),
+                        }
+                    }
+                } else {
+                    quote! { #arg? }
                 }
             }
 

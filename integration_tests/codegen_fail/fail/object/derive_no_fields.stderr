@@ -1,5 +1,5 @@
 error: GraphQL object must have at least one field
- --> $DIR/derive_no_fields.rs:4:1
+ --> fail/object/derive_no_fields.rs:4:1
   |
 4 | struct Obj {}
   | ^^^^^^^^^^^^^

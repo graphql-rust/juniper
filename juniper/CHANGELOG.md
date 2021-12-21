@@ -7,6 +7,8 @@
 - `#[graphql_object]` and `#[graphql_subscription]` macros expansion now preserves defined `impl` blocks "as is" and reuses defined methods in opaque way. ([#971](https://github.com/graphql-rust/juniper/pull/971))
 - `rename = "<policy>"` attribute's argument renamed to `rename_all = "<policy>"`. ([#971](https://github.com/graphql-rust/juniper/pull/971))
 - Upgrade `bson` feature to [2.0 version of its crate](https://github.com/mongodb/bson-rust/releases/tag/v2.0.0). ([#979](https://github.com/graphql-rust/juniper/pull/979))
+- Make `FromInputValue` methods fallible to allow post-validation. ([#987](https://github.com/graphql-rust/juniper/pull/987))
+- Change `Option` to `Result` in `from_input_value()` return type of `#[graphql_scalar]` macro. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 - Forbid `__typename` field on `subscription` operations [accordingly to October 2021 spec](https://spec.graphql.org/October2021/#note-bc213). ([#1001](https://github.com/graphql-rust/juniper/pull/1001), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
 
 ## Features
@@ -17,12 +19,17 @@
 - Use `null` in addition to `None` to create `Value::Null` in `graphql_value!` macro to mirror `serde_json::json!`. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 - Add `From` impls to `InputValue` mirroring the ones for `Value` and provide better support for `Option` handling. ([#996](https://github.com/graphql-rust/juniper/pull/996))
 - Implement `graphql_input_value!` and `graphql_vars!` macros. ([#996](https://github.com/graphql-rust/juniper/pull/996))
+- Support [`time` crate](https://docs.rs/time) types as GraphQL scalars behind `time` feature. ([#1006](https://github.com/graphql-rust/juniper/pull/1006))
+- Add `specified_by_url` attribute argument to `#[derive(GraphQLScalarValue)]` and `#[graphql_scalar]` macros. ([#1003](https://github.com/graphql-rust/juniper/pull/1003), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
+- Support `isRepeatable` field on directives. ([#1003](https://github.com/graphql-rust/juniper/pull/1003), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
+- Support `__Schema.description`, `__Type.specifiedByURL` and `__Directive.isRepeatable` fields in introspection. ([#1003](https://github.com/graphql-rust/juniper/pull/1003), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
 - Add support for directives on variables definitions. ([#1005](https://github.com/graphql-rust/juniper/pull/1005))
 
 ## Fixes
 
 - Allow spreading interface fragments on unions and other interfaces. ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
 - Support expressions in `graphql_value!` macro. ([#996](https://github.com/graphql-rust/juniper/pull/996), [#503](https://github.com/graphql-rust/juniper/issues/503))
+- List coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004](https://github.com/graphql-rust/juniper/pull/1004))
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 

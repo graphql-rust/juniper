@@ -1,5 +1,5 @@
 error: GraphQL object must have a different name for each field
-  --> $DIR/fields_duplicate.rs:10:6
+  --> fail/subscription/fields_duplicate.rs:10:6
    |
 10 | impl ObjA {
    |      ^^^^

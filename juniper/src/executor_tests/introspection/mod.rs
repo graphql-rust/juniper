@@ -9,7 +9,7 @@ use crate::{
     graphql_interface, graphql_object, graphql_scalar, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    value::{ParseScalarResult, ParseScalarValue, Value},
     GraphQLEnum,
 };
 
@@ -28,8 +28,10 @@ impl<S: ScalarValue> GraphQLScalar for Scalar {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<Scalar> {
-        v.as_scalar().and_then(ScalarValue::as_int).map(Scalar)
+    fn from_input_value(v: &InputValue) -> Result<Scalar, String> {
+        v.as_int_value()
+            .map(Scalar)
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -490,6 +492,7 @@ async fn scalar_introspection() {
             name
             kind
             description
+            specifiedByUrl
             fields { name }
             interfaces { name }
             possibleTypes { name }
@@ -525,6 +528,7 @@ async fn scalar_introspection() {
             "name": "SampleScalar",
             "kind": "SCALAR",
             "description": null,
+            "specifiedByUrl": null,
             "fields": null,
             "interfaces": null,
             "possibleTypes": null,

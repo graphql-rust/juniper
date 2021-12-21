@@ -84,7 +84,7 @@ fn test_derived_enum() {
     );
     assert_eq!(
         FromInputValue::<DefaultScalarValue>::from_input_value(&graphql_input_value!(REGULAR)),
-        Some(SomeEnum::Regular),
+        Ok(SomeEnum::Regular),
     );
 
     // Test FULL variant.
@@ -94,7 +94,7 @@ fn test_derived_enum() {
     );
     assert_eq!(
         FromInputValue::<DefaultScalarValue>::from_input_value(&graphql_input_value!(FULL)),
-        Some(SomeEnum::Full)
+        Ok(SomeEnum::Full)
     );
 }
 

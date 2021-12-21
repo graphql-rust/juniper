@@ -177,6 +177,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///    // A description can also specified in the attribute.
 ///    // This will the doc comment, if one exists.
 ///    description = "...",
+///    // A specification URL.
+///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
 /// )]
 /// struct UserId(String);
 /// ```
@@ -221,7 +223,10 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     name = "MyName",
 ///     // You can also specify a description here.
 ///     // If present, doc comments will be ignored.
-///     description = "An opaque identifier, represented as a string")]
+///     description = "An opaque identifier, represented as a string",
+///    // A specification URL.
+///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
+/// )]
 /// impl<S> GraphQLScalar for UserID
 /// where
 ///     S: juniper::ScalarValue
@@ -230,8 +235,11 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///         juniper::Value::scalar(self.0.to_owned())
 ///     }
 ///
-///     fn from_input_value(value: &juniper::InputValue) -> Option<UserID> {
-///         value.as_string_value().map(|s| UserID(s.to_owned()))
+///     // NOTE: The error type should implement `IntoFieldError<S>`.
+///     fn from_input_value(value: &juniper::InputValue) -> Result<UserID, String> {
+///         value.as_string_value()
+///             .map(|s| UserID(s.to_owned()))
+///             .ok_or_else(|| format!("Expected `String`, found: {}", value))
 ///     }
 ///
 ///     fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {

@@ -138,11 +138,10 @@ impl GraphQLScalar for i64 {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<i64> {
-        match *v {
-            InputValue::Scalar(MyScalarValue::Long(i)) => Some(i),
-            _ => None,
-        }
+    fn from_input_value(v: &InputValue) -> Result<i64, String> {
+        v.as_scalar_value::<i64>()
+            .copied()
+            .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {}", v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {

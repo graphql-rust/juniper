@@ -5,7 +5,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue},
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue},
     GraphQLError::ValidationError,
     GraphQLInputObject,
 };
@@ -19,14 +19,11 @@ impl<S: ScalarValue> GraphQLScalar for TestComplexScalar {
         graphql_value!("SerializedValue")
     }
 
-    fn from_input_value(v: &InputValue) -> Option<TestComplexScalar> {
-        if let Some(s) = v.as_scalar().and_then(ScalarValue::as_str) {
-            if s == "SerializedValue" {
-                return Some(TestComplexScalar);
-            }
-        }
-
-        None
+    fn from_input_value(v: &InputValue) -> Result<TestComplexScalar, String> {
+        v.as_string_value()
+            .filter(|s| *s == "SerializedValue")
+            .map(|_| TestComplexScalar)
+            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {}"#, v))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -1075,7 +1072,8 @@ mod integers {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                r#"Variable "$var" got invalid value. Expected "Int"."#,
+                "Variable \"$var\" got invalid value. Expected input scalar `Int`. \
+                 Got: `10`. Details: Expected `Int`, found: 10.",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );
@@ -1099,7 +1097,9 @@ mod integers {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                r#"Variable "$var" got invalid value. Expected "Int"."#,
+                "Variable \"$var\" got invalid value. \
+                 Expected input scalar `Int`. Got: `\"10\"`. \
+                 Details: Expected `Int`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );
@@ -1157,7 +1157,9 @@ mod floats {
         assert_eq!(
             error,
             ValidationError(vec![RuleError::new(
-                r#"Variable "$var" got invalid value. Expected "Float"."#,
+                "Variable \"$var\" got invalid value. \
+                 Expected input scalar `Float`. Got: `\"10\"`. \
+                 Details: Expected `Float`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
             )]),
         );

@@ -1,5 +1,5 @@
 error: GraphQL input object does not allow fields with the same name
- --> $DIR/derive_unique_name.rs:4:5
+ --> fail/input-object/derive_unique_name.rs:4:5
   |
 4 | /     #[graphql(name = "test")]
 5 | |     test2: String,

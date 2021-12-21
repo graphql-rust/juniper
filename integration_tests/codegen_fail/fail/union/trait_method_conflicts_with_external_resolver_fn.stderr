@@ -1,5 +1,5 @@
 error: GraphQL union trait method `a` conflicts with the external resolver function `some_fn` declared on the trait to resolve the variant type `Human`
- --> $DIR/trait_method_conflicts_with_external_resolver_fn.rs:5:5
+ --> fail/union/trait_method_conflicts_with_external_resolver_fn.rs:5:5
   |
 5 |     fn a(&self) -> Option<&Human>;
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,5 @@
 error: GraphQL object synchronous resolvers are not supported
-  --> $DIR/field_not_async.rs:11:5
+  --> fail/subscription/field_not_async.rs:11:5
    |
 11 |     fn id(&self) -> Stream<'static, bool> {
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

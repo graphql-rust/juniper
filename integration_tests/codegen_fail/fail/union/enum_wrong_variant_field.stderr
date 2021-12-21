@@ -1,5 +1,5 @@
 error: GraphQL union enum allows only unnamed variants with a single field, e.g. `Some(T)`
- --> $DIR/enum_wrong_variant_field.rs:5:5
+ --> fail/union/enum_wrong_variant_field.rs:5:5
   |
 5 |     A { human: Human },
   |     ^
@@ -7,7 +7,7 @@ error: GraphQL union enum allows only unnamed variants with a single field, e.g.
   = note: https://spec.graphql.org/June2018/#sec-Unions
 
 error: GraphQL union enum allows only unnamed variants with a single field, e.g. `Some(T)`
-  --> $DIR/enum_wrong_variant_field.rs:10:6
+  --> fail/union/enum_wrong_variant_field.rs:10:6
    |
 10 |     A(Human, u8),
    |      ^^^^^^^^^^^

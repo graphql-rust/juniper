@@ -1,5 +1,5 @@
 error: GraphQL enum expects at least one field
- --> $DIR/derive_no_fields.rs:2:1
+ --> fail/enum/derive_no_fields.rs:2:1
   |
 2 | pub enum Test {}
   | ^^^^^^^^^^^^^^^^

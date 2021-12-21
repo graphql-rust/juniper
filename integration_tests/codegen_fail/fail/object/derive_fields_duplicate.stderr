@@ -1,5 +1,5 @@
 error: GraphQL object must have a different name for each field
- --> $DIR/derive_fields_duplicate.rs:4:1
+ --> fail/object/derive_fields_duplicate.rs:4:1
   |
 4 | / struct ObjA {
 5 | |     id: String,
