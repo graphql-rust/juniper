@@ -34,176 +34,6 @@ where
 mod new {
     use super::*;
 
-    const fn fnv1a128(str: &str) -> u128 {
-        const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
-        const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
-
-        let bytes = str.as_bytes();
-        let mut hash = FNV_OFFSET_BASIS;
-        let mut i = 0;
-        while i < bytes.len() {
-            hash ^= bytes[i] as u128;
-            hash = hash.wrapping_mul(FNV_PRIME);
-            i += 1;
-        }
-        hash
-    }
-
-    trait IsSubtype<T: ?Sized> {
-        fn mark() {}
-    }
-
-    struct Parameter<T, const N: u128>(T);
-
-    impl IsSubtype<String> for String {}
-    impl IsSubtype<&'static str> for String {}
-    impl IsSubtype<String> for &'static str {}
-    impl IsSubtype<&'static str> for &'static str {}
-
-    impl<T, S> IsSubtype<Vec<S>> for Vec<T> where T: IsSubtype<S> {}
-    impl<T, S> IsSubtype<Option<S>> for T where T: IsSubtype<S> {}
-
-    impl IsSubtype<()> for () {}
-    impl<S1, const N1: u128> IsSubtype<(Option<Parameter<S1, N1>>,)> for () {}
-    impl<S1, S2, const N1: u128, const N2: u128>
-        IsSubtype<(Option<Parameter<S1, N1>>, Option<Parameter<S2, N2>>)> for ()
-    {
-    }
-    impl<S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Option<Parameter<S1, N1>>,
-            Option<Parameter<S2, N2>>,
-            Option<Parameter<S3, N3>>,
-        )> for ()
-    {
-    }
-
-    impl<T1, S1, const N1: u128> IsSubtype<(Parameter<S1, N1>,)> for (Parameter<T1, N1>,) where
-        T1: IsSubtype<S1>
-    {
-    }
-    impl<T1, S1, S2, const N1: u128, const N2: u128>
-        IsSubtype<(Parameter<S1, N1>, Option<Parameter<S2, N2>>)> for (Parameter<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, const N1: u128, const N2: u128>
-        IsSubtype<(Option<Parameter<S2, N2>>, Parameter<S1, N1>)> for (Parameter<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Parameter<S1, N1>,
-            Option<Parameter<S2, N2>>,
-            Option<Parameter<S3, N3>>,
-        )> for (Parameter<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Option<Parameter<S2, N2>>,
-            Parameter<S1, N1>,
-            Option<Parameter<S3, N3>>,
-        )> for (Parameter<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Option<Parameter<S3, N3>>,
-            Option<Parameter<S2, N2>>,
-            Parameter<S1, N1>,
-        )> for (Parameter<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-
-    trait Field<S: ScalarValue, const N: u128> {
-        type Context;
-        type TypeInfo;
-        type Ret;
-        type ArgTypes;
-
-        fn call(
-            &self,
-            info: &Self::TypeInfo,
-            args: &::juniper::Arguments<S>,
-            executor: &::juniper::Executor<Self::Context, S>,
-        ) -> ::juniper::ExecutionResult<S>;
-    }
-
-    // #[derive(GraphQLInterface)]
-    // #[graphql(for(Human, Droid))]
-    struct Character {
-        id: String,
-    }
-
-    impl IsSubtype<Human> for Character {}
-    impl IsSubtype<Droid> for Character {}
-
-    enum CharacterEnumValue<I1, I2> {
-        Human(I1),
-        Droid(I2),
-    }
-
-    type CharacterValue = CharacterEnumValue<Human, Droid>;
-
-    impl From<Human> for CharacterValue {
-        fn from(v: Human) -> Self {
-            Self::Human(v)
-        }
-    }
-
-    impl From<Droid> for CharacterValue {
-        fn from(v: Droid) -> Self {
-            Self::Droid(v)
-        }
-    }
-
-    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for CharacterValue {
-        type Context = ();
-        type TypeInfo = ();
-        type Ret = String;
-        type ArgTypes = (Parameter<String, { fnv1a128("required") }>,);
-
-        fn call(
-            &self,
-            info: &Self::TypeInfo,
-            args: &juniper::Arguments<S>,
-            executor: &juniper::Executor<Self::Context, S>,
-        ) -> juniper::ExecutionResult<S> {
-            match self {
-                CharacterValue::Human(v) => {
-                    let _ = <Self::Ret as IsSubtype<
-                        <Human as Field<S, { fnv1a128("id") }>>::Ret,
-                    >>::mark;
-                    let _ = <Self::ArgTypes as IsSubtype<
-                        <Human as Field<S, { fnv1a128("id") }>>::ArgTypes,
-                    >>::mark;
-
-                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
-                }
-                CharacterValue::Droid(v) => {
-                    let _ = <Self::Ret as IsSubtype<
-                        <Droid as Field<S, { fnv1a128("id") }>>::Ret,
-                    >>::mark;
-                    let _ = <Self::ArgTypes as IsSubtype<
-                        <Droid as Field<S, { fnv1a128("id") }>>::ArgTypes,
-                    >>::mark;
-
-                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
-                }
-            }
-        }
-    }
-
     #[automatically_derived]
     impl<__S> ::juniper::marker::GraphQLInterface<__S> for CharacterValue
     where
@@ -390,6 +220,419 @@ mod new {
         }
     }
 
+    impl IsSubtype<String> for String {}
+    impl IsSubtype<&'static str> for String {}
+    impl IsSubtype<String> for &'static str {}
+    impl IsSubtype<&'static str> for &'static str {}
+
+    impl<T, S> IsSubtype<Vec<S>> for Vec<T> where T: IsSubtype<S> {}
+    impl<T, S> IsSubtype<Option<S>> for T where T: IsSubtype<S> {}
+
+    impl IsSubtype<()> for () {}
+    impl<S1, const N1: u128> IsSubtype<(Option<Argument<S1, N1>>,)> for () {}
+    impl<S1, S2, const N1: u128, const N2: u128>
+        IsSubtype<(Option<Argument<S1, N1>>, Option<Argument<S2, N2>>)> for ()
+    {
+    }
+    impl<S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Option<Argument<S1, N1>>,
+            Option<Argument<S2, N2>>,
+            Option<Argument<S3, N3>>,
+        )> for ()
+    {
+    }
+
+    impl<T1, S1, const N1: u128> IsSubtype<(Argument<S1, N1>,)> for (Argument<T1, N1>,) where
+        T1: IsSubtype<S1>
+    {
+    }
+    impl<T1, S1, S2, const N1: u128, const N2: u128>
+        IsSubtype<(Argument<S1, N1>, Option<Argument<S2, N2>>)> for (Argument<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+    impl<T1, S1, S2, const N1: u128, const N2: u128>
+        IsSubtype<(Option<Argument<S2, N2>>, Argument<S1, N1>)> for (Argument<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Argument<S1, N1>,
+            Option<Argument<S2, N2>>,
+            Option<Argument<S3, N3>>,
+        )> for (Argument<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Option<Argument<S2, N2>>,
+            Argument<S1, N1>,
+            Option<Argument<S3, N3>>,
+        )> for (Argument<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
+        IsSubtype<(
+            Option<Argument<S3, N3>>,
+            Option<Argument<S2, N2>>,
+            Argument<S1, N1>,
+        )> for (Argument<T1, N1>,)
+    where
+        T1: IsSubtype<S1>,
+    {
+    }
+
+    const _: () = assert!(is_subtype(<i32 as WrappedType>::N, <i32 as WrappedType>::N));
+    const _: () = assert!(is_subtype(
+        <Option<i32> as WrappedType>::N,
+        <i32 as WrappedType>::N,
+    ));
+    const _: () = assert!(!is_subtype(
+        <Option<Vec<i32>> as WrappedType>::N,
+        <i32 as WrappedType>::N,
+    ));
+    const _: () = assert!(is_subtype(
+        <Option<Vec<i32>> as WrappedType>::N,
+        <Vec<i32> as WrappedType>::N,
+    ));
+    const _: () = assert!(is_subtype(
+        <Option<Vec<Option<Vec<i32>>>> as WrappedType>::N,
+        <Vec<Vec<i32>> as WrappedType>::N,
+    ));
+
+    const fn fnv1a128(str: &str) -> u128 {
+        const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
+        const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
+
+        let bytes = str.as_bytes();
+        let mut hash = FNV_OFFSET_BASIS;
+        let mut i = 0;
+        while i < bytes.len() {
+            hash ^= bytes[i] as u128;
+            hash = hash.wrapping_mul(FNV_PRIME);
+            i += 1;
+        }
+        hash
+    }
+
+    const fn str_eq(l: &str, r: &str) -> bool {
+        let (l, r) = (l.as_bytes(), r.as_bytes());
+
+        if l.len() != r.len() {
+            return false;
+        }
+
+        let mut i = 0;
+        while i < l.len() {
+            if l[i] != r[i] {
+                return false;
+            }
+            i += 1;
+        }
+
+        true
+    }
+
+    const fn is_superset(superset: &[&str], set: &[&str]) -> bool {
+        const fn find(set: &[&str], elem: &str) -> bool {
+            let mut i = 0;
+            while i < set.len() {
+                if str_eq(elem, set[i]) {
+                    return true;
+                }
+                i += 1;
+            }
+            false
+        }
+
+        if superset.len() < set.len() {
+            return false;
+        }
+
+        let mut i = 0;
+        while i < set.len() {
+            if !find(superset, set[i]) {
+                return false;
+            }
+            i += 1;
+        }
+
+        true
+    }
+
+    const fn is_valid_field_args(
+        base_interface: &'static [(&'static str, &'static str, u128)],
+        implementation: &'static [(&'static str, &'static str, u128)],
+    ) -> bool {
+        const fn find(
+            base_interface: &'static [(&'static str, &'static str, u128)],
+            impl_name: &'static str,
+            impl_ty: &'static str,
+            impl_wrap_val: u128,
+        ) -> bool {
+            let mut i = 0;
+            while i < base_interface.len() {
+                let (base_name, base_ty, base_wrap_val) = base_interface[i];
+                if str_eq(impl_name, base_name) {
+                    return str_eq(base_ty, impl_ty) && impl_wrap_val == base_wrap_val;
+                }
+                i += 1;
+            }
+            false
+        }
+
+        if base_interface.len() > implementation.len() {
+            return false;
+        }
+
+        let mut i = 0;
+        let mut successfully_implemented_fields = 0;
+        while i < implementation.len() {
+            let (impl_name, impl_ty, impl_wrap_val) = implementation[i];
+            if find(base_interface, impl_name, impl_ty, impl_wrap_val) {
+                successfully_implemented_fields += 1;
+            } else if impl_wrap_val % 10 != 2 {
+                // Not an optional field.
+                return false;
+            }
+            i += 1;
+        }
+
+        successfully_implemented_fields == base_interface.len()
+    }
+
+    const fn is_subtype(ty: u128, subtype: u128) -> bool {
+        let ty_current = ty % 10;
+        let subtype_current = subtype % 10;
+
+        if ty_current == subtype_current {
+            if ty_current == 1 {
+                true
+            } else {
+                is_subtype(ty / 10, subtype / 10)
+            }
+        } else if ty_current == 2 {
+            is_subtype(ty / 10, subtype)
+        } else {
+            false
+        }
+    }
+
+    trait WrappedType {
+        /// NonNull  - 1
+        /// Nullable - 2
+        /// List     - 3
+        ///
+        /// `[[Int]!] - <Option<Vec<Vec<Option<i32>>>> as WrappedType>::N = 12332`
+        const N: u128;
+    }
+
+    impl WrappedType for i32 {
+        const N: u128 = 1;
+    }
+
+    impl<T: WrappedType> WrappedType for Option<T> {
+        const N: u128 = T::N * 10 + 2;
+    }
+
+    impl<T: WrappedType> WrappedType for Vec<T> {
+        const N: u128 = T::N * 10 + 3;
+    }
+
+    impl WrappedType for String {
+        const N: u128 = 1;
+    }
+
+    impl<'a> WrappedType for &'a str {
+        const N: u128 = 1;
+    }
+
+    trait Type {
+        const NAME: &'static str;
+    }
+
+    impl<T: Type> Type for Option<T> {
+        const NAME: &'static str = T::NAME;
+    }
+
+    impl<T: Type> Type for Vec<T> {
+        const NAME: &'static str = T::NAME;
+    }
+
+    impl Type for String {
+        const NAME: &'static str = "String";
+    }
+
+    impl<'a> Type for &'a str {
+        const NAME: &'static str = "String";
+    }
+
+    impl Type for i32 {
+        const NAME: &'static str = "Int";
+    }
+
+    trait SubTypes {
+        const NAMES: &'static [&'static str];
+    }
+
+    impl<T: SubTypes> SubTypes for Option<T> {
+        const NAMES: &'static [&'static str] = T::NAMES;
+    }
+
+    impl<T: SubTypes> SubTypes for Vec<T> {
+        const NAMES: &'static [&'static str] = T::NAMES;
+    }
+
+    impl SubTypes for String {
+        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
+    impl<'a> SubTypes for &'a str {
+        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
+    impl<'a> SubTypes for i32 {
+        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
+    trait IsSubtype<T: ?Sized> {
+        fn mark() {}
+    }
+
+    struct Argument<T, const N: u128>(T);
+
+    trait Field<S: ScalarValue, const N: u128> {
+        type Context;
+        type TypeInfo;
+        type Ret;
+        type ArgTypes;
+        const SUB_TYPES: &'static [&'static str];
+        const WRAPPED_VALUE: u128;
+        const ARGUMENTS: &'static [(&'static str, &'static str, u128)];
+
+        fn call(
+            &self,
+            info: &Self::TypeInfo,
+            args: &::juniper::Arguments<S>,
+            executor: &::juniper::Executor<Self::Context, S>,
+        ) -> ::juniper::ExecutionResult<S>;
+    }
+
+    // #[derive(GraphQLInterface)]
+    // #[graphql(for(Human, Droid))]
+    struct Character {
+        id: Option<String>,
+    }
+
+    impl Type for CharacterValue {
+        const NAME: &'static str = "Character";
+    }
+
+    impl SubTypes for CharacterValue {
+        const NAMES: &'static [&'static str] = &[
+            <CharacterValue as Type>::NAME,
+            <Human as Type>::NAME,
+            <Droid as Type>::NAME,
+        ];
+    }
+
+    impl IsSubtype<Human> for Character {}
+    impl IsSubtype<Droid> for Character {}
+
+    enum CharacterEnumValue<I1, I2> {
+        Human(I1),
+        Droid(I2),
+    }
+
+    type CharacterValue = CharacterEnumValue<Human, Droid>;
+
+    impl From<Human> for CharacterValue {
+        fn from(v: Human) -> Self {
+            Self::Human(v)
+        }
+    }
+
+    impl From<Droid> for CharacterValue {
+        fn from(v: Droid) -> Self {
+            Self::Droid(v)
+        }
+    }
+
+    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for CharacterValue {
+        type Context = ();
+        type TypeInfo = ();
+        type Ret = String;
+        type ArgTypes = (Argument<String, { fnv1a128("required") }>,);
+        const SUB_TYPES: &'static [&'static str] = <Option<String> as SubTypes>::NAMES;
+        const WRAPPED_VALUE: u128 = <Option<String> as WrappedType>::N;
+        const ARGUMENTS: &'static [(&'static str, &'static str, u128)] =
+            &[("required", "String", 1)];
+
+        fn call(
+            &self,
+            info: &Self::TypeInfo,
+            args: &juniper::Arguments<S>,
+            executor: &juniper::Executor<Self::Context, S>,
+        ) -> juniper::ExecutionResult<S> {
+            match self {
+                CharacterValue::Human(v) => {
+                    let _ = <Self::Ret as IsSubtype<
+                        <Human as Field<S, { fnv1a128("id") }>>::Ret,
+                    >>::mark;
+                    let _ = <Self::ArgTypes as IsSubtype<
+                        <Human as Field<S, { fnv1a128("id") }>>::ArgTypes,
+                    >>::mark;
+
+                    const _: () = assert!(is_superset(
+                        <Option<String> as SubTypes>::NAMES,
+                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::SUB_TYPES,
+                    ));
+                    const _: () = assert!(is_subtype(
+                        <Option<String> as WrappedType>::N,
+                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::WRAPPED_VALUE,
+                    ));
+                    const _: () = assert!(is_valid_field_args(
+                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS, 
+                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS,
+                    ));
+
+                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
+                }
+                CharacterValue::Droid(v) => {
+                    let _ = <Self::Ret as IsSubtype<
+                        <Droid as Field<S, { fnv1a128("id") }>>::Ret,
+                    >>::mark;
+                    let _ = <Self::ArgTypes as IsSubtype<
+                        <Droid as Field<S, { fnv1a128("id") }>>::ArgTypes,
+                    >>::mark;
+
+                    const _: () = assert!(is_superset(
+                        <Option<String> as SubTypes>::NAMES,
+                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::SUB_TYPES,
+                    ));
+                    const _: () = assert!(is_subtype(
+                        <Option<String> as WrappedType>::N,
+                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::WRAPPED_VALUE,
+                    ));
+                    const _: () = assert!(is_valid_field_args(
+                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS,
+                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS,
+                    ));
+
+                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
+                }
+            }
+        }
+    }
+
     // ---------
 
     #[derive(GraphQLObject)]
@@ -399,14 +642,26 @@ mod new {
         home_planet: String,
     }
 
+    impl Type for Human {
+        const NAME: &'static str = "Human";
+    }
+
+    impl SubTypes for Human {
+        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Human {
         type Context = ();
         type TypeInfo = ();
         type Ret = String;
         type ArgTypes = (
-            Parameter<&'static str, { fnv1a128("required") }>,
-            Option<Parameter<i32, { fnv1a128("optional") }>>,
+            Argument<&'static str, { fnv1a128("required") }>,
+            Option<Argument<i32, { fnv1a128("optional") }>>,
         );
+        const SUB_TYPES: &'static [&'static str] = <String as SubTypes>::NAMES;
+        const WRAPPED_VALUE: u128 = <String as WrappedType>::N;
+        const ARGUMENTS: &'static [(&'static str, &'static str, u128)] =
+            &[("required", "String", 1), ("optional", "String", 12)];
 
         fn call(
             &self,
@@ -439,11 +694,23 @@ mod new {
         }
     }
 
+    impl Type for Droid {
+        const NAME: &'static str = "Droid";
+    }
+
+    impl SubTypes for Droid {
+        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
+    }
+
     impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Droid {
         type Context = ();
         type TypeInfo = ();
         type Ret = &'static str;
-        type ArgTypes = (Parameter<String, { fnv1a128("required") }>,);
+        type ArgTypes = (Argument<String, { fnv1a128("required") }>,);
+        const SUB_TYPES: &'static [&'static str] = <Option<&str> as SubTypes>::NAMES;
+        const WRAPPED_VALUE: u128 = <Option<&str> as WrappedType>::N;
+        const ARGUMENTS: &'static [(&'static str, &'static str, u128)] =
+            &[("required", "String", 1), ("optional", "Int", 12)];
 
         fn call(
             &self,

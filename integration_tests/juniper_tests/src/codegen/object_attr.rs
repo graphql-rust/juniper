@@ -1901,7 +1901,7 @@ mod executor {
 
     #[graphql_object(scalar = S: ScalarValue)]
     impl Human {
-        async fn id<'e, S>(&self, executor: &'e Executor<'_, '_, (), S>) -> &'e str
+        async fn id<'e, 'r, 'a, S>(&self, executor: &'e Executor<'r, 'a, (), S>) -> &'e str
         where
             S: ScalarValue,
         {
