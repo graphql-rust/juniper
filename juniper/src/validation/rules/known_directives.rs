@@ -233,8 +233,8 @@ mod tests {
             factory,
             r#"
           query Foo(
-            $var1: Int = 1 @skip(if: true) @any @directive, 
-            $var2: String @is, @unsupported
+            $var1: Int = 1 @skip(if: true) @unknown, 
+            $var2: String @deprecated
           ) {
             name
           }
@@ -245,20 +245,12 @@ mod tests {
                     &[SourcePosition::new(49, 2, 27)],
                 ),
                 RuleError::new(
-                    &unknown_error_message("any"),
+                    &unknown_error_message("unknown"),
                     &[SourcePosition::new(65, 2, 43)],
                 ),
                 RuleError::new(
-                    &unknown_error_message("directive"),
-                    &[SourcePosition::new(70, 2, 48)],
-                ),
-                RuleError::new(
-                    &unknown_error_message("is"),
-                    &[SourcePosition::new(109, 3, 26)],
-                ),
-                RuleError::new(
-                    &unknown_error_message("unsupported"),
-                    &[SourcePosition::new(114, 3, 31)],
+                    &misplaced_error_message("deprecated", &DirectiveLocation::VariableDefinition),
+                    &[SourcePosition::new(102, 3, 26)],
                 ),
             ],
         );

@@ -1057,6 +1057,12 @@ pub(crate) fn schema_introspection_result() -> Value {
                   "deprecationReason": null
                 },
                 {
+                  "name": "VARIABLE_DEFINITION",
+                  "description": null,
+                  "isDeprecated": false,
+                  "deprecationReason": null
+                },
+                {
                   "name": "FRAGMENT_SPREAD",
                   "description": null,
                   "isDeprecated": false,
@@ -1064,12 +1070,6 @@ pub(crate) fn schema_introspection_result() -> Value {
                 },
                 {
                   "name": "INLINE_FRAGMENT",
-                  "description": null,
-                  "isDeprecated": false,
-                  "deprecationReason": null
-                },
-                {
-                  "name": "VARIABLE_DEFINITION",
                   "description": null,
                   "isDeprecated": false,
                   "deprecationReason": null
@@ -2394,17 +2394,17 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                   "deprecationReason": null
                 },
                 {
+                  "name": "VARIABLE_DEFINITION",
+                  "isDeprecated": false,
+                  "deprecationReason": null
+                },
+                {
                   "name": "FRAGMENT_SPREAD",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "INLINE_FRAGMENT",
-                  "isDeprecated": false,
-                  "deprecationReason": null
-                },
-                {
-                  "name": "VARIABLE_DEFINITION",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
