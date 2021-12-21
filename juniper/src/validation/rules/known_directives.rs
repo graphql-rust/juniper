@@ -231,26 +231,24 @@ mod tests {
     fn with_unknown_directive_on_var_definition() {
         expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
-            r#"
-          query Foo(
-            $var1: Int = 1 @skip(if: true) @unknown, 
-            $var2: String @deprecated
-          ) {
-            name
-          }
-        "#,
+            r#"query Foo(
+                $var1: Int = 1 @skip(if: true) @unknown,
+                $var2: String @deprecated
+            ) {
+                name
+            }"#,
             &[
                 RuleError::new(
                     &misplaced_error_message("skip", &DirectiveLocation::VariableDefinition),
-                    &[SourcePosition::new(49, 2, 27)],
+                    &[SourcePosition::new(42, 1, 31)],
                 ),
                 RuleError::new(
                     &unknown_error_message("unknown"),
-                    &[SourcePosition::new(65, 2, 43)],
+                    &[SourcePosition::new(58, 1, 47)],
                 ),
                 RuleError::new(
                     &misplaced_error_message("deprecated", &DirectiveLocation::VariableDefinition),
-                    &[SourcePosition::new(102, 3, 26)],
+                    &[SourcePosition::new(98, 2, 30)],
                 ),
             ],
         );
