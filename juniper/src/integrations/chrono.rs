@@ -21,8 +21,6 @@
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
-use std::str::FromStr;
-
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 
 use crate::{
@@ -229,65 +227,6 @@ where
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
-    }
-}
-
-#[graphql_scalar(
-    name = "UtcOffset",
-    description = "Offset from UTC in `±hh:mm` format. See [list of database \
-                   time zones][0].\
-                   \n\n\
-                   [`UtcOffset` scalar][1] compliant.\
-                   \n\n\
-                   See also [`time::UtcOffset`][2] for details.\
-                   \n\n\
-                   [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones\n\
-                   [1]: https://graphql-scalars.dev/docs/scalars/utc-offset\n\
-                   [2]: https://docs.rs/time/*/time/struct.UtcOffset.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset"
-)]
-impl<S: ScalarValue> GraphQLScalar for FixedOffset {
-    fn resolve(&self) -> Value {
-        let hh = self.local_minus_utc() / 3600;
-        let mm = (self.local_minus_utc() % 3600) / 60;
-
-        Value::scalar(format!("{:+}:{}", hh, mm.abs()))
-    }
-
-    fn from_input_value(v: &InputValue) -> Result<Self, String> {
-        const ERR_PREFIX: &str = "Invalid `UtcOffset`";
-
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s: &str| {
-                let (hh, mm) = s
-                    .get(1..=2)
-                    .and_then(|hh| s.get(4..=5).map(|mm| (hh, mm)))
-                    .filter(|_| s.chars().count() == 6)
-                    .ok_or_else(|| {
-                        format!("{}: Expected exactly 6 characters: `±hh:mm`", ERR_PREFIX,)
-                    })?;
-
-                let (hh, mm) = u16::from_str(hh)
-                    .and_then(|hh| u16::from_str(mm).map(|mm| (hh, mm)))
-                    .map_err(|e| format!("{}: {}", ERR_PREFIX, e))?;
-                let offset = i32::from(hh * 3600 + mm * 60);
-
-                match (s.chars().next(), s.chars().skip(3).next()) {
-                    (Some('+'), Some(':')) => FixedOffset::east_opt(offset),
-                    (Some('-'), Some(':')) => FixedOffset::west_opt(offset),
-                    _ => return Err(format!("{}: Expected format `±hh:mm`", ERR_PREFIX)),
-                }
-                .ok_or_else(|| format!("{}: out-of-bound offset", ERR_PREFIX))
-            })
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(s) = value {
-            Ok(S::from(s.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
