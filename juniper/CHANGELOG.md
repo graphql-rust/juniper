@@ -10,6 +10,8 @@
 - Make `FromInputValue` methods fallible to allow post-validation. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 - Change `Option` to `Result` in `from_input_value()` return type of `#[graphql_scalar]` macro. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 - Forbid `__typename` field on `subscription` operations [accordingly to October 2021 spec](https://spec.graphql.org/October2021/#note-bc213). ([#1001](https://github.com/graphql-rust/juniper/pull/1001), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
+- Change [`chrono` crate](https://docs.rs/chrono) GraphQL scalars according to the [graphql-scalars.dev](https://graphql-scalars.dev). ([#1010](https://github.com/graphql-rust/juniper/pull/1010))
+- Remove `scalar-naivetime` feature. ([#1010](https://github.com/graphql-rust/juniper/pull/1010))
 
 ## Features
 

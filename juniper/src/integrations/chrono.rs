@@ -2,13 +2,12 @@
 //!
 //! # Supported types
 //!
-//! | Rust type                         | Format                | GraphQL scalar      |
-//! |-----------------------------------|-----------------------|---------------------|
-//! | [`NaiveDate`]                     | `yyyy-MM-dd`          | [`Date`][s1]        |
-//! | [`NaiveTime`]                     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]   |
-//! | [`NaiveDateTime`]                 | `yyyy-MM-dd HH:mm:ss` | `LocalDateTime`     |
-//! | [`DateTime`]`<`[`FixedOffset`]`>` | [RFC 3339] string     | [`DateTime`][s4]    |
-//! | [`FixedOffset`]                   | `±hh:mm`              | [`UtcOffset`][s5]   |
+//! | Rust type                         | Format                | GraphQL scalar    |
+//! |-----------------------------------|-----------------------|-------------------|
+//! | [`NaiveDate`]                     | `yyyy-MM-dd`          | [`Date`][s1]      |
+//! | [`NaiveTime`]                     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2] |
+//! | [`NaiveDateTime`]                 | `yyyy-MM-dd HH:mm:ss` | `LocalDateTime`   |
+//! | [`DateTime`]`<`[`FixedOffset`]`>` | [RFC 3339] string     | [`DateTime`][s4]  |
 //!
 //! [`DateTime`]: chrono::DateTime
 //! [`FixedOffset`]: chrono::FixedOffset
@@ -46,10 +45,10 @@ const DATE_FORMAT: &str = "%Y-%m-%d";
                    \n\n\
                    [`Date` scalar][1] compliant.\
                    \n\n\
-                   See also [`time::Date`][2] for details.\
+                   See also [`chrono::NaiveDate`][2] for details.\
                    \n\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/date\n\
-                   [2]: https://docs.rs/time/*/time/struct.Date.html",
+                   [2]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html",
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date"
 )]
 impl<S> GraphQLScalar for NaiveDate
@@ -103,10 +102,10 @@ const LOCAL_TIME_FORMAT_NO_SECS: &str = "%H:%M";
                    \n\n\
                    [`LocalTime` scalar][1] compliant.\
                    \n\n\
-                   See also [`time::Time`][2] for details.\
+                   See also [`chrono::NaiveTime`][2] for details.\
                    \n\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/local-time\n\
-                   [2]: https://docs.rs/time/*/time/struct.Time.html",
+                   [2]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveTime.html",
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time"
 )]
 impl<S> GraphQLScalar for NaiveTime
@@ -155,9 +154,9 @@ const LOCAL_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
     description = "Combined date and time (without time zone) in `yyyy-MM-dd \
                    HH:mm:ss` format.\
                    \n\n\
-                   See also [`time::PrimitiveDateTime`][2] for details.\
+                   See also [`chrono::NaiveDateTime`][1] for details.\
                    \n\n\
-                   [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html"
+                   [1]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDateTime.html"
 )]
 impl<S> GraphQLScalar for NaiveDateTime
 where
@@ -201,11 +200,13 @@ const DATE_TIME_FORMAT: &str = "%FT%TZ";
                    \n\n\
                    [`DateTime` scalar][1] compliant.\
                    \n\n\
-                   See also [`time::OffsetDateTime`][2] for details.\
+                   See also [`chrono::DateTime`][2]`<`[`FixedOffset`][3]`>` \
+                   for details.\
                    \n\n\
                    [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/date-time\n\
-                   [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html",
+                   [2]: https://docs.rs/chrono/*/chrono/struct.DateTime.html\n\",
+                   [3]: https://docs.rs/chrono/*/chrono/offset/struct.FixedOffset.html",
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time"
 )]
 impl<S> GraphQLScalar for DateTime<FixedOffset>
