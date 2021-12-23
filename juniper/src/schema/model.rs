@@ -87,6 +87,8 @@ pub enum DirectiveLocation {
     FragmentDefinition,
     #[graphql(name = "FIELD_DEFINITION")]
     FieldDefinition,
+    #[graphql(name = "VARIABLE_DEFINITION")]
+    VariableDefinition,
     #[graphql(name = "FRAGMENT_SPREAD")]
     FragmentSpread,
     #[graphql(name = "INLINE_FRAGMENT")]
@@ -588,27 +590,28 @@ where
 
 impl fmt::Display for DirectiveLocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match *self {
-            DirectiveLocation::Query => "query",
-            DirectiveLocation::Mutation => "mutation",
-            DirectiveLocation::Subscription => "subscription",
-            DirectiveLocation::Field => "field",
-            DirectiveLocation::FieldDefinition => "field definition",
-            DirectiveLocation::FragmentDefinition => "fragment definition",
-            DirectiveLocation::FragmentSpread => "fragment spread",
-            DirectiveLocation::InlineFragment => "inline fragment",
-            DirectiveLocation::Scalar => "scalar",
-            DirectiveLocation::EnumValue => "enum value",
+        f.write_str(match self {
+            Self::Query => "query",
+            Self::Mutation => "mutation",
+            Self::Subscription => "subscription",
+            Self::Field => "field",
+            Self::FieldDefinition => "field definition",
+            Self::FragmentDefinition => "fragment definition",
+            Self::FragmentSpread => "fragment spread",
+            Self::InlineFragment => "inline fragment",
+            Self::VariableDefinition => "variable definition",
+            Self::Scalar => "scalar",
+            Self::EnumValue => "enum value",
         })
     }
 }
 
 impl<'a, S> fmt::Display for TypeType<'a, S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            TypeType::Concrete(t) => f.write_str(t.name().unwrap()),
-            TypeType::List(ref i, _) => write!(f, "[{}]", i),
-            TypeType::NonNull(ref i) => write!(f, "{}!", i),
+        match self {
+            Self::Concrete(t) => f.write_str(t.name().unwrap()),
+            Self::List(i, _) => write!(f, "[{}]", i),
+            Self::NonNull(i) => write!(f, "{}!", i),
         }
     }
 }

@@ -1,5 +1,8 @@
 use crate::{
-    ast::{Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType},
+    ast::{
+        Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType,
+        VariableDefinition,
+    },
     parser::Spanning,
     schema::model::DirectiveLocation,
     validation::{ValidatorContext, Visitor},
@@ -106,6 +109,24 @@ where
         assert_eq!(top, Some(DirectiveLocation::InlineFragment));
     }
 
+    fn enter_variable_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<&'a str>, VariableDefinition<S>),
+    ) {
+        self.location_stack
+            .push(DirectiveLocation::VariableDefinition);
+    }
+
+    fn exit_variable_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<&'a str>, VariableDefinition<S>),
+    ) {
+        let top = self.location_stack.pop();
+        assert_eq!(top, Some(DirectiveLocation::VariableDefinition));
+    }
+
     fn enter_directive(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
@@ -203,6 +224,33 @@ mod tests {
                 &unknown_error_message("unknown"),
                 &[SourcePosition::new(29, 2, 16)],
             )],
+        );
+    }
+
+    #[test]
+    fn with_unknown_directive_on_var_definition() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"query Foo(
+                $var1: Int = 1 @skip(if: true) @unknown,
+                $var2: String @deprecated
+            ) {
+                name
+            }"#,
+            &[
+                RuleError::new(
+                    &misplaced_error_message("skip", &DirectiveLocation::VariableDefinition),
+                    &[SourcePosition::new(42, 1, 31)],
+                ),
+                RuleError::new(
+                    &unknown_error_message("unknown"),
+                    &[SourcePosition::new(58, 1, 47)],
+                ),
+                RuleError::new(
+                    &misplaced_error_message("deprecated", &DirectiveLocation::VariableDefinition),
+                    &[SourcePosition::new(98, 2, 30)],
+                ),
+            ],
         );
     }
 
