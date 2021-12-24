@@ -109,7 +109,10 @@ mod new {
             executor: &::juniper::Executor<Self::Context, __S>,
         ) -> ::juniper::ExecutionResult<__S> {
             match field {
-                "id" => <_ as Field<__S, { fnv1a128("id") }>>::call(self, info, args, executor),
+                "id" => <_ as juniper::macros::helper::Field<
+                    __S,
+                    { juniper::macros::helper::fnv1a128("id") },
+                >>::call(self, info, args, executor),
                 _ => {
                     return Err(::juniper::FieldError::from({
                         format!("Field `{}` not found on type `{}`", field, "CharacterValue",)
@@ -165,12 +168,12 @@ mod new {
             executor: &'b ::juniper::Executor<Self::Context, __S>,
         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<__S>> {
             match field {
-                "id" => Box::pin(::juniper::futures::future::ready(<_ as Field<
-                    __S,
-                    { fnv1a128("id") },
-                >>::call(
-                    self, info, args, executor,
-                ))),
+                "id" => Box::pin(::juniper::futures::future::ready(
+                    <_ as juniper::macros::helper::Field<
+                        __S,
+                        { juniper::macros::helper::fnv1a128("id") },
+                    >>::call(self, info, args, executor),
+                )),
                 _ => Box::pin(async move {
                     return Err(::juniper::FieldError::from({
                         format!("Field `{}` not found on type `{}`", field, "CharacterValue",)
@@ -220,132 +223,30 @@ mod new {
         }
     }
 
-    impl IsSubtype<String> for String {}
-    impl IsSubtype<&'static str> for String {}
-    impl IsSubtype<String> for &'static str {}
-    impl IsSubtype<&'static str> for &'static str {}
-
-    impl<T, S> IsSubtype<Vec<S>> for Vec<T> where T: IsSubtype<S> {}
-    impl<T, S> IsSubtype<Option<S>> for T where T: IsSubtype<S> {}
-
-    impl IsSubtype<()> for () {}
-    impl<S1, const N1: u128> IsSubtype<(Option<Argument<S1, N1>>,)> for () {}
-    impl<S1, S2, const N1: u128, const N2: u128>
-        IsSubtype<(Option<Argument<S1, N1>>, Option<Argument<S2, N2>>)> for ()
-    {
-    }
-    impl<S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Option<Argument<S1, N1>>,
-            Option<Argument<S2, N2>>,
-            Option<Argument<S3, N3>>,
-        )> for ()
-    {
+    enum CharacterEnumValue<I1, I2> {
+        Human(I1),
+        Droid(I2),
     }
 
-    impl<T1, S1, const N1: u128> IsSubtype<(Argument<S1, N1>,)> for (Argument<T1, N1>,) where
-        T1: IsSubtype<S1>
-    {
-    }
-    impl<T1, S1, S2, const N1: u128, const N2: u128>
-        IsSubtype<(Argument<S1, N1>, Option<Argument<S2, N2>>)> for (Argument<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, const N1: u128, const N2: u128>
-        IsSubtype<(Option<Argument<S2, N2>>, Argument<S1, N1>)> for (Argument<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Argument<S1, N1>,
-            Option<Argument<S2, N2>>,
-            Option<Argument<S3, N3>>,
-        )> for (Argument<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Option<Argument<S2, N2>>,
-            Argument<S1, N1>,
-            Option<Argument<S3, N3>>,
-        )> for (Argument<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
-    impl<T1, S1, S2, S3, const N1: u128, const N2: u128, const N3: u128>
-        IsSubtype<(
-            Option<Argument<S3, N3>>,
-            Option<Argument<S2, N2>>,
-            Argument<S1, N1>,
-        )> for (Argument<T1, N1>,)
-    where
-        T1: IsSubtype<S1>,
-    {
-    }
+    type CharacterValue = CharacterEnumValue<Human, Droid>;
 
-    const _: () = assert!(is_subtype(<i32 as WrappedType>::N, <i32 as WrappedType>::N));
-    const _: () = assert!(is_subtype(
-        <Option<i32> as WrappedType>::N,
-        <i32 as WrappedType>::N,
-    ));
-    const _: () = assert!(!is_subtype(
-        <Option<Vec<i32>> as WrappedType>::N,
-        <i32 as WrappedType>::N,
-    ));
-    const _: () = assert!(is_subtype(
-        <Option<Vec<i32>> as WrappedType>::N,
-        <Vec<i32> as WrappedType>::N,
-    ));
-    const _: () = assert!(is_subtype(
-        <Option<Vec<Option<Vec<i32>>>> as WrappedType>::N,
-        <Vec<Vec<i32>> as WrappedType>::N,
-    ));
-
-    const fn fnv1a128(str: &str) -> u128 {
-        const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
-        const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
-
-        let bytes = str.as_bytes();
-        let mut hash = FNV_OFFSET_BASIS;
-        let mut i = 0;
-        while i < bytes.len() {
-            hash ^= bytes[i] as u128;
-            hash = hash.wrapping_mul(FNV_PRIME);
-            i += 1;
+    impl From<Human> for CharacterValue {
+        fn from(v: Human) -> Self {
+            Self::Human(v)
         }
-        hash
     }
 
-    const fn str_eq(l: &str, r: &str) -> bool {
-        let (l, r) = (l.as_bytes(), r.as_bytes());
-
-        if l.len() != r.len() {
-            return false;
+    impl From<Droid> for CharacterValue {
+        fn from(v: Droid) -> Self {
+            Self::Droid(v)
         }
-
-        let mut i = 0;
-        while i < l.len() {
-            if l[i] != r[i] {
-                return false;
-            }
-            i += 1;
-        }
-
-        true
     }
 
     const fn is_superset(superset: &[&str], set: &[&str]) -> bool {
         const fn find(set: &[&str], elem: &str) -> bool {
             let mut i = 0;
             while i < set.len() {
-                if str_eq(elem, set[i]) {
+                if juniper::macros::helper::str_eq(elem, set[i]) {
                     return true;
                 }
                 i += 1;
@@ -368,163 +269,7 @@ mod new {
         true
     }
 
-    const fn is_valid_field_args(
-        base_interface: &'static [(&'static str, &'static str, u128)],
-        implementation: &'static [(&'static str, &'static str, u128)],
-    ) -> bool {
-        const fn find(
-            base_interface: &'static [(&'static str, &'static str, u128)],
-            impl_name: &'static str,
-            impl_ty: &'static str,
-            impl_wrap_val: u128,
-        ) -> bool {
-            let mut i = 0;
-            while i < base_interface.len() {
-                let (base_name, base_ty, base_wrap_val) = base_interface[i];
-                if str_eq(impl_name, base_name) {
-                    return str_eq(base_ty, impl_ty) && impl_wrap_val == base_wrap_val;
-                }
-                i += 1;
-            }
-            false
-        }
-
-        if base_interface.len() > implementation.len() {
-            return false;
-        }
-
-        let mut i = 0;
-        let mut successfully_implemented_fields = 0;
-        while i < implementation.len() {
-            let (impl_name, impl_ty, impl_wrap_val) = implementation[i];
-            if find(base_interface, impl_name, impl_ty, impl_wrap_val) {
-                successfully_implemented_fields += 1;
-            } else if impl_wrap_val % 10 != 2 {
-                // Not an optional field.
-                return false;
-            }
-            i += 1;
-        }
-
-        successfully_implemented_fields == base_interface.len()
-    }
-
-    const fn is_subtype(ty: u128, subtype: u128) -> bool {
-        let ty_current = ty % 10;
-        let subtype_current = subtype % 10;
-
-        if ty_current == subtype_current {
-            if ty_current == 1 {
-                true
-            } else {
-                is_subtype(ty / 10, subtype / 10)
-            }
-        } else if ty_current == 2 {
-            is_subtype(ty / 10, subtype)
-        } else {
-            false
-        }
-    }
-
-    trait WrappedType {
-        /// NonNull  - 1
-        /// Nullable - 2
-        /// List     - 3
-        ///
-        /// `[[Int]!] - <Option<Vec<Vec<Option<i32>>>> as WrappedType>::N = 12332`
-        const N: u128;
-    }
-
-    impl WrappedType for i32 {
-        const N: u128 = 1;
-    }
-
-    impl<T: WrappedType> WrappedType for Option<T> {
-        const N: u128 = T::N * 10 + 2;
-    }
-
-    impl<T: WrappedType> WrappedType for Vec<T> {
-        const N: u128 = T::N * 10 + 3;
-    }
-
-    impl WrappedType for String {
-        const N: u128 = 1;
-    }
-
-    impl<'a> WrappedType for &'a str {
-        const N: u128 = 1;
-    }
-
-    trait Type {
-        const NAME: &'static str;
-    }
-
-    impl<T: Type> Type for Option<T> {
-        const NAME: &'static str = T::NAME;
-    }
-
-    impl<T: Type> Type for Vec<T> {
-        const NAME: &'static str = T::NAME;
-    }
-
-    impl Type for String {
-        const NAME: &'static str = "String";
-    }
-
-    impl<'a> Type for &'a str {
-        const NAME: &'static str = "String";
-    }
-
-    impl Type for i32 {
-        const NAME: &'static str = "Int";
-    }
-
-    trait SubTypes {
-        const NAMES: &'static [&'static str];
-    }
-
-    impl<T: SubTypes> SubTypes for Option<T> {
-        const NAMES: &'static [&'static str] = T::NAMES;
-    }
-
-    impl<T: SubTypes> SubTypes for Vec<T> {
-        const NAMES: &'static [&'static str] = T::NAMES;
-    }
-
-    impl SubTypes for String {
-        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
-    }
-
-    impl<'a> SubTypes for &'a str {
-        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
-    }
-
-    impl<'a> SubTypes for i32 {
-        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
-    }
-
-    trait IsSubtype<T: ?Sized> {
-        fn mark() {}
-    }
-
-    struct Argument<T, const N: u128>(T);
-
-    trait Field<S: ScalarValue, const N: u128> {
-        type Context;
-        type TypeInfo;
-        type Ret;
-        type ArgTypes;
-        const SUB_TYPES: &'static [&'static str];
-        const WRAPPED_VALUE: u128;
-        const ARGUMENTS: &'static [(&'static str, &'static str, u128)];
-
-        fn call(
-            &self,
-            info: &Self::TypeInfo,
-            args: &::juniper::Arguments<S>,
-            executor: &::juniper::Executor<Self::Context, S>,
-        ) -> ::juniper::ExecutionResult<S>;
-    }
+    // --------------
 
     // #[derive(GraphQLInterface)]
     // #[graphql(for(Human, Droid))]
@@ -532,49 +277,45 @@ mod new {
         id: Option<String>,
     }
 
-    impl Type for CharacterValue {
-        const NAME: &'static str = "Character";
+    impl<S> juniper::macros::helper::BaseType<S> for CharacterValue
+    where
+        S: ScalarValue,
+    {
+        const NAME: juniper::macros::helper::Type = "Character";
     }
 
-    impl SubTypes for CharacterValue {
-        const NAMES: &'static [&'static str] = &[
-            <CharacterValue as Type>::NAME,
-            <Human as Type>::NAME,
-            <Droid as Type>::NAME,
+    impl<S> juniper::macros::helper::BaseSubTypes<S> for CharacterValue
+    where
+        S: ScalarValue,
+    {
+        const NAMES: juniper::macros::helper::Types = &[
+            <CharacterValue as juniper::macros::helper::BaseType<S>>::NAME,
+            <Human as juniper::macros::helper::BaseType<S>>::NAME,
+            <Droid as juniper::macros::helper::BaseType<S>>::NAME,
         ];
     }
 
-    impl IsSubtype<Human> for Character {}
-    impl IsSubtype<Droid> for Character {}
-
-    enum CharacterEnumValue<I1, I2> {
-        Human(I1),
-        Droid(I2),
+    impl<S> juniper::macros::helper::WrappedType<S> for CharacterValue {
+        const VALUE: u128 = 1;
     }
 
-    type CharacterValue = CharacterEnumValue<Human, Droid>;
-
-    impl From<Human> for CharacterValue {
-        fn from(v: Human) -> Self {
-            Self::Human(v)
-        }
-    }
-
-    impl From<Droid> for CharacterValue {
-        fn from(v: Droid) -> Self {
-            Self::Droid(v)
-        }
-    }
-
-    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for CharacterValue {
+    impl<S: ScalarValue>
+        juniper::macros::helper::Field<S, { juniper::macros::helper::fnv1a128("id") }>
+        for CharacterValue
+    {
         type Context = ();
         type TypeInfo = ();
-        type Ret = String;
-        type ArgTypes = (Argument<String, { fnv1a128("required") }>,);
-        const SUB_TYPES: &'static [&'static str] = <Option<String> as SubTypes>::NAMES;
-        const WRAPPED_VALUE: u128 = <Option<String> as WrappedType>::N;
-        const ARGUMENTS: &'static [(&'static str, &'static str, u128)] =
-            &[("required", "String", 1)];
+        const TYPE: juniper::macros::helper::Type =
+            <Option<String> as juniper::macros::helper::BaseType<S>>::NAME;
+        const SUB_TYPES: juniper::macros::helper::Types =
+            <Option<String> as juniper::macros::helper::BaseSubTypes<S>>::NAMES;
+        const WRAPPED_VALUE: juniper::macros::helper::WrappedValue =
+            <Option<String> as juniper::macros::helper::WrappedType<S>>::VALUE;
+        const ARGUMENTS: &'static [(
+            juniper::macros::helper::Name,
+            juniper::macros::helper::Type,
+            juniper::macros::helper::WrappedValue,
+        )] = &[("required", "String", 1)];
 
         fn call(
             &self,
@@ -584,50 +325,62 @@ mod new {
         ) -> juniper::ExecutionResult<S> {
             match self {
                 CharacterValue::Human(v) => {
-                    let _ = <Self::Ret as IsSubtype<
-                        <Human as Field<S, { fnv1a128("id") }>>::Ret,
-                    >>::mark;
-                    let _ = <Self::ArgTypes as IsSubtype<
-                        <Human as Field<S, { fnv1a128("id") }>>::ArgTypes,
-                    >>::mark;
+                    const _: () = assert!(juniper::macros::helper::is_subtype(
+                        <Option<String> as juniper::macros::helper::BaseSubTypes>::NAMES,
+                        <Option<String> as juniper::macros::helper::WrappedType>::VALUE,
+                        <Human as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::TYPE,
+                        <Human as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::WRAPPED_VALUE,
+                    ));
+                    const _: () = assert!(juniper::macros::helper::is_valid_field_args(
+                        <CharacterValue as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::ARGUMENTS,
+                        <Human as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::ARGUMENTS,
+                    ));
 
-                    const _: () = assert!(is_superset(
-                        <Option<String> as SubTypes>::NAMES,
-                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::SUB_TYPES,
-                    ));
-                    const _: () = assert!(is_subtype(
-                        <Option<String> as WrappedType>::N,
-                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::WRAPPED_VALUE,
-                    ));
-                    const _: () = assert!(is_valid_field_args(
-                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS, 
-                        <Human as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS,
-                    ));
-
-                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
+                    <_ as juniper::macros::helper::Field<
+                        S,
+                        { juniper::macros::helper::fnv1a128("id") },
+                    >>::call(v, info, args, executor)
                 }
                 CharacterValue::Droid(v) => {
-                    let _ = <Self::Ret as IsSubtype<
-                        <Droid as Field<S, { fnv1a128("id") }>>::Ret,
-                    >>::mark;
-                    let _ = <Self::ArgTypes as IsSubtype<
-                        <Droid as Field<S, { fnv1a128("id") }>>::ArgTypes,
-                    >>::mark;
+                    const _: () = assert!(juniper::macros::helper::is_subtype(
+                        <Option<String> as juniper::macros::helper::BaseSubTypes>::NAMES,
+                        <Option<String> as juniper::macros::helper::WrappedType>::VALUE,
+                        <Droid as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::TYPE,
+                        <Droid as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::WRAPPED_VALUE,
+                    ));
+                    const _: () = assert!(juniper::macros::helper::is_valid_field_args(
+                        <CharacterValue as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::ARGUMENTS,
+                        <Droid as juniper::macros::helper::Field<
+                            DefaultScalarValue,
+                            { juniper::macros::helper::fnv1a128("id") },
+                        >>::ARGUMENTS,
+                    ));
 
-                    const _: () = assert!(is_superset(
-                        <Option<String> as SubTypes>::NAMES,
-                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::SUB_TYPES,
-                    ));
-                    const _: () = assert!(is_subtype(
-                        <Option<String> as WrappedType>::N,
-                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::WRAPPED_VALUE,
-                    ));
-                    const _: () = assert!(is_valid_field_args(
-                        <CharacterValue as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS,
-                        <Droid as Field<DefaultScalarValue, { fnv1a128("id") }>>::ARGUMENTS,
-                    ));
-
-                    <_ as Field<S, { fnv1a128("id") }>>::call(v, info, args, executor)
+                    <_ as juniper::macros::helper::Field<
+                        S,
+                        { juniper::macros::helper::fnv1a128("id") },
+                    >>::call(v, info, args, executor)
                 }
             }
         }
@@ -635,46 +388,19 @@ mod new {
 
     // ---------
 
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue)]
     struct Human {
         id: String,
         home_planet: String,
     }
 
-    impl Type for Human {
-        const NAME: &'static str = "Human";
-    }
+    #[graphql_object(impl = CharacterValue)]
+    impl Human {
+        fn id(&self, _required: String, _optional: Option<String>) -> &str {
+            &self.id
+        }
 
-    impl SubTypes for Human {
-        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
-    }
-
-    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Human {
-        type Context = ();
-        type TypeInfo = ();
-        type Ret = String;
-        type ArgTypes = (
-            Argument<&'static str, { fnv1a128("required") }>,
-            Option<Argument<i32, { fnv1a128("optional") }>>,
-        );
-        const SUB_TYPES: &'static [&'static str] = <String as SubTypes>::NAMES;
-        const WRAPPED_VALUE: u128 = <String as WrappedType>::N;
-        const ARGUMENTS: &'static [(&'static str, &'static str, u128)] =
-            &[("required", "String", 1), ("optional", "String", 12)];
-
-        fn call(
-            &self,
-            info: &Self::TypeInfo,
-            _: &juniper::Arguments<S>,
-            executor: &juniper::Executor<Self::Context, S>,
-        ) -> juniper::ExecutionResult<S> {
-            let res = &self.id;
-
-            ::juniper::IntoResolvable::into(res, executor.context()).and_then(|res| match res {
-                Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
-                None => Ok(::juniper::Value::null()),
-            })
+        fn home_planet(&self) -> &str {
+            &self.home_planet
         }
     }
 
@@ -685,45 +411,12 @@ mod new {
 
     #[graphql_object(impl = CharacterValue)]
     impl Droid {
-        fn id(&self) -> &str {
+        fn id(&self, _required: String) -> &str {
             &self.id
         }
 
         fn primary_function(&self) -> &str {
             &self.primary_function
-        }
-    }
-
-    impl Type for Droid {
-        const NAME: &'static str = "Droid";
-    }
-
-    impl SubTypes for Droid {
-        const NAMES: &'static [&'static str] = &[<Self as Type>::NAME];
-    }
-
-    impl<S: ScalarValue> Field<S, { fnv1a128("id") }> for Droid {
-        type Context = ();
-        type TypeInfo = ();
-        type Ret = &'static str;
-        type ArgTypes = (Argument<String, { fnv1a128("required") }>,);
-        const SUB_TYPES: &'static [&'static str] = <Option<&str> as SubTypes>::NAMES;
-        const WRAPPED_VALUE: u128 = <Option<&str> as WrappedType>::N;
-        const ARGUMENTS: &'static [(&'static str, &'static str, u128)] =
-            &[("required", "String", 1), ("optional", "Int", 12)];
-
-        fn call(
-            &self,
-            info: &Self::TypeInfo,
-            _: &juniper::Arguments<S>,
-            executor: &juniper::Executor<Self::Context, S>,
-        ) -> juniper::ExecutionResult<S> {
-            let res = self.id();
-
-            ::juniper::IntoResolvable::into(res, executor.context()).and_then(|res| match res {
-                Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(info, &r),
-                None => Ok(::juniper::Value::null()),
-            })
         }
     }
 
@@ -760,7 +453,7 @@ mod new {
         const DOC: &str = r#"{
             character {
                 ... on Human {
-                    humanId: id
+                    humanId: id(required: "test")
                     homePlanet
                 }
             }
@@ -782,7 +475,7 @@ mod new {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
-                    droidId: id
+                    droidId: id(required: "test")
                     primaryFunction
                 }
             }

@@ -441,6 +441,7 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
+        self.impl_traits_for_const_assertions().to_tokens(into);
     }
 }
 
@@ -713,6 +714,36 @@ impl Definition {
             }
         }
     }
+
+    /// TODO
+    #[must_use]
+    pub(crate) fn impl_traits_for_const_assertions(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let name = &self.name;
+        let (impl_generics, where_clause) = self.ty.impl_generics(false);
+        let ty = self.ty.ty_tokens();
+
+        quote! {
+            impl #impl_generics ::juniper::macros::helper::BaseType<#scalar> for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::helper::Type = #name;
+            }
+
+            impl #impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::helper::Types =
+                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+            }
+
+            impl #impl_generics ::juniper::macros::helper::WrappedType<#scalar> for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::helper::WrappedValue = 1;
+            }
+        }
+    }
 }
 
 /// Representation of custom downcast into an [`Implementer`] from a
@@ -902,6 +933,7 @@ impl Implementer {
 /// code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+#[derive(Debug)]
 struct EnumType {
     /// Name of this [`EnumType`] to generate it with.
     ident: syn::Ident,
@@ -1405,6 +1437,7 @@ impl EnumType {
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 /// [2]: https://doc.rust-lang.org/reference/types/trait-object.html
+#[derive(Debug)]
 struct TraitObjectType {
     /// Name of this [`TraitObjectType`] to generate it with.
     ident: syn::Ident,
@@ -1637,6 +1670,7 @@ impl ToTokens for TraitObjectType {
 /// type for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+#[derive(Debug)]
 enum Type {
     /// [GraphQL interface][1] type implementation as Rust enum.
     ///

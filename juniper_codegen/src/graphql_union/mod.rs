@@ -320,6 +320,7 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
+        self.impl_traits_for_const_assertions().to_tokens(into);
     }
 }
 
@@ -606,6 +607,41 @@ impl Definition {
                         type_name, #name,
                     ));
                 }
+            }
+        }
+    }
+
+    /// TODO
+    #[must_use]
+    pub(crate) fn impl_traits_for_const_assertions(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let name = &self.name;
+        let (impl_generics, ty, where_clause) = self.impl_generics(false);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::BaseType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::helper::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::helper::Types =
+                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::WrappedType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::helper::WrappedValue = 1;
             }
         }
     }

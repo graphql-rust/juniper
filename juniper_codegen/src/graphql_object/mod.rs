@@ -361,6 +361,42 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         }
     }
 
+    /// TODO
+    #[must_use]
+    pub(crate) fn impl_traits_for_const_assertions(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let name = &self.name;
+        let (impl_generics, where_clause) = self.impl_generics(false);
+        let ty = &self.ty;
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::BaseType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::helper::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::helper::Types =
+                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::WrappedType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::helper::WrappedValue = 1;
+            }
+        }
+    }
+
     /// Returns generated code implementing [`GraphQLType`] trait for this
     /// [GraphQL object][1].
     ///
@@ -439,6 +475,7 @@ impl ToTokens for Definition<Query> {
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
         self.impl_as_dyn_graphql_value_tokens().to_tokens(into);
+        self.impl_traits_for_const_assertions().to_tokens(into);
     }
 }
 
@@ -494,6 +531,16 @@ impl Definition<Query> {
             .fields
             .iter()
             .filter_map(|f| f.method_resolve_field_tokens(scalar, None));
+        let field_impls = self.fields.iter().filter_map(|f| {
+            f.impl_field(
+                ty,
+                &impl_generics,
+                where_clause.as_ref(),
+                scalar,
+                None,
+                context,
+            )
+        });
         let async_fields_err = {
             let names = self
                 .fields
@@ -543,6 +590,8 @@ impl Definition<Query> {
                     #name.to_string()
                 }
             }
+
+            #(#field_impls)*
         }
     }
 

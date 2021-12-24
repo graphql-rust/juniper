@@ -881,6 +881,25 @@ impl GraphQLTypeDefiniton {
                     }
                 }
             }
+
+            impl#impl_generics ::juniper::macros::helper::BaseType<#scalar> for #ty
+                #where_clause
+            {
+                const NAME: &'static str = #name;
+            }
+
+            impl#impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar> for #ty
+                #where_clause
+            {
+                const NAMES: &'static [&'static str] =
+                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+            }
+
+            impl#impl_generics ::juniper::macros::helper::WrappedType<#scalar> for #ty
+                #where_clause
+            {
+                const VALUE: u128 = 1;
+            }
         );
 
         if !self.no_async {
@@ -1127,6 +1146,28 @@ impl GraphQLTypeDefiniton {
                         #( #to_inputs )*
                     ].into_iter().collect())
                 }
+            }
+
+            impl#impl_generics ::juniper::macros::helper::BaseType<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const NAME: &'static str = #name;
+            }
+
+            impl#impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const NAMES: &'static [&'static str] =
+                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+            }
+
+            impl#impl_generics ::juniper::macros::helper::WrappedType<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const VALUE: u128 = 1;
             }
         );
 

@@ -441,6 +441,113 @@ impl Definition {
         })
     }
 
+    /// TODO
+    #[must_use]
+    pub(crate) fn impl_field(
+        &self,
+        impl_ty: &syn::Type,
+        impl_generics: &TokenStream,
+        where_clause: Option<&syn::WhereClause>,
+        scalar: &scalar::Type,
+        trait_ty: Option<&syn::Type>,
+        context: &syn::Type,
+    ) -> Option<TokenStream> {
+        if self.is_async {
+            return None;
+        }
+
+        let (name, ty, mut res_ty, ident) =
+            (&self.name, self.ty.clone(), self.ty.clone(), &self.ident);
+
+        // if matches!(
+        //     scalar,
+        //     scalar::Type::ExplicitGeneric(_) | scalar::Type::ImplicitGeneric(_),
+        // ) {
+        //     impl_generics
+        //         .params
+        //         .push(parse_quote!( #scalar: ::juniper::ScalarValue ));
+        // }
+        //
+        // let (impl_gens, ty_gens, where_clause) = impl_generics.split_for_impl();
+
+        let res = if self.is_method() {
+            let args = self
+                .arguments
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
+
+            let rcv = self.has_receiver.then(|| {
+                quote! { self, }
+            });
+
+            if trait_ty.is_some() {
+                quote! { <Self as #trait_ty>::#ident(#rcv #( #args ),*) }
+            } else {
+                quote! { Self::#ident(#rcv #( #args ),*) }
+            }
+        } else {
+            res_ty = parse_quote! { _ };
+            quote! { &self.#ident }
+        };
+
+        let arguments = self
+            .arguments
+            .as_ref()
+            .iter()
+            .flat_map(|vec| vec.iter())
+            .filter_map(|arg| match arg {
+                MethodArgument::Regular(arg) => {
+                    let (name, ty) = (&arg.name, &arg.ty);
+
+                    Some(quote! {(
+                        #name,
+                        <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
+                        <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
+                    )})
+                }
+                MethodArgument::Executor | MethodArgument::Context(_) => None,
+            })
+            .collect::<Vec<_>>();
+
+        let resolving_code = gen::sync_resolving_code();
+
+        Some(quote! {
+            #[automatically_derived]
+            impl #impl_generics ::juniper::macros::helper::Field<
+                #scalar,
+                { ::juniper::macros::helper::fnv1a128(#name) }
+            > for #impl_ty
+                #where_clause
+            {
+                type Context = #context;
+                type TypeInfo = ();
+                const TYPE: ::juniper::macros::helper::Type =
+                    <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
+                const SUB_TYPES: ::juniper::macros::helper::Types =
+                    <#ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
+                const WRAPPED_VALUE: juniper::macros::helper::WrappedValue =
+                    <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
+                const ARGUMENTS: &'static [(
+                    ::juniper::macros::helper::Name,
+                    ::juniper::macros::helper::Type,
+                    ::juniper::macros::helper::WrappedValue,
+                )] = &[#(#arguments,)*];
+
+                fn call(
+                    &self,
+                    info: &Self::TypeInfo,
+                    args: &::juniper::Arguments<#scalar>,
+                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::ExecutionResult<#scalar> {
+                    let res: #res_ty = #res;
+                    #resolving_code
+                }
+            }
+        })
+    }
+
     /// Returns generated code for the
     /// [`GraphQLValueAsync::resolve_field_async`][0] method, which resolves
     /// this [GraphQL field][1] asynchronously.

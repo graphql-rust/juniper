@@ -225,13 +225,23 @@ fn impl_scalar_struct(
             where #scalar: ::juniper::ScalarValue,
         { }
 
-        impl#impl_generics ::juniper::macros::helper::Type<#scalar> for #ident {
+        impl#impl_generics ::juniper::macros::helper::BaseType<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        {
             const NAME: &'static str = #name;
         }
 
-        impl#impl_generics ::juniper::macros::helper::SubTypes<#scalar> for #ident {
+        impl#impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        {
             const NAMES: &'static [&'static str] =
-                &[<Self as ::juniper::macros::helper::Type<#scalar>>::NAME];
+                &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+        }
+
+        impl#impl_generics ::juniper::macros::helper::WrappedType<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        {
+            const VALUE: u128 = 1;
         }
     );
 

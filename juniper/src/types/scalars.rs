@@ -202,12 +202,16 @@ where
     })
 }
 
-impl<S> crate::macros::helper::Type<S> for str {
+impl<S> crate::macros::helper::WrappedType<S> for str {
+    const VALUE: u128 = 1;
+}
+
+impl<S> crate::macros::helper::BaseType<S> for str {
     const NAME: &'static str = "String";
 }
 
-impl<S> crate::macros::helper::SubTypes<S> for str {
-    const NAMES: &'static [&'static str] = &[<Self as crate::macros::helper::Type>::NAME];
+impl<S> crate::macros::helper::BaseSubTypes<S> for str {
+    const NAMES: &'static [&'static str] = &[<Self as crate::macros::helper::BaseType<S>>::NAME];
 }
 
 impl<S> GraphQLType<S> for str
