@@ -24,9 +24,6 @@ use crate::{
     Value,
 };
 
-#[doc(hidden)]
-pub static RFC3339_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.f%:z";
-
 #[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime")]
 impl<S> GraphQLScalar for DateTime<FixedOffset>
 where

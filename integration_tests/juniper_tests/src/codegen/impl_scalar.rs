@@ -9,6 +9,7 @@ struct DefaultName(i32);
 struct OtherOrder(i32);
 struct Named(i32);
 struct ScalarDescription(i32);
+struct ScalarSpecifiedByUrl(i32);
 struct Generated(String);
 
 struct Root;
@@ -93,6 +94,23 @@ impl GraphQLScalar for ScalarDescription {
     }
 }
 
+#[graphql_scalar(specified_by_url = "https://tools.ietf.org/html/rfc4122")]
+impl GraphQLScalar for ScalarSpecifiedByUrl {
+    fn resolve(&self) -> Value {
+        Value::scalar(self.0)
+    }
+
+    fn from_input_value(v: &InputValue) -> Result<ScalarSpecifiedByUrl, String> {
+        v.as_int_value()
+            .map(ScalarSpecifiedByUrl)
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
+    }
+
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+        <i32 as ParseScalarValue>::from_str(value)
+    }
+}
+
 macro_rules! impl_scalar {
     ($name: ident) => {
         #[graphql_scalar]
@@ -133,6 +151,9 @@ impl Root {
     }
     fn scalar_description() -> ScalarDescription {
         ScalarDescription(0)
+    }
+    fn scalar_specified_by_url() -> ScalarSpecifiedByUrl {
+        ScalarSpecifiedByUrl(0)
     }
     fn generated() -> Generated {
         Generated("foo".to_owned())
@@ -297,6 +318,7 @@ async fn scalar_description_introspection() {
         __type(name: "ScalarDescription") {
             name
             description
+            specifiedByUrl
         }
     }
     "#;
@@ -311,6 +333,32 @@ async fn scalar_description_introspection() {
             Some(&graphql_value!(
                 "A sample scalar, represented as an integer",
             )),
+        );
+        assert_eq!(
+            type_info.get_field_value("specifiedByUrl"),
+            Some(&graphql_value!(null)),
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn scalar_specified_by_url_introspection() {
+    let doc = r#"{
+        __type(name: "ScalarSpecifiedByUrl") {
+            name
+            specifiedByUrl
+        }
+    }"#;
+
+    run_type_info_query(doc, |type_info| {
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&graphql_value!("ScalarSpecifiedByUrl")),
+        );
+        assert_eq!(
+            type_info.get_field_value("specifiedByUrl"),
+            Some(&graphql_value!("https://tools.ietf.org/html/rfc4122")),
         );
     })
     .await;

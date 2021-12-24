@@ -49,6 +49,7 @@ pub enum InputValue<S = DefaultScalarValue> {
 pub struct VariableDefinition<'a, S> {
     pub var_type: Spanning<Type<'a>>,
     pub default_value: Option<Spanning<InputValue<S>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]

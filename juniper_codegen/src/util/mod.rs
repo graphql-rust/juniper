@@ -17,6 +17,7 @@ use syn::{
     spanned::Spanned,
     token, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
+use url::Url;
 
 use crate::common::parse::ParseBufferExt as _;
 
@@ -454,6 +455,7 @@ pub enum FieldAttributeParseMode {
 enum FieldAttribute {
     Name(SpanContainer<syn::LitStr>),
     Description(SpanContainer<syn::LitStr>),
+    SpecifiedByUrl(SpanContainer<syn::LitStr>),
     Deprecation(SpanContainer<DeprecationAttr>),
     Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
@@ -483,6 +485,15 @@ impl Parse for FieldAttribute {
                 input.parse::<token::Eq>()?;
                 let lit = input.parse::<syn::LitStr>()?;
                 Ok(FieldAttribute::Description(SpanContainer::new(
+                    ident.span(),
+                    Some(lit.span()),
+                    lit,
+                )))
+            }
+            "specified_by_url" => {
+                input.parse::<token::Eq>()?;
+                let lit = input.parse::<syn::LitStr>()?;
+                Ok(FieldAttribute::SpecifiedByUrl(SpanContainer::new(
                     ident.span(),
                     Some(lit.span()),
                     lit,
@@ -542,7 +553,9 @@ pub struct FieldAttributes {
     pub name: Option<SpanContainer<String>>,
     pub description: Option<SpanContainer<String>>,
     pub deprecation: Option<SpanContainer<DeprecationAttr>>,
-    // Only relevant for GraphQLObject derive.
+    /// Only relevant for scalar impl macro.
+    pub specified_by_url: Option<SpanContainer<Url>>,
+    /// Only relevant for GraphQLObject derive.
     pub skip: Option<SpanContainer<syn::Ident>>,
     /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
@@ -563,6 +576,18 @@ impl Parse for FieldAttributes {
                 }
                 FieldAttribute::Description(name) => {
                     output.description = Some(name.map(|val| val.value()));
+                }
+                FieldAttribute::SpecifiedByUrl(url) => {
+                    output.specified_by_url = Some(
+                        url.map(|val| Url::parse(&val.value()))
+                            .transpose()
+                            .map_err(|e| {
+                                syn::Error::new(
+                                    e.span_ident(),
+                                    format!("Invalid URL: {}", e.inner()),
+                                )
+                            })?,
+                    );
                 }
                 FieldAttribute::Deprecation(attr) => {
                     output.deprecation = Some(attr);

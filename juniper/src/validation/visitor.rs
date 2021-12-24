@@ -141,6 +141,19 @@ fn visit_variable_definitions<'a, S, V>(
                     visit_input_value(v, ctx, default_value);
                 }
 
+                if let Some(dirs) = &def.1.directives {
+                    for directive in dirs {
+                        let directive_arguments = ctx
+                            .schema
+                            .directive_by_name(directive.item.name.item)
+                            .map(|d| &d.arguments);
+
+                        v.enter_directive(ctx, directive);
+                        visit_arguments(v, ctx, directive_arguments, &directive.item.arguments);
+                        v.exit_directive(ctx, directive);
+                    }
+                }
+
                 v.exit_variable_definition(ctx, def);
             })
         }

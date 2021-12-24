@@ -6,12 +6,14 @@ use crate::{
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{spanned::Spanned, token, Data, Fields, Ident, Variant};
+use url::Url;
 
 #[derive(Debug, Default)]
 struct TransparentAttributes {
     transparent: Option<bool>,
     name: Option<String>,
     description: Option<String>,
+    specified_by_url: Option<Url>,
     scalar: Option<syn::Type>,
 }
 
@@ -21,6 +23,7 @@ impl syn::parse::Parse for TransparentAttributes {
             transparent: None,
             name: None,
             description: None,
+            specified_by_url: None,
             scalar: None,
         };
 
@@ -36,6 +39,14 @@ impl syn::parse::Parse for TransparentAttributes {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
                     output.description = Some(val.value());
+                }
+                "specified_by_url" => {
+                    input.parse::<token::Eq>()?;
+                    let val: syn::LitStr = input.parse::<syn::LitStr>()?;
+                    output.specified_by_url =
+                        Some(val.value().parse().map_err(|e| {
+                            syn::Error::new(val.span(), format!("Invalid URL: {}", e))
+                        })?);
                 }
                 "transparent" => {
                     output.transparent = Some(true);
@@ -101,10 +112,11 @@ fn impl_scalar_struct(
     let inner_ty = &field.ty;
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
-    let description = match attrs.description {
-        Some(val) => quote!( .description( #val ) ),
-        None => quote!(),
-    };
+    let description = attrs.description.map(|val| quote!(.description(#val)));
+    let specified_by_url = attrs.specified_by_url.map(|url| {
+        let url_lit = url.as_str();
+        quote!(.specified_by_url(#url_lit))
+    });
 
     let scalar = attrs
         .scalar
@@ -159,6 +171,7 @@ fn impl_scalar_struct(
             {
                 registry.build_scalar_type::<Self>(info)
                     #description
+                    #specified_by_url
                     .into_meta()
             }
         }
