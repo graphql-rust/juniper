@@ -527,10 +527,20 @@ impl Definition<Query> {
 
         let name = &self.name;
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(scalar, None));
+        let fields_resolvers = self.fields.iter().filter_map(|f| {
+            (!f.is_async).then(|| {
+                let name = &f.name;
+                quote! {
+                    #name => {
+                        ::juniper::macros::helper::Field::<
+                            #scalar,
+                            { ::juniper::macros::helper::fnv1a128(#name) }
+                        >::call(self, info, args, executor)
+                    },
+                }
+            })
+        });
+
         let field_impls = self.fields.iter().filter_map(|f| {
             f.impl_field(
                 ty,

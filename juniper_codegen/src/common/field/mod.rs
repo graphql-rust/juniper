@@ -459,17 +459,6 @@ impl Definition {
         let (name, ty, mut res_ty, ident) =
             (&self.name, self.ty.clone(), self.ty.clone(), &self.ident);
 
-        // if matches!(
-        //     scalar,
-        //     scalar::Type::ExplicitGeneric(_) | scalar::Type::ImplicitGeneric(_),
-        // ) {
-        //     impl_generics
-        //         .params
-        //         .push(parse_quote!( #scalar: ::juniper::ScalarValue ));
-        // }
-        //
-        // let (impl_gens, ty_gens, where_clause) = impl_generics.split_for_impl();
-
         let res = if self.is_method() {
             let args = self
                 .arguments
