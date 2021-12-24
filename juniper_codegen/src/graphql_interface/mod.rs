@@ -722,6 +722,7 @@ impl Definition {
         let name = &self.name;
         let (impl_generics, where_clause) = self.ty.impl_generics(false);
         let ty = self.ty.ty_tokens();
+        let implementors = self.implementers.iter().map(|i| &i.ty);
 
         quote! {
             impl #impl_generics ::juniper::macros::helper::BaseType<#scalar> for #ty
@@ -733,8 +734,10 @@ impl Definition {
             impl #impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::helper::Types =
-                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::macros::helper::Types = &[
+                    <Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
+                    #(<#implementors as ::juniper::macros::helper::BaseType<#scalar>>::NAME),*
+                ];
             }
 
             impl #impl_generics ::juniper::macros::helper::WrappedType<#scalar> for #ty
