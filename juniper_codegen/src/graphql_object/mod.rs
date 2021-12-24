@@ -536,7 +536,7 @@ impl Definition<Query> {
                             #scalar,
                             { ::juniper::macros::helper::fnv1a128(#name) }
                         >::call(self, info, args, executor)
-                    },
+                    }
                 }
             })
         });
@@ -549,6 +549,7 @@ impl Definition<Query> {
                 scalar,
                 None,
                 context,
+                false,
             )
         });
         let async_fields_err = {
@@ -613,15 +614,36 @@ impl Definition<Query> {
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
+        let context = &self.context;
 
         let (impl_generics, where_clause) = self.impl_generics(true);
         let ty = &self.ty;
         let ty_name = ty.to_token_stream().to_string();
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .map(|f| f.method_resolve_field_async_tokens(scalar, None));
+        let fields_resolvers = self.fields.iter().map(|f| {
+            let name = &f.name;
+            quote! {
+                #name => {
+                    ::juniper::macros::helper::AsyncField::<
+                        #scalar,
+                        { ::juniper::macros::helper::fnv1a128(#name) }
+                    >::call(self, info, args, executor)
+                }
+            }
+        });
+
+        let field_impls = self.fields.iter().filter_map(|f| {
+            f.impl_field(
+                ty,
+                &impl_generics,
+                where_clause.as_ref(),
+                scalar,
+                None,
+                context,
+                true,
+            )
+        });
+
         let no_field_err =
             field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
@@ -643,6 +665,8 @@ impl Definition<Query> {
                     }
                 }
             }
+
+            #(#field_impls)*
         }
     }
 

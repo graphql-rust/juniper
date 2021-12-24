@@ -382,3 +382,19 @@ pub trait Field<S, const N: FieldName> {
         executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S>;
 }
+
+pub trait AsyncField<S, const N: FieldName> {
+    type Context;
+    type TypeInfo;
+    const TYPE: Type;
+    const SUB_TYPES: Types;
+    const WRAPPED_VALUE: WrappedValue;
+    const ARGUMENTS: &'static [(Name, Type, WrappedValue)];
+
+    fn call<'b>(
+        &'b self,
+        info: &'b Self::TypeInfo,
+        args: &'b Arguments<S>,
+        executor: &'b Executor<Self::Context, S>,
+    ) -> BoxFuture<'b, ExecutionResult<S>>;
+}

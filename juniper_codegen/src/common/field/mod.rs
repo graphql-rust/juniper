@@ -451,21 +451,22 @@ impl Definition {
         scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
         context: &syn::Type,
+        for_async: bool,
     ) -> Option<TokenStream> {
-        if self.is_async {
+        if !for_async && self.is_async {
             return None;
         }
 
         let (name, ty, mut res_ty, ident) =
             (&self.name, self.ty.clone(), self.ty.clone(), &self.ident);
 
-        let res = if self.is_method() {
+        let mut res = if self.is_method() {
             let args = self
                 .arguments
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, for_async));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
@@ -480,6 +481,9 @@ impl Definition {
             res_ty = parse_quote! { _ };
             quote! { &self.#ident }
         };
+        if for_async && !self.is_async {
+            res = quote! { ::juniper::futures::future::ready(#res) };
+        }
 
         let arguments = self
             .arguments
@@ -500,11 +504,42 @@ impl Definition {
             })
             .collect::<Vec<_>>();
 
-        let resolving_code = gen::sync_resolving_code();
+        let (call, trait_name) = if for_async {
+            let resolving_code = gen::async_resolving_code(Some(&res_ty));
+            let call = quote! {
+                fn call<'b>(
+                    &'b self,
+                    info: &'b Self::TypeInfo,
+                    args: &'b ::juniper::Arguments<#scalar>,
+                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    let fut = #res;
+                    #resolving_code
+                }
+            };
+
+            (call, quote! { AsyncField })
+        } else {
+            let resolving_code = gen::sync_resolving_code();
+            let call = quote! {
+                fn call(
+                    &self,
+                    info: &Self::TypeInfo,
+                    args: &::juniper::Arguments<#scalar>,
+                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::ExecutionResult<#scalar> {
+                    let res: #res_ty = #res;
+                    #resolving_code
+                }
+            };
+
+            (call, quote! { Field })
+        };
 
         Some(quote! {
+            #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl #impl_generics ::juniper::macros::helper::Field<
+            impl #impl_generics ::juniper::macros::helper::#trait_name<
                 #scalar,
                 { ::juniper::macros::helper::fnv1a128(#name) }
             > for #impl_ty
@@ -524,15 +559,7 @@ impl Definition {
                     ::juniper::macros::helper::WrappedValue,
                 )] = &[#(#arguments,)*];
 
-                fn call(
-                    &self,
-                    info: &Self::TypeInfo,
-                    args: &::juniper::Arguments<#scalar>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::ExecutionResult<#scalar> {
-                    let res: #res_ty = #res;
-                    #resolving_code
-                }
+                #call
             }
         })
     }

@@ -616,6 +616,7 @@ impl Definition {
     pub(crate) fn impl_traits_for_const_assertions(&self) -> TokenStream {
         let scalar = &self.scalar;
         let name = &self.name;
+        let variants = self.variants.iter().map(|var| &var.ty);
         let (impl_generics, ty, where_clause) = self.impl_generics(false);
 
         quote! {
@@ -632,8 +633,10 @@ impl Definition {
                 for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::helper::Types =
-                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::macros::helper::Types = &[
+                    <Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
+                    #(<#variants as ::juniper::macros::helper::BaseType<#scalar>>::NAME),*
+                ];
             }
 
             #[automatically_derived]
