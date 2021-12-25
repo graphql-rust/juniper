@@ -2,25 +2,23 @@
 //!
 //! # Supported types
 //!
-//! | Rust type                         | Format                | GraphQL scalar    |
-//! |-----------------------------------|-----------------------|-------------------|
-//! | [`NaiveDate`]                     | `yyyy-MM-dd`          | [`Date`][s1]      |
-//! | [`NaiveTime`]                     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2] |
-//! | [`NaiveDateTime`]                 | `yyyy-MM-dd HH:mm:ss` | `LocalDateTime`   |
-//! | [`DateTime`]`<`[`FixedOffset`]`>` | [RFC 3339] string     | [`DateTime`][s4]  |
+//! | Rust type         | Format                | GraphQL scalar    |
+//! |-------------------|-----------------------|-------------------|
+//! | [`NaiveDate`]     | `yyyy-MM-dd`          | [`Date`][s1]      |
+//! | [`NaiveTime`]     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2] |
+//! | [`NaiveDateTime`] | `yyyy-MM-dd HH:mm:ss` | `LocalDateTime`   |
+//! | [`DateTime`]      | [RFC 3339] string     | [`DateTime`][s4]  |
 //!
 //! [`DateTime`]: chrono::DateTime
-//! [`FixedOffset`]: chrono::FixedOffset
-//! [`NaiveDate`]: chrono::NaiveDate
-//! [`NaiveDateTime`]: chrono::NaiveDateTime
-//! [`NaiveTime`]: chrono::NaiveTime
+//! [`NaiveDate`]: chrono::naive::NaiveDate
+//! [`NaiveDateTime`]: chrono::naive::NaiveDateTime
+//! [`NaiveTime`]: chrono::naive::NaiveTime
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 //! [s1]: https://graphql-scalars.dev/docs/scalars/date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
-//! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+use chrono::{SecondsFormat, Timelike as _};
 
 use crate::{
     graphql_scalar,
@@ -29,13 +27,17 @@ use crate::{
     Value,
 };
 
+pub use chrono::{
+    DateTime, FixedOffset as UtcOffset, NaiveDate as Date, NaiveDateTime as LocalDateTime,
+    NaiveTime as LocalTime, Utc,
+};
+
 /// Format of a [`Date` scalar][1].
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/date
 const DATE_FORMAT: &str = "%Y-%m-%d";
 
 #[graphql_scalar(
-    description = "Date",
     description = "Date in the proleptic Gregorian calendar (without time \
                    zone).\
                    \n\n\
@@ -51,25 +53,22 @@ const DATE_FORMAT: &str = "%Y-%m-%d";
                    [2]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html",
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date"
 )]
-impl<S> GraphQLScalar for NaiveDate
-where
-    S: ScalarValue,
-{
+impl<S: ScalarValue> GraphQLScalar for Date {
     fn resolve(&self) -> Value {
         Value::scalar(self.format(DATE_FORMAT).to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveDate, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                Self::parse_from_str(s, "%Y-%m-%d").map_err(|e| format!("Invalid `Date`: {}", e))
+                Self::parse_from_str(s, DATE_FORMAT).map_err(|e| format!("Invalid `Date`: {}", e))
             })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+        if let ScalarToken::String(s) = value {
+            Ok(S::from(s.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -92,7 +91,6 @@ const LOCAL_TIME_FORMAT_NO_MILLIS: &str = "%H:%M:%S";
 const LOCAL_TIME_FORMAT_NO_SECS: &str = "%H:%M";
 
 #[graphql_scalar(
-    description = "LocalTime",
     description = "Clock time within a given date (without time zone) in \
                    `HH:mm[:ss[.SSS]]` format.\
                    \n\n\
@@ -108,10 +106,7 @@ const LOCAL_TIME_FORMAT_NO_SECS: &str = "%H:%M";
                    [2]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveTime.html",
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time"
 )]
-impl<S> GraphQLScalar for NaiveTime
-where
-    S: ScalarValue,
-{
+impl<S: ScalarValue> GraphQLScalar for LocalTime {
     fn resolve(&self) -> Value {
         Value::scalar(
             if self.nanosecond() == 0 {
@@ -123,7 +118,7 @@ where
         )
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveTime, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -138,8 +133,8 @@ where
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+        if let ScalarToken::String(s) = value {
+            Ok(S::from(s.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -150,7 +145,6 @@ where
 const LOCAL_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
 #[graphql_scalar(
-    description = "LocalDateTime",
     description = "Combined date and time (without time zone) in `yyyy-MM-dd \
                    HH:mm:ss` format.\
                    \n\n\
@@ -158,15 +152,12 @@ const LOCAL_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
                    \n\n\
                    [1]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDateTime.html"
 )]
-impl<S> GraphQLScalar for NaiveDateTime
-where
-    S: ScalarValue,
-{
+impl<S: ScalarValue> GraphQLScalar for LocalDateTime {
     fn resolve(&self) -> Value {
         Value::scalar(self.format(LOCAL_DATE_TIME_FORMAT).to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveDateTime, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -184,13 +175,9 @@ where
     }
 }
 
-/// Format of a [`DateTime` scalar][1].
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/date-time
-const DATE_TIME_FORMAT: &str = "%FT%TZ";
-
+// TODO: Make generic over `chrono::TimeZone` once `#[graphql_scalar]` macro
+//       supports generics.
 #[graphql_scalar(
-    name = "DateTime",
     description = "Combined date and time (with time zone) in [RFC 3339][0] \
                    format.\
                    \n\n\
@@ -200,8 +187,8 @@ const DATE_TIME_FORMAT: &str = "%FT%TZ";
                    \n\n\
                    [`DateTime` scalar][1] compliant.\
                    \n\n\
-                   See also [`chrono::DateTime`][2]`<`[`FixedOffset`][3]`>` \
-                   for details.\
+                   See also [`chrono::DateTime`][2]` and \
+                   [`chrono::FixedOffset`][3]` for details.\
                    \n\n\
                    [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/date-time\n\
@@ -209,25 +196,25 @@ const DATE_TIME_FORMAT: &str = "%FT%TZ";
                    [3]: https://docs.rs/chrono/*/chrono/offset/struct.FixedOffset.html",
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time"
 )]
-impl<S> GraphQLScalar for DateTime<FixedOffset>
-where
-    S: ScalarValue,
-{
+impl<S: ScalarValue> GraphQLScalar for DateTime<UtcOffset> {
     fn resolve(&self) -> Value {
-        Value::scalar(self.naive_utc().format(DATE_TIME_FORMAT).to_string())
+        Value::scalar(
+            self.with_timezone(&Utc)
+                .to_rfc3339_opts(SecondsFormat::AutoSi, true),
+        )
     }
 
-    fn from_input_value(v: &InputValue) -> Result<DateTime<FixedOffset>, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                DateTime::parse_from_rfc3339(s).map_err(|e| format!("Invalid `DateTime`: {}", e))
+                Self::parse_from_rfc3339(s).map_err(|e| format!("Invalid `DateTime`: {}", e))
             })
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
+        if let ScalarToken::String(s) = value {
+            Ok(S::from(s.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -238,16 +225,16 @@ where
 mod date_test {
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
-    use super::NaiveDate;
+    use super::Date;
 
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("1996-12-19", NaiveDate::from_ymd(1996, 12, 19)),
-            ("1564-01-30", NaiveDate::from_ymd(1564, 01, 30)),
+            ("1996-12-19", Date::from_ymd(1996, 12, 19)),
+            ("1564-01-30", Date::from_ymd(1564, 01, 30)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = NaiveDate::from_input_value(&input);
+            let parsed = Date::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -276,7 +263,7 @@ mod date_test {
             graphql_input_value!(false),
         ] {
             let input: InputValue = input;
-            let parsed = NaiveDate::from_input_value(&input);
+            let parsed = Date::from_input_value(&input);
 
             assert!(parsed.is_err(), "allows input: {:?}", input);
         }
@@ -286,15 +273,15 @@ mod date_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                NaiveDate::from_ymd(1996, 12, 19),
+                Date::from_ymd(1996, 12, 19),
                 graphql_input_value!("1996-12-19"),
             ),
             (
-                NaiveDate::from_ymd(1564, 01, 30),
+                Date::from_ymd(1564, 01, 30),
                 graphql_input_value!("1564-01-30"),
             ),
             (
-                NaiveDate::from_ymd(2020, 01, 01),
+                Date::from_ymd(2020, 01, 01),
                 graphql_input_value!("2020-01-01"),
             ),
         ] {
@@ -306,23 +293,23 @@ mod date_test {
 }
 
 #[cfg(test)]
-mod naive_time_test {
+mod local_time_test {
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
-    use super::NaiveTime;
+    use super::LocalTime;
 
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("14:23:43", NaiveTime::from_hms(14, 23, 43)),
-            ("14:00:00", NaiveTime::from_hms(14, 00, 00)),
-            ("14:00", NaiveTime::from_hms(14, 00, 00)),
-            ("14:32", NaiveTime::from_hms(14, 32, 00)),
-            ("14:00:00.000", NaiveTime::from_hms(14, 00, 00)),
-            ("14:23:43.345", NaiveTime::from_hms_milli(14, 23, 43, 345)),
+            ("14:23:43", LocalTime::from_hms(14, 23, 43)),
+            ("14:00:00", LocalTime::from_hms(14, 00, 00)),
+            ("14:00", LocalTime::from_hms(14, 00, 00)),
+            ("14:32", LocalTime::from_hms(14, 32, 00)),
+            ("14:00:00.000", LocalTime::from_hms(14, 00, 00)),
+            ("14:23:43.345", LocalTime::from_hms_milli(14, 23, 43, 345)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = NaiveTime::from_input_value(&input);
+            let parsed = LocalTime::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -355,7 +342,7 @@ mod naive_time_test {
             graphql_input_value!(false),
         ] {
             let input: InputValue = input;
-            let parsed = NaiveTime::from_input_value(&input);
+            let parsed = LocalTime::from_input_value(&input);
 
             assert!(parsed.is_err(), "allows input: {:?}", input);
         }
@@ -365,19 +352,19 @@ mod naive_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                NaiveTime::from_hms_micro(1, 2, 3, 4005),
+                LocalTime::from_hms_micro(1, 2, 3, 4005),
                 graphql_input_value!("01:02:03.004"),
             ),
             (
-                NaiveTime::from_hms(0, 0, 0),
+                LocalTime::from_hms(0, 0, 0),
                 graphql_input_value!("00:00:00"),
             ),
             (
-                NaiveTime::from_hms(12, 0, 0),
+                LocalTime::from_hms(12, 0, 0),
                 graphql_input_value!("12:00:00"),
             ),
             (
-                NaiveTime::from_hms(1, 2, 3),
+                LocalTime::from_hms(1, 2, 3),
                 graphql_input_value!("01:02:03"),
             ),
         ] {
@@ -389,31 +376,33 @@ mod naive_time_test {
 }
 
 #[cfg(test)]
-mod naive_date_time_test {
+mod local_date_time_test {
+    use chrono::naive::{NaiveDate, NaiveTime};
+
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
-    use super::{NaiveDate, NaiveDateTime, NaiveTime};
+    use super::LocalDateTime;
 
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
             (
                 "1996-12-19 14:23:43",
-                NaiveDateTime::new(
+                LocalDateTime::new(
                     NaiveDate::from_ymd(1996, 12, 19),
                     NaiveTime::from_hms(14, 23, 43),
                 ),
             ),
             (
                 "1564-01-30 14:00:00",
-                NaiveDateTime::new(
+                LocalDateTime::new(
                     NaiveDate::from_ymd(1564, 1, 30),
                     NaiveTime::from_hms(14, 00, 00),
                 ),
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = NaiveDateTime::from_input_value(&input);
+            let parsed = LocalDateTime::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -448,7 +437,7 @@ mod naive_date_time_test {
             graphql_input_value!(false),
         ] {
             let input: InputValue = input;
-            let parsed = NaiveDateTime::from_input_value(&input);
+            let parsed = LocalDateTime::from_input_value(&input);
 
             assert!(parsed.is_err(), "allows input: {:?}", input);
         }
@@ -458,14 +447,14 @@ mod naive_date_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                NaiveDateTime::new(
+                LocalDateTime::new(
                     NaiveDate::from_ymd(1996, 12, 19),
                     NaiveTime::from_hms(0, 0, 0),
                 ),
                 graphql_input_value!("1996-12-19 00:00:00"),
             ),
             (
-                NaiveDateTime::new(
+                LocalDateTime::new(
                     NaiveDate::from_ymd(1564, 1, 30),
                     NaiveTime::from_hms(14, 0, 0),
                 ),
@@ -481,56 +470,58 @@ mod naive_date_time_test {
 
 #[cfg(test)]
 mod date_time_test {
+    use chrono::naive::{NaiveDate, NaiveDateTime, NaiveTime};
+
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
-    use super::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
+    use super::{DateTime, UtcOffset};
 
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
             (
                 "2014-11-28T21:00:09+09:00",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<UtcOffset>::from_utc(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd(2014, 11, 28),
                         NaiveTime::from_hms(12, 0, 9),
                     ),
-                    FixedOffset::east(9 * 3600),
+                    UtcOffset::east(9 * 3600),
                 ),
             ),
             (
                 "2014-11-28T21:00:09Z",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<UtcOffset>::from_utc(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd(2014, 11, 28),
                         NaiveTime::from_hms(21, 0, 9),
                     ),
-                    FixedOffset::east(0),
+                    UtcOffset::east(0),
                 ),
             ),
             (
                 "2014-11-28T21:00:09+00:00",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<UtcOffset>::from_utc(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd(2014, 11, 28),
                         NaiveTime::from_hms(21, 0, 9),
                     ),
-                    FixedOffset::east(0),
+                    UtcOffset::east(0),
                 ),
             ),
             (
                 "2014-11-28T21:00:09.05+09:00",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<UtcOffset>::from_utc(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd(2014, 11, 28),
                         NaiveTime::from_hms_milli(12, 0, 9, 50),
                     ),
-                    FixedOffset::east(0),
+                    UtcOffset::east(0),
                 ),
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = DateTime::from_input_value(&input);
+            let parsed = DateTime::<UtcOffset>::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -570,7 +561,7 @@ mod date_time_test {
             graphql_input_value!(false),
         ] {
             let input: InputValue = input;
-            let parsed = DateTime::<FixedOffset>::from_input_value(&input);
+            let parsed = DateTime::<UtcOffset>::from_input_value(&input);
 
             assert!(parsed.is_err(), "allows input: {:?}", input);
         }
@@ -580,24 +571,24 @@ mod date_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<UtcOffset>::from_utc(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd(1996, 12, 19),
                         NaiveTime::from_hms(0, 0, 0),
                     ),
-                    FixedOffset::east(0),
+                    UtcOffset::east(0),
                 ),
                 graphql_input_value!("1996-12-19T00:00:00Z"),
             ),
             (
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<UtcOffset>::from_utc(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd(1564, 1, 30),
-                        NaiveTime::from_hms(5, 0, 0),
+                        NaiveTime::from_hms_milli(5, 0, 0, 123),
                     ),
-                    FixedOffset::east(9 * 3600),
+                    UtcOffset::east(9 * 3600),
                 ),
-                graphql_input_value!("1564-01-30T05:00:00Z"),
+                graphql_input_value!("1564-01-30T05:00:00.123Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -615,7 +606,7 @@ mod integration_test {
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
-    use super::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
+    use super::{Date, DateTime, LocalDateTime, LocalTime, UtcOffset};
 
     #[tokio::test]
     async fn serializes() {
@@ -623,28 +614,25 @@ mod integration_test {
 
         #[graphql_object]
         impl Root {
-            fn date() -> NaiveDate {
-                NaiveDate::from_ymd(2015, 3, 14)
+            fn date() -> Date {
+                Date::from_ymd(2015, 3, 14)
             }
 
-            fn local_time() -> NaiveTime {
-                NaiveTime::from_hms(16, 7, 8)
+            fn local_time() -> LocalTime {
+                LocalTime::from_hms(16, 7, 8)
             }
 
-            fn local_date_time() -> NaiveDateTime {
-                NaiveDateTime::new(
-                    NaiveDate::from_ymd(2016, 7, 8),
-                    NaiveTime::from_hms(9, 10, 11),
-                )
+            fn local_date_time() -> LocalDateTime {
+                LocalDateTime::new(Date::from_ymd(2016, 7, 8), LocalTime::from_hms(9, 10, 11))
             }
 
-            fn date_time() -> DateTime<FixedOffset> {
-                DateTime::<FixedOffset>::from_utc(
-                    NaiveDateTime::new(
-                        NaiveDate::from_ymd(1996, 12, 20),
-                        NaiveTime::from_hms(0, 39, 57),
+            fn date_time() -> DateTime<UtcOffset> {
+                DateTime::<UtcOffset>::from_utc(
+                    LocalDateTime::new(
+                        Date::from_ymd(1996, 12, 20),
+                        LocalTime::from_hms(0, 39, 57),
                     ),
-                    FixedOffset::west(8 * 3600),
+                    UtcOffset::west(8 * 3600),
                 )
             }
         }
