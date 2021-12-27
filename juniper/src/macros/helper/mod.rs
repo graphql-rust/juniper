@@ -320,8 +320,11 @@ pub trait WrappedType<S = DefaultScalarValue> {
     const VALUE: u128;
 }
 
-// TODO: Reconsider
-impl<S, T: WrappedType<S>, Ctx> WrappedType<S> for (Ctx, T) {
+impl<'a, S, T: WrappedType<S>> WrappedType<S> for (&'a T::Context, T)
+where
+    S: ScalarValue,
+    T: crate::GraphQLValue<S>,
+{
     const VALUE: u128 = T::VALUE;
 }
 
