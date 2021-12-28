@@ -34,6 +34,8 @@ where
 mod new {
     use super::*;
 
+    // ------- Implemented -------
+
     #[automatically_derived]
     impl<__S> ::juniper::marker::GraphQLInterface<__S> for CharacterValue
     where
@@ -240,33 +242,6 @@ mod new {
         fn from(v: Droid) -> Self {
             Self::Droid(v)
         }
-    }
-
-    const fn is_superset(superset: &[&str], set: &[&str]) -> bool {
-        const fn find(set: &[&str], elem: &str) -> bool {
-            let mut i = 0;
-            while i < set.len() {
-                if juniper::macros::helper::str_eq(elem, set[i]) {
-                    return true;
-                }
-                i += 1;
-            }
-            false
-        }
-
-        if superset.len() < set.len() {
-            return false;
-        }
-
-        let mut i = 0;
-        while i < set.len() {
-            if !find(superset, set[i]) {
-                return false;
-            }
-            i += 1;
-        }
-
-        true
     }
 
     // --------------

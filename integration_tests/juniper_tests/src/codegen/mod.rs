@@ -4,6 +4,7 @@ mod derive_object_with_raw_idents;
 mod derive_scalar;
 mod impl_scalar;
 mod interface_attr;
+mod new_interface;
 mod object_attr;
 mod object_derive;
 mod scalar_value_transparent;

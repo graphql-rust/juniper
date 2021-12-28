@@ -3,6 +3,7 @@
 //! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 
 pub mod attr;
+pub mod new;
 
 use std::{
     collections::{HashMap, HashSet},

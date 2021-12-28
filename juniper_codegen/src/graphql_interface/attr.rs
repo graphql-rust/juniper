@@ -17,7 +17,7 @@ use crate::{
 };
 
 use super::{
-    inject_async_trait, Definition, EnumType, ImplAttr, Implementer, ImplementerDowncast,
+    inject_async_trait, new, Definition, EnumType, ImplAttr, Implementer, ImplementerDowncast,
     TraitAttr, TraitObjectType, Type,
 };
 
@@ -41,6 +41,21 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
     Err(syn::Error::new(
         Span::call_site(),
         "#[graphql_interface] attribute is applicable to trait definitions and trait \
+         implementations only",
+    ))
+}
+
+/// Expands `#[graphql_interface_new]` macro into generated code.
+pub fn expand_new(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
+    if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body.clone()) {
+        let trait_attrs = parse::attr::unite(("graphql_interface_new", &attr_args), &ast.attrs);
+        ast.attrs = parse::attr::strip("graphql_interface_new", ast.attrs);
+        return expand_on_trait_new(trait_attrs, ast);
+    }
+
+    Err(syn::Error::new(
+        Span::call_site(),
+        "#[graphql_interface_new] attribute is applicable to trait definitions and trait \
          implementations only",
     ))
 }
@@ -220,6 +235,209 @@ fn expand_on_trait(
         ast.supertraits
             .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar_ty> });
     }
+
+    if is_async_trait {
+        if has_default_async_methods {
+            // Hack for object safety. See details: https://docs.rs/async-trait/#dyn-traits
+            ast.supertraits.push(parse_quote! { Sync });
+        }
+        inject_async_trait(
+            &mut ast.attrs,
+            ast.items.iter_mut().filter_map(|i| {
+                if let syn::TraitItem::Method(m) = i {
+                    Some(&mut m.sig)
+                } else {
+                    None
+                }
+            }),
+            &ast.generics,
+        );
+    }
+
+    Ok(quote! {
+        #ast
+        #generated_code
+    })
+}
+
+/// Expands `#[graphql_interface_new]` macro placed on trait definition.
+fn expand_on_trait_new(
+    attrs: Vec<syn::Attribute>,
+    mut ast: syn::ItemTrait,
+) -> syn::Result<TokenStream> {
+    let attr = new::TraitAttr::from_attrs("graphql_interface_new", &attrs)?;
+
+    let trait_ident = &ast.ident;
+    let trait_span = ast.span();
+
+    let name = attr
+        .name
+        .clone()
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| trait_ident.unraw().to_string());
+    if !attr.is_internal && name.starts_with("__") {
+        ERR.no_double_underscore(
+            attr.name
+                .as_ref()
+                .map(SpanContainer::span_ident)
+                .unwrap_or_else(|| trait_ident.span()),
+        );
+    }
+
+    let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
+
+    // let mut implementers: Vec<_> = attr
+    //     .implementers
+    //     .iter()
+    //     .map(|ty| Implementer {
+    //         ty: ty.as_ref().clone(),
+    //         downcast: None,
+    //         context: None,
+    //         scalar: scalar.clone(),
+    //     })
+    //     .collect();
+    // for (ty, downcast) in &attr.external_downcasts {
+    //     match implementers.iter_mut().find(|i| &i.ty == ty) {
+    //         Some(impler) => {
+    //             impler.downcast = Some(ImplementerDowncast::External {
+    //                 path: downcast.inner().clone(),
+    //             });
+    //         }
+    //         None => err_only_implementer_downcast(&downcast.span_joined()),
+    //     }
+    // }
+
+    proc_macro_error::abort_if_dirty();
+
+    let renaming = attr
+        .rename_fields
+        .as_deref()
+        .copied()
+        .unwrap_or(RenameRule::CamelCase);
+
+    let mut fields = vec![];
+    for item in &mut ast.items {
+        if let syn::TraitItem::Method(m) = item {
+            match TraitMethod::parse(m, &renaming) {
+                Some(TraitMethod::Field(f)) => fields.push(f),
+                Some(TraitMethod::Downcast(_d)) => {
+                    unimplemented!();
+                    // match implementers.iter_mut().find(|i| i.ty == d.ty) {
+                    //     Some(impler) => {
+                    //         if let Some(external) = &impler.downcast {
+                    //             err_duplicate_downcast(m, external, &impler.ty);
+                    //         } else {
+                    //             impler.downcast = d.downcast;
+                    //             impler.context = d.context;
+                    //         }
+                    //     }
+                    //     None => err_only_implementer_downcast(&m.sig),
+                    // }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    proc_macro_error::abort_if_dirty();
+
+    if fields.is_empty() {
+        ERR.emit_custom(trait_span, "must have at least one field");
+    }
+    if !field::all_different(&fields) {
+        ERR.emit_custom(trait_span, "must have a different name for each field");
+    }
+
+    proc_macro_error::abort_if_dirty();
+
+    let context = attr
+        .context
+        .as_deref()
+        .cloned()
+        .or_else(|| {
+            fields.iter().find_map(|f| {
+                f.arguments.as_ref().and_then(|f| {
+                    f.iter()
+                        .find_map(field::MethodArgument::context_ty)
+                        .cloned()
+                })
+            })
+        })
+        // .or_else(|| {
+        //     implementers
+        //         .iter()
+        //         .find_map(|impler| impler.context.as_ref())
+        //         .cloned()
+        // })
+        .unwrap_or_else(|| parse_quote! { () });
+
+    // let is_trait_object = attr.r#dyn.is_some();
+
+    let is_async_trait = attr.asyncness.is_some()
+        || ast
+            .items
+            .iter()
+            .find_map(|item| match item {
+                syn::TraitItem::Method(m) => m.sig.asyncness,
+                _ => None,
+            })
+            .is_some();
+    let has_default_async_methods = ast.items.iter().any(|item| match item {
+        syn::TraitItem::Method(m) => m.sig.asyncness.and(m.default.as_ref()).is_some(),
+        _ => false,
+    });
+
+    // let ty = if is_trait_object {
+    //     Type::TraitObject(Box::new(TraitObjectType::new(
+    //         &ast,
+    //         &attr,
+    //         scalar.clone(),
+    //         context.clone(),
+    //     )))
+    // } else {
+    //     Type::Enum(Box::new(EnumType::new(
+    //         &ast,
+    //         &attr,
+    //         &implementers,
+    //         scalar.clone(),
+    //     )))
+    // };
+
+    let description = attr.description.as_ref().map(|c| c.inner().clone());
+    let generated_code = new::Definition {
+        attrs: attr,
+        ident: trait_ident.clone(),
+        vis: ast.vis.clone(),
+        trait_generics: ast.generics.clone(),
+        name,
+        description,
+
+        context,
+        scalar: scalar.clone(),
+
+        fields,
+    };
+
+    // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
+    // if is_trait_object {
+    //     ast.attrs.push(parse_quote! {
+    //         #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
+    //     });
+    //
+    //     let scalar_ty = scalar.generic_ty();
+    //     if !scalar.is_explicit_generic() {
+    //         let default_ty = scalar.default_ty();
+    //         ast.generics
+    //             .params
+    //             .push(parse_quote! { #scalar_ty = #default_ty });
+    //     }
+    //     ast.generics
+    //         .make_where_clause()
+    //         .predicates
+    //         .push(parse_quote! { #scalar_ty: ::juniper::ScalarValue });
+    //     ast.supertraits
+    //         .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar_ty> });
+    // }
 
     if is_async_trait {
         if has_default_async_methods {
