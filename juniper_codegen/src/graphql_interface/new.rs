@@ -14,6 +14,7 @@ use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
+    punctuated::Punctuated,
     spanned::Spanned as _,
     token,
 };
@@ -343,12 +344,28 @@ impl Definition {
             |c| format_ident!("{}Enum", c.inner().to_string()),
         );
 
+        let enum_alias_generics = {
+            let mut enum_alias_generics = trait_gens.clone();
+            let enum_generics = std::mem::take(&mut enum_alias_generics.params);
+            enum_alias_generics.params = enum_generics
+                .into_iter()
+                .map(|gen| match gen {
+                    syn::GenericParam::Type(mut ty) => {
+                        ty.bounds = Punctuated::new();
+                        ty.into()
+                    }
+                    rest => rest,
+                })
+                .collect();
+            enum_alias_generics
+        };
+
         let variants_generics = self
             .attrs
             .implementers
             .iter()
             .enumerate()
-            .map(|(id, ty)| format_ident!("I{}", id));
+            .map(|(id, _)| format_ident!("I{}", id));
 
         let variants_idents = self
             .attrs
@@ -356,23 +373,38 @@ impl Definition {
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident));
 
-        let enum_generics = self
-            .trait_generics
-            .params
-            .iter()
-            .map(ToTokens::to_token_stream)
-            .chain(variants_generics.clone().map(ToTokens::into_token_stream));
+        let enum_generics = {
+            let mut enum_generics = self.trait_generics.clone();
+            let enum_generic_params = std::mem::take(&mut enum_generics.params);
+            let (mut enum_generic_params_lifetimes, enum_generic_params_rest) = enum_generic_params
+                .into_iter()
+                .partition::<Punctuated<_, _>, _>(|par| {
+                    matches!(par, syn::GenericParam::Lifetime(_))
+                });
+
+            let variants = variants_generics
+                .clone()
+                .map::<syn::GenericParam, _>(|var| parse_quote! { #var })
+                .collect::<Vec<_>>();
+            enum_generic_params_lifetimes.extend(variants);
+            enum_generic_params_lifetimes.extend(enum_generic_params_rest);
+            // variants.extend(enum_generic_params_rest);
+            enum_generics.params = enum_generic_params_lifetimes;
+            enum_generics
+        };
+
         let enum_to_alias_generics = self
-            .trait_generics
-            .params
+            .attrs
+            .implementers
             .iter()
             .map(ToTokens::to_token_stream)
-            .chain(
-                self.attrs
-                    .implementers
-                    .iter()
-                    .map(ToTokens::to_token_stream),
-            );
+            .chain(self.trait_generics.params.iter().map(|par| match par {
+                syn::GenericParam::Type(ty) => {
+                    let par_ident = &ty.ident;
+                    quote! { #par_ident }
+                }
+                rest => quote! { #rest },
+            }));
 
         let from_impls = self
             .attrs
@@ -393,12 +425,12 @@ impl Definition {
 
         quote! {
             #[derive(Clone, Copy, Debug)]
-            #vis enum #enum_ident<#(#enum_generics,)*> {
-                #(#variants_idents(#variants_generics)),*
+            #vis enum #enum_ident#enum_generics {
+                #(#variants_idents(#variants_generics),)*
                 #phantom_variant
             }
 
-            #vis type #alias_ident#trait_gens =
+            #vis type #alias_ident#enum_alias_generics =
                 #enum_ident<#(#enum_to_alias_generics,)*>;
 
             #(#from_impls)*
@@ -803,6 +835,10 @@ impl Definition {
                 })
                 .unzip();
 
+            let unreachable_arm = (self.attrs.implementers.is_empty() || !self.trait_generics.params.is_empty()).then(|| {
+                quote! { _ => unreachable!() }
+            });
+
             Some(quote! {
                 impl#impl_generics ::juniper::macros::helper::#trait_name<
                     #scalar,
@@ -857,6 +893,7 @@ impl Definition {
                                     { ::juniper::macros::helper::fnv1a128(#name) },
                                 >>::call(v, info, args, executor)
                             })*
+                            #unreachable_arm
                         }
                     }
                 }
@@ -1003,7 +1040,8 @@ impl Definition {
                 }
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
-                let ty = &self.ident;
+                let ty = self.attrs.enum_alias_ident(&self.ident);
+                // let ty = &self.ident;
                 let (_, ty_generics, _) = generics.split_for_impl();
 
                 quote! { for<#( #lifetimes ),*> #ty#ty_generics }
