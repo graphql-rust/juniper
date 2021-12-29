@@ -6,52 +6,23 @@ use juniper::{
 
 // --------------------------
 
-#[derive(GraphQLInputObject, Debug)]
-struct Point {
-    x: i32,
+#[graphql_interface_new(for = [Human, Droid], scalar = S)]
+trait Character<S: ScalarValue = DefaultScalarValue> {
+    fn id(&self) -> FieldResult<&str, S>;
 }
 
-#[graphql_interface_new(for = Human)]
-trait Character {
-    async fn id(
-        &self,
-        #[graphql(default)] first: String,
-        #[graphql(default = "second".to_string())] second: String,
-        #[graphql(default = "t")] third: String,
-    ) -> String;
-
-    fn info(&self, #[graphql(default = Point { x: 1 })] coord: Point) -> i32 {
-        coord.x
-    }
-}
-
+#[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue<__S>)]
 struct Human {
     id: String,
-    info: i32,
+    home_planet: String,
 }
 
-#[graphql_object(impl = CharacterValue)]
-impl Human {
-    fn info(&self, _coord: Point) -> i32 {
-        self.info
-    }
-
-    async fn id(&self, first: String, second: String, third: String) -> String {
-        format!("{}|{}&{}", first, second, third)
-    }
-}
-
-struct QueryRoot;
-
-#[graphql_object]
-impl QueryRoot {
-    fn character(&self) -> CharacterValue {
-        Human {
-            id: "human-32".to_string(),
-            info: 0,
-        }
-        .into()
-    }
+#[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue<__S>)]
+struct Droid {
+    id: String,
+    primary_function: String,
 }
 
 // --------------

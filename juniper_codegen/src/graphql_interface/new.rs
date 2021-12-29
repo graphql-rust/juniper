@@ -18,6 +18,7 @@ use syn::{
     spanned::Spanned as _,
     token,
     visit::Visit,
+    visit_mut::VisitMut,
 };
 
 use crate::{
@@ -785,9 +786,9 @@ impl Definition {
 
     /// TODO
     fn impl_fields(&self, for_async: bool) -> TokenStream {
-        struct ReplaceGenericsForConst(syn::AngleBracketedGenericArguments);
+        struct GenericsForConst(syn::AngleBracketedGenericArguments);
 
-        impl Visit<'_> for ReplaceGenericsForConst {
+        impl Visit<'_> for GenericsForConst {
             fn visit_generic_param(&mut self, param: &syn::GenericParam) {
                 match param {
                     syn::GenericParam::Lifetime(_) => self.0.args.push(parse_quote!( 'static )),
@@ -795,16 +796,43 @@ impl Definition {
                         if ty.default.is_none() {
                             self.0.args.push(parse_quote!(()));
                         }
-
-                        // let ty = ty
-                        //     .default
-                        //     .as_ref()
-                        //     .map_or_else(|| parse_quote!(()), |def| parse_quote!( #def ));
-                        // self.0.args.push(ty);
                     }
                     syn::GenericParam::Const(_) => {
                         unimplemented!()
                     }
+                }
+            }
+        }
+
+        struct ReplaceGenericsForConst<'a>(&'a syn::Generics);
+
+        impl<'a> VisitMut for ReplaceGenericsForConst<'a> {
+            fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
+                match arg {
+                    syn::GenericArgument::Lifetime(lf) => {
+                        *lf = parse_quote!( 'static );
+                    }
+                    syn::GenericArgument::Type(ty) => {
+                        let is_generic = self
+                            .0
+                            .params
+                            .iter()
+                            .filter_map(|par| match par {
+                                syn::GenericParam::Type(ty) => Some(&ty.ident),
+                                _ => None,
+                            })
+                            .any(|par| {
+                                let par = quote! { #par }.to_string();
+                                let ty = quote! { #ty }.to_string();
+                                println!("{} == {}", par, ty);
+                                par == ty
+                            });
+
+                        if is_generic {
+                            *ty = parse_quote!(());
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -862,7 +890,8 @@ impl Definition {
             };
 
             let name = &field.name;
-            let return_ty = &field.ty;
+            let mut return_ty = field.ty.clone();
+            ReplaceGenericsForConst(&generics).visit_type_mut(&mut return_ty);
 
             let (args_tys, args_names): (Vec<_>, Vec<_>) = field
                 .arguments
@@ -879,7 +908,7 @@ impl Definition {
                 .unzip();
 
             let const_ty_generics = {
-                let mut visitor = ReplaceGenericsForConst(parse_quote!( <> ));
+                let mut visitor = GenericsForConst(parse_quote!( <> ));
                 visitor.visit_generics(&self.trait_generics);
                 visitor.0
             };
