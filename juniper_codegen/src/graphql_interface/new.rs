@@ -794,7 +794,9 @@ impl Definition {
                     syn::GenericParam::Lifetime(_) => self.0.args.push(parse_quote!( 'static )),
                     syn::GenericParam::Type(ty) => {
                         if ty.default.is_none() {
-                            self.0.args.push(parse_quote!(()));
+                            self.0
+                                .args
+                                .push(parse_quote!(::juniper::DefaultScalarValue));
                         }
                     }
                     syn::GenericParam::Const(_) => {
@@ -824,12 +826,11 @@ impl Definition {
                             .any(|par| {
                                 let par = quote! { #par }.to_string();
                                 let ty = quote! { #ty }.to_string();
-                                println!("{} == {}", par, ty);
                                 par == ty
                             });
 
                         if is_generic {
-                            *ty = parse_quote!(());
+                            *ty = parse_quote!(::juniper::DefaultScalarValue);
                         }
                     }
                     _ => {}

@@ -1,28 +1,64 @@
 use juniper::{
     execute, graphql_interface, graphql_interface_new, graphql_object, graphql_value, graphql_vars,
     DefaultScalarValue, EmptyMutation, EmptySubscription, Executor, FieldError, FieldResult,
-    GraphQLInputObject, GraphQLObject, GraphQLType, IntoFieldError, RootNode, ScalarValue,
+    GraphQLInputObject, GraphQLObject, GraphQLType, IntoFieldError, LookAheadMethods, RootNode,
+    ScalarValue,
 };
 
 // --------------------------
 
 #[graphql_interface_new(for = [Human, Droid], scalar = S)]
-trait Character<S: ScalarValue = DefaultScalarValue> {
-    fn id(&self) -> FieldResult<&str, S>;
+trait Character<S: ScalarValue> {
+    async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
+    where
+        S: Send + Sync,
+    {
+        executor.look_ahead().field_name()
+    }
+
+    async fn info<'b>(
+        &'b self,
+        arg: Option<i32>,
+        #[graphql(executor)] another: &Executor<'_, '_, (), S>,
+    ) -> &'b str
+    where
+        S: Send + Sync;
 }
 
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue<__S>)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue<__S>)]
+#[graphql_object(impl = CharacterValue<__S>)]
+impl Human {
+    async fn id<'a, S: ScalarValue>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str {
+        executor.look_ahead().field_name()
+    }
+
+    async fn info<'b>(&'b self, _arg: Option<i32>) -> &'b str {
+        &self.home_planet
+    }
+}
+
 struct Droid {
     id: String,
     primary_function: String,
+}
+
+#[graphql_object(impl = CharacterValue<__S>)]
+impl Droid {
+    fn id<'a, S: ScalarValue>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str {
+        executor.look_ahead().field_name()
+    }
+
+    async fn info<'b, S: ScalarValue>(
+        &'b self,
+        _arg: Option<i32>,
+        _executor: &Executor<'_, '_, (), S>,
+    ) -> &'b str {
+        &self.primary_function
+    }
 }
 
 // --------------
