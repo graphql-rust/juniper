@@ -2,14 +2,10 @@
 //!
 //! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 
-use std::{
-    any::TypeId,
-    collections::{HashMap, HashSet},
-    convert::TryInto as _,
-};
+use std::{collections::HashSet, convert::TryInto as _};
 
-use proc_macro2::{Ident, Span, TokenStream};
-use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
+use proc_macro2::TokenStream;
+use quote::{format_ident, quote, ToTokens};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -26,7 +22,7 @@ use crate::{
         field, gen,
         parse::{
             attr::{err, OptionExt as _},
-            GenericsExt as _, ParseBufferExt as _,
+            ParseBufferExt as _,
         },
         scalar,
     },
