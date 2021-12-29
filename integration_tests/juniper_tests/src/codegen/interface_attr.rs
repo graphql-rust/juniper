@@ -1637,29 +1637,30 @@ mod generic_lifetime_async {
 mod argument {
     use super::*;
 
-    #[graphql_interface(for = Human)]
+    #[graphql_interface_new(for = Human)]
     trait Character {
         fn id_wide(&self, is_number: bool) -> &str;
 
         async fn id_wide2(&self, is_number: bool, r#async: Option<i32>) -> &str;
     }
 
-    #[graphql_interface(dyn = DynHero, for = Human)]
-    trait Hero {
-        fn info_wide(&self, is_planet: bool) -> &str;
-
-        async fn info_wide2(&self, is_planet: bool, r#async: Option<i32>) -> &str;
-    }
-
-    #[derive(GraphQLObject)]
-    #[graphql(impl = [CharacterValue, DynHero<__S>])]
+    // #[derive(GraphQLObject)]
+    // #[graphql(impl = CharacterValue)]
     struct Human {
         id: String,
         home_planet: String,
     }
 
-    #[graphql_interface]
-    impl Character for Human {
+    #[graphql_object(impl = CharacterValue)]
+    impl Human {
+        fn id(&self) -> &str {
+            &self.id
+        }
+
+        fn home_planet(&self) -> &str {
+            &self.home_planet
+        }
+
         fn id_wide(&self, is_number: bool) -> &str {
             if is_number {
                 &self.id
@@ -1668,30 +1669,11 @@ mod argument {
             }
         }
 
-        async fn id_wide2(&self, is_number: bool, _: Option<i32>) -> &str {
+        async fn id_wide2(&self, is_number: bool, _async: Option<i32>) -> &str {
             if is_number {
                 &self.id
             } else {
                 "none"
-            }
-        }
-    }
-
-    #[graphql_interface(dyn)]
-    impl Hero for Human {
-        fn info_wide(&self, is_planet: bool) -> &str {
-            if is_planet {
-                &self.home_planet
-            } else {
-                &self.id
-            }
-        }
-
-        async fn info_wide2(&self, is_planet: bool, _: Option<i32>) -> &str {
-            if is_planet {
-                &self.home_planet
-            } else {
-                &self.id
             }
         }
     }
@@ -1706,13 +1688,6 @@ mod argument {
                 home_planet: "earth".to_string(),
             }
             .into()
-        }
-
-        fn hero<S: ScalarValue + Send + Sync>(&self) -> Box<DynHero<'_, S>> {
-            Box::new(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
-            })
         }
     }
 
@@ -1746,140 +1721,89 @@ mod argument {
     }
 
     #[tokio::test]
-    async fn dyn_resolves_info_field() {
-        let schema = schema(QueryRoot);
-
-        for (input, expected) in &[
-            (
-                "{ hero { infoWide(isPlanet: true), infoWide2(isPlanet: true) } }",
-                "earth",
-            ),
-            (
-                "{ hero { infoWide(isPlanet: false), infoWide2(isPlanet: false, async: 3) } }",
-                "human-32",
-            ),
-        ] {
-            let expected: &str = *expected;
-
-            assert_eq!(
-                execute(*input, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((
-                    graphql_value!({"hero": {
-                        "infoWide": expected,
-                        "infoWide2": expected,
-                    }}),
-                    vec![],
-                )),
-            );
-        }
-    }
-
-    #[tokio::test]
     async fn camelcases_name() {
         let schema = schema(QueryRoot);
 
-        for (interface, field, arg) in &[
-            ("Character", "idWide", "isNumber"),
-            ("Hero", "infoWide", "isPlanet"),
-        ] {
-            let doc = format!(
-                r#"{{
-                    __type(name: "{}") {{
-                        fields {{
-                            name
-                            args {{
-                                name
-                            }}
-                        }}
-                    }}
-                }}"#,
-                interface,
-            );
-
-            let expected_field_name: &str = *field;
-            let expected_field_name2: &str = &format!("{}2", field);
-            let expected_arg_name: &str = *arg;
-            assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((
-                    graphql_value!({"__type": {"fields": [{
-                        "name": expected_field_name,
-                        "args": [
-                            {"name": expected_arg_name},
-                        ],
-                    }, {
-                        "name": expected_field_name2,
-                        "args": [
-                            {"name": expected_arg_name},
-                            {"name": "async"},
-                        ],
-                    }]}}),
-                    vec![],
-                )),
-            );
-        }
+        let doc = r#"{
+            __type(name: "Character") {
+                fields {
+                    name
+                    args {
+                        name
+                    }
+                }
+            }
+        }"#;
+        assert_eq!(
+            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [{
+                    "name": "idWide",
+                    "args": [
+                        {"name": "isNumber"},
+                    ],
+                },{
+                    "name": "idWide2",
+                    "args": [
+                        {"name": "isNumber"},
+                        {"name": "async"}
+                    ],
+                }]}}),
+                vec![],
+            )),
+        );
     }
 
     #[tokio::test]
     async fn has_no_description() {
         let schema = schema(QueryRoot);
 
-        for interface in &["Character", "Hero"] {
-            let doc = format!(
-                r#"{{
-                    __type(name: "{}") {{
-                        fields {{
-                            args {{
-                                description
-                            }}
-                        }}
-                    }}
-                }}"#,
-                interface,
-            );
+        let doc = r#"{
+            __type(name: "Character") {
+                fields {
+                    args {
+                        description
+                    }
+                }
+            }
+        }"#;
 
-            assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((
-                    graphql_value!({"__type": {"fields": [
-                        {"args": [{"description": null}]},
-                        {"args": [{"description": null}, {"description": null}]},
-                    ]}}),
-                    vec![],
-                )),
-            );
-        }
+        assert_eq!(
+            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"args": [{"description": null}]},
+                    {"args": [{"description": null}, {"description": null}]},
+                ]}}),
+                vec![],
+            )),
+        );
     }
 
     #[tokio::test]
     async fn has_no_defaults() {
         let schema = schema(QueryRoot);
 
-        for interface in &["Character", "Hero"] {
-            let doc = format!(
-                r#"{{
-                    __type(name: "{}") {{
-                        fields {{
-                            args {{
-                                defaultValue
-                            }}
-                        }}
-                    }}
-                }}"#,
-                interface,
-            );
+        let doc = r#"{
+            __type(name: "Character") {
+                fields {
+                    args {
+                        defaultValue
+                    }
+                }
+            }
+        }"#;
 
-            assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((
-                    graphql_value!({"__type": {"fields": [
-                        {"args": [{"defaultValue": null}]},
-                        {"args": [{"defaultValue": null}, {"defaultValue": null}]},
-                    ]}}),
-                    vec![],
-                )),
-            );
-        }
+        assert_eq!(
+            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"fields": [
+                    {"args": [{"defaultValue": null}]},
+                    {"args": [{"defaultValue": null}, {"defaultValue": null}]},
+                ]}}),
+                vec![],
+            )),
+        );
     }
 }
 
@@ -1891,7 +1815,7 @@ mod default_argument {
         x: i32,
     }
 
-    #[graphql_interface(for = Human)]
+    #[graphql_interface_new(for = Human)]
     trait Character {
         async fn id(
             &self,
@@ -1905,15 +1829,17 @@ mod default_argument {
         }
     }
 
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue)]
     struct Human {
         id: String,
         info: i32,
     }
 
-    #[graphql_interface]
-    impl Character for Human {
+    #[graphql_object(impl = CharacterValue)]
+    impl Human {
+        fn info(&self, coord: Point) -> i32 {
+            coord.x
+        }
+
         async fn id(&self, first: String, second: String, third: String) -> String {
             format!("{}|{}&{}", first, second, third)
         }
@@ -2030,7 +1956,7 @@ mod description_from_doc_comment {
     use super::*;
 
     /// Rust docs.
-    #[graphql_interface(for = Human)]
+    #[graphql_interface_new(for = Human)]
     trait Character {
         /// Rust `id` docs.
         /// Long.
@@ -2042,13 +1968,6 @@ mod description_from_doc_comment {
     struct Human {
         id: String,
         home_planet: String,
-    }
-
-    #[graphql_interface]
-    impl Character for Human {
-        fn id(&self) -> &str {
-            &self.id
-        }
     }
 
     struct QueryRoot;
@@ -2093,32 +2012,38 @@ mod description_from_doc_comment {
 mod deprecation_from_attr {
     use super::*;
 
-    #[graphql_interface(for = Human)]
+    #[graphql_interface_new(for = Human)]
     trait Character {
         fn id(&self) -> &str;
 
         #[deprecated]
-        fn a(&self) -> &str {
-            "a"
-        }
+        fn a(&self) -> &str;
 
         #[deprecated(note = "Use `id`.")]
-        fn b(&self) -> &str {
-            "b"
-        }
+        fn b(&self) -> &str;
     }
 
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue)]
     struct Human {
         id: String,
         home_planet: String,
     }
 
-    #[graphql_interface]
-    impl Character for Human {
+    #[graphql_object(impl = CharacterValue)]
+    impl Human {
         fn id(&self) -> &str {
             &self.id
+        }
+
+        fn human_planet(&self) -> &str {
+            &self.home_planet
+        }
+
+        fn a() -> &'static str {
+            "a"
+        }
+
+        fn b() -> String {
+            "b".to_owned()
         }
     }
 
@@ -2225,7 +2150,7 @@ mod explicit_name_description_and_deprecation {
     use super::*;
 
     /// Rust docs.
-    #[graphql_interface(name = "MyChar", desc = "My character.", for = Human)]
+    #[graphql_interface_new(name = "MyChar", desc = "My character.", for = Human)]
     trait Character {
         /// Rust `id` docs.
         #[graphql(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
@@ -2234,26 +2159,32 @@ mod explicit_name_description_and_deprecation {
 
         #[graphql(deprecated)]
         #[deprecated(note = "Should be omitted.")]
-        fn a(&self) -> &str {
-            "a"
-        }
+        fn a(&self) -> &str;
 
-        fn b(&self) -> &str {
-            "b"
-        }
+        fn b(&self) -> &str;
     }
 
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue)]
     struct Human {
         id: String,
         home_planet: String,
     }
 
-    #[graphql_interface]
-    impl Character for Human {
-        fn id(&self, _: Option<String>) -> &str {
+    #[graphql_object(impl = CharacterValue)]
+    impl Human {
+        fn my_id(&self, #[graphql(name = "myName")] _: Option<String>) -> &str {
             &self.id
+        }
+
+        fn home_planet(&self) -> &str {
+            &self.home_planet
+        }
+
+        fn a() -> String {
+            "a".to_owned()
+        }
+
+        fn b() -> &'static str {
+            "b"
         }
     }
 

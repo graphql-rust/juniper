@@ -8,7 +8,7 @@ use std::{
     convert::TryInto as _,
 };
 
-use proc_macro2::TokenStream;
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, quote, ToTokens, TokenStreamExt as _};
 use syn::{
     ext::IdentExt as _,
@@ -17,6 +17,7 @@ use syn::{
     punctuated::Punctuated,
     spanned::Spanned as _,
     token,
+    visit::Visit,
 };
 
 use crate::{
@@ -393,18 +394,36 @@ impl Definition {
             enum_generics
         };
 
-        let enum_to_alias_generics = self
-            .attrs
-            .implementers
-            .iter()
-            .map(ToTokens::to_token_stream)
-            .chain(self.trait_generics.params.iter().map(|par| match par {
-                syn::GenericParam::Type(ty) => {
-                    let par_ident = &ty.ident;
-                    quote! { #par_ident }
-                }
-                rest => quote! { #rest },
-            }));
+        let enum_to_alias_generics = {
+            let (lifetimes, rest) = self
+                .trait_generics
+                .params
+                .iter()
+                .partition::<Vec<_>, _>(|par| matches!(par, syn::GenericParam::Lifetime(_)));
+
+            lifetimes
+                .into_iter()
+                .map(|par| match par {
+                    syn::GenericParam::Lifetime(def) => {
+                        let lifetime = &def.lifetime;
+                        quote! { #lifetime }
+                    }
+                    rest => quote! { #rest },
+                })
+                .chain(
+                    self.attrs
+                        .implementers
+                        .iter()
+                        .map(ToTokens::to_token_stream),
+                )
+                .chain(rest.into_iter().map(|par| match par {
+                    syn::GenericParam::Type(ty) => {
+                        let par_ident = &ty.ident;
+                        quote! { #par_ident }
+                    }
+                    rest => quote! { #rest },
+                }))
+        };
 
         let from_impls = self
             .attrs
@@ -556,7 +575,7 @@ impl Definition {
                     let fields = [
                         #( #fields_meta, )*
                     ];
-                    registry.build_interface_type::<#ty>(info, &fields)
+                    registry.build_interface_type::<#ty#ty_generics>(info, &fields)
                         #description
                         .into_meta()
                 }
@@ -766,6 +785,30 @@ impl Definition {
 
     /// TODO
     fn impl_fields(&self, for_async: bool) -> TokenStream {
+        struct ReplaceGenericsForConst(syn::AngleBracketedGenericArguments);
+
+        impl Visit<'_> for ReplaceGenericsForConst {
+            fn visit_generic_param(&mut self, param: &syn::GenericParam) {
+                match param {
+                    syn::GenericParam::Lifetime(_) => self.0.args.push(parse_quote!( 'static )),
+                    syn::GenericParam::Type(ty) => {
+                        if ty.default.is_none() {
+                            self.0.args.push(parse_quote!(()));
+                        }
+
+                        // let ty = ty
+                        //     .default
+                        //     .as_ref()
+                        //     .map_or_else(|| parse_quote!(()), |def| parse_quote!( #def ));
+                        // self.0.args.push(ty);
+                    }
+                    syn::GenericParam::Const(_) => {
+                        unimplemented!()
+                    }
+                }
+            }
+        }
+
         let scalar = &self.scalar;
         let const_scalar = match scalar {
             scalar::Type::Concrete(ty) => ty.to_token_stream(),
@@ -835,6 +878,12 @@ impl Definition {
                 })
                 .unzip();
 
+            let const_ty_generics = {
+                let mut visitor = ReplaceGenericsForConst(parse_quote!( <> ));
+                visitor.visit_generics(&self.trait_generics);
+                visitor.0
+            };
+
             let unreachable_arm = (self.attrs.implementers.is_empty() || !self.trait_generics.params.is_empty()).then(|| {
                 quote! { _ => unreachable!() }
             });
@@ -878,7 +927,7 @@ impl Definition {
                                     >>::WRAPPED_VALUE,
                                 ));
                                 const _: () = ::std::assert!(::juniper::macros::helper::is_valid_field_args(
-                                    <#ty as ::juniper::macros::helper::#trait_name<
+                                    <#ty#const_ty_generics as ::juniper::macros::helper::#trait_name<
                                         #const_scalar,
                                         { ::juniper::macros::helper::fnv1a128(#name) },
                                     >>::ARGUMENTS,
