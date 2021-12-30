@@ -2,7 +2,7 @@
 
 pub mod subscription;
 
-use std::{fmt, rc::Rc, sync::Arc};
+use std::{fmt, mem, rc::Rc, sync::Arc};
 
 use futures::future::{self, BoxFuture};
 
@@ -128,6 +128,179 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
     }
 
     true
+}
+
+pub const fn number_of_digits(n: u128) -> usize {
+    if n == 0 {
+        return 1;
+    }
+
+    let mut len = 0;
+    let mut current = n;
+    while current % 10 != 0 {
+        len += 1;
+        current /= 10;
+    }
+    len
+}
+
+pub const fn str_len_from_wrapped_val(ty: Type, v: WrappedValue) -> usize {
+    let mut len = ty.len() + 1; // Type!
+
+    let mut current_wrap_val = v;
+    while current_wrap_val % 10 != 0 {
+        match current_wrap_val % 10 {
+            2 => len -= 1, // remove !
+            3 => len += 3, // [Type]!
+            _ => {}
+        }
+
+        current_wrap_val /= 10;
+    }
+
+    len
+}
+
+const _: () = check_valid_field_args();
+
+pub const fn check_valid_field_args() {
+    const BASE: &[(Name, Type, WrappedValue)] = &[("test", "String", 1)];
+    const IMPL: &[(Name, Type, WrappedValue)] = &[("test", "String", 12323)];
+
+    const OPENING_BRACKET: &str = "[";
+    const CLOSING_BRACKET: &str = "]";
+    const BANG: &str = "!";
+
+    const fn find_len() -> usize {
+        let mut base_i = 0;
+        while base_i < BASE.len() {
+            let (base_name, base_type, base_wrap_val) = BASE[base_i];
+
+            let mut impl_i = 0;
+            while impl_i < IMPL.len() {
+                let (impl_name, impl_type, impl_wrap_val) = IMPL[impl_i];
+
+                if str_eq(base_name, impl_name) {
+                    if !(str_eq(base_type, impl_type) && base_wrap_val == impl_wrap_val) {
+                        return str_len_from_wrapped_val(impl_type, impl_wrap_val);
+                    }
+                }
+                impl_i += 1;
+            }
+            base_i += 1;
+        }
+        0
+    }
+
+    let mut base_i = 0;
+    while base_i < BASE.len() {
+        let (base_name, base_type, base_wrap_val) = BASE[base_i];
+
+        let mut impl_i = 0;
+        let mut was_found = false;
+        while impl_i < IMPL.len() {
+            let (impl_name, impl_type, impl_wrap_val) = IMPL[impl_i];
+
+            if str_eq(base_name, impl_name) {
+                if str_eq(base_type, impl_type) && base_wrap_val == impl_wrap_val {
+                    was_found = true;
+                } else {
+                    const IMPL_TYPE_LEN: usize = find_len();
+                    let mut impl_type_arr: [u8; IMPL_TYPE_LEN] = [0; IMPL_TYPE_LEN];
+
+                    let mut current_start = 0;
+                    let mut current_end = IMPL_TYPE_LEN - 1;
+                    let mut current_wrap_val = impl_wrap_val;
+                    let mut is_null = false;
+                    while current_wrap_val % 10 != 0 {
+                        match current_wrap_val % 10 {
+                            2 => is_null = true,
+                            3 => {
+                                if is_null {
+                                    let mut i = 0;
+                                    while i < OPENING_BRACKET.as_bytes().len() {
+                                        impl_type_arr[current_start + i] =
+                                            OPENING_BRACKET.as_bytes()[i];
+                                        i += 1;
+                                    }
+                                    current_start += i;
+                                    i = 0;
+                                    while i < CLOSING_BRACKET.as_bytes().len() {
+                                        impl_type_arr[current_end
+                                            - CLOSING_BRACKET.as_bytes().len()
+                                            + i
+                                            + 1] = CLOSING_BRACKET.as_bytes()[i];
+                                        i += 1;
+                                    }
+                                    current_end -= i;
+                                } else {
+                                    let mut i = 0;
+                                    while i < OPENING_BRACKET.as_bytes().len() {
+                                        impl_type_arr[current_start + i] =
+                                            OPENING_BRACKET.as_bytes()[i];
+                                        i += 1;
+                                    }
+                                    current_start += i;
+                                    i = 0;
+                                    while i < BANG.as_bytes().len() {
+                                        impl_type_arr
+                                            [current_end - BANG.as_bytes().len() + i + 1] =
+                                            BANG.as_bytes()[i];
+                                        i += 1;
+                                    }
+                                    current_end -= i;
+                                    i = 0;
+                                    while i < CLOSING_BRACKET.as_bytes().len() {
+                                        impl_type_arr[current_end
+                                            - CLOSING_BRACKET.as_bytes().len()
+                                            + i
+                                            + 1] = CLOSING_BRACKET.as_bytes()[i];
+                                        i += 1;
+                                    }
+                                    current_end -= i;
+                                }
+                                is_null = false;
+                            }
+                            _ => {}
+                        }
+
+                        current_wrap_val /= 10;
+                    }
+
+                    let mut i = 0;
+                    while i < impl_type.as_bytes().len() {
+                        impl_type_arr[current_start + i] = impl_type.as_bytes()[i];
+                        i += 1;
+                    }
+                    i = 0;
+                    if !is_null {
+                        while i < BANG.as_bytes().len() {
+                            impl_type_arr[current_end - BANG.as_bytes().len() + i + 1] =
+                                BANG.as_bytes()[i];
+                            i += 1;
+                        }
+                    }
+
+                    let impl_type_str: &str = unsafe { mem::transmute(impl_type_arr.as_slice()) };
+
+                    // TODO: format incorrect field type error.
+                    panic!(impl_type_str);
+                }
+            } else if impl_wrap_val % 10 != 2 {
+                // TODO: format field must be nullable error.
+                panic!(impl_name);
+            }
+
+            impl_i += 1;
+        }
+
+        if !was_found {
+            // TODO: format field not found error.
+            panic!(base_name);
+        }
+
+        base_i += 1;
+    }
 }
 
 pub const fn is_valid_field_args(
