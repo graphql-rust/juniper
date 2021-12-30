@@ -3,7 +3,7 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens as _};
+use quote::{format_ident, quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -403,19 +403,32 @@ fn expand_on_trait_new(
     //     )))
     // };
 
+    let enum_alias_ident = attr
+        .r#enum
+        .as_deref()
+        .cloned()
+        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
+    let enum_ident = attr.r#enum.as_ref().map_or_else(
+        || format_ident!("{}ValueEnum", trait_ident.to_string()),
+        |c| format_ident!("{}Enum", c.inner().to_string()),
+    );
+
     let description = attr.description.as_ref().map(|c| c.inner().clone());
     let generated_code = new::Definition {
-        attrs: attr,
-        ident: trait_ident.clone(),
-        vis: ast.vis.clone(),
         trait_generics: ast.generics.clone(),
+        vis: ast.vis.clone(),
+        enum_ident,
+        enum_alias_ident,
         name,
         description,
-
         context,
         scalar: scalar.clone(),
-
         fields,
+        implementers: attr
+            .implementers
+            .iter()
+            .map(|c| c.inner().clone())
+            .collect(),
     };
 
     // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.

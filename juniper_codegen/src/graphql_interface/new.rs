@@ -22,7 +22,7 @@ use crate::{
         field, gen,
         parse::{
             attr::{err, OptionExt as _},
-            ParseBufferExt as _,
+            GenericsExt as _, ParseBufferExt as _,
         },
         scalar,
     },
@@ -229,36 +229,35 @@ impl TraitAttr {
 
         Ok(attr)
     }
-
-    /// TODO
-    fn enum_alias_ident(&self, trait_name: &syn::Ident) -> SpanContainer<syn::Ident> {
-        self.r#enum.clone().unwrap_or_else(|| {
-            SpanContainer::new(
-                trait_name.span(),
-                Some(trait_name.span()),
-                format_ident!("{}Value", trait_name.to_string()),
-            )
-        })
-    }
 }
 
 /// Definition of [GraphQL interface][1] for code generation.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 pub(crate) struct Definition {
-    /// TODO
-    pub(crate) attrs: TraitAttr,
-
-    pub(crate) ident: syn::Ident,
-
-    pub(crate) vis: syn::Visibility,
-
+    /// [`syn::Generics`] of the trait describing the [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     pub(crate) trait_generics: syn::Generics,
 
-    // /// Rust type that this [GraphQL interface][1] is represented with.
-    // ///
-    // /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    // ty: syn::Type,
+    /// [`syn::Visibility`] of the trait describing the [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    pub(crate) vis: syn::Visibility,
+
+    /// Name of the generic enum describing all [`implementers`]. It's generic
+    /// to derive [`Clone`], [`Copy`] and [`Debug`] on it.
+    ///
+    /// [`implementers`]: Self::implementers
+    /// [`Debug`]: std::fmt::Debug
+    pub(crate) enum_ident: syn::Ident,
+
+    /// Name of the type alias for [`enum_ident`] with [`implementers`].
+    ///
+    /// [`enum_ident`]: Self::enum_ident
+    /// [`implementers`]: Self::implementers
+    pub(crate) enum_alias_ident: syn::Ident,
+
     /// Name of this [GraphQL interface][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
@@ -290,10 +289,11 @@ pub(crate) struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     pub(crate) fields: Vec<field::Definition>,
-    // /// Defined [`Implementer`]s of this [GraphQL interface][1].
-    // ///
-    // /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    // implementers: Vec<syn::Type>,
+
+    /// Defined [`Implementer`]s of this [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    pub(crate) implementers: Vec<syn::TypePath>,
 }
 
 impl ToTokens for Definition {
@@ -304,101 +304,64 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_traits_for_const_assertions().to_tokens(into);
+        self.impl_traits_for_reflection().to_tokens(into);
         self.impl_fields(false).to_tokens(into);
         self.impl_fields(true).to_tokens(into);
     }
 }
 
 impl Definition {
+    /// Generates enum describing all [`implementers`].
+    ///
+    /// [`implementers`]: Self::implementers
+    #[must_use]
     fn generate_enum(&self) -> TokenStream {
         let vis = &self.vis;
-        let trait_gens = &self.trait_generics;
-        let (trait_impl_gens, trait_ty_gens, trait_where_clause) =
-            self.trait_generics.split_for_impl();
+        let enum_ident = &self.enum_ident;
+        let alias_ident = &self.enum_alias_ident;
 
-        let ty_params = self.trait_generics.params.iter().map(|p| {
-            let ty = match p {
-                syn::GenericParam::Type(ty) => {
-                    let ident = &ty.ident;
-                    quote! { #ident }
-                }
-                syn::GenericParam::Lifetime(lt) => {
-                    let lifetime = &lt.lifetime;
-                    quote! { &#lifetime () }
-                }
-                syn::GenericParam::Const(_) => unimplemented!(),
-            };
-            quote! {
-                ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
-            }
-        });
-        let phantom_variant =
-            (!self.trait_generics.params.is_empty()).then(|| quote! { __Phantom(#(#ty_params,)*) });
-
-        let alias_ident = self.attrs.enum_alias_ident(&self.ident);
-        let enum_ident = self.attrs.r#enum.as_ref().map_or_else(
-            || format_ident!("{}ValueEnum", self.ident.to_string()),
-            |c| format_ident!("{}Enum", c.inner().to_string()),
-        );
-
-        let enum_alias_generics = {
-            let mut enum_alias_generics = trait_gens.clone();
-            let enum_generics = std::mem::take(&mut enum_alias_generics.params);
-            enum_alias_generics.params = enum_generics
-                .into_iter()
-                .map(|gen| match gen {
-                    syn::GenericParam::Type(mut ty) => {
-                        ty.bounds = Punctuated::new();
-                        ty.into()
-                    }
-                    rest => rest,
-                })
-                .collect();
-            enum_alias_generics
-        };
-
-        let variants_generics = self
-            .attrs
+        let variant_gens_pars = self
             .implementers
             .iter()
             .enumerate()
-            .map(|(id, _)| format_ident!("I{}", id));
+            .map::<syn::GenericParam, _>(|(id, _)| {
+                let par = format_ident!("__I{}", id);
+                parse_quote!( #par )
+            });
 
         let variants_idents = self
-            .attrs
             .implementers
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident));
 
-        let enum_generics = {
-            let mut enum_generics = self.trait_generics.clone();
-            let enum_generic_params = std::mem::take(&mut enum_generics.params);
-            let (mut enum_generic_params_lifetimes, enum_generic_params_rest) = enum_generic_params
-                .into_iter()
-                .partition::<Punctuated<_, _>, _>(|par| {
-                    matches!(par, syn::GenericParam::Lifetime(_))
-                });
+        let trait_gens = &self.trait_generics;
+        let (trait_impl_gens, trait_ty_gens, trait_where_clause) =
+            self.trait_generics.split_for_impl();
 
-            let variants = variants_generics
-                .clone()
-                .map::<syn::GenericParam, _>(|var| parse_quote! { #var })
-                .collect::<Vec<_>>();
-            enum_generic_params_lifetimes.extend(variants);
-            enum_generic_params_lifetimes.extend(enum_generic_params_rest);
-            // variants.extend(enum_generic_params_rest);
-            enum_generics.params = enum_generic_params_lifetimes;
-            enum_generics
+        let (trait_gens_lifetimes, trait_gens_tys) = trait_gens
+            .params
+            .clone()
+            .into_iter()
+            .partition::<Punctuated<_, _>, _>(|par| {
+            matches!(par, syn::GenericParam::Lifetime(_))
+        });
+
+        let enum_gens = {
+            let mut enum_gens = trait_gens.clone();
+            enum_gens.params = trait_gens_lifetimes.clone();
+            enum_gens.params.extend(variant_gens_pars.clone());
+            enum_gens.params.extend(trait_gens_tys.clone());
+            enum_gens
         };
 
-        let enum_to_alias_generics = {
-            let (lifetimes, rest) = self
-                .trait_generics
-                .params
-                .iter()
-                .partition::<Vec<_>, _>(|par| matches!(par, syn::GenericParam::Lifetime(_)));
+        let enum_alias_gens = {
+            let mut enum_alias_gens = trait_gens.clone();
+            enum_alias_gens.move_bounds_to_where_clause();
+            enum_alias_gens
+        };
 
-            lifetimes
+        let enum_to_alias_gens = {
+            trait_gens_lifetimes
                 .into_iter()
                 .map(|par| match par {
                     syn::GenericParam::Lifetime(def) => {
@@ -407,13 +370,8 @@ impl Definition {
                     }
                     rest => quote! { #rest },
                 })
-                .chain(
-                    self.attrs
-                        .implementers
-                        .iter()
-                        .map(ToTokens::to_token_stream),
-                )
-                .chain(rest.into_iter().map(|par| match par {
+                .chain(self.implementers.iter().map(ToTokens::to_token_stream))
+                .chain(trait_gens_tys.into_iter().map(|par| match par {
                     syn::GenericParam::Type(ty) => {
                         let par_ident = &ty.ident;
                         quote! { #par_ident }
@@ -422,12 +380,28 @@ impl Definition {
                 }))
         };
 
-        let from_impls = self
-            .attrs
-            .implementers
-            .iter()
-            .zip(variants_idents.clone())
-            .map(|(ty, ident)| {
+        let phantom_variant = self.has_phantom_variant().then(|| {
+            let phantom_params = trait_gens.params.iter().filter_map(|p| {
+                let ty = match p {
+                    syn::GenericParam::Type(ty) => {
+                        let ident = &ty.ident;
+                        quote! { #ident }
+                    }
+                    syn::GenericParam::Lifetime(lt) => {
+                        let lifetime = &lt.lifetime;
+                        quote! { &#lifetime () }
+                    }
+                    syn::GenericParam::Const(_) => return None,
+                };
+                Some(quote! {
+                    ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
+                })
+            });
+            quote! { __Phantom(#(#phantom_params),*) }
+        });
+
+        let from_impls = self.implementers.iter().zip(variants_idents.clone()).map(
+            |(ty, ident)| {
                 quote! {
                     impl#trait_impl_gens ::std::convert::From<#ty> for #alias_ident#trait_ty_gens
                         #trait_where_clause
@@ -437,17 +411,18 @@ impl Definition {
                         }
                     }
                 }
-            });
+            },
+        );
 
         quote! {
             #[derive(Clone, Copy, Debug)]
-            #vis enum #enum_ident#enum_generics {
-                #(#variants_idents(#variants_generics),)*
+            #vis enum #enum_ident#enum_gens {
+                #(#variants_idents(#variant_gens_pars),)*
                 #phantom_variant
             }
 
-            #vis type #alias_ident#enum_alias_generics =
-                #enum_ident<#(#enum_to_alias_generics,)*>;
+            #vis type #alias_ident#enum_alias_gens =
+                #enum_ident<#(#enum_to_alias_gens),*>;
 
             #(#from_impls)*
         }
@@ -460,14 +435,14 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_interface_tokens(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
 
         let gens = self.impl_generics(false);
         let (impl_generics, _, where_clause) = gens.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
-        let ty = self.attrs.enum_alias_ident(&self.ident);
 
-        let impler_tys = self.attrs.implementers.iter().collect::<Vec<_>>();
+        let impler_tys = &self.implementers;
         let all_implers_unique = (impler_tys.len() > 1).then(|| {
             quote! { ::juniper::sa::assert_type_ne_all!(#( #impler_tys ),*); }
         });
@@ -493,19 +468,19 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_output_type_tokens(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
-        let ty = self.attrs.enum_alias_ident(&self.ident);
 
         let fields_marks = self
             .fields
             .iter()
             .map(|f| f.method_mark_tokens(false, scalar));
 
-        let impler_tys = self.attrs.implementers.iter();
+        let impler_tys = self.implementers.iter();
 
         quote! {
             #[automatically_derived]
@@ -528,12 +503,12 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_type_tokens(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
-        let ty = self.attrs.enum_alias_ident(&self.ident);
 
         let name = &self.name;
         let description = self
@@ -542,7 +517,7 @@ impl Definition {
             .map(|desc| quote! { .description(#desc) });
 
         // Sorting is required to preserve/guarantee the order of implementers registered in schema.
-        let mut impler_tys = self.attrs.implementers.iter().collect::<Vec<_>>();
+        let mut impler_tys = self.implementers.clone();
         impler_tys.sort_unstable_by(|a, b| {
             let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
             a.cmp(&b)
@@ -587,14 +562,14 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
+        let trait_name = &self.name;
         let scalar = &self.scalar;
         let context = &self.context;
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
-        let ty = self.attrs.enum_alias_ident(&self.ident);
-        let trait_name = &self.name;
 
         let fields_resolvers = self.fields.iter().filter_map(|f| {
             (!f.is_async).then(|| {
@@ -683,13 +658,13 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
+        let trait_name = &self.name;
         let scalar = &self.scalar;
 
         let generics = self.impl_generics(true);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
-        let ty = &self.attrs.enum_alias_ident(&self.ident);
-        let trait_name = &self.name;
 
         let fields_resolvers = self.fields.iter().map(|f| {
             let name = &f.name;
@@ -739,16 +714,23 @@ impl Definition {
         }
     }
 
-    /// TODO
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
+    /// [`WrappedType`] traits for this [GraphQL interface][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::helper::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::helper::BaseType
+    /// [`WrappedType`]: juniper::macros::helper::WrappedType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
-    pub(crate) fn impl_traits_for_const_assertions(&self) -> TokenStream {
+    pub(crate) fn impl_traits_for_reflection(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
+        let implementers = &self.implementers;
         let scalar = &self.scalar;
         let name = &self.name;
+
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
-        let ty = self.attrs.enum_alias_ident(&self.ident);
-        let implementers = self.attrs.implementers.iter();
 
         quote! {
             #[automatically_derived]
@@ -780,73 +762,25 @@ impl Definition {
         }
     }
 
-    /// TODO
+    /// Returns generated code implementing [`Field`] or [`AsyncField`] trait
+    /// for this [GraphQL interface][1].
+    ///
+    /// [`AsyncField`]: juniper::macros::helper::AsyncField
+    /// [`Field`]: juniper::macros::helper::Field
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_fields(&self, for_async: bool) -> TokenStream {
-        struct GenericsForConst(syn::AngleBracketedGenericArguments);
-
-        impl Visit<'_> for GenericsForConst {
-            fn visit_generic_param(&mut self, param: &syn::GenericParam) {
-                match param {
-                    syn::GenericParam::Lifetime(_) => self.0.args.push(parse_quote!( 'static )),
-                    syn::GenericParam::Type(ty) => {
-                        if ty.default.is_none() {
-                            self.0
-                                .args
-                                .push(parse_quote!(::juniper::DefaultScalarValue));
-                        }
-                    }
-                    syn::GenericParam::Const(_) => {
-                        unimplemented!()
-                    }
-                }
-            }
-        }
-
-        struct ReplaceGenericsForConst<'a>(&'a syn::Generics);
-
-        impl<'a> VisitMut for ReplaceGenericsForConst<'a> {
-            fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
-                match arg {
-                    syn::GenericArgument::Lifetime(lf) => {
-                        *lf = parse_quote!( 'static );
-                    }
-                    syn::GenericArgument::Type(ty) => {
-                        let is_generic = self
-                            .0
-                            .params
-                            .iter()
-                            .filter_map(|par| match par {
-                                syn::GenericParam::Type(ty) => Some(&ty.ident),
-                                _ => None,
-                            })
-                            .any(|par| {
-                                let par = quote! { #par }.to_string();
-                                let ty = quote! { #ty }.to_string();
-                                par == ty
-                            });
-
-                        if is_generic {
-                            *ty = parse_quote!(::juniper::DefaultScalarValue);
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-
+        let ty = &self.enum_alias_ident;
+        let context = &self.context;
         let scalar = &self.scalar;
         let const_scalar = match scalar {
-            scalar::Type::Concrete(ty) => ty.to_token_stream(),
+            scalar::Type::Concrete(ty) => ty.clone(),
             scalar::Type::ExplicitGeneric(_) | scalar::Type::ImplicitGeneric(_) => {
-                quote! { ::juniper::DefaultScalarValue }
+                parse_quote! { ::juniper::DefaultScalarValue }
             }
         };
 
-        let ty = self.attrs.enum_alias_ident(&self.ident);
-        let context = &self.context;
-        let impl_tys = self.attrs.implementers.iter().collect::<Vec<_>>();
+        let impl_tys = self.implementers.iter().collect::<Vec<_>>();
         let impl_idents = self
-            .attrs
             .implementers
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
@@ -860,6 +794,11 @@ impl Definition {
             if field.is_async && !for_async {
                 return None;
             }
+
+            let name = &field.name;
+            let mut return_ty = field.ty.clone();
+            Self::replace_generics_for_const(&mut return_ty, &generics);
+
             let (trait_name, call_sig) = if for_async {
                 (
                     quote! { AsyncField },
@@ -886,10 +825,6 @@ impl Definition {
                 )
             };
 
-            let name = &field.name;
-            let mut return_ty = field.ty.clone();
-            ReplaceGenericsForConst(&generics).visit_type_mut(&mut return_ty);
-
             let (args_tys, args_names): (Vec<_>, Vec<_>) = field
                 .arguments
                 .iter()
@@ -904,17 +839,14 @@ impl Definition {
                 })
                 .unzip();
 
-            let const_ty_generics = {
-                let mut visitor = GenericsForConst(parse_quote!( <> ));
-                visitor.visit_generics(&self.trait_generics);
-                visitor.0
-            };
+            let const_ty_generics = self.const_trait_generics();
 
-            let unreachable_arm = (self.attrs.implementers.is_empty() || !self.trait_generics.params.is_empty()).then(|| {
+            let unreachable_arm = (self.implementers.is_empty() || !self.trait_generics.params.is_empty()).then(|| {
                 quote! { _ => unreachable!() }
             });
 
             Some(quote! {
+                #[allow(non_snake_case)]
                 impl#impl_generics ::juniper::macros::helper::#trait_name<
                     #scalar,
                     { ::juniper::macros::helper::fnv1a128(#name) }
@@ -987,7 +919,6 @@ impl Definition {
         let scalar = &self.scalar;
 
         let match_arms = self
-            .attrs
             .implementers
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| (&seg.ident, ty)))
@@ -999,11 +930,10 @@ impl Definition {
                 }
             });
 
-        let non_exhaustive_match_arm = (!self.trait_generics.params.is_empty()
-            || self.attrs.implementers.is_empty())
-        .then(|| {
-            quote! { _ => unreachable!(), }
-        });
+        let non_exhaustive_match_arm =
+            (!self.trait_generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+                quote! { _ => unreachable!(), }
+            });
 
         quote! {
             match self {
@@ -1023,7 +953,7 @@ impl Definition {
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
         let resolving_code = gen::async_resolving_code(None);
 
-        let match_arms = self.attrs.implementers.iter().filter_map(|ty| {
+        let match_arms = self.implementers.iter().filter_map(|ty| {
             ty.path.segments.last().map(|ident| {
                 quote! {
                     Self::#ident(v) => {
@@ -1033,11 +963,10 @@ impl Definition {
                 }
             })
         });
-        let non_exhaustive_match_arm = (!self.trait_generics.params.is_empty()
-            || self.attrs.implementers.is_empty())
-        .then(|| {
-            quote! { _ => unreachable!(), }
-        });
+        let non_exhaustive_match_arm =
+            (!self.trait_generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+                quote! { _ => unreachable!(), }
+            });
 
         quote! {
             match self {
@@ -1056,7 +985,7 @@ impl Definition {
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         let resolving_code = gen::sync_resolving_code();
 
-        let match_arms = self.attrs.implementers.iter().filter_map(|ty| {
+        let match_arms = self.implementers.iter().filter_map(|ty| {
             ty.path.segments.last().map(|ident| {
                 quote! {
                     Self::#ident(res) => #resolving_code,
@@ -1064,11 +993,10 @@ impl Definition {
             })
         });
 
-        let non_exhaustive_match_arm = (!self.trait_generics.params.is_empty()
-            || self.attrs.implementers.is_empty())
-        .then(|| {
-            quote! { _ => unreachable!(), }
-        });
+        let non_exhaustive_match_arm =
+            (!self.trait_generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+                quote! { _ => unreachable!(), }
+            });
 
         quote! {
             match self {
@@ -1076,6 +1004,78 @@ impl Definition {
                 #non_exhaustive_match_arm
             }
         }
+    }
+
+    /// Returns trait generics replaced with default values for usage in `const`
+    /// context.
+    #[must_use]
+    fn const_trait_generics(&self) -> syn::PathArguments {
+        struct GenericsForConst(syn::AngleBracketedGenericArguments);
+
+        impl Visit<'_> for GenericsForConst {
+            fn visit_generic_param(&mut self, param: &syn::GenericParam) {
+                let arg = match param {
+                    syn::GenericParam::Lifetime(_) => parse_quote!( 'static ),
+                    syn::GenericParam::Type(ty) => {
+                        if ty.default.is_none() {
+                            parse_quote!(::juniper::DefaultScalarValue)
+                        } else {
+                            return;
+                        }
+                    }
+                    syn::GenericParam::Const(_) => {
+                        // This hack works because only `min_const_generics` are
+                        // enabled for now.
+                        // TODO: replace this once full `const_generics` are
+                        //       available.
+                        //       Maybe with `<_ as Default>::default()`?
+                        parse_quote!({ 0_u8 as _ })
+                    }
+                };
+                self.0.args.push(arg)
+            }
+        }
+
+        let mut visitor = GenericsForConst(parse_quote!( <> ));
+        visitor.visit_generics(&self.trait_generics);
+        syn::PathArguments::AngleBracketed(visitor.0)
+    }
+
+    /// Replaces `generics` in `ty` for usage in `const` context.
+    fn replace_generics_for_const(ty: &mut syn::Type, generics: &syn::Generics) {
+        struct ReplaceGenericsForConst<'a>(&'a syn::Generics);
+
+        impl<'a> VisitMut for ReplaceGenericsForConst<'a> {
+            fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
+                match arg {
+                    syn::GenericArgument::Lifetime(lf) => {
+                        *lf = parse_quote!( 'static );
+                    }
+                    syn::GenericArgument::Type(ty) => {
+                        let is_generic = self
+                            .0
+                            .params
+                            .iter()
+                            .filter_map(|par| match par {
+                                syn::GenericParam::Type(ty) => Some(&ty.ident),
+                                _ => None,
+                            })
+                            .any(|par| {
+                                let par = quote! { #par }.to_string();
+                                let ty = quote! { #ty }.to_string();
+                                par == ty
+                            });
+
+                        if is_generic {
+                            *ty = parse_quote!(());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        ReplaceGenericsForConst(&generics).visit_type_mut(ty)
     }
 
     /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
@@ -1115,8 +1115,7 @@ impl Definition {
                 }
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
-                let ty = self.attrs.enum_alias_ident(&self.ident);
-                // let ty = &self.ident;
+                let ty = &self.enum_alias_ident;
                 let (_, ty_generics, _) = generics.split_for_impl();
 
                 quote! { for<#( #lifetimes ),*> #ty#ty_generics }
@@ -1137,5 +1136,12 @@ impl Definition {
         }
 
         generics
+    }
+
+    /// Indicates whether this [`EnumType`] has non-exhaustive phantom variant
+    /// to hold type parameters.
+    #[must_use]
+    fn has_phantom_variant(&self) -> bool {
+        !self.trait_generics.params.is_empty()
     }
 }
