@@ -286,27 +286,6 @@ fn expand_on_trait_new(
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    // let mut implementers: Vec<_> = attr
-    //     .implementers
-    //     .iter()
-    //     .map(|ty| Implementer {
-    //         ty: ty.as_ref().clone(),
-    //         downcast: None,
-    //         context: None,
-    //         scalar: scalar.clone(),
-    //     })
-    //     .collect();
-    // for (ty, downcast) in &attr.external_downcasts {
-    //     match implementers.iter_mut().find(|i| &i.ty == ty) {
-    //         Some(impler) => {
-    //             impler.downcast = Some(ImplementerDowncast::External {
-    //                 path: downcast.inner().clone(),
-    //             });
-    //         }
-    //         None => err_only_implementer_downcast(&downcast.span_joined()),
-    //     }
-    // }
-
     proc_macro_error::abort_if_dirty();
 
     let renaming = attr
@@ -322,17 +301,6 @@ fn expand_on_trait_new(
                 Some(TraitMethod::Field(f)) => fields.push(f),
                 Some(TraitMethod::Downcast(_d)) => {
                     unimplemented!();
-                    // match implementers.iter_mut().find(|i| i.ty == d.ty) {
-                    //     Some(impler) => {
-                    //         if let Some(external) = &impler.downcast {
-                    //             err_duplicate_downcast(m, external, &impler.ty);
-                    //         } else {
-                    //             impler.downcast = d.downcast;
-                    //             impler.context = d.context;
-                    //         }
-                    //     }
-                    //     None => err_only_implementer_downcast(&m.sig),
-                    // }
                 }
                 _ => {}
             }
@@ -363,15 +331,7 @@ fn expand_on_trait_new(
                 })
             })
         })
-        // .or_else(|| {
-        //     implementers
-        //         .iter()
-        //         .find_map(|impler| impler.context.as_ref())
-        //         .cloned()
-        // })
         .unwrap_or_else(|| parse_quote! { () });
-
-    // let is_trait_object = attr.r#dyn.is_some();
 
     let is_async_trait = attr.asyncness.is_some()
         || ast
@@ -386,22 +346,6 @@ fn expand_on_trait_new(
         syn::TraitItem::Method(m) => m.sig.asyncness.and(m.default.as_ref()).is_some(),
         _ => false,
     });
-
-    // let ty = if is_trait_object {
-    //     Type::TraitObject(Box::new(TraitObjectType::new(
-    //         &ast,
-    //         &attr,
-    //         scalar.clone(),
-    //         context.clone(),
-    //     )))
-    // } else {
-    //     Type::Enum(Box::new(EnumType::new(
-    //         &ast,
-    //         &attr,
-    //         &implementers,
-    //         scalar.clone(),
-    //     )))
-    // };
 
     let enum_alias_ident = attr
         .r#enum
@@ -430,27 +374,6 @@ fn expand_on_trait_new(
             .map(|c| c.inner().clone())
             .collect(),
     };
-
-    // Attach the `juniper::AsDynGraphQLValue` on top of the trait if dynamic dispatch is used.
-    // if is_trait_object {
-    //     ast.attrs.push(parse_quote! {
-    //         #[allow(unused_qualifications, clippy::type_repetition_in_bounds)]
-    //     });
-    //
-    //     let scalar_ty = scalar.generic_ty();
-    //     if !scalar.is_explicit_generic() {
-    //         let default_ty = scalar.default_ty();
-    //         ast.generics
-    //             .params
-    //             .push(parse_quote! { #scalar_ty = #default_ty });
-    //     }
-    //     ast.generics
-    //         .make_where_clause()
-    //         .predicates
-    //         .push(parse_quote! { #scalar_ty: ::juniper::ScalarValue });
-    //     ast.supertraits
-    //         .push(parse_quote! { ::juniper::AsDynGraphQLValue<#scalar_ty> });
-    // }
 
     if is_async_trait {
         if has_default_async_methods {
