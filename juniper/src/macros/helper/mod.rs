@@ -145,13 +145,13 @@ pub const fn number_of_digits(n: u128) -> usize {
 }
 
 pub const fn str_len_from_wrapped_val(ty: Type, v: WrappedValue) -> usize {
-    let mut len = ty.len() + 1; // Type!
+    let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
 
     let mut current_wrap_val = v;
     while current_wrap_val % 10 != 0 {
         match current_wrap_val % 10 {
-            2 => len -= 1, // remove !
-            3 => len += 3, // [Type]!
+            2 => len -= "!".as_bytes().len(),   // remove !
+            3 => len += "[]!".as_bytes().len(), // [Type]!
             _ => {}
         }
 
@@ -231,6 +231,7 @@ pub const fn check_valid_field_args() {
                 if str_eq(base_name, impl_name) {
                     if str_eq(base_type, impl_type) && base_wrap_val == impl_wrap_val {
                         was_found = true;
+                        break;
                     } else {
                         return Err(Error {
                             base: (base_name, base_type, base_wrap_val),
@@ -269,6 +270,7 @@ pub const fn check_valid_field_args() {
                 let (base_name, _, _) = BASE[base_i];
                 if str_eq(base_name, impl_name) {
                     was_found = true;
+                    break;
                 }
                 base_i += 1;
             }
@@ -450,7 +452,7 @@ pub const fn check_valid_field_args() {
 
     match ERROR.cause {
         Cause::TypeMismatch => {
-            panic!(const_concat!(
+            const MSG: &str = const_concat!(
                 "Field `",
                 BASE_NAME,
                 "`: expected type `",
@@ -458,25 +460,28 @@ pub const fn check_valid_field_args() {
                 "`, found: `",
                 IMPL_TYPE_FORMATTED,
                 "`.",
-            ));
+            );
+            panic!("{}", MSG);
         }
         Cause::RequiredField => {
-            panic!(const_concat!(
+            const MSG: &str = const_concat!(
                 "Field `",
                 BASE_NAME,
                 "` of type `",
                 BASE_TYPE_FORMATTED,
                 "` was expected, but not found."
-            ));
+            );
+            panic!("{}", MSG);
         }
         Cause::AdditionalNonNullableField => {
-            panic!(const_concat!(
+            const MSG: &str = const_concat!(
                 "Field `",
                 IMPL_NAME,
                 "` of type `",
                 IMPL_TYPE_FORMATTED,
                 "` not present on the interface and so has to be nullable."
-            ));
+            );
+            panic!("{}", MSG);
         }
     }
 }
