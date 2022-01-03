@@ -93,74 +93,6 @@ pub type Name = &'static str;
 pub type FieldName = u128;
 pub type WrappedValue = u128;
 
-/// Non-cryptographic hash with good dispersion to use [`str`](prim@str) in
-/// const generics. See [spec] for more info.
-///
-/// [spec]: https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-17.html
-pub const fn fnv1a128(str: Name) -> u128 {
-    const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
-    const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
-
-    let bytes = str.as_bytes();
-    let mut hash = FNV_OFFSET_BASIS;
-    let mut i = 0;
-    while i < bytes.len() {
-        hash ^= bytes[i] as u128;
-        hash = hash.wrapping_mul(FNV_PRIME);
-        i += 1;
-    }
-    hash
-}
-
-pub const fn str_eq(l: &str, r: &str) -> bool {
-    let (l, r) = (l.as_bytes(), r.as_bytes());
-
-    if l.len() != r.len() {
-        return false;
-    }
-
-    let mut i = 0;
-    while i < l.len() {
-        if l[i] != r[i] {
-            return false;
-        }
-        i += 1;
-    }
-
-    true
-}
-
-pub const fn number_of_digits(n: u128) -> usize {
-    if n == 0 {
-        return 1;
-    }
-
-    let mut len = 0;
-    let mut current = n;
-    while current % 10 != 0 {
-        len += 1;
-        current /= 10;
-    }
-    len
-}
-
-pub const fn str_len_from_wrapped_val(ty: Type, v: WrappedValue) -> usize {
-    let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
-
-    let mut current_wrap_val = v;
-    while current_wrap_val % 10 != 0 {
-        match current_wrap_val % 10 {
-            2 => len -= "!".as_bytes().len(),   // remove !
-            3 => len += "[]!".as_bytes().len(), // [Type]!
-            _ => {}
-        }
-
-        current_wrap_val /= 10;
-    }
-
-    len
-}
-
 #[macro_export]
 macro_rules! const_concat {
     ($($s:expr),* $(,)?) => {{
@@ -278,16 +210,92 @@ macro_rules! format_type {
 }
 
 #[macro_export]
-macro_rules! check_field_args {
+macro_rules! assert_field {
     (
-        $field_name: expr,
-        (
-            $base_name: expr,
-            $base_args: expr $(,)?
-        ), (
-            $impl_name: expr,
-            $impl_args: expr $(,)?
-        ) $(,)?) => {
+        $base_ty: ty,
+        $impl_ty: ty,
+        $scalar: ty,
+        $field_name: expr $(,)?
+    ) => {
+        $crate::assert_field_args!($base_ty, $impl_ty, $scalar, $field_name);
+        $crate::assert_subtype!($base_ty, $impl_ty, $scalar, $field_name);
+    };
+}
+
+#[macro_export]
+macro_rules! assert_subtype {
+    (
+        $base_ty: ty,
+        $impl_ty: ty,
+        $scalar: ty,
+        $field_name: expr $(,)?
+    ) => {
+        const _: () = {
+            const FIELD_NAME: $crate::macros::helper::Name =
+                $field_name;
+            const BASE_RETURN_WRAPPED_VAL: $crate::macros::helper::WrappedValue =
+                <$base_ty as $crate::macros::helper::AsyncField<
+                    $scalar,
+                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                >>::WRAPPED_VALUE;
+            const IMPL_RETURN_WRAPPED_VAL: $crate::macros::helper::WrappedValue =
+                <$impl_ty as $crate::macros::helper::AsyncField<
+                    $scalar,
+                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                >>::WRAPPED_VALUE;
+
+            const BASE_TY: $crate::macros::helper::Type =
+                <$base_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
+            const IMPL_TY: $crate::macros::helper::Type =
+                <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
+
+            const BASE_RETURN_SUB_TYPES: $crate::macros::helper::Types =
+                <$base_ty as $crate::macros::helper::AsyncField<
+                    $scalar,
+                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                >>::SUB_TYPES;
+
+            const BASE_RETURN_TY: $crate::macros::helper::Type =
+                <$base_ty as $crate::macros::helper::AsyncField<
+                    $scalar,
+                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                >>::TYPE;
+            const IMPL_RETURN_TY: $crate::macros::helper::Type =
+                <$impl_ty as $crate::macros::helper::AsyncField<
+                    $scalar,
+                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                >>::TYPE;
+
+            let is_subtype = $crate::macros::helper::exists(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
+                && $crate::macros::helper::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
+            if !is_subtype {
+                const MSG: &str = $crate::const_concat!(
+                    "Failed to implement interface `",
+                    BASE_TY,
+                    "` on `",
+                    IMPL_TY,
+                    "`: Field `",
+                    FIELD_NAME,
+                    "`: implementor is expected to return a subtype of interface's return object: `",
+                    $crate::format_type!(IMPL_RETURN_TY, IMPL_RETURN_WRAPPED_VAL),
+                    "` is not a subtype of `",
+                    $crate::format_type!(BASE_RETURN_TY, BASE_RETURN_WRAPPED_VAL),
+                    "`.",
+                );
+                ::std::panic!("{}", MSG);
+            }
+        };
+    };
+}
+
+#[macro_export]
+macro_rules! assert_field_args {
+    (
+        $base_ty: ty,
+        $impl_ty: ty,
+        $scalar: ty,
+        $field_name: expr $(,)?
+    ) => {
         const _: () = {
             type FullArg = (
                 $crate::macros::helper::Name,
@@ -296,10 +304,16 @@ macro_rules! check_field_args {
             );
 
             const FIELD_NAME: &str = $field_name;
-            const BASE_NAME: &str = $base_name;
-            const IMPL_NAME: &str = $impl_name;
-            const BASE_ARGS: &[FullArg] = $base_args;
-            const IMPL_ARGS: &[FullArg] = $impl_args;
+            const BASE_NAME: &str = <$base_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
+            const IMPL_NAME: &str = <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
+            const BASE_ARGS: &[FullArg] = <$base_ty as $crate::macros::helper::AsyncField<
+                $scalar,
+                { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+            >>::ARGUMENTS;
+            const IMPL_ARGS: &[FullArg] = <$impl_ty as $crate::macros::helper::AsyncField<
+                $scalar,
+                { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+            >>::ARGUMENTS;
 
             struct Error {
                 cause: Cause,
@@ -401,9 +415,9 @@ macro_rules! check_field_args {
                 const BASE_ARG_NAME: &str = ERROR.base.0;
                 const IMPL_ARG_NAME: &str = ERROR.implementation.0;
 
-                const BASE_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.base.1, ERROR.base.2,);
+                const BASE_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.base.1, ERROR.base.2);
                 const IMPL_TYPE_FORMATTED: &str =
-                    $crate::format_type!(ERROR.implementation.1, ERROR.implementation.2,);
+                    $crate::format_type!(ERROR.implementation.1, ERROR.implementation.2);
 
                 const PREFIX: &str = $crate::const_concat!(
                     "Failed to implement interface `",
@@ -448,78 +462,6 @@ macro_rules! check_field_args {
                         )
                     }
                 };
-                ::std::panic!("{}", MSG);
-            }
-        };
-    };
-}
-
-pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
-    let ty_current = ty % 10;
-    let subtype_current = subtype % 10;
-
-    if ty_current == subtype_current {
-        if ty_current == 1 {
-            true
-        } else {
-            can_be_subtype(ty / 10, subtype / 10)
-        }
-    } else if ty_current == 2 {
-        can_be_subtype(ty / 10, subtype)
-    } else {
-        false
-    }
-}
-
-pub const fn exists(val: Type, arr: Types) -> bool {
-    let mut i = 0;
-    while i < arr.len() {
-        if str_eq(val, arr[i]) {
-            return true;
-        }
-        i += 1;
-    }
-    false
-}
-
-pub const fn is_subtype(
-    possible_subtypes: Types,
-    wrapped_type: WrappedValue,
-    subtype: Type,
-    wrapped_subtype: WrappedValue,
-) -> bool {
-    exists(subtype, possible_subtypes) && can_be_subtype(wrapped_type, wrapped_subtype)
-}
-
-#[macro_export]
-macro_rules! check_subtype {
-    (
-        $field_name: expr,
-        $base_name: expr,
-        $base_ty: expr,
-        $base_wrapped_val: expr,
-        $possible_subtypes: expr,
-        $impl_name: expr,
-        $impl_ty: expr,
-        $impl_wrapped_val: expr $(,)?
-    ) => {
-        const _: () = {
-            let is_subtype = $crate::macros::helper::exists($impl_ty, $possible_subtypes)
-                && $crate::macros::helper::can_be_subtype($base_wrapped_val, $impl_wrapped_val);
-            if !is_subtype {
-                const MSG: &str = $crate::const_concat!(
-                    "Failed to implement interface `",
-                    $base_name,
-                    "` on `",
-                    $impl_name,
-                    "`: Field `",
-                    $field_name,
-                    "` return object is `",
-                    $crate::format_type!($base_ty, $base_wrapped_val),
-                    "`, which is not a subtype of `",
-                    $crate::format_type!($impl_ty, $impl_wrapped_val),
-                    "`.",
-                );
                 ::std::panic!("{}", MSG);
             }
         };
@@ -718,4 +660,86 @@ pub trait AsyncField<S, const N: FieldName> {
         args: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
     ) -> BoxFuture<'b, ExecutionResult<S>>;
+}
+
+/// Non-cryptographic hash with good dispersion to use [`str`](prim@str) in
+/// const generics. See [spec] for more info.
+///
+/// [spec]: https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-17.html
+pub const fn fnv1a128(str: Name) -> u128 {
+    const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
+    const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
+
+    let bytes = str.as_bytes();
+    let mut hash = FNV_OFFSET_BASIS;
+    let mut i = 0;
+    while i < bytes.len() {
+        hash ^= bytes[i] as u128;
+        hash = hash.wrapping_mul(FNV_PRIME);
+        i += 1;
+    }
+    hash
+}
+
+pub const fn str_eq(l: &str, r: &str) -> bool {
+    let (l, r) = (l.as_bytes(), r.as_bytes());
+
+    if l.len() != r.len() {
+        return false;
+    }
+
+    let mut i = 0;
+    while i < l.len() {
+        if l[i] != r[i] {
+            return false;
+        }
+        i += 1;
+    }
+
+    true
+}
+
+pub const fn str_len_from_wrapped_val(ty: Type, v: WrappedValue) -> usize {
+    let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
+
+    let mut current_wrap_val = v;
+    while current_wrap_val % 10 != 0 {
+        match current_wrap_val % 10 {
+            2 => len -= "!".as_bytes().len(),   // remove !
+            3 => len += "[]!".as_bytes().len(), // [Type]!
+            _ => {}
+        }
+
+        current_wrap_val /= 10;
+    }
+
+    len
+}
+
+pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
+    let ty_current = ty % 10;
+    let subtype_current = subtype % 10;
+
+    if ty_current == subtype_current {
+        if ty_current == 1 {
+            true
+        } else {
+            can_be_subtype(ty / 10, subtype / 10)
+        }
+    } else if ty_current == 2 {
+        can_be_subtype(ty / 10, subtype)
+    } else {
+        false
+    }
+}
+
+pub const fn exists(val: Type, arr: Types) -> bool {
+    let mut i = 0;
+    while i < arr.len() {
+        if str_eq(val, arr[i]) {
+            return true;
+        }
+        i += 1;
+    }
+    false
 }

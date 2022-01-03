@@ -770,7 +770,6 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_fields(&self, for_async: bool) -> TokenStream {
         let ty = &self.enum_alias_ident;
-        let name = &self.name;
         let context = &self.context;
         let scalar = &self.scalar;
         let const_scalar = match scalar {
@@ -791,148 +790,107 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
 
-        self.fields.iter().filter_map(|field| {
-            if field.is_async && !for_async {
-                return None;
-            }
+        self.fields
+            .iter()
+            .filter_map(|field| {
+                if field.is_async && !for_async {
+                    return None;
+                }
 
-            let field_name = &field.name;
-            let mut return_ty = field.ty.clone();
-            Self::replace_generics_for_const(&mut return_ty, &generics);
+                let field_name = &field.name;
+                let mut return_ty = field.ty.clone();
+                Self::replace_generics_for_const(&mut return_ty, &generics);
 
-            let (trait_name, call_sig) = if for_async {
-                (
-                    quote! { AsyncField },
-                    quote! {
-                        fn call<'b>(
-                            &'b self,
-                            info: &'b Self::TypeInfo,
-                            args: &'b ::juniper::Arguments<#scalar>,
-                            executor: &'b ::juniper::Executor<Self::Context, #scalar>,
-                        ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>>
-                    },
-                )
-            } else {
-                (
-                    quote! { Field },
-                    quote! {
-                        fn call(
-                            &self,
-                            info: &Self::TypeInfo,
-                            args: &::juniper::Arguments<#scalar>,
-                            executor: &::juniper::Executor<Self::Context, #scalar>,
-                        ) -> ::juniper::ExecutionResult<#scalar>
-                    },
-                )
-            };
+                let (trait_name, call_sig) = if for_async {
+                    (
+                        quote! { AsyncField },
+                        quote! {
+                            fn call<'b>(
+                                &'b self,
+                                info: &'b Self::TypeInfo,
+                                args: &'b ::juniper::Arguments<#scalar>,
+                                executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                            ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>>
+                        },
+                    )
+                } else {
+                    (
+                        quote! { Field },
+                        quote! {
+                            fn call(
+                                &self,
+                                info: &Self::TypeInfo,
+                                args: &::juniper::Arguments<#scalar>,
+                                executor: &::juniper::Executor<Self::Context, #scalar>,
+                            ) -> ::juniper::ExecutionResult<#scalar>
+                        },
+                    )
+                };
 
-            let (args_tys, args_names): (Vec<_>, Vec<_>) = field
-                .arguments
-                .iter()
-                .flat_map(|vec| vec.iter())
-                .filter_map(|arg| {
-                    match arg {
-                        field::MethodArgument::Regular(arg) => {
-                            Some((&arg.ty, &arg.name))
-                        }
+                let (args_tys, args_names): (Vec<_>, Vec<_>) = field
+                    .arguments
+                    .iter()
+                    .flat_map(|vec| vec.iter())
+                    .filter_map(|arg| match arg {
+                        field::MethodArgument::Regular(arg) => Some((&arg.ty, &arg.name)),
                         _ => None,
+                    })
+                    .unzip();
+
+                let const_ty_generics = self.const_trait_generics();
+
+                let unreachable_arm = (self.implementers.is_empty()
+                    || !self.trait_generics.params.is_empty())
+                .then(|| {
+                    quote! { _ => unreachable!() }
+                });
+
+                Some(quote! {
+                    #[allow(non_snake_case)]
+                    impl#impl_generics ::juniper::macros::helper::#trait_name<
+                        #scalar,
+                        { ::juniper::macros::helper::fnv1a128(#field_name) }
+                    > for #ty#ty_generics #where_clause {
+                        type Context = #context;
+                        type TypeInfo = ();
+                        const TYPE: ::juniper::macros::helper::Type =
+                            <#return_ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
+                        const SUB_TYPES: ::juniper::macros::helper::Types =
+                            <#return_ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
+                        const WRAPPED_VALUE: ::juniper::macros::helper::WrappedValue =
+                            <#return_ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
+                        const ARGUMENTS: &'static [(
+                            ::juniper::macros::helper::Name,
+                            ::juniper::macros::helper::Type,
+                            ::juniper::macros::helper::WrappedValue,
+                        )] = &[#((
+                            #args_names,
+                            <#args_tys as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
+                            <#args_tys as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
+                        )),*];
+
+                        #call_sig {
+                            match self {
+                                #(#ty::#impl_idents(v) => {
+                                    ::juniper::assert_field!(
+                                        #ty#const_ty_generics,
+                                        #impl_tys,
+                                        #const_scalar,
+                                        #field_name,
+                                    );
+
+                                    <_ as ::juniper::macros::helper::#trait_name<
+                                        #scalar,
+                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                    >>::call(v, info, args, executor)
+                                })*
+                                #unreachable_arm
+                            }
+                        }
                     }
                 })
-                .unzip();
-
-            let const_ty_generics = self.const_trait_generics();
-
-            let unreachable_arm = (self.implementers.is_empty() || !self.trait_generics.params.is_empty()).then(|| {
-                quote! { _ => unreachable!() }
-            });
-
-            Some(quote! {
-                #[allow(non_snake_case)]
-                impl#impl_generics ::juniper::macros::helper::#trait_name<
-                    #scalar,
-                    { ::juniper::macros::helper::fnv1a128(#field_name) }
-                > for #ty#ty_generics #where_clause {
-                    type Context = #context;
-                    type TypeInfo = ();
-                    const TYPE: ::juniper::macros::helper::Type =
-                        <#return_ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
-                    const SUB_TYPES: ::juniper::macros::helper::Types =
-                        <#return_ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
-                    const WRAPPED_VALUE: ::juniper::macros::helper::WrappedValue =
-                        <#return_ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
-                    const ARGUMENTS: &'static [(
-                        ::juniper::macros::helper::Name,
-                        ::juniper::macros::helper::Type,
-                        ::juniper::macros::helper::WrappedValue,
-                    )] = &[#((
-                        #args_names,
-                        <#args_tys as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                        <#args_tys as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
-                    )),*];
-
-                    #call_sig {
-                        match self {
-                            #(#ty::#impl_idents(v) => {
-                                // const _: () = ::std::assert!(::juniper::macros::helper::is_subtype(
-                                //     <#return_ty as ::juniper::macros::helper::BaseSubTypes>::NAMES,
-                                //     <#return_ty as ::juniper::macros::helper::WrappedType>::VALUE,
-                                //     <#impl_tys as ::juniper::macros::helper::#trait_name<
-                                //         #const_scalar,
-                                //         { ::juniper::macros::helper::fnv1a128(#field_name) },
-                                //     >>::TYPE,
-                                //     <#impl_tys as ::juniper::macros::helper::#trait_name<
-                                //         #const_scalar,
-                                //         { ::juniper::macros::helper::fnv1a128(#field_name) },
-                                //     >>::WRAPPED_VALUE,
-                                // ));
-                                ::juniper::check_subtype!(
-                                    #field_name,
-
-                                    #name,
-                                    <#return_ty as ::juniper::macros::helper::BaseType<#const_scalar>>::NAME,
-                                    <#return_ty as ::juniper::macros::helper::WrappedType<#const_scalar>>::VALUE,
-                                    <#return_ty as ::juniper::macros::helper::BaseSubTypes>::NAMES,
-
-                                    <#impl_tys as ::juniper::macros::helper::BaseType<#const_scalar>>::NAME,
-                                    <#impl_tys as ::juniper::macros::helper::#trait_name<
-                                        #const_scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
-                                    >>::TYPE,
-                                    <#impl_tys as ::juniper::macros::helper::#trait_name<
-                                        #const_scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
-                                    >>::WRAPPED_VALUE,
-                                );
-                                ::juniper::check_field_args!(
-                                    #field_name,
-                                    (
-                                        #name,
-                                        <#ty#const_ty_generics as ::juniper::macros::helper::#trait_name<
-                                            #const_scalar,
-                                            { ::juniper::macros::helper::fnv1a128(#field_name) },
-                                        >>::ARGUMENTS,
-                                    ),
-                                    (
-                                        <#impl_tys as ::juniper::macros::helper::BaseType<#const_scalar>>::NAME,
-                                        <#impl_tys as ::juniper::macros::helper::#trait_name<
-                                            #const_scalar,
-                                            { ::juniper::macros::helper::fnv1a128(#field_name) },
-                                        >>::ARGUMENTS,
-                                    ),
-                                );
-
-                                <_ as ::juniper::macros::helper::#trait_name<
-                                    #scalar,
-                                    { ::juniper::macros::helper::fnv1a128(#field_name) },
-                                >>::call(v, info, args, executor)
-                            })*
-                            #unreachable_arm
-                        }
-                    }
-                }
             })
-        })
-        .collect()
+            .collect()
     }
 
     /// Returns generated code for the [`GraphQLValue::concrete_type_name`][0]
