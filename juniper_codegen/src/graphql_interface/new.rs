@@ -770,6 +770,7 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_fields(&self, for_async: bool) -> TokenStream {
         let ty = &self.enum_alias_ident;
+        let name = &self.name;
         let context = &self.context;
         let scalar = &self.scalar;
         let const_scalar = match scalar {
@@ -795,7 +796,7 @@ impl Definition {
                 return None;
             }
 
-            let name = &field.name;
+            let field_name = &field.name;
             let mut return_ty = field.ty.clone();
             Self::replace_generics_for_const(&mut return_ty, &generics);
 
@@ -849,7 +850,7 @@ impl Definition {
                 #[allow(non_snake_case)]
                 impl#impl_generics ::juniper::macros::helper::#trait_name<
                     #scalar,
-                    { ::juniper::macros::helper::fnv1a128(#name) }
+                    { ::juniper::macros::helper::fnv1a128(#field_name) }
                 > for #ty#ty_generics #where_clause {
                     type Context = #context;
                     type TypeInfo = ();
@@ -877,27 +878,34 @@ impl Definition {
                                     <#return_ty as ::juniper::macros::helper::WrappedType>::VALUE,
                                     <#impl_tys as ::juniper::macros::helper::#trait_name<
                                         #const_scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#name) },
+                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
                                     >>::TYPE,
                                     <#impl_tys as ::juniper::macros::helper::#trait_name<
                                         #const_scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#name) },
+                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
                                     >>::WRAPPED_VALUE,
                                 ));
-                                const _: () = ::std::assert!(::juniper::macros::helper::is_valid_field_args(
-                                    <#ty#const_ty_generics as ::juniper::macros::helper::#trait_name<
-                                        #const_scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#name) },
-                                    >>::ARGUMENTS,
-                                    <#impl_tys as ::juniper::macros::helper::#trait_name<
-                                        #const_scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#name) },
-                                    >>::ARGUMENTS,
-                                ));
+                                ::juniper::check_field_args!(
+                                    #field_name,
+                                    (
+                                        #name,
+                                        <#ty#const_ty_generics as ::juniper::macros::helper::#trait_name<
+                                            #const_scalar,
+                                            { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                        >>::ARGUMENTS,
+                                    ),
+                                    (
+                                        <#impl_tys as ::juniper::macros::helper::BaseType<#const_scalar>>::NAME,
+                                        <#impl_tys as ::juniper::macros::helper::#trait_name<
+                                            #const_scalar,
+                                            { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                        >>::ARGUMENTS,
+                                    ),
+                                );
 
                                 <_ as ::juniper::macros::helper::#trait_name<
                                     #scalar,
-                                    { ::juniper::macros::helper::fnv1a128(#name) },
+                                    { ::juniper::macros::helper::fnv1a128(#field_name) },
                                 >>::call(v, info, args, executor)
                             })*
                             #unreachable_arm

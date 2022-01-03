@@ -2022,7 +2022,7 @@ mod switched_context {
 
         async fn switch_res_opt<'e, S: ScalarValue>(
             &self,
-            executor: &'e Executor<'e, 'e, CustomContext, S>,
+            executor: &'e Executor<'_, '_, CustomContext, S>,
         ) -> FieldResult<Option<(&'e CustomContext, Droid)>> {
             Ok(Some((executor.context(), Droid { id: 3 })))
         }

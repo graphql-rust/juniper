@@ -2,7 +2,7 @@
 
 pub mod subscription;
 
-use std::{fmt, mem, rc::Rc, sync::Arc};
+use std::{fmt, rc::Rc, sync::Arc};
 
 use futures::future::{self, BoxFuture};
 
@@ -161,6 +161,7 @@ pub const fn str_len_from_wrapped_val(ty: Type, v: WrappedValue) -> usize {
     len
 }
 
+#[macro_export]
 macro_rules! const_concat {
     ($($s:expr),* $(,)?) => {{
         const LEN: usize = 0 $(+ $s.len())*;
@@ -184,347 +185,274 @@ macro_rules! const_concat {
     }};
 }
 
-const _: () = check_valid_field_args();
+#[macro_export]
+macro_rules! format_type {
+    ($ty: expr) => {{
+        const TYPE: (
+            $crate::macros::helper::Name,
+            $crate::macros::helper::Type,
+            $crate::macros::helper::WrappedValue,
+        ) = $ty;
+        const RES_LEN: usize = $crate::macros::helper::str_len_from_wrapped_val(TYPE.1, TYPE.2);
 
-pub const fn check_valid_field_args() {
-    const BASE: &[(Name, Type, WrappedValue)] = &[("test", "String", 13)];
-    const IMPL: &[(Name, Type, WrappedValue)] =
-        &[("test", "String", 123), ("additional", "String", 12)];
+        const OPENING_BRACKET: &str = "[";
+        const CLOSING_BRACKET: &str = "]";
+        const BANG: &str = "!";
 
-    const OPENING_BRACKET: &str = "[";
-    const CLOSING_BRACKET: &str = "]";
-    const BANG: &str = "!";
+        const fn format_type_arr() -> [u8; RES_LEN] {
+            let (_, ty, wrap_val) = TYPE;
+            let mut type_arr: [u8; RES_LEN] = [0; RES_LEN];
 
-    struct Error {
-        base: (Name, Type, WrappedValue),
-        implementation: (Name, Type, WrappedValue),
-        cause: Cause,
-    }
+            let mut current_start = 0;
+            let mut current_end = RES_LEN - 1;
+            let mut current_wrap_val = wrap_val;
+            let mut is_null = false;
+            while current_wrap_val % 10 != 0 {
+                match current_wrap_val % 10 {
+                    2 => is_null = true,
+                    3 => {
+                        if is_null {
+                            let mut i = 0;
+                            while i < OPENING_BRACKET.as_bytes().len() {
+                                type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
+                                i += 1;
+                            }
+                            current_start += i;
+                            i = 0;
+                            while i < CLOSING_BRACKET.as_bytes().len() {
+                                type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
+                                    CLOSING_BRACKET.as_bytes()[i];
+                                i += 1;
+                            }
+                            current_end -= i;
+                        } else {
+                            let mut i = 0;
+                            while i < OPENING_BRACKET.as_bytes().len() {
+                                type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
+                                i += 1;
+                            }
+                            current_start += i;
+                            i = 0;
+                            while i < BANG.as_bytes().len() {
+                                type_arr[current_end - BANG.as_bytes().len() + i + 1] =
+                                    BANG.as_bytes()[i];
+                                i += 1;
+                            }
+                            current_end -= i;
+                            i = 0;
+                            while i < CLOSING_BRACKET.as_bytes().len() {
+                                type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
+                                    CLOSING_BRACKET.as_bytes()[i];
+                                i += 1;
+                            }
+                            current_end -= i;
+                        }
+                        is_null = false;
+                    }
+                    _ => {}
+                }
 
-    enum Cause {
-        RequiredField,
-        AdditionalNonNullableField,
-        TypeMismatch,
-    }
+                current_wrap_val /= 10;
+            }
 
-    const fn unwrap_error(v: Result<(), Error>) -> Error {
-        match v {
-            Ok(()) => Error {
-                base: ("empty", "empty", 1),
-                implementation: ("empty", "empty", 1),
-                cause: Cause::TypeMismatch,
-            },
-            Err(err) => err,
+            let mut i = 0;
+            while i < ty.as_bytes().len() {
+                type_arr[current_start + i] = ty.as_bytes()[i];
+                i += 1;
+            }
+            i = 0;
+            if !is_null {
+                while i < BANG.as_bytes().len() {
+                    type_arr[current_end - BANG.as_bytes().len() + i + 1] = BANG.as_bytes()[i];
+                    i += 1;
+                }
+            }
+
+            type_arr
         }
-    }
 
-    const fn check() -> Result<(), Error> {
-        let mut base_i = 0;
-        while base_i < BASE.len() {
-            let (base_name, base_type, base_wrap_val) = BASE[base_i];
+        const TYPE_ARR: [u8; RES_LEN] = format_type_arr();
+        // SAFETY: This is safe, as `TYPE_ARR` was formatted from `TYPE.Name`,
+        //         `[`, `]` and `!`.
+        const TYPE_FORMATTED: &str = unsafe { ::std::mem::transmute(TYPE_ARR.as_slice()) };
+        TYPE_FORMATTED
+    }};
+}
 
-            let mut impl_i = 0;
-            let mut was_found = false;
-            while impl_i < IMPL.len() {
-                let (impl_name, impl_type, impl_wrap_val) = IMPL[impl_i];
+#[macro_export]
+macro_rules! check_field_args {
+    (
+        $field_name: expr,
+        (
+            $base_name: expr,
+            $base_args: expr $(,)?
+        ), (
+            $impl_name: expr,
+            $impl_args: expr $(,)?
+        ) $(,)?) => {
+        const _: () = {
+            type FullArg = (
+                $crate::macros::helper::Name,
+                $crate::macros::helper::Type,
+                $crate::macros::helper::WrappedValue,
+            );
 
-                if str_eq(base_name, impl_name) {
-                    if str_eq(base_type, impl_type) && base_wrap_val == impl_wrap_val {
-                        was_found = true;
-                        break;
-                    } else {
+            const FIELD_NAME: &str = $field_name;
+            const BASE_NAME: &str = $base_name;
+            const IMPL_NAME: &str = $impl_name;
+            const BASE_ARGS: &[FullArg] = $base_args;
+            const IMPL_ARGS: &[FullArg] = $impl_args;
+
+            struct Error {
+                cause: Cause,
+                base: FullArg,
+                implementation: FullArg,
+            }
+
+            enum Cause {
+                RequiredField,
+                AdditionalNonNullableField,
+                TypeMismatch,
+            }
+
+            const fn unwrap_error(v: ::std::result::Result<(), Error>) -> Error {
+                match v {
+                    Ok(()) => Error {
+                        cause: Cause::RequiredField,
+                        base: ("unreachable", "unreachable", 1),
+                        implementation: ("unreachable", "unreachable", 1),
+                    },
+                    Err(err) => err,
+                }
+            }
+
+            const fn check() -> Result<(), Error> {
+                let mut base_i = 0;
+                while base_i < BASE_ARGS.len() {
+                    let (base_name, base_type, base_wrap_val) = BASE_ARGS[base_i];
+
+                    let mut impl_i = 0;
+                    let mut was_found = false;
+                    while impl_i < IMPL_ARGS.len() {
+                        let (impl_name, impl_type, impl_wrap_val) = IMPL_ARGS[impl_i];
+
+                        if $crate::macros::helper::str_eq(base_name, impl_name) {
+                            if $crate::macros::helper::str_eq(base_type, impl_type)
+                                && base_wrap_val == impl_wrap_val
+                            {
+                                was_found = true;
+                                break;
+                            } else {
+                                return Err(Error {
+                                    cause: Cause::TypeMismatch,
+                                    base: (base_name, base_type, base_wrap_val),
+                                    implementation: (impl_name, impl_type, impl_wrap_val),
+                                });
+                            }
+                        }
+
+                        impl_i += 1;
+                    }
+
+                    if !was_found {
                         return Err(Error {
+                            cause: Cause::RequiredField,
                             base: (base_name, base_type, base_wrap_val),
-                            implementation: (impl_name, impl_type, impl_wrap_val),
-                            cause: Cause::TypeMismatch,
+                            implementation: (base_name, base_type, base_wrap_val),
+                        });
+                    }
+
+                    base_i += 1;
+                }
+
+                let mut impl_i = 0;
+                while impl_i < IMPL_ARGS.len() {
+                    let (impl_name, impl_type, impl_wrapped_val) = IMPL_ARGS[impl_i];
+                    impl_i += 1;
+
+                    if impl_wrapped_val % 10 == 2 {
+                        continue;
+                    }
+
+                    let mut base_i = 0;
+                    let mut was_found = false;
+                    while base_i < BASE_ARGS.len() {
+                        let (base_name, _, _) = BASE_ARGS[base_i];
+                        if $crate::macros::helper::str_eq(base_name, impl_name) {
+                            was_found = true;
+                            break;
+                        }
+                        base_i += 1;
+                    }
+                    if !was_found {
+                        return Err(Error {
+                            cause: Cause::AdditionalNonNullableField,
+                            base: (impl_name, impl_type, impl_wrapped_val),
+                            implementation: (impl_name, impl_type, impl_wrapped_val),
                         });
                     }
                 }
 
-                impl_i += 1;
+                Ok(())
             }
 
-            if !was_found {
-                return Err(Error {
-                    base: (base_name, base_type, base_wrap_val),
-                    implementation: (base_name, base_type, base_wrap_val),
-                    cause: Cause::RequiredField,
-                });
-            }
+            const RES: ::std::result::Result<(), Error> = check();
+            if RES.is_err() {
+                const ERROR: Error = unwrap_error(RES);
 
-            base_i += 1;
-        }
+                const BASE_ARG_NAME: &str = ERROR.base.0;
+                const IMPL_ARG_NAME: &str = ERROR.implementation.0;
 
-        let mut impl_i = 0;
-        while impl_i < IMPL.len() {
-            let (impl_name, impl_type, impl_wrapped_val) = IMPL[impl_i];
-            impl_i += 1;
+                const BASE_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.base);
+                const IMPL_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.implementation);
 
-            if impl_wrapped_val % 10 == 2 {
-                continue;
-            }
-
-            let mut base_i = 0;
-            let mut was_found = false;
-            while base_i < BASE.len() {
-                let (base_name, _, _) = BASE[base_i];
-                if str_eq(base_name, impl_name) {
-                    was_found = true;
-                    break;
-                }
-                base_i += 1;
-            }
-            if !was_found {
-                return Err(Error {
-                    base: (impl_name, impl_type, impl_wrapped_val),
-                    implementation: (impl_name, impl_type, impl_wrapped_val),
-                    cause: Cause::AdditionalNonNullableField,
-                });
-            }
-        }
-
-        Ok(())
-    }
-
-    const RES: Result<(), Error> = check();
-    if RES.is_ok() {
-        return;
-    }
-
-    const ERROR: Error = unwrap_error(RES);
-
-    const IMPL_NAME: &str = ERROR.implementation.0;
-    const IMPL_TYPE_LEN: usize =
-        str_len_from_wrapped_val(ERROR.implementation.1, ERROR.implementation.2);
-
-    const BASE_NAME: &str = ERROR.base.0;
-    const BASE_TYPE_LEN: usize = str_len_from_wrapped_val(ERROR.base.1, ERROR.base.2);
-
-    const fn format_impl_type() -> [u8; IMPL_TYPE_LEN] {
-        let (_, impl_type, impl_wrap_val) = ERROR.implementation;
-        let mut impl_type_arr: [u8; IMPL_TYPE_LEN] = [0; IMPL_TYPE_LEN];
-
-        let mut current_start = 0;
-        let mut current_end = IMPL_TYPE_LEN - 1;
-        let mut current_wrap_val = impl_wrap_val;
-        let mut is_null = false;
-        while current_wrap_val % 10 != 0 {
-            match current_wrap_val % 10 {
-                2 => is_null = true,
-                3 => {
-                    if is_null {
-                        let mut i = 0;
-                        while i < OPENING_BRACKET.as_bytes().len() {
-                            impl_type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_start += i;
-                        i = 0;
-                        while i < CLOSING_BRACKET.as_bytes().len() {
-                            impl_type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                CLOSING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
-                    } else {
-                        let mut i = 0;
-                        while i < OPENING_BRACKET.as_bytes().len() {
-                            impl_type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_start += i;
-                        i = 0;
-                        while i < BANG.as_bytes().len() {
-                            impl_type_arr[current_end - BANG.as_bytes().len() + i + 1] =
-                                BANG.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
-                        i = 0;
-                        while i < CLOSING_BRACKET.as_bytes().len() {
-                            impl_type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                CLOSING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
+                const PREFIX: &str = $crate::const_concat!(
+                    "Failed to implement interface `",
+                    BASE_NAME,
+                    "` on object `",
+                    IMPL_NAME,
+                    "`: Field `",
+                    FIELD_NAME,
+                    "`: ",
+                );
+                const MSG: &str = match ERROR.cause {
+                    Cause::TypeMismatch => {
+                        $crate::const_concat!(
+                            PREFIX,
+                            "Argument `",
+                            BASE_ARG_NAME,
+                            "`: expected type `",
+                            BASE_TYPE_FORMATTED,
+                            "`, found: `",
+                            IMPL_TYPE_FORMATTED,
+                            "`.",
+                        )
                     }
-                    is_null = false;
-                }
-                _ => {}
-            }
-
-            current_wrap_val /= 10;
-        }
-
-        let mut i = 0;
-        while i < impl_type.as_bytes().len() {
-            impl_type_arr[current_start + i] = impl_type.as_bytes()[i];
-            i += 1;
-        }
-        i = 0;
-        if !is_null {
-            while i < BANG.as_bytes().len() {
-                impl_type_arr[current_end - BANG.as_bytes().len() + i + 1] = BANG.as_bytes()[i];
-                i += 1;
-            }
-        }
-
-        impl_type_arr
-    }
-
-    const IMPL_TYPE_ARR: [u8; IMPL_TYPE_LEN] = format_impl_type();
-    const IMPL_TYPE_FORMATTED: &str = unsafe { mem::transmute(IMPL_TYPE_ARR.as_slice()) };
-
-    const fn format_base_type() -> [u8; BASE_TYPE_LEN] {
-        let (_, base_type, base_wrap_val) = ERROR.base;
-        let mut base_type_arr: [u8; BASE_TYPE_LEN] = [0; BASE_TYPE_LEN];
-
-        let mut current_start = 0;
-        let mut current_end = BASE_TYPE_LEN - 1;
-        let mut current_wrap_val = base_wrap_val;
-        let mut is_null = false;
-        while current_wrap_val % 10 != 0 {
-            match current_wrap_val % 10 {
-                2 => is_null = true,
-                3 => {
-                    if is_null {
-                        let mut i = 0;
-                        while i < OPENING_BRACKET.as_bytes().len() {
-                            base_type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_start += i;
-                        i = 0;
-                        while i < CLOSING_BRACKET.as_bytes().len() {
-                            base_type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                CLOSING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
-                    } else {
-                        let mut i = 0;
-                        while i < OPENING_BRACKET.as_bytes().len() {
-                            base_type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_start += i;
-                        i = 0;
-                        while i < BANG.as_bytes().len() {
-                            base_type_arr[current_end - BANG.as_bytes().len() + i + 1] =
-                                BANG.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
-                        i = 0;
-                        while i < CLOSING_BRACKET.as_bytes().len() {
-                            base_type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                CLOSING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
+                    Cause::RequiredField => {
+                        $crate::const_concat!(
+                            PREFIX,
+                            "Argument `",
+                            BASE_ARG_NAME,
+                            "` of type `",
+                            BASE_TYPE_FORMATTED,
+                            "` was expected, but not found."
+                        )
                     }
-                    is_null = false;
-                }
-                _ => {}
+                    Cause::AdditionalNonNullableField => {
+                        $crate::const_concat!(
+                            PREFIX,
+                            "Argument `",
+                            IMPL_ARG_NAME,
+                            "` of type `",
+                            IMPL_TYPE_FORMATTED,
+                            "` not present on the interface and so has to be nullable."
+                        )
+                    }
+                };
+                ::std::panic!("{}", MSG);
             }
-
-            current_wrap_val /= 10;
-        }
-
-        let mut i = 0;
-        while i < base_type.as_bytes().len() {
-            base_type_arr[current_start + i] = base_type.as_bytes()[i];
-            i += 1;
-        }
-        i = 0;
-        if !is_null {
-            while i < BANG.as_bytes().len() {
-                base_type_arr[current_end - BANG.as_bytes().len() + i + 1] = BANG.as_bytes()[i];
-                i += 1;
-            }
-        }
-
-        base_type_arr
-    }
-
-    const BASE_TYPE_ARR: [u8; BASE_TYPE_LEN] = format_base_type();
-    const BASE_TYPE_FORMATTED: &str = unsafe { mem::transmute(BASE_TYPE_ARR.as_slice()) };
-
-    match ERROR.cause {
-        Cause::TypeMismatch => {
-            const MSG: &str = const_concat!(
-                "Field `",
-                BASE_NAME,
-                "`: expected type `",
-                BASE_TYPE_FORMATTED,
-                "`, found: `",
-                IMPL_TYPE_FORMATTED,
-                "`.",
-            );
-            panic!("{}", MSG);
-        }
-        Cause::RequiredField => {
-            const MSG: &str = const_concat!(
-                "Field `",
-                BASE_NAME,
-                "` of type `",
-                BASE_TYPE_FORMATTED,
-                "` was expected, but not found."
-            );
-            panic!("{}", MSG);
-        }
-        Cause::AdditionalNonNullableField => {
-            const MSG: &str = const_concat!(
-                "Field `",
-                IMPL_NAME,
-                "` of type `",
-                IMPL_TYPE_FORMATTED,
-                "` not present on the interface and so has to be nullable."
-            );
-            panic!("{}", MSG);
-        }
-    }
-}
-
-pub const fn is_valid_field_args(
-    base_interface: &[(Name, Type, WrappedValue)],
-    implementation: &[(Name, Type, WrappedValue)],
-) -> bool {
-    const fn find(
-        base_interface: &[(Name, Type, WrappedValue)],
-        impl_name: Name,
-        impl_ty: Type,
-        impl_wrap_val: WrappedValue,
-    ) -> bool {
-        let mut i = 0;
-        while i < base_interface.len() {
-            let (base_name, base_ty, base_wrap_val) = base_interface[i];
-            if str_eq(impl_name, base_name) {
-                return str_eq(base_ty, impl_ty) && impl_wrap_val == base_wrap_val;
-            }
-            i += 1;
-        }
-        false
-    }
-
-    if base_interface.len() > implementation.len() {
-        return false;
-    }
-
-    let mut i = 0;
-    let mut successfully_implemented_fields = 0;
-    while i < implementation.len() {
-        let (impl_name, impl_ty, impl_wrap_val) = implementation[i];
-        if find(base_interface, impl_name, impl_ty, impl_wrap_val) {
-            successfully_implemented_fields += 1;
-        } else if impl_wrap_val % 10 != 2 {
-            // Not an optional field.
-            return false;
-        }
-        i += 1;
-    }
-
-    successfully_implemented_fields == base_interface.len()
+        };
+    };
 }
 
 pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {

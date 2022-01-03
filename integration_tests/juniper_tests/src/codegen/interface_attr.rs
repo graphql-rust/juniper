@@ -340,7 +340,6 @@ mod trivial_with_trait_imp {
         primary_function: String,
     }
 
-    #[graphql_interface]
     impl Character for Droid {
         fn id(&self) -> &str {
             &self.id
