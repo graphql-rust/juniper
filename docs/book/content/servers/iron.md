@@ -11,8 +11,8 @@ Juniper's Iron integration is contained in the `juniper_iron` crate:
 
 ```toml
 [dependencies]
-juniper = "0.10"
-juniper_iron = "0.2.0"
+juniper = "0.15.7"
+juniper_iron = "0.7.4"
 ```
 
 Included in the source is a [small
