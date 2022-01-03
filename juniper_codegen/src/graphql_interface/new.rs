@@ -306,9 +306,9 @@ impl ToTokens for Definition {
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
         self.impl_traits_for_reflection().to_tokens(into);
-        self.impl_fields_meta().to_tokens(into);
-        self.impl_fields(false).to_tokens(into);
-        self.impl_fields(true).to_tokens(into);
+        self.impl_field_meta().to_tokens(into);
+        self.impl_field().to_tokens(into);
+        self.impl_async_field().to_tokens(into);
     }
 }
 
@@ -750,7 +750,7 @@ impl Definition {
             {
                 const NAMES: ::juniper::macros::helper::Types = &[
                     <Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                    #(<#implementers as ::juniper::macros::helper::BaseType<#scalar>>::NAME,)*
+                    #(<#implementers as ::juniper::macros::helper::BaseType<#scalar>>::NAME),*
                 ];
             }
 
@@ -769,7 +769,7 @@ impl Definition {
     ///
     /// [`FieldMeta`]: juniper::macros::helper::FieldMeta
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    fn impl_fields_meta(&self) -> TokenStream {
+    fn impl_field_meta(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let context = &self.context;
         let scalar = &self.scalar;
@@ -783,7 +783,7 @@ impl Definition {
             .map(|field| {
                 let field_name = &field.name;
                 let mut return_ty = field.ty.clone();
-                Self::replace_generics_for_const(&mut return_ty, &generics);
+                generics.replace_type_with_defaults(&mut return_ty);
 
                 let (args_tys, args_names): (Vec<_>, Vec<_>) = field
                     .arguments
@@ -830,15 +830,10 @@ impl Definition {
     /// [`AsyncField`]: juniper::macros::helper::AsyncField
     /// [`Field`]: juniper::macros::helper::Field
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    fn impl_fields(&self, for_async: bool) -> TokenStream {
+    fn impl_field(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
-        let const_scalar = match scalar {
-            scalar::Type::Concrete(ty) => ty.clone(),
-            scalar::Type::ExplicitGeneric(_) | scalar::Type::ImplicitGeneric(_) => {
-                parse_quote! { ::juniper::DefaultScalarValue }
-            }
-        };
+        let const_scalar = self.const_scalar();
 
         let impl_tys = self.implementers.iter().collect::<Vec<_>>();
         let impl_idents = self
@@ -854,39 +849,13 @@ impl Definition {
         self.fields
             .iter()
             .filter_map(|field| {
-                if field.is_async && !for_async {
+                if field.is_async {
                     return None;
                 }
 
                 let field_name = &field.name;
                 let mut return_ty = field.ty.clone();
-                Self::replace_generics_for_const(&mut return_ty, &generics);
-
-                let (trait_name, call_sig) = if for_async {
-                    (
-                        quote! { AsyncField },
-                        quote! {
-                            fn call<'b>(
-                                &'b self,
-                                info: &'b Self::TypeInfo,
-                                args: &'b ::juniper::Arguments<#scalar>,
-                                executor: &'b ::juniper::Executor<Self::Context, #scalar>,
-                            ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>>
-                        },
-                    )
-                } else {
-                    (
-                        quote! { Field },
-                        quote! {
-                            fn call(
-                                &self,
-                                info: &Self::TypeInfo,
-                                args: &::juniper::Arguments<#scalar>,
-                                executor: &::juniper::Executor<Self::Context, #scalar>,
-                            ) -> ::juniper::ExecutionResult<#scalar>
-                        },
-                    )
-                };
+                generics.replace_type_with_defaults(&mut return_ty);
 
                 let const_ty_generics = self.const_trait_generics();
 
@@ -898,11 +867,16 @@ impl Definition {
 
                 Some(quote! {
                     #[allow(non_snake_case)]
-                    impl#impl_generics ::juniper::macros::helper::#trait_name<
+                    impl#impl_generics ::juniper::macros::helper::Field<
                         #scalar,
                         { ::juniper::macros::helper::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
-                        #call_sig {
+                        fn call(
+                            &self,
+                            info: &Self::TypeInfo,
+                            args: &::juniper::Arguments<#scalar>,
+                            executor: &::juniper::Executor<Self::Context, #scalar>,
+                        ) -> ::juniper::ExecutionResult<#scalar> {
                             match self {
                                 #(#ty::#impl_idents(v) => {
                                     ::juniper::assert_field!(
@@ -922,6 +896,77 @@ impl Definition {
                         }
                     }
                 })
+            })
+            .collect()
+    }
+
+    /// Returns generated code implementing [`AsyncField`] trait for this
+    /// [GraphQL interface][1].
+    ///
+    /// [`AsyncField`]: juniper::macros::helper::AsyncField
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    fn impl_async_field(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
+        let scalar = &self.scalar;
+        let const_scalar = self.const_scalar();
+
+        let impl_tys = self.implementers.iter().collect::<Vec<_>>();
+        let impl_idents = self
+            .implementers
+            .iter()
+            .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
+            .collect::<Vec<_>>();
+
+        let generics = self.impl_generics(for_async);
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+
+        self.fields
+            .iter()
+            .map(|field| {
+                let field_name = &field.name;
+                let mut return_ty = field.ty.clone();
+                generics.replace_type_with_defaults(&mut return_ty);
+
+                let const_ty_generics = self.const_trait_generics();
+
+                let unreachable_arm = (self.implementers.is_empty()
+                    || !self.trait_generics.params.is_empty())
+                .then(|| {
+                    quote! { _ => unreachable!() }
+                });
+
+                quote! {
+                    #[allow(non_snake_case)]
+                    impl#impl_generics ::juniper::macros::helper::AsyncField<
+                        #scalar,
+                        { ::juniper::macros::helper::fnv1a128(#field_name) }
+                    > for #ty#ty_generics #where_clause {
+                        fn call<'b>(
+                            &'b self,
+                            info: &'b Self::TypeInfo,
+                            args: &'b ::juniper::Arguments<#scalar>,
+                            executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                        ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                            match self {
+                                #(#ty::#impl_idents(v) => {
+                                    ::juniper::assert_field!(
+                                        #ty#const_ty_generics,
+                                        #impl_tys,
+                                        #const_scalar,
+                                        #field_name,
+                                    );
+
+                                    <_ as ::juniper::macros::helper::#trait_name<
+                                        #scalar,
+                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                    >>::call(v, info, args, executor)
+                                })*
+                                #unreachable_arm
+                            }
+                        }
+                    }
+                }
             })
             .collect()
     }
@@ -1040,13 +1085,17 @@ impl Definition {
                             return;
                         }
                     }
-                    syn::GenericParam::Const(_) => {
-                        // This hack works because only `min_const_generics` are
-                        // enabled for now.
-                        // TODO: replace this once full `const_generics` are
-                        //       available.
-                        //       Maybe with `<_ as Default>::default()`?
-                        parse_quote!({ 0_u8 as _ })
+                    syn::GenericParam::Const(c) => {
+                        if c.default.is_none() {
+                            // This hack works because only `min_const_generics`
+                            // are enabled for now.
+                            // TODO: replace this once full `const_generics` are
+                            //       available.
+                            //       Maybe with `<_ as Default>::default()`?
+                            parse_quote!({ 0_u8 as _ })
+                        } else {
+                            return;
+                        }
                     }
                 };
                 self.0.args.push(arg)
@@ -1058,41 +1107,22 @@ impl Definition {
         syn::PathArguments::AngleBracketed(visitor.0)
     }
 
-    /// Replaces `generics` in `ty` for usage in `const` context.
-    fn replace_generics_for_const(ty: &mut syn::Type, generics: &syn::Generics) {
-        struct ReplaceGenericsForConst<'a>(&'a syn::Generics);
-
-        impl<'a> VisitMut for ReplaceGenericsForConst<'a> {
-            fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
-                match arg {
-                    syn::GenericArgument::Lifetime(lf) => {
-                        *lf = parse_quote!( 'static );
-                    }
-                    syn::GenericArgument::Type(ty) => {
-                        let is_generic = self
-                            .0
-                            .params
-                            .iter()
-                            .filter_map(|par| match par {
-                                syn::GenericParam::Type(ty) => Some(&ty.ident),
-                                _ => None,
-                            })
-                            .any(|par| {
-                                let par = quote! { #par }.to_string();
-                                let ty = quote! { #ty }.to_string();
-                                par == ty
-                            });
-
-                        if is_generic {
-                            *ty = parse_quote!(());
-                        }
-                    }
-                    _ => {}
-                }
+    /// Returns [`scalar`] replaced with [`DefaultScalarValue`] in case it's
+    /// [`ExplicitGeneric`] or [`ImplicitGeneric`] for using [`scalar`] in
+    /// `const` context.
+    ///
+    /// [`scalar`]: Self::scalar
+    /// [`DefaultScalarValue`]: juniper::DefaultScalarValue
+    /// [`ExplicitGeneric`]: scalar::Type::ExplicitGeneric
+    /// [`ImplicitGeneric`]: scalar::Type::ImplicitGeneric
+    #[must_use]
+    fn const_scalar(&self) -> syn::Type {
+        match &self.scalar {
+            scalar::Type::Concrete(ty) => ty.clone(),
+            scalar::Type::ExplicitGeneric(_) | scalar::Type::ImplicitGeneric(_) => {
+                parse_quote! { ::juniper::DefaultScalarValue }
             }
         }
-
-        ReplaceGenericsForConst(&generics).visit_type_mut(ty)
     }
 
     /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and

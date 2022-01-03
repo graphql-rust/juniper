@@ -11,12 +11,14 @@ use std::{
 };
 
 use proc_macro2::Span;
+use quote::quote;
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseBuffer},
     parse_quote,
     punctuated::Punctuated,
     token::{self, Token},
+    visit_mut::VisitMut,
 };
 
 /// Extension of [`ParseBuffer`] providing common function widely used by this crate for parsing.
@@ -250,6 +252,9 @@ pub(crate) trait GenericsExt {
 
     /// Moves all trait and lifetime bounds of these [`syn::Generics`] to its [`syn::WhereClause`].
     fn move_bounds_to_where_clause(&mut self);
+
+    /// Replaces generic parameters in `ty` found in `self` with default ones.
+    fn replace_type_with_defaults(&self, ty: &mut syn::Type);
 }
 
 impl GenericsExt for syn::Generics {
@@ -298,5 +303,41 @@ impl GenericsExt for syn::Generics {
                 P::Const(_) => {}
             }
         }
+    }
+
+    fn replace_type_with_defaults(&self, ty: &mut syn::Type) {
+        struct Replace<'a>(&'a syn::Generics);
+
+        impl<'a> VisitMut for Replace<'a> {
+            fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
+                match arg {
+                    syn::GenericArgument::Lifetime(lf) => {
+                        *lf = parse_quote!( 'static );
+                    }
+                    syn::GenericArgument::Type(ty) => {
+                        let is_generic = self
+                            .0
+                            .params
+                            .iter()
+                            .filter_map(|par| match par {
+                                syn::GenericParam::Type(ty) => Some(&ty.ident),
+                                _ => None,
+                            })
+                            .any(|par| {
+                                let par = quote! { #par }.to_string();
+                                let ty = quote! { #ty }.to_string();
+                                par == ty
+                            });
+
+                        if is_generic {
+                            *ty = parse_quote!(());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        Replace(self).visit_type_mut(ty)
     }
 }
