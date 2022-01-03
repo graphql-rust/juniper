@@ -541,6 +541,10 @@ impl Definition<Query> {
             })
         });
 
+        let field_meta_impls = self
+            .fields
+            .iter()
+            .map(|f| f.impl_field_meta(ty, &impl_generics, where_clause.as_ref(), scalar, context));
         let field_impls = self.fields.iter().filter_map(|f| {
             f.impl_field(
                 ty,
@@ -548,7 +552,6 @@ impl Definition<Query> {
                 where_clause.as_ref(),
                 scalar,
                 None,
-                context,
                 false,
             )
         });
@@ -602,6 +605,8 @@ impl Definition<Query> {
                 }
             }
 
+            #(#field_meta_impls)*
+
             #(#field_impls)*
         }
     }
@@ -614,7 +619,6 @@ impl Definition<Query> {
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
-        let context = &self.context;
 
         let (impl_generics, where_clause) = self.impl_generics(true);
         let ty = &self.ty;
@@ -639,7 +643,6 @@ impl Definition<Query> {
                 where_clause.as_ref(),
                 scalar,
                 None,
-                context,
                 true,
             )
         });

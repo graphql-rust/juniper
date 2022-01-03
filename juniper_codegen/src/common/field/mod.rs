@@ -443,6 +443,63 @@ impl Definition {
 
     /// TODO
     #[must_use]
+    pub(crate) fn impl_field_meta(
+        &self,
+        impl_ty: &syn::Type,
+        impl_generics: &TokenStream,
+        where_clause: Option<&syn::WhereClause>,
+        scalar: &scalar::Type,
+        context: &syn::Type,
+    ) -> TokenStream {
+        let (name, ty) = (&self.name, self.ty.clone());
+
+        let arguments = self
+            .arguments
+            .as_ref()
+            .iter()
+            .flat_map(|vec| vec.iter())
+            .filter_map(|arg| match arg {
+                MethodArgument::Regular(arg) => {
+                    let (name, ty) = (&arg.name, &arg.ty);
+
+                    Some(quote! {(
+                        #name,
+                        <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
+                        <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
+                    )})
+                }
+                MethodArgument::Executor | MethodArgument::Context(_) => None,
+            })
+            .collect::<Vec<_>>();
+
+        quote! {
+            #[allow(deprecated, non_snake_case)]
+            #[automatically_derived]
+            impl #impl_generics ::juniper::macros::helper::FieldMeta<
+                #scalar,
+                { ::juniper::macros::helper::fnv1a128(#name) }
+            > for #impl_ty
+                #where_clause
+            {
+                type Context = #context;
+                type TypeInfo = ();
+                const TYPE: ::juniper::macros::helper::Type =
+                    <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
+                const SUB_TYPES: ::juniper::macros::helper::Types =
+                    <#ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
+                const WRAPPED_VALUE: juniper::macros::helper::WrappedValue =
+                    <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
+                const ARGUMENTS: &'static [(
+                    ::juniper::macros::helper::Name,
+                    ::juniper::macros::helper::Type,
+                    ::juniper::macros::helper::WrappedValue,
+                )] = &[#(#arguments,)*];
+            }
+        }
+    }
+
+    /// TODO
+    #[must_use]
     pub(crate) fn impl_field(
         &self,
         impl_ty: &syn::Type,
@@ -450,15 +507,13 @@ impl Definition {
         where_clause: Option<&syn::WhereClause>,
         scalar: &scalar::Type,
         trait_ty: Option<&syn::Type>,
-        context: &syn::Type,
         for_async: bool,
     ) -> Option<TokenStream> {
         if !for_async && self.is_async {
             return None;
         }
 
-        let (name, ty, mut res_ty, ident) =
-            (&self.name, self.ty.clone(), self.ty.clone(), &self.ident);
+        let (name, mut res_ty, ident) = (&self.name, self.ty.clone(), &self.ident);
 
         let mut res = if self.is_method() {
             let args = self
@@ -484,25 +539,6 @@ impl Definition {
         if for_async && !self.is_async {
             res = quote! { ::juniper::futures::future::ready(#res) };
         }
-
-        let arguments = self
-            .arguments
-            .as_ref()
-            .iter()
-            .flat_map(|vec| vec.iter())
-            .filter_map(|arg| match arg {
-                MethodArgument::Regular(arg) => {
-                    let (name, ty) = (&arg.name, &arg.ty);
-
-                    Some(quote! {(
-                        #name,
-                        <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                        <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
-                    )})
-                }
-                MethodArgument::Executor | MethodArgument::Context(_) => None,
-            })
-            .collect::<Vec<_>>();
 
         let (call, trait_name) = if for_async {
             let resolving_code = gen::async_resolving_code(Some(&res_ty));
@@ -545,20 +581,6 @@ impl Definition {
             > for #impl_ty
                 #where_clause
             {
-                type Context = #context;
-                type TypeInfo = ();
-                const TYPE: ::juniper::macros::helper::Type =
-                    <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
-                const SUB_TYPES: ::juniper::macros::helper::Types =
-                    <#ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
-                const WRAPPED_VALUE: juniper::macros::helper::WrappedValue =
-                    <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
-                const ARGUMENTS: &'static [(
-                    ::juniper::macros::helper::Name,
-                    ::juniper::macros::helper::Type,
-                    ::juniper::macros::helper::WrappedValue,
-                )] = &[#(#arguments,)*];
-
                 #call
             }
         })

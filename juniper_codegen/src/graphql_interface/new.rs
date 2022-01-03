@@ -50,8 +50,9 @@ pub(crate) struct TraitAttr {
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
     pub(crate) description: Option<SpanContainer<String>>,
 
-    /// Explicitly specified identifier of the enum Rust type behind the trait,
-    /// being an actual implementation of a [GraphQL interface][1] type.
+    /// Explicitly specified identifier of the type alias of Rust enum type
+    /// behind the trait, being an actual implementation of a
+    /// [GraphQL interface][1] type.
     ///
     /// If [`None`], then `{trait_name}Value` identifier will be used.
     ///
@@ -305,6 +306,7 @@ impl ToTokens for Definition {
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
         self.impl_traits_for_reflection().to_tokens(into);
+        self.impl_fields_meta().to_tokens(into);
         self.impl_fields(false).to_tokens(into);
         self.impl_fields(true).to_tokens(into);
     }
@@ -762,6 +764,66 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`FieldMeta`] for this
+    /// [GraphQL interface][1].
+    ///
+    /// [`FieldMeta`]: juniper::macros::helper::FieldMeta
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    fn impl_fields_meta(&self) -> TokenStream {
+        let ty = &self.enum_alias_ident;
+        let context = &self.context;
+        let scalar = &self.scalar;
+
+        let generics = self.impl_generics(false);
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+
+        self.fields
+            .iter()
+            .map(|field| {
+                let field_name = &field.name;
+                let mut return_ty = field.ty.clone();
+                Self::replace_generics_for_const(&mut return_ty, &generics);
+
+                let (args_tys, args_names): (Vec<_>, Vec<_>) = field
+                    .arguments
+                    .iter()
+                    .flat_map(|vec| vec.iter())
+                    .filter_map(|arg| match arg {
+                        field::MethodArgument::Regular(arg) => Some((&arg.ty, &arg.name)),
+                        _ => None,
+                    })
+                    .unzip();
+
+                quote! {
+                    #[allow(non_snake_case)]
+                    impl#impl_generics ::juniper::macros::helper::FieldMeta<
+                        #scalar,
+                        { ::juniper::macros::helper::fnv1a128(#field_name) }
+                    > for #ty#ty_generics #where_clause {
+                        type Context = #context;
+                        type TypeInfo = ();
+                        const TYPE: ::juniper::macros::helper::Type =
+                            <#return_ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
+                        const SUB_TYPES: ::juniper::macros::helper::Types =
+                            <#return_ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
+                        const WRAPPED_VALUE: ::juniper::macros::helper::WrappedValue =
+                            <#return_ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
+                        const ARGUMENTS: &'static [(
+                            ::juniper::macros::helper::Name,
+                            ::juniper::macros::helper::Type,
+                            ::juniper::macros::helper::WrappedValue,
+                        )] = &[#((
+                            #args_names,
+                            <#args_tys as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
+                            <#args_tys as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
+                        )),*];
+                    }
+                }
+            })
+            .collect()
+    }
+
     /// Returns generated code implementing [`Field`] or [`AsyncField`] trait
     /// for this [GraphQL interface][1].
     ///
@@ -770,7 +832,6 @@ impl Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_fields(&self, for_async: bool) -> TokenStream {
         let ty = &self.enum_alias_ident;
-        let context = &self.context;
         let scalar = &self.scalar;
         let const_scalar = match scalar {
             scalar::Type::Concrete(ty) => ty.clone(),
@@ -827,16 +888,6 @@ impl Definition {
                     )
                 };
 
-                let (args_tys, args_names): (Vec<_>, Vec<_>) = field
-                    .arguments
-                    .iter()
-                    .flat_map(|vec| vec.iter())
-                    .filter_map(|arg| match arg {
-                        field::MethodArgument::Regular(arg) => Some((&arg.ty, &arg.name)),
-                        _ => None,
-                    })
-                    .unzip();
-
                 let const_ty_generics = self.const_trait_generics();
 
                 let unreachable_arm = (self.implementers.is_empty()
@@ -851,24 +902,6 @@ impl Definition {
                         #scalar,
                         { ::juniper::macros::helper::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
-                        type Context = #context;
-                        type TypeInfo = ();
-                        const TYPE: ::juniper::macros::helper::Type =
-                            <#return_ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
-                        const SUB_TYPES: ::juniper::macros::helper::Types =
-                            <#return_ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
-                        const WRAPPED_VALUE: ::juniper::macros::helper::WrappedValue =
-                            <#return_ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
-                        const ARGUMENTS: &'static [(
-                            ::juniper::macros::helper::Name,
-                            ::juniper::macros::helper::Type,
-                            ::juniper::macros::helper::WrappedValue,
-                        )] = &[#((
-                            #args_names,
-                            <#args_tys as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                            <#args_tys as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
-                        )),*];
-
                         #call_sig {
                             match self {
                                 #(#ty::#impl_idents(v) => {

@@ -234,12 +234,12 @@ macro_rules! assert_subtype {
             const FIELD_NAME: $crate::macros::helper::Name =
                 $field_name;
             const BASE_RETURN_WRAPPED_VAL: $crate::macros::helper::WrappedValue =
-                <$base_ty as $crate::macros::helper::AsyncField<
+                <$base_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
                     { $crate::macros::helper::fnv1a128(FIELD_NAME) },
                 >>::WRAPPED_VALUE;
             const IMPL_RETURN_WRAPPED_VAL: $crate::macros::helper::WrappedValue =
-                <$impl_ty as $crate::macros::helper::AsyncField<
+                <$impl_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
                     { $crate::macros::helper::fnv1a128(FIELD_NAME) },
                 >>::WRAPPED_VALUE;
@@ -250,18 +250,18 @@ macro_rules! assert_subtype {
                 <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
 
             const BASE_RETURN_SUB_TYPES: $crate::macros::helper::Types =
-                <$base_ty as $crate::macros::helper::AsyncField<
+                <$base_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
                     { $crate::macros::helper::fnv1a128(FIELD_NAME) },
                 >>::SUB_TYPES;
 
             const BASE_RETURN_TY: $crate::macros::helper::Type =
-                <$base_ty as $crate::macros::helper::AsyncField<
+                <$base_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
                     { $crate::macros::helper::fnv1a128(FIELD_NAME) },
                 >>::TYPE;
             const IMPL_RETURN_TY: $crate::macros::helper::Type =
-                <$impl_ty as $crate::macros::helper::AsyncField<
+                <$impl_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
                     { $crate::macros::helper::fnv1a128(FIELD_NAME) },
                 >>::TYPE;
@@ -306,11 +306,11 @@ macro_rules! assert_field_args {
             const FIELD_NAME: &str = $field_name;
             const BASE_NAME: &str = <$base_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
             const IMPL_NAME: &str = <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
-            const BASE_ARGS: &[FullArg] = <$base_ty as $crate::macros::helper::AsyncField<
+            const BASE_ARGS: &[FullArg] = <$base_ty as $crate::macros::helper::FieldMeta<
                 $scalar,
                 { $crate::macros::helper::fnv1a128(FIELD_NAME) },
             >>::ARGUMENTS;
-            const IMPL_ARGS: &[FullArg] = <$impl_ty as $crate::macros::helper::AsyncField<
+            const IMPL_ARGS: &[FullArg] = <$impl_ty as $crate::macros::helper::FieldMeta<
                 $scalar,
                 { $crate::macros::helper::fnv1a128(FIELD_NAME) },
             >>::ARGUMENTS;
@@ -630,14 +630,16 @@ impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
     const VALUE: u128 = T::VALUE;
 }
 
-pub trait Field<S, const N: FieldName> {
+pub trait FieldMeta<S, const N: FieldName> {
     type Context;
     type TypeInfo;
     const TYPE: Type;
     const SUB_TYPES: Types;
     const WRAPPED_VALUE: WrappedValue;
     const ARGUMENTS: &'static [(Name, Type, WrappedValue)];
+}
 
+pub trait Field<S, const N: FieldName>: FieldMeta<S, N> {
     fn call(
         &self,
         info: &Self::TypeInfo,
@@ -646,14 +648,7 @@ pub trait Field<S, const N: FieldName> {
     ) -> ExecutionResult<S>;
 }
 
-pub trait AsyncField<S, const N: FieldName> {
-    type Context;
-    type TypeInfo;
-    const TYPE: Type;
-    const SUB_TYPES: Types;
-    const WRAPPED_VALUE: WrappedValue;
-    const ARGUMENTS: &'static [(Name, Type, WrappedValue)];
-
+pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
     fn call<'b>(
         &'b self,
         info: &'b Self::TypeInfo,
