@@ -14,7 +14,6 @@ use syn::{
     spanned::Spanned as _,
     token,
     visit::Visit,
-    visit_mut::VisitMut,
 };
 
 use crate::{
@@ -842,7 +841,7 @@ impl Definition {
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
             .collect::<Vec<_>>();
 
-        let generics = self.impl_generics(for_async);
+        let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
 
@@ -886,7 +885,7 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    <_ as ::juniper::macros::helper::#trait_name<
+                                    <_ as ::juniper::macros::helper::Field<
                                         #scalar,
                                         { ::juniper::macros::helper::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
@@ -917,7 +916,7 @@ impl Definition {
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
             .collect::<Vec<_>>();
 
-        let generics = self.impl_generics(for_async);
+        let generics = self.impl_generics(true);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
 
@@ -957,7 +956,7 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    <_ as ::juniper::macros::helper::#trait_name<
+                                    <_ as ::juniper::macros::helper::AsyncField<
                                         #scalar,
                                         { ::juniper::macros::helper::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
