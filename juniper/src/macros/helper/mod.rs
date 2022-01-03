@@ -187,20 +187,19 @@ macro_rules! const_concat {
 
 #[macro_export]
 macro_rules! format_type {
-    ($ty: expr) => {{
+    ($ty: expr, $wrapped_value: expr $(,)?) => {{
         const TYPE: (
-            $crate::macros::helper::Name,
             $crate::macros::helper::Type,
             $crate::macros::helper::WrappedValue,
-        ) = $ty;
-        const RES_LEN: usize = $crate::macros::helper::str_len_from_wrapped_val(TYPE.1, TYPE.2);
+        ) = ($ty, $wrapped_value);
+        const RES_LEN: usize = $crate::macros::helper::str_len_from_wrapped_val(TYPE.0, TYPE.1);
 
         const OPENING_BRACKET: &str = "[";
         const CLOSING_BRACKET: &str = "]";
         const BANG: &str = "!";
 
         const fn format_type_arr() -> [u8; RES_LEN] {
-            let (_, ty, wrap_val) = TYPE;
+            let (ty, wrap_val) = TYPE;
             let mut type_arr: [u8; RES_LEN] = [0; RES_LEN];
 
             let mut current_start = 0;
@@ -272,8 +271,7 @@ macro_rules! format_type {
         }
 
         const TYPE_ARR: [u8; RES_LEN] = format_type_arr();
-        // SAFETY: This is safe, as `TYPE_ARR` was formatted from `TYPE.Name`,
-        //         `[`, `]` and `!`.
+        // SAFETY: This is safe, as `TYPE_ARR` was formatted from `Type`, `[`, `]` and `!`.
         const TYPE_FORMATTED: &str = unsafe { ::std::mem::transmute(TYPE_ARR.as_slice()) };
         TYPE_FORMATTED
     }};
@@ -403,13 +401,14 @@ macro_rules! check_field_args {
                 const BASE_ARG_NAME: &str = ERROR.base.0;
                 const IMPL_ARG_NAME: &str = ERROR.implementation.0;
 
-                const BASE_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.base);
-                const IMPL_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.implementation);
+                const BASE_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.base.1, ERROR.base.2,);
+                const IMPL_TYPE_FORMATTED: &str =
+                    $crate::format_type!(ERROR.implementation.1, ERROR.implementation.2,);
 
                 const PREFIX: &str = $crate::const_concat!(
                     "Failed to implement interface `",
                     BASE_NAME,
-                    "` on object `",
+                    "` on `",
                     IMPL_NAME,
                     "`: Field `",
                     FIELD_NAME,
@@ -490,6 +489,41 @@ pub const fn is_subtype(
     wrapped_subtype: WrappedValue,
 ) -> bool {
     exists(subtype, possible_subtypes) && can_be_subtype(wrapped_type, wrapped_subtype)
+}
+
+#[macro_export]
+macro_rules! check_subtype {
+    (
+        $field_name: expr,
+        $base_name: expr,
+        $base_ty: expr,
+        $base_wrapped_val: expr,
+        $possible_subtypes: expr,
+        $impl_name: expr,
+        $impl_ty: expr,
+        $impl_wrapped_val: expr $(,)?
+    ) => {
+        const _: () = {
+            let is_subtype = $crate::macros::helper::exists($impl_ty, $possible_subtypes)
+                && $crate::macros::helper::can_be_subtype($base_wrapped_val, $impl_wrapped_val);
+            if !is_subtype {
+                const MSG: &str = $crate::const_concat!(
+                    "Failed to implement interface `",
+                    $base_name,
+                    "` on `",
+                    $impl_name,
+                    "`: Field `",
+                    $field_name,
+                    "` return object is `",
+                    $crate::format_type!($base_ty, $base_wrapped_val),
+                    "`, which is not a subtype of `",
+                    $crate::format_type!($impl_ty, $impl_wrapped_val),
+                    "`.",
+                );
+                ::std::panic!("{}", MSG);
+            }
+        };
+    };
 }
 
 /// TODO

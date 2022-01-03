@@ -1828,10 +1828,7 @@ mod default_argument {
         }
     }
 
-    struct Human {
-        id: String,
-        info: i32,
-    }
+    struct Human;
 
     #[graphql_object(impl = CharacterValue)]
     impl Human {
@@ -1849,11 +1846,7 @@ mod default_argument {
     #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
-            Human {
-                id: "human-32".to_string(),
-                info: 0,
-            }
-            .into()
+            Human.into()
         }
     }
 
@@ -3066,7 +3059,6 @@ mod inferred_custom_context_from_field {
     }
 
     struct Human {
-        id: String,
         home_planet: String,
     }
 
@@ -3086,7 +3078,6 @@ mod inferred_custom_context_from_field {
     }
 
     struct Droid {
-        id: String,
         primary_function: String,
     }
 
@@ -3116,12 +3107,10 @@ mod inferred_custom_context_from_field {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
                     primary_function: "run".to_string(),
                 }
                 .into(),
@@ -3231,7 +3220,6 @@ mod executor {
     }
 
     struct Human {
-        id: String,
         home_planet: String,
     }
 
@@ -3251,7 +3239,6 @@ mod executor {
     }
 
     struct Droid {
-        id: String,
         primary_function: String,
     }
 
@@ -3285,12 +3272,10 @@ mod executor {
         fn character(&self) -> CharacterValue<DefaultScalarValue> {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
                     home_planet: "earth".to_string(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
                     primary_function: "run".to_string(),
                 }
                 .into(),

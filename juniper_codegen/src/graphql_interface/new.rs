@@ -873,9 +873,27 @@ impl Definition {
                     #call_sig {
                         match self {
                             #(#ty::#impl_idents(v) => {
-                                const _: () = ::std::assert!(::juniper::macros::helper::is_subtype(
+                                // const _: () = ::std::assert!(::juniper::macros::helper::is_subtype(
+                                //     <#return_ty as ::juniper::macros::helper::BaseSubTypes>::NAMES,
+                                //     <#return_ty as ::juniper::macros::helper::WrappedType>::VALUE,
+                                //     <#impl_tys as ::juniper::macros::helper::#trait_name<
+                                //         #const_scalar,
+                                //         { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                //     >>::TYPE,
+                                //     <#impl_tys as ::juniper::macros::helper::#trait_name<
+                                //         #const_scalar,
+                                //         { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                //     >>::WRAPPED_VALUE,
+                                // ));
+                                ::juniper::check_subtype!(
+                                    #field_name,
+
+                                    #name,
+                                    <#return_ty as ::juniper::macros::helper::BaseType<#const_scalar>>::NAME,
+                                    <#return_ty as ::juniper::macros::helper::WrappedType<#const_scalar>>::VALUE,
                                     <#return_ty as ::juniper::macros::helper::BaseSubTypes>::NAMES,
-                                    <#return_ty as ::juniper::macros::helper::WrappedType>::VALUE,
+
+                                    <#impl_tys as ::juniper::macros::helper::BaseType<#const_scalar>>::NAME,
                                     <#impl_tys as ::juniper::macros::helper::#trait_name<
                                         #const_scalar,
                                         { ::juniper::macros::helper::fnv1a128(#field_name) },
@@ -884,7 +902,7 @@ impl Definition {
                                         #const_scalar,
                                         { ::juniper::macros::helper::fnv1a128(#field_name) },
                                     >>::WRAPPED_VALUE,
-                                ));
+                                );
                                 ::juniper::check_field_args!(
                                     #field_name,
                                     (
