@@ -8,57 +8,58 @@ use crate::{
     Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, Nullable, ScalarValue,
 };
 
-/// Type alias for GraphQL [`object`][1], [`scalar`][2] or [`interface`][3] type
-/// name.
+/// Type alias for [GraphQL object][1], [scalar][2] or [interface][3] type name.
+/// See [`BaseType`] for more info.
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sec-Scalars
 /// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub type Type = &'static str;
 
-/// Type alias for slice of [`Type`]s. See [`BaseType`] for more info.
+/// Type alias for slice of [`Type`]s. See [`BaseSubTypes`] for more info.
 pub type Types = &'static [Type];
 
-/// Type alias for GraphQL [`object`][1] or [`interface`][2]
-/// [`field argument`][3] name.
+/// Type alias for [GraphQL object][1] or [interface][2] [field argument][3]
+/// name.
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
 /// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
 pub type Name = &'static str;
 
-/// Type alias for slice of [`Name`]s.
+/// Type alias for slice of [`Name`]s. See [`Fields`] for more info.
 pub type Names = &'static [Name];
 
 /// Type alias for value of [`WrappedType`].
 pub type WrappedValue = u128;
 
-/// Type alias for [`Field argument`][1]s [`Name`], [`Type`] and
-/// [`WrappedValue`].
+/// Type alias for [field argument][1]s [`Name`], [`Type`] and [`WrappedValue`].
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Language.Arguments
 pub type Argument = (Name, Type, WrappedValue);
 
-/// Type alias for [`Field argument`][1]s [`Name`], [`Type`] and
+/// Type alias for [field argument][1]s [`Name`], [`Type`] and
 /// [`WrappedValue`].
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Language.Arguments
 pub type Arguments = &'static [(Name, Type, WrappedValue)];
 
-/// Type alias for constantly hashed [`Name`] for usage in const generics.
+/// Type alias for constantly hashed [`Name`] for usage in const context.
 pub type FieldName = u128;
 
-/// GraphQL [`object`][1], [`scalar`][2] or [`interface`][3] [`Type`] name.
-/// This trait is transparent to the [`Option`], [`Vec`] and other containers,
-/// so to fully represent GraphQL [`object`][1] we additionally use
-/// [`WrappedType`].
+/// [GraphQL object][1], [scalar][2] or [interface][3] [`Type`] name. This trait
+/// is transparent to the [`Option`], [`Vec`] and other containers, so to fully
+/// represent [GraphQL object][1] we additionally use [`WrappedType`].
 ///
+/// Different Rust type may have the same [`NAME`]. For example [`String`] and
+/// &[`str`](prim@str).
+///
+/// [`NAME`]: Self::NAME
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sec-Scalars
 /// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub trait BaseType<S> {
-    /// [`Type`] of the GraphQL [`object`][1], [`scalar`][2] or
-    /// [`interface`][3].
+    /// [`Type`] of the [GraphQL object][1], [scalar][2] or [interface][3].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Objects
     /// [2]: https://spec.graphql.org/October2021/#sec-Scalars
@@ -114,13 +115,13 @@ impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Rc<T> {
     const NAME: Type = T::NAME;
 }
 
-/// GraphQL [`object`][1] [`sub-types`][2].  This trait is transparent to the
+/// [GraphQL object][1] [sub-types][2]. This trait is transparent to the
 /// [`Option`], [`Vec`] and other containers.
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sel-JAHZhCHCDEJDAAAEEFDBtzC
 pub trait BaseSubTypes<S> {
-    /// [`Types`] for the GraphQL [`object`][1]s [`sub-types`][2].
+    /// [`Types`] for the [GraphQL object][1]s [sub-types][2].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Objects
     /// [2]: https://spec.graphql.org/October2021/#sel-JAHZhCHCDEJDAAAEEFDBtzC
@@ -175,17 +176,17 @@ impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
     const NAMES: Types = T::NAMES;
 }
 
-/// To fully represent GraphQL [`object`][1] it's not enough to use [`Type`],
-/// because of the [`wrapping types`][2]. To work around this we use
+/// To fully represent [GraphQL object][1] it's not enough to use [`Type`],
+/// because of the [wrapping types][2]. To work around this we use
 /// [`WrappedValue`] which is represented with [`u128`].
 ///
-/// - In base case of non-nullable [`object`] [`VALUE`] is `1`.
+/// - In base case of non-nullable [object] [`VALUE`] is `1`.
 /// - To represent nullability we "append" `2` to the [`VALUE`], so
-///   [`Option`]`<`[`object`][1]`>` has [`VALUE`] of `12`.
+///   [`Option`]`<`[object][1]`>` has [`VALUE`] of `12`.
 /// - To represent list we "append" `3` to the [`VALUE`], so
-///   [`Vec`]`<`[`object`][1]`>` has [`VALUE`] of `13`.
+///   [`Vec`]`<`[object][1]`>` has [`VALUE`] of `13`.
 ///
-/// This approach allows us to uniquely represent any GraphQL [`object`] with
+/// This approach allows us to uniquely represent any [GraphQL object][1] with
 /// combination of [`Type`] and [`WrappedValue`] and even constantly format it
 /// with [`format_type`] macro.
 ///
@@ -265,14 +266,14 @@ impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
     const VALUE: u128 = T::VALUE;
 }
 
-/// GraphQL [`object`][1] or [`interface`][2] [`Field arguments`][3] [`Names`].
+/// [GraphQL object][1] or [interface][2] [field arguments][3] [`Names`].
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
 /// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
 pub trait Fields<S> {
-    /// [`Names`] of the GraphQL [`object`][1] or [`interface`][2]
-    /// [`Field arguments`][3].
+    /// [`Names`] of the [GraphQL object][1] or [interface][2]
+    /// [field arguments][3].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Objects
     /// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
@@ -280,51 +281,52 @@ pub trait Fields<S> {
     const NAMES: Names;
 }
 
-/// Stores meta information of GraphQL [`Fields`][1]:
+/// Stores meta information of [GraphQL fields][1]:
 /// - [`Context`] and [`TypeInfo`].
 /// - Return type's [`TYPE`], [`SUB_TYPES`] and [`WRAPPED_VALUE`].
 /// - [`ARGUMENTS`].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
-/// [`Context`]: Self::Context
-/// [`TypeInfo`]: Self::TypeInfo
-/// [`TYPE`]: Self::TYPE
-/// [`SUB_TYPES`]: Self::SUB_TYPES
-/// [`WRAPPED_VALUE`]: Self::WRAPPED_VALUE
 /// [`ARGUMENTS`]: Self::ARGUMENTS
+/// [`Context`]: Self::Context
+/// [`SUB_TYPES`]: Self::SUB_TYPES
+/// [`TYPE`]: Self::TYPE
+/// [`TypeInfo`]: Self::TypeInfo
+/// [`WRAPPED_VALUE`]: Self::WRAPPED_VALUE
+/// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
 pub trait FieldMeta<S, const N: FieldName> {
     /// [`GraphQLValue::Context`] of this [`Field`][1].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     type Context;
 
-    /// [`GraphQLValue::TypeInfo`] of this [`Field`][1].
+    /// [`GraphQLValue::TypeInfo`] of this [GraphQL field][1].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     type TypeInfo;
 
-    /// [`Types`] of [`Field`][1]'s return type.
+    /// [`Types`] of [GraphQL field's][1] return type.
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     const TYPE: Type;
 
-    /// Sub-[`Types`] of [`Field`][1]'s return type.
+    /// [Sub-Types][1] of [GraphQL field's][2] return type.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    /// [1]: BaseSubTypes
+    /// [2]: https://spec.graphql.org/October2021/#sec-Language.Fields
     const SUB_TYPES: Types;
 
-    /// [`WrappedValue`] of [`Field`][1]'s return type.
+    /// [`WrappedValue`] of [GraphQL field's][1] return type.
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     const WRAPPED_VALUE: WrappedValue;
 
-    /// [`Field`][1]'s [`Arguments`].
+    /// [GraphQL field's][1] [`Arguments`].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     const ARGUMENTS: Arguments;
 }
 
-/// Synchronous field of a GraphQL [`object`][1] or [`interface`][2].
+/// Synchronous field of a [GraphQL object][1] or [interface][2].
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
@@ -334,8 +336,9 @@ pub trait Field<S, const N: FieldName>: FieldMeta<S, N> {
     /// The `arguments` object contains all the specified arguments, with
     /// default values being substituted for the ones not provided by the query.
     ///
-    /// The `executor` can be used to drive selections into sub-[`objects`][1].
+    /// The `executor` can be used to drive selections into sub-[objects][1].
     ///
+    /// [`Value`]: crate::Value
     /// [1]: https://spec.graphql.org/October2021/#sec-Objects
     fn call(
         &self,
@@ -350,12 +353,12 @@ pub trait Field<S, const N: FieldName>: FieldMeta<S, N> {
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
-    /// Resolves the [`Value`] of this asynchronous [`Field`].
+    /// Resolves the [`Value`] of this asynchronous [`AsyncField`].
     ///
     /// The `arguments` object contains all the specified arguments, with
     /// default values being substituted for the ones not provided by the query.
     ///
-    /// The `executor` can be used to drive selections into sub-[`objects`][1].
+    /// The `executor` can be used to drive selections into sub-[objects][1].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Objects
     fn call<'b>(
@@ -383,31 +386,6 @@ pub const fn fnv1a128(str: Name) -> u128 {
         i += 1;
     }
     hash
-}
-
-/// Compares strings in `const` context.
-///
-/// As there is no `const impl Trait` and `l == r` calls [`Eq`], we have to
-/// write custom comparison function.
-///
-/// [`Eq`]: std::cmp::Eq
-// TODO: Remove once `Eq` trait is allowed in `const` context.
-pub const fn str_eq(l: &str, r: &str) -> bool {
-    let (l, r) = (l.as_bytes(), r.as_bytes());
-
-    if l.len() != r.len() {
-        return false;
-    }
-
-    let mut i = 0;
-    while i < l.len() {
-        if l[i] != r[i] {
-            return false;
-        }
-        i += 1;
-    }
-
-    true
 }
 
 /// Length of the [`format_type`] macro result __in bytes__.
@@ -462,6 +440,31 @@ pub const fn str_exists_in_arr(val: &str, arr: &[&str]) -> bool {
         i += 1;
     }
     false
+}
+
+/// Compares strings in `const` context.
+///
+/// As there is no `const impl Trait` and `l == r` calls [`Eq`], we have to
+/// write custom comparison function.
+///
+/// [`Eq`]: std::cmp::Eq
+// TODO: Remove once `Eq` trait is allowed in `const` context.
+pub const fn str_eq(l: &str, r: &str) -> bool {
+    let (l, r) = (l.as_bytes(), r.as_bytes());
+
+    if l.len() != r.len() {
+        return false;
+    }
+
+    let mut i = 0;
+    while i < l.len() {
+        if l[i] != r[i] {
+            return false;
+        }
+        i += 1;
+    }
+
+    true
 }
 
 /// Asserts validness of the [`Field`] [`Arguments`] and return [`Type`]. This
@@ -648,7 +651,6 @@ macro_rules! assert_field_args {
                         impl_i += 1;
                     }
 
-                    // TODO: Maybe that's ok?
                     if !was_found {
                         return Err(Error {
                             cause: Cause::RequiredField,

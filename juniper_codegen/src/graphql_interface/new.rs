@@ -573,15 +573,17 @@ impl Definition {
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
 
         let fields_resolvers = self.fields.iter().filter_map(|f| {
-            (!f.is_async).then(|| {
-                let name = &f.name;
-                quote! {
-                    #name => {
-                        ::juniper::macros::reflection::Field::<
-                            #scalar,
-                            { ::juniper::macros::reflection::fnv1a128(#name) }
-                        >::call(self, info, args, executor)
-                    }
+            if f.is_async {
+                return None;
+            }
+
+            let name = &f.name;
+            Some(quote! {
+                #name => {
+                    ::juniper::macros::reflection::Field::<
+                        #scalar,
+                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                    >::call(self, info, args, executor)
                 }
             })
         });
@@ -715,11 +717,12 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
-    /// [`WrappedType`] traits for this [GraphQL interface][1].
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`],
+    /// [`WrappedType`] and [`Fields`] traits for this [GraphQL interface][1].
     ///
     /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
     /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`Fields`]: juniper::macros::reflection::Fields
     /// [`WrappedType`]: juniper::macros::reflection::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
@@ -772,7 +775,7 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`FieldMeta`] for this
+    /// Returns generated code implementing [`FieldMeta`] for each field of this
     /// [GraphQL interface][1].
     ///
     /// [`FieldMeta`]: juniper::macros::reflection::FieldMeta
@@ -835,7 +838,6 @@ impl Definition {
     /// Returns generated code implementing [`Field`] trait for each field of
     /// this [GraphQL interface][1].
     ///
-    /// [`AsyncField`]: juniper::macros::reflection::AsyncField
     /// [`Field`]: juniper::macros::reflection::Field
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_field_tokens(&self) -> TokenStream {

@@ -611,7 +611,13 @@ impl Definition {
         }
     }
 
-    /// TODO
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
+    /// [`WrappedType`] traits for this [GraphQL union][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     #[must_use]
     pub(crate) fn impl_traits_for_const_assertions(&self) -> TokenStream {
         let scalar = &self.scalar;

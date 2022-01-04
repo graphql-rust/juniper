@@ -361,11 +361,12 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         }
     }
 
-    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
-    /// [`WrappedType`] traits for this [GraphQL object][1].
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`],
+    /// [`WrappedType`] and [`Fields`] traits for this [GraphQL object][1].
     ///
     /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
     /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`Fields`]: juniper::macros::reflection::Fields
     /// [`WrappedType`]: juniper::macros::reflection::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     #[must_use]
@@ -735,15 +736,17 @@ impl Definition<Query> {
         let name = &self.name;
 
         let fields_resolvers = self.fields.iter().filter_map(|f| {
-            (!f.is_async).then(|| {
-                let name = &f.name;
-                quote! {
-                    #name => {
-                        ::juniper::macros::reflection::Field::<
-                            #scalar,
-                            { ::juniper::macros::reflection::fnv1a128(#name) }
-                        >::call(self, info, args, executor)
-                    }
+            if f.is_async {
+                return None;
+            }
+
+            let name = &f.name;
+            Some(quote! {
+                #name => {
+                    ::juniper::macros::reflection::Field::<
+                        #scalar,
+                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                    >::call(self, info, args, executor)
                 }
             })
         });

@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
+    macros::reflection,
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::{
@@ -202,17 +203,16 @@ where
     })
 }
 
-impl<S> crate::macros::reflection::WrappedType<S> for str {
+impl<S> reflection::WrappedType<S> for str {
     const VALUE: u128 = 1;
 }
 
-impl<S> crate::macros::reflection::BaseType<S> for str {
+impl<S> reflection::BaseType<S> for str {
     const NAME: &'static str = "String";
 }
 
-impl<S> crate::macros::reflection::BaseSubTypes<S> for str {
-    const NAMES: &'static [&'static str] =
-        &[<Self as crate::macros::reflection::BaseType<S>>::NAME];
+impl<S> reflection::BaseSubTypes<S> for str {
+    const NAMES: &'static [&'static str] = &[<Self as reflection::BaseType<S>>::NAME];
 }
 
 impl<S> GraphQLType<S> for str
