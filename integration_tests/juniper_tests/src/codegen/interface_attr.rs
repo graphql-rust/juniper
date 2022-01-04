@@ -3,7 +3,8 @@
 use juniper::{
     execute, graphql_interface_new, graphql_object, graphql_value, graphql_vars,
     DefaultScalarValue, EmptyMutation, EmptySubscription, Executor, FieldError, FieldResult,
-    GraphQLInputObject, GraphQLObject, GraphQLType, IntoFieldError, RootNode, ScalarValue,
+    GraphQLInputObject, GraphQLObject, GraphQLType, GraphQLUnion, IntoFieldError, RootNode,
+    ScalarValue,
 };
 
 fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -3305,5 +3306,296 @@ mod ignored_method {
                 vec![],
             )),
         );
+    }
+}
+
+mod field_return_subtyping {
+    use super::*;
+
+    #[graphql_interface_new(for = [Human, Droid])]
+    trait Character {
+        fn id(&self) -> Option<String>;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = CharacterValue)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    struct Droid {
+        id: String,
+        primary_function: String,
+    }
+
+    #[graphql_object(impl = CharacterValue)]
+    impl Droid {
+        fn id(&self) -> &str {
+            &self.id
+        }
+
+        fn primary_function(&self) -> &str {
+            &self.primary_function
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
+            match self {
+                Self::Human => Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }
+                .into(),
+                Self::Droid => Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }
+                .into(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_droid() {
+        const DOC: &str = r#"{
+            character {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+            }
+        }"#;
+
+        for (root, expected_id) in &[
+            (QueryRoot::Human, "human-32"),
+            (QueryRoot::Droid, "droid-99"),
+        ] {
+            let schema = schema(*root);
+
+            let expected_id: &str = *expected_id;
+            assert_eq!(
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
+            );
+        }
+    }
+}
+
+mod field_return_union_subtyping {
+    use super::*;
+
+    #[derive(GraphQLObject)]
+    struct Strength {
+        value: i32,
+    }
+
+    #[derive(GraphQLObject)]
+    struct Knowledge {
+        value: i32,
+    }
+
+    #[allow(dead_code)]
+    #[derive(GraphQLUnion)]
+    enum KeyFeature {
+        Strength(Strength),
+        Knowledge(Knowledge),
+    }
+
+    #[graphql_interface_new(for = [Human, Droid])]
+    trait Character {
+        fn id(&self) -> Option<String>;
+
+        fn key_feature(&self) -> KeyFeature;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = CharacterValue)]
+    struct Human {
+        id: String,
+        home_planet: String,
+        key_feature: Knowledge,
+    }
+
+    struct Droid {
+        id: String,
+        primary_function: String,
+        strength: i32,
+    }
+
+    #[graphql_object(impl = CharacterValue)]
+    impl Droid {
+        fn id(&self) -> &str {
+            &self.id
+        }
+
+        fn primary_function(&self) -> &str {
+            &self.primary_function
+        }
+
+        fn key_feature(&self) -> Strength {
+            Strength {
+                value: self.strength,
+            }
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
+            match self {
+                Self::Human => Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                    key_feature: Knowledge { value: 10 },
+                }
+                .into(),
+                Self::Droid => Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                    strength: 42,
+                }
+                .into(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                    keyFeature {
+                        value
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth", "keyFeature": {"value": 10}}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_droid() {
+        const DOC: &str = r#"{
+            character {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                    keyFeature {
+                        value
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run", "keyFeature": {"value": 42}}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn enum_resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+                keyFeature {
+                    ...on Strength {
+                        value
+                    }
+                    ... on Knowledge {
+                        value
+                    }
+                }
+            }
+        }"#;
+
+        for (root, expected_id, expected_val) in &[
+            (QueryRoot::Human, "human-32", 10),
+            (QueryRoot::Droid, "droid-99", 42),
+        ] {
+            let schema = schema(*root);
+
+            let expected_id: &str = *expected_id;
+            let expected_val = *expected_val;
+            assert_eq!(
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((
+                    graphql_value!({"character": {"id": expected_id, "keyFeature": {"value": expected_val}}}),
+                    vec![]
+                )),
+            );
+        }
     }
 }
