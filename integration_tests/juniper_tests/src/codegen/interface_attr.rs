@@ -1,7 +1,7 @@
 //! Tests for `#[graphql_interface]` macro.
 
 use juniper::{
-    execute, graphql_interface, graphql_interface_new, graphql_object, graphql_value, graphql_vars,
+    execute, graphql_interface_new, graphql_object, graphql_value, graphql_vars,
     DefaultScalarValue, EmptyMutation, EmptySubscription, Executor, FieldError, FieldResult,
     GraphQLInputObject, GraphQLObject, GraphQLType, IntoFieldError, RootNode, ScalarValue,
 };

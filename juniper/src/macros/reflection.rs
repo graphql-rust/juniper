@@ -4,17 +4,66 @@ use std::{rc::Rc, sync::Arc};
 
 use futures::future::BoxFuture;
 
-use crate::{Arguments, DefaultScalarValue, ExecutionResult, Executor, Nullable, ScalarValue};
+use crate::{
+    Arguments as FieldArguments, DefaultScalarValue, ExecutionResult, Executor, GraphQLValue,
+    Nullable, ScalarValue,
+};
 
+/// Type alias for GraphQL [`object`][1], [`scalar`][2] or [`interface`][3] type
+/// name.
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sec-Scalars
+/// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub type Type = &'static str;
+
+/// Type alias for slice of [`Type`]s. See [`BaseType`] for more info.
 pub type Types = &'static [Type];
+
+/// Type alias for GraphQL [`object`][1] or [`interface`][2]
+/// [`field argument`][3] name.
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
+/// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
 pub type Name = &'static str;
+
+/// Type alias for slice of [`Name`]s.
 pub type Names = &'static [Name];
-pub type FieldName = u128;
+
+/// Type alias for value of [`WrappedType`].
 pub type WrappedValue = u128;
 
-/// TODO
-pub trait BaseType<S = DefaultScalarValue> {
+/// Type alias for [`Field argument`][1]s [`Name`], [`Type`] and
+/// [`WrappedValue`].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Language.Arguments
+pub type Argument = (Name, Type, WrappedValue);
+
+/// Type alias for [`Field argument`][1]s [`Name`], [`Type`] and
+/// [`WrappedValue`].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Language.Arguments
+pub type Arguments = &'static [(Name, Type, WrappedValue)];
+
+/// Type alias for constantly hashed [`Name`] for usage in const generics.
+pub type FieldName = u128;
+
+/// GraphQL [`object`][1], [`scalar`][2] or [`interface`][3] [`Type`] name.
+/// This trait is transparent to the [`Option`], [`Vec`] and other containers,
+/// so to fully represent GraphQL [`object`][1] we additionally use
+/// [`WrappedType`].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sec-Scalars
+/// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
+pub trait BaseType<S> {
+    /// [`Type`] of the GraphQL [`object`][1], [`scalar`][2] or
+    /// [`interface`][3].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021/#sec-Scalars
+    /// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
     const NAME: Type;
 }
 
@@ -22,8 +71,11 @@ impl<'a, S, T: BaseType<S> + ?Sized> BaseType<S> for &'a T {
     const NAME: Type = T::NAME;
 }
 
-// TODO: Reconsider
-impl<S, T: BaseType<S>, Ctx> BaseType<S> for (Ctx, T) {
+impl<'ctx, S, T> BaseType<S> for (&'ctx T::Context, T)
+where
+    S: ScalarValue,
+    T: BaseType<S> + GraphQLValue<S>,
+{
     const NAME: Type = T::NAME;
 }
 
@@ -35,7 +87,6 @@ impl<S, T: BaseType<S>> BaseType<S> for Nullable<T> {
     const NAME: Type = T::NAME;
 }
 
-// TODO: Should Err be trait bounded somehow?
 impl<S, T: BaseType<S>, E> BaseType<S> for Result<T, E> {
     const NAME: Type = T::NAME;
 }
@@ -64,8 +115,16 @@ impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Rc<T> {
     const NAME: Type = T::NAME;
 }
 
-/// TODO
-pub trait BaseSubTypes<S = DefaultScalarValue> {
+/// GraphQL [`object`][1] [`sub-types`][2].  This trait is transparent to the
+/// [`Option`], [`Vec`] and other containers.
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sel-JAHZhCHCDEJDAAAEEFDBtzC
+pub trait BaseSubTypes<S> {
+    /// [`Types`] for the GraphQL [`object`][1]s [`sub-types`][2].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021/#sel-JAHZhCHCDEJDAAAEEFDBtzC
     const NAMES: Types;
 }
 
@@ -73,8 +132,11 @@ impl<'a, S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for &'a T {
     const NAMES: Types = T::NAMES;
 }
 
-// TODO: Reconsider
-impl<S, T: BaseSubTypes<S>, Ctx> BaseSubTypes<S> for (Ctx, T) {
+impl<'ctx, S, T> BaseSubTypes<S> for (&'ctx T::Context, T)
+where
+    S: ScalarValue,
+    T: BaseSubTypes<S> + GraphQLValue<S>,
+{
     const NAMES: Types = T::NAMES;
 }
 
@@ -86,7 +148,6 @@ impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Nullable<T> {
     const NAMES: Types = T::NAMES;
 }
 
-// TODO: Should Err be trait bounded somehow?
 impl<S, T: BaseSubTypes<S>, E> BaseSubTypes<S> for Result<T, E> {
     const NAMES: Types = T::NAMES;
 }
@@ -115,20 +176,52 @@ impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
     const NAMES: Types = T::NAMES;
 }
 
-/// TODO
-pub trait WrappedType<S = DefaultScalarValue> {
-    /// NonNull  - 1
-    /// Nullable - 2
-    /// List     - 3
-    ///
-    /// `[[Int]!] - <Option<Vec<Vec<Option<i32>>>> as WrappedType>::N = 12332`
-    const VALUE: u128;
+/// To fully represent GraphQL [`object`][1] it's not enough to use [`Type`],
+/// because of the [`wrapping types`][2]. To work around this we use
+/// [`WrappedValue`] which is represented with [`u128`].
+///
+/// - In base case of non-nullable [`object`] [`VALUE`] is `1`.
+/// - To represent nullability we "append" `2` to the [`VALUE`], so
+///   [`Option`]`<`[`object`][1]`>` has [`VALUE`] of `12`.
+/// - To represent list we "append" `3` to the [`VALUE`], so
+///   [`Vec`]`<`[`object`][1]`>` has [`VALUE`] of `13`.
+///
+/// This approach allows us to uniquely represent any GraphQL [`object`] with
+/// combination of [`Type`] and [`WrappedValue`] and even constantly format it
+/// with [`format_type`] macro.
+///
+/// # Examples
+///
+/// ```rust
+/// # use juniper::{macros::reflection::{WrappedType, BaseType, WrappedValue, Type}, DefaultScalarValue, format_type};
+/// #
+/// assert_eq!(<Option<i32> as WrappedType<DefaultScalarValue>>::VALUE, 12);
+/// assert_eq!(<Vec<i32> as WrappedType<DefaultScalarValue>>::VALUE, 13);
+/// assert_eq!(<Vec<Option<i32>> as WrappedType<DefaultScalarValue>>::VALUE, 123);
+/// assert_eq!(<Option<Vec<i32>> as WrappedType<DefaultScalarValue>>::VALUE, 132);
+/// assert_eq!(<Option<Vec<Option<i32>>> as WrappedType<DefaultScalarValue>>::VALUE, 1232);
+///
+/// const TYPE_STRING: Type = <Option<Vec<Option<String>>> as BaseType<DefaultScalarValue>>::NAME;
+/// const WRAP_VAL_STRING: WrappedValue = <Option<Vec<Option<String>>> as WrappedType<DefaultScalarValue>>::VALUE;
+/// assert_eq!(format_type!(TYPE_STRING, WRAP_VAL_STRING), "[String]");
+///
+/// const TYPE_STR: Type = <Option<Vec<Option<&str>>> as BaseType<DefaultScalarValue>>::NAME;
+/// const WRAP_VAL_STR: WrappedValue = <Option<Vec<Option<&str>>> as WrappedType<DefaultScalarValue>>::VALUE;
+/// assert_eq!(format_type!(TYPE_STRING, WRAP_VAL_STRING), "[String]");
+/// ```
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sec-Wrapping-Types
+/// [`VALUE`]: Self::VALUE
+pub trait WrappedType<S> {
+    /// [`WrappedValue`] of this type.
+    const VALUE: WrappedValue;
 }
 
-impl<'a, S, T: WrappedType<S>> WrappedType<S> for (&'a T::Context, T)
+impl<'ctx, S, T: WrappedType<S>> WrappedType<S> for (&'ctx T::Context, T)
 where
     S: ScalarValue,
-    T: crate::GraphQLValue<S>,
+    T: GraphQLValue<S>,
 {
     const VALUE: u128 = T::VALUE;
 }
@@ -141,8 +234,6 @@ impl<S, T: WrappedType<S>> WrappedType<S> for Nullable<T> {
     const VALUE: u128 = T::VALUE * 10 + 2;
 }
 
-// TODO: Should Err be trait bounded somehow?
-//       And should `VALUE` be `T::VALUE` or `T::VALUE * 10 + 2`?
 impl<S, T: WrappedType<S>, E> WrappedType<S> for Result<T, E> {
     const VALUE: u128 = T::VALUE;
 }
@@ -175,33 +266,103 @@ impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
     const VALUE: u128 = T::VALUE;
 }
 
-pub trait Fields<S = DefaultScalarValue> {
+/// GraphQL [`object`][1] or [`interface`][2] [`Field arguments`][3] [`Names`].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
+/// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
+pub trait Fields<S> {
+    /// [`Names`] of the GraphQL [`object`][1] or [`interface`][2]
+    /// [`Field arguments`][3].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
+    /// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
     const NAMES: Names;
 }
 
+/// Stores meta information of GraphQL [`Fields`][1]:
+/// - [`Context`] and [`TypeInfo`].
+/// - Return type's [`TYPE`], [`SUB_TYPES`] and [`WRAPPED_VALUE`].
+/// - [`ARGUMENTS`].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+/// [`Context`]: Self::Context
+/// [`TypeInfo`]: Self::TypeInfo
+/// [`TYPE`]: Self::TYPE
+/// [`SUB_TYPES`]: Self::SUB_TYPES
+/// [`WRAPPED_VALUE`]: Self::WRAPPED_VALUE
+/// [`ARGUMENTS`]: Self::ARGUMENTS
 pub trait FieldMeta<S, const N: FieldName> {
+    /// [`GraphQLValue::Context`] of this [`Field`][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     type Context;
+
+    /// [`GraphQLValue::TypeInfo`] of this [`Field`][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     type TypeInfo;
+
+    /// [`Types`] of [`Field`][1]'s return type.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     const TYPE: Type;
+
+    /// Sub-[`Types`] of [`Field`][1]'s return type.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     const SUB_TYPES: Types;
+
+    /// [`WrappedValue`] of [`Field`][1]'s return type.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
     const WRAPPED_VALUE: WrappedValue;
-    const ARGUMENTS: &'static [(Name, Type, WrappedValue)];
+
+    /// [`Field`][1]'s [`Arguments`].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    const ARGUMENTS: Arguments;
 }
 
+/// Synchronous field of a GraphQL [`object`][1] or [`interface`][2].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub trait Field<S, const N: FieldName>: FieldMeta<S, N> {
+    /// Resolves the [`Value`] of this synchronous [`Field`].
+    ///
+    /// The `arguments` object contains all the specified arguments, with
+    /// default values being substituted for the ones not provided by the query.
+    ///
+    /// The `executor` can be used to drive selections into sub-[`objects`][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
     fn call(
         &self,
         info: &Self::TypeInfo,
-        args: &Arguments<S>,
+        args: &FieldArguments<S>,
         executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S>;
 }
 
+/// Asynchronous field of a GraphQL [`object`][1] or [`interface`][2].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
+    /// Resolves the [`Value`] of this asynchronous [`Field`].
+    ///
+    /// The `arguments` object contains all the specified arguments, with
+    /// default values being substituted for the ones not provided by the query.
+    ///
+    /// The `executor` can be used to drive selections into sub-[`objects`][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
     fn call<'b>(
         &'b self,
         info: &'b Self::TypeInfo,
-        args: &'b Arguments<S>,
+        args: &'b FieldArguments<S>,
         executor: &'b Executor<Self::Context, S>,
     ) -> BoxFuture<'b, ExecutionResult<S>>;
 }
@@ -225,6 +386,13 @@ pub const fn fnv1a128(str: Name) -> u128 {
     hash
 }
 
+/// Compares strings in `const` context.
+///
+/// As there is no `const impl Trait` and `l == r` calls [`Eq`], we have to
+/// write custom comparison function.
+///
+/// [`Eq`]: std::cmp::Eq
+// TODO: Remove once `Eq` trait is allowed in `const` context.
 pub const fn str_eq(l: &str, r: &str) -> bool {
     let (l, r) = (l.as_bytes(), r.as_bytes());
 
@@ -243,7 +411,8 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
     true
 }
 
-pub const fn str_len_from_wrapped_val(ty: Type, v: WrappedValue) -> usize {
+/// Length of the [`format_type`] macro result __in bytes__.
+pub const fn type_len_with_wrapped_val(ty: Type, v: WrappedValue) -> usize {
     let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
 
     let mut current_wrap_val = v;
@@ -260,6 +429,13 @@ pub const fn str_len_from_wrapped_val(ty: Type, v: WrappedValue) -> usize {
     len
 }
 
+/// Based on the [`WrappedValue`] checks whether GraphQL [`objects`][1] can be
+/// subtypes.
+///
+/// To fully determine sub-typing relation [`Type`] should be one of the
+/// [`BaseSubTypes::NAMES`].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Objects
 pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
     let ty_current = ty % 10;
     let subtype_current = subtype % 10;
@@ -277,7 +453,8 @@ pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
     }
 }
 
-pub const fn exists(val: Type, arr: Types) -> bool {
+/// Checks whether `val` exists in `arr`.
+pub const fn str_exists_in_arr(val: &str, arr: &[&str]) -> bool {
     let mut i = 0;
     while i < arr.len() {
         if str_eq(val, arr[i]) {
@@ -327,32 +504,32 @@ macro_rules! assert_subtype {
             const BASE_RETURN_WRAPPED_VAL: $crate::macros::reflection::WrappedValue =
                 <$base_ty as $crate::macros::reflection::FieldMeta<
                     $scalar,
-                    { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::WRAPPED_VALUE;
             const IMPL_RETURN_WRAPPED_VAL: $crate::macros::reflection::WrappedValue =
                 <$impl_ty as $crate::macros::reflection::FieldMeta<
                     $scalar,
-                    { $crate::hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
+                    { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::WRAPPED_VALUE;
 
             const BASE_RETURN_SUB_TYPES: $crate::macros::reflection::Types =
                 <$base_ty as $crate::macros::reflection::FieldMeta<
                     $scalar,
-                    { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::SUB_TYPES;
 
             const BASE_RETURN_TY: $crate::macros::reflection::Type =
                 <$base_ty as $crate::macros::reflection::FieldMeta<
                     $scalar,
-                    { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::TYPE;
             const IMPL_RETURN_TY: $crate::macros::reflection::Type =
                 <$impl_ty as $crate::macros::reflection::FieldMeta<
                     $scalar,
-                    { $crate::hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
+                    { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::TYPE;
 
-            let is_subtype = $crate::macros::reflection::exists(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
+            let is_subtype = $crate::macros::reflection::str_exists_in_arr(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
                 && $crate::macros::reflection::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
             if !is_subtype {
                 const MSG: &str = $crate::const_concat!(
@@ -401,11 +578,11 @@ macro_rules! assert_field_args {
             const FIELD_NAME: &str = $field_name;
             const BASE_ARGS: &[FullArg] = <$base_ty as $crate::macros::reflection::FieldMeta<
                 $scalar,
-                { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
             >>::ARGUMENTS;
             const IMPL_ARGS: &[FullArg] = <$impl_ty as $crate::macros::reflection::FieldMeta<
                 $scalar,
-                { $crate::hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
+                { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
             >>::ARGUMENTS;
 
             struct Error {
@@ -576,9 +753,9 @@ macro_rules! const_concat {
 }
 
 #[macro_export]
-macro_rules! hash {
+macro_rules! checked_hash {
     ($field_name: expr, $impl_ty: ty, $scalar: ty $(, $prefix: expr)? $(,)?) => {{
-        let exists = $crate::macros::reflection::exists(
+        let exists = $crate::macros::reflection::str_exists_in_arr(
             $field_name,
             <$impl_ty as $crate::macros::reflection::Fields<$scalar>>::NAMES,
         );
@@ -607,7 +784,8 @@ macro_rules! format_type {
             $crate::macros::reflection::Type,
             $crate::macros::reflection::WrappedValue,
         ) = ($ty, $wrapped_value);
-        const RES_LEN: usize = $crate::macros::reflection::str_len_from_wrapped_val(TYPE.0, TYPE.1);
+        const RES_LEN: usize =
+            $crate::macros::reflection::type_len_with_wrapped_val(TYPE.0, TYPE.1);
 
         const OPENING_BRACKET: &str = "[";
         const CLOSING_BRACKET: &str = "]";
