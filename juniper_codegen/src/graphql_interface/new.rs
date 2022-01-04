@@ -298,16 +298,16 @@ pub(crate) struct Definition {
 
 impl ToTokens for Definition {
     fn to_tokens(&self, into: &mut TokenStream) {
-        self.generate_enum().to_tokens(into);
+        self.generate_enum_tokens().to_tokens(into);
         self.impl_graphql_interface_tokens().to_tokens(into);
         self.impl_output_type_tokens().to_tokens(into);
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_traits_for_reflection().to_tokens(into);
-        self.impl_field_meta().to_tokens(into);
-        self.impl_field().to_tokens(into);
-        self.impl_async_field().to_tokens(into);
+        self.impl_traits_for_reflection_tokens().to_tokens(into);
+        self.impl_field_meta_tokens().to_tokens(into);
+        self.impl_field_tokens().to_tokens(into);
+        self.impl_async_field_tokens().to_tokens(into);
     }
 }
 
@@ -316,7 +316,7 @@ impl Definition {
     ///
     /// [`implementers`]: Self::implementers
     #[must_use]
-    fn generate_enum(&self) -> TokenStream {
+    fn generate_enum_tokens(&self) -> TokenStream {
         let vis = &self.vis;
         let enum_ident = &self.enum_ident;
         let alias_ident = &self.enum_alias_ident;
@@ -723,7 +723,7 @@ impl Definition {
     /// [`WrappedType`]: juniper::macros::reflection::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
-    pub(crate) fn impl_traits_for_reflection(&self) -> TokenStream {
+    pub(crate) fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let implementers = &self.implementers;
         let scalar = &self.scalar;
@@ -777,7 +777,7 @@ impl Definition {
     ///
     /// [`FieldMeta`]: juniper::macros::reflection::FieldMeta
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    fn impl_field_meta(&self) -> TokenStream {
+    fn impl_field_meta_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let context = &self.context;
         let scalar = &self.scalar;
@@ -832,13 +832,13 @@ impl Definition {
             .collect()
     }
 
-    /// Returns generated code implementing [`Field`] or [`AsyncField`] trait
-    /// for this [GraphQL interface][1].
+    /// Returns generated code implementing [`Field`] trait for each field of
+    /// this [GraphQL interface][1].
     ///
     /// [`AsyncField`]: juniper::macros::reflection::AsyncField
     /// [`Field`]: juniper::macros::reflection::Field
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    fn impl_field(&self) -> TokenStream {
+    fn impl_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
         let const_scalar = self.const_scalar();
@@ -908,12 +908,12 @@ impl Definition {
             .collect()
     }
 
-    /// Returns generated code implementing [`AsyncField`] trait for this
-    /// [GraphQL interface][1].
+    /// Returns generated code implementing [`AsyncField`] trait for each field
+    /// of this [GraphQL interface][1].
     ///
     /// [`AsyncField`]: juniper::macros::reflection::AsyncField
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    fn impl_async_field(&self) -> TokenStream {
+    fn impl_async_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
         let const_scalar = self.const_scalar();
