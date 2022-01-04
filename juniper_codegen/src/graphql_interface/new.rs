@@ -728,6 +728,7 @@ impl Definition {
         let implementers = &self.implementers;
         let scalar = &self.scalar;
         let name = &self.name;
+        let fields = self.fields.iter().map(|f| &f.name);
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
@@ -759,6 +760,14 @@ impl Definition {
                 #where_clause
             {
                 const VALUE: ::juniper::macros::helper::WrappedValue = 1;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::Fields<#scalar>
+                for #ty#ty_generics
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::helper::Names = &[#(#fields),*];
             }
         }
     }

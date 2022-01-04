@@ -368,6 +368,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         let name = &self.name;
         let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
+        let fields = self.fields.iter().map(|f| &f.name);
 
         quote! {
             #[automatically_derived]
@@ -393,6 +394,14 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                 #where_clause
             {
                 const VALUE: ::juniper::macros::helper::WrappedValue = 1;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::helper::Fields<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::helper::Names = &[#(#fields),*];
             }
         }
     }

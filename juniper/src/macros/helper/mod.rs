@@ -90,6 +90,7 @@ where
 pub type Type = &'static str;
 pub type Types = &'static [Type];
 pub type Name = &'static str;
+pub type Names = &'static [Name];
 pub type FieldName = u128;
 pub type WrappedValue = u128;
 
@@ -118,6 +119,31 @@ macro_rules! const_concat {
 }
 
 #[macro_export]
+macro_rules! hash {
+    ($field_name: expr, $impl_ty: ty, $scalar: ty $(, $prefix: expr)? $(,)?) => {{
+        let exists = $crate::macros::helper::exists(
+            $field_name,
+            <$impl_ty as $crate::macros::helper::Fields<$scalar>>::NAMES,
+        );
+        if exists {
+            $crate::macros::helper::fnv1a128(FIELD_NAME)
+        } else {
+            ::std::panic!(
+                "{}",
+                $crate::const_concat!(
+                    $($prefix,)?
+                    "Field `",
+                    $field_name,
+                    "` isn't implemented on `",
+                    <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME,
+                    "`."
+                )
+            )
+        }
+    }};
+}
+
+#[macro_export]
 macro_rules! format_type {
     ($ty: expr, $wrapped_value: expr $(,)?) => {{
         const TYPE: (
@@ -142,27 +168,13 @@ macro_rules! format_type {
                 match current_wrap_val % 10 {
                     2 => is_null = true,
                     3 => {
-                        if is_null {
-                            let mut i = 0;
-                            while i < OPENING_BRACKET.as_bytes().len() {
-                                type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                                i += 1;
-                            }
-                            current_start += i;
-                            i = 0;
-                            while i < CLOSING_BRACKET.as_bytes().len() {
-                                type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                    CLOSING_BRACKET.as_bytes()[i];
-                                i += 1;
-                            }
-                            current_end -= i;
-                        } else {
-                            let mut i = 0;
-                            while i < OPENING_BRACKET.as_bytes().len() {
-                                type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                                i += 1;
-                            }
-                            current_start += i;
+                        let mut i = 0;
+                        while i < OPENING_BRACKET.as_bytes().len() {
+                            type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
+                            i += 1;
+                        }
+                        current_start += i;
+                        if !is_null {
                             i = 0;
                             while i < BANG.as_bytes().len() {
                                 type_arr[current_end - BANG.as_bytes().len() + i + 1] =
@@ -170,14 +182,14 @@ macro_rules! format_type {
                                 i += 1;
                             }
                             current_end -= i;
-                            i = 0;
-                            while i < CLOSING_BRACKET.as_bytes().len() {
-                                type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                    CLOSING_BRACKET.as_bytes()[i];
-                                i += 1;
-                            }
-                            current_end -= i;
                         }
+                        i = 0;
+                        while i < CLOSING_BRACKET.as_bytes().len() {
+                            type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
+                                CLOSING_BRACKET.as_bytes()[i];
+                            i += 1;
+                        }
+                        current_end -= i;
                         is_null = false;
                     }
                     _ => {}
@@ -231,50 +243,54 @@ macro_rules! assert_subtype {
         $field_name: expr $(,)?
     ) => {
         const _: () = {
+            const BASE_TY: $crate::macros::helper::Type =
+                <$base_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
+            const IMPL_TY: $crate::macros::helper::Type =
+                <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
+            const ERR_PREFIX: &str = $crate::const_concat!(
+                "Failed to implement interface `",
+                BASE_TY,
+                "` on `",
+                IMPL_TY,
+                "`: ",
+            );
+
             const FIELD_NAME: $crate::macros::helper::Name =
                 $field_name;
             const BASE_RETURN_WRAPPED_VAL: $crate::macros::helper::WrappedValue =
                 <$base_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
-                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                    { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::WRAPPED_VALUE;
             const IMPL_RETURN_WRAPPED_VAL: $crate::macros::helper::WrappedValue =
                 <$impl_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
-                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                    { $crate::hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::WRAPPED_VALUE;
-
-            const BASE_TY: $crate::macros::helper::Type =
-                <$base_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
-            const IMPL_TY: $crate::macros::helper::Type =
-                <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
 
             const BASE_RETURN_SUB_TYPES: $crate::macros::helper::Types =
                 <$base_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
-                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                    { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::SUB_TYPES;
 
             const BASE_RETURN_TY: $crate::macros::helper::Type =
                 <$base_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
-                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                    { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::TYPE;
             const IMPL_RETURN_TY: $crate::macros::helper::Type =
                 <$impl_ty as $crate::macros::helper::FieldMeta<
                     $scalar,
-                    { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                    { $crate::hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::TYPE;
 
             let is_subtype = $crate::macros::helper::exists(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
                 && $crate::macros::helper::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
             if !is_subtype {
                 const MSG: &str = $crate::const_concat!(
-                    "Failed to implement interface `",
-                    BASE_TY,
-                    "` on `",
-                    IMPL_TY,
-                    "`: Field `",
+                    ERR_PREFIX,
+                    "Field `",
                     FIELD_NAME,
                     "`: implementor is expected to return a subtype of interface's return object: `",
                     $crate::format_type!(IMPL_RETURN_TY, IMPL_RETURN_WRAPPED_VAL),
@@ -303,16 +319,24 @@ macro_rules! assert_field_args {
                 $crate::macros::helper::WrappedValue,
             );
 
-            const FIELD_NAME: &str = $field_name;
             const BASE_NAME: &str = <$base_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
             const IMPL_NAME: &str = <$impl_ty as $crate::macros::helper::BaseType<$scalar>>::NAME;
+            const ERR_PREFIX: &str = $crate::const_concat!(
+                "Failed to implement interface `",
+                BASE_NAME,
+                "` on `",
+                IMPL_NAME,
+                "`: ",
+            );
+
+            const FIELD_NAME: &str = $field_name;
             const BASE_ARGS: &[FullArg] = <$base_ty as $crate::macros::helper::FieldMeta<
                 $scalar,
-                { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                { $crate::hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
             >>::ARGUMENTS;
             const IMPL_ARGS: &[FullArg] = <$impl_ty as $crate::macros::helper::FieldMeta<
                 $scalar,
-                { $crate::macros::helper::fnv1a128(FIELD_NAME) },
+                { $crate::hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
             >>::ARGUMENTS;
 
             struct Error {
@@ -419,19 +443,9 @@ macro_rules! assert_field_args {
                 const IMPL_TYPE_FORMATTED: &str =
                     $crate::format_type!(ERROR.implementation.1, ERROR.implementation.2);
 
-                const PREFIX: &str = $crate::const_concat!(
-                    "Failed to implement interface `",
-                    BASE_NAME,
-                    "` on `",
-                    IMPL_NAME,
-                    "`: Field `",
-                    FIELD_NAME,
-                    "`: ",
-                );
                 const MSG: &str = match ERROR.cause {
                     Cause::TypeMismatch => {
                         $crate::const_concat!(
-                            PREFIX,
                             "Argument `",
                             BASE_ARG_NAME,
                             "`: expected type `",
@@ -443,7 +457,6 @@ macro_rules! assert_field_args {
                     }
                     Cause::RequiredField => {
                         $crate::const_concat!(
-                            PREFIX,
                             "Argument `",
                             BASE_ARG_NAME,
                             "` of type `",
@@ -453,7 +466,6 @@ macro_rules! assert_field_args {
                     }
                     Cause::AdditionalNonNullableField => {
                         $crate::const_concat!(
-                            PREFIX,
                             "Argument `",
                             IMPL_ARG_NAME,
                             "` of type `",
@@ -462,7 +474,9 @@ macro_rules! assert_field_args {
                         )
                     }
                 };
-                ::std::panic!("{}", MSG);
+                const ERROR_MSG: &str =
+                    $crate::const_concat!(ERR_PREFIX, "Field `", FIELD_NAME, "`: ", MSG);
+                ::std::panic!("{}", ERROR_MSG);
             }
         };
     };
@@ -628,6 +642,10 @@ impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Arc<T> {
 
 impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
     const VALUE: u128 = T::VALUE;
+}
+
+pub trait Fields<S = DefaultScalarValue> {
+    const NAMES: Names;
 }
 
 pub trait FieldMeta<S, const N: FieldName> {
