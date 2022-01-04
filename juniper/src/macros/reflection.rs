@@ -5,8 +5,7 @@ use std::{rc::Rc, sync::Arc};
 use futures::future::BoxFuture;
 
 use crate::{
-    Arguments as FieldArguments, DefaultScalarValue, ExecutionResult, Executor, GraphQLValue,
-    Nullable, ScalarValue,
+    Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, Nullable, ScalarValue,
 };
 
 /// Type alias for GraphQL [`object`][1], [`scalar`][2] or [`interface`][3] type
@@ -465,6 +464,11 @@ pub const fn str_exists_in_arr(val: &str, arr: &[&str]) -> bool {
     false
 }
 
+/// Asserts validness of the [`Field`] [`Arguments`] and return [`Type`]. This
+/// assertion is a combination of [`assert_subtype`] and  [`assert_field_args`].
+/// See [spec][1] for more info.
+///
+/// [1]: https://spec.graphql.org/October2021/#IsValidImplementation()
 #[macro_export]
 macro_rules! assert_field {
     (
@@ -478,6 +482,10 @@ macro_rules! assert_field {
     };
 }
 
+/// Asserts validness of the [`Field`]s return type. See [spec][1] for more
+/// info.
+///
+/// [1]: https://spec.graphql.org/October2021/#IsValidImplementationFieldType()
 #[macro_export]
 macro_rules! assert_subtype {
     (
@@ -501,6 +509,7 @@ macro_rules! assert_subtype {
 
             const FIELD_NAME: $crate::macros::reflection::Name =
                 $field_name;
+
             const BASE_RETURN_WRAPPED_VAL: $crate::macros::reflection::WrappedValue =
                 <$base_ty as $crate::macros::reflection::FieldMeta<
                     $scalar,
@@ -512,12 +521,6 @@ macro_rules! assert_subtype {
                     { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::WRAPPED_VALUE;
 
-            const BASE_RETURN_SUB_TYPES: $crate::macros::reflection::Types =
-                <$base_ty as $crate::macros::reflection::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
-                >>::SUB_TYPES;
-
             const BASE_RETURN_TY: $crate::macros::reflection::Type =
                 <$base_ty as $crate::macros::reflection::FieldMeta<
                     $scalar,
@@ -528,6 +531,12 @@ macro_rules! assert_subtype {
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::TYPE;
+
+            const BASE_RETURN_SUB_TYPES: $crate::macros::reflection::Types =
+                <$base_ty as $crate::macros::reflection::FieldMeta<
+                    $scalar,
+                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                >>::SUB_TYPES;
 
             let is_subtype = $crate::macros::reflection::str_exists_in_arr(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
                 && $crate::macros::reflection::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
@@ -548,6 +557,10 @@ macro_rules! assert_subtype {
     };
 }
 
+/// Asserts validness of the [`Field`]s arguments. See [spec][1] for more
+/// info.
+///
+/// [1]: https://spec.graphql.org/October2021/#sel-IAHZhCHCDEEFAAADHD8Cxob
 #[macro_export]
 macro_rules! assert_field_args {
     (
@@ -557,12 +570,6 @@ macro_rules! assert_field_args {
         $field_name: expr $(,)?
     ) => {
         const _: () = {
-            type FullArg = (
-                $crate::macros::reflection::Name,
-                $crate::macros::reflection::Type,
-                $crate::macros::reflection::WrappedValue,
-            );
-
             const BASE_NAME: &str =
                 <$base_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME;
             const IMPL_NAME: &str =
@@ -576,19 +583,22 @@ macro_rules! assert_field_args {
             );
 
             const FIELD_NAME: &str = $field_name;
-            const BASE_ARGS: &[FullArg] = <$base_ty as $crate::macros::reflection::FieldMeta<
-                $scalar,
-                { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
-            >>::ARGUMENTS;
-            const IMPL_ARGS: &[FullArg] = <$impl_ty as $crate::macros::reflection::FieldMeta<
-                $scalar,
-                { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
-            >>::ARGUMENTS;
+
+            const BASE_ARGS: ::juniper::macros::reflection::Arguments =
+                <$base_ty as $crate::macros::reflection::FieldMeta<
+                    $scalar,
+                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                >>::ARGUMENTS;
+            const IMPL_ARGS: ::juniper::macros::reflection::Arguments =
+                <$impl_ty as $crate::macros::reflection::FieldMeta<
+                    $scalar,
+                    { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
+                >>::ARGUMENTS;
 
             struct Error {
                 cause: Cause,
-                base: FullArg,
-                implementation: FullArg,
+                base: ::juniper::macros::reflection::Argument,
+                implementation: ::juniper::macros::reflection::Argument,
             }
 
             enum Cause {
@@ -599,6 +609,8 @@ macro_rules! assert_field_args {
 
             const fn unwrap_error(v: ::std::result::Result<(), Error>) -> Error {
                 match v {
+                    // Unfortunately we can't use `unreachable!()` here, as this
+                    // branch will be executed either way.
                     Ok(()) => Error {
                         cause: Cause::RequiredField,
                         base: ("unreachable", "unreachable", 1),
@@ -636,6 +648,7 @@ macro_rules! assert_field_args {
                         impl_i += 1;
                     }
 
+                    // TODO: Maybe that's ok?
                     if !was_found {
                         return Err(Error {
                             cause: Cause::RequiredField,
@@ -728,10 +741,11 @@ macro_rules! assert_field_args {
     };
 }
 
+/// Concatenates const [`str`](prim@str)s in const context.
 #[macro_export]
 macro_rules! const_concat {
     ($($s:expr),* $(,)?) => {{
-        const LEN: usize = 0 $(+ $s.len())*;
+        const LEN: usize = 0 $(+ $s.as_bytes().len())*;
         const CNT: usize = [$($s),*].len();
         const fn concat(input: [&str; CNT]) -> [u8; LEN] {
             let mut bytes = [0; LEN];
@@ -748,10 +762,16 @@ macro_rules! const_concat {
             bytes
         }
         const CON: [u8; LEN] = concat([$($s),*]);
+
+        // SAFETY: this is safe, as we concatenate multiple UTF-8 strings one
+        //         after the other byte by byte.
+        #[allow(unsafe_code)]
         unsafe { std::str::from_utf8_unchecked(&CON) }
     }};
 }
 
+/// Before executing [`fnv1a128`] checks whether `impl_ty` has corresponding
+/// [`Field`] impl and panics with understandable message.
 #[macro_export]
 macro_rules! checked_hash {
     ($field_name: expr, $impl_ty: ty, $scalar: ty $(, $prefix: expr)? $(,)?) => {{
@@ -762,21 +782,29 @@ macro_rules! checked_hash {
         if exists {
             $crate::macros::reflection::fnv1a128(FIELD_NAME)
         } else {
-            ::std::panic!(
-                "{}",
-                $crate::const_concat!(
-                    $($prefix,)?
-                    "Field `",
-                    $field_name,
-                    "` isn't implemented on `",
-                    <$impl_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME,
-                    "`."
-                )
-            )
+            const MSG: &str = $crate::const_concat!(
+                $($prefix,)?
+                "Field `",
+                $field_name,
+                "` isn't implemented on `",
+                <$impl_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                "`."
+            );
+            ::std::panic!("{}", MSG)
         }
     }};
 }
 
+/// Formats [`Type`] and [`WrappedValue`] into GraphQL type.
+///
+/// # Examples
+///
+/// ```
+/// # use juniper::format_type;
+/// #
+/// assert_eq!(format_type!("String", 123), "[String]!");
+/// assert_eq!(format_type!("🦀", 123), "[🦀]!");
+/// ```
 #[macro_export]
 macro_rules! format_type {
     ($ty: expr, $wrapped_value: expr $(,)?) => {{
@@ -801,8 +829,9 @@ macro_rules! format_type {
             let mut is_null = false;
             while current_wrap_val % 10 != 0 {
                 match current_wrap_val % 10 {
-                    2 => is_null = true,
+                    2 => is_null = true, // Skips writing BANG later.
                     3 => {
+                        // Write OPENING_BRACKET at current_start.
                         let mut i = 0;
                         while i < OPENING_BRACKET.as_bytes().len() {
                             type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
@@ -810,6 +839,7 @@ macro_rules! format_type {
                         }
                         current_start += i;
                         if !is_null {
+                            // Write BANG at current_end.
                             i = 0;
                             while i < BANG.as_bytes().len() {
                                 type_arr[current_end - BANG.as_bytes().len() + i + 1] =
@@ -818,6 +848,7 @@ macro_rules! format_type {
                             }
                             current_end -= i;
                         }
+                        // Write CLOSING_BRACKET at current_end.
                         i = 0;
                         while i < CLOSING_BRACKET.as_bytes().len() {
                             type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
@@ -833,6 +864,7 @@ macro_rules! format_type {
                 current_wrap_val /= 10;
             }
 
+            // Writes Type at current_start.
             let mut i = 0;
             while i < ty.as_bytes().len() {
                 type_arr[current_start + i] = ty.as_bytes()[i];
@@ -840,6 +872,7 @@ macro_rules! format_type {
             }
             i = 0;
             if !is_null {
+                // Writes BANG at current_end.
                 while i < BANG.as_bytes().len() {
                     type_arr[current_end - BANG.as_bytes().len() + i + 1] = BANG.as_bytes()[i];
                     i += 1;
@@ -850,8 +883,12 @@ macro_rules! format_type {
         }
 
         const TYPE_ARR: [u8; RES_LEN] = format_type_arr();
-        // SAFETY: This is safe, as `TYPE_ARR` was formatted from `Type`, `[`, `]` and `!`.
+
+        // SAFETY: this is safe, as we concatenate multiple UTF-8 strings one
+        //         after the other byte by byte.
+        #[allow(unsafe_code)]
         const TYPE_FORMATTED: &str = unsafe { ::std::mem::transmute(TYPE_ARR.as_slice()) };
+
         TYPE_FORMATTED
     }};
 }
