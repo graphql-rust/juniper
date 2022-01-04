@@ -3,6 +3,9 @@
 #[doc(hidden)]
 #[macro_use]
 pub mod helper;
+#[doc(hidden)]
+#[macro_use]
+pub mod reflection;
 
 #[macro_use]
 mod graphql_input_value;

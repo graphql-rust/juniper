@@ -328,20 +328,20 @@ pub fn build_scalar(
             }
         }
 
-        impl#generic_type_decl ::juniper::macros::helper::BaseType<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::macros::reflection::BaseType<#generic_type> for #impl_for_type
             #generic_type_bound
         {
             const NAME: &'static str = #name;
         }
 
-        impl#generic_type_decl ::juniper::macros::helper::BaseSubTypes<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::macros::reflection::BaseSubTypes<#generic_type> for #impl_for_type
             #generic_type_bound
         {
             const NAMES: &'static [&'static str] =
-                &[<Self as ::juniper::macros::helper::BaseType<#generic_type>>::NAME];
+                &[<Self as ::juniper::macros::reflection::BaseType<#generic_type>>::NAME];
         }
 
-        impl#generic_type_decl ::juniper::macros::helper::WrappedType<#generic_type> for #impl_for_type
+        impl#generic_type_decl ::juniper::macros::reflection::WrappedType<#generic_type> for #impl_for_type
             #generic_type_bound
         {
             const VALUE: u128 = 1;

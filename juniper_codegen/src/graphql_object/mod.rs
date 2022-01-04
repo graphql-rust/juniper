@@ -372,36 +372,36 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::BaseType<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAME: ::juniper::macros::helper::Type = #name;
+                const NAME: ::juniper::macros::reflection::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::helper::Types =
-                    &[<Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::macros::reflection::Types =
+                    &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::WrappedType<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar>
                 for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::macros::helper::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::Fields<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::Fields<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::helper::Names = &[#(#fields),*];
+                const NAMES: ::juniper::macros::reflection::Names = &[#(#fields),*];
             }
         }
     }
@@ -541,9 +541,9 @@ impl Definition<Query> {
                 let name = &f.name;
                 quote! {
                     #name => {
-                        ::juniper::macros::helper::Field::<
+                        ::juniper::macros::reflection::Field::<
                             #scalar,
-                            { ::juniper::macros::helper::fnv1a128(#name) }
+                            { ::juniper::macros::reflection::fnv1a128(#name) }
                         >::call(self, info, args, executor)
                     }
                 }
@@ -637,9 +637,9 @@ impl Definition<Query> {
             let name = &f.name;
             quote! {
                 #name => {
-                    ::juniper::macros::helper::AsyncField::<
+                    ::juniper::macros::reflection::AsyncField::<
                         #scalar,
-                        { ::juniper::macros::helper::fnv1a128(#name) }
+                        { ::juniper::macros::reflection::fnv1a128(#name) }
                     >::call(self, info, args, executor)
                 }
             }

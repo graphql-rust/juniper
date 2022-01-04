@@ -464,8 +464,8 @@ impl Definition {
 
                     Some(quote! {(
                         #name,
-                        <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                        <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
+                        <#ty as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
+                        <#ty as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE,
                     )})
                 }
                 MethodArgument::Executor | MethodArgument::Context(_) => None,
@@ -475,24 +475,24 @@ impl Definition {
         quote! {
             #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl #impl_generics ::juniper::macros::helper::FieldMeta<
+            impl #impl_generics ::juniper::macros::reflection::FieldMeta<
                 #scalar,
-                { ::juniper::macros::helper::fnv1a128(#name) }
+                { ::juniper::macros::reflection::fnv1a128(#name) }
             > for #impl_ty
                 #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
-                const TYPE: ::juniper::macros::helper::Type =
-                    <#ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
-                const SUB_TYPES: ::juniper::macros::helper::Types =
-                    <#ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
-                const WRAPPED_VALUE: juniper::macros::helper::WrappedValue =
-                    <#ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
+                const TYPE: ::juniper::macros::reflection::Type =
+                    <#ty as ::juniper::macros::reflection::BaseType<#scalar>>::NAME;
+                const SUB_TYPES: ::juniper::macros::reflection::Types =
+                    <#ty as ::juniper::macros::reflection::BaseSubTypes<#scalar>>::NAMES;
+                const WRAPPED_VALUE: juniper::macros::reflection::WrappedValue =
+                    <#ty as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE;
                 const ARGUMENTS: &'static [(
-                    ::juniper::macros::helper::Name,
-                    ::juniper::macros::helper::Type,
-                    ::juniper::macros::helper::WrappedValue,
+                    ::juniper::macros::reflection::Name,
+                    ::juniper::macros::reflection::Type,
+                    ::juniper::macros::reflection::WrappedValue,
                 )] = &[#(#arguments,)*];
             }
         }
@@ -575,9 +575,9 @@ impl Definition {
         Some(quote! {
             #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl #impl_generics ::juniper::macros::helper::#trait_name<
+            impl #impl_generics ::juniper::macros::reflection::#trait_name<
                 #scalar,
-                { ::juniper::macros::helper::fnv1a128(#name) }
+                { ::juniper::macros::reflection::fnv1a128(#name) }
             > for #impl_ty
                 #where_clause
             {

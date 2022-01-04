@@ -726,25 +726,25 @@ impl Definition {
         let implementors = self.implementers.iter().map(|i| &i.ty);
 
         quote! {
-            impl #impl_generics ::juniper::macros::helper::BaseType<#scalar> for #ty
+            impl #impl_generics ::juniper::macros::reflection::BaseType<#scalar> for #ty
                 #where_clause
             {
-                const NAME: ::juniper::macros::helper::Type = #name;
+                const NAME: ::juniper::macros::reflection::Type = #name;
             }
 
-            impl #impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar> for #ty
+            impl #impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::helper::Types = &[
-                    <Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                    #(<#implementors as ::juniper::macros::helper::BaseType<#scalar>>::NAME),*
+                const NAMES: ::juniper::macros::reflection::Types = &[
+                    <Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
+                    #(<#implementors as ::juniper::macros::reflection::BaseType<#scalar>>::NAME),*
                 ];
             }
 
-            impl #impl_generics ::juniper::macros::helper::WrappedType<#scalar> for #ty
+            impl #impl_generics ::juniper::macros::reflection::WrappedType<#scalar> for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::macros::helper::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
             }
         }
     }

@@ -577,9 +577,9 @@ impl Definition {
                 let name = &f.name;
                 quote! {
                     #name => {
-                        ::juniper::macros::helper::Field::<
+                        ::juniper::macros::reflection::Field::<
                             #scalar,
-                            { ::juniper::macros::helper::fnv1a128(#name) }
+                            { ::juniper::macros::reflection::fnv1a128(#name) }
                         >::call(self, info, args, executor)
                     }
                 }
@@ -671,9 +671,9 @@ impl Definition {
             let name = &f.name;
             quote! {
                 #name => {
-                    ::juniper::macros::helper::AsyncField::<
+                    ::juniper::macros::reflection::AsyncField::<
                         #scalar,
-                        { ::juniper::macros::helper::fnv1a128(#name) }
+                        { ::juniper::macros::reflection::fnv1a128(#name) }
                     >::call(self, info, args, executor)
                 }
             }
@@ -718,9 +718,9 @@ impl Definition {
     /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
     /// [`WrappedType`] traits for this [GraphQL interface][1].
     ///
-    /// [`BaseSubTypes`]: juniper::macros::helper::BaseSubTypes
-    /// [`BaseType`]: juniper::macros::helper::BaseType
-    /// [`WrappedType`]: juniper::macros::helper::WrappedType
+    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
     pub(crate) fn impl_traits_for_reflection(&self) -> TokenStream {
@@ -736,38 +736,38 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::BaseType<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const NAME: ::juniper::macros::helper::Type = #name;
+                const NAME: ::juniper::macros::reflection::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::BaseSubTypes<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const NAMES: ::juniper::macros::helper::Types = &[
-                    <Self as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                    #(<#implementers as ::juniper::macros::helper::BaseType<#scalar>>::NAME),*
+                const NAMES: ::juniper::macros::reflection::Types = &[
+                    <Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
+                    #(<#implementers as ::juniper::macros::reflection::BaseType<#scalar>>::NAME),*
                 ];
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::WrappedType<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const VALUE: ::juniper::macros::helper::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::helper::Fields<#scalar>
+            impl#impl_generics ::juniper::macros::reflection::Fields<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const NAMES: ::juniper::macros::helper::Names = &[#(#fields),*];
+                const NAMES: ::juniper::macros::reflection::Names = &[#(#fields),*];
             }
         }
     }
@@ -775,7 +775,7 @@ impl Definition {
     /// Returns generated code implementing [`FieldMeta`] for this
     /// [GraphQL interface][1].
     ///
-    /// [`FieldMeta`]: juniper::macros::helper::FieldMeta
+    /// [`FieldMeta`]: juniper::macros::reflection::FieldMeta
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_field_meta(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -805,26 +805,26 @@ impl Definition {
 
                 quote! {
                     #[allow(non_snake_case)]
-                    impl#impl_generics ::juniper::macros::helper::FieldMeta<
+                    impl#impl_generics ::juniper::macros::reflection::FieldMeta<
                         #scalar,
-                        { ::juniper::macros::helper::fnv1a128(#field_name) }
+                        { ::juniper::macros::reflection::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
                         type Context = #context;
                         type TypeInfo = ();
-                        const TYPE: ::juniper::macros::helper::Type =
-                            <#return_ty as ::juniper::macros::helper::BaseType<#scalar>>::NAME;
-                        const SUB_TYPES: ::juniper::macros::helper::Types =
-                            <#return_ty as ::juniper::macros::helper::BaseSubTypes<#scalar>>::NAMES;
-                        const WRAPPED_VALUE: ::juniper::macros::helper::WrappedValue =
-                            <#return_ty as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE;
+                        const TYPE: ::juniper::macros::reflection::Type =
+                            <#return_ty as ::juniper::macros::reflection::BaseType<#scalar>>::NAME;
+                        const SUB_TYPES: ::juniper::macros::reflection::Types =
+                            <#return_ty as ::juniper::macros::reflection::BaseSubTypes<#scalar>>::NAMES;
+                        const WRAPPED_VALUE: ::juniper::macros::reflection::WrappedValue =
+                            <#return_ty as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE;
                         const ARGUMENTS: &'static [(
-                            ::juniper::macros::helper::Name,
-                            ::juniper::macros::helper::Type,
-                            ::juniper::macros::helper::WrappedValue,
+                            ::juniper::macros::reflection::Name,
+                            ::juniper::macros::reflection::Type,
+                            ::juniper::macros::reflection::WrappedValue,
                         )] = &[#((
                             #args_names,
-                            <#args_tys as ::juniper::macros::helper::BaseType<#scalar>>::NAME,
-                            <#args_tys as ::juniper::macros::helper::WrappedType<#scalar>>::VALUE,
+                            <#args_tys as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
+                            <#args_tys as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE,
                         )),*];
                     }
                 }
@@ -835,8 +835,8 @@ impl Definition {
     /// Returns generated code implementing [`Field`] or [`AsyncField`] trait
     /// for this [GraphQL interface][1].
     ///
-    /// [`AsyncField`]: juniper::macros::helper::AsyncField
-    /// [`Field`]: juniper::macros::helper::Field
+    /// [`AsyncField`]: juniper::macros::reflection::AsyncField
+    /// [`Field`]: juniper::macros::reflection::Field
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_field(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -875,9 +875,9 @@ impl Definition {
 
                 Some(quote! {
                     #[allow(non_snake_case)]
-                    impl#impl_generics ::juniper::macros::helper::Field<
+                    impl#impl_generics ::juniper::macros::reflection::Field<
                         #scalar,
-                        { ::juniper::macros::helper::fnv1a128(#field_name) }
+                        { ::juniper::macros::reflection::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
                         fn call(
                             &self,
@@ -894,9 +894,9 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    <_ as ::juniper::macros::helper::Field<
+                                    <_ as ::juniper::macros::reflection::Field<
                                         #scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                        { ::juniper::macros::reflection::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
                                 })*
                                 #unreachable_arm
@@ -911,7 +911,7 @@ impl Definition {
     /// Returns generated code implementing [`AsyncField`] trait for this
     /// [GraphQL interface][1].
     ///
-    /// [`AsyncField`]: juniper::macros::helper::AsyncField
+    /// [`AsyncField`]: juniper::macros::reflection::AsyncField
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_async_field(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -946,9 +946,9 @@ impl Definition {
 
                 quote! {
                     #[allow(non_snake_case)]
-                    impl#impl_generics ::juniper::macros::helper::AsyncField<
+                    impl#impl_generics ::juniper::macros::reflection::AsyncField<
                         #scalar,
-                        { ::juniper::macros::helper::fnv1a128(#field_name) }
+                        { ::juniper::macros::reflection::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
                         fn call<'b>(
                             &'b self,
@@ -965,9 +965,9 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    <_ as ::juniper::macros::helper::AsyncField<
+                                    <_ as ::juniper::macros::reflection::AsyncField<
                                         #scalar,
-                                        { ::juniper::macros::helper::fnv1a128(#field_name) },
+                                        { ::juniper::macros::reflection::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
                                 })*
                                 #unreachable_arm
