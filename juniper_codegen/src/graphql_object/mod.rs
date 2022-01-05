@@ -21,7 +21,7 @@ use crate::{
         field, gen,
         parse::{
             attr::{err, OptionExt as _},
-            ParseBufferExt as _, TypeExt,
+            GenericsExt as _, ParseBufferExt as _, TypeExt,
         },
         scalar,
     },
@@ -522,7 +522,20 @@ impl Definition<Query> {
         let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
-        let interface_tys = self.interfaces.iter().collect::<Vec<_>>();
+        let interface_tys = self.interfaces.iter();
+
+        let generics = {
+            let mut generics = self.generics.clone();
+            if scalar.is_implicit_generic() {
+                generics.params.push(parse_quote!(#scalar))
+            }
+            generics
+        };
+        let const_interface_tys = interface_tys.clone().cloned().map(|mut ty| {
+            generics.replace_type_with_defaults(&mut ty);
+            ty
+        });
+
         // TODO: Make it work by repeating `sa::assert_type_ne_all!` expansion,
         //       but considering generics.
         //let interface_tys: Vec<_> = self.interfaces.iter().collect();
@@ -537,7 +550,7 @@ impl Definition<Query> {
                 fn mark() {
                     #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
                     ::juniper::assert_implemented_for!(
-                        #const_scalar, #ty, #(#interface_tys),*
+                        #const_scalar, #ty, #(#const_interface_tys),*
                     );
                 }
             }

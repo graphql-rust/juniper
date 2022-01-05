@@ -478,6 +478,7 @@ impl Definition {
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let ty_const_generics = self.const_trait_generics();
 
         let fields_marks = self
             .fields
@@ -496,7 +497,7 @@ impl Definition {
                     #( #fields_marks )*
                     #( <#impler_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
                     ::juniper::assert_interfaces_impls!(
-                        #const_scalar, #ty, #(#impler_tys),*
+                        #const_scalar, #ty#ty_const_generics, #(#impler_tys),*
                     );
                 }
             }

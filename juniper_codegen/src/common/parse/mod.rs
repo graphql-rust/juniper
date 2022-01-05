@@ -330,7 +330,7 @@ impl GenericsExt for syn::Generics {
                             });
 
                         if is_generic {
-                            *ty = parse_quote!(());
+                            *ty = parse_quote!(::juniper::DefaultScalarValue);
                         }
                     }
                     _ => {}
