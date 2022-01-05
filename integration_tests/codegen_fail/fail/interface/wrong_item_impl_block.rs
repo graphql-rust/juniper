@@ -5,9 +5,7 @@ pub struct ObjA {
     test: String,
 }
 
-#[graphql_interface]
-trait Character {
-    fn id(&self, obj: ObjA) -> &str;
-}
+#[graphql_interface(for = ObjA)]
+impl ObjA {}
 
 fn main() {}

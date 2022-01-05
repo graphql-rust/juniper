@@ -114,9 +114,8 @@ pub use futures::future::{BoxFuture, LocalBoxFuture};
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_interface, graphql_interface_new, graphql_object, graphql_scalar, graphql_subscription,
-    graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue,
-    GraphQLUnion,
+    graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
+    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
 };
 
 #[doc(hidden)]

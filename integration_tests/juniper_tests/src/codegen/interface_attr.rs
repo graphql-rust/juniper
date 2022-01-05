@@ -1,10 +1,9 @@
 //! Tests for `#[graphql_interface]` macro.
 
 use juniper::{
-    execute, graphql_interface_new, graphql_object, graphql_value, graphql_vars,
-    DefaultScalarValue, EmptyMutation, EmptySubscription, Executor, FieldError, FieldResult,
-    GraphQLInputObject, GraphQLObject, GraphQLType, GraphQLUnion, IntoFieldError, RootNode,
-    ScalarValue,
+    execute, graphql_interface, graphql_object, graphql_value, graphql_vars, DefaultScalarValue,
+    EmptyMutation, EmptySubscription, Executor, FieldError, FieldResult, GraphQLInputObject,
+    GraphQLObject, GraphQLType, GraphQLUnion, IntoFieldError, RootNode, ScalarValue,
 };
 
 fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -35,7 +34,7 @@ where
 mod no_implers {
     use super::*;
 
-    #[graphql_interface_new]
+    #[graphql_interface]
     trait Character {
         fn id(&self) -> &str;
     }
@@ -101,7 +100,7 @@ mod no_implers {
 mod trivial {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character {
         fn id(&self) -> &str;
     }
@@ -325,7 +324,7 @@ mod trivial {
 mod explicit_alias {
     use super::*;
 
-    #[graphql_interface_new(enum = CharacterEnum, for = [Human, Droid])]
+    #[graphql_interface(enum = CharacterEnum, for = [Human, Droid])]
     trait Character {
         fn id(&self) -> &str;
     }
@@ -495,7 +494,7 @@ mod explicit_alias {
 mod trivial_async {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character {
         async fn id(&self) -> &str;
     }
@@ -719,7 +718,7 @@ mod trivial_async {
 mod explicit_async {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character {
         fn id(&self) -> &str;
 
@@ -865,7 +864,7 @@ mod fallible_field {
         }
     }
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character {
         fn id(&self) -> Result<&str, CustomError>;
     }
@@ -1023,7 +1022,7 @@ mod fallible_field {
 mod generic {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character<A = (), B: ?Sized = ()> {
         fn id(&self) -> &str;
     }
@@ -1161,7 +1160,7 @@ mod generic {
 mod generic_async {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character<A = (), B: ?Sized = ()> {
         async fn id(&self) -> &str;
     }
@@ -1299,7 +1298,7 @@ mod generic_async {
 mod generic_lifetime_async {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character<'me, A> {
         async fn id<'a>(&'a self) -> &'a str;
     }
@@ -1437,7 +1436,7 @@ mod generic_lifetime_async {
 mod argument {
     use super::*;
 
-    #[graphql_interface_new(for = Human)]
+    #[graphql_interface(for = Human)]
     trait Character {
         fn id_wide(&self, is_number: bool) -> &str;
 
@@ -1613,7 +1612,7 @@ mod default_argument {
         x: i32,
     }
 
-    #[graphql_interface_new(for = Human)]
+    #[graphql_interface(for = Human)]
     trait Character {
         async fn id(
             &self,
@@ -1747,7 +1746,7 @@ mod description_from_doc_comment {
     use super::*;
 
     /// Rust docs.
-    #[graphql_interface_new(for = Human)]
+    #[graphql_interface(for = Human)]
     trait Character {
         /// Rust `id` docs.
         /// Long.
@@ -1803,7 +1802,7 @@ mod description_from_doc_comment {
 mod deprecation_from_attr {
     use super::*;
 
-    #[graphql_interface_new(for = Human)]
+    #[graphql_interface(for = Human)]
     trait Character {
         fn id(&self) -> &str;
 
@@ -1941,7 +1940,7 @@ mod explicit_name_description_and_deprecation {
     use super::*;
 
     /// Rust docs.
-    #[graphql_interface_new(name = "MyChar", desc = "My character.", for = Human)]
+    #[graphql_interface(name = "MyChar", desc = "My character.", for = Human)]
     trait Character {
         /// Rust `id` docs.
         #[graphql(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
@@ -2127,7 +2126,7 @@ mod explicit_name_description_and_deprecation {
 mod renamed_all_fields_and_args {
     use super::*;
 
-    #[graphql_interface_new(rename_all = "none", for = Human)]
+    #[graphql_interface(rename_all = "none", for = Human)]
     trait Character {
         fn id(&self) -> &str {
             "human-32"
@@ -2225,8 +2224,8 @@ mod renamed_all_fields_and_args {
 mod explicit_scalar {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
-    #[graphql_interface_new(scalar = DefaultScalarValue)]
+    #[graphql_interface(for = [Human, Droid])]
+    #[graphql_interface(scalar = DefaultScalarValue)]
     trait Character {
         fn id(&self) -> &str;
     }
@@ -2350,7 +2349,7 @@ mod custom_scalar {
 
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid], scalar = MyScalarValue)]
+    #[graphql_interface(for = [Human, Droid], scalar = MyScalarValue)]
     trait Character {
         async fn id(&self) -> &str;
     }
@@ -2472,7 +2471,7 @@ mod custom_scalar {
 mod explicit_generic_scalar {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid], scalar = S)]
+    #[graphql_interface(for = [Human, Droid], scalar = S)]
     trait Character<S: ScalarValue = DefaultScalarValue> {
         fn id(&self) -> FieldResult<&str, S>;
     }
@@ -2594,7 +2593,7 @@ mod explicit_generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid], scalar = S: ScalarValue + Clone)]
+    #[graphql_interface(for = [Human, Droid], scalar = S: ScalarValue + Clone)]
     trait Character {
         fn id(&self) -> &str;
     }
@@ -2720,7 +2719,7 @@ mod explicit_custom_context {
 
     impl juniper::Context for CustomContext {}
 
-    #[graphql_interface_new(for = [Human, Droid], context = CustomContext)]
+    #[graphql_interface(for = [Human, Droid], context = CustomContext)]
     trait Character {
         async fn id<'a>(&'a self, context: &CustomContext) -> &'a str;
 
@@ -2886,7 +2885,7 @@ mod inferred_custom_context_from_field {
 
     impl juniper::Context for CustomContext {}
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character {
         fn id<'a>(&self, context: &'a CustomContext) -> &'a str;
 
@@ -3036,7 +3035,7 @@ mod executor {
 
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid], scalar = S)]
+    #[graphql_interface(for = [Human, Droid], scalar = S)]
     trait Character<S: ScalarValue> {
         async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
         where
@@ -3216,7 +3215,7 @@ mod executor {
 mod ignored_method {
     use super::*;
 
-    #[graphql_interface_new(for = Human)]
+    #[graphql_interface(for = Human)]
     trait Character {
         fn id(&self) -> &str;
 
@@ -3312,7 +3311,7 @@ mod ignored_method {
 mod field_return_subtyping {
     use super::*;
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character {
         fn id(&self) -> Option<String>;
     }
@@ -3451,7 +3450,7 @@ mod field_return_union_subtyping {
         Knowledge(Knowledge),
     }
 
-    #[graphql_interface_new(for = [Human, Droid])]
+    #[graphql_interface(for = [Human, Droid])]
     trait Character {
         fn id(&self) -> Option<String>;
 

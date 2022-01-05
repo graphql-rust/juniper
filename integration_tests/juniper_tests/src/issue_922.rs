@@ -38,33 +38,11 @@ struct Human {
     pub name: String,
 }
 
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> i32 {
-        self.id
-    }
-
-    fn name(&self) -> String {
-        self.name.clone()
-    }
-}
-
 #[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue)]
 struct Droid {
     pub id: i32,
     pub name: String,
-}
-
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&self) -> i32 {
-        self.id
-    }
-
-    fn name(&self) -> String {
-        self.name.clone()
-    }
 }
 
 type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;

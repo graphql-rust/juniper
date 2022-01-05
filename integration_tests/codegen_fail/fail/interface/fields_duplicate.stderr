@@ -1,25 +1,12 @@
 error: GraphQL interface must have a different name for each field
-  --> fail/interface/fields_duplicate.rs:13:1
-   |
-13 | / trait Character {
-14 | |     fn id(&self) -> &str {
-15 | |         "funA"
-16 | |     }
-...  |
-21 | |     }
-22 | | }
-   | |_^
-   |
-   = note: https://spec.graphql.org/June2018/#sec-Interfaces
-
-error[E0412]: cannot find type `CharacterValue` in this scope
- --> fail/interface/fields_duplicate.rs:4:18
+ --> fail/interface/fields_duplicate.rs:4:1
   |
-4 | #[graphql(impl = CharacterValue)]
-  |                  ^^^^^^^^^^^^^^ not found in this scope
-
-error[E0405]: cannot find trait `Character` in this scope
-  --> fail/interface/fields_duplicate.rs:10:6
-   |
-10 | impl Character for ObjA {}
-   |      ^^^^^^^^^ not found in this scope
+4 | / trait Character {
+5 | |     fn id(&self) -> &str;
+6 | |
+7 | |     #[graphql(name = "id")]
+8 | |     fn id2(&self) -> &str;
+9 | | }
+  | |_^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Interfaces

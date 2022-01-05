@@ -136,7 +136,6 @@ impl Human {
     }
 }
 
-#[graphql_interface]
 impl Character for Human {
     fn id(&self) -> &str {
         &self.id
@@ -223,7 +222,6 @@ impl Droid {
     }
 }
 
-#[graphql_interface]
 impl Character for Droid {
     fn id(&self) -> &str {
         &self.id

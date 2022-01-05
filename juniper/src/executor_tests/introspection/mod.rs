@@ -43,9 +43,7 @@ impl<S: ScalarValue> GraphQLScalar for Scalar {
 #[graphql_interface(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface
-    fn sample_enum(&self) -> Sample {
-        Sample::One
-    }
+    fn sample_enum(&self) -> Sample;
 }
 
 struct Root;
@@ -65,9 +63,6 @@ impl Root {
         Scalar(first + second)
     }
 }
-
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Interface for Root {}
 
 #[tokio::test]
 async fn test_execution() {

@@ -90,12 +90,6 @@ impl Type {
         matches!(self, Self::ExplicitGeneric(_) | Self::ImplicitGeneric(_))
     }
 
-    /// Indicates whether this [`Type`] is [`Type::ExplicitGeneric`].
-    #[must_use]
-    pub(crate) fn is_explicit_generic(&self) -> bool {
-        matches!(self, Self::ExplicitGeneric(_))
-    }
-
     /// Indicates whether this [`Type`] is [`Type::ImplicitGeneric`].
     #[must_use]
     pub(crate) fn is_implicit_generic(&self) -> bool {
@@ -120,16 +114,6 @@ impl Type {
             Self::ExplicitGeneric(ty_param) => parse_quote! { #ty_param },
             Self::ImplicitGeneric(Some(pred)) => pred.bounded_ty.clone(),
             Self::ImplicitGeneric(None) => parse_quote! { __S },
-        }
-    }
-
-    /// Returns a type parameter identifier that suits this [`Type`].
-    #[must_use]
-    pub(crate) fn generic_ty(&self) -> syn::Type {
-        match self {
-            Self::ExplicitGeneric(ty_param) => parse_quote! { #ty_param },
-            Self::ImplicitGeneric(Some(pred)) => pred.bounded_ty.clone(),
-            Self::ImplicitGeneric(None) | Self::Concrete(_) => parse_quote! { __S },
         }
     }
 
