@@ -281,6 +281,10 @@ pub trait Fields<S> {
     const NAMES: Names;
 }
 
+pub trait Implements<S> {
+    const NAMES: Types;
+}
+
 /// Stores meta information of [GraphQL fields][1]:
 /// - [`Context`] and [`TypeInfo`].
 /// - Return type's [`TYPE`], [`SUB_TYPES`] and [`WRAPPED_VALUE`].
@@ -465,6 +469,54 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
     }
 
     true
+}
+
+#[macro_export]
+macro_rules! assert_implemented_for {
+    ($scalar: ty, $implementor: ty $(, $interfaces: ty)* $(,)?) => {
+        const _: () = {
+            $({
+                let is_present = $crate::macros::reflection::str_exists_in_arr(
+                    <$implementor as ::juniper::macros::reflection::BaseType<$scalar>>::NAME,
+                    <$interfaces as ::juniper::macros::reflection::BaseSubTypes<$scalar>>::NAMES,
+                );
+                if !is_present {
+                    const MSG: &str = $crate::const_concat!(
+                        "Failed to implement interface `",
+                        <$interfaces as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        "` on `",
+                        <$implementor as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        "`: missing implementer reference in interface's `for` attribute.",
+                    );
+                    ::std::panic!("{}", MSG);
+                }
+            })*
+        };
+    };
+}
+
+#[macro_export]
+macro_rules! assert_interfaces_impls {
+    ($scalar: ty, $interface: ty $(, $implementers: ty)* $(,)?) => {
+        const _: () = {
+            $({
+                let is_present = $crate::macros::reflection::str_exists_in_arr(
+                    <$interface as ::juniper::macros::reflection::BaseType<$scalar>>::NAME,
+                    <$implementers as ::juniper::macros::reflection::Implements<$scalar>>::NAMES,
+                );
+                if !is_present {
+                    const MSG: &str = $crate::const_concat!(
+                        "Failed to implement interface `",
+                        <$interface as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        "` on `",
+                        <$implementers as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        "`: missing interface reference in implementer's `impl` attribute.",
+                    );
+                    ::std::panic!("{}", MSG);
+                }
+            })*
+        };
+    };
 }
 
 /// Asserts validness of the [`Field`] [`Arguments`] and return [`Type`]. This

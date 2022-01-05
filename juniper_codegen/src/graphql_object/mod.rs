@@ -376,6 +376,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
         let fields = self.fields.iter().map(|f| &f.name);
+        let interfaces = self.interfaces.iter();
 
         quote! {
             #[automatically_derived]
@@ -393,6 +394,15 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             {
                 const NAMES: ::juniper::macros::reflection::Types =
                     &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflection::Implements<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflection::Types =
+                    &[#(<#interfaces as ::juniper::macros::reflection::BaseType<#scalar>>::NAME),*];
             }
 
             #[automatically_derived]
@@ -507,11 +517,12 @@ impl Definition<Query> {
     #[must_use]
     fn impl_graphql_object_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
+        let const_scalar = self.scalar.default_ty();
 
         let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
-        let interface_tys = self.interfaces.iter();
+        let interface_tys = self.interfaces.iter().collect::<Vec<_>>();
         // TODO: Make it work by repeating `sa::assert_type_ne_all!` expansion,
         //       but considering generics.
         //let interface_tys: Vec<_> = self.interfaces.iter().collect();
@@ -525,6 +536,9 @@ impl Definition<Query> {
             {
                 fn mark() {
                     #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
+                    ::juniper::assert_implemented_for!(
+                        #const_scalar, #ty, #(#interface_tys),*
+                    );
                 }
             }
         }

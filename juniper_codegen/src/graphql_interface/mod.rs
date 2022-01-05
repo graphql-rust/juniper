@@ -473,6 +473,7 @@ impl Definition {
     fn impl_output_type_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
+        let const_scalar = &self.scalar.default_ty();
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
@@ -483,7 +484,7 @@ impl Definition {
             .iter()
             .map(|f| f.method_mark_tokens(false, scalar));
 
-        let impler_tys = self.implementers.iter();
+        let impler_tys = self.implementers.iter().collect::<Vec<_>>();
 
         quote! {
             #[automatically_derived]
@@ -494,6 +495,9 @@ impl Definition {
                 fn mark() {
                     #( #fields_marks )*
                     #( <#impler_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                    ::juniper::assert_interfaces_impls!(
+                        #const_scalar, #ty, #(#impler_tys),*
+                    );
                 }
             }
         }
