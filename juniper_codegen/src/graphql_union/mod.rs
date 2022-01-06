@@ -320,7 +320,7 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_traits_for_const_assertions().to_tokens(into);
+        self.impl_traits_for_reflection_tokens().to_tokens(into);
     }
 }
 
@@ -619,7 +619,7 @@ impl Definition {
     /// [`WrappedType`]: juniper::macros::reflection::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     #[must_use]
-    pub(crate) fn impl_traits_for_const_assertions(&self) -> TokenStream {
+    pub(crate) fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
         let name = &self.name;
         let variants = self.variants.iter().map(|var| &var.ty);

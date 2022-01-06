@@ -330,6 +330,8 @@ impl GenericsExt for syn::Generics {
                             });
 
                         if is_generic {
+                            // Replacing with `DefaultScalarValue` instead of
+                            // `()` because generic parameter may be scalar.
                             *ty = parse_quote!(::juniper::DefaultScalarValue);
                         }
                     }

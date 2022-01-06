@@ -281,11 +281,14 @@ pub trait Fields<S> {
     const NAMES: Names;
 }
 
+/// [`Types`] of the [GraphQL interfaces][1] implemented by this type.
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub trait Implements<S> {
     const NAMES: Types;
 }
 
-/// Stores meta information of [GraphQL fields][1]:
+/// Stores meta information of [GraphQL field][1]:
 /// - [`Context`] and [`TypeInfo`].
 /// - Return type's [`TYPE`], [`SUB_TYPES`] and [`WRAPPED_VALUE`].
 /// - [`ARGUMENTS`].
@@ -471,6 +474,8 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
     true
 }
 
+/// Asserts that `#[graphql_interface(for = ...)]` has all types referencing
+/// this interface in `impl = ...` attribute section.
 #[macro_export]
 macro_rules! assert_implemented_for {
     ($scalar: ty, $implementor: ty $(, $interfaces: ty)* $(,)?) => {
@@ -495,6 +500,8 @@ macro_rules! assert_implemented_for {
     };
 }
 
+/// Asserts that `impl = ...` attribute section has all types referencing this
+/// type in `#[graphql_interface(for = ...)]`.
 #[macro_export]
 macro_rules! assert_interfaces_impls {
     ($scalar: ty, $interface: ty $(, $implementers: ty)* $(,)?) => {
