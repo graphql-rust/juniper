@@ -883,8 +883,8 @@ mod fallible_field {
 
     #[graphql_object(impl = CharacterValue)]
     impl Droid {
-        fn id(&self) -> String {
-            self.id.clone()
+        fn id(&self) -> Result<String, CustomError> {
+            Ok(self.id.clone())
         }
 
         fn primary_function(&self) -> &str {

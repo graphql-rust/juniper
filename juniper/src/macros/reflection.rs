@@ -210,9 +210,9 @@ impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
 /// assert_eq!(format_type!(TYPE_STRING, WRAP_VAL_STRING), "[String]");
 /// ```
 ///
+/// [`VALUE`]: Self::VALUE
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
 /// [2]: https://spec.graphql.org/October2021/#sec-Wrapping-Types
-/// [`VALUE`]: Self::VALUE
 pub trait WrappedType<S> {
     /// [`WrappedValue`] of this type.
     const VALUE: WrappedValue;
@@ -285,6 +285,9 @@ pub trait Fields<S> {
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Interfaces
 pub trait Implements<S> {
+    /// [`Types`] of the [GraphQL interfaces][1] implemented by this type.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Interfaces
     const NAMES: Types;
 }
 

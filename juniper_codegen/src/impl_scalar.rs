@@ -331,20 +331,20 @@ pub fn build_scalar(
         impl#generic_type_decl ::juniper::macros::reflection::BaseType<#generic_type> for #impl_for_type
             #generic_type_bound
         {
-            const NAME: &'static str = #name;
+            const NAME:::juniper::macros::reflection::Type = #name;
         }
 
         impl#generic_type_decl ::juniper::macros::reflection::BaseSubTypes<#generic_type> for #impl_for_type
             #generic_type_bound
         {
-            const NAMES: &'static [&'static str] =
+            const NAMES: ::juniper::macros::reflection::Types =
                 &[<Self as ::juniper::macros::reflection::BaseType<#generic_type>>::NAME];
         }
 
         impl#generic_type_decl ::juniper::macros::reflection::WrappedType<#generic_type> for #impl_for_type
             #generic_type_bound
         {
-            const VALUE: u128 = 1;
+            const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
         }
     );
 

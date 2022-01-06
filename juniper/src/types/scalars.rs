@@ -204,15 +204,15 @@ where
 }
 
 impl<S> reflection::WrappedType<S> for str {
-    const VALUE: u128 = 1;
+    const VALUE: reflection::WrappedValue = 1;
 }
 
 impl<S> reflection::BaseType<S> for str {
-    const NAME: &'static str = "String";
+    const NAME: reflection::Type = "String";
 }
 
 impl<S> reflection::BaseSubTypes<S> for str {
-    const NAMES: &'static [&'static str] = &[<Self as reflection::BaseType<S>>::NAME];
+    const NAMES: reflection::Types = &[<Self as reflection::BaseType<S>>::NAME];
 }
 
 impl<S> GraphQLType<S> for str

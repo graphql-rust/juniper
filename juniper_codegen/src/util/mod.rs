@@ -910,20 +910,20 @@ impl GraphQLTypeDefiniton {
             impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar> for #ty
                 #where_clause
             {
-                const NAME: &'static str = #name;
+                const NAME: ::juniper::macros::reflection::Type = #name;
             }
 
             impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
-                const NAMES: &'static [&'static str] =
+                const NAMES: ::juniper::macros::reflection::Types =
                     &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
             }
 
             impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar> for #ty
                 #where_clause
             {
-                const VALUE: u128 = 1;
+                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
             }
         );
 
@@ -1177,14 +1177,14 @@ impl GraphQLTypeDefiniton {
                 for #ty #type_generics_tokens
                 #where_clause
             {
-                const NAME: &'static str = #name;
+                const NAME: ::juniper::macros::reflection::Type = #name;
             }
 
             impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar>
                 for #ty #type_generics_tokens
                 #where_clause
             {
-                const NAMES: &'static [&'static str] =
+                const NAMES: ::juniper::macros::reflection::Types =
                     &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
             }
 
@@ -1192,7 +1192,7 @@ impl GraphQLTypeDefiniton {
                 for #ty #type_generics_tokens
                 #where_clause
             {
-                const VALUE: u128 = 1;
+                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
             }
         );
 

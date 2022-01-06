@@ -128,7 +128,7 @@ fn expand_on_trait(
         |c| format_ident!("{}Enum", c.inner().to_string()),
     );
 
-    let description = attr.description.as_ref().map(|c| c.inner().clone());
+    let description = attr.description.as_deref().cloned();
     let generated_code = Definition {
         trait_generics: ast.generics.clone(),
         vis: ast.vis.clone(),

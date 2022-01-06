@@ -989,10 +989,11 @@ impl Definition {
     }
 
     /// Returns generated code for the [`GraphQLValue::concrete_type_name`][0]
-    /// method, which returns name of the underlying [`Implementer`] GraphQL
-    /// type contained in this [`EnumType`].
+    /// method, which returns name of the underlying [`implementers`][1] GraphQL
+    /// type contained in this enum.
     ///
     /// [0]: juniper::GraphQLValue::concrete_type_name
+    /// [1]: Self::implementers
     #[must_use]
     fn method_concrete_type_name_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -1024,10 +1025,11 @@ impl Definition {
 
     /// Returns generated code for the
     /// [`GraphQLValueAsync::resolve_into_type_async`][0] method, which
-    /// downcasts this [`EnumType`] into its underlying [`Implementer`] type
+    /// downcasts this enum into its underlying [`implementers`][1] type
     /// asynchronously.
     ///
     /// [0]: juniper::GraphQLValueAsync::resolve_into_type_async
+    /// [1]: Self::implementers
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
         let resolving_code = gen::async_resolving_code(None);
@@ -1056,10 +1058,11 @@ impl Definition {
     }
 
     /// Returns generated code for the [`GraphQLValue::resolve_into_type`][0]
-    /// method, which downcasts this [`EnumType`] into its underlying
-    /// [`Implementer`] type synchronously.
+    /// method, which downcasts this enum into its underlying
+    /// [`implementers`][1] type synchronously.
     ///
     /// [0]: juniper::GraphQLValue::resolve_into_type
+    /// [1]: Self::implementers
     #[must_use]
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         let resolving_code = gen::sync_resolving_code();
@@ -1125,7 +1128,7 @@ impl Definition {
     }
 
     /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
-    /// similar) implementation of this [`EnumType`].
+    /// similar) implementation of this enum.
     ///
     /// If `for_async` is `true`, then additional predicates are added to suit
     /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
@@ -1184,8 +1187,8 @@ impl Definition {
         generics
     }
 
-    /// Indicates whether this [`EnumType`] has non-exhaustive phantom variant
-    /// to hold type parameters.
+    /// Indicates whether this enum has non-exhaustive phantom variant to hold
+    /// type parameters.
     #[must_use]
     fn has_phantom_variant(&self) -> bool {
         !self.trait_generics.params.is_empty()

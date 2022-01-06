@@ -241,20 +241,20 @@ fn impl_scalar_struct(
         impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar> for #ident
             where #scalar: ::juniper::ScalarValue,
         {
-            const NAME: &'static str = #name;
+            const NAME: ::juniper::macros::reflection::Type = #name;
         }
 
         impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar> for #ident
             where #scalar: ::juniper::ScalarValue,
         {
-            const NAMES: &'static [&'static str] =
+            const NAMES: ::juniper::macros::reflection::Types =
                 &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
         }
 
         impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar> for #ident
             where #scalar: ::juniper::ScalarValue,
         {
-            const VALUE: u128 = 1;
+            const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
         }
     );
 
