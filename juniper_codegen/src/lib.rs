@@ -272,8 +272,10 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 /// is totally okay. They all will be treated as a single attribute.
 ///
 /// [GraphQL interfaces][1] are more like Go's structural interfaces, while
-/// Rust's traits are more like typeclasses. So using `impl Trait` isn't an
-/// option.
+/// Rust's traits are more like typeclasses. Using `impl Trait` isn't an
+/// option, so you have to cover all trait's methods with type's fields or
+/// impl block. But no one is stopping you from additionally implementing trait
+/// manually.
 ///
 /// Another difference between [GraphQL interface][1] type and Rust trait is
 /// that the former serves both as an _abstraction_ and a _value downcastable to

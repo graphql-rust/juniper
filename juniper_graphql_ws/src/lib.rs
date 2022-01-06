@@ -68,6 +68,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
     /// Specifies the maximum number of in-flight operations that a connection can have. If this
     /// number is exceeded, attempting to start more will result in an error. By default, there is
     /// no limit to in-flight operations.
+    #[must_use]
     pub fn with_max_in_flight_operations(mut self, max: usize) -> Self {
         self.max_in_flight_operations = max;
         self
@@ -75,6 +76,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
 
     /// Specifies the interval at which to send keep-alives. Specifying a zero duration will
     /// disable keep-alives. By default, keep-alives are sent every 15 seconds.
+    #[must_use]
     pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
         self.keep_alive_interval = interval;
         self

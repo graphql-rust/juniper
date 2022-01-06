@@ -95,11 +95,7 @@ impl Human {
         Self {
             id: id.to_owned(),
             name: name.to_owned(),
-            friend_ids: friend_ids
-                .to_owned()
-                .into_iter()
-                .map(ToOwned::to_owned)
-                .collect(),
+            friend_ids: friend_ids.iter().copied().map(ToOwned::to_owned).collect(),
             appears_in: appears_in.to_vec(),
             secret_backstory: secret_backstory.map(ToOwned::to_owned),
             home_planet: home_planet.map(|p| p.to_owned()),
@@ -181,11 +177,7 @@ impl Droid {
         Self {
             id: id.to_owned(),
             name: name.to_owned(),
-            friend_ids: friend_ids
-                .to_owned()
-                .into_iter()
-                .map(ToOwned::to_owned)
-                .collect(),
+            friend_ids: friend_ids.iter().copied().map(ToOwned::to_owned).collect(),
             appears_in: appears_in.to_vec(),
             secret_backstory: secret_backstory.map(ToOwned::to_owned),
             primary_function: primary_function.map(ToOwned::to_owned),

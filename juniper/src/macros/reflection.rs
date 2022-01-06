@@ -820,7 +820,7 @@ macro_rules! const_concat {
         // SAFETY: this is safe, as we concatenate multiple UTF-8 strings one
         //         after the other byte by byte.
         #[allow(unsafe_code)]
-        unsafe { std::str::from_utf8_unchecked(&CON) }
+        unsafe { ::std::str::from_utf8_unchecked(&CON) }
     }};
 }
 
@@ -941,7 +941,8 @@ macro_rules! format_type {
         // SAFETY: this is safe, as we concatenate multiple UTF-8 strings one
         //         after the other byte by byte.
         #[allow(unsafe_code)]
-        const TYPE_FORMATTED: &str = unsafe { ::std::mem::transmute(TYPE_ARR.as_slice()) };
+        const TYPE_FORMATTED: &str =
+            unsafe { ::std::str::from_utf8_unchecked(TYPE_ARR.as_slice()) };
 
         TYPE_FORMATTED
     }};

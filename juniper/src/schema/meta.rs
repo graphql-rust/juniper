@@ -447,6 +447,7 @@ impl<'a, S> ScalarMeta<'a, S> {
     /// Sets the `description` of this [`ScalarMeta`] type.
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -457,6 +458,7 @@ impl<'a, S> ScalarMeta<'a, S> {
     /// Overwrites any previously set [specification URL][0].
     ///
     /// [0]: https://spec.graphql.org/October2021#sec--specifiedBy
+    #[must_use]
     pub fn specified_by_url(mut self, url: impl Into<Cow<'a, str>>) -> Self {
         self.specified_by_url = Some(url.into());
         self
@@ -515,6 +517,7 @@ impl<'a, S> ObjectMeta<'a, S> {
     /// Sets the `description` of this [`ObjectMeta`] type.
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -523,6 +526,7 @@ impl<'a, S> ObjectMeta<'a, S> {
     /// Set the `interfaces` this [`ObjectMeta`] type implements.
     ///
     /// Overwrites any previously set list of interfaces.
+    #[must_use]
     pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> Self {
         self.interface_names = interfaces
             .iter()
@@ -556,6 +560,7 @@ impl<'a, S> EnumMeta<'a, S> {
     /// Sets the `description` of this [`EnumMeta`] type.
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -584,6 +589,7 @@ impl<'a, S> InterfaceMeta<'a, S> {
     /// Sets the `description` of this [`InterfaceMeta`] type.
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -612,6 +618,7 @@ impl<'a> UnionMeta<'a> {
     /// Sets the `description` of this [`UnionMeta`] type.
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -643,6 +650,7 @@ impl<'a, S> InputObjectMeta<'a, S> {
     /// Set the `description` of this [`InputObjectMeta`] type.
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -658,6 +666,7 @@ impl<'a, S> Field<'a, S> {
     /// Set the `description` of this [`Field`].
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -666,6 +675,7 @@ impl<'a, S> Field<'a, S> {
     /// Adds an `argument` to this [`Field`].
     ///
     /// Arguments are unordered and can't contain duplicates by name.
+    #[must_use]
     pub fn argument(mut self, argument: Argument<'a, S>) -> Self {
         match self.arguments {
             None => {
@@ -681,6 +691,7 @@ impl<'a, S> Field<'a, S> {
     /// Sets this [`Field`] as deprecated with an optional `reason`.
     ///
     /// Overwrites any previously set deprecation reason.
+    #[must_use]
     pub fn deprecated(mut self, reason: Option<&str>) -> Self {
         self.deprecation_status = DeprecationStatus::Deprecated(reason.map(ToOwned::to_owned));
         self
@@ -701,6 +712,7 @@ impl<'a, S> Argument<'a, S> {
     /// Sets the `description` of this [`Argument`].
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -709,6 +721,7 @@ impl<'a, S> Argument<'a, S> {
     /// Set the default value of this [`Argument`].
     ///
     /// Overwrites any previously set default value.
+    #[must_use]
     pub fn default_value(mut self, val: InputValue<S>) -> Self {
         self.default_value = Some(val);
         self
@@ -728,6 +741,7 @@ impl EnumValue {
     /// Sets the `description` of this [`EnumValue`].
     ///
     /// Overwrites any previously set description.
+    #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
@@ -736,6 +750,7 @@ impl EnumValue {
     /// Sets this [`EnumValue`] as deprecated with an optional `reason`.
     ///
     /// Overwrites any previously set deprecation reason.
+    #[must_use]
     pub fn deprecated(mut self, reason: Option<&str>) -> Self {
         self.deprecation_status = DeprecationStatus::Deprecated(reason.map(ToOwned::to_owned));
         self

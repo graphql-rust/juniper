@@ -112,9 +112,7 @@ where
                 ..
             },
             _,
-        ) => Ok(parser
-            .next_token()?
-            .map(|_| InputValue::enum_value(name.to_owned()))),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::enum_value(name))),
         _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
     }
 }

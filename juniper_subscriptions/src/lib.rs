@@ -183,7 +183,7 @@ where
                 ready_vec.push(None);
             }
 
-            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<ExecutionOutput<S>>> {
+            let stream = stream::poll_fn(move |ctx| -> Poll<Option<ExecutionOutput<S>>> {
                 let mut obj_iterator = object.iter_mut();
 
                 // Due to having to modify `ready_vec` contents (by-move pattern)
@@ -204,7 +204,7 @@ where
 
                     match val {
                         Value::Scalar(stream) => {
-                            match Pin::new(stream).poll_next(&mut ctx) {
+                            match Pin::new(stream).poll_next(ctx) {
                                 Poll::Ready(None) => return Poll::Ready(None),
                                 Poll::Ready(Some(value)) => {
                                     *ready = Some((field_name.clone(), value));

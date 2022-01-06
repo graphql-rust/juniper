@@ -49,6 +49,7 @@ where
     S: Clone,
 {
     #[doc(hidden)]
+    #[must_use]
     pub fn type_sub_executor(
         &self,
         type_name: Option<&str>,
@@ -76,6 +77,7 @@ where
     }
 
     #[doc(hidden)]
+    #[must_use]
     pub fn field_sub_executor(
         &self,
         field_alias: &'a str,

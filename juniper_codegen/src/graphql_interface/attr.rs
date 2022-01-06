@@ -23,7 +23,7 @@ const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
 
 /// Expands `#[graphql_interface]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
-    if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body.clone()) {
+    if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body) {
         let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
         ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
         return expand_on_trait(trait_attrs, ast);
@@ -137,7 +137,7 @@ fn expand_on_trait(
         name,
         description,
         context,
-        scalar: scalar.clone(),
+        scalar,
         fields,
         implementers: attr
             .implementers
@@ -178,10 +178,6 @@ fn parse_field(
     method: &mut syn::TraitItemMethod,
     renaming: &RenameRule,
 ) -> Option<field::Definition> {
-    if method.default.is_some() {
-        return err_default_impl_block(&method.default);
-    }
-
     let method_ident = &method.sig.ident;
     let method_attrs = method.attrs.clone();
 
@@ -197,6 +193,10 @@ fn parse_field(
 
     if attr.ignore.is_some() {
         return None;
+    }
+
+    if method.default.is_some() {
+        return err_default_impl_block(&method.default);
     }
 
     let name = attr

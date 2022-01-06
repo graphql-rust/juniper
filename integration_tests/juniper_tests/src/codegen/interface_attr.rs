@@ -1621,9 +1621,7 @@ mod default_argument {
             #[graphql(default = "t")] third: String,
         ) -> String;
 
-        fn info(&self, #[graphql(default = Point { x: 1 })] coord: Point) -> i32 {
-            coord.x
-        }
+        fn info(&self, #[graphql(default = Point { x: 1 })] coord: Point) -> i32;
     }
 
     struct Human;
@@ -2128,17 +2126,11 @@ mod renamed_all_fields_and_args {
 
     #[graphql_interface(rename_all = "none", for = Human)]
     trait Character {
-        fn id(&self) -> &str {
-            "human-32"
-        }
+        fn id(&self) -> &str;
 
-        async fn home_planet(&self, planet_name: String) -> String {
-            planet_name
-        }
+        async fn home_planet(&self, planet_name: String) -> String;
 
-        async fn r#async_info(&self, r#my_num: i32) -> i32 {
-            r#my_num
-        }
+        async fn r#async_info(&self, r#my_num: i32) -> i32;
     }
 
     struct Human;
@@ -3039,10 +3031,7 @@ mod executor {
     trait Character<S: ScalarValue> {
         async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
         where
-            S: Send + Sync,
-        {
-            executor.look_ahead().field_name()
-        }
+            S: Send + Sync;
 
         async fn info<'b>(
             &'b self,

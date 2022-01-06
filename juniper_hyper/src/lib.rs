@@ -286,13 +286,13 @@ enum GraphQLRequestError {
 }
 
 impl fmt::Display for GraphQLRequestError {
-    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            GraphQLRequestError::BodyHyper(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::BodyUtf8(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::BodyJSONError(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::Variables(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::Invalid(ref err) => fmt::Display::fmt(err, &mut f),
+            GraphQLRequestError::BodyHyper(ref err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::BodyUtf8(ref err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::BodyJSONError(ref err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::Variables(ref err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::Invalid(ref err) => fmt::Display::fmt(err, f),
         }
     }
 }

@@ -45,32 +45,14 @@ trait Character {
 struct Human {
     id: String,
 }
-#[graphql_interface] // implementing requires macro attribute too, (°ｏ°)!
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
 
 #[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue)]
 struct Droid {
     id: String,
 }
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-# fn main() {
-let human = Human { id: "human-32".to_owned() };
-// Values type for interface has `From` implementations for all its implementers,
-// so we don't need to bother with enum variant names.
-let character: CharacterValue = human.into();
-assert_eq!(character.id(), "human-32");
-# }
+#
+# fn main() {}
 ```
 
 Also, enum name can be specified explicitly, if desired.
@@ -90,69 +72,9 @@ struct Human {
     id: String,
     home_planet: String,
 }
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
 #
 # fn main() {}
 ```
-
-
-### Trait object values
-
-If, for some reason, we would like to use [trait objects][2] for representing [interface][1] values incorporating dynamic dispatch, then it should be specified explicitly in the trait definition.
-
-Downcasting [trait objects][2] in Rust is not that trivial, that's why macro transforms the trait definition slightly, imposing some additional type parameters under-the-hood.
-
-> __NOTICE__:  
-> A __trait has to be [object safe](https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety)__, because schema resolvers will need to return a [trait object][2] to specify a [GraphQL interface][1] behind it.
-
-```rust
-# extern crate juniper;
-# extern crate tokio;
-use juniper::{graphql_interface, GraphQLObject};
-
-// `dyn` argument accepts the name of type alias for the required trait object,
-// and macro generates this alias automatically.
-#[graphql_interface(dyn = DynCharacter, for = Human)] 
-trait Character {
-    async fn id(&self) -> &str; // async fields are supported natively
-}
-
-#[derive(GraphQLObject)]
-#[graphql(impl = DynCharacter<__S>)] // macro adds `ScalarValue` type parameter to trait,
-struct Human {                       // so it may be specified explicitly when required 
-    id: String,
-}
-#[graphql_interface(dyn)] // implementing requires to know about dynamic dispatch too
-impl Character for Human {
-    async fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-#[derive(GraphQLObject)]
-#[graphql(impl = DynCharacter<__S>)]
-struct Droid {
-    id: String,
-}
-#[graphql_interface]
-impl Character for Droid {
-    async fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-# #[tokio::main]
-# async fn main() {
-let human = Human { id: "human-32".to_owned() };
-let character: Box<DynCharacter> = Box::new(human);
-assert_eq!(character.id().await, "human-32");
-# }
-``` 
 
 
 ### Ignoring trait methods
@@ -175,12 +97,6 @@ trait Character {
 #[graphql(impl = CharacterValue)]
 struct Human {
     id: String,
-}
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
 }
 #
 # fn main() {}
@@ -278,24 +194,6 @@ struct Human {
     id: String,
     name: String,
 }
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self, db: &Database) -> Option<&str> {
-        if db.humans.contains_key(&self.id) {
-            Some(&self.id)
-        } else {
-            None
-        }
-    }
-
-    fn name(&self, db: &Database) -> Option<&str> {
-        if db.humans.contains_key(&self.id) {
-            Some(&self.name)
-        } else {
-            None
-        }
-    }
-}
 #
 # fn main() {}
 ```
@@ -309,7 +207,7 @@ This requires to explicitly parametrize over [`ScalarValue`][3], as [`Executor`]
 
 ```rust
 # extern crate juniper;
-use juniper::{graphql_interface, Executor, GraphQLObject, LookAheadMethods as _, ScalarValue};
+use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _, ScalarValue};
 
 #[graphql_interface(for = Human, Scalar = S)] // notice specifying `ScalarValue` as existing type parameter
 trait Character<S: ScalarValue> {             
@@ -326,101 +224,39 @@ trait Character<S: ScalarValue> {
     ) -> &'b str
     where
         S: Send + Sync;
+    
+    fn home_planet(&self) -> &str;
 }
 
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue<__S>)]
 struct Human {
     id: String,
     name: String,
+    home_planet: String,
 }
-#[graphql_interface(scalar = S)]
-impl<S: ScalarValue> Character<S> for Human {
-    async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
+#[graphql_object(impl = CharacterValue<__S>)]
+impl Human {
+    async fn id<'a, S>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
     where
-        S: Send + Sync,
+        S: ScalarValue + Send + Sync,
     {
         executor.look_ahead().field_name()
     }
 
-    async fn name<'b>(&'b self, _: &Executor<'_, '_, (), S>) -> &'b str
+    async fn name<'b, S>(&'b self, #[graphql(executor)] _: &Executor<'_, '_, (), S>) -> &'b str
     where
-        S: Send + Sync,
+        S: ScalarValue + Send + Sync,
     {
         &self.name
     }
+    
+    fn home_planet<'c, S>(&'c self, #[graphql(executor)] _: &Executor<'_, '_, (), S>) -> &'c str {
+        // Executor may not be present on the trait method  ^^^^^^^^^^^^^^^^^^^^^^^^
+        &self.home_planet
+    }
 }
 #
 # fn main() {}
 ```
-
-
-### Downcasting
-
-By default, the [GraphQL interface][1] value is downcast to one of its implementer types via matching the enum variant or downcasting the trait object (if `dyn` macro argument is used).
-
-However, if some custom logic is needed to downcast a [GraphQL interface][1] implementer, you may specify either an external function or a trait method to do so.
-
-```rust
-# extern crate juniper;
-# use std::collections::HashMap;
-use juniper::{graphql_interface, GraphQLObject};
-
-struct Database {
-    droids: HashMap<String, Droid>,
-}
-impl juniper::Context for Database {}
-
-#[graphql_interface(for = [Human, Droid], context = Database)]
-#[graphql_interface(on Droid = get_droid)] // enables downcasting `Droid` via `get_droid()` function
-trait Character {
-    fn id(&self) -> &str;
-
-    #[graphql(downcast)] // makes method a downcast to `Human`, not a field 
-    // NOTICE: The method signature may optionally contain `&Database` context argument.
-    fn as_human(&self) -> Option<&Human> {
-        None
-    }
-}
-
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue, Context = Database)]
-struct Human {
-    id: String,
-}
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn as_human(&self) -> Option<&Self> {
-        Some(self)
-    }   
-}
-
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue, Context = Database)]
-struct Droid {
-    id: String,
-}
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-// External downcast function doesn't have to be a method of a type.
-// It's only a matter of the function signature to match the requirements.
-fn get_droid<'db>(ch: &CharacterValue, db: &'db Database) -> Option<&'db Droid> {
-    db.droids.get(ch.id())
-}
-#
-# fn main() {}
-```
-
-The attribute syntax `#[graphql_interface(on ImplementerType = resolver_fn)]` follows the [GraphQL syntax for downcasting interface implementer](https://spec.graphql.org/June2018/#example-5cc55).
 
 
 
@@ -445,24 +281,12 @@ struct Human {
     id: String,
     home_planet: String,
 }
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }   
-}
 
 #[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
 struct Droid {
     id: String,
     primary_function: String,
-}
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }   
 }
 #
 # fn main() {}
