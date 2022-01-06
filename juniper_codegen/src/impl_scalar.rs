@@ -331,7 +331,7 @@ pub fn build_scalar(
         impl#generic_type_decl ::juniper::macros::reflection::BaseType<#generic_type> for #impl_for_type
             #generic_type_bound
         {
-            const NAME:::juniper::macros::reflection::Type = #name;
+            const NAME: ::juniper::macros::reflection::Type = #name;
         }
 
         impl#generic_type_decl ::juniper::macros::reflection::BaseSubTypes<#generic_type> for #impl_for_type
