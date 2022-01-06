@@ -178,6 +178,10 @@ fn parse_field(
     method: &mut syn::TraitItemMethod,
     renaming: &RenameRule,
 ) -> Option<field::Definition> {
+    if method.default.is_some() {
+        return err_default_impl_block(&method.default);
+    }
+
     let method_ident = &method.sig.ident;
     let method_attrs = method.attrs.clone();
 
@@ -260,6 +264,13 @@ fn parse_field(
         has_receiver: method.sig.receiver().is_some(),
         is_async: method.sig.asyncness.is_some(),
     })
+}
+
+/// Emits "trait method can't have default impl block" [`syn::Error`] pointing
+/// to the given `span`.
+fn err_default_impl_block<T, S: Spanned>(span: &S) -> Option<T> {
+    ERR.emit_custom(span.span(), "trait method can't have default impl block");
+    None
 }
 
 /// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given

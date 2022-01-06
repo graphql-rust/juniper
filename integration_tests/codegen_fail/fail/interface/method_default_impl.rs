@@ -2,7 +2,9 @@ use juniper::graphql_interface;
 
 #[graphql_interface]
 trait Character {
-    fn __id(&self) -> &str;
+    fn id(&self) -> &str {
+        "default"
+    }
 }
 
 fn main() {}
