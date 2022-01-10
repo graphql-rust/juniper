@@ -10,11 +10,8 @@ use crate::{
     Value,
 };
 
-#[crate::graphql_scalar(description = "Uuid")]
-impl<S> GraphQLScalar for Uuid
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(description = "Uuid", scalar = S)]
+impl<S> GraphQLScalar for Uuid {
     fn resolve(&self) -> Value {
         Value::scalar(self.to_string())
     }

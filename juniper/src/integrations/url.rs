@@ -7,11 +7,8 @@ use crate::{
     Value,
 };
 
-#[crate::graphql_scalar(description = "Url")]
-impl<S> GraphQLScalar for Url
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(description = "Url", scalar = S)]
+impl<S> GraphQLScalar for Url {
     fn resolve(&self) -> Value {
         Value::scalar(self.as_str().to_owned())
     }

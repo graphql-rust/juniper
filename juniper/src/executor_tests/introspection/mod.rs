@@ -22,8 +22,8 @@ enum Sample {
 
 struct Scalar(i32);
 
-#[graphql_scalar(name = "SampleScalar")]
-impl<S: ScalarValue> GraphQLScalar for Scalar {
+#[graphql_scalar(name = "SampleScalar", scalar = S)]
+impl<S> GraphQLScalar for Scalar {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }

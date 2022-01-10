@@ -57,9 +57,10 @@ const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]
                    \n\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/date\n\
                    [2]: https://docs.rs/time/*/time/struct.Date.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date"
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date", 
+    scalar = S
 )]
-impl<S: ScalarValue> GraphQLScalar for Date {
+impl<S> GraphQLScalar for Date {
     fn resolve(&self) -> Value {
         Value::scalar(
             self.format(DATE_FORMAT)
@@ -113,9 +114,10 @@ const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]
                    \n\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/local-time\n\
                    [2]: https://docs.rs/time/*/time/struct.Time.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time"
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time", 
+    scalar = S
 )]
-impl<S: ScalarValue> GraphQLScalar for LocalTime {
+impl<S> GraphQLScalar for LocalTime {
     fn resolve(&self) -> Value {
         Value::scalar(
             if self.millisecond() == 0 {
@@ -160,9 +162,10 @@ const LOCAL_DATE_TIME_FORMAT: &[FormatItem<'_>] =
                    \n\n\
                    See also [`time::PrimitiveDateTime`][2] for details.\
                    \n\n\
-                   [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html"
+                   [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html", 
+    scalar = S
 )]
-impl<S: ScalarValue> GraphQLScalar for LocalDateTime {
+impl<S> GraphQLScalar for LocalDateTime {
     fn resolve(&self) -> Value {
         Value::scalar(
             self.format(LOCAL_DATE_TIME_FORMAT)
@@ -203,9 +206,10 @@ impl<S: ScalarValue> GraphQLScalar for LocalDateTime {
                    [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/date-time\n\
                    [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time"
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
+    scalar = S
 )]
-impl<S: ScalarValue> GraphQLScalar for DateTime {
+impl<S> GraphQLScalar for DateTime {
     fn resolve(&self) -> Value {
         Value::scalar(
             self.to_offset(UtcOffset::UTC)
@@ -249,9 +253,10 @@ const UTC_OFFSET_FORMAT: &[FormatItem<'_>] =
                    [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones\n\
                    [1]: https://graphql-scalars.dev/docs/scalars/utc-offset\n\
                    [2]: https://docs.rs/time/*/time/struct.UtcOffset.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset"
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset", 
+    scalar = S
 )]
-impl<S: ScalarValue> GraphQLScalar for UtcOffset {
+impl<S> GraphQLScalar for UtcOffset {
     fn resolve(&self) -> Value {
         Value::scalar(
             self.format(UTC_OFFSET_FORMAT)

@@ -24,11 +24,8 @@ use crate::{
     Value,
 };
 
-#[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime")]
-impl<S> GraphQLScalar for DateTime<FixedOffset>
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime", scalar = S)]
+impl<S> GraphQLScalar for DateTime<FixedOffset> {
     fn resolve(&self) -> Value {
         Value::scalar(self.to_rfc3339())
     }
@@ -51,11 +48,8 @@ where
     }
 }
 
-#[crate::graphql_scalar(name = "DateTimeUtc", description = "DateTime")]
-impl<S> GraphQLScalar for DateTime<Utc>
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(name = "DateTimeUtc", description = "DateTime", scalar = S)]
+impl<S> GraphQLScalar for DateTime<Utc> {
     fn resolve(&self) -> Value {
         Value::scalar(self.to_rfc3339())
     }
@@ -83,11 +77,8 @@ where
 // inherent lack of precision required for the time zone resolution.
 // For serialization and deserialization uses, it is best to use
 // `NaiveDate` instead."
-#[crate::graphql_scalar(description = "NaiveDate")]
-impl<S> GraphQLScalar for NaiveDate
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(description = "NaiveDate", scalar = S)]
+impl<S> GraphQLScalar for NaiveDate {
     fn resolve(&self) -> Value {
         Value::scalar(self.format("%Y-%m-%d").to_string())
     }
@@ -111,11 +102,8 @@ where
 }
 
 #[cfg(feature = "scalar-naivetime")]
-#[crate::graphql_scalar(description = "NaiveTime")]
-impl<S> GraphQLScalar for NaiveTime
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(description = "NaiveTime", scalar = S)]
+impl<S> GraphQLScalar for NaiveTime {
     fn resolve(&self) -> Value {
         Value::scalar(self.format("%H:%M:%S").to_string())
     }
@@ -140,11 +128,8 @@ where
 
 // JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
 // datetimes. Values will be truncated to microsecond resolution.
-#[crate::graphql_scalar(description = "NaiveDateTime")]
-impl<S> GraphQLScalar for NaiveDateTime
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(description = "NaiveDateTime", scalar = S)]
+impl<S> GraphQLScalar for NaiveDateTime {
     fn resolve(&self) -> Value {
         Value::scalar(self.timestamp() as f64)
     }

@@ -23,11 +23,8 @@ Syntax to validate:
 
 */
 
-#[graphql_scalar]
-impl<S> GraphQLScalar for DefaultName
-where
-    S: ScalarValue,
-{
+#[graphql_scalar(scalar = S)]
+impl<S> GraphQLScalar for DefaultName {
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }

@@ -12,11 +12,8 @@ use crate::{
     Value,
 };
 
-#[graphql_scalar(name = "Tz", description = "Timezone")]
-impl<S> GraphQLScalar for Tz
-where
-    S: ScalarValue,
-{
+#[graphql_scalar(name = "Tz", description = "Timezone", scalar = S)]
+impl<S> GraphQLScalar for Tz {
     fn resolve(&self) -> Value {
         Value::scalar(self.name().to_owned())
     }

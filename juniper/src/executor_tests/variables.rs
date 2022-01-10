@@ -13,8 +13,8 @@ use crate::{
 #[derive(Debug)]
 struct TestComplexScalar;
 
-#[graphql_scalar]
-impl<S: ScalarValue> GraphQLScalar for TestComplexScalar {
+#[graphql_scalar(scalar = S)]
+impl<S> GraphQLScalar for TestComplexScalar {
     fn resolve(&self) -> Value {
         graphql_value!("SerializedValue")
     }

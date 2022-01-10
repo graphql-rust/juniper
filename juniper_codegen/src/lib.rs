@@ -226,11 +226,9 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     description = "An opaque identifier, represented as a string",
 ///    // A specification URL.
 ///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
+///    scalar = S,
 /// )]
-/// impl<S> GraphQLScalar for UserID
-/// where
-///     S: juniper::ScalarValue
-///  {
+/// impl<S> GraphQLScalar for UserID {
 ///     fn resolve(&self) -> juniper::Value {
 ///         juniper::Value::scalar(self.0.to_owned())
 ///     }
@@ -255,14 +253,10 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// usable as arguments and default values.
 #[proc_macro_error]
 #[proc_macro_attribute]
-pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    let gen = impl_scalar::build_scalar(args, input, GraphQLScope::ImplScalar);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
+    impl_scalar::expand(attr.into(), body.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[graphql_interface]` macro for generating a [GraphQL interface][1]

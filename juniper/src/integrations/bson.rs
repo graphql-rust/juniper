@@ -10,11 +10,8 @@ use crate::{
     Value,
 };
 
-#[graphql_scalar(description = "ObjectId")]
-impl<S> GraphQLScalar for ObjectId
-where
-    S: ScalarValue,
-{
+#[graphql_scalar(description = "ObjectId", scalar = S)]
+impl<S> GraphQLScalar for ObjectId {
     fn resolve(&self) -> Value {
         Value::scalar(self.to_hex())
     }
@@ -36,11 +33,8 @@ where
     }
 }
 
-#[graphql_scalar(description = "UtcDateTime")]
-impl<S> GraphQLScalar for UtcDateTime
-where
-    S: ScalarValue,
-{
+#[graphql_scalar(description = "UtcDateTime", scalar = S)]
+impl<S> GraphQLScalar for UtcDateTime {
     fn resolve(&self) -> Value {
         Value::scalar((*self).to_chrono().to_rfc3339())
     }

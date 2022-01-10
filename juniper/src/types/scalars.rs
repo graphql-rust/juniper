@@ -51,11 +51,8 @@ impl fmt::Display for ID {
     }
 }
 
-#[crate::graphql_scalar(name = "ID")]
-impl<S> GraphQLScalar for ID
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(name = "ID", scalar = S)]
+impl<S> GraphQLScalar for ID {
     fn resolve(&self) -> Value {
         Value::scalar(self.0.clone())
     }
@@ -76,11 +73,8 @@ where
     }
 }
 
-#[crate::graphql_scalar(name = "String")]
-impl<S> GraphQLScalar for String
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(name = "String", scalar = S)]
+impl<S> GraphQLScalar for String {
     fn resolve(&self) -> Value {
         Value::scalar(self.clone())
     }
@@ -276,11 +270,8 @@ where
     }
 }
 
-#[crate::graphql_scalar(name = "Boolean")]
-impl<S> GraphQLScalar for bool
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(name = "Boolean", scalar = S)]
+impl<S> GraphQLScalar for bool {
     fn resolve(&self) -> Value {
         Value::scalar(*self)
     }
@@ -297,11 +288,8 @@ where
     }
 }
 
-#[crate::graphql_scalar(name = "Int")]
-impl<S> GraphQLScalar for i32
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(name = "Int", scalar = S)]
+impl<S> GraphQLScalar for i32 {
     fn resolve(&self) -> Value {
         Value::scalar(*self)
     }
@@ -322,11 +310,8 @@ where
     }
 }
 
-#[crate::graphql_scalar(name = "Float")]
-impl<S> GraphQLScalar for f64
-where
-    S: ScalarValue,
-{
+#[crate::graphql_scalar(name = "Float", scalar = S)]
+impl<S> GraphQLScalar for f64 {
     fn resolve(&self) -> Value {
         Value::scalar(*self)
     }
