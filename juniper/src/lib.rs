@@ -168,7 +168,7 @@ pub use crate::{
         subscription::{ExtractTypeFromStream, IntoFieldResult},
         AsDynGraphQLValue,
     },
-    parser::{ParseError, Spanning},
+    parser::{ParseError, ScalarToken, Spanning},
     schema::{
         meta,
         model::{RootNode, SchemaType},
@@ -185,7 +185,10 @@ pub use crate::{
         },
     },
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    value::{
+        DefaultScalarValue, GraphQLScalar, Object, ParseScalarResult, ParseScalarValue,
+        ScalarValue, Value,
+    },
 };
 
 /// An error that prevented query execution

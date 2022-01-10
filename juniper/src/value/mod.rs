@@ -5,13 +5,38 @@ use std::{any::TypeId, borrow::Cow, fmt, mem};
 
 use crate::{
     ast::{InputValue, ToInputValue},
-    parser::Spanning,
+    parser::{ScalarToken, Spanning},
 };
 
 pub use self::{
     object::Object,
     scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue},
 };
+
+/// [GraphQL scalar][1] definition. Implementation of this trait should be
+/// attributed with [`graphql_scalar`].
+///
+/// [`graphql_scalar`]: crate::graphql_scalar
+/// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+pub trait GraphQLScalar<S = DefaultScalarValue>: Sized {
+    /// Error of converting [`InputValue`] into this [GraphQL scalar][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    type Error;
+
+    /// Resolves this [GraphQL scalar][1] into [`Value`].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn resolve(&self) -> Value<S>;
+
+    /// Parses [`InputValue`] into this [GraphQL scalar][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error>;
+
+    /// Resolves [`ScalarToken`] literal into `S`.
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
+}
 
 /// Serializable value returned from query and field execution.
 ///

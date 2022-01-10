@@ -16,6 +16,7 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{ParseScalarResult, ScalarValue, Value},
+    GraphQLScalar,
 };
 
 /// An ID as defined by the GraphQL specification
@@ -51,13 +52,15 @@ impl fmt::Display for ID {
     }
 }
 
-#[crate::graphql_scalar(name = "ID", scalar = S)]
-impl<S> GraphQLScalar for ID {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(name = "ID")]
+impl<S: ScalarValue> GraphQLScalar<S> for ID {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.0.clone())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<ID, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<ID, String> {
         v.as_string_value()
             .map(str::to_owned)
             .or_else(|| v.as_int_value().map(|i| i.to_string()))
@@ -65,7 +68,7 @@ impl<S> GraphQLScalar for ID {
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         match value {
             ScalarToken::String(value) | ScalarToken::Int(value) => Ok(S::from(value.to_owned())),
             _ => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
@@ -73,19 +76,21 @@ impl<S> GraphQLScalar for ID {
     }
 }
 
-#[crate::graphql_scalar(name = "String", scalar = S)]
-impl<S> GraphQLScalar for String {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(name = "String")]
+impl<S: ScalarValue> GraphQLScalar<S> for String {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.clone())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<String, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<String, String> {
         v.as_string_value()
             .map(str::to_owned)
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
@@ -270,36 +275,40 @@ where
     }
 }
 
-#[crate::graphql_scalar(name = "Boolean", scalar = S)]
-impl<S> GraphQLScalar for bool {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(name = "Boolean")]
+impl<S: ScalarValue> GraphQLScalar<S> for bool {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<bool, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<bool, String> {
         v.as_scalar_value()
             .and_then(ScalarValue::as_boolean)
             .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         // Bools are parsed separately - they shouldn't reach this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
 }
 
-#[crate::graphql_scalar(name = "Int", scalar = S)]
-impl<S> GraphQLScalar for i32 {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(name = "Int")]
+impl<S: ScalarValue> GraphQLScalar<S> for i32 {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<i32, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<i32, String> {
         v.as_int_value()
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::Int(v) = value {
             v.parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
@@ -310,18 +319,20 @@ impl<S> GraphQLScalar for i32 {
     }
 }
 
-#[crate::graphql_scalar(name = "Float", scalar = S)]
-impl<S> GraphQLScalar for f64 {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(name = "Float")]
+impl<S: ScalarValue> GraphQLScalar<S> for f64 {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<f64, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<f64, String> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         match value {
             ScalarToken::Int(v) => v
                 .parse()

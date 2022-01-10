@@ -115,29 +115,32 @@ The example below is used just for illustration.
 #    }
 # }
 #
-use juniper::{Value, ParseScalarResult, ParseScalarValue};
+use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value};
 use date::Date;
 
 #[juniper::graphql_scalar(description = "Date")]
-impl<S> GraphQLScalar for Date
+impl<S> GraphQLScalar<S> for Date
 where
     S: ScalarValue
 {
+    // Error of the `from_input_value()` method. 
+    // NOTE: Should implement `IntoFieldError<S>`.
+    type Error = String;
+  
     // Define how to convert your custom scalar into a primitive type.
-    fn resolve(&self) -> Value {
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.to_string())
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    // NOTE: The error type should implement `IntoFieldError<S>`.
-    fn from_input_value(v: &InputValue) -> Result<Date, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Date, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
     }
 
     // Define how to parse a string value.
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 }

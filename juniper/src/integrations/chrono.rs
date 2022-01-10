@@ -21,16 +21,18 @@ use chrono::prelude::*;
 use crate::{
     parser::{ParseError, ScalarToken, Token},
     value::{ParseScalarResult, ParseScalarValue},
-    Value,
+    GraphQLScalar, InputValue, ScalarValue, Value,
 };
 
-#[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime", scalar = S)]
-impl<S> GraphQLScalar for DateTime<FixedOffset> {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime")]
+impl<S: ScalarValue> GraphQLScalar<S> for DateTime<FixedOffset> {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<DateTime<FixedOffset>, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<DateTime<FixedOffset>, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -39,7 +41,7 @@ impl<S> GraphQLScalar for DateTime<FixedOffset> {
             })
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -48,13 +50,15 @@ impl<S> GraphQLScalar for DateTime<FixedOffset> {
     }
 }
 
-#[crate::graphql_scalar(name = "DateTimeUtc", description = "DateTime", scalar = S)]
-impl<S> GraphQLScalar for DateTime<Utc> {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(name = "DateTimeUtc", description = "DateTime")]
+impl<S: ScalarValue> GraphQLScalar<S> for DateTime<Utc> {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<DateTime<Utc>, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<DateTime<Utc>, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -63,7 +67,7 @@ impl<S> GraphQLScalar for DateTime<Utc> {
             })
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -77,13 +81,15 @@ impl<S> GraphQLScalar for DateTime<Utc> {
 // inherent lack of precision required for the time zone resolution.
 // For serialization and deserialization uses, it is best to use
 // `NaiveDate` instead."
-#[crate::graphql_scalar(description = "NaiveDate", scalar = S)]
-impl<S> GraphQLScalar for NaiveDate {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(description = "NaiveDate")]
+impl<S: ScalarValue> GraphQLScalar<S> for NaiveDate {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.format("%Y-%m-%d").to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveDate, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<NaiveDate, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -92,7 +98,7 @@ impl<S> GraphQLScalar for NaiveDate {
             })
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -102,13 +108,15 @@ impl<S> GraphQLScalar for NaiveDate {
 }
 
 #[cfg(feature = "scalar-naivetime")]
-#[crate::graphql_scalar(description = "NaiveTime", scalar = S)]
-impl<S> GraphQLScalar for NaiveTime {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(description = "NaiveTime")]
+impl<S: ScalarValue> GraphQLScalar<S> for NaiveTime {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.format("%H:%M:%S").to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveTime, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<NaiveTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -117,7 +125,7 @@ impl<S> GraphQLScalar for NaiveTime {
             })
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -128,13 +136,15 @@ impl<S> GraphQLScalar for NaiveTime {
 
 // JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
 // datetimes. Values will be truncated to microsecond resolution.
-#[crate::graphql_scalar(description = "NaiveDateTime", scalar = S)]
-impl<S> GraphQLScalar for NaiveDateTime {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(description = "NaiveDateTime")]
+impl<S: ScalarValue> GraphQLScalar<S> for NaiveDateTime {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.timestamp() as f64)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveDateTime, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<NaiveDateTime, String> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
             .and_then(|f| {
@@ -144,7 +154,7 @@ impl<S> GraphQLScalar for NaiveDateTime {
             })
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <f64 as ParseScalarValue<S>>::from_str(value)
     }
 }

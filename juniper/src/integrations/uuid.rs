@@ -7,22 +7,24 @@ use uuid::Uuid;
 use crate::{
     parser::{ParseError, ScalarToken, Token},
     value::ParseScalarResult,
-    Value,
+    GraphQLScalar, InputValue, ScalarValue, Value,
 };
 
-#[crate::graphql_scalar(description = "Uuid", scalar = S)]
-impl<S> GraphQLScalar for Uuid {
-    fn resolve(&self) -> Value {
+#[crate::graphql_scalar(description = "Uuid")]
+impl<S: ScalarValue> GraphQLScalar<S> for Uuid {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Uuid, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Uuid, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `Uuid`: {}", e)))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {

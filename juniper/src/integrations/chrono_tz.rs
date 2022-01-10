@@ -9,16 +9,18 @@ use crate::{
     graphql_scalar,
     parser::{ParseError, ScalarToken, Token},
     value::ParseScalarResult,
-    Value,
+    GraphQLScalar, InputValue, ScalarValue, Value,
 };
 
-#[graphql_scalar(name = "Tz", description = "Timezone", scalar = S)]
-impl<S> GraphQLScalar for Tz {
-    fn resolve(&self) -> Value {
+#[graphql_scalar(name = "Tz", description = "Timezone")]
+impl<S: ScalarValue> GraphQLScalar<S> for Tz {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.name().to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Tz, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Tz, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -27,7 +29,7 @@ impl<S> GraphQLScalar for Tz {
             })
     }
 
-    fn from_str<'a>(val: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(val: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(s) = val {
             Ok(S::from(s.to_owned()))
         } else {

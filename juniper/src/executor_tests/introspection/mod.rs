@@ -10,7 +10,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{ParseScalarResult, ParseScalarValue, Value},
-    GraphQLEnum,
+    GraphQLEnum, GraphQLScalar, InputValue, ScalarToken, ScalarValue,
 };
 
 #[derive(GraphQLEnum)]
@@ -22,19 +22,21 @@ enum Sample {
 
 struct Scalar(i32);
 
-#[graphql_scalar(name = "SampleScalar", scalar = S)]
-impl<S> GraphQLScalar for Scalar {
-    fn resolve(&self) -> Value {
+#[graphql_scalar(name = "SampleScalar")]
+impl<S: ScalarValue> GraphQLScalar<S> for Scalar {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Scalar, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Scalar, String> {
         v.as_int_value()
             .map(Scalar)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 }

@@ -5,18 +5,20 @@ use chrono::prelude::*;
 
 use crate::{
     graphql_scalar,
-    parser::{ParseError, ScalarToken, Token},
+    parser::{ParseError, Token},
     value::ParseScalarResult,
-    Value,
+    GraphQLScalar, InputValue, ScalarToken, ScalarValue, Value,
 };
 
-#[graphql_scalar(description = "ObjectId", scalar = S)]
-impl<S> GraphQLScalar for ObjectId {
-    fn resolve(&self) -> Value {
+#[graphql_scalar(description = "ObjectId")]
+impl<S: ScalarValue> GraphQLScalar<S> for ObjectId {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.to_hex())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<ObjectId, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<ObjectId, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -24,7 +26,7 @@ impl<S> GraphQLScalar for ObjectId {
             })
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(val) = value {
             Ok(S::from(val.to_owned()))
         } else {
@@ -33,13 +35,15 @@ impl<S> GraphQLScalar for ObjectId {
     }
 }
 
-#[graphql_scalar(description = "UtcDateTime", scalar = S)]
-impl<S> GraphQLScalar for UtcDateTime {
-    fn resolve(&self) -> Value {
+#[graphql_scalar(description = "UtcDateTime")]
+impl<S: ScalarValue> GraphQLScalar<S> for UtcDateTime {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar((*self).to_chrono().to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<UtcDateTime, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<UtcDateTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -49,7 +53,7 @@ impl<S> GraphQLScalar for UtcDateTime {
             .map(Self::from_chrono)
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(val) = value {
             Ok(S::from(val.to_owned()))
         } else {

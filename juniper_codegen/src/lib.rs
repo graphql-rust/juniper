@@ -215,10 +215,12 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// possible to specify a custom representation.
 ///
 /// ```rust
+/// # use juniper::{graphql_scalar, GraphQLScalar, ParseScalarResult, ScalarToken, ScalarValue, Value};
+/// #
 /// // The data type
 /// struct UserID(String);
 ///
-/// #[juniper::graphql_scalar(
+/// #[graphql_scalar(
 ///     // You can rename the type for GraphQL by specifying the name here.
 ///     name = "MyName",
 ///     // You can also specify a description here.
@@ -226,21 +228,22 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     description = "An opaque identifier, represented as a string",
 ///    // A specification URL.
 ///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
-///    scalar = S,
 /// )]
-/// impl<S> GraphQLScalar for UserID {
-///     fn resolve(&self) -> juniper::Value {
-///         juniper::Value::scalar(self.0.to_owned())
+/// impl<S: ScalarValue> GraphQLScalar<S> for UserID {
+///     // NOTE: The Error type should implement `IntoFieldError<S>`.
+///     type Error = String;  
+///
+///     fn resolve(&self) -> Value<S> {
+///         Value::scalar(self.0.to_owned())
 ///     }
 ///
-///     // NOTE: The error type should implement `IntoFieldError<S>`.
-///     fn from_input_value(value: &juniper::InputValue) -> Result<UserID, String> {
+///     fn from_input_value(value: &juniper::InputValue<S>) -> Result<Self, Self::Error> {
 ///         value.as_string_value()
 ///             .map(|s| UserID(s.to_owned()))
 ///             .ok_or_else(|| format!("Expected `String`, found: {}", value))
 ///     }
 ///
-///     fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {
+///     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
 ///         <String as juniper::ParseScalarValue<S>>::from_str(value)
 ///     }
 /// }

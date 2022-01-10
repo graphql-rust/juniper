@@ -1,6 +1,7 @@
 use juniper::{
     execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, DefaultScalarValue,
-    EmptyMutation, EmptySubscription, Object, ParseScalarResult, ParseScalarValue, RootNode, Value,
+    EmptyMutation, EmptySubscription, GraphQLScalar, InputValue, Object, ParseScalarResult,
+    ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
 };
 
 use crate::custom_scalar::MyScalarValue;
@@ -23,42 +24,48 @@ Syntax to validate:
 
 */
 
-#[graphql_scalar(scalar = S)]
-impl<S> GraphQLScalar for DefaultName {
-    fn resolve(&self) -> Value {
+#[graphql_scalar]
+impl<S: ScalarValue> GraphQLScalar<S> for DefaultName {
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<DefaultName, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, String> {
         v.as_int_value()
             .map(DefaultName)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 }
 
 #[graphql_scalar]
 impl GraphQLScalar for OtherOrder {
+    type Error = String;
+
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<OtherOrder, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, String> {
         v.as_int_value()
             .map(OtherOrder)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }
 
 #[graphql_scalar(name = "ANamedScalar")]
 impl GraphQLScalar for Named {
+    type Error = String;
+
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
@@ -69,30 +76,34 @@ impl GraphQLScalar for Named {
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }
 
 #[graphql_scalar(description = "A sample scalar, represented as an integer")]
 impl GraphQLScalar for ScalarDescription {
+    type Error = String;
+
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<ScalarDescription, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, String> {
         v.as_int_value()
             .map(ScalarDescription)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }
 
 #[graphql_scalar(specified_by_url = "https://tools.ietf.org/html/rfc4122")]
 impl GraphQLScalar for ScalarSpecifiedByUrl {
+    type Error = String;
+
     fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
@@ -103,7 +114,7 @@ impl GraphQLScalar for ScalarSpecifiedByUrl {
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }
@@ -111,22 +122,24 @@ impl GraphQLScalar for ScalarSpecifiedByUrl {
 macro_rules! impl_scalar {
     ($name: ident) => {
         #[graphql_scalar]
-        impl<S> GraphQLScalar for $name
+        impl<S> GraphQLScalar<S> for $name
         where
             S: ScalarValue,
         {
-            fn resolve(&self) -> Value {
+            type Error = &'static str;
+
+            fn resolve(&self) -> Value<S> {
                 Value::scalar(self.0.clone())
             }
 
-            fn from_input_value(v: &InputValue) -> Result<Self, &'static str> {
+            fn from_input_value(v: &InputValue<S>) -> Result<Self, &'static str> {
                 v.as_scalar_value()
                     .and_then(|v| v.as_str())
                     .and_then(|s| Some(Self(s.to_owned())))
                     .ok_or_else(|| "Expected `String`")
             }
 
-            fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+            fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
                 <String as ParseScalarValue<S>>::from_str(value)
             }
         }
@@ -160,18 +173,20 @@ impl Root {
 struct WithCustomScalarValue(i32);
 
 #[graphql_scalar]
-impl GraphQLScalar for WithCustomScalarValue {
+impl GraphQLScalar<MyScalarValue> for WithCustomScalarValue {
+    type Error = String;
+
     fn resolve(&self) -> Value<MyScalarValue> {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<WithCustomScalarValue, String> {
+    fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<Self, String> {
         v.as_int_value()
             .map(WithCustomScalarValue)
             .ok_or_else(|| format!("Expected Int, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, MyScalarValue> {
         <i32 as ParseScalarValue<MyScalarValue>>::from_str(value)
     }
 }
@@ -220,6 +235,8 @@ fn path_in_resolve_return_type() {
 
     #[graphql_scalar]
     impl GraphQLScalar for ResolvePath {
+        type Error = String;
+
         fn resolve(&self) -> self::Value {
             Value::scalar(self.0)
         }
@@ -230,7 +247,7 @@ fn path_in_resolve_return_type() {
                 .ok_or_else(|| format!("Expected `Int`, found: {}", v))
         }
 
-        fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+        fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
             <i32 as ParseScalarValue>::from_str(value)
         }
     }
