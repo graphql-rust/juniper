@@ -140,7 +140,7 @@ impl GraphQLScalar<MyScalarValue> for i64 {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<i64, String> {
+    fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<Self, Self::Error> {
         v.as_scalar_value::<i64>()
             .copied()
             .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {}", v))

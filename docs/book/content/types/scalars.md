@@ -133,7 +133,7 @@ where
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    fn from_input_value(v: &InputValue<S>) -> Result<Date, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))

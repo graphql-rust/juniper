@@ -69,7 +69,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for Date {
         )
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| Self::parse(s, DATE_FORMAT).map_err(|e| format!("Invalid `Date`: {}", e)))
@@ -131,7 +131,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for LocalTime {
         )
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -176,7 +176,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for LocalDateTime {
         )
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -222,7 +222,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime {
         )
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -269,7 +269,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for UtcOffset {
         )
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {

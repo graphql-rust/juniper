@@ -30,9 +30,9 @@ impl<S: ScalarValue> GraphQLScalar<S> for Scalar {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Scalar, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_int_value()
-            .map(Scalar)
+            .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 

@@ -15,10 +15,10 @@ impl<S: ScalarValue> GraphQLScalar<S> for Url {
         Value::scalar(self.as_str().to_owned())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Url, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse `Url`: {}", e)))
+            .and_then(|s| Self::parse(s).map_err(|e| format!("Failed to parse `Url`: {}", e)))
     }
 
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {

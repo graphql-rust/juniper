@@ -60,11 +60,11 @@ impl<S: ScalarValue> GraphQLScalar<S> for ID {
         Value::scalar(self.0.clone())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<ID, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .map(str::to_owned)
             .or_else(|| v.as_int_value().map(|i| i.to_string()))
-            .map(ID)
+            .map(Self)
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
 
@@ -84,7 +84,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for String {
         Value::scalar(self.clone())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<String, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .map(str::to_owned)
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
@@ -283,7 +283,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for bool {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<bool, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_scalar_value()
             .and_then(ScalarValue::as_boolean)
             .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
@@ -303,7 +303,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for i32 {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<i32, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_int_value()
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
@@ -327,7 +327,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for f64 {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<f64, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
     }

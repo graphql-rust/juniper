@@ -18,10 +18,10 @@ impl<S: ScalarValue> GraphQLScalar<S> for Uuid {
         Value::scalar(self.to_string())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Uuid, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `Uuid`: {}", e)))
+            .and_then(|s| Self::parse_str(s).map_err(|e| format!("Failed to parse `Uuid`: {}", e)))
     }
 
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {

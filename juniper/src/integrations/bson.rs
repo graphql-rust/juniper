@@ -18,7 +18,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for ObjectId {
         Value::scalar(self.to_hex())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<ObjectId, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -43,7 +43,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for UtcDateTime {
         Value::scalar((*self).to_chrono().to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<UtcDateTime, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {

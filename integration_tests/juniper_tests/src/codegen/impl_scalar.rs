@@ -32,9 +32,9 @@ impl<S: ScalarValue> GraphQLScalar<S> for DefaultName {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_int_value()
-            .map(DefaultName)
+            .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
@@ -51,9 +51,9 @@ impl GraphQLScalar for OtherOrder {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, Self::Error> {
         v.as_int_value()
-            .map(OtherOrder)
+            .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
@@ -70,9 +70,9 @@ impl GraphQLScalar for Named {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Named, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, Self::Error> {
         v.as_int_value()
-            .map(Named)
+            .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
@@ -89,7 +89,7 @@ impl GraphQLScalar for ScalarDescription {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, Self::Error> {
         v.as_int_value()
             .map(ScalarDescription)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
@@ -108,9 +108,9 @@ impl GraphQLScalar for ScalarSpecifiedByUrl {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<ScalarSpecifiedByUrl, String> {
+    fn from_input_value(v: &InputValue) -> Result<Self, Self::Error> {
         v.as_int_value()
-            .map(ScalarSpecifiedByUrl)
+            .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
@@ -132,7 +132,7 @@ macro_rules! impl_scalar {
                 Value::scalar(self.0.clone())
             }
 
-            fn from_input_value(v: &InputValue<S>) -> Result<Self, &'static str> {
+            fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
                 v.as_scalar_value()
                     .and_then(|v| v.as_str())
                     .and_then(|s| Some(Self(s.to_owned())))
@@ -180,9 +180,9 @@ impl GraphQLScalar<MyScalarValue> for WithCustomScalarValue {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<Self, String> {
+    fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<Self, Self::Error> {
         v.as_int_value()
-            .map(WithCustomScalarValue)
+            .map(Self)
             .ok_or_else(|| format!("Expected Int, found: {}", v))
     }
 
@@ -241,9 +241,9 @@ fn path_in_resolve_return_type() {
             Value::scalar(self.0)
         }
 
-        fn from_input_value(v: &InputValue) -> Result<ResolvePath, String> {
+        fn from_input_value(v: &InputValue) -> Result<Self, Self::Error> {
             v.as_int_value()
-                .map(ResolvePath)
+                .map(Self)
                 .ok_or_else(|| format!("Expected `Int`, found: {}", v))
         }
 

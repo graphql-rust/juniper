@@ -32,7 +32,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime<FixedOffset> {
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<DateTime<FixedOffset>, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -58,7 +58,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime<Utc> {
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<DateTime<Utc>, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -89,7 +89,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for NaiveDate {
         Value::scalar(self.format("%Y-%m-%d").to_string())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<NaiveDate, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -144,7 +144,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for NaiveDateTime {
         Value::scalar(self.timestamp() as f64)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<NaiveDateTime, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
             .and_then(|f| {

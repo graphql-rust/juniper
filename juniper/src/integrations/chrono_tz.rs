@@ -20,7 +20,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for Tz {
         Value::scalar(self.name().to_owned())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Tz, String> {
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
