@@ -239,7 +239,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///
 ///     fn from_input_value(value: &juniper::InputValue<S>) -> Result<Self, Self::Error> {
 ///         value.as_string_value()
-///             .map(|s| UserID(s.to_owned()))
+///             .map(|s| Self(s.to_owned()))
 ///             .ok_or_else(|| format!("Expected `String`, found: {}", value))
 ///     }
 ///

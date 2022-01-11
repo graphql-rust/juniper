@@ -1,4 +1,6 @@
-#![allow(clippy::collapsible_if)]
+//! Code generation for [GraphQL scalar][1].
+//!
+//! [1]: https://spec.graphql.org/October2021/#sec-Scalars
 
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, ToTokens};
@@ -21,18 +23,18 @@ use crate::{
         scalar,
     },
     result::GraphQLScope,
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, DeprecationAttr},
+    util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
 };
 
-/// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
+/// [`GraphQLScope`] of errors for `#[graphql_scalar]` macro.
 const ERR: GraphQLScope = GraphQLScope::ImplScalar;
 
-/// Expands `#[graphql_interface]` macro into generated code.
+/// Expands `#[graphql_scalar]` macro into generated code.
 pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
     if let Ok(mut ast) = syn::parse2::<syn::ItemImpl>(body) {
         let attrs = parse::attr::unite(("graphql_scalar", &attr_args), &ast.attrs);
         ast.attrs = parse::attr::strip("graphql_scalar", ast.attrs);
-        return expand_on_impl_block(attrs, ast);
+        return expand_on_impl(attrs, ast);
     }
 
     Err(syn::Error::new(
@@ -41,10 +43,8 @@ pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<T
     ))
 }
 
-fn expand_on_impl_block(
-    attrs: Vec<syn::Attribute>,
-    ast: syn::ItemImpl,
-) -> syn::Result<TokenStream> {
+/// Expands `#[graphql_scalar]` macro placed on an implementation block.
+fn expand_on_impl(attrs: Vec<syn::Attribute>, ast: syn::ItemImpl) -> syn::Result<TokenStream> {
     let attr = Attr::from_attrs("graphql_scalar", &attrs)?;
 
     let mut self_ty = ast.self_ty.clone();
@@ -75,39 +75,11 @@ fn expand_on_impl_block(
     let (_, trait_ty, _) = ast.trait_.as_ref().ok_or_else(|| {
         ERR.custom_error(
             ast.impl_token.span(),
-            "expected GraphQLScalar trait implementation",
+            "expected `GraphQLScalar` trait implementation",
         )
     })?;
 
-    let get_scalar = || {
-        if let Some(last_seg) = trait_ty.segments.last() {
-            match &last_seg.arguments {
-                syn::PathArguments::AngleBracketed(gens) => {
-                    if let Some(syn::GenericArgument::Type(ty)) = gens.args.last() {
-                        let is_generic = ast
-                            .generics
-                            .params
-                            .iter()
-                            .filter_map(|par| match par {
-                                syn::GenericParam::Type(ty) => Some(&ty.ident),
-                                _ => None,
-                            })
-                            .find(|gen_par| {
-                                gen_par.to_string() == ty.to_token_stream().to_string()
-                            });
-
-                        return is_generic.map_or_else(
-                            || scalar::Type::Concrete(ty.clone()),
-                            |scalar| scalar::Type::ExplicitGeneric(scalar.clone()),
-                        );
-                    }
-                }
-                syn::PathArguments::None | syn::PathArguments::Parenthesized(_) => {}
-            }
-        }
-        scalar::Type::Concrete(parse_quote! { ::juniper::DefaultScalarValue })
-    };
-    let scalar = get_scalar();
+    let scalar = get_scalar(trait_ty, &ast.generics);
 
     let mut out = ast.to_token_stream();
     Definition {
@@ -123,11 +95,54 @@ fn expand_on_impl_block(
     Ok(out)
 }
 
+/// Extracts [`scalar::Type`] from [`GraphQLScalar`] trait.
+///
+/// [`GraphQLScalar`]: juniper::GraphQLScalar
+fn get_scalar(trait_ty: &syn::Path, generics: &syn::Generics) -> scalar::Type {
+    if let Some(last_seg) = trait_ty.segments.last() {
+        match &last_seg.arguments {
+            syn::PathArguments::AngleBracketed(gens) => {
+                if let Some(syn::GenericArgument::Type(ty)) = gens.args.last() {
+                    let generic_scalar = generics
+                        .params
+                        .iter()
+                        .filter_map(|par| match par {
+                            syn::GenericParam::Type(ty) => Some(&ty.ident),
+                            _ => None,
+                        })
+                        .find(|gen_par| gen_par.to_string() == ty.to_token_stream().to_string());
+
+                    return generic_scalar.map_or_else(
+                        || scalar::Type::Concrete(ty.clone()),
+                        |scalar| scalar::Type::ExplicitGeneric(scalar.clone()),
+                    );
+                }
+            }
+            syn::PathArguments::None | syn::PathArguments::Parenthesized(_) => {}
+        }
+    }
+    scalar::Type::Concrete(parse_quote! { ::juniper::DefaultScalarValue })
+}
+
+/// Available arguments behind `#[graphql_scalar]` attribute when generating
+/// code for [GraphQL scalar][1] type.
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Scalars
 #[derive(Default)]
 struct Attr {
+    /// Name of this [GraphQL scalar][1] in GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     pub name: Option<SpanContainer<String>>,
+
+    /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     pub description: Option<SpanContainer<String>>,
-    pub deprecation: Option<SpanContainer<DeprecationAttr>>,
+
+    /// Spec [`Url`] of this [GraphQL scalar][1] to put into GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     pub specified_by_url: Option<SpanContainer<Url>>,
 }
 
@@ -186,7 +201,6 @@ impl Attr {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
-            deprecation: try_merge_opt!(deprecation: self, another),
             specified_by_url: try_merge_opt!(specified_by_url: self, another),
         })
     }
@@ -206,13 +220,45 @@ impl Attr {
     }
 }
 
-pub struct Definition {
-    impl_for_type: syn::Type,
-    generics: syn::Generics,
+/// Definition of [GraphQL scalar][1] for code generation.
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+struct Definition {
+    /// Name of this [GraphQL scalar][1] in GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     name: String,
-    scalar: scalar::Type,
+
+    /// Rust type that this [GraphQL scalar][1] is represented with.
+    ///
+    /// It should contain all its generics, if any.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    impl_for_type: syn::Type,
+
+    /// Generics of the Rust type that this [GraphQL scalar][1] is implemented
+    /// for.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    generics: syn::Generics,
+
+    /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     description: Option<String>,
+
+    /// Spec [`Url`] of this [GraphQL scalar][1] to put into GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     specified_by_url: Option<Url>,
+
+    /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
+    /// implementation with for this [GraphQL scalar][1].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    scalar: scalar::Type,
 }
 
 impl ToTokens for Definition {
@@ -220,7 +266,7 @@ impl ToTokens for Definition {
         self.impl_output_and_input_type_tokens().to_tokens(into);
         self.impl_type_tokens().to_tokens(into);
         self.impl_value_tokens().to_tokens(into);
-        self.impl_value_async().to_tokens(into);
+        self.impl_value_async_tokens().to_tokens(into);
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
@@ -229,11 +275,12 @@ impl ToTokens for Definition {
 }
 
 impl Definition {
-    /// Returns generated code implementing [`marker::IsOutputType`] trait for
-    /// this [GraphQL interface][1].
+    /// Returns generated code implementing [`marker::IsInputType`] and
+    /// [`marker::IsOutputType`] trait for this [GraphQL scalar][1].
     ///
+    /// [`marker::IsInputType`]: juniper::marker::IsInputType
     /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     #[must_use]
     fn impl_output_and_input_type_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
@@ -251,6 +298,11 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`GraphQLType`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_type_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let name = &self.name;
@@ -276,12 +328,12 @@ impl Definition {
                     Some(#name)
                 }
 
-                fn meta<'__registry>(
+                fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut ::juniper::Registry<'__registry, #scalar>,
-                ) -> ::juniper::meta::MetaType<'__registry, #scalar>
+                    registry: &mut ::juniper::Registry<'r, #scalar>,
+                ) -> ::juniper::meta::MetaType<'r, #scalar>
                 where
-                    #scalar: '__registry,
+                    #scalar: 'r,
                 {
                     registry.build_scalar_type::<Self>(info)
                         #description
@@ -292,6 +344,11 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`GraphQLValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`GraphQLValue`]: juniper::GraphQLValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_value_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let scalar = &self.scalar;
@@ -306,7 +363,7 @@ impl Definition {
                 type Context = ();
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
@@ -322,7 +379,12 @@ impl Definition {
         }
     }
 
-    fn impl_value_async(&self) -> TokenStream {
+    /// Returns generated code implementing [`GraphQLValueAsync`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_value_async_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let scalar = &self.scalar;
 
@@ -333,12 +395,12 @@ impl Definition {
             impl#impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty
                 #where_clause
             {
-                fn resolve_async<'__l>(
-                    &'__l self,
-                    info: &'__l Self::TypeInfo,
-                    selection_set: Option<&'__l [::juniper::Selection<#scalar>]>,
-                    executor: &'__l ::juniper::Executor<Self::Context, #scalar>,
-                ) -> ::juniper::BoxFuture<'__l, ::juniper::ExecutionResult<#scalar>> {
+                fn resolve_async<'b>(
+                    &'b self,
+                    info: &'b Self::TypeInfo,
+                    selection_set: Option<&'b [::juniper::Selection<#scalar>]>,
+                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
                     Box::pin(future::ready(v))
@@ -347,6 +409,11 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`InputValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`InputValue`]: juniper::InputValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_to_input_value_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let scalar = &self.scalar;
@@ -366,6 +433,11 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`FromInputValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`FromInputValue`]: juniper::FromInputValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_from_input_value_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let scalar = &self.scalar;
@@ -386,6 +458,11 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`ParseScalarValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`ParseScalarValue`]: juniper::ParseScalarValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_parse_scalar_value_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let scalar = &self.scalar;
@@ -398,14 +475,21 @@ impl Definition {
                 #where_clause
            {
                fn from_str(
-                    token: ::juniper::parser::ScalarToken,
-               ) -> ::juniper::ParseScalarResult<#scalar> {
+                    token: ::juniper::parser::ScalarToken<'_>,
+               ) -> ::juniper::ParseScalarResult<'_, #scalar> {
                     <Self as ::juniper::GraphQLScalar<#scalar>>::from_str(token)
                 }
             }
         }
     }
 
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
+    /// [`WrappedType`] traits for this [GraphQL scalar][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let scalar = &self.scalar;

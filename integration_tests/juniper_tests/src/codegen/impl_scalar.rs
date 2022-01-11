@@ -91,7 +91,7 @@ impl GraphQLScalar for ScalarDescription {
 
     fn from_input_value(v: &InputValue) -> Result<Self, Self::Error> {
         v.as_int_value()
-            .map(ScalarDescription)
+            .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
