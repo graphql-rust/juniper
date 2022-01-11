@@ -1252,7 +1252,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     /// Creates a [`ScalarMeta`] type.
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S> + 'r,
+        T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S>,
         T::Error: IntoFieldError<S>,
         S: ScalarValue,
     {

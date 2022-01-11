@@ -1,3 +1,6 @@
+use std::fmt;
+
+use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
     execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, DefaultScalarValue,
     EmptyMutation, EmptySubscription, GraphQLScalar, InputValue, Object, ParseScalarResult,
@@ -12,6 +15,7 @@ struct Named(i32);
 struct ScalarDescription(i32);
 struct ScalarSpecifiedByUrl(i32);
 struct Generated(String);
+struct CustomDateTime<Tz: TimeZone>(DateTime<Tz>);
 
 struct Root;
 
@@ -119,6 +123,33 @@ impl GraphQLScalar for ScalarSpecifiedByUrl {
     }
 }
 
+#[graphql_scalar(specified_by_url = "https://tools.ietf.org/html/rfc3339")]
+impl<S: ScalarValue, Tz> GraphQLScalar<S> for CustomDateTime<Tz>
+where
+    Tz: From<Utc> + TimeZone,
+    Tz::Offset: fmt::Display,
+{
+    type Error = String;
+
+    fn resolve(&self) -> Value<S> {
+        Value::scalar(self.0.to_rfc3339())
+    }
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .map(|dt| Self(dt.with_timezone(&Tz::from(Utc))))
+                    .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
+            })
+    }
+
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <String as ParseScalarValue<S>>::from_str(value)
+    }
+}
+
 macro_rules! impl_scalar {
     ($name: ident) => {
         #[graphql_scalar]
@@ -168,6 +199,9 @@ impl Root {
     fn generated() -> Generated {
         Generated("foo".to_owned())
     }
+    fn custom_date_time() -> CustomDateTime<Utc> {
+        CustomDateTime(Utc.timestamp_nanos(0))
+    }
 }
 
 struct WithCustomScalarValue(i32);
@@ -197,6 +231,10 @@ struct RootWithCustomScalarValue;
 impl RootWithCustomScalarValue {
     fn with_custom_scalar_value() -> WithCustomScalarValue {
         WithCustomScalarValue(0)
+    }
+
+    fn with_generic_scalar_value() -> CustomDateTime<Utc> {
+        CustomDateTime(Utc.timestamp(0, 0))
     }
 }
 
@@ -326,6 +364,30 @@ async fn named_introspection() {
 }
 
 #[tokio::test]
+async fn generic_introspection() {
+    let doc = r#"
+    {
+        __type(name: "CustomDateTime") {
+            name
+            description
+        }
+    }
+    "#;
+
+    run_type_info_query(doc, |type_info| {
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&graphql_value!("CustomDateTime")),
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&graphql_value!(null)),
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
 async fn scalar_description_introspection() {
     let doc = r#"
     {
@@ -404,7 +466,7 @@ async fn generated_scalar_introspection() {
 
 #[tokio::test]
 async fn resolves_with_custom_scalar_value() {
-    const DOC: &str = r#"{ withCustomScalarValue }"#;
+    const DOC: &str = r#"{ withCustomScalarValue withGenericScalarValue }"#;
 
     let schema = RootNode::<_, _, _, MyScalarValue>::new_with_scalar_value(
         RootWithCustomScalarValue,
@@ -414,6 +476,12 @@ async fn resolves_with_custom_scalar_value() {
 
     assert_eq!(
         execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-        Ok((graphql_value!({"withCustomScalarValue": 0}), vec![])),
+        Ok((
+            graphql_value!({
+                "withCustomScalarValue": 0,
+                "withGenericScalarValue": "1970-01-01T00:00:00+00:00",
+            }),
+            vec![]
+        )),
     );
 }
