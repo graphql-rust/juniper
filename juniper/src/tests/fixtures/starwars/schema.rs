@@ -118,7 +118,7 @@ impl Human {
 
     /// The friends of the human
     fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
+        ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
@@ -129,28 +129,6 @@ impl Human {
     /// The home planet of the human
     fn home_planet(&self) -> &Option<String> {
         &self.home_planet
-    }
-}
-
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn name(&self) -> Option<&str> {
-        Some(&self.name)
-    }
-
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
-    }
-
-    fn appears_in(&self) -> &[Episode] {
-        &self.appears_in
-    }
-
-    fn friends_ids(&self) -> &[String] {
-        &self.friend_ids
     }
 }
 
@@ -200,7 +178,7 @@ impl Droid {
 
     /// The friends of the droid
     fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
+        ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
@@ -211,28 +189,6 @@ impl Droid {
     /// The primary function of the droid
     fn primary_function(&self) -> &Option<String> {
         &self.primary_function
-    }
-}
-
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn name(&self) -> Option<&str> {
-        Some(&self.name)
-    }
-
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
-    }
-
-    fn appears_in(&self) -> &[Episode] {
-        &self.appears_in
-    }
-
-    fn friends_ids(&self) -> &[String] {
-        &self.friend_ids
     }
 }
 
@@ -363,10 +319,7 @@ impl Database {
         }
     }
 
-    pub fn get_friends(&self, c: &dyn Character) -> Vec<CharacterValue> {
-        c.friends_ids()
-            .iter()
-            .flat_map(|id| self.get_character(id))
-            .collect()
+    pub fn get_friends(&self, ids: &[String]) -> Vec<CharacterValue> {
+        ids.iter().flat_map(|id| self.get_character(id)).collect()
     }
 }

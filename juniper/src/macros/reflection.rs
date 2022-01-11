@@ -1,4 +1,5 @@
-//! Helper traits and macros for compile-time reflection.
+//! Helper traits and macros for compile-time reflection of Rust types into
+//! GraphQL types.
 
 use std::{rc::Rc, sync::Arc};
 
@@ -8,62 +9,39 @@ use crate::{
     Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, Nullable, ScalarValue,
 };
 
-/// Type alias for [GraphQL object][1], [scalar][2] or [interface][3] type name.
+/// Alias for a [GraphQL object][1], [scalar][2] or [interface][3] type's name
+/// in a GraphQL schema.
+///
 /// See [`BaseType`] for more info.
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sec-Scalars
-/// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
+/// [3]: https://spec.graphql.org/October2021#sec-Interfaces
 pub type Type = &'static str;
 
-/// Type alias for slice of [`Type`]s. See [`BaseSubTypes`] for more info.
+/// Alias for a slice of [`Type`]s.
+///
+/// See [`BaseSubTypes`] for more info.
 pub type Types = &'static [Type];
 
-/// Type alias for [GraphQL object][1] or [interface][2] [field argument][3]
-/// name.
+/// Naming of a [GraphQL object][1], [scalar][2] or [interface][3] [`Type`].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
-/// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
-pub type Name = &'static str;
-
-/// Type alias for slice of [`Name`]s. See [`Fields`] for more info.
-pub type Names = &'static [Name];
-
-/// Type alias for value of [`WrappedType`].
-pub type WrappedValue = u128;
-
-/// Type alias for [field argument][1]s [`Name`], [`Type`] and [`WrappedValue`].
+/// This trait is transparent to [`Option`], [`Vec`] and other containers, so to
+/// fully represent [GraphQL object][1] we additionally use [`WrappedType`].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Language.Arguments
-pub type Argument = (Name, Type, WrappedValue);
-
-/// Type alias for [field argument][1]s [`Name`], [`Type`] and
-/// [`WrappedValue`].
-///
-/// [1]: https://spec.graphql.org/October2021/#sec-Language.Arguments
-pub type Arguments = &'static [(Name, Type, WrappedValue)];
-
-/// Type alias for constantly hashed [`Name`] for usage in const context.
-pub type FieldName = u128;
-
-/// [GraphQL object][1], [scalar][2] or [interface][3] [`Type`] name. This trait
-/// is transparent to the [`Option`], [`Vec`] and other containers, so to fully
-/// represent [GraphQL object][1] we additionally use [`WrappedType`].
-///
-/// Different Rust type may have the same [`NAME`]. For example [`String`] and
-/// &[`str`](prim@str).
+/// Different Rust type may have the same [`NAME`]. For example, [`String`] and
+/// `&`[`str`](prim@str) share `String!` GraphQL type.
 ///
 /// [`NAME`]: Self::NAME
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sec-Scalars
-/// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
+/// [3]: https://spec.graphql.org/October2021#sec-Interfaces
 pub trait BaseType<S> {
     /// [`Type`] of the [GraphQL object][1], [scalar][2] or [interface][3].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
-    /// [2]: https://spec.graphql.org/October2021/#sec-Scalars
-    /// [3]: https://spec.graphql.org/October2021/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021#sec-Scalars
+    /// [3]: https://spec.graphql.org/October2021#sec-Interfaces
     const NAME: Type;
 }
 
@@ -115,16 +93,16 @@ impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Rc<T> {
     const NAME: Type = T::NAME;
 }
 
-/// [GraphQL object][1] [sub-types][2]. This trait is transparent to the
-/// [`Option`], [`Vec`] and other containers.
+/// [Sub-types][2] of a [GraphQL object][1].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sel-JAHZhCHCDEJDAAAEEFDBtzC
+/// This trait is transparent to [`Option`], [`Vec`] and other containers.
+///
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sel-JAHZhCHCDEJDAAAEEFDBtzC
 pub trait BaseSubTypes<S> {
-    /// [`Types`] for the [GraphQL object][1]s [sub-types][2].
+    /// Sub-[`Types`] of the [GraphQL object][1].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
-    /// [2]: https://spec.graphql.org/October2021/#sel-JAHZhCHCDEJDAAAEEFDBtzC
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     const NAMES: Types;
 }
 
@@ -176,19 +154,26 @@ impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
     const NAMES: Types = T::NAMES;
 }
 
-/// To fully represent [GraphQL object][1] it's not enough to use [`Type`],
-/// because of the [wrapping types][2]. To work around this we use
-/// [`WrappedValue`] which is represented with [`u128`].
+/// Alias for a value of a [`WrappedType`] (combined GraphQL type).
+pub type WrappedValue = u128;
+
+// TODO: Just use `&str`s once they're allowed in `const` generics.
+/// Encoding of a composed GraphQL type in numbers.
 ///
-/// - In base case of non-nullable [object] [`VALUE`] is `1`.
+/// To fully represent a [GraphQL object][1] it's not enough to use [`Type`],
+/// because of the [wrapping types][2]. To work around this we use a
+/// [`WrappedValue`] which is represented via [`u128`].
+///
+/// - In base case of non-nullable [object][1] [`VALUE`] is `1`.
 /// - To represent nullability we "append" `2` to the [`VALUE`], so
 ///   [`Option`]`<`[object][1]`>` has [`VALUE`] of `12`.
 /// - To represent list we "append" `3` to the [`VALUE`], so
 ///   [`Vec`]`<`[object][1]`>` has [`VALUE`] of `13`.
 ///
 /// This approach allows us to uniquely represent any [GraphQL object][1] with
-/// combination of [`Type`] and [`WrappedValue`] and even constantly format it
-/// with [`format_type`] macro.
+/// combination of [`Type`] and [`WrappedValue`] and even format it via
+/// [`format_type!`] macro in `const` context.
+///
 ///
 /// # Examples
 ///
@@ -211,8 +196,8 @@ impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
 /// ```
 ///
 /// [`VALUE`]: Self::VALUE
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sec-Wrapping-Types
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Wrapping-Types
 pub trait WrappedType<S> {
     /// [`WrappedValue`] of this type.
     const VALUE: WrappedValue;
@@ -266,6 +251,34 @@ impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
     const VALUE: u128 = T::VALUE;
 }
 
+/// Alias for a [GraphQL object][1] or [interface][2] [field argument][3] name.
+///
+/// See [`Fields`] for more info.
+///
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Interfaces
+/// [3]: https://spec.graphql.org/October2021#sec-Language.Arguments
+pub type Name = &'static str;
+
+/// Alias for a slice of [`Name`]s.
+///
+/// See [`Fields`] for more info.
+pub type Names = &'static [Name];
+
+/// Alias for [field argument][1]s [`Name`], [`Type`] and [`WrappedValue`].
+///
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+pub type Argument = (Name, Type, WrappedValue);
+
+/// Alias for a slice of [field argument][1]s [`Name`], [`Type`] and
+/// [`WrappedValue`].
+///
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+pub type Arguments = &'static [(Name, Type, WrappedValue)];
+
+/// Alias for a `const`-hashed [`Name`] used in `const` context.
+pub type FieldName = u128;
+
 /// [GraphQL object][1] or [interface][2] [field arguments][3] [`Names`].
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Objects
@@ -291,7 +304,7 @@ pub trait Implements<S> {
     const NAMES: Types;
 }
 
-/// Stores meta information of [GraphQL field][1]:
+/// Stores meta information of a [GraphQL field][1]:
 /// - [`Context`] and [`TypeInfo`].
 /// - Return type's [`TYPE`], [`SUB_TYPES`] and [`WRAPPED_VALUE`].
 /// - [`ARGUMENTS`].
@@ -379,10 +392,11 @@ pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
     ) -> BoxFuture<'b, ExecutionResult<S>>;
 }
 
-/// Non-cryptographic hash with good dispersion to use [`str`](prim@str) in
-/// const generics. See [spec] for more info.
+/// Non-cryptographic hash with good dispersion to use as a [`str`](prim@str) in
+/// `const` generics. See [spec] for more info.
 ///
 /// [spec]: https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-17.html
+#[must_use]
 pub const fn fnv1a128(str: Name) -> u128 {
     const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
     const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
@@ -398,49 +412,51 @@ pub const fn fnv1a128(str: Name) -> u128 {
     hash
 }
 
-/// Length of the [`format_type`] macro result __in bytes__.
-pub const fn type_len_with_wrapped_val(ty: Type, v: WrappedValue) -> usize {
+/// Length __in bytes__ of the [`format_type`] macro result.
+#[must_use]
+pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
     let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
 
-    let mut current_wrap_val = v;
-    while current_wrap_val % 10 != 0 {
-        match current_wrap_val % 10 {
+    let mut curr = val;
+    while curr % 10 != 0 {
+        match curr % 10 {
             2 => len -= "!".as_bytes().len(),   // remove !
             3 => len += "[]!".as_bytes().len(), // [Type]!
             _ => {}
         }
-
-        current_wrap_val /= 10;
+        curr /= 10;
     }
 
     len
 }
 
-/// Based on the [`WrappedValue`] checks whether GraphQL [`objects`][1] can be
-/// subtypes.
+/// Checks whether GraphQL [`objects`][1] can be sub-types, based on the
+/// [`WrappedValue`].
 ///
-/// To fully determine sub-typing relation [`Type`] should be one of the
+/// To fully determine the sub-typing relation [`Type`] should be one of the
 /// [`BaseSubTypes::NAMES`].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+#[must_use]
 pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
-    let ty_current = ty % 10;
-    let subtype_current = subtype % 10;
+    let ty_curr = ty % 10;
+    let sub_curr = subtype % 10;
 
-    if ty_current == subtype_current {
-        if ty_current == 1 {
+    if ty_curr == sub_curr {
+        if ty_curr == 1 {
             true
         } else {
             can_be_subtype(ty / 10, subtype / 10)
         }
-    } else if ty_current == 2 {
+    } else if ty_curr == 2 {
         can_be_subtype(ty / 10, subtype)
     } else {
         false
     }
 }
 
-/// Checks whether `val` exists in `arr`.
+/// Checks whether the given `val` exists in the given `arr`.
+#[must_use]
 pub const fn str_exists_in_arr(val: &str, arr: &[&str]) -> bool {
     let mut i = 0;
     while i < arr.len() {
@@ -452,7 +468,7 @@ pub const fn str_exists_in_arr(val: &str, arr: &[&str]) -> bool {
     false
 }
 
-/// Compares strings in `const` context.
+/// Compares strings in a `const` context.
 ///
 /// As there is no `const impl Trait` and `l == r` calls [`Eq`], we have to
 /// write custom comparison function.
@@ -477,8 +493,8 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
     true
 }
 
-/// Asserts that `#[graphql_interface(for = ...)]` has all types referencing
-/// this interface in `impl = ...` attribute section.
+/// Asserts that `#[graphql_interface(for = ...)]` has all the types referencing
+/// this interface in the `impl = ...` attribute argument.
 #[macro_export]
 macro_rules! assert_implemented_for {
     ($scalar: ty, $implementor: ty $(, $interfaces: ty)* $(,)?) => {
@@ -503,8 +519,8 @@ macro_rules! assert_implemented_for {
     };
 }
 
-/// Asserts that `impl = ...` attribute section has all types referencing this
-/// type in `#[graphql_interface(for = ...)]`.
+/// Asserts that `impl = ...` attribute argument has all the types referencing
+/// this GraphQL type in `#[graphql_interface(for = ...)]`.
 #[macro_export]
 macro_rules! assert_interfaces_impls {
     ($scalar: ty, $interface: ty $(, $implementers: ty)* $(,)?) => {
@@ -529,11 +545,14 @@ macro_rules! assert_interfaces_impls {
     };
 }
 
-/// Asserts validness of the [`Field`] [`Arguments`] and return [`Type`]. This
-/// assertion is a combination of [`assert_subtype`] and  [`assert_field_args`].
+/// Asserts validness of [`Field`] [`Arguments`] and returned [`Type`].
+///
+/// This assertion is a combination of [`assert_subtype`] and
+/// [`assert_field_args`].
+///
 /// See [spec][1] for more info.
 ///
-/// [1]: https://spec.graphql.org/October2021/#IsValidImplementation()
+/// [1]: https://spec.graphql.org/October2021#IsValidImplementation()
 #[macro_export]
 macro_rules! assert_field {
     (
@@ -547,10 +566,11 @@ macro_rules! assert_field {
     };
 }
 
-/// Asserts validness of the [`Field`]s return type. See [spec][1] for more
-/// info.
+/// Asserts validness of a [`Field`] return type.
 ///
-/// [1]: https://spec.graphql.org/October2021/#IsValidImplementationFieldType()
+/// See [spec][1] for more info.
+///
+/// [1]: https://spec.graphql.org/October2021#IsValidImplementationFieldType()
 #[macro_export]
 macro_rules! assert_subtype {
     (
@@ -805,7 +825,7 @@ macro_rules! assert_field_args {
     };
 }
 
-/// Concatenates const [`str`](prim@str)s in const context.
+/// Concatenates `const` [`str`](prim@str)s in a `const` context.
 #[macro_export]
 macro_rules! const_concat {
     ($($s:expr),* $(,)?) => {{
@@ -827,15 +847,16 @@ macro_rules! const_concat {
         }
         const CON: [u8; LEN] = concat([$($s),*]);
 
-        // SAFETY: this is safe, as we concatenate multiple UTF-8 strings one
-        //         after the other byte by byte.
+        // TODO: Use `str::from_utf8()` once it becomes `const`.
+        // SAFETY: This is safe, as we concatenate multiple UTF-8 strings one
+        //         after another byte-by-byte.
         #[allow(unsafe_code)]
         unsafe { ::std::str::from_utf8_unchecked(&CON) }
     }};
 }
 
-/// Before executing [`fnv1a128`] checks whether `impl_ty` has corresponding
-/// [`Field`] impl and panics with understandable message.
+/// Ensures that the given `$impl_ty` implements [`Field`] and returns a
+/// [`fnv1a128`] hash for it, otherwise panics with understandable message.
 #[macro_export]
 macro_rules! checked_hash {
     ($field_name: expr, $impl_ty: ty, $scalar: ty $(, $prefix: expr)? $(,)?) => {{
@@ -859,7 +880,8 @@ macro_rules! checked_hash {
     }};
 }
 
-/// Formats [`Type`] and [`WrappedValue`] into GraphQL type.
+/// Formats the given [`Type`] and [`WrappedValue`] into a readable GraphQL type
+/// name.
 ///
 /// # Examples
 ///
@@ -893,9 +915,9 @@ macro_rules! format_type {
             let mut is_null = false;
             while current_wrap_val % 10 != 0 {
                 match current_wrap_val % 10 {
-                    2 => is_null = true, // Skips writing BANG later.
+                    2 => is_null = true, // Skips writing `BANG` later.
                     3 => {
-                        // Write OPENING_BRACKET at current_start.
+                        // Write `OPENING_BRACKET` at `current_start`.
                         let mut i = 0;
                         while i < OPENING_BRACKET.as_bytes().len() {
                             type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
@@ -903,7 +925,7 @@ macro_rules! format_type {
                         }
                         current_start += i;
                         if !is_null {
-                            // Write BANG at current_end.
+                            // Write `BANG` at `current_end`.
                             i = 0;
                             while i < BANG.as_bytes().len() {
                                 type_arr[current_end - BANG.as_bytes().len() + i + 1] =
@@ -912,7 +934,7 @@ macro_rules! format_type {
                             }
                             current_end -= i;
                         }
-                        // Write CLOSING_BRACKET at current_end.
+                        // Write `CLOSING_BRACKET` at `current_end`.
                         i = 0;
                         while i < CLOSING_BRACKET.as_bytes().len() {
                             type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
@@ -928,7 +950,7 @@ macro_rules! format_type {
                 current_wrap_val /= 10;
             }
 
-            // Writes Type at current_start.
+            // Writes `Type` at `current_start`.
             let mut i = 0;
             while i < ty.as_bytes().len() {
                 type_arr[current_start + i] = ty.as_bytes()[i];
@@ -936,7 +958,7 @@ macro_rules! format_type {
             }
             i = 0;
             if !is_null {
-                // Writes BANG at current_end.
+                // Writes `BANG` at `current_end`.
                 while i < BANG.as_bytes().len() {
                     type_arr[current_end - BANG.as_bytes().len() + i + 1] = BANG.as_bytes()[i];
                     i += 1;
@@ -948,8 +970,9 @@ macro_rules! format_type {
 
         const TYPE_ARR: [u8; RES_LEN] = format_type_arr();
 
-        // SAFETY: this is safe, as we concatenate multiple UTF-8 strings one
-        //         after the other byte by byte.
+        // TODO: Use `str::from_utf8()` once it becomes `const`.
+        // SAFETY: This is safe, as we concatenate multiple UTF-8 strings one
+        //         after another byte-by-byte.
         #[allow(unsafe_code)]
         const TYPE_FORMATTED: &str =
             unsafe { ::std::str::from_utf8_unchecked(TYPE_ARR.as_slice()) };
