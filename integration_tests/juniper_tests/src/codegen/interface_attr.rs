@@ -772,7 +772,7 @@ mod explicit_async {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -911,7 +911,7 @@ mod fallible_field {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -999,7 +999,7 @@ mod fallible_field {
     async fn has_correct_graphql_type() {
         let schema = schema(QueryRoot::Human);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
                 kind
@@ -1016,7 +1016,7 @@ mod fallible_field {
         }"#;
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "name": "Character",
@@ -1069,7 +1069,7 @@ mod generic {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -1155,7 +1155,7 @@ mod generic {
 
     #[tokio::test]
     async fn uses_trait_name_without_type_params() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
             }
@@ -1164,7 +1164,7 @@ mod generic {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -1207,7 +1207,7 @@ mod generic_async {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -1293,7 +1293,7 @@ mod generic_async {
 
     #[tokio::test]
     async fn uses_trait_name_without_type_params() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
             }
@@ -1302,7 +1302,7 @@ mod generic_async {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -1345,7 +1345,7 @@ mod generic_lifetime_async {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue<'_, ()> {
             match self {
@@ -1431,7 +1431,7 @@ mod generic_lifetime_async {
 
     #[tokio::test]
     async fn uses_trait_name_without_type_params() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
             }
@@ -1440,7 +1440,7 @@ mod generic_lifetime_async {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -1490,7 +1490,7 @@ mod argument {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
@@ -1534,7 +1534,7 @@ mod argument {
     async fn camelcases_name() {
         let schema = schema(QueryRoot);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     name
@@ -1545,7 +1545,7 @@ mod argument {
             }
         }"#;
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [{
                     "name": "idWide",
@@ -1568,7 +1568,7 @@ mod argument {
     async fn has_no_description() {
         let schema = schema(QueryRoot);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     args {
@@ -1579,7 +1579,7 @@ mod argument {
         }"#;
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"args": [{"description": null}]},
@@ -1594,7 +1594,7 @@ mod argument {
     async fn has_no_defaults() {
         let schema = schema(QueryRoot);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     args {
@@ -1605,7 +1605,7 @@ mod argument {
         }"#;
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"args": [{"defaultValue": null}]},
@@ -2482,7 +2482,7 @@ mod explicit_generic_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue<__S>)]
+    #[graphql(scalar = S: ScalarValue, impl = CharacterValue<S>)]
     struct Human {
         id: String,
         home_planet: String,
@@ -2510,7 +2510,7 @@ mod explicit_generic_scalar {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object(scalar = S: ScalarValue)]
     impl QueryRoot {
         fn character<S: ScalarValue>(&self) -> CharacterValue<S> {
             match self {
@@ -2632,7 +2632,7 @@ mod bounded_generic_scalar {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Clone + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -2787,7 +2787,7 @@ mod explicit_custom_context {
         Droid,
     }
 
-    #[graphql_object(context = CustomContext, scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object(context = CustomContext)]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -2851,7 +2851,7 @@ mod explicit_custom_context {
 
     #[tokio::test]
     async fn resolves_fields() {
-        let doc = r#"{
+        const DOC: &str = r#"{
            character {
                 id
                 info
@@ -2869,7 +2869,7 @@ mod explicit_custom_context {
             let expected_info: &str = *expected_info;
             let expexted_more: &str = *expexted_more;
             assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &CustomContext).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext).await,
                 Ok((
                     graphql_value!({"character": {
                         "id": expected_id,
@@ -2941,7 +2941,7 @@ mod inferred_custom_context_from_field {
         Droid,
     }
 
-    #[graphql_object(context = CustomContext, scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object(context = CustomContext)]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -3005,7 +3005,7 @@ mod inferred_custom_context_from_field {
 
     #[tokio::test]
     async fn resolves_fields() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             character {
                 id
                 info
@@ -3022,7 +3022,7 @@ mod inferred_custom_context_from_field {
             let expected_id: &str = *expected_id;
             let expected_info: &str = *expected_info;
             assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &ctx).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &ctx).await,
                 Ok((
                     graphql_value!({"character": {
                         "id": expected_id,
@@ -3042,24 +3042,20 @@ mod executor {
 
     #[graphql_interface(for = [Human, Droid], scalar = S)]
     trait Character<S: ScalarValue> {
-        async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
-        where
-            S: Send + Sync;
+        async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str;
 
         async fn info<'b>(
             &'b self,
             arg: Option<i32>,
             #[graphql(executor)] another: &Executor<'_, '_, (), S>,
-        ) -> &'b str
-        where
-            S: Send + Sync;
+        ) -> &'b str;
     }
 
     struct Human {
         home_planet: String,
     }
 
-    #[graphql_object(impl = CharacterValue<__S>)]
+    #[graphql_object(scalar = S: ScalarValue, impl = CharacterValue<S>)]
     impl Human {
         async fn id<'a, S: ScalarValue>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str {
             executor.look_ahead().field_name()
@@ -3165,7 +3161,7 @@ mod executor {
 
     #[tokio::test]
     async fn resolves_fields() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             character {
                 id
                 info
@@ -3177,7 +3173,7 @@ mod executor {
 
             let expected_info: &str = *expected_info;
             assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
                     graphql_value!({"character": {"id": "id", "info": expected_info}}),
                     vec![],
@@ -3188,7 +3184,7 @@ mod executor {
 
     #[tokio::test]
     async fn not_arg() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     name
@@ -3202,7 +3198,7 @@ mod executor {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "args": []},
@@ -3347,7 +3343,7 @@ mod field_return_subtyping {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -3496,7 +3492,7 @@ mod field_return_union_subtyping {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -3641,7 +3637,7 @@ mod nullable_argument_subtyping {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
