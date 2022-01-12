@@ -1,12 +1,459 @@
-use crate::{
-    common::parse::ParseBufferExt as _,
-    result::GraphQLScope,
-    util::{self, span_container::SpanContainer},
-};
 use proc_macro2::TokenStream;
-use quote::quote;
-use syn::{spanned::Spanned, token, Data, Fields, Ident, Variant};
+use quote::{format_ident, quote};
+use syn::{
+    ext::IdentExt as _,
+    parse::{Parse, ParseStream},
+    parse_quote,
+    spanned::Spanned,
+    token, Data, Fields, Ident, Variant,
+};
 use url::Url;
+
+use crate::{
+    common::{
+        parse::{
+            attr::{err, OptionExt},
+            ParseBufferExt as _,
+        },
+        scalar,
+    },
+    result::GraphQLScope,
+    util::{self, filter_attrs, get_doc_comment, span_container::SpanContainer},
+};
+
+#[derive(Default)]
+struct Attr {
+    name: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<String>>,
+    specified_by_url: Option<SpanContainer<Url>>,
+    scalar: Option<SpanContainer<scalar::AttrValue>>,
+    resolve: Option<SpanContainer<syn::Path>>,
+    from_input_value: Option<SpanContainer<syn::Path>>,
+    from_str: Option<SpanContainer<syn::Path>>,
+}
+
+impl Parse for Attr {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let mut out = Self::default();
+        while !input.is_empty() {
+            let ident = input.parse_any_ident()?;
+            match ident.to_string().as_str() {
+                "name" => {
+                    input.parse::<token::Eq>()?;
+                    let name = input.parse::<syn::LitStr>()?;
+                    out.name
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(name.span()),
+                            name.value(),
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "desc" | "description" => {
+                    input.parse::<token::Eq>()?;
+                    let desc = input.parse::<syn::LitStr>()?;
+                    out.description
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(desc.span()),
+                            desc.value(),
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "specified_by_url" => {
+                    input.parse::<token::Eq>()?;
+                    let lit = input.parse::<syn::LitStr>()?;
+                    let url = lit.value().parse::<Url>().map_err(|err| {
+                        syn::Error::new(lit.span(), format!("Invalid URL: {}", err))
+                    })?;
+                    out.specified_by_url
+                        .replace(SpanContainer::new(ident.span(), Some(lit.span()), url))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "scalar" | "Scalar" | "ScalarValue" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<scalar::AttrValue>()?;
+                    out.scalar
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "resolve" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::Path>()?;
+                    out.resolve
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "from_input_value" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::Path>()?;
+                    out.from_input_value
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "from_str" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::Path>()?;
+                    out.from_str
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
+                }
+            }
+            input.try_parse::<token::Comma>()?;
+        }
+        Ok(out)
+    }
+}
+
+impl Attr {
+    /// Tries to merge two [`Attr`]s into a single one, reporting about
+    /// duplicates, if any.
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
+        Ok(Self {
+            name: try_merge_opt!(name: self, another),
+            description: try_merge_opt!(description: self, another),
+            specified_by_url: try_merge_opt!(specified_by_url: self, another),
+            scalar: try_merge_opt!(scalar: self, another),
+            resolve: try_merge_opt!(resolve: self, another),
+            from_input_value: try_merge_opt!(from_input_value: self, another),
+            from_str: try_merge_opt!(from_str: self, another),
+        })
+    }
+
+    /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a trait definition.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        let mut attr = filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
+
+        if attr.description.is_none() {
+            attr.description = get_doc_comment(attrs);
+        }
+
+        Ok(attr)
+    }
+}
+
+struct Definition {
+    ident: syn::Ident,
+    generics: syn::Generics,
+    field: syn::Field,
+    name: String,
+    description: Option<String>,
+    specified_by_url: Option<Url>,
+    scalar: Option<scalar::Type>,
+    resolve: Option<syn::Path>,
+    from_input_value: Option<syn::Path>,
+    from_str: Option<syn::Path>,
+}
+
+impl Definition {
+    /// Returns generated code implementing [`marker::IsInputType`] and
+    /// [`marker::IsOutputType`] trait for this [GraphQL scalar][1].
+    ///
+    /// [`marker::IsInputType`]: juniper::marker::IsInputType
+    /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    #[must_use]
+    fn impl_output_and_input_type_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let scalar = &self.scalar;
+
+        let generics = self.impl_generics(false);
+        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+
+        quote! {
+            impl#impl_gens ::juniper::marker::IsInputType<#scalar> for #ident#ty_gens
+                #where_clause { }
+
+            impl#impl_gens ::juniper::marker::IsOutputType<#scalar> for #ident#ty_gens
+                #where_clause { }
+        }
+    }
+
+    /// Returns generated code implementing [`GraphQLType`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_type_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let scalar = &self.scalar;
+        let name = &self.name;
+
+        let description = self
+            .description
+            .as_ref()
+            .map(|val| quote! { .description(#val) });
+        let specified_by_url = self.specified_by_url.as_ref().map(|url| {
+            let url_lit = url.as_str();
+            quote! { .specified_by_url(#url_lit) }
+        });
+
+        let generics = self.impl_generics(false);
+        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+
+        quote! {
+            impl#impl_gens ::juniper::GraphQLType<#scalar> for #ident#ty_gens
+                #where_clause
+            {
+                fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+                    Some(#name)
+                }
+
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut ::juniper::Registry<'r, #scalar>,
+                ) -> ::juniper::meta::MetaType<'r, #scalar>
+                where
+                    #scalar: 'r,
+                {
+                    registry.build_scalar_type::<Self>(info)
+                        #description
+                        #specified_by_url
+                        .into_meta()
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`GraphQLValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`GraphQLValue`]: juniper::GraphQLValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_value_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let scalar = &self.scalar;
+        let field = &self.field.ident;
+
+        let generics = self.impl_generics(false);
+        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+
+        let resolve = self.resolve.map_or_else(
+            || quote! { ::juniper::GraphQLValue::<#scalar>::resolve(&self.#field, info, selection, executor) },
+            |resolve_fn| quote! { Ok(#resolve_fn(self)) },
+        );
+
+        quote! {
+            impl#impl_gens ::juniper::GraphQLValue<#scalar> for #ident#ty_gens
+                #where_clause
+            {
+                type Context = ();
+                type TypeInfo = ();
+
+                fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+                    <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                }
+
+                fn resolve(
+                    &self,
+                    info: &(),
+                    selection: Option<&[::juniper::Selection<#scalar>]>,
+                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::ExecutionResult<#scalar> {
+                    #resolve
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`GraphQLValueAsync`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_value_async_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let scalar = &self.scalar;
+
+        let generics = self.impl_generics(true);
+        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+
+        quote! {
+            impl#impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ident#ty_gens
+                #where_clause
+            {
+                fn resolve_async<'b>(
+                    &'b self,
+                    info: &'b Self::TypeInfo,
+                    selection_set: Option<&'b [::juniper::Selection<#scalar>]>,
+                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                    use ::juniper::futures::future;
+                    let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
+                    Box::pin(future::ready(v))
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`InputValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`InputValue`]: juniper::InputValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_to_input_value_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let scalar = &self.scalar;
+        let field = &self.field.ident;
+
+        let resolve = self.resolve.map_or_else(
+            || quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(self.#field) },
+            |resolve_fn| {
+                quote! {
+                    let v = #resolve_fn(self);
+                    ::juniper::ToInputValue::to_input_value(&v)
+                }
+            },
+        );
+
+        let generics = self.impl_generics(false);
+        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+
+        quote! {
+            impl#impl_gens ::juniper::ToInputValue<#scalar> for #ident#ty_gens
+                #where_clause
+            {
+                fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
+                    #resolve
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`FromInputValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`FromInputValue`]: juniper::FromInputValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_from_input_value_tokens(&self) -> TokenStream {
+        let ty = &self.impl_for_type;
+        let scalar = &self.scalar;
+        let field = &self.field.ident;
+        let field_ty = &self.field.ty;
+
+        let error_ty = self
+            .from_input_value
+            .map_or_else(|| quote! { #field_ty }, |_| quote! { Self });
+        let from_input_value = self
+            .from_input_value
+            .map_or_else(
+                || quote! { <#field_ty as :juniper::FromInputValue<#scalar>>::from_input_value(&self.#field) },
+                |from_input_value_fn| quote! { #from_input_value(self) }
+            );
+
+        let generics = self.impl_generics(false);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            impl#impl_gens ::juniper::FromInputValue<#scalar> for #ty
+                #where_clause
+            {
+                type Error = <#error_ty as ::juniper::GraphQLScalar<#scalar>>::Error;
+
+                fn from_input_value(input: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
+                   #from_input_value
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`ParseScalarValue`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`ParseScalarValue`]: juniper::ParseScalarValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_parse_scalar_value_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let scalar = &self.scalar;
+        let field_ty = &self.field.ty;
+
+        let from_str = self.from_str.map_or_else(
+            || quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::from_str(token) },
+            |from_str_fn| quote! { #from_str_fn(token) },
+        );
+
+        let generics = self.impl_generics(false);
+        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+
+        quote! {
+            impl#impl_gens ::juniper::ParseScalarValue<#scalar> for #ident#ty_gens
+                #where_clause
+           {
+               fn from_str(
+                    token: ::juniper::parser::ScalarToken<'_>,
+               ) -> ::juniper::ParseScalarResult<'_, #scalar> {
+                    #from_str
+                }
+            }
+        }
+    }
+
+    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
+    /// similar) implementation of this enum.
+    ///
+    /// If `for_async` is `true`, then additional predicates are added to suit
+    /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
+    ///
+    /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
+    /// [`GraphQLType`]: juniper::GraphQLType
+    #[must_use]
+    fn impl_generics(&self, for_async: bool) -> syn::Generics {
+        let mut generics = self.generics.clone();
+
+        let scalar = &self.scalar;
+        if scalar.is_implicit_generic() {
+            generics.params.push(parse_quote! { #scalar });
+        }
+        if scalar.is_generic() {
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        }
+        if let Some(bound) = scalar.bounds() {
+            generics.make_where_clause().predicates.push(bound);
+        }
+
+        if for_async {
+            let self_ty = if self.generics.lifetimes().next().is_some() {
+                // Modify lifetime names to omit "lifetime name `'a` shadows a
+                // lifetime name that is already in scope" error.
+                let mut generics = self.generics.clone();
+                for lt in generics.lifetimes_mut() {
+                    let ident = lt.lifetime.ident.unraw();
+                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                }
+
+                let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
+                let ty = &self.ident;
+                let (_, ty_generics, _) = generics.split_for_impl();
+
+                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+            } else {
+                quote! { Self }
+            };
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #self_ty: Sync });
+
+            if scalar.is_generic() {
+                generics
+                    .make_where_clause()
+                    .predicates
+                    .push(parse_quote! { #scalar: Send + Sync });
+            }
+        }
+
+        generics
+    }
+}
 
 #[derive(Debug, Default)]
 struct TransparentAttributes {
