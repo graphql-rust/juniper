@@ -493,6 +493,123 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
     true
 }
 
+/// Tried to call [`Field`] implementation of `set_ty` with  `info`, `args` and
+/// `executor` as arguments if present or panics otherwise.
+///
+/// This macro uses [autoref-based specialisation][1].
+///
+/// [1]: http://lukaskalbertodt.github.io/2019/12/05/generalized-autoref-based-specialization.html
+#[macro_export]
+macro_rules! call_field_or_panic {
+    (
+        $field_name: expr,
+        $self_: expr,
+        $info: expr,
+        $args: expr,
+        $executor: expr $(,)?
+    ) => {{
+        const FIELD_NAME: $crate::macros::reflection::FieldName =
+            $crate::macros::reflection::fnv1a128($field_name);
+
+        struct Wrap<T>(T);
+
+        impl<S, T> $crate::macros::reflection::FieldMeta<S, FIELD_NAME> for Wrap<&T>
+        where
+            T: $crate::macros::reflection::FieldMeta<S, FIELD_NAME>,
+        {
+            type Context = T::Context;
+
+            type TypeInfo = T::TypeInfo;
+
+            const TYPE: $crate::macros::reflection::Type = T::TYPE;
+
+            const SUB_TYPES: $crate::macros::reflection::Types = T::SUB_TYPES;
+
+            const WRAPPED_VALUE: $crate::macros::reflection::WrappedValue = T::WRAPPED_VALUE;
+
+            const ARGUMENTS: $crate::macros::reflection::Arguments = T::ARGUMENTS;
+        }
+
+        impl<S, T> $crate::macros::reflection::FieldMeta<S, FIELD_NAME> for &Wrap<&T>
+        where
+            T: $crate::macros::reflection::FieldMeta<S, FIELD_NAME>,
+        {
+            type Context = T::Context;
+
+            type TypeInfo = T::TypeInfo;
+
+            const TYPE: $crate::macros::reflection::Type = T::TYPE;
+
+            const SUB_TYPES: $crate::macros::reflection::Types = T::SUB_TYPES;
+
+            const WRAPPED_VALUE: $crate::macros::reflection::WrappedValue = T::WRAPPED_VALUE;
+
+            const ARGUMENTS: $crate::macros::reflection::Arguments = T::ARGUMENTS;
+        }
+
+        /// First, we'll try to call this trait in case [`Field`] impl is present.
+        trait ViaField<S>: $crate::macros::reflection::FieldMeta<S, FIELD_NAME> {
+            fn __call(
+                &self,
+                info: &Self::TypeInfo,
+                args: &$crate::Arguments<S>,
+                executor: &$crate::Executor<Self::Context, S>,
+            ) -> $crate::ExecutionResult<S>;
+        }
+
+        impl<S, T> ViaField<S> for &Wrap<&T>
+        where
+            T: $crate::macros::reflection::Field<
+                S,
+                { $crate::macros::reflection::fnv1a128($field_name) },
+            >,
+        {
+            fn __call(
+                &self,
+                info: &Self::TypeInfo,
+                args: &$crate::Arguments<S>,
+                executor: &$crate::Executor<Self::Context, S>,
+            ) -> $crate::ExecutionResult<S> {
+                self.0.call(info, args, executor)
+            }
+        }
+
+        /// If [`Field`] impl wasn't found, we'll fallback to [`BasePanic`]
+        /// trait, which simply panics.
+        trait BasePanic<S>: $crate::macros::reflection::FieldMeta<S, FIELD_NAME> {
+            fn __call(
+                &self,
+                info: &Self::TypeInfo,
+                args: &$crate::Arguments<S>,
+                executor: &$crate::Executor<Self::Context, S>,
+            ) -> $crate::ExecutionResult<S>;
+        }
+
+        impl<S, T> BasePanic<S> for Wrap<&T>
+        where
+            T: $crate::macros::reflection::FieldMeta<
+                    S,
+                    { $crate::macros::reflection::fnv1a128($field_name) },
+                > + $crate::macros::reflection::BaseType<S>,
+        {
+            fn __call(
+                &self,
+                _: &Self::TypeInfo,
+                _: &$crate::Arguments<S>,
+                _: &$crate::Executor<Self::Context, S>,
+            ) -> $crate::ExecutionResult<S> {
+                ::std::panic!(
+                    "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+                    $field_name,
+                    T::NAME,
+                );
+            }
+        }
+
+        (&&Wrap($self_)).__call($info, $args, $executor)
+    }};
+}
+
 /// Asserts that `#[graphql_interface(for = ...)]` has all the types referencing
 /// this interface in the `impl = ...` attribute argument.
 #[macro_export]

@@ -482,16 +482,12 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 /// // NOTICE: Specifying `ScalarValue` as existing type parameter.
 /// #[graphql_interface(for = Human, scalar = S)]
 /// trait Character<S: ScalarValue> {
-///     async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
-///     where
-///         S: Send + Sync; // required by `#[async_trait]` transformation ¯\_(ツ)_/¯
+///     fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str;
 ///
-///     async fn name<'b>(
+///     fn name<'b>(
 ///         &'b self,
 ///         #[graphql(executor)] another: &Executor<'_, '_, (), S>,
-///     ) -> &'b str
-///     where
-///         S: Send + Sync;
+///     ) -> &'b str;
 /// }
 ///
 /// struct Human {
