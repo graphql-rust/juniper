@@ -1,11 +1,11 @@
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use proc_macro2::{Literal, TokenStream};
+use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned,
-    token, Data, Fields, Ident, Variant,
+    token,
 };
 use url::Url;
 
@@ -18,8 +18,222 @@ use crate::{
         scalar,
     },
     result::GraphQLScope,
-    util::{self, filter_attrs, get_doc_comment, span_container::SpanContainer},
+    util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
 };
+
+const ERR: GraphQLScope = GraphQLScope::DeriveScalar;
+
+pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
+    let ast = syn::parse2::<syn::DeriveInput>(input)?;
+
+    let attr = Attr::from_attrs("graphql", &ast.attrs)?;
+
+    let field = match (
+        attr.resolve.as_deref().cloned(),
+        attr.from_input_value.as_deref().cloned(),
+        attr.from_str.as_deref().cloned(),
+    ) {
+        (Some(resolve), Some(from_input_value), Some(from_str)) => {
+            GraphQLScalarDefinition::Custom {
+                resolve,
+                from_input_value,
+                from_str,
+            }
+        }
+        (resolve, from_input_value, from_str) => {
+            let data = if let syn::Data::Struct(data) = &ast.data {
+                data
+            } else {
+                return Err(ERR.custom_error(
+                    ast.span(),
+                    "expected single-field struct \
+                      or all `resolve`, `from_input_value` and `from_str` functions",
+                ));
+            };
+            let field = match &data.fields {
+                syn::Fields::Unit => Err(ERR.custom_error(
+                    ast.span(),
+                    "expected exactly 1 field, e.g., `Test(i32)` or `Test { test: i32 }` \
+                     or all `resolve`, `from_input_value` and `from_str` functions",
+                )),
+                syn::Fields::Unnamed(fields) => fields
+                    .unnamed
+                    .first()
+                    .and_then(|f| (fields.unnamed.len() == 1).then(|| Field::Unnamed(f.clone())))
+                    .ok_or_else(|| {
+                        ERR.custom_error(
+                            ast.span(),
+                            "expected exactly 1 field, e.g., Test(i32)\
+                             or all `resolve`, `from_input_value` and `from_str` functions",
+                        )
+                    }),
+                syn::Fields::Named(fields) => fields
+                    .named
+                    .first()
+                    .and_then(|f| (fields.named.len() == 1).then(|| Field::Named(f.clone())))
+                    .ok_or_else(|| {
+                        ERR.custom_error(
+                            ast.span(),
+                            "expected exactly 1 field, e.g., Test { test: i32 }\
+                             or all `resolve`, `from_input_value` and `from_str` functions",
+                        )
+                    }),
+            }?;
+            GraphQLScalarDefinition::Delegated {
+                resolve,
+                from_input_value,
+                from_str,
+                field,
+            }
+        }
+    };
+
+    let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
+
+    Ok(Definition {
+        ident: ast.ident.clone(),
+        generics: ast.generics.clone(),
+        field,
+        name: attr
+            .name
+            .as_deref()
+            .cloned()
+            .unwrap_or_else(|| ast.ident.to_string()),
+        description: attr.description.as_deref().cloned(),
+        specified_by_url: attr.specified_by_url.as_deref().cloned(),
+        scalar,
+    }
+    .to_token_stream())
+}
+
+enum GraphQLScalarDefinition {
+    Custom {
+        resolve: syn::Path,
+        from_input_value: syn::Path,
+        from_str: syn::Path,
+    },
+    Delegated {
+        resolve: Option<syn::Path>,
+        from_input_value: Option<syn::Path>,
+        from_str: Option<syn::Path>,
+        field: Field,
+    },
+}
+
+impl GraphQLScalarDefinition {
+    fn resolve(&self, scalar: &scalar::Type) -> TokenStream {
+        let (resolve, field) = match self {
+            GraphQLScalarDefinition::Custom { resolve, .. } => (Some(resolve), None),
+            GraphQLScalarDefinition::Delegated { resolve, field, .. } => {
+                (resolve.as_ref(), Some(field))
+            }
+        };
+
+        resolve.as_ref().map_or_else(
+            || quote! { ::juniper::GraphQLValue::<#scalar>::resolve(&self.#field, info, selection, executor) },
+            |resolve_fn| quote! { Ok(#resolve_fn(self)) },
+        )
+    }
+
+    fn to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+        let (resolve, field) = match self {
+            GraphQLScalarDefinition::Custom { resolve, .. } => (Some(resolve), None),
+            GraphQLScalarDefinition::Delegated { resolve, field, .. } => {
+                (resolve.as_ref(), Some(field))
+            }
+        };
+
+        resolve.as_ref().map_or_else(
+            || quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field) },
+            |resolve_fn| {
+                quote! {
+                    let v = #resolve_fn(self);
+                    ::juniper::ToInputValue::to_input_value(&v)
+                }
+            },
+        )
+    }
+
+    fn from_input_value_err(&self, scalar: &scalar::Type) -> TokenStream {
+        let err_ty = match self {
+            GraphQLScalarDefinition::Custom { .. } => parse_quote!(Self),
+            GraphQLScalarDefinition::Delegated { field, .. } => field.ty().clone(),
+        };
+
+        quote! { <#err_ty as ::juniper::GraphQLScalar<#scalar>>::Error }
+    }
+
+    fn from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+        let (from_input_value, field) = match self {
+            GraphQLScalarDefinition::Custom {
+                from_input_value, ..
+            } => (Some(from_input_value), None),
+            GraphQLScalarDefinition::Delegated {
+                from_input_value,
+                field,
+                ..
+            } => (from_input_value.as_ref(), Some(field)),
+        };
+        let field_ty = field.map(Field::ty);
+        let self_constructor = field.map(Field::closure_constructor);
+
+        from_input_value.as_ref().map_or_else(
+            || {
+                quote! {
+                    <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
+                        .map(#self_constructor)
+                }
+            },
+            |from_input_value_fn| quote! { #from_input_value_fn(input) },
+        )
+    }
+
+    fn from_str(&self, scalar: &scalar::Type) -> TokenStream {
+        let (from_str, field) = match self {
+            GraphQLScalarDefinition::Custom { from_str, .. } => (Some(from_str), None),
+            GraphQLScalarDefinition::Delegated {
+                from_str, field, ..
+            } => (from_str.as_ref(), Some(field)),
+        };
+        let field_ty = field.map(Field::ty);
+
+        from_str.as_ref().map_or_else(
+            || quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::from_str(token) },
+            |from_str_fn| quote! { #from_str_fn(token) },
+        )
+    }
+}
+
+enum Field {
+    Named(syn::Field),
+    Unnamed(syn::Field),
+}
+
+impl ToTokens for Field {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Field::Named(f) => f.ident.to_tokens(tokens),
+            Field::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
+        }
+    }
+}
+
+impl Field {
+    fn ty(&self) -> &syn::Type {
+        match self {
+            Field::Named(f) | Field::Unnamed(f) => &f.ty,
+        }
+    }
+
+    fn closure_constructor(&self) -> TokenStream {
+        match self {
+            Field::Named(syn::Field { ident, .. }) => {
+                quote! { |v| Self { #ident: v } }
+            }
+            Field::Unnamed(_) => quote! { Self },
+        }
+    }
+}
 
 #[derive(Default)]
 struct Attr {
@@ -141,14 +355,24 @@ impl Attr {
 struct Definition {
     ident: syn::Ident,
     generics: syn::Generics,
-    field: syn::Field,
+    field: GraphQLScalarDefinition,
     name: String,
     description: Option<String>,
     specified_by_url: Option<Url>,
-    scalar: Option<scalar::Type>,
-    resolve: Option<syn::Path>,
-    from_input_value: Option<syn::Path>,
-    from_str: Option<syn::Path>,
+    scalar: scalar::Type,
+}
+
+impl ToTokens for Definition {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        self.impl_output_and_input_type_tokens().to_tokens(into);
+        self.impl_type_tokens().to_tokens(into);
+        self.impl_value_tokens().to_tokens(into);
+        self.impl_value_async_tokens().to_tokens(into);
+        self.impl_to_input_value_tokens().to_tokens(into);
+        self.impl_from_input_value_tokens().to_tokens(into);
+        self.impl_parse_scalar_value_tokens().to_tokens(into);
+        self.impl_traits_for_reflection_tokens().to_tokens(into);
+    }
 }
 
 impl Definition {
@@ -164,7 +388,8 @@ impl Definition {
         let scalar = &self.scalar;
 
         let generics = self.impl_generics(false);
-        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
 
         quote! {
             impl#impl_gens ::juniper::marker::IsInputType<#scalar> for #ident#ty_gens
@@ -195,7 +420,8 @@ impl Definition {
         });
 
         let generics = self.impl_generics(false);
-        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
 
         quote! {
             impl#impl_gens ::juniper::GraphQLType<#scalar> for #ident#ty_gens
@@ -229,15 +455,12 @@ impl Definition {
     fn impl_value_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
-        let field = &self.field.ident;
+
+        let resolve = self.field.resolve(&scalar);
 
         let generics = self.impl_generics(false);
-        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
-
-        let resolve = self.resolve.map_or_else(
-            || quote! { ::juniper::GraphQLValue::<#scalar>::resolve(&self.#field, info, selection, executor) },
-            |resolve_fn| quote! { Ok(#resolve_fn(self)) },
-        );
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
 
         quote! {
             impl#impl_gens ::juniper::GraphQLValue<#scalar> for #ident#ty_gens
@@ -272,7 +495,8 @@ impl Definition {
         let scalar = &self.scalar;
 
         let generics = self.impl_generics(true);
-        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
 
         quote! {
             impl#impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ident#ty_gens
@@ -300,27 +524,19 @@ impl Definition {
     fn impl_to_input_value_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
-        let field = &self.field.ident;
 
-        let resolve = self.resolve.map_or_else(
-            || quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(self.#field) },
-            |resolve_fn| {
-                quote! {
-                    let v = #resolve_fn(self);
-                    ::juniper::ToInputValue::to_input_value(&v)
-                }
-            },
-        );
+        let to_input_value = self.field.to_input_value(&scalar);
 
         let generics = self.impl_generics(false);
-        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
 
         quote! {
             impl#impl_gens ::juniper::ToInputValue<#scalar> for #ident#ty_gens
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                    #resolve
+                    #to_input_value
                 }
             }
         }
@@ -332,29 +548,21 @@ impl Definition {
     /// [`FromInputValue`]: juniper::FromInputValue
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_from_input_value_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
+        let ident = &self.ident;
         let scalar = &self.scalar;
-        let field = &self.field.ident;
-        let field_ty = &self.field.ty;
 
-        let error_ty = self
-            .from_input_value
-            .map_or_else(|| quote! { #field_ty }, |_| quote! { Self });
-        let from_input_value = self
-            .from_input_value
-            .map_or_else(
-                || quote! { <#field_ty as :juniper::FromInputValue<#scalar>>::from_input_value(&self.#field) },
-                |from_input_value_fn| quote! { #from_input_value(self) }
-            );
+        let error_ty = self.field.from_input_value_err(&scalar);
+        let from_input_value = self.field.from_input_value(&scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
 
         quote! {
-            impl#impl_gens ::juniper::FromInputValue<#scalar> for #ty
+            impl#impl_gens ::juniper::FromInputValue<#scalar> for #ident#ty_gens
                 #where_clause
             {
-                type Error = <#error_ty as ::juniper::GraphQLScalar<#scalar>>::Error;
+                type Error = #error_ty;
 
                 fn from_input_value(input: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
                    #from_input_value
@@ -371,15 +579,12 @@ impl Definition {
     fn impl_parse_scalar_value_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
-        let field_ty = &self.field.ty;
 
-        let from_str = self.from_str.map_or_else(
-            || quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::from_str(token) },
-            |from_str_fn| quote! { #from_str_fn(token) },
-        );
+        let from_str = self.field.from_str(&scalar);
 
         let generics = self.impl_generics(false);
-        let (impl_gens, ty_gens, where_clause) = generics.split_for_impl();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
 
         quote! {
             impl#impl_gens ::juniper::ParseScalarValue<#scalar> for #ident#ty_gens
@@ -390,6 +595,44 @@ impl Definition {
                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
                     #from_str
                 }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
+    /// [`WrappedType`] traits for this [GraphQL scalar][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let scalar = &self.scalar;
+        let name = &self.name;
+
+        let generics = self.impl_generics(false);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let (_, ty_gens, _) = self.generics.split_for_impl();
+
+        quote! {
+            impl#impl_gens ::juniper::macros::reflection::BaseType<#scalar> for #ident#ty_gens
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflection::Type = #name;
+            }
+
+            impl#impl_gens ::juniper::macros::reflection::BaseSubTypes<#scalar> for #ident#ty_gens
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflection::Types =
+                    &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
+            }
+
+            impl#impl_gens ::juniper::macros::reflection::WrappedType<#scalar> for #ident#ty_gens
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
             }
         }
     }
@@ -453,342 +696,4 @@ impl Definition {
 
         generics
     }
-}
-
-#[derive(Debug, Default)]
-struct TransparentAttributes {
-    transparent: Option<bool>,
-    name: Option<String>,
-    description: Option<String>,
-    specified_by_url: Option<Url>,
-    scalar: Option<syn::Type>,
-}
-
-impl syn::parse::Parse for TransparentAttributes {
-    fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
-        let mut output = Self {
-            transparent: None,
-            name: None,
-            description: None,
-            specified_by_url: None,
-            scalar: None,
-        };
-
-        while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
-            match ident.to_string().as_str() {
-                "name" => {
-                    input.parse::<token::Eq>()?;
-                    let val = input.parse::<syn::LitStr>()?;
-                    output.name = Some(val.value());
-                }
-                "description" => {
-                    input.parse::<token::Eq>()?;
-                    let val = input.parse::<syn::LitStr>()?;
-                    output.description = Some(val.value());
-                }
-                "specified_by_url" => {
-                    input.parse::<token::Eq>()?;
-                    let val: syn::LitStr = input.parse::<syn::LitStr>()?;
-                    output.specified_by_url =
-                        Some(val.value().parse().map_err(|e| {
-                            syn::Error::new(val.span(), format!("Invalid URL: {}", e))
-                        })?);
-                }
-                "transparent" => {
-                    output.transparent = Some(true);
-                }
-                "scalar" | "Scalar" => {
-                    input.parse::<token::Eq>()?;
-                    let val = input.parse::<syn::Type>()?;
-                    output.scalar = Some(val);
-                }
-                _ => return Err(syn::Error::new(ident.span(), "unknown attribute")),
-            }
-            input.try_parse::<token::Comma>()?;
-        }
-
-        Ok(output)
-    }
-}
-
-impl TransparentAttributes {
-    fn from_attrs(attrs: &[syn::Attribute]) -> syn::parse::Result<Self> {
-        match util::find_graphql_attr(attrs) {
-            Some(attr) => {
-                let mut parsed: TransparentAttributes = attr.parse_args()?;
-                if parsed.description.is_none() {
-                    parsed.description =
-                        util::get_doc_comment(attrs).map(SpanContainer::into_inner);
-                }
-                Ok(parsed)
-            }
-            None => Ok(Default::default()),
-        }
-    }
-}
-
-pub fn impl_scalar_value(ast: &syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
-    let ident = &ast.ident;
-
-    match ast.data {
-        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, error),
-        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, error),
-        Data::Union(_) => Err(error.custom_error(ast.span(), "may not be applied to unions")),
-    }
-}
-
-fn impl_scalar_struct(
-    ast: &syn::DeriveInput,
-    data: &syn::DataStruct,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
-    let field = match data.fields {
-        syn::Fields::Unnamed(ref fields) if fields.unnamed.len() == 1 => {
-            fields.unnamed.first().unwrap()
-        }
-        _ => {
-            return Err(error.custom_error(
-                data.fields.span(),
-                "requires exact one field, e.g., Test(i32)",
-            ))
-        }
-    };
-    let ident = &ast.ident;
-    let attrs = TransparentAttributes::from_attrs(&ast.attrs)?;
-    let inner_ty = &field.ty;
-    let name = attrs.name.unwrap_or_else(|| ident.to_string());
-
-    let description = attrs.description.map(|val| quote!(.description(#val)));
-    let specified_by_url = attrs.specified_by_url.map(|url| {
-        let url_lit = url.as_str();
-        quote!(.specified_by_url(#url_lit))
-    });
-
-    let scalar = attrs
-        .scalar
-        .as_ref()
-        .map(|s| quote!( #s ))
-        .unwrap_or_else(|| quote!(__S));
-
-    let impl_generics = attrs
-        .scalar
-        .as_ref()
-        .map(|_| quote!())
-        .unwrap_or_else(|| quote!(<__S>));
-
-    let _async = quote!(
-        impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ident
-        where
-            Self: Sync,
-            Self::TypeInfo: Sync,
-            Self::Context: Sync,
-            #scalar: ::juniper::ScalarValue + Send + Sync,
-        {
-            fn resolve_async<'a>(
-                &'a self,
-                info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [::juniper::Selection<#scalar>]>,
-                executor: &'a ::juniper::Executor<Self::Context, #scalar>,
-            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#scalar>> {
-                use ::juniper::futures::future;
-                let v = ::juniper::GraphQLValue::<#scalar>::resolve(self, info, selection_set, executor);
-                Box::pin(future::ready(v))
-            }
-        }
-    );
-
-    let content = quote!(
-        #_async
-
-        impl#impl_generics ::juniper::GraphQLType<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
-                Some(#name)
-            }
-
-            fn meta<'r>(
-                info: &Self::TypeInfo,
-                registry: &mut ::juniper::Registry<'r, #scalar>,
-            ) -> ::juniper::meta::MetaType<'r, #scalar>
-            where
-                #scalar: 'r,
-            {
-                registry.build_scalar_type::<Self>(info)
-                    #description
-                    #specified_by_url
-                    .into_meta()
-            }
-        }
-
-        impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            type Context = ();
-            type TypeInfo = ();
-
-            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
-            }
-
-            fn resolve(
-                &self,
-                info: &(),
-                selection: Option<&[::juniper::Selection<#scalar>]>,
-                executor: &::juniper::Executor<Self::Context, #scalar>,
-            ) -> ::juniper::ExecutionResult<#scalar> {
-                ::juniper::GraphQLValue::<#scalar>::resolve(&self.0, info, selection, executor)
-            }
-        }
-
-        impl#impl_generics ::juniper::ToInputValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                ::juniper::ToInputValue::<#scalar>::to_input_value(&self.0)
-            }
-        }
-
-        impl#impl_generics ::juniper::FromInputValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            type Error = <#inner_ty as ::juniper::FromInputValue<#scalar>>::Error;
-
-            fn from_input_value(
-                v: &::juniper::InputValue<#scalar>
-            ) -> Result<#ident, <#inner_ty as ::juniper::FromInputValue<#scalar>>::Error> {
-                let inner: #inner_ty = ::juniper::FromInputValue::<#scalar>::from_input_value(v)?;
-                Ok(#ident(inner))
-            }
-        }
-
-        impl#impl_generics ::juniper::ParseScalarValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            fn from_str<'a>(
-                value: ::juniper::parser::ScalarToken<'a>,
-            ) -> ::juniper::ParseScalarResult<'a, #scalar> {
-                <#inner_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(value)
-            }
-        }
-
-        impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ident
-            where #scalar: ::juniper::ScalarValue,
-        { }
-        impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ident
-            where #scalar: ::juniper::ScalarValue,
-        { }
-
-        impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar> for #ident
-            where #scalar: ::juniper::ScalarValue,
-        {
-            const NAME: ::juniper::macros::reflection::Type = #name;
-        }
-
-        impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar> for #ident
-            where #scalar: ::juniper::ScalarValue,
-        {
-            const NAMES: ::juniper::macros::reflection::Types =
-                &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
-        }
-
-        impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar> for #ident
-            where #scalar: ::juniper::ScalarValue,
-        {
-            const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
-        }
-    );
-
-    Ok(content)
-}
-
-fn impl_scalar_enum(
-    ident: &syn::Ident,
-    data: &syn::DataEnum,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
-    let froms = data
-        .variants
-        .iter()
-        .map(|v| derive_from_variant(v, ident, &error))
-        .collect::<Result<Vec<_>, _>>()?;
-
-    let display = derive_display(data.variants.iter(), ident);
-
-    Ok(quote! {
-        #(#froms)*
-
-        #display
-    })
-}
-
-fn derive_display<'a, I>(variants: I, ident: &Ident) -> TokenStream
-where
-    I: Iterator<Item = &'a Variant>,
-{
-    let arms = variants.map(|v| {
-        let variant = &v.ident;
-        quote!(#ident::#variant(ref v) => write!(f, "{}", v),)
-    });
-
-    quote! {
-        impl std::fmt::Display for #ident {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                match *self {
-                    #(#arms)*
-                }
-            }
-        }
-    }
-}
-
-fn derive_from_variant(
-    variant: &Variant,
-    ident: &Ident,
-    error: &GraphQLScope,
-) -> syn::Result<TokenStream> {
-    let ty = match variant.fields {
-        Fields::Unnamed(ref u) if u.unnamed.len() == 1 => &u.unnamed.first().unwrap().ty,
-
-        _ => {
-            return Err(error.custom_error(
-                variant.fields.span(),
-                "requires exact one field, e.g., Test(i32)",
-            ))
-        }
-    };
-
-    let variant = &variant.ident;
-
-    Ok(quote! {
-        impl ::std::convert::From<#ty> for #ident {
-            fn from(t: #ty) -> Self {
-                #ident::#variant(t)
-            }
-        }
-
-        impl<'a> ::std::convert::From<&'a #ident> for std::option::Option<&'a #ty> {
-            fn from(t: &'a #ident) -> Self {
-                match *t {
-                    #ident::#variant(ref t) => std::option::Option::Some(t),
-                    _ => std::option::Option::None
-                }
-            }
-        }
-
-        impl ::std::convert::From<#ident> for std::option::Option<#ty> {
-            fn from(t: #ident) -> Self {
-                match t {
-                    #ident::#variant(t) => std::option::Option::Some(t),
-                    _ => std::option::Option::None
-                }
-            }
-        }
-    })
 }

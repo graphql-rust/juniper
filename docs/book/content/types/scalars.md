@@ -49,7 +49,7 @@ serde supports this pattern with `#[serde(transparent)]`.
 
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLScalarValue)]
+#[derive(juniper::GraphQLScalar)]
 pub struct UserId(i32);
 
 #[derive(juniper::GraphQLObject)]
@@ -67,7 +67,7 @@ The macro also allows for more customization:
 ```rust
 # extern crate juniper;
 /// You can use a doc comment to specify a description.
-#[derive(juniper::GraphQLScalarValue)]
+#[derive(juniper::GraphQLScalar)]
 #[graphql(
     transparent,
     // Overwrite the GraphQL type name.

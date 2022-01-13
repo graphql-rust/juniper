@@ -1,0 +1,8 @@
+error: GraphQL scalar expected exactly 1 field, e.g., Test { test: i32 }or all `resolve`, `from_input_value` and `from_str` functions
+ --> fail/scalar/mutliple_named_fields.rs:4:1
+  |
+4 | / struct Scalar {
+5 | |     id: i32,
+6 | |     another: i32,
+7 | | }
+  | |_^

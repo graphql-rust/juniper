@@ -1,6 +1,6 @@
-use juniper::GraphQLScalarValue;
+use juniper::GraphQLScalar;
 
-#[derive(GraphQLScalarValue)]
+#[derive(GraphQLScalar)]
 #[graphql(specified_by_url = "not an url")]
 struct ScalarSpecifiedByUrl(i64);
 

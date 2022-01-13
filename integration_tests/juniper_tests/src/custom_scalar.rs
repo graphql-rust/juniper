@@ -6,11 +6,11 @@ use juniper::{
     graphql_vars,
     parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
-    EmptyMutation, FieldResult, GraphQLScalar, GraphQLScalarValue, InputValue, Object,
-    ParseScalarResult, RootNode, ScalarValue, Value, Variables,
+    EmptyMutation, FieldResult, GraphQLScalar, InputValue, Object, ParseScalarResult, RootNode,
+    ScalarValue, Value, Variables,
 };
 
-#[derive(GraphQLScalarValue, Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(untagged)]
 pub(crate) enum MyScalarValue {
     Int(i32),
@@ -18,6 +18,148 @@ pub(crate) enum MyScalarValue {
     Float(f64),
     String(String),
     Boolean(bool),
+}
+
+impl From<i32> for MyScalarValue {
+    fn from(v: i32) -> Self {
+        Self::Int(v)
+    }
+}
+
+impl From<MyScalarValue> for Option<i32> {
+    fn from(v: MyScalarValue) -> Self {
+        if let MyScalarValue::Int(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> From<&'a MyScalarValue> for Option<&'a i32> {
+    fn from(v: &'a MyScalarValue) -> Self {
+        if let MyScalarValue::Int(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl From<i64> for MyScalarValue {
+    fn from(v: i64) -> Self {
+        Self::Long(v)
+    }
+}
+
+impl From<MyScalarValue> for Option<i64> {
+    fn from(v: MyScalarValue) -> Self {
+        if let MyScalarValue::Long(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> From<&'a MyScalarValue> for Option<&'a i64> {
+    fn from(v: &'a MyScalarValue) -> Self {
+        if let MyScalarValue::Long(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl From<f64> for MyScalarValue {
+    fn from(v: f64) -> Self {
+        Self::Float(v)
+    }
+}
+
+impl From<MyScalarValue> for Option<f64> {
+    fn from(v: MyScalarValue) -> Self {
+        if let MyScalarValue::Float(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> From<&'a MyScalarValue> for Option<&'a f64> {
+    fn from(v: &'a MyScalarValue) -> Self {
+        if let MyScalarValue::Float(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl From<String> for MyScalarValue {
+    fn from(v: String) -> Self {
+        Self::String(v)
+    }
+}
+
+impl From<MyScalarValue> for Option<String> {
+    fn from(v: MyScalarValue) -> Self {
+        if let MyScalarValue::String(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> From<&'a MyScalarValue> for Option<&'a String> {
+    fn from(v: &'a MyScalarValue) -> Self {
+        if let MyScalarValue::String(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl From<bool> for MyScalarValue {
+    fn from(v: bool) -> Self {
+        Self::Boolean(v)
+    }
+}
+
+impl From<MyScalarValue> for Option<bool> {
+    fn from(v: MyScalarValue) -> Self {
+        if let MyScalarValue::Boolean(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> From<&'a MyScalarValue> for Option<&'a bool> {
+    fn from(v: &'a MyScalarValue) -> Self {
+        if let MyScalarValue::Boolean(v) = v {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+impl fmt::Display for MyScalarValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Int(v) => v.fmt(f),
+            Self::Long(v) => v.fmt(f),
+            Self::Float(v) => v.fmt(f),
+            Self::String(v) => v.fmt(f),
+            Self::Boolean(v) => v.fmt(f),
+        }
+    }
 }
 
 impl ScalarValue for MyScalarValue {
