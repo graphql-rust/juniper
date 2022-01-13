@@ -494,19 +494,16 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     id: String,
 ///     name: String,
 /// }
-/// #[graphql_object(impl = CharacterValue<__S>)]
+/// #[graphql_object(scalar = S: ScalarValue, impl = CharacterValue<S>)]
 /// impl Human {
 ///     async fn id<'a, S>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
 ///     where
-///         S: ScalarValue + Send + Sync,
+///         S: ScalarValue,
 ///     {
 ///         executor.look_ahead().field_name()
 ///     }
 ///
-///     async fn name<'b, S>(&'b self, _executor: &Executor<'_, '_, (), S>) -> &'b str
-///     where
-///         S: ScalarValue + Send + Sync,
-///     {
+///     async fn name<'b, S>(&'b self, _executor: &Executor<'_, '_, (), S>) -> &'b str {
 ///         &self.name
 ///     }
 /// }

@@ -930,7 +930,7 @@ macro_rules! assert_field_args {
                             IMPL_ARG_NAME,
                             "` of type `",
                             IMPL_TYPE_FORMATTED,
-                            "` not present on the interface and so has to be nullable."
+                            "` isn't present on the interface and so has to be nullable."
                         )
                     }
                 };
