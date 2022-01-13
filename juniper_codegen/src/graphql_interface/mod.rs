@@ -903,10 +903,13 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    <_ as ::juniper::macros::reflection::Field<
-                                        #scalar,
-                                        { ::juniper::macros::reflection::fnv1a128(#field_name) },
-                                    >>::call(v, info, args, executor)
+                                    ::juniper::call_field_or_panic!(
+                                        #field_name,
+                                        v,
+                                        info,
+                                        args,
+                                        executor,
+                                    )
                                 })*
                                 #unreachable_arm
                             }
@@ -1192,35 +1195,5 @@ impl Definition {
     #[must_use]
     fn has_phantom_variant(&self) -> bool {
         !self.trait_generics.params.is_empty()
-    }
-}
-
-/// Injects [`async_trait`] implementation into the given trait definition or
-/// trait implementation block, correctly restricting type and lifetime
-/// parameters with `'async_trait` lifetime, if required.
-fn inject_async_trait<'m, M>(attrs: &mut Vec<syn::Attribute>, methods: M, generics: &syn::Generics)
-where
-    M: IntoIterator<Item = &'m mut syn::Signature>,
-{
-    attrs.push(parse_quote! { #[::juniper::async_trait] });
-
-    for method in methods.into_iter() {
-        if method.asyncness.is_some() {
-            let where_clause = &mut method.generics.make_where_clause().predicates;
-            for p in &generics.params {
-                let ty_param = match p {
-                    syn::GenericParam::Type(t) => {
-                        let ty_param = &t.ident;
-                        quote! { #ty_param }
-                    }
-                    syn::GenericParam::Lifetime(l) => {
-                        let ty_param = &l.lifetime;
-                        quote! { #ty_param }
-                    }
-                    syn::GenericParam::Const(_) => continue,
-                };
-                where_clause.push(parse_quote! { #ty_param: 'async_trait });
-            }
-        }
     }
 }

@@ -12,6 +12,8 @@
 - Forbid `__typename` field on `subscription` operations [accordingly to October 2021 spec](https://spec.graphql.org/October2021/#note-bc213). ([#1001](https://github.com/graphql-rust/juniper/pull/1001), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
 - Redesign `#[graphql_interface]` macro. ([#1009](https://github.com/graphql-rust/juniper/pull/1009)):
   - Remove support for `#[graphql_interface(dyn)]`.
+  - Remove support for `downcast`.
+  - Remove support for `async` trait methods.
   - Describe all interface trait methods with type's fields or impl block instead of `#[graphql_interface]` attribute on `impl Trait`.
   - Forbid default impls on non-skipped trait methods.
   - Add support for additional nullable arguments on implementer.

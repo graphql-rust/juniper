@@ -213,17 +213,13 @@ use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _
 trait Character<S: ScalarValue> {             
     // If a field argument is named `executor`, it's automatically assumed
     // as an executor argument.
-    async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
-    where
-        S: Send + Sync; // required by `#[async_trait]` transformation ¯\_(ツ)_/¯
+    fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str;
 
     // Otherwise, you may mark it explicitly as an executor argument.
-    async fn name<'b>(
+    fn name<'b>(
         &'b self,
         #[graphql(executor)] another: &Executor<'_, '_, (), S>,
-    ) -> &'b str
-    where
-        S: Send + Sync;
+    ) -> &'b str;
     
     fn home_planet(&self) -> &str;
 }
@@ -233,19 +229,16 @@ struct Human {
     name: String,
     home_planet: String,
 }
-#[graphql_object(impl = CharacterValue<__S>)]
+#[graphql_object(scalar = S: ScalarValue, impl = CharacterValue<S>)]
 impl Human {
-    async fn id<'a, S>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
+    async fn id<'a, S>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str 
     where
-        S: ScalarValue + Send + Sync,
+        S: ScalarValue,
     {
         executor.look_ahead().field_name()
     }
 
-    async fn name<'b, S>(&'b self, #[graphql(executor)] _: &Executor<'_, '_, (), S>) -> &'b str
-    where
-        S: ScalarValue + Send + Sync,
-    {
+    async fn name<'b, S>(&'b self, #[graphql(executor)] _: &Executor<'_, '_, (), S>) -> &'b str {
         &self.name
     }
     

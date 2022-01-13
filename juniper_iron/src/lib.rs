@@ -370,9 +370,9 @@ enum GraphQLIronError {
 
 impl fmt::Display for GraphQLIronError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GraphQLIronError::Serde(ref err) => fmt::Display::fmt(err, f),
-            GraphQLIronError::Url(ref err) => fmt::Display::fmt(err, f),
+        match self {
+            GraphQLIronError::Serde(err) => fmt::Display::fmt(err, f),
+            GraphQLIronError::Url(err) => fmt::Display::fmt(err, f),
             GraphQLIronError::InvalidData(err) => fmt::Display::fmt(err, f),
         }
     }
