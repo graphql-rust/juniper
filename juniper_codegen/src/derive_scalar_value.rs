@@ -31,16 +31,29 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let field = match (
         attr.resolve.as_deref().cloned(),
         attr.from_input_value.as_deref().cloned(),
+        attr.from_input_value_err.as_deref().cloned(),
         attr.from_str.as_deref().cloned(),
     ) {
-        (Some(resolve), Some(from_input_value), Some(from_str)) => {
+        (Some(resolve), Some(from_input_value), Some(from_input_value_err), Some(from_str)) => {
             GraphQLScalarDefinition::Custom {
                 resolve,
-                from_input_value,
+                from_input_value: (from_input_value, from_input_value_err),
                 from_str,
             }
         }
-        (resolve, from_input_value, from_str) => {
+        (resolve, from_input_value, from_input_value_err, from_str) => {
+            let from_input_value = match (from_input_value, from_input_value_err) {
+                (Some(from_input_value), Some(err)) => Some((from_input_value, err)),
+                (None, None) => None,
+                _ => {
+                    return Err(ERR.custom_error(
+                        ast.span(),
+                        "`from_input_value` attribute should be provided in \
+                     tandem with `from_input_value_err`",
+                    ))
+                }
+            };
+
             let data = if let syn::Data::Struct(data) = &ast.data {
                 data
             } else {
@@ -109,12 +122,12 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 enum GraphQLScalarDefinition {
     Custom {
         resolve: syn::Path,
-        from_input_value: syn::Path,
+        from_input_value: (syn::Path, syn::Type),
         from_str: syn::Path,
     },
     Delegated {
         resolve: Option<syn::Path>,
-        from_input_value: Option<syn::Path>,
+        from_input_value: Option<(syn::Path, syn::Type)>,
         from_str: Option<syn::Path>,
         field: Field,
     },
@@ -122,85 +135,99 @@ enum GraphQLScalarDefinition {
 
 impl GraphQLScalarDefinition {
     fn resolve(&self, scalar: &scalar::Type) -> TokenStream {
-        let (resolve, field) = match self {
-            GraphQLScalarDefinition::Custom { resolve, .. } => (Some(resolve), None),
-            GraphQLScalarDefinition::Delegated { resolve, field, .. } => {
-                (resolve.as_ref(), Some(field))
+        match self {
+            Self::Custom { resolve, .. }
+            | Self::Delegated {
+                resolve: Some(resolve),
+                ..
+            } => {
+                quote! { Ok(#resolve(self)) }
             }
-        };
-
-        resolve.as_ref().map_or_else(
-            || quote! { ::juniper::GraphQLValue::<#scalar>::resolve(&self.#field, info, selection, executor) },
-            |resolve_fn| quote! { Ok(#resolve_fn(self)) },
-        )
+            Self::Delegated { field, .. } => {
+                quote! {
+                    ::juniper::GraphQLValue::<#scalar>::resolve(
+                        &self.#field,
+                        info,
+                        selection,
+                        executor,
+                    )
+                }
+            }
+        }
     }
 
     fn to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
-        let (resolve, field) = match self {
-            GraphQLScalarDefinition::Custom { resolve, .. } => (Some(resolve), None),
-            GraphQLScalarDefinition::Delegated { resolve, field, .. } => {
-                (resolve.as_ref(), Some(field))
-            }
-        };
-
-        resolve.as_ref().map_or_else(
-            || quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field) },
-            |resolve_fn| {
+        match self {
+            Self::Custom { resolve, .. }
+            | Self::Delegated {
+                resolve: Some(resolve),
+                ..
+            } => {
                 quote! {
-                    let v = #resolve_fn(self);
+                    let v = #resolve(self);
                     ::juniper::ToInputValue::to_input_value(&v)
                 }
-            },
-        )
+            }
+            Self::Delegated { field, .. } => {
+                quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field) }
+            }
+        }
     }
 
     fn from_input_value_err(&self, scalar: &scalar::Type) -> TokenStream {
-        let err_ty = match self {
-            GraphQLScalarDefinition::Custom { .. } => parse_quote!(Self),
-            GraphQLScalarDefinition::Delegated { field, .. } => field.ty().clone(),
-        };
-
-        quote! { <#err_ty as ::juniper::GraphQLScalar<#scalar>>::Error }
+        match self {
+            Self::Custom {
+                from_input_value: (_, err),
+                ..
+            }
+            | Self::Delegated {
+                from_input_value: Some((_, err)),
+                ..
+            } => quote! { #err },
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::Error }
+            }
+        }
     }
 
     fn from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
-        let (from_input_value, field) = match self {
-            GraphQLScalarDefinition::Custom {
-                from_input_value, ..
-            } => (Some(from_input_value), None),
-            GraphQLScalarDefinition::Delegated {
-                from_input_value,
-                field,
+        match self {
+            Self::Custom {
+                from_input_value: (from_input_value, _),
                 ..
-            } => (from_input_value.as_ref(), Some(field)),
-        };
-        let field_ty = field.map(Field::ty);
-        let self_constructor = field.map(Field::closure_constructor);
-
-        from_input_value.as_ref().map_or_else(
-            || {
+            }
+            | Self::Delegated {
+                from_input_value: Some((from_input_value, _)),
+                ..
+            } => {
+                quote! { #from_input_value(input) }
+            }
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                let self_constructor = field.closure_constructor();
                 quote! {
                     <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
                         .map(#self_constructor)
                 }
-            },
-            |from_input_value_fn| quote! { #from_input_value_fn(input) },
-        )
+            }
+        }
     }
 
     fn from_str(&self, scalar: &scalar::Type) -> TokenStream {
-        let (from_str, field) = match self {
-            GraphQLScalarDefinition::Custom { from_str, .. } => (Some(from_str), None),
-            GraphQLScalarDefinition::Delegated {
-                from_str, field, ..
-            } => (from_str.as_ref(), Some(field)),
-        };
-        let field_ty = field.map(Field::ty);
-
-        from_str.as_ref().map_or_else(
-            || quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::from_str(token) },
-            |from_str_fn| quote! { #from_str_fn(token) },
-        )
+        match self {
+            Self::Custom { from_str, .. }
+            | Self::Delegated {
+                from_str: Some(from_str),
+                ..
+            } => {
+                quote! { #from_str(token) }
+            }
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::from_str(token) }
+            }
+        }
     }
 }
 
@@ -243,6 +270,7 @@ struct Attr {
     scalar: Option<SpanContainer<scalar::AttrValue>>,
     resolve: Option<SpanContainer<syn::Path>>,
     from_input_value: Option<SpanContainer<syn::Path>>,
+    from_input_value_err: Option<SpanContainer<syn::Type>>,
     from_str: Option<SpanContainer<syn::Path>>,
 }
 
@@ -305,6 +333,13 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "from_input_value_err" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::Type>()?;
+                    out.from_input_value_err
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "from_str" => {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<syn::Path>()?;
@@ -333,6 +368,7 @@ impl Attr {
             scalar: try_merge_opt!(scalar: self, another),
             resolve: try_merge_opt!(resolve: self, another),
             from_input_value: try_merge_opt!(from_input_value: self, another),
+            from_input_value_err: try_merge_opt!(from_input_value_err: self, another),
             from_str: try_merge_opt!(from_str: self, another),
         })
     }

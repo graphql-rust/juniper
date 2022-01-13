@@ -1,6 +1,10 @@
+use std::fmt;
+
+use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_value, EmptyMutation, EmptySubscription, FromInputValue, InputValue, RootNode,
-    ToInputValue, Value, Variables,
+    execute, graphql_value, EmptyMutation, EmptySubscription, FromInputValue, InputValue,
+    ParseScalarResult, ParseScalarValue, RootNode, ScalarToken, ScalarValue, ToInputValue, Value,
+    Variables,
 };
 
 use crate::custom_scalar::MyScalarValue;
@@ -16,6 +20,62 @@ pub struct LargeId(i64);
 #[graphql(scalar = MyScalarValue)]
 pub struct SmallId {
     id: i32,
+}
+
+#[derive(juniper::GraphQLScalar)]
+#[graphql(
+    scalar = S: ScalarValue,
+    specified_by_url = "https://tools.ietf.org/html/rfc3339",
+    resolve = resolve_custom_date_time,
+    from_input_value = custom_dt::from_input_value,
+    from_input_value_err = String,
+    from_str = from_str_custom_date_time,
+)]
+struct CustomDateTime<Tz>
+where
+    Tz: From<Utc> + TimeZone,
+    Tz::Offset: fmt::Display,
+{
+    dt: DateTime<Tz>,
+    _unused: (),
+}
+
+fn from_str_custom_date_time<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+where
+    S: ScalarValue,
+{
+    <String as ParseScalarValue<S>>::from_str(value)
+}
+
+fn resolve_custom_date_time<S, Tz>(dt: &CustomDateTime<Tz>) -> Value<S>
+where
+    S: ScalarValue,
+    Tz: From<Utc> + TimeZone,
+    Tz::Offset: fmt::Display,
+{
+    Value::scalar(dt.dt.to_rfc3339())
+}
+
+mod custom_dt {
+    use super::{fmt, CustomDateTime, DateTime, InputValue, ScalarValue, TimeZone, Utc};
+
+    pub(super) fn from_input_value<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
+    where
+        S: ScalarValue,
+        Tz: From<Utc> + TimeZone,
+        Tz::Offset: fmt::Display,
+    {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .map(|dt| CustomDateTime {
+                        dt: dt.with_timezone(&Tz::from(Utc)),
+                        _unused: (),
+                    })
+                    .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
+            })
+    }
 }
 
 #[derive(juniper::GraphQLObject)]
