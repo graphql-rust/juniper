@@ -41,7 +41,7 @@ mod no_implers {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             unimplemented!()
@@ -50,48 +50,48 @@ mod no_implers {
 
     #[tokio::test]
     async fn is_graphql_interface() {
-        let schema = schema(QueryRoot);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 kind
             }
         }"#;
 
+        let schema = schema(QueryRoot);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
         );
     }
 
     #[tokio::test]
     async fn uses_trait_name() {
-        let schema = schema(QueryRoot);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
             }
         }"#;
 
+        let schema = schema(QueryRoot);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
 
     #[tokio::test]
     async fn has_no_description() {
-        let schema = schema(QueryRoot);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 description
             }
         }"#;
 
+        let schema = schema(QueryRoot);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
@@ -119,7 +119,7 @@ mod trivial {
 
     #[graphql_object(impl = CharacterValue)]
     impl Droid {
-        fn id(&self) -> &str {
+        async fn id(&self) -> &str {
             &self.id
         }
 
@@ -134,7 +134,7 @@ mod trivial {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -153,7 +153,7 @@ mod trivial {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -168,14 +168,17 @@ mod trivial {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -190,14 +193,17 @@ mod trivial {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -220,25 +226,23 @@ mod trivial {
 
     #[tokio::test]
     async fn is_graphql_interface() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 kind
             }
         }"#;
 
+        let schema = schema(QueryRoot::Human);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
         );
     }
 
     #[tokio::test]
     async fn registers_all_implementers() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 possibleTypes {
                     kind
@@ -247,8 +251,10 @@ mod trivial {
             }
         }"#;
 
+        let schema = schema(QueryRoot::Human);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"possibleTypes": [
                     {"kind": "OBJECT", "name": "Droid"},
@@ -290,32 +296,32 @@ mod trivial {
 
     #[tokio::test]
     async fn uses_trait_name() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
             }
         }"#;
 
+        let schema = schema(QueryRoot::Human);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
 
     #[tokio::test]
     async fn has_no_description() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 description
             }
         }"#;
 
+        let schema = schema(QueryRoot::Human);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
     }
@@ -361,6 +367,182 @@ mod explicit_alias {
     #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterEnum {
+            match self {
+                Self::Human => Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }
+                .into(),
+                Self::Droid => Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }
+                .into(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_human() {
+        const DOC: &str = r#"{
+            character {
+                ... on Human {
+                    humanId: id
+                    homePlanet
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        const DOC: &str = r#"{
+            character {
+                ... on Droid {
+                    droidId: id
+                    primaryFunction
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_id_field() {
+        const DOC: &str = r#"{
+            character {
+                id
+            }
+        }"#;
+
+        for (root, expected_id) in &[
+            (QueryRoot::Human, "human-32"),
+            (QueryRoot::Droid, "droid-99"),
+        ] {
+            let schema = schema(*root);
+
+            let expected_id: &str = *expected_id;
+            assert_eq!(
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_interface() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn uses_trait_name() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                name
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Character") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+        );
+    }
+}
+
+mod trivial_async {
+    use super::*;
+
+    #[graphql_interface(for = [Human, Droid])]
+    trait Character {
+        fn id(&self) -> &str;
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = CharacterValue)]
+    struct Human {
+        id: String,
+        home_planet: String,
+    }
+
+    struct Droid {
+        id: String,
+        primary_function: String,
+    }
+
+    #[graphql_object(impl = CharacterValue)]
+    impl Droid {
+        async fn id(&self) -> &str {
+            &self.id
+        }
+
+        fn primary_function(&self) -> &str {
+            &self.primary_function
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
                     id: "human-32".to_string(),
@@ -459,180 +641,8 @@ mod explicit_alias {
     }
 
     #[tokio::test]
-    async fn uses_trait_name() {
-        const DOC: &str = r#"{
-            __type(name: "Character") {
-                name
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Human);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_no_description() {
-        const DOC: &str = r#"{
-            __type(name: "Character") {
-                description
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Human);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
-        );
-    }
-}
-
-mod trivial_async {
-    use super::*;
-
-    #[graphql_interface(for = [Human, Droid])]
-    trait Character {
-        async fn id(&self) -> &str;
-    }
-
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue)]
-    struct Human {
-        id: String,
-        home_planet: String,
-    }
-
-    struct Droid {
-        id: String,
-        primary_function: String,
-    }
-
-    #[graphql_object(impl = CharacterValue)]
-    impl Droid {
-        fn id(&self) -> &str {
-            &self.id
-        }
-
-        fn primary_function(&self) -> &str {
-            &self.primary_function
-        }
-    }
-
-    #[derive(Clone, Copy)]
-    enum QueryRoot {
-        Human,
-        Droid,
-    }
-
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
-    impl QueryRoot {
-        fn character(&self) -> CharacterValue {
-            match self {
-                Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
-                }
-                .into(),
-                Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
-                }
-                .into(),
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_human() {
-        const DOC: &str = r#"{
-            character {
-                ... on Human {
-                    humanId: id
-                    homePlanet
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Human);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_droid() {
-        const DOC: &str = r#"{
-            character {
-                ... on Droid {
-                    droidId: id
-                    primaryFunction
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Droid);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_id_field() {
-        const DOC: &str = r#"{
-            character {
-                id
-            }
-        }"#;
-
-        for (root, expected_id) in &[
-            (QueryRoot::Human, "human-32"),
-            (QueryRoot::Droid, "droid-99"),
-        ] {
-            let schema = schema(*root);
-
-            let expected_id: &str = *expected_id;
-            assert_eq!(
-                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn is_graphql_interface() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
-            __type(name: "Character") {
-                kind
-            }
-        }"#;
-
-        assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
     async fn registers_all_implementers() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 possibleTypes {
                     kind
@@ -641,8 +651,10 @@ mod trivial_async {
             }
         }"#;
 
+        let schema = schema(QueryRoot::Human);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"possibleTypes": [
                     {"kind": "OBJECT", "name": "Droid"},
@@ -684,172 +696,34 @@ mod trivial_async {
 
     #[tokio::test]
     async fn uses_trait_name() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
             }
         }"#;
 
+        let schema = schema(QueryRoot::Human);
+
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
 
     #[tokio::test]
     async fn has_no_description() {
-        let schema = schema(QueryRoot::Human);
-
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 description
             }
         }"#;
 
-        assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
-        );
-    }
-}
-
-mod explicit_async {
-    use super::*;
-
-    #[graphql_interface(for = [Human, Droid])]
-    trait Character {
-        fn id(&self) -> &str;
-
-        async fn info(&self) -> String;
-    }
-
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue)]
-    struct Human {
-        id: String,
-        info: String,
-        home_planet: String,
-    }
-
-    struct Droid {
-        id: String,
-        primary_function: String,
-    }
-
-    #[graphql_object(impl = CharacterValue)]
-    impl Droid {
-        fn id(&self) -> &str {
-            &self.id
-        }
-
-        async fn info(&self) -> String {
-            format!("Primary function is {}", &self.primary_function)
-        }
-
-        fn primary_function(&self) -> &str {
-            &self.primary_function
-        }
-    }
-
-    #[derive(Clone, Copy)]
-    enum QueryRoot {
-        Human,
-        Droid,
-    }
-
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
-    impl QueryRoot {
-        fn character(&self) -> CharacterValue {
-            match self {
-                Self::Human => Human {
-                    id: "human-32".to_string(),
-                    info: "Home planet is earth".to_string(),
-                    home_planet: "earth".to_string(),
-                }
-                .into(),
-                Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
-                }
-                .into(),
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_human() {
-        const DOC: &str = r#"{
-            character {
-                ... on Human {
-                    humanId: id
-                    homePlanet
-                }
-            }
-        }"#;
-
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
-                vec![],
-            )),
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
         );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_droid() {
-        const DOC: &str = r#"{
-            character {
-                ... on Droid {
-                    droidId: id
-                    primaryFunction
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Droid);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_fields() {
-        const DOC: &str = r#"{
-            character {
-                id
-                info
-            }
-        }"#;
-
-        for (root, expected_id, expected_info) in &[
-            (QueryRoot::Human, "human-32", "Home planet is earth"),
-            (QueryRoot::Droid, "droid-99", "Primary function is run"),
-        ] {
-            let schema = schema(*root);
-
-            let expected_id: &str = *expected_id;
-            let expected_info: &str = *expected_info;
-            assert_eq!(
-                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((
-                    graphql_value!({"character": {
-                        "id": expected_id,
-                        "info": expected_info,
-                    }}),
-                    vec![],
-                )),
-            );
-        }
     }
 }
 
@@ -898,7 +772,7 @@ mod fallible_field {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -986,7 +860,7 @@ mod fallible_field {
     async fn has_correct_graphql_type() {
         let schema = schema(QueryRoot::Human);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
                 kind
@@ -1003,7 +877,7 @@ mod fallible_field {
         }"#;
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
                     "name": "Character",
@@ -1056,7 +930,7 @@ mod generic {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -1142,7 +1016,7 @@ mod generic {
 
     #[tokio::test]
     async fn uses_trait_name_without_type_params() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 name
             }
@@ -1151,283 +1025,7 @@ mod generic {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
-        );
-    }
-}
-
-mod generic_async {
-    use super::*;
-
-    #[graphql_interface(for = [Human, Droid])]
-    trait Character<A = (), B: ?Sized = ()> {
-        async fn id(&self) -> &str;
-    }
-
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue)]
-    struct Human {
-        id: String,
-        home_planet: String,
-    }
-
-    struct Droid {
-        id: String,
-        primary_function: String,
-    }
-
-    #[graphql_object(impl = CharacterValue<(), u8>)]
-    impl Droid {
-        fn id(&self) -> &str {
-            &self.id
-        }
-
-        fn primary_function(&self) -> &str {
-            &self.primary_function
-        }
-    }
-
-    #[derive(Clone, Copy)]
-    enum QueryRoot {
-        Human,
-        Droid,
-    }
-
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
-    impl QueryRoot {
-        fn character(&self) -> CharacterValue {
-            match self {
-                Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
-                }
-                .into(),
-                Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
-                }
-                .into(),
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_human() {
-        const DOC: &str = r#"{
-            character {
-                ... on Human {
-                    humanId: id
-                    homePlanet
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Human);
-
-        assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_droid() {
-        const DOC: &str = r#"{
-            character {
-                ... on Droid {
-                    droidId: id
-                    primaryFunction
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Droid);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_id_field() {
-        const DOC: &str = r#"{
-            character {
-                id
-            }
-        }"#;
-
-        for (root, expected_id) in &[
-            (QueryRoot::Human, "human-32"),
-            (QueryRoot::Droid, "droid-99"),
-        ] {
-            let schema = schema(*root);
-
-            let expected_id: &str = *expected_id;
-            assert_eq!(
-                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn uses_trait_name_without_type_params() {
-        let doc = r#"{
-            __type(name: "Character") {
-                name
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Human);
-
-        assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
-        );
-    }
-}
-
-mod generic_lifetime_async {
-    use super::*;
-
-    #[graphql_interface(for = [Human, Droid])]
-    trait Character<'me, A> {
-        async fn id<'a>(&'a self) -> &'a str;
-    }
-
-    #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue<()>)]
-    struct Human {
-        id: String,
-        home_planet: String,
-    }
-
-    struct Droid {
-        id: String,
-        primary_function: String,
-    }
-
-    #[graphql_object(impl = CharacterValue<()>)]
-    impl Droid {
-        fn id(&self) -> &str {
-            &self.id
-        }
-
-        fn primary_function(&self) -> &str {
-            &self.primary_function
-        }
-    }
-
-    #[derive(Clone, Copy)]
-    enum QueryRoot {
-        Human,
-        Droid,
-    }
-
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
-    impl QueryRoot {
-        fn character(&self) -> CharacterValue<'_, ()> {
-            match self {
-                Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
-                }
-                .into(),
-                Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
-                }
-                .into(),
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_human() {
-        const DOC: &str = r#"{
-            character {
-                ... on Human {
-                    humanId: id
-                    homePlanet
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Human);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_droid() {
-        const DOC: &str = r#"{
-            character {
-                ... on Droid {
-                    droidId: id
-                    primaryFunction
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Droid);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn enum_resolves_id_field() {
-        const DOC: &str = r#"{
-            character {
-                id
-            }
-        }"#;
-
-        for (root, expected_id) in &[
-            (QueryRoot::Human, "human-32"),
-            (QueryRoot::Droid, "droid-99"),
-        ] {
-            let schema = schema(*root);
-
-            let expected_id: &str = *expected_id;
-            assert_eq!(
-                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn uses_trait_name_without_type_params() {
-        let doc = r#"{
-            __type(name: "Character") {
-                name
-            }
-        }"#;
-
-        let schema = schema(QueryRoot::Human);
-
-        assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"__type": {"name": "Character"}}), vec![])),
         );
     }
@@ -1440,7 +1038,7 @@ mod argument {
     trait Character {
         fn id_wide(&self, is_number: bool) -> &str;
 
-        async fn id_wide2(&self, is_number: bool, r#async: Option<i32>) -> &str;
+        fn id_wide2(&self, is_number: bool, r#async: Option<i32>) -> &str;
     }
 
     struct Human {
@@ -1458,7 +1056,7 @@ mod argument {
             &self.home_planet
         }
 
-        fn id_wide(&self, is_number: bool) -> &str {
+        async fn id_wide(&self, is_number: bool) -> &str {
             if is_number {
                 &self.id
             } else {
@@ -1477,7 +1075,7 @@ mod argument {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
@@ -1521,7 +1119,7 @@ mod argument {
     async fn camelcases_name() {
         let schema = schema(QueryRoot);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     name
@@ -1532,7 +1130,7 @@ mod argument {
             }
         }"#;
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [{
                     "name": "idWide",
@@ -1555,7 +1153,7 @@ mod argument {
     async fn has_no_description() {
         let schema = schema(QueryRoot);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     args {
@@ -1566,7 +1164,7 @@ mod argument {
         }"#;
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"args": [{"description": null}]},
@@ -1581,7 +1179,7 @@ mod argument {
     async fn has_no_defaults() {
         let schema = schema(QueryRoot);
 
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     args {
@@ -1592,7 +1190,7 @@ mod argument {
         }"#;
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"args": [{"defaultValue": null}]},
@@ -1614,7 +1212,7 @@ mod default_argument {
 
     #[graphql_interface(for = Human)]
     trait Character {
-        async fn id(
+        fn id(
             &self,
             #[graphql(default)] first: String,
             #[graphql(default = "second".to_string())] second: String,
@@ -1628,7 +1226,7 @@ mod default_argument {
 
     #[graphql_object(impl = CharacterValue)]
     impl Human {
-        fn info(&self, coord: Point) -> i32 {
+        async fn info(&self, coord: Point) -> i32 {
             coord.x
         }
 
@@ -2128,9 +1726,9 @@ mod renamed_all_fields_and_args {
     trait Character {
         fn id(&self) -> &str;
 
-        async fn home_planet(&self, planet_name: String) -> String;
+        fn home_planet(&self, planet_name: String) -> String;
 
-        async fn r#async_info(&self, r#my_num: i32) -> i32;
+        fn r#async_info(&self, r#my_num: i32) -> i32;
     }
 
     struct Human;
@@ -2141,11 +1739,11 @@ mod renamed_all_fields_and_args {
             "human-32"
         }
 
-        fn home_planet(planet_name: String) -> String {
+        async fn home_planet(planet_name: String) -> String {
             planet_name
         }
 
-        fn r#async_info(r#my_num: i32) -> i32 {
+        async fn r#async_info(r#my_num: i32) -> i32 {
             r#my_num
         }
     }
@@ -2343,7 +1941,7 @@ mod custom_scalar {
 
     #[graphql_interface(for = [Human, Droid], scalar = MyScalarValue)]
     trait Character {
-        async fn id(&self) -> &str;
+        fn id(&self) -> &str;
     }
 
     #[derive(GraphQLObject)]
@@ -2469,7 +2067,7 @@ mod explicit_generic_scalar {
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue<__S>)]
+    #[graphql(scalar = S: ScalarValue, impl = CharacterValue<S>)]
     struct Human {
         id: String,
         home_planet: String,
@@ -2497,7 +2095,7 @@ mod explicit_generic_scalar {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object(scalar = S: ScalarValue)]
     impl QueryRoot {
         fn character<S: ScalarValue>(&self) -> CharacterValue<S> {
             match self {
@@ -2619,7 +2217,7 @@ mod bounded_generic_scalar {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Clone + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -2713,9 +2311,9 @@ mod explicit_custom_context {
 
     #[graphql_interface(for = [Human, Droid], context = CustomContext)]
     trait Character {
-        async fn id<'a>(&'a self, context: &CustomContext) -> &'a str;
+        fn id<'a>(&'a self, context: &CustomContext) -> &'a str;
 
-        async fn info<'b>(&'b self, ctx: &()) -> &'b str;
+        fn info<'b>(&'b self, ctx: &()) -> &'b str;
 
         fn more<'c>(&'c self, #[graphql(context)] custom: &CustomContext) -> &'c str;
     }
@@ -2727,11 +2325,11 @@ mod explicit_custom_context {
 
     #[graphql_object(impl = CharacterValue, context = CustomContext)]
     impl Human {
-        fn id<'a>(&'a self, _context: &CustomContext) -> &'a str {
+        async fn id<'a>(&'a self, _context: &CustomContext) -> &'a str {
             &self.id
         }
 
-        fn home_planet(&self) -> &str {
+        async fn home_planet(&self) -> &str {
             &self.home_planet
         }
 
@@ -2774,7 +2372,7 @@ mod explicit_custom_context {
         Droid,
     }
 
-    #[graphql_object(context = CustomContext, scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object(context = CustomContext)]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -2838,7 +2436,7 @@ mod explicit_custom_context {
 
     #[tokio::test]
     async fn resolves_fields() {
-        let doc = r#"{
+        const DOC: &str = r#"{
            character {
                 id
                 info
@@ -2856,7 +2454,7 @@ mod explicit_custom_context {
             let expected_info: &str = *expected_info;
             let expexted_more: &str = *expexted_more;
             assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &CustomContext).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext).await,
                 Ok((
                     graphql_value!({"character": {
                         "id": expected_id,
@@ -2881,7 +2479,7 @@ mod inferred_custom_context_from_field {
     trait Character {
         fn id<'a>(&self, context: &'a CustomContext) -> &'a str;
 
-        fn info<'b>(&'b self, context: &()) -> &'b str;
+        fn info(&self, context: &()) -> &str;
     }
 
     struct Human {
@@ -2928,7 +2526,7 @@ mod inferred_custom_context_from_field {
         Droid,
     }
 
-    #[graphql_object(context = CustomContext, scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object(context = CustomContext)]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -2992,7 +2590,7 @@ mod inferred_custom_context_from_field {
 
     #[tokio::test]
     async fn resolves_fields() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             character {
                 id
                 info
@@ -3009,7 +2607,7 @@ mod inferred_custom_context_from_field {
             let expected_id: &str = *expected_id;
             let expected_info: &str = *expected_info;
             assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &ctx).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &ctx).await,
                 Ok((
                     graphql_value!({"character": {
                         "id": expected_id,
@@ -3029,24 +2627,20 @@ mod executor {
 
     #[graphql_interface(for = [Human, Droid], scalar = S)]
     trait Character<S: ScalarValue> {
-        async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
-        where
-            S: Send + Sync;
+        fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str;
 
-        async fn info<'b>(
+        fn info<'b>(
             &'b self,
             arg: Option<i32>,
             #[graphql(executor)] another: &Executor<'_, '_, (), S>,
-        ) -> &'b str
-        where
-            S: Send + Sync;
+        ) -> &'b str;
     }
 
     struct Human {
         home_planet: String,
     }
 
-    #[graphql_object(impl = CharacterValue<__S>)]
+    #[graphql_object(scalar = S: ScalarValue, impl = CharacterValue<S>)]
     impl Human {
         async fn id<'a, S: ScalarValue>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str {
             executor.look_ahead().field_name()
@@ -3152,7 +2746,7 @@ mod executor {
 
     #[tokio::test]
     async fn resolves_fields() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             character {
                 id
                 info
@@ -3164,7 +2758,7 @@ mod executor {
 
             let expected_info: &str = *expected_info;
             assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
                     graphql_value!({"character": {"id": "id", "info": expected_info}}),
                     vec![],
@@ -3175,7 +2769,7 @@ mod executor {
 
     #[tokio::test]
     async fn not_arg() {
-        let doc = r#"{
+        const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
                     name
@@ -3189,7 +2783,7 @@ mod executor {
         let schema = schema(QueryRoot::Human);
 
         assert_eq!(
-            execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"fields": [
                     {"name": "id", "args": []},
@@ -3334,7 +2928,7 @@ mod field_return_subtyping {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -3483,7 +3077,7 @@ mod field_return_union_subtyping {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {
@@ -3588,7 +3182,7 @@ mod field_return_union_subtyping {
     }
 }
 
-mod additional_nullable_argument {
+mod nullable_argument_subtyping {
     use super::*;
 
     #[graphql_interface(for = [Human, Droid])]
@@ -3628,7 +3222,7 @@ mod additional_nullable_argument {
         Droid,
     }
 
-    #[graphql_object(scalar = S: ScalarValue + Send + Sync)]
+    #[graphql_object]
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             match self {

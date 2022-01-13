@@ -479,35 +479,28 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// // NOTICE: Specifying `ScalarValue` as existing type parameter.
 /// #[graphql_interface(for = Human, scalar = S)]
 /// trait Character<S: ScalarValue> {
-///     async fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
-///     where
-///         S: Send + Sync; // required by `#[async_trait]` transformation ¯\_(ツ)_/¯
+///     fn id<'a>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str;
 ///
-///     async fn name<'b>(
+///     fn name<'b>(
 ///         &'b self,
 ///         #[graphql(executor)] another: &Executor<'_, '_, (), S>,
-///     ) -> &'b str
-///     where
-///         S: Send + Sync;
+///     ) -> &'b str;
 /// }
 ///
 /// struct Human {
 ///     id: String,
 ///     name: String,
 /// }
-/// #[graphql_object(impl = CharacterValue<__S>)]
+/// #[graphql_object(scalar = S: ScalarValue, impl = CharacterValue<S>)]
 /// impl Human {
 ///     async fn id<'a, S>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
 ///     where
-///         S: ScalarValue + Send + Sync,
+///         S: ScalarValue,
 ///     {
 ///         executor.look_ahead().field_name()
 ///     }
 ///
-///     async fn name<'b, S>(&'b self, _executor: &Executor<'_, '_, (), S>) -> &'b str
-///     where
-///         S: ScalarValue + Send + Sync,
-///     {
+///     async fn name<'b, S>(&'b self, _executor: &Executor<'_, '_, (), S>) -> &'b str {
 ///         &self.name
 ///     }
 /// }

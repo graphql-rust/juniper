@@ -16,7 +16,7 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
-use super::{inject_async_trait, Definition, TraitAttr};
+use super::{Definition, TraitAttr};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
@@ -104,20 +104,6 @@ fn expand_on_trait(
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let is_async_trait = attr.asyncness.is_some()
-        || ast
-            .items
-            .iter()
-            .find_map(|item| match item {
-                syn::TraitItem::Method(m) => m.sig.asyncness,
-                _ => None,
-            })
-            .is_some();
-    let has_default_async_methods = ast.items.iter().any(|item| match item {
-        syn::TraitItem::Method(m) => m.sig.asyncness.and(m.default.as_ref()).is_some(),
-        _ => false,
-    });
-
     let enum_alias_ident = attr
         .r#enum
         .as_deref()
@@ -145,24 +131,6 @@ fn expand_on_trait(
             .map(|c| c.inner().clone())
             .collect(),
     };
-
-    if is_async_trait {
-        if has_default_async_methods {
-            // Hack for object safety. See details: https://docs.rs/async-trait/#dyn-traits
-            ast.supertraits.push(parse_quote! { Sync });
-        }
-        inject_async_trait(
-            &mut ast.attrs,
-            ast.items.iter_mut().filter_map(|i| {
-                if let syn::TraitItem::Method(m) = i {
-                    Some(&mut m.sig)
-                } else {
-                    None
-                }
-            }),
-            &ast.generics,
-        );
-    }
 
     Ok(quote! {
         #ast
