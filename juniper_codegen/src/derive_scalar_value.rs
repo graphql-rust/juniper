@@ -29,27 +29,27 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let attr = Attr::from_attrs("graphql", &ast.attrs)?;
 
     let field = match (
-        attr.resolve.as_deref().cloned(),
-        attr.from_input_value.as_deref().cloned(),
-        attr.from_input_value_err.as_deref().cloned(),
-        attr.from_str.as_deref().cloned(),
+        attr.to_output.as_deref().cloned(),
+        attr.from_input.as_deref().cloned(),
+        attr.from_input_err.as_deref().cloned(),
+        attr.parse_token.as_deref().cloned(),
     ) {
-        (Some(resolve), Some(from_input_value), Some(from_input_value_err), Some(from_str)) => {
+        (Some(to_output), Some(from_input), Some(from_input_err), Some(parse_token)) => {
             GraphQLScalarDefinition::Custom {
-                resolve,
-                from_input_value: (from_input_value, from_input_value_err),
-                from_str,
+                to_output,
+                from_input: (from_input, from_input_err),
+                parse_token,
             }
         }
-        (resolve, from_input_value, from_input_value_err, from_str) => {
-            let from_input_value = match (from_input_value, from_input_value_err) {
-                (Some(from_input_value), Some(err)) => Some((from_input_value, err)),
+        (to_output, from_input, from_input_err, parse_token) => {
+            let from_input = match (from_input, from_input_err) {
+                (Some(from_input), Some(err)) => Some((from_input, err)),
                 (None, None) => None,
                 _ => {
                     return Err(ERR.custom_error(
                         ast.span(),
-                        "`from_input_value` attribute should be provided in \
-                     tandem with `from_input_value_err`",
+                        "`from_input_with` attribute should be provided in \
+                         tandem with `from_input_err`",
                     ))
                 }
             };
@@ -93,9 +93,9 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                     }),
             }?;
             GraphQLScalarDefinition::Delegated {
-                resolve,
-                from_input_value,
-                from_str,
+                to_output,
+                from_input,
+                parse_token,
                 field,
             }
         }
@@ -121,14 +121,14 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
 enum GraphQLScalarDefinition {
     Custom {
-        resolve: syn::Path,
-        from_input_value: (syn::Path, syn::Type),
-        from_str: syn::Path,
+        to_output: syn::ExprPath,
+        from_input: (syn::ExprPath, syn::Type),
+        parse_token: syn::ExprPath,
     },
     Delegated {
-        resolve: Option<syn::Path>,
-        from_input_value: Option<(syn::Path, syn::Type)>,
-        from_str: Option<syn::Path>,
+        to_output: Option<syn::ExprPath>,
+        from_input: Option<(syn::ExprPath, syn::Type)>,
+        parse_token: Option<syn::ExprPath>,
         field: Field,
     },
 }
@@ -136,12 +136,12 @@ enum GraphQLScalarDefinition {
 impl GraphQLScalarDefinition {
     fn resolve(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
-            Self::Custom { resolve, .. }
+            Self::Custom { to_output, .. }
             | Self::Delegated {
-                resolve: Some(resolve),
+                to_output: Some(to_output),
                 ..
             } => {
-                quote! { Ok(#resolve(self)) }
+                quote! { Ok(#to_output(self)) }
             }
             Self::Delegated { field, .. } => {
                 quote! {
@@ -158,13 +158,13 @@ impl GraphQLScalarDefinition {
 
     fn to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
-            Self::Custom { resolve, .. }
+            Self::Custom { to_output, .. }
             | Self::Delegated {
-                resolve: Some(resolve),
+                to_output: Some(to_output),
                 ..
             } => {
                 quote! {
-                    let v = #resolve(self);
+                    let v = #to_output(self);
                     ::juniper::ToInputValue::to_input_value(&v)
                 }
             }
@@ -177,16 +177,16 @@ impl GraphQLScalarDefinition {
     fn from_input_value_err(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom {
-                from_input_value: (_, err),
+                from_input: (_, err),
                 ..
             }
             | Self::Delegated {
-                from_input_value: Some((_, err)),
+                from_input: Some((_, err)),
                 ..
             } => quote! { #err },
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();
-                quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::Error }
+                quote! { <#field_ty as ::juniper::FromInputValue<#scalar>>::Error }
             }
         }
     }
@@ -194,14 +194,14 @@ impl GraphQLScalarDefinition {
     fn from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom {
-                from_input_value: (from_input_value, _),
+                from_input: (from_input, _),
                 ..
             }
             | Self::Delegated {
-                from_input_value: Some((from_input_value, _)),
+                from_input: Some((from_input, _)),
                 ..
             } => {
-                quote! { #from_input_value(input) }
+                quote! { #from_input(input) }
             }
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();
@@ -216,16 +216,16 @@ impl GraphQLScalarDefinition {
 
     fn from_str(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
-            Self::Custom { from_str, .. }
+            Self::Custom { parse_token, .. }
             | Self::Delegated {
-                from_str: Some(from_str),
+                parse_token: Some(parse_token),
                 ..
             } => {
-                quote! { #from_str(token) }
+                quote! { #parse_token(token) }
             }
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();
-                quote! { <#field_ty as ::juniper::GraphQLScalar<#scalar>>::from_str(token) }
+                quote! { <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token) }
             }
         }
     }
@@ -268,10 +268,10 @@ struct Attr {
     description: Option<SpanContainer<String>>,
     specified_by_url: Option<SpanContainer<Url>>,
     scalar: Option<SpanContainer<scalar::AttrValue>>,
-    resolve: Option<SpanContainer<syn::Path>>,
-    from_input_value: Option<SpanContainer<syn::Path>>,
-    from_input_value_err: Option<SpanContainer<syn::Type>>,
-    from_str: Option<SpanContainer<syn::Path>>,
+    to_output: Option<SpanContainer<syn::ExprPath>>,
+    from_input: Option<SpanContainer<syn::ExprPath>>,
+    from_input_err: Option<SpanContainer<syn::Type>>,
+    parse_token: Option<SpanContainer<syn::ExprPath>>,
 }
 
 impl Parse for Attr {
@@ -319,31 +319,31 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "resolve" => {
+                "to_output_with" => {
                     input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Path>()?;
-                    out.resolve
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.to_output
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "from_input_value" => {
+                "from_input_with" => {
                     input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Path>()?;
-                    out.from_input_value
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.from_input
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "from_input_value_err" => {
+                "from_input_err" => {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<syn::Type>()?;
-                    out.from_input_value_err
+                    out.from_input_err
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "from_str" => {
+                "parse_token_with" => {
                     input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Path>()?;
-                    out.from_str
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.parse_token
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -366,10 +366,10 @@ impl Attr {
             description: try_merge_opt!(description: self, another),
             specified_by_url: try_merge_opt!(specified_by_url: self, another),
             scalar: try_merge_opt!(scalar: self, another),
-            resolve: try_merge_opt!(resolve: self, another),
-            from_input_value: try_merge_opt!(from_input_value: self, another),
-            from_input_value_err: try_merge_opt!(from_input_value_err: self, another),
-            from_str: try_merge_opt!(from_str: self, another),
+            to_output: try_merge_opt!(to_output: self, another),
+            from_input: try_merge_opt!(from_input: self, another),
+            from_input_err: try_merge_opt!(from_input_err: self, another),
+            parse_token: try_merge_opt!(parse_token: self, another),
         })
     }
 

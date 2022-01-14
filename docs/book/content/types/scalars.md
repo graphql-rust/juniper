@@ -69,7 +69,6 @@ The macro also allows for more customization:
 /// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalar)]
 #[graphql(
-    transparent,
     // Overwrite the GraphQL type name.
     name = "MyUserId",
     // Specify a custom description.
