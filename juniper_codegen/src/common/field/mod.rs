@@ -251,28 +251,6 @@ impl Definition {
         }
     }
 
-    /// Returns generated code that errors about [GraphQL fields][1] tried to be
-    /// resolved asynchronously in the [`GraphQLValue::resolve_field`] method
-    /// (which is synchronous itself).
-    ///
-    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    #[must_use]
-    pub(crate) fn method_resolve_field_err_async_field_tokens(
-        field_names: &[&str],
-        scalar: &scalar::Type,
-        ty_name: &str,
-    ) -> TokenStream {
-        quote! {
-            #( #field_names )|* => return Err(::juniper::FieldError::from(format!(
-                "Tried to resolve async field `{}` on type `{}` with a sync resolver",
-                field,
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
-                    .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?,
-            ))),
-        }
-    }
-
     /// Returns generated code for the [`marker::IsOutputType::mark`] method,
     /// which performs static checks for this [GraphQL field][1].
     ///

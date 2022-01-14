@@ -579,11 +579,7 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.trait_generics.split_for_impl();
 
-        let fields_resolvers = self.fields.iter().filter_map(|f| {
-            if f.is_async {
-                return None;
-            }
-
+        let fields_resolvers = self.fields.iter().map(|f| {
             let name = &f.name;
             Some(quote! {
                 #name => {
@@ -594,18 +590,7 @@ impl Definition {
                 }
             })
         });
-        let async_fields_err = {
-            let names = self
-                .fields
-                .iter()
-                .filter_map(|f| f.is_async.then(|| f.name.as_str()))
-                .collect::<Vec<_>>();
-            (!names.is_empty()).then(|| {
-                field::Definition::method_resolve_field_err_async_field_tokens(
-                    &names, scalar, trait_name,
-                )
-            })
-        };
+
         let no_field_err =
             field::Definition::method_resolve_field_err_no_field_tokens(scalar, trait_name);
 
@@ -635,7 +620,6 @@ impl Definition {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
-                        #async_fields_err
                         _ => #no_field_err,
                     }
                 }
@@ -865,11 +849,7 @@ impl Definition {
 
         self.fields
             .iter()
-            .filter_map(|field| {
-                if field.is_async {
-                    return None;
-                }
-
+            .map(|field| {
                 let field_name = &field.name;
                 let mut return_ty = field.ty.clone();
                 generics.replace_type_with_defaults(&mut return_ty);
@@ -882,7 +862,7 @@ impl Definition {
                     quote! { _ => unreachable!() }
                 });
 
-                Some(quote! {
+                quote! {
                     #[allow(non_snake_case)]
                     impl#impl_generics ::juniper::macros::reflection::Field<
                         #scalar,
@@ -903,19 +883,16 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    ::juniper::call_field_or_panic!(
-                                        #field_name,
-                                        v,
-                                        info,
-                                        args,
-                                        executor,
-                                    )
+                                    <_ as ::juniper::macros::reflection::Field::<
+                                        #scalar,
+                                        { ::juniper::macros::reflection::fnv1a128(#field_name) },
+                                    >>::call(v, info, args, executor)
                                 })*
                                 #unreachable_arm
                             }
                         }
                     }
-                })
+                }
             })
             .collect()
     }

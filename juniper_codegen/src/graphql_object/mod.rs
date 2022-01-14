@@ -633,34 +633,45 @@ impl Definition<Query> {
 
         self.fields
             .iter()
-            .filter_map(|field| {
-                if field.is_async {
-                    return None;
-                }
-
+            .map(|field| {
                 let (name, mut res_ty, ident) = (&field.name, field.ty.clone(), &field.ident);
 
-                let res = if field.is_method() {
-                    let args = field
-                        .arguments
-                        .as_ref()
-                        .unwrap()
-                        .iter()
-                        .map(|arg| arg.method_resolve_field_tokens(scalar, false));
-
-                    let rcv = field.has_receiver.then(|| {
-                        quote! { self, }
-                    });
-
-                    quote! { Self::#ident(#rcv #( #args ),*) }
+                let resolve = if field.is_async {
+                    quote! {
+                        ::std::panic!(
+                             "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+                             #name,
+                             <Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
+                         );
+                    }
                 } else {
-                    res_ty = parse_quote! { _ };
-                    quote! { &self.#ident }
+                    let res = if field.is_method() {
+                        let args = field
+                            .arguments
+                            .as_ref()
+                            .unwrap()
+                            .iter()
+                            .map(|arg| arg.method_resolve_field_tokens(scalar, false));
+
+                        let rcv = field.has_receiver.then(|| {
+                            quote! { self, }
+                        });
+
+                        quote! { Self::#ident(#rcv #( #args ),*) }
+                    } else {
+                        res_ty = parse_quote! { _ };
+                        quote! { &self.#ident }
+                    };
+
+                    let resolving_code = gen::sync_resolving_code();
+
+                    quote! {
+                        let res: #res_ty = #res;
+                        #resolving_code
+                    }
                 };
 
-                let resolving_code = gen::sync_resolving_code();
-
-                Some(quote! {
+                quote! {
                     #[allow(deprecated, non_snake_case)]
                     #[automatically_derived]
                     impl #impl_generics ::juniper::macros::reflection::Field<
@@ -675,11 +686,10 @@ impl Definition<Query> {
                             args: &::juniper::Arguments<#scalar>,
                             executor: &::juniper::Executor<Self::Context, #scalar>,
                         ) -> ::juniper::ExecutionResult<#scalar> {
-                            let res: #res_ty = #res;
-                            #resolving_code
+                            #resolve
                         }
                     }
-                })
+                }
             })
             .collect()
     }
@@ -762,34 +772,18 @@ impl Definition<Query> {
 
         let name = &self.name;
 
-        let fields_resolvers = self.fields.iter().filter_map(|f| {
-            if f.is_async {
-                return None;
-            }
-
+        let fields_resolvers = self.fields.iter().map(|f| {
             let name = &f.name;
-            Some(quote! {
+            quote! {
                 #name => {
                     ::juniper::macros::reflection::Field::<
                         #scalar,
                         { ::juniper::macros::reflection::fnv1a128(#name) }
                     >::call(self, info, args, executor)
                 }
-            })
+            }
         });
 
-        let async_fields_err = {
-            let names = self
-                .fields
-                .iter()
-                .filter_map(|f| f.is_async.then(|| f.name.as_str()))
-                .collect::<Vec<_>>();
-            (!names.is_empty()).then(|| {
-                field::Definition::method_resolve_field_err_async_field_tokens(
-                    &names, scalar, &ty_name,
-                )
-            })
-        };
         let no_field_err =
             field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
@@ -814,7 +808,6 @@ impl Definition<Query> {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
-                        #async_fields_err
                         _ => #no_field_err,
                     }
                 }
