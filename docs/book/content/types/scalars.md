@@ -97,6 +97,8 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
     let inc = v.0 + 1;
     inc.to_output()
 }
+# 
+# fn main() {}
 ```
 
 #### `#[graphql(from_input_with = ..., from_input_err = ...)]` attributes
@@ -129,6 +131,8 @@ impl UserId {
             .map(|id| Self(id.to_owned()))
     }
 }
+#
+# fn main() {}
  ```
 
 #### `#[graphql(parse_token_with = ...]` or `#[graphql(parse_token(...)]` attributes
@@ -169,6 +173,8 @@ fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, 
     <String as GraphQLScalar<S>>::parse_token(value)
         .or_else(|_| <i32 as GraphQLScalar<S>>::parse_token(value))
 }
+#
+# fn main() {}
 ```
 
 > __NOTE:__ As you can see, once you provide all 3 custom resolvers, there is no
