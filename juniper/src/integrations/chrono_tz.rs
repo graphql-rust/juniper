@@ -16,11 +16,11 @@ use crate::{
 impl<S: ScalarValue> GraphQLScalar<S> for Tz {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.name().to_owned())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -29,7 +29,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for Tz {
             })
     }
 
-    fn from_str(val: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(val: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(s) = val {
             Ok(S::from(s.to_owned()))
         } else {

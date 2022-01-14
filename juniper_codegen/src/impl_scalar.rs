@@ -39,7 +39,7 @@ pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<T
 
     Err(syn::Error::new(
         Span::call_site(),
-        "#[graphql_scalar] attribute is applicable to impl trait only",
+        "#[graphql_scalar] attribute is applicable to impl trait block only",
     ))
 }
 
@@ -373,7 +373,7 @@ impl Definition {
                     selection: Option<&[::juniper::Selection<#scalar>]>,
                     executor: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
-                    Ok(::juniper::GraphQLScalar::resolve(self))
+                    Ok(::juniper::GraphQLScalar::to_output(self))
                 }
             }
         }
@@ -426,7 +426,7 @@ impl Definition {
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                    let v = ::juniper::GraphQLScalar::resolve(self);
+                    let v = ::juniper::GraphQLScalar::to_output(self);
                     ::juniper::ToInputValue::to_input_value(&v)
                 }
             }
@@ -452,7 +452,7 @@ impl Definition {
                 type Error = <Self as ::juniper::GraphQLScalar<#scalar>>::Error;
 
                 fn from_input_value(input: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
-                    ::juniper::GraphQLScalar::from_input_value(input)
+                    ::juniper::GraphQLScalar::from_input(input)
                 }
             }
         }
@@ -477,7 +477,7 @@ impl Definition {
                fn from_str(
                     token: ::juniper::parser::ScalarToken<'_>,
                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
-                    <Self as ::juniper::GraphQLScalar<#scalar>>::from_str(token)
+                    <Self as ::juniper::GraphQLScalar<#scalar>>::parse_token(token)
                 }
             }
         }
@@ -521,7 +521,7 @@ impl Definition {
     }
 
     /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
-    /// similar) implementation of this enum.
+    /// similar) implementation.
     ///
     /// If `for_async` is `true`, then additional predicates are added to suit
     /// the [`GraphQLAsyncValue`] trait (and similar) requirements.

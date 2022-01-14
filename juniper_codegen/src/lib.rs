@@ -229,17 +229,17 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     // NOTE: The Error type should implement `IntoFieldError<S>`.
 ///     type Error = String;  
 ///
-///     fn resolve(&self) -> Value<S> {
+///     fn to_output(&self) -> Value<S> {
 ///         Value::scalar(self.0.to_owned())
 ///     }
 ///
-///     fn from_input_value(value: &juniper::InputValue<S>) -> Result<Self, Self::Error> {
+///     fn from_input(value: &juniper::InputValue<S>) -> Result<Self, Self::Error> {
 ///         value.as_string_value()
 ///             .map(|s| Self(s.to_owned()))
 ///             .ok_or_else(|| format!("Expected `String`, found: {}", value))
 ///     }
 ///
-///     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+///     fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
 ///         <String as juniper::ParseScalarValue<S>>::from_str(value)
 ///     }
 /// }

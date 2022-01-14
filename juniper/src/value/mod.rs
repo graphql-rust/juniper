@@ -27,15 +27,15 @@ pub trait GraphQLScalar<S = DefaultScalarValue>: Sized {
     /// Resolves this [GraphQL scalar][1] into [`Value`].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    fn resolve(&self) -> Value<S>;
+    fn to_output(&self) -> Value<S>;
 
     /// Parses [`InputValue`] into this [GraphQL scalar][1].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error>;
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error>;
 
     /// Resolves [`ScalarToken`] literal into `S`.
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
 }
 
 /// Serializable value returned from query and field execution.

@@ -56,11 +56,11 @@ impl fmt::Display for ID {
 impl<S: ScalarValue> GraphQLScalar<S> for ID {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.0.clone())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .map(str::to_owned)
             .or_else(|| v.as_int_value().map(|i| i.to_string()))
@@ -68,7 +68,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for ID {
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         match value {
             ScalarToken::String(value) | ScalarToken::Int(value) => Ok(S::from(value.to_owned())),
             _ => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
@@ -80,17 +80,17 @@ impl<S: ScalarValue> GraphQLScalar<S> for ID {
 impl<S: ScalarValue> GraphQLScalar<S> for String {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.clone())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .map(str::to_owned)
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
@@ -279,17 +279,17 @@ where
 impl<S: ScalarValue> GraphQLScalar<S> for bool {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_scalar_value()
             .and_then(ScalarValue::as_boolean)
             .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         // Bools are parsed separately - they shouldn't reach this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
@@ -299,16 +299,16 @@ impl<S: ScalarValue> GraphQLScalar<S> for bool {
 impl<S: ScalarValue> GraphQLScalar<S> for i32 {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_int_value()
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::Int(v) = value {
             v.parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
@@ -323,16 +323,16 @@ impl<S: ScalarValue> GraphQLScalar<S> for i32 {
 impl<S: ScalarValue> GraphQLScalar<S> for f64 {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         match value {
             ScalarToken::Int(v) => v
                 .parse()

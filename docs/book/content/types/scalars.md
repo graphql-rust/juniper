@@ -128,19 +128,19 @@ where
     type Error = String;
   
     // Define how to convert your custom scalar into a primitive type.
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.to_string())
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
     }
 
     // Define how to parse a string value.
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 }

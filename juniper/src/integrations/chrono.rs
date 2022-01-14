@@ -28,11 +28,11 @@ use crate::{
 impl<S: ScalarValue> GraphQLScalar<S> for DateTime<FixedOffset> {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -41,7 +41,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime<FixedOffset> {
             })
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -54,11 +54,11 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime<FixedOffset> {
 impl<S: ScalarValue> GraphQLScalar<S> for DateTime<Utc> {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -67,7 +67,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime<Utc> {
             })
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -85,11 +85,11 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime<Utc> {
 impl<S: ScalarValue> GraphQLScalar<S> for NaiveDate {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.format("%Y-%m-%d").to_string())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -98,7 +98,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for NaiveDate {
             })
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -112,11 +112,11 @@ impl<S: ScalarValue> GraphQLScalar<S> for NaiveDate {
 impl<S: ScalarValue> GraphQLScalar<S> for NaiveTime {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.format("%H:%M:%S").to_string())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -125,7 +125,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for NaiveTime {
             })
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -140,11 +140,11 @@ impl<S: ScalarValue> GraphQLScalar<S> for NaiveTime {
 impl<S: ScalarValue> GraphQLScalar<S> for NaiveDateTime {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.timestamp() as f64)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
             .and_then(|f| {
@@ -154,7 +154,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for NaiveDateTime {
             })
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <f64 as ParseScalarValue<S>>::from_str(value)
     }
 }

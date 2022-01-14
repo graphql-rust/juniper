@@ -26,17 +26,17 @@ struct Scalar(i32);
 impl<S: ScalarValue> GraphQLScalar<S> for Scalar {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_int_value()
             .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 }
