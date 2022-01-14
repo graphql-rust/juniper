@@ -107,27 +107,27 @@ impl Human {
 #[graphql_object(context = Database, impl = CharacterValue)]
 impl Human {
     /// The id of the human
-    fn id(&self) -> &str {
+    pub fn id(&self) -> &str {
         &self.id
     }
 
     /// The name of the human
-    fn name(&self) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         Some(self.name.as_str())
     }
 
     /// The friends of the human
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
+    pub fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
         ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
-    fn appears_in(&self) -> &[Episode] {
+    pub fn appears_in(&self) -> &[Episode] {
         &self.appears_in
     }
 
     /// The home planet of the human
-    fn home_planet(&self) -> &Option<String> {
+    pub fn home_planet(&self) -> &Option<String> {
         &self.home_planet
     }
 }

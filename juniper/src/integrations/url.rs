@@ -11,17 +11,17 @@ use crate::{
 impl<S: ScalarValue> GraphQLScalar<S> for Url {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.as_str().to_owned())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| Self::parse(s).map_err(|e| format!("Failed to parse `Url`: {}", e)))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 }

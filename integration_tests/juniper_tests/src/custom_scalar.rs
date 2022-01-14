@@ -136,17 +136,17 @@ impl<'de> Deserialize<'de> for MyScalarValue {
 impl GraphQLScalar<MyScalarValue> for i64 {
     type Error = String;
 
-    fn resolve(&self) -> Value<MyScalarValue> {
+    fn to_output(&self) -> Value<MyScalarValue> {
         Value::scalar(*self)
     }
 
-    fn from_input_value(v: &InputValue<MyScalarValue>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<MyScalarValue>) -> Result<Self, Self::Error> {
         v.as_scalar_value::<i64>()
             .copied()
             .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, MyScalarValue> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, MyScalarValue> {
         if let ScalarToken::Int(v) = value {
             v.parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))

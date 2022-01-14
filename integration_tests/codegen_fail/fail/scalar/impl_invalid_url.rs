@@ -6,17 +6,17 @@ struct ScalarSpecifiedByUrl(i32);
 impl GraphQLScalar for ScalarSpecifiedByUrl {
     type Error = String;
 
-    fn resolve(&self) -> Value {
+    fn to_output(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue) -> Result<Self, Self::Error> {
         v.as_int_value()
             .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
         <i32 as ParseScalarValue>::from_str(value)
     }
 }

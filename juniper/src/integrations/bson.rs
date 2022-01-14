@@ -14,11 +14,11 @@ use crate::{
 impl<S: ScalarValue> GraphQLScalar<S> for ObjectId {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar(self.to_hex())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -26,7 +26,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for ObjectId {
             })
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(val) = value {
             Ok(S::from(val.to_owned()))
         } else {
@@ -39,11 +39,11 @@ impl<S: ScalarValue> GraphQLScalar<S> for ObjectId {
 impl<S: ScalarValue> GraphQLScalar<S> for UtcDateTime {
     type Error = String;
 
-    fn resolve(&self) -> Value<S> {
+    fn to_output(&self) -> Value<S> {
         Value::scalar((*self).to_chrono().to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -53,7 +53,7 @@ impl<S: ScalarValue> GraphQLScalar<S> for UtcDateTime {
             .map(Self::from_chrono)
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
         if let ScalarToken::String(val) = value {
             Ok(S::from(val.to_owned()))
         } else {
