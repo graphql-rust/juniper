@@ -167,27 +167,27 @@ impl Droid {
 #[graphql_object(context = Database, impl = CharacterValue)]
 impl Droid {
     /// The id of the droid
-    fn id(&self) -> &str {
+    pub fn id(&self) -> &str {
         &self.id
     }
 
     /// The name of the droid
-    fn name(&self) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         Some(self.name.as_str())
     }
 
     /// The friends of the droid
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
+    pub fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
         ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
-    fn appears_in(&self) -> &[Episode] {
+    pub fn appears_in(&self) -> &[Episode] {
         &self.appears_in
     }
 
     /// The primary function of the droid
-    fn primary_function(&self) -> &Option<String> {
+    pub fn primary_function(&self) -> &Option<String> {
         &self.primary_function
     }
 }
