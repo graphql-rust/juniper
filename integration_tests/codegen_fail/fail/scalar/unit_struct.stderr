@@ -1,4 +1,4 @@
-error: GraphQL scalar expected exactly 1 field, e.g., `Test(i32)` or `Test { test: i32 }` or all `resolve`, `from_input_value` and `from_str` functions
+error: GraphQL scalar expected exactly 1 field, e.g.: `Test(i32)`, `Test { test: i32 }` or all custom resolvers
  --> fail/scalar/unit_struct.rs:4:1
   |
 4 | struct ScalarSpecifiedByUrl;

@@ -1,14 +1,14 @@
 use juniper::{GraphQLScalar, Value};
 
 #[derive(GraphQLScalar)]
-#[graphql(resolve = Self::resolve)]
+#[graphql(to_output_with = Self::to_output)]
 struct Scalar {
     id: i32,
     another: i32,
 }
 
 impl Scalar {
-    fn resolve(&self) -> Value {
+    fn to_output(&self) -> Value {
         Value::scalar(self.id)
     }
 }

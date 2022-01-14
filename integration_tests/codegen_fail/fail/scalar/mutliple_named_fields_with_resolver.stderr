@@ -1,7 +1,7 @@
-error: GraphQL scalar expected exactly 1 field, e.g., Test { test: i32 }or all `resolve`, `from_input_value` and `from_str` functions
+error: GraphQL scalar expected exactly 1 field, e.g., Test { test: i32 } or all custom resolvers
  --> fail/scalar/mutliple_named_fields_with_resolver.rs:4:1
   |
-4 | / #[graphql(resolve = Self::resolve)]
+4 | / #[graphql(to_output_with = Self::to_output)]
 5 | | struct Scalar {
 6 | |     id: i32,
 7 | |     another: i32,

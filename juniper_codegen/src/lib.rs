@@ -108,8 +108,7 @@ macro_rules! try_merge_hashset {
 
 mod derive_enum;
 mod derive_input_object;
-mod derive_scalar_value;
-mod impl_scalar;
+mod graphql_scalar;
 
 mod common;
 mod graphql_interface;
@@ -189,7 +188,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLScalar, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
-    derive_scalar_value::expand(input.into())
+    graphql_scalar::derive::expand(input.into())
         .unwrap_or_abort()
         .into()
 }
@@ -253,7 +252,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
-    impl_scalar::expand(attr.into(), body.into())
+    graphql_scalar::attr::expand(attr.into(), body.into())
         .unwrap_or_abort()
         .into()
 }
