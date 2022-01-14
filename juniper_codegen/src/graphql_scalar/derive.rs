@@ -462,7 +462,7 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let resolve = self.methods.expand_resolve(&scalar);
+        let resolve = self.methods.expand_resolve(scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -531,7 +531,7 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let to_input_value = self.methods.expand_to_input_value(&scalar);
+        let to_input_value = self.methods.expand_to_input_value(scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -557,8 +557,8 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let error_ty = self.methods.expand_from_input_value_err(&scalar);
-        let from_input_value = self.methods.expand_from_input_value(&scalar);
+        let error_ty = self.methods.expand_from_input_value_err(scalar);
+        let from_input_value = self.methods.expand_from_input_value(scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -586,7 +586,7 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let from_str = self.methods.expand_from_str(&scalar);
+        let from_str = self.methods.expand_from_str(scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
