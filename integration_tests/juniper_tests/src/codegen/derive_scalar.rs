@@ -297,6 +297,155 @@ mod custom_to_output {
     }
 }
 
+mod delegated_parse_token {
+    use super::*;
+
+    #[derive(GraphQLScalar)]
+    #[graphql(
+        to_output_with = to_output,
+        from_input_with = from_input,
+        from_input_err = String,
+    )]
+    #[graphql(
+        parse_token = String,
+        specified_by_url = "https://tools.ietf.org/html/rfc3339"
+    )]
+    struct CustomDateTime<Tz>(DateTime<Tz>)
+    where
+        Tz: From<Utc> + TimeZone,
+        Tz::Offset: fmt::Display;
+
+    fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+    where
+        S: ScalarValue,
+        Tz: From<Utc> + TimeZone,
+        Tz::Offset: fmt::Display,
+    {
+        Value::scalar(v.0.to_rfc3339())
+    }
+
+    fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
+    where
+        S: ScalarValue,
+        Tz: From<Utc> + TimeZone,
+        Tz::Offset: fmt::Display,
+    {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
+                    .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
+            })
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_custom_date_time() {
+        const DOC: &str = r#"{ dateTime(value: "1996-12-19T16:39:57-08:00") }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"dateTime": "1996-12-20T00:39:57+00:00"}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_specified_by_url() {
+        const DOC: &str = r#"{
+            __type(name: "CustomDateTime") {
+                specifiedByUrl
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc3339"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod multiple_delegated_parse_token {
+    use super::*;
+
+    #[derive(GraphQLScalar)]
+    #[graphql(
+        to_output_with = to_output,
+        from_input_with = from_input,
+        from_input_err = String,
+        parse_token(String, i32),
+    )]
+    enum StringOrInt {
+        String(String),
+        Int(i32),
+    }
+
+    fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+        match v {
+            StringOrInt::String(str) => Value::scalar(str.to_owned()),
+            StringOrInt::Int(i) => Value::scalar(*i),
+        }
+    }
+
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
+        v.as_string_value()
+            .map(|s| StringOrInt::String(s.to_owned()))
+            .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn string_or_int(value: StringOrInt) -> StringOrInt {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_string() {
+        const DOC: &str = r#"{ stringOrInt(value: "test") }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"stringOrInt": "test"}), vec![],)),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_int() {
+        const DOC: &str = r#"{ stringOrInt(value: 0) }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"stringOrInt": 0}), vec![],)),
+        );
+    }
+}
+
 mod generic_with_all_resolvers {
     use super::*;
 

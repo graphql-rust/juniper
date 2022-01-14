@@ -2,6 +2,7 @@ use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use syn::{
     ext::IdentExt as _,
+    parenthesized,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned,
@@ -59,15 +60,14 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
             } else {
                 return Err(ERR.custom_error(
                     ast.span(),
-                    "expected single-field struct \
-                      or all `resolve`, `from_input_value` and `from_str` functions",
+                    "expected all custom resolvers or single-field struct",
                 ));
             };
             let field = match &data.fields {
                 syn::Fields::Unit => Err(ERR.custom_error(
                     ast.span(),
-                    "expected exactly 1 field, e.g., `Test(i32)` or `Test { test: i32 }` \
-                     or all `resolve`, `from_input_value` and `from_str` functions",
+                    "expected exactly 1 field, e.g.: `Test(i32)`, `Test { test: i32 }` \
+                     or all custom resolvers",
                 )),
                 syn::Fields::Unnamed(fields) => fields
                     .unnamed
@@ -76,8 +76,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),
-                            "expected exactly 1 field, e.g., Test(i32)\
-                             or all `resolve`, `from_input_value` and `from_str` functions",
+                            "expected exactly 1 field, e.g., Test(i32) \
+                             or all custom resolvers",
                         )
                     }),
                 syn::Fields::Named(fields) => fields
@@ -87,8 +87,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),
-                            "expected exactly 1 field, e.g., Test { test: i32 }\
-                             or all `resolve`, `from_input_value` and `from_str` functions",
+                            "expected exactly 1 field, e.g., Test { test: i32 } \
+                             or all custom resolvers",
                         )
                     }),
             }?;
@@ -119,149 +119,6 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     .to_token_stream())
 }
 
-enum GraphQLScalarDefinition {
-    Custom {
-        to_output: syn::ExprPath,
-        from_input: (syn::ExprPath, syn::Type),
-        parse_token: syn::ExprPath,
-    },
-    Delegated {
-        to_output: Option<syn::ExprPath>,
-        from_input: Option<(syn::ExprPath, syn::Type)>,
-        parse_token: Option<syn::ExprPath>,
-        field: Field,
-    },
-}
-
-impl GraphQLScalarDefinition {
-    fn resolve(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { to_output, .. }
-            | Self::Delegated {
-                to_output: Some(to_output),
-                ..
-            } => {
-                quote! { Ok(#to_output(self)) }
-            }
-            Self::Delegated { field, .. } => {
-                quote! {
-                    ::juniper::GraphQLValue::<#scalar>::resolve(
-                        &self.#field,
-                        info,
-                        selection,
-                        executor,
-                    )
-                }
-            }
-        }
-    }
-
-    fn to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { to_output, .. }
-            | Self::Delegated {
-                to_output: Some(to_output),
-                ..
-            } => {
-                quote! {
-                    let v = #to_output(self);
-                    ::juniper::ToInputValue::to_input_value(&v)
-                }
-            }
-            Self::Delegated { field, .. } => {
-                quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field) }
-            }
-        }
-    }
-
-    fn from_input_value_err(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom {
-                from_input: (_, err),
-                ..
-            }
-            | Self::Delegated {
-                from_input: Some((_, err)),
-                ..
-            } => quote! { #err },
-            Self::Delegated { field, .. } => {
-                let field_ty = field.ty();
-                quote! { <#field_ty as ::juniper::FromInputValue<#scalar>>::Error }
-            }
-        }
-    }
-
-    fn from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom {
-                from_input: (from_input, _),
-                ..
-            }
-            | Self::Delegated {
-                from_input: Some((from_input, _)),
-                ..
-            } => {
-                quote! { #from_input(input) }
-            }
-            Self::Delegated { field, .. } => {
-                let field_ty = field.ty();
-                let self_constructor = field.closure_constructor();
-                quote! {
-                    <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
-                        .map(#self_constructor)
-                }
-            }
-        }
-    }
-
-    fn from_str(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { parse_token, .. }
-            | Self::Delegated {
-                parse_token: Some(parse_token),
-                ..
-            } => {
-                quote! { #parse_token(token) }
-            }
-            Self::Delegated { field, .. } => {
-                let field_ty = field.ty();
-                quote! { <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token) }
-            }
-        }
-    }
-}
-
-enum Field {
-    Named(syn::Field),
-    Unnamed(syn::Field),
-}
-
-impl ToTokens for Field {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        match self {
-            Field::Named(f) => f.ident.to_tokens(tokens),
-            Field::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
-        }
-    }
-}
-
-impl Field {
-    fn ty(&self) -> &syn::Type {
-        match self {
-            Field::Named(f) | Field::Unnamed(f) => &f.ty,
-        }
-    }
-
-    fn closure_constructor(&self) -> TokenStream {
-        match self {
-            Field::Named(syn::Field { ident, .. }) => {
-                quote! { |v| Self { #ident: v } }
-            }
-            Field::Unnamed(_) => quote! { Self },
-        }
-    }
-}
-
 #[derive(Default)]
 struct Attr {
     name: Option<SpanContainer<String>>,
@@ -271,7 +128,7 @@ struct Attr {
     to_output: Option<SpanContainer<syn::ExprPath>>,
     from_input: Option<SpanContainer<syn::ExprPath>>,
     from_input_err: Option<SpanContainer<syn::Type>>,
-    parse_token: Option<SpanContainer<syn::ExprPath>>,
+    parse_token: Option<SpanContainer<ParseToken>>,
 }
 
 impl Parse for Attr {
@@ -344,7 +201,36 @@ impl Parse for Attr {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<syn::ExprPath>()?;
                     out.parse_token
-                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(scl.span()),
+                            ParseToken::Custom(scl),
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "parse_token" => {
+                    let (span, parsed_types) = if input.parse::<token::Eq>().is_ok() {
+                        let scl = input.parse::<syn::Type>()?;
+                        (scl.span(), vec![scl])
+                    } else {
+                        let types;
+                        let _ = parenthesized!(types in input);
+                        let parsed_types =
+                            types.parse_terminated::<_, token::Comma>(syn::Type::parse)?;
+
+                        if parsed_types.is_empty() {
+                            return Err(syn::Error::new(ident.span(), "expected at least 1 type."));
+                        }
+
+                        (parsed_types.span(), parsed_types.into_iter().collect())
+                    };
+
+                    out.parse_token
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(span),
+                            ParseToken::Delegate(parsed_types),
+                        ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 name => {
@@ -492,7 +378,7 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let resolve = self.field.resolve(&scalar);
+        let resolve = self.field.expand_resolve(&scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -561,7 +447,7 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let to_input_value = self.field.to_input_value(&scalar);
+        let to_input_value = self.field.expand_to_input_value(&scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -587,8 +473,8 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let error_ty = self.field.from_input_value_err(&scalar);
-        let from_input_value = self.field.from_input_value(&scalar);
+        let error_ty = self.field.expand_from_input_value_err(&scalar);
+        let from_input_value = self.field.expand_from_input_value(&scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -616,7 +502,7 @@ impl Definition {
         let ident = &self.ident;
         let scalar = &self.scalar;
 
-        let from_str = self.field.from_str(&scalar);
+        let from_str = self.field.expand_from_str(&scalar);
 
         let generics = self.impl_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -731,5 +617,180 @@ impl Definition {
         }
 
         generics
+    }
+}
+
+enum GraphQLScalarDefinition {
+    Custom {
+        to_output: syn::ExprPath,
+        from_input: (syn::ExprPath, syn::Type),
+        parse_token: ParseToken,
+    },
+    Delegated {
+        to_output: Option<syn::ExprPath>,
+        from_input: Option<(syn::ExprPath, syn::Type)>,
+        parse_token: Option<ParseToken>,
+        field: Field,
+    },
+}
+
+impl GraphQLScalarDefinition {
+    fn expand_resolve(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { to_output, .. }
+            | Self::Delegated {
+                to_output: Some(to_output),
+                ..
+            } => {
+                quote! { Ok(#to_output(self)) }
+            }
+            Self::Delegated { field, .. } => {
+                quote! {
+                    ::juniper::GraphQLValue::<#scalar>::resolve(
+                        &self.#field,
+                        info,
+                        selection,
+                        executor,
+                    )
+                }
+            }
+        }
+    }
+
+    fn expand_to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { to_output, .. }
+            | Self::Delegated {
+                to_output: Some(to_output),
+                ..
+            } => {
+                quote! {
+                    let v = #to_output(self);
+                    ::juniper::ToInputValue::to_input_value(&v)
+                }
+            }
+            Self::Delegated { field, .. } => {
+                quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field) }
+            }
+        }
+    }
+
+    fn expand_from_input_value_err(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom {
+                from_input: (_, err),
+                ..
+            }
+            | Self::Delegated {
+                from_input: Some((_, err)),
+                ..
+            } => quote! { #err },
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                quote! { <#field_ty as ::juniper::FromInputValue<#scalar>>::Error }
+            }
+        }
+    }
+
+    fn expand_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom {
+                from_input: (from_input, _),
+                ..
+            }
+            | Self::Delegated {
+                from_input: Some((from_input, _)),
+                ..
+            } => {
+                quote! { #from_input(input) }
+            }
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                let self_constructor = field.closure_constructor();
+                quote! {
+                    <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
+                        .map(#self_constructor)
+                }
+            }
+        }
+    }
+
+    fn expand_from_str(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { parse_token, .. }
+            | Self::Delegated {
+                parse_token: Some(parse_token),
+                ..
+            } => {
+                let parse_token = parse_token.expand_from_str(scalar);
+                quote! { #parse_token }
+            }
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                quote! { <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token) }
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+enum ParseToken {
+    Custom(syn::ExprPath),
+    Delegate(Vec<syn::Type>),
+}
+
+impl ParseToken {
+    fn expand_from_str(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            ParseToken::Custom(parse_token) => {
+                quote! { #parse_token(token) }
+            }
+            ParseToken::Delegate(delegated) => delegated
+                .iter()
+                .fold(None, |acc, ty| {
+                    acc.map_or_else(
+                        || Some(quote! { <#ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token) }),
+                        |prev| {
+                            Some(quote! {
+                                #prev.or_else(|_| {
+                                    <#ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token)
+                                })
+                            })
+                        }
+                    )
+                })
+                .unwrap_or_default(),
+        }
+    }
+}
+
+enum Field {
+    Named(syn::Field),
+    Unnamed(syn::Field),
+}
+
+impl ToTokens for Field {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Field::Named(f) => f.ident.to_tokens(tokens),
+            Field::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
+        }
+    }
+}
+
+impl Field {
+    fn ty(&self) -> &syn::Type {
+        match self {
+            Field::Named(f) | Field::Unnamed(f) => &f.ty,
+        }
+    }
+
+    fn closure_constructor(&self) -> TokenStream {
+        match self {
+            Field::Named(syn::Field { ident, .. }) => {
+                quote! { |v| Self { #ident: v } }
+            }
+            Field::Unnamed(_) => quote! { Self },
+        }
     }
 }
