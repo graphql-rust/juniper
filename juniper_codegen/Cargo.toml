@@ -21,7 +21,7 @@ proc-macro = true
 proc-macro-error = "1.0.2"
 proc-macro2 = "1.0.1"
 quote = "1.0.3"
-syn = { version = "1.0.60", features = ["extra-traits", "full", "parsing"], default-features = false }
+syn = { version = "1.0.60", features = ["extra-traits", "full", "parsing", "visit", "visit-mut"], default-features = false }
 url = "2.0"
 
 [dev-dependencies]

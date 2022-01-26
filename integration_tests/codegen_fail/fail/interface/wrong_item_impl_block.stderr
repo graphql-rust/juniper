@@ -1,5 +1,5 @@
-error: #[graphql_interface] attribute is applicable to trait definitions and trait implementations only
- --> $DIR/wrong_item.rs:8:1
+error: #[graphql_interface] attribute is applicable to trait definitions only
+ --> fail/interface/wrong_item_impl_block.rs:8:1
   |
 8 | #[graphql_interface(for = ObjA)]
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

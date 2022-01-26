@@ -141,6 +141,7 @@ impl<T> Nullable<T> {
 
     /// Returns the nullable if it contains a value, otherwise returns `b`.
     #[inline]
+    #[must_use]
     pub fn or(self, b: Self) -> Self {
         match self {
             Self::Some(_) => self,
@@ -151,6 +152,7 @@ impl<T> Nullable<T> {
     /// Returns the nullable if it contains a value, otherwise calls `f` and
     /// returns the result.
     #[inline]
+    #[must_use]
     pub fn or_else<F: FnOnce() -> Nullable<T>>(self, f: F) -> Nullable<T> {
         match self {
             Self::Some(_) => self,
@@ -161,6 +163,7 @@ impl<T> Nullable<T> {
     /// Replaces the actual value in the nullable by the value given in parameter, returning the
     /// old value if present, leaving a `Some` in its place without deinitializing either one.
     #[inline]
+    #[must_use]
     pub fn replace(&mut self, value: T) -> Self {
         std::mem::replace(self, Self::Some(value))
     }

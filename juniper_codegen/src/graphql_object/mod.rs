@@ -18,10 +18,10 @@ use syn::{
 
 use crate::{
     common::{
-        field,
+        field, gen,
         parse::{
             attr::{err, OptionExt as _},
-            ParseBufferExt as _, TypeExt,
+            GenericsExt as _, ParseBufferExt as _, TypeExt,
         },
         scalar,
     },
@@ -361,6 +361,68 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         }
     }
 
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`],
+    /// [`WrappedType`] and [`Fields`] traits for this [GraphQL object][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflect::BaseType
+    /// [`Fields`]: juniper::macros::reflect::Fields
+    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let name = &self.name;
+        let (impl_generics, where_clause) = self.impl_generics(false);
+        let ty = &self.ty;
+        let fields = self.fields.iter().map(|f| &f.name);
+        let interfaces = self.interfaces.iter();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[#(<#interfaces as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::Fields<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
+            }
+        }
+    }
+
     /// Returns generated code implementing [`GraphQLType`] trait for this
     /// [GraphQL object][1].
     ///
@@ -439,6 +501,10 @@ impl ToTokens for Definition<Query> {
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
         self.impl_as_dyn_graphql_value_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
+        self.impl_field_meta_tokens().to_tokens(into);
+        self.impl_field_tokens().to_tokens(into);
+        self.impl_async_field_tokens().to_tokens(into);
     }
 }
 
@@ -451,11 +517,25 @@ impl Definition<Query> {
     #[must_use]
     fn impl_graphql_object_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
+        let const_scalar = self.scalar.default_ty();
 
         let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
 
         let interface_tys = self.interfaces.iter();
+
+        let generics = {
+            let mut generics = self.generics.clone();
+            if scalar.is_implicit_generic() {
+                generics.params.push(parse_quote! { #scalar })
+            }
+            generics
+        };
+        let const_interface_tys = interface_tys.clone().cloned().map(|mut ty| {
+            generics.replace_type_with_defaults(&mut ty);
+            ty
+        });
+
         // TODO: Make it work by repeating `sa::assert_type_ne_all!` expansion,
         //       but considering generics.
         //let interface_tys: Vec<_> = self.interfaces.iter().collect();
@@ -469,9 +549,208 @@ impl Definition<Query> {
             {
                 fn mark() {
                     #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
+                    ::juniper::assert_implemented_for!(
+                        #const_scalar, #ty, #(#const_interface_tys),*
+                    );
                 }
             }
         }
+    }
+
+    /// Returns generated code implementing [`FieldMeta`] traits for each field
+    /// of this [GraphQL object][1].
+    ///
+    /// [`FieldMeta`]: juniper::FieldMeta
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_field_meta_tokens(&self) -> TokenStream {
+        let impl_ty = &self.ty;
+        let scalar = &self.scalar;
+        let context = &self.context;
+        let (impl_generics, where_clause) = self.impl_generics(false);
+
+        self.fields
+            .iter()
+            .map(|field| {
+                let (name, ty) = (&field.name, field.ty.clone());
+
+                let arguments = field
+                    .arguments
+                    .as_ref()
+                    .iter()
+                    .flat_map(|vec| vec.iter())
+                    .filter_map(|arg| match arg {
+                        field::MethodArgument::Regular(arg) => {
+                            let (name, ty) = (&arg.name, &arg.ty);
+                            Some(quote! {(
+                                #name,
+                                <#ty as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                                <#ty as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE,
+                            )})
+                        }
+                        field::MethodArgument::Executor | field::MethodArgument::Context(_) => None,
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    #[allow(deprecated, non_snake_case)]
+                    #[automatically_derived]
+                    impl #impl_generics ::juniper::macros::reflect::FieldMeta<
+                        #scalar,
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
+                    > for #impl_ty #where_clause {
+                        type Context = #context;
+                        type TypeInfo = ();
+                        const TYPE: ::juniper::macros::reflect::Type =
+                            <#ty as ::juniper::macros::reflect::BaseType<#scalar>>::NAME;
+                        const SUB_TYPES: ::juniper::macros::reflect::Types =
+                            <#ty as ::juniper::macros::reflect::BaseSubTypes<#scalar>>::NAMES;
+                        const WRAPPED_VALUE: juniper::macros::reflect::WrappedValue =
+                            <#ty as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE;
+                        const ARGUMENTS: &'static [(
+                            ::juniper::macros::reflect::Name,
+                            ::juniper::macros::reflect::Type,
+                            ::juniper::macros::reflect::WrappedValue,
+                        )] = &[#(#arguments,)*];
+                    }
+                }
+            })
+            .collect()
+    }
+
+    /// Returns generated code implementing [`Field`] trait for each field of
+    /// this [GraphQL object][1].
+    ///
+    /// [`Field`]: juniper::Field
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_field_tokens(&self) -> TokenStream {
+        let (impl_ty, scalar) = (&self.ty, &self.scalar);
+        let (impl_generics, where_clause) = self.impl_generics(false);
+
+        self.fields
+            .iter()
+            .map(|field| {
+                let (name, mut res_ty, ident) = (&field.name, field.ty.clone(), &field.ident);
+
+                let resolve = if field.is_async {
+                    quote! {
+                        ::std::panic!(
+                             "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+                             #name,
+                             <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                         );
+                    }
+                } else {
+                    let res = if field.is_method() {
+                        let args = field
+                            .arguments
+                            .as_ref()
+                            .unwrap()
+                            .iter()
+                            .map(|arg| arg.method_resolve_field_tokens(scalar, false));
+
+                        let rcv = field.has_receiver.then(|| {
+                            quote! { self, }
+                        });
+
+                        quote! { Self::#ident(#rcv #( #args ),*) }
+                    } else {
+                        res_ty = parse_quote! { _ };
+                        quote! { &self.#ident }
+                    };
+
+                    let resolving_code = gen::sync_resolving_code();
+
+                    quote! {
+                        let res: #res_ty = #res;
+                        #resolving_code
+                    }
+                };
+
+                quote! {
+                    #[allow(deprecated, non_snake_case)]
+                    #[automatically_derived]
+                    impl #impl_generics ::juniper::macros::reflect::Field<
+                        #scalar,
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
+                    > for #impl_ty
+                        #where_clause
+                    {
+                        fn call(
+                            &self,
+                            info: &Self::TypeInfo,
+                            args: &::juniper::Arguments<#scalar>,
+                            executor: &::juniper::Executor<Self::Context, #scalar>,
+                        ) -> ::juniper::ExecutionResult<#scalar> {
+                            #resolve
+                        }
+                    }
+                }
+            })
+            .collect()
+    }
+
+    /// Returns generated code implementing [`AsyncField`] trait for each field
+    /// of this [GraphQL object][1].
+    ///
+    /// [`AsyncField`]: juniper::AsyncField
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    #[must_use]
+    fn impl_async_field_tokens(&self) -> TokenStream {
+        let (impl_ty, scalar) = (&self.ty, &self.scalar);
+        let (impl_generics, where_clause) = self.impl_generics(true);
+
+        self.fields
+            .iter()
+            .map(|field| {
+                let (name, mut res_ty, ident) = (&field.name, field.ty.clone(), &field.ident);
+
+                let mut res = if field.is_method() {
+                    let args = field
+                        .arguments
+                        .as_ref()
+                        .unwrap()
+                        .iter()
+                        .map(|arg| arg.method_resolve_field_tokens(scalar, true));
+
+                    let rcv = field.has_receiver.then(|| {
+                        quote! { self, }
+                    });
+
+                    quote! { Self::#ident(#rcv #( #args ),*) }
+                } else {
+                    res_ty = parse_quote! { _ };
+                    quote! { &self.#ident }
+                };
+                if !field.is_async {
+                    res = quote! { ::juniper::futures::future::ready(#res) };
+                }
+
+                let resolving_code = gen::async_resolving_code(Some(&res_ty));
+
+                quote! {
+                    #[allow(deprecated, non_snake_case)]
+                    #[automatically_derived]
+                    impl #impl_generics ::juniper::macros::reflect::AsyncField<
+                        #scalar,
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
+                    > for #impl_ty
+                        #where_clause
+                    {
+                        fn call<'b>(
+                            &'b self,
+                            info: &'b Self::TypeInfo,
+                            args: &'b ::juniper::Arguments<#scalar>,
+                            executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                        ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
+                            let fut = #res;
+                            #resolving_code
+                        }
+                    }
+                }
+            })
+            .collect()
     }
 
     /// Returns generated code implementing [`GraphQLValue`] trait for this
@@ -490,22 +769,18 @@ impl Definition<Query> {
 
         let name = &self.name;
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .filter_map(|f| f.method_resolve_field_tokens(scalar, None));
-        let async_fields_err = {
-            let names = self
-                .fields
-                .iter()
-                .filter_map(|f| f.is_async.then(|| f.name.as_str()))
-                .collect::<Vec<_>>();
-            (!names.is_empty()).then(|| {
-                field::Definition::method_resolve_field_err_async_field_tokens(
-                    &names, scalar, &ty_name,
-                )
-            })
-        };
+        let fields_resolvers = self.fields.iter().map(|f| {
+            let name = &f.name;
+            quote! {
+                #name => {
+                    ::juniper::macros::reflect::Field::<
+                        #scalar,
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
+                    >::call(self, info, args, executor)
+                }
+            }
+        });
+
         let no_field_err =
             field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
@@ -530,7 +805,6 @@ impl Definition<Query> {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
-                        #async_fields_err
                         _ => #no_field_err,
                     }
                 }
@@ -559,10 +833,18 @@ impl Definition<Query> {
         let ty = &self.ty;
         let ty_name = ty.to_token_stream().to_string();
 
-        let fields_resolvers = self
-            .fields
-            .iter()
-            .map(|f| f.method_resolve_field_async_tokens(scalar, None));
+        let fields_resolvers = self.fields.iter().map(|f| {
+            let name = &f.name;
+            quote! {
+                #name => {
+                    ::juniper::macros::reflect::AsyncField::<
+                        #scalar,
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
+                    >::call(self, info, args, executor)
+                }
+            }
+        });
+
         let no_field_err =
             field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 

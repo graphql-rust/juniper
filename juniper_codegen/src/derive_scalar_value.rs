@@ -237,6 +237,25 @@ fn impl_scalar_struct(
         impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ident
             where #scalar: ::juniper::ScalarValue,
         { }
+
+        impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        {
+            const NAME: ::juniper::macros::reflect::Type = #name;
+        }
+
+        impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        {
+            const NAMES: ::juniper::macros::reflect::Types =
+                &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+        }
+
+        impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar> for #ident
+            where #scalar: ::juniper::ScalarValue,
+        {
+            const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
+        }
     );
 
     Ok(content)

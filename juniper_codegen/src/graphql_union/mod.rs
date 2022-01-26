@@ -320,6 +320,7 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
     }
 }
 
@@ -606,6 +607,50 @@ impl Definition {
                         type_name, #name,
                     ));
                 }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
+    /// [`WrappedType`] traits for this [GraphQL union][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflect::BaseType
+    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let name = &self.name;
+        let variants = self.variants.iter().map(|var| &var.ty);
+        let (impl_generics, ty, where_clause) = self.impl_generics(false);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types = &[
+                    <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                    #(<#variants as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
+                ];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         }
     }

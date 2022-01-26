@@ -1,0 +1,7 @@
+error[E0080]: evaluation of constant value failed
+  --> fail/interface/additional_non_nullable_argument.rs:14:1
+   |
+14 | #[graphql_interface(for = ObjA)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` isn't present on the interface and so has to be nullable.', $DIR/fail/interface/additional_non_nullable_argument.rs:14:1
+   |
+   = note: this error originates in the macro `$crate::panic::panic_2015` (in Nightly builds, run with -Z macro-backtrace for more info)

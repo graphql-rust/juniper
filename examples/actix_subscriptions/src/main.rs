@@ -10,7 +10,7 @@ use actix_web::{
 
 use juniper::{
     graphql_object, graphql_subscription, graphql_value,
-    tests::fixtures::starwars::schema::{Character as _, Database, Query},
+    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, FieldError, RootNode,
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
