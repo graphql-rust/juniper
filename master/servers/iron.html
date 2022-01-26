@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Type System - Juniper - GraphQL Server for Rust</title>
+        <title>Iron - Juniper - GraphQL Server for Rust</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html" class="active">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
+            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html" class="active"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -136,43 +136,121 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#type-system" id="type-system"><h1>Type System</h1></a>
-<p>Most of the work in working with juniper consists of mapping the
-GraphQL type system to the Rust types your application uses.</p>
-<p>Juniper provides some convenient abstractions that try to make this process
-as painless as possible.</p>
-<p>Find out more in the individual chapters below.</p>
-<ul>
-<li><a href="objects/defining_objects.html">Defining objects</a>
-<ul>
-<li><a href="objects/complex_fields.html">Complex fields</a></li>
-<li><a href="objects/using_contexts.html">Using contexts</a></li>
-<li><a href="objects/error_handling.html">Error handling</a></li>
-</ul>
-</li>
-<li><a href="other-index.html">Other types</a>
-<ul>
-<li><a href="enums.html">Enums</a></li>
-<li><a href="interfaces.html">Interfaces</a></li>
-<li><a href="input_objects.html">Input objects</a></li>
-<li><a href="scalars.html">Scalars</a></li>
-<li><a href="unions.html">Unions</a></li>
-</ul>
-</li>
-</ul>
+                        <a class="header" href="#integrating-with-iron" id="integrating-with-iron"><h1>Integrating with Iron</h1></a>
+<p><a href="https://github.com/iron/iron">Iron</a> is a library that's been around for a while in the Rust sphere but lately
+hasn't seen much of development. Nevertheless, it's still a solid library with a
+familiar request/response/middleware architecture that works on Rust's stable
+channel.</p>
+<p>Juniper's Iron integration is contained in the <code>juniper_iron</code> crate:</p>
+<p>!FILENAME Cargo.toml</p>
+<pre><code class="language-toml">[dependencies]
+juniper = &quot;0.15.7&quot;
+juniper_iron = &quot;0.7.4&quot;
+</code></pre>
+<p>Included in the source is a <a href="https://github.com/graphql-rust/juniper_iron/blob/master/examples/iron_server.rs">small
+example</a>
+which sets up a basic GraphQL and <a href="https://github.com/graphql/graphiql">GraphiQL</a> handler.</p>
+<a class="header" href="#basic-integration" id="basic-integration"><h2>Basic integration</h2></a>
+<p>Let's start with a minimal schema and just get a GraphQL endpoint up and
+running. We use <a href="https://github.com/iron/mount">mount</a> to attach the GraphQL handler at <code>/graphql</code>.</p>
+<p>The <code>context_factory</code> function will be executed on every request and can be used
+to set up database connections, read session token information from cookies, and
+set up other global data that the schema might require.</p>
+<p>In this example, we won't use any global data so we just return an empty value.</p>
+<pre><code class="language-rust ignore">extern crate juniper;
+extern crate juniper_iron;
+extern crate iron;
+extern crate mount;
+
+use mount::Mount;
+use iron::prelude::*;
+use juniper::EmptyMutation;
+use juniper_iron::GraphQLHandler;
+
+fn context_factory(_: &amp;mut Request) -&gt; IronResult&lt;()&gt; {
+    Ok(())
+}
+
+struct Root;
+
+#[juniper::graphql_object]
+impl Root {
+    fn foo() -&gt; String {
+        &quot;Bar&quot;.to_owned()
+    }
+}
+
+# #[allow(unreachable_code, unused_variables)]
+fn main() {
+    let mut mount = Mount::new();
+
+    let graphql_endpoint = GraphQLHandler::new(
+        context_factory,
+        Root,
+        EmptyMutation::&lt;()&gt;::new(),
+    );
+
+    mount.mount(&quot;/graphql&quot;, graphql_endpoint);
+
+    let chain = Chain::new(mount);
+
+#   return;
+    Iron::new(chain).http(&quot;0.0.0.0:8080&quot;).unwrap();
+}
+</code></pre>
+<a class="header" href="#accessing-data-from-the-request" id="accessing-data-from-the-request"><h2>Accessing data from the request</h2></a>
+<p>If you want to access e.g. the source IP address of the request from a field
+resolver, you need to pass this data using Juniper's <a href="../types/objects/using_contexts.html">context feature</a>.</p>
+<pre><code class="language-rust ignore"># extern crate juniper;
+# extern crate juniper_iron;
+# extern crate iron;
+# use iron::prelude::*;
+use std::net::SocketAddr;
+
+struct Context {
+    remote_addr: SocketAddr,
+}
+
+impl juniper::Context for Context {}
+
+fn context_factory(req: &amp;mut Request) -&gt; IronResult&lt;Context&gt; {
+    Ok(Context {
+        remote_addr: req.remote_addr
+    })
+}
+
+struct Root;
+
+#[juniper::graphql_object(
+    Context = Context,
+)]
+impl Root {
+    field my_addr(context: &amp;Context) -&gt; String {
+        format!(&quot;Hello, you're coming from {}&quot;, context.remote_addr)
+    }
+}
+
+# fn main() {
+#     let _graphql_endpoint = juniper_iron::GraphQLHandler::new(
+#         context_factory,
+#         Root,
+#         juniper::EmptyMutation::&lt;Context&gt;::new(),
+#     );
+# }
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../quickstart.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../servers/rocket.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../types/objects/defining_objects.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../servers/hyper.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -184,13 +262,13 @@ as painless as possible.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="../quickstart.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="../servers/rocket.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a href="../types/objects/defining_objects.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="../servers/hyper.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
