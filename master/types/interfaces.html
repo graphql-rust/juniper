@@ -1,38 +1,37 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Interfaces - Juniper - GraphQL Server for Rust</title>
+        <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
+        <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
         <link rel="stylesheet" href="../css/variables.css">
         <link rel="stylesheet" href="../css/general.css">
         <link rel="stylesheet" href="../css/chrome.css">
         <link rel="stylesheet" href="../css/print.css" media="print">
-
         <!-- Fonts -->
         <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
-
+        <link rel="stylesheet" href="../fonts/fonts.css">
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="../highlight.css">
         <link rel="stylesheet" href="../tomorrow-night.css">
         <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        
-
-        
     </head>
-    <body class="light">
+    <body>
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">var path_to_root = "../";</script>
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -53,10 +52,13 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
-            if (theme === null || theme === undefined) { theme = 'light'; }
-            document.body.className = theme;
-            document.querySelector('html').className = theme + ' js';
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
@@ -72,50 +74,48 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html" class="active"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="../quickstart.html">Quickstart</a></li><li class="chapter-item expanded affix "><a href="../types/index.html">Type System</a></li><li class="chapter-item expanded "><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="chapter-item expanded "><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="chapter-item expanded "><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/interfaces.html" class="active"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                
-                <div id="menu-bar" class="menu-bar">
-                    <div id="menu-bar-sticky-container">
-                        <div class="left-buttons">
-                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                                <i class="fa fa-bars"></i>
-                            </button>
-                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                                <i class="fa fa-paint-brush"></i>
-                            </button>
-                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
-                            </ul>
-                            
-                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
-                                <i class="fa fa-search"></i>
-                            </button>
-                            
-                        </div>
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
 
-                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1> 
+                    <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1>
 
-                        <div class="right-buttons">
-                            <a href="../print.html" title="Print this book" aria-label="Print this book">
-                                <i id="print-button" class="fa fa-print"></i>
-                            </a>
-                        </div>
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
                     </div>
                 </div>
 
-                
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -123,8 +123,6 @@
                         </ul>
                     </div>
                 </div>
-                
-
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
                 <script type="text/javascript">
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
@@ -136,26 +134,26 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#interfaces" id="interfaces"><h1>Interfaces</h1></a>
+                        <h1 id="interfaces"><a class="header" href="#interfaces">Interfaces</a></h1>
 <p><a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> map well to interfaces known from common object-oriented languages such as Java or C#, but Rust, unfortunately, has no concept that maps perfectly to them. The nearest analogue of <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> are Rust traits, and the main difference is that in GraphQL an <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface type</a> serves both as an <em>abstraction</em> and a <em>boxed value (downcastable to concrete implementers)</em>, while in Rust, a trait is an <em>abstraction only</em> and <em>to represent such a boxed value a separate type is required</em>, like enum or trait object, because Rust trait doesn't represent a type itself, and so can have no values. This difference imposes some unintuitive and non-obvious corner cases when we try to express <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> in Rust, but on the other hand gives you full control over which type is backing your interface, and how it's resolved.</p>
 <p>For implementing <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> Juniper provides the <code>#[graphql_interface]</code> macro.</p>
-<a class="header" href="#traits" id="traits"><h2>Traits</h2></a>
+<h2 id="traits"><a class="header" href="#traits">Traits</a></h2>
 <p>Defining a trait is mandatory for defining a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a>, because this is the <em>obvious</em> way we describe an <em>abstraction</em> in Rust. All <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface</a> fields are defined as computed ones via trait methods.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-use juniper::graphql_interface;
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>use juniper::graphql_interface;
 
 #[graphql_interface]
 trait Character {
     fn id(&amp;self) -&gt; &amp;str;
 }
-#
-# fn main() {}
-</code></pre></pre>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
 <p>However, to return values of such <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface</a>, we should provide its implementers and the Rust type representing a <em>boxed value of this trait</em>. The last one can be represented in two flavors: enum and <a href="https://doc.rust-lang.org/reference/types/trait-object.html">trait object</a>.</p>
-<a class="header" href="#enum-values-default" id="enum-values-default"><h3>Enum values (default)</h3></a>
+<h3 id="enum-values-default"><a class="header" href="#enum-values-default">Enum values (default)</a></h3>
 <p>By default, Juniper generates an enum representing the values of the defined <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a>, and names it straightforwardly, <code>{Interface}Value</code>.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-use juniper::{graphql_interface, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>use juniper::{graphql_interface, GraphQLObject};
 
 #[graphql_interface(for = [Human, Droid])] // enumerating all implementers is mandatory 
 trait Character {
@@ -167,36 +165,18 @@ trait Character {
 struct Human {
     id: String,
 }
-#[graphql_interface] // implementing requires macro attribute too, (°ｏ°)!
-impl Character for Human {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-}
 
 #[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue)]
 struct Droid {
     id: String,
 }
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-}
-
-# fn main() {
-let human = Human { id: &quot;human-32&quot;.to_owned() };
-// Values type for interface has `From` implementations for all its implementers,
-// so we don't need to bother with enum variant names.
-let character: CharacterValue = human.into();
-assert_eq!(character.id(), &quot;human-32&quot;);
-# }
-</code></pre></pre>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
 <p>Also, enum name can be specified explicitly, if desired.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-use juniper::{graphql_interface, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>use juniper::{graphql_interface, GraphQLObject};
 
 #[graphql_interface(enum = CharaterInterface, for = Human)] 
 trait Character {
@@ -209,68 +189,13 @@ struct Human {
     id: String,
     home_planet: String,
 }
-#[graphql_interface]
-impl Character for Human {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-}
-#
-# fn main() {}
-</code></pre></pre>
-<a class="header" href="#trait-object-values" id="trait-object-values"><h3>Trait object values</h3></a>
-<p>If, for some reason, we would like to use <a href="https://doc.rust-lang.org/reference/types/trait-object.html">trait objects</a> for representing <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface</a> values incorporating dynamic dispatch, then it should be specified explicitly in the trait definition.</p>
-<p>Downcasting <a href="https://doc.rust-lang.org/reference/types/trait-object.html">trait objects</a> in Rust is not that trivial, that's why macro transforms the trait definition slightly, imposing some additional type parameters under-the-hood.</p>
-<blockquote>
-<p><strong>NOTICE</strong>:<br />
-A <strong>trait has to be <a href="https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety">object safe</a></strong>, because schema resolvers will need to return a <a href="https://doc.rust-lang.org/reference/types/trait-object.html">trait object</a> to specify a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> behind it.</p>
-</blockquote>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-# extern crate tokio;
-use juniper::{graphql_interface, GraphQLObject};
-
-// `dyn` argument accepts the name of type alias for the required trait object,
-// and macro generates this alias automatically.
-#[graphql_interface(dyn = DynCharacter, for = Human)] 
-trait Character {
-    async fn id(&amp;self) -&gt; &amp;str; // async fields are supported natively
-}
-
-#[derive(GraphQLObject)]
-#[graphql(impl = DynCharacter&lt;__S&gt;)] // macro adds `ScalarValue` type parameter to trait,
-struct Human {                       // so it may be specified explicitly when required 
-    id: String,
-}
-#[graphql_interface(dyn)] // implementing requires to know about dynamic dispatch too
-impl Character for Human {
-    async fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-}
-
-#[derive(GraphQLObject)]
-#[graphql(impl = DynCharacter&lt;__S&gt;)]
-struct Droid {
-    id: String,
-}
-#[graphql_interface]
-impl Character for Droid {
-    async fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-}
-
-# #[tokio::main]
-# async fn main() {
-let human = Human { id: &quot;human-32&quot;.to_owned() };
-let character: Box&lt;DynCharacter&gt; = Box::new(human);
-assert_eq!(character.id().await, &quot;human-32&quot;);
-# }
-</code></pre></pre>
-<a class="header" href="#ignoring-trait-methods" id="ignoring-trait-methods"><h3>Ignoring trait methods</h3></a>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
+<h3 id="ignoring-trait-methods"><a class="header" href="#ignoring-trait-methods">Ignoring trait methods</a></h3>
 <p>We may want to omit some trait methods to be assumed as <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> fields and ignore them.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-use juniper::{graphql_interface, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>use juniper::{graphql_interface, GraphQLObject};
 
 #[graphql_interface(for = Human)]  
 trait Character {
@@ -285,20 +210,14 @@ trait Character {
 struct Human {
     id: String,
 }
-#[graphql_interface]
-impl Character for Human {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-}
-#
-# fn main() {}
-</code></pre></pre>
-<a class="header" href="#fields-arguments-and-interface-customization" id="fields-arguments-and-interface-customization"><h3>Fields, arguments and interface customization</h3></a>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
+<h3 id="fields-arguments-and-interface-customization"><a class="header" href="#fields-arguments-and-interface-customization">Fields, arguments and interface customization</a></h3>
 <p>Similarly to <a href="https://spec.graphql.org/June2018/#sec-Objects">GraphQL objects</a> Juniper allows to fully customize <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface</a> fields and their arguments.</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(deprecated)]
-# extern crate juniper;
-use juniper::graphql_interface;
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(deprecated)]
+</span><span class="boring">extern crate juniper;
+</span>use juniper::graphql_interface;
 
 // Renames the interface in GraphQL schema.
 #[graphql_interface(name = &quot;MyCharacter&quot;)] 
@@ -332,27 +251,27 @@ trait Character {
         num: i32,
     ) -&gt; &amp;str;
 }
-#
-# fn main() {}
-</code></pre></pre>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
 <p>Renaming policies for all <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> fields and arguments are supported as well:</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(deprecated)]
-# extern crate juniper;
-use juniper::graphql_interface;
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(deprecated)]
+</span><span class="boring">extern crate juniper;
+</span>use juniper::graphql_interface;
 
 #[graphql_interface(rename_all = &quot;none&quot;)] // disables any renaming
 trait Character {
     // Now exposed as `my_id` and `my_num` in the schema
     fn my_id(&amp;self, my_num: i32) -&gt; &amp;str;
 }
-#
-# fn main() {}
-</code></pre></pre>
-<a class="header" href="#custom-context" id="custom-context"><h3>Custom context</h3></a>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
+<h3 id="custom-context"><a class="header" href="#custom-context">Custom context</a></h3>
 <p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-# use std::collections::HashMap;
-use juniper::{graphql_interface, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span><span class="boring">use std::collections::HashMap;
+</span>use juniper::{graphql_interface, GraphQLObject};
 
 struct Database {
     humans: HashMap&lt;String, Human&gt;,
@@ -375,140 +294,60 @@ struct Human {
     id: String,
     name: String,
 }
-#[graphql_interface]
-impl Character for Human {
-    fn id(&amp;self, db: &amp;Database) -&gt; Option&lt;&amp;str&gt; {
-        if db.humans.contains_key(&amp;self.id) {
-            Some(&amp;self.id)
-        } else {
-            None
-        }
-    }
-
-    fn name(&amp;self, db: &amp;Database) -&gt; Option&lt;&amp;str&gt; {
-        if db.humans.contains_key(&amp;self.id) {
-            Some(&amp;self.name)
-        } else {
-            None
-        }
-    }
-}
-#
-# fn main() {}
-</code></pre></pre>
-<a class="header" href="#using-executor-and-explicit-generic-scalar" id="using-executor-and-explicit-generic-scalar"><h3>Using executor and explicit generic scalar</h3></a>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
+<h3 id="using-executor-and-explicit-generic-scalar"><a class="header" href="#using-executor-and-explicit-generic-scalar">Using executor and explicit generic scalar</a></h3>
 <p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
-<p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-use juniper::{graphql_interface, Executor, GraphQLObject, LookAheadMethods as _, ScalarValue};
+<p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so. </p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _, ScalarValue};
 
 #[graphql_interface(for = Human, Scalar = S)] // notice specifying `ScalarValue` as existing type parameter
 trait Character&lt;S: ScalarValue&gt; {             
     // If a field argument is named `executor`, it's automatically assumed
     // as an executor argument.
-    async fn id&lt;'a&gt;(&amp;self, executor: &amp;'a Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'a str
-    where
-        S: Send + Sync; // required by `#[async_trait]` transformation ¯\_(ツ)_/¯
+    fn id&lt;'a&gt;(&amp;self, executor: &amp;'a Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'a str;
 
     // Otherwise, you may mark it explicitly as an executor argument.
-    async fn name&lt;'b&gt;(
+    fn name&lt;'b&gt;(
         &amp;'b self,
         #[graphql(executor)] another: &amp;Executor&lt;'_, '_, (), S&gt;,
-    ) -&gt; &amp;'b str
-    where
-        S: Send + Sync;
+    ) -&gt; &amp;'b str;
+    
+    fn home_planet(&amp;self) -&gt; &amp;str;
 }
 
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue&lt;__S&gt;)]
 struct Human {
     id: String,
     name: String,
+    home_planet: String,
 }
-#[graphql_interface(scalar = S)]
-impl&lt;S: ScalarValue&gt; Character&lt;S&gt; for Human {
-    async fn id&lt;'a&gt;(&amp;self, executor: &amp;'a Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'a str
+#[graphql_object(scalar = S: ScalarValue, impl = CharacterValue&lt;S&gt;)]
+impl Human {
+    async fn id&lt;'a, S&gt;(&amp;self, executor: &amp;'a Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'a str 
     where
-        S: Send + Sync,
+        S: ScalarValue,
     {
         executor.look_ahead().field_name()
     }
 
-    async fn name&lt;'b&gt;(&amp;'b self, _: &amp;Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'b str
-    where
-        S: Send + Sync,
-    {
+    async fn name&lt;'b, S&gt;(&amp;'b self, #[graphql(executor)] _: &amp;Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'b str {
         &amp;self.name
     }
-}
-#
-# fn main() {}
-</code></pre></pre>
-<a class="header" href="#downcasting" id="downcasting"><h3>Downcasting</h3></a>
-<p>By default, the <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> value is downcast to one of its implementer types via matching the enum variant or downcasting the trait object (if <code>dyn</code> macro argument is used).</p>
-<p>However, if some custom logic is needed to downcast a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> implementer, you may specify either an external function or a trait method to do so.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-# use std::collections::HashMap;
-use juniper::{graphql_interface, GraphQLObject};
-
-struct Database {
-    droids: HashMap&lt;String, Droid&gt;,
-}
-impl juniper::Context for Database {}
-
-#[graphql_interface(for = [Human, Droid], context = Database)]
-#[graphql_interface(on Droid = get_droid)] // enables downcasting `Droid` via `get_droid()` function
-trait Character {
-    fn id(&amp;self) -&gt; &amp;str;
-
-    #[graphql(downcast)] // makes method a downcast to `Human`, not a field 
-    // NOTICE: The method signature may optionally contain `&amp;Database` context argument.
-    fn as_human(&amp;self) -&gt; Option&lt;&amp;Human&gt; {
-        None
+    
+    fn home_planet&lt;'c, S&gt;(&amp;'c self, #[graphql(executor)] _: &amp;Executor&lt;'_, '_, (), S&gt;) -&gt; &amp;'c str {
+        // Executor may not be present on the trait method  ^^^^^^^^^^^^^^^^^^^^^^^^
+        &amp;self.home_planet
     }
 }
-
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue, Context = Database)]
-struct Human {
-    id: String,
-}
-#[graphql_interface]
-impl Character for Human {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-
-    fn as_human(&amp;self) -&gt; Option&lt;&amp;Self&gt; {
-        Some(self)
-    }   
-}
-
-#[derive(GraphQLObject)]
-#[graphql(impl = CharacterValue, Context = Database)]
-struct Droid {
-    id: String,
-}
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }
-}
-
-// External downcast function doesn't have to be a method of a type.
-// It's only a matter of the function signature to match the requirements.
-fn get_droid&lt;'db&gt;(ch: &amp;CharacterValue, db: &amp;'db Database) -&gt; Option&lt;&amp;'db Droid&gt; {
-    db.droids.get(ch.id())
-}
-#
-# fn main() {}
-</code></pre></pre>
-<p>The attribute syntax <code>#[graphql_interface(on ImplementerType = resolver_fn)]</code> follows the <a href="https://spec.graphql.org/June2018/#example-5cc55">GraphQL syntax for downcasting interface implementer</a>.</p>
-<a class="header" href="#scalarvalue-considerations" id="scalarvalue-considerations"><h2><code>ScalarValue</code> considerations</h2></a>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
+<h2 id="scalarvalue-considerations"><a class="header" href="#scalarvalue-considerations"><code>ScalarValue</code> considerations</a></h2>
 <p>By default, <code>#[graphql_interface]</code> macro generates code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> implementers is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified.</p>
-<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
-use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust"><span class="boring">extern crate juniper;
+</span>use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
 
 #[graphql_interface(for = [Human, Droid])]
 #[graphql_interface(scalar = DefaultScalarValue)] // removing this line will fail compilation
@@ -522,12 +361,6 @@ struct Human {
     id: String,
     home_planet: String,
 }
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Character for Human {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }   
-}
 
 #[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue, Scalar = DefaultScalarValue)]
@@ -535,73 +368,46 @@ struct Droid {
     id: String,
     primary_function: String,
 }
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Character for Droid {
-    fn id(&amp;self) -&gt; &amp;str {
-        &amp;self.id
-    }   
-}
-#
-# fn main() {}
-</code></pre></pre>
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                        
                             <a rel="prev" href="../types/enums.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                        
-
-                        
                             <a rel="next" href="../types/input_objects.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
-                        
-
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                
-                    <a href="../types/enums.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../types/enums.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                
-
-                
-                    <a href="../types/input_objects.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../types/input_objects.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
-                
             </nav>
 
         </div>
 
-        
-
-        
-
-        
-
-        
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
         <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
-        
-
         <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
         <script src="../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
-        
-
-        
-
     </body>
 </html>
