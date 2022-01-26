@@ -1,4 +1,4 @@
-error: GraphQL interface trait method can't have default impl block
+error: GraphQL interface trait method can't have default implementation
  --> fail/interface/method_default_impl.rs:5:26
   |
 5 |       fn id(&self) -> &str {

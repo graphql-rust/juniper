@@ -114,14 +114,13 @@ fn expand_on_trait(
         |c| format_ident!("{}Enum", c.inner().to_string()),
     );
 
-    let description = attr.description.as_deref().cloned();
     let generated_code = Definition {
         trait_generics: ast.generics.clone(),
         vis: ast.vis.clone(),
         enum_ident,
         enum_alias_ident,
         name,
-        description,
+        description: attr.description.as_deref().cloned(),
         context,
         scalar,
         fields,
@@ -138,7 +137,7 @@ fn expand_on_trait(
     })
 }
 
-/// Parses [`field::Definition`] from the given trait method definition.
+/// Parses a [`field::Definition`] from the given trait method definition.
 ///
 /// Returns [`None`] if parsing fails, or the method field is ignored.
 #[must_use]
@@ -234,16 +233,18 @@ fn parse_field(
     })
 }
 
-/// Emits "trait method can't have default impl block" [`syn::Error`] pointing
-/// to the given `span`.
+/// Emits "trait method can't have default implementation" [`syn::Error`]
+/// pointing to the given `span`.
 fn err_default_impl_block<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(span.span(), "trait method can't have default impl block");
+    ERR.emit_custom(
+        span.span(),
+        "trait method can't have default implementation",
+    );
     None
 }
 
 /// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given
 /// `span`.
-#[must_use]
 fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(
         span.span(),
@@ -254,7 +255,6 @@ fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
 
 /// Emits "no trait method receiver" [`syn::Error`] pointing to the given
 /// `span`.
-#[must_use]
 fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(
         span.span(),

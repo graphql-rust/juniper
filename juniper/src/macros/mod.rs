@@ -4,7 +4,7 @@
 pub mod helper;
 #[doc(hidden)]
 #[macro_use]
-pub mod reflection;
+pub mod reflect;
 
 #[macro_use]
 mod graphql_input_value;

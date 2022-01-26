@@ -1,5 +1,4 @@
-//! Helper traits and macros for compile-time reflection of Rust types into
-//! GraphQL types.
+//! Compile-time reflection of Rust types into GraphQL types.
 
 use std::{rc::Rc, sync::Arc};
 
@@ -27,9 +26,9 @@ pub type Types = &'static [Type];
 /// Naming of a [GraphQL object][1], [scalar][2] or [interface][3] [`Type`].
 ///
 /// This trait is transparent to [`Option`], [`Vec`] and other containers, so to
-/// fully represent [GraphQL object][1] we additionally use [`WrappedType`].
+/// fully represent a [GraphQL object][1] we additionally use [`WrappedType`].
 ///
-/// Different Rust type may have the same [`NAME`]. For example, [`String`] and
+/// Different Rust types may have the same [`NAME`]. For example, [`String`] and
 /// `&`[`str`](prim@str) share `String!` GraphQL type.
 ///
 /// [`NAME`]: Self::NAME
@@ -154,7 +153,7 @@ impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
     const NAMES: Types = T::NAMES;
 }
 
-/// Alias for a value of a [`WrappedType`] (combined GraphQL type).
+/// Alias for a value of a [`WrappedType`] (composed GraphQL type).
 pub type WrappedValue = u128;
 
 // TODO: Just use `&str`s once they're allowed in `const` generics.
@@ -162,23 +161,26 @@ pub type WrappedValue = u128;
 ///
 /// To fully represent a [GraphQL object][1] it's not enough to use [`Type`],
 /// because of the [wrapping types][2]. To work around this we use a
-/// [`WrappedValue`] which is represented via [`u128`].
-///
+/// [`WrappedValue`] which is represented via [`u128`] number in the following
+/// encoding:
 /// - In base case of non-nullable [object][1] [`VALUE`] is `1`.
 /// - To represent nullability we "append" `2` to the [`VALUE`], so
 ///   [`Option`]`<`[object][1]`>` has [`VALUE`] of `12`.
 /// - To represent list we "append" `3` to the [`VALUE`], so
 ///   [`Vec`]`<`[object][1]`>` has [`VALUE`] of `13`.
 ///
-/// This approach allows us to uniquely represent any [GraphQL object][1] with
+/// This approach allows us to uniquely represent any [GraphQL object][1] with a
 /// combination of [`Type`] and [`WrappedValue`] and even format it via
-/// [`format_type!`] macro in `const` context.
-///
+/// [`format_type!`] macro in a `const` context.
 ///
 /// # Examples
 ///
 /// ```rust
-/// # use juniper::{macros::reflection::{WrappedType, BaseType, WrappedValue, Type}, DefaultScalarValue, format_type};
+/// # use juniper::{
+/// #     format_type,
+/// #     macros::reflect::{WrappedType, BaseType, WrappedValue, Type},
+/// #     DefaultScalarValue,
+/// # };
 /// #
 /// assert_eq!(<Option<i32> as WrappedType<DefaultScalarValue>>::VALUE, 12);
 /// assert_eq!(<Vec<i32> as WrappedType<DefaultScalarValue>>::VALUE, 13);
@@ -276,31 +278,31 @@ pub type Argument = (Name, Type, WrappedValue);
 /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
 pub type Arguments = &'static [(Name, Type, WrappedValue)];
 
-/// Alias for a `const`-hashed [`Name`] used in `const` context.
+/// Alias for a `const`-hashed [`Name`] used in a `const` context.
 pub type FieldName = u128;
 
 /// [GraphQL object][1] or [interface][2] [field arguments][3] [`Names`].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
-/// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Interfaces
+/// [3]: https://spec.graphql.org/October2021#sec-Language.Arguments
 pub trait Fields<S> {
     /// [`Names`] of the [GraphQL object][1] or [interface][2]
     /// [field arguments][3].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
-    /// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
-    /// [3]: https://spec.graphql.org/October2021/#sec-Language.Arguments
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [3]: https://spec.graphql.org/October2021#sec-Language.Arguments
     const NAMES: Names;
 }
 
 /// [`Types`] of the [GraphQL interfaces][1] implemented by this type.
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 pub trait Implements<S> {
     /// [`Types`] of the [GraphQL interfaces][1] implemented by this type.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     const NAMES: Types;
 }
 
@@ -315,54 +317,54 @@ pub trait Implements<S> {
 /// [`TYPE`]: Self::TYPE
 /// [`TypeInfo`]: Self::TypeInfo
 /// [`WRAPPED_VALUE`]: Self::WRAPPED_VALUE
-/// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
 pub trait FieldMeta<S, const N: FieldName> {
-    /// [`GraphQLValue::Context`] of this [`Field`][1].
+    /// [`GraphQLValue::Context`] of this [field][1].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     type Context;
 
     /// [`GraphQLValue::TypeInfo`] of this [GraphQL field][1].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     type TypeInfo;
 
     /// [`Types`] of [GraphQL field's][1] return type.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     const TYPE: Type;
 
-    /// [Sub-Types][1] of [GraphQL field's][2] return type.
+    /// [Sub-types][1] of [GraphQL field's][2] return type.
     ///
     /// [1]: BaseSubTypes
-    /// [2]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     const SUB_TYPES: Types;
 
     /// [`WrappedValue`] of [GraphQL field's][1] return type.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     const WRAPPED_VALUE: WrappedValue;
 
     /// [GraphQL field's][1] [`Arguments`].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     const ARGUMENTS: Arguments;
 }
 
 /// Synchronous field of a [GraphQL object][1] or [interface][2].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Interfaces
 pub trait Field<S, const N: FieldName>: FieldMeta<S, N> {
     /// Resolves the [`Value`] of this synchronous [`Field`].
     ///
-    /// The `arguments` object contains all the specified arguments, with
+    /// The `arguments` object contains all the specified arguments, with the
     /// default values being substituted for the ones not provided by the query.
     ///
     /// The `executor` can be used to drive selections into sub-[objects][1].
     ///
     /// [`Value`]: crate::Value
-    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     fn call(
         &self,
         info: &Self::TypeInfo,
@@ -371,19 +373,19 @@ pub trait Field<S, const N: FieldName>: FieldMeta<S, N> {
     ) -> ExecutionResult<S>;
 }
 
-/// Asynchronous field of a GraphQL [`object`][1] or [`interface`][2].
+/// Asynchronous field of a GraphQL [object][1] or [interface][2].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Objects
-/// [2]: https://spec.graphql.org/October2021/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Interfaces
 pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
     /// Resolves the [`Value`] of this asynchronous [`AsyncField`].
     ///
-    /// The `arguments` object contains all the specified arguments, with
+    /// The `arguments` object contains all the specified arguments, with the
     /// default values being substituted for the ones not provided by the query.
     ///
     /// The `executor` can be used to drive selections into sub-[objects][1].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     fn call<'b>(
         &'b self,
         info: &'b Self::TypeInfo,
@@ -412,7 +414,7 @@ pub const fn fnv1a128(str: Name) -> u128 {
     hash
 }
 
-/// Length __in bytes__ of the [`format_type`] macro result.
+/// Length __in bytes__ of the [`format_type!`] macro result.
 #[must_use]
 pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
     let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
@@ -430,10 +432,10 @@ pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
     len
 }
 
-/// Checks whether GraphQL [`objects`][1] can be sub-types, based on the
-/// [`WrappedValue`].
+/// Checks whether the given GraphQL [object][1] represents a `subtype` of the
+/// given GraphQL `ty`pe, basing on the [`WrappedType`] encoding.
 ///
-/// To fully determine the sub-typing relation [`Type`] should be one of the
+/// To fully determine the sub-typing relation the [`Type`] should be one of the
 /// [`BaseSubTypes::NAMES`].
 ///
 /// [1]: https://spec.graphql.org/October2021#sec-Objects
@@ -495,21 +497,23 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
 
 /// Asserts that `#[graphql_interface(for = ...)]` has all the types referencing
 /// this interface in the `impl = ...` attribute argument.
+///
+/// Symmetrical to [`assert_interfaces_impls!`].
 #[macro_export]
 macro_rules! assert_implemented_for {
     ($scalar: ty, $implementor: ty $(, $interfaces: ty)* $(,)?) => {
         const _: () = {
             $({
-                let is_present = $crate::macros::reflection::str_exists_in_arr(
-                    <$implementor as ::juniper::macros::reflection::BaseType<$scalar>>::NAME,
-                    <$interfaces as ::juniper::macros::reflection::BaseSubTypes<$scalar>>::NAMES,
+                let is_present = $crate::macros::reflect::str_exists_in_arr(
+                    <$implementor as ::juniper::macros::reflect::BaseType<$scalar>>::NAME,
+                    <$interfaces as ::juniper::macros::reflect::BaseSubTypes<$scalar>>::NAMES,
                 );
                 if !is_present {
                     const MSG: &str = $crate::const_concat!(
                         "Failed to implement interface `",
-                        <$interfaces as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        <$interfaces as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
-                        <$implementor as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`: missing implementer reference in interface's `for` attribute.",
                     );
                     ::std::panic!("{}", MSG);
@@ -521,21 +525,23 @@ macro_rules! assert_implemented_for {
 
 /// Asserts that `impl = ...` attribute argument has all the types referencing
 /// this GraphQL type in `#[graphql_interface(for = ...)]`.
+///
+/// Symmetrical to [`assert_implemented_for!`].
 #[macro_export]
 macro_rules! assert_interfaces_impls {
     ($scalar: ty, $interface: ty $(, $implementers: ty)* $(,)?) => {
         const _: () = {
             $({
-                let is_present = $crate::macros::reflection::str_exists_in_arr(
-                    <$interface as ::juniper::macros::reflection::BaseType<$scalar>>::NAME,
-                    <$implementers as ::juniper::macros::reflection::Implements<$scalar>>::NAMES,
+                let is_present = $crate::macros::reflect::str_exists_in_arr(
+                    <$interface as ::juniper::macros::reflect::BaseType<$scalar>>::NAME,
+                    <$implementers as ::juniper::macros::reflect::Implements<$scalar>>::NAMES,
                 );
                 if !is_present {
                     const MSG: &str = $crate::const_concat!(
                         "Failed to implement interface `",
-                        <$interface as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        <$interface as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
-                        <$implementers as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                        <$implementers as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`: missing interface reference in implementer's `impl` attribute.",
                     );
                     ::std::panic!("{}", MSG);
@@ -580,10 +586,10 @@ macro_rules! assert_subtype {
         $field_name: expr $(,)?
     ) => {
         const _: () = {
-            const BASE_TY: $crate::macros::reflection::Type =
-                <$base_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME;
-            const IMPL_TY: $crate::macros::reflection::Type =
-                <$impl_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME;
+            const BASE_TY: $crate::macros::reflect::Type =
+                <$base_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
+            const IMPL_TY: $crate::macros::reflect::Type =
+                <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
             const ERR_PREFIX: &str = $crate::const_concat!(
                 "Failed to implement interface `",
                 BASE_TY,
@@ -592,39 +598,39 @@ macro_rules! assert_subtype {
                 "`: ",
             );
 
-            const FIELD_NAME: $crate::macros::reflection::Name =
+            const FIELD_NAME: $crate::macros::reflect::Name =
                 $field_name;
 
-            const BASE_RETURN_WRAPPED_VAL: $crate::macros::reflection::WrappedValue =
-                <$base_ty as $crate::macros::reflection::FieldMeta<
+            const BASE_RETURN_WRAPPED_VAL: $crate::macros::reflect::WrappedValue =
+                <$base_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::WRAPPED_VALUE;
-            const IMPL_RETURN_WRAPPED_VAL: $crate::macros::reflection::WrappedValue =
-                <$impl_ty as $crate::macros::reflection::FieldMeta<
+            const IMPL_RETURN_WRAPPED_VAL: $crate::macros::reflect::WrappedValue =
+                <$impl_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::WRAPPED_VALUE;
 
-            const BASE_RETURN_TY: $crate::macros::reflection::Type =
-                <$base_ty as $crate::macros::reflection::FieldMeta<
+            const BASE_RETURN_TY: $crate::macros::reflect::Type =
+                <$base_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::TYPE;
-            const IMPL_RETURN_TY: $crate::macros::reflection::Type =
-                <$impl_ty as $crate::macros::reflection::FieldMeta<
+            const IMPL_RETURN_TY: $crate::macros::reflect::Type =
+                <$impl_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::TYPE;
 
-            const BASE_RETURN_SUB_TYPES: $crate::macros::reflection::Types =
-                <$base_ty as $crate::macros::reflection::FieldMeta<
+            const BASE_RETURN_SUB_TYPES: $crate::macros::reflect::Types =
+                <$base_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::SUB_TYPES;
 
-            let is_subtype = $crate::macros::reflection::str_exists_in_arr(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
-                && $crate::macros::reflection::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
+            let is_subtype = $crate::macros::reflect::str_exists_in_arr(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
+                && $crate::macros::reflect::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
             if !is_subtype {
                 const MSG: &str = $crate::const_concat!(
                     ERR_PREFIX,
@@ -645,7 +651,7 @@ macro_rules! assert_subtype {
 /// Asserts validness of the [`Field`]s arguments. See [spec][1] for more
 /// info.
 ///
-/// [1]: https://spec.graphql.org/October2021/#sel-IAHZhCHCDEEFAAADHD8Cxob
+/// [1]: https://spec.graphql.org/October2021#sel-IAHZhCHCDEEFAAADHD8Cxob
 #[macro_export]
 macro_rules! assert_field_args {
     (
@@ -655,10 +661,8 @@ macro_rules! assert_field_args {
         $field_name: expr $(,)?
     ) => {
         const _: () = {
-            const BASE_NAME: &str =
-                <$base_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME;
-            const IMPL_NAME: &str =
-                <$impl_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME;
+            const BASE_NAME: &str = <$base_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
+            const IMPL_NAME: &str = <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
             const ERR_PREFIX: &str = $crate::const_concat!(
                 "Failed to implement interface `",
                 BASE_NAME,
@@ -669,21 +673,21 @@ macro_rules! assert_field_args {
 
             const FIELD_NAME: &str = $field_name;
 
-            const BASE_ARGS: ::juniper::macros::reflection::Arguments =
-                <$base_ty as $crate::macros::reflection::FieldMeta<
+            const BASE_ARGS: ::juniper::macros::reflect::Arguments =
+                <$base_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
                 >>::ARGUMENTS;
-            const IMPL_ARGS: ::juniper::macros::reflection::Arguments =
-                <$impl_ty as $crate::macros::reflection::FieldMeta<
+            const IMPL_ARGS: ::juniper::macros::reflect::Arguments =
+                <$impl_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
                     { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
                 >>::ARGUMENTS;
 
             struct Error {
                 cause: Cause,
-                base: ::juniper::macros::reflection::Argument,
-                implementation: ::juniper::macros::reflection::Argument,
+                base: ::juniper::macros::reflect::Argument,
+                implementation: ::juniper::macros::reflect::Argument,
             }
 
             enum Cause {
@@ -715,8 +719,8 @@ macro_rules! assert_field_args {
                     while impl_i < IMPL_ARGS.len() {
                         let (impl_name, impl_type, impl_wrap_val) = IMPL_ARGS[impl_i];
 
-                        if $crate::macros::reflection::str_eq(base_name, impl_name) {
-                            if $crate::macros::reflection::str_eq(base_type, impl_type)
+                        if $crate::macros::reflect::str_eq(base_name, impl_name) {
+                            if $crate::macros::reflect::str_eq(base_type, impl_type)
                                 && base_wrap_val == impl_wrap_val
                             {
                                 was_found = true;
@@ -757,7 +761,7 @@ macro_rules! assert_field_args {
                     let mut was_found = false;
                     while base_i < BASE_ARGS.len() {
                         let (base_name, _, _) = BASE_ARGS[base_i];
-                        if $crate::macros::reflection::str_eq(base_name, impl_name) {
+                        if $crate::macros::reflect::str_eq(base_name, impl_name) {
                             was_found = true;
                             break;
                         }
@@ -860,19 +864,19 @@ macro_rules! const_concat {
 #[macro_export]
 macro_rules! checked_hash {
     ($field_name: expr, $impl_ty: ty, $scalar: ty $(, $prefix: expr)? $(,)?) => {{
-        let exists = $crate::macros::reflection::str_exists_in_arr(
+        let exists = $crate::macros::reflect::str_exists_in_arr(
             $field_name,
-            <$impl_ty as $crate::macros::reflection::Fields<$scalar>>::NAMES,
+            <$impl_ty as $crate::macros::reflect::Fields<$scalar>>::NAMES,
         );
         if exists {
-            $crate::macros::reflection::fnv1a128(FIELD_NAME)
+            $crate::macros::reflect::fnv1a128(FIELD_NAME)
         } else {
             const MSG: &str = $crate::const_concat!(
                 $($prefix,)?
                 "Field `",
                 $field_name,
                 "` isn't implemented on `",
-                <$impl_ty as $crate::macros::reflection::BaseType<$scalar>>::NAME,
+                <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                 "`."
             );
             ::std::panic!("{}", MSG)
@@ -885,7 +889,7 @@ macro_rules! checked_hash {
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust
 /// # use juniper::format_type;
 /// #
 /// assert_eq!(format_type!("String", 123), "[String]!");
@@ -895,11 +899,10 @@ macro_rules! checked_hash {
 macro_rules! format_type {
     ($ty: expr, $wrapped_value: expr $(,)?) => {{
         const TYPE: (
-            $crate::macros::reflection::Type,
-            $crate::macros::reflection::WrappedValue,
+            $crate::macros::reflect::Type,
+            $crate::macros::reflect::WrappedValue,
         ) = ($ty, $wrapped_value);
-        const RES_LEN: usize =
-            $crate::macros::reflection::type_len_with_wrapped_val(TYPE.0, TYPE.1);
+        const RES_LEN: usize = $crate::macros::reflect::type_len_with_wrapped_val(TYPE.0, TYPE.1);
 
         const OPENING_BRACKET: &str = "[";
         const CLOSING_BRACKET: &str = "]";

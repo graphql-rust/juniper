@@ -253,7 +253,8 @@ pub(crate) trait GenericsExt {
     /// Moves all trait and lifetime bounds of these [`syn::Generics`] to its [`syn::WhereClause`].
     fn move_bounds_to_where_clause(&mut self);
 
-    /// Replaces generic parameters in `ty` found in `self` with default ones.
+    /// Replaces generic parameters in the given [`syn::Type`] with default
+    /// ones, provided by these [`syn::Generics`].
     fn replace_type_with_defaults(&self, ty: &mut syn::Type);
 }
 
@@ -312,7 +313,7 @@ impl GenericsExt for syn::Generics {
             fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
                 match arg {
                     syn::GenericArgument::Lifetime(lf) => {
-                        *lf = parse_quote!( 'static );
+                        *lf = parse_quote! { 'static };
                     }
                     syn::GenericArgument::Type(ty) => {
                         let is_generic = self
@@ -330,8 +331,8 @@ impl GenericsExt for syn::Generics {
                             });
 
                         if is_generic {
-                            // Replacing with `DefaultScalarValue` instead of
-                            // `()` because generic parameter may be scalar.
+                            // Replace with `DefaultScalarValue` instead of `()`
+                            // because generic parameter may be scalar.
                             *ty = parse_quote!(::juniper::DefaultScalarValue);
                         }
                     }

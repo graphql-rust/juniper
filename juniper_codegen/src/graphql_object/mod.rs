@@ -364,13 +364,13 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`],
     /// [`WrappedType`] and [`Fields`] traits for this [GraphQL object][1].
     ///
-    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
-    /// [`BaseType`]: juniper::macros::reflection::BaseType
-    /// [`Fields`]: juniper::macros::reflection::Fields
-    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflect::BaseType
+    /// [`Fields`]: juniper::macros::reflect::Fields
+    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     #[must_use]
-    pub(crate) fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
+    pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
         let name = &self.name;
         let (impl_generics, where_clause) = self.impl_generics(false);
@@ -380,45 +380,45 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAME: ::juniper::macros::reflection::Type = #name;
+                const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Types =
-                    &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::Implements<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Types =
-                    &[#(<#interfaces as ::juniper::macros::reflection::BaseType<#scalar>>::NAME),*];
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[#(<#interfaces as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*];
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::Fields<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::Fields<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Names = &[#(#fields),*];
+                const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
             }
         }
     }
@@ -501,7 +501,7 @@ impl ToTokens for Definition<Query> {
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
         self.impl_as_dyn_graphql_value_tokens().to_tokens(into);
-        self.impl_traits_for_reflection_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
         self.impl_field_meta_tokens().to_tokens(into);
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
@@ -527,7 +527,7 @@ impl Definition<Query> {
         let generics = {
             let mut generics = self.generics.clone();
             if scalar.is_implicit_generic() {
-                generics.params.push(parse_quote!(#scalar))
+                generics.params.push(parse_quote! { #scalar })
             }
             generics
         };
@@ -582,11 +582,10 @@ impl Definition<Query> {
                     .filter_map(|arg| match arg {
                         field::MethodArgument::Regular(arg) => {
                             let (name, ty) = (&arg.name, &arg.ty);
-
                             Some(quote! {(
                                 #name,
-                                <#ty as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
-                                <#ty as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE,
+                                <#ty as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                                <#ty as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE,
                             )})
                         }
                         field::MethodArgument::Executor | field::MethodArgument::Context(_) => None,
@@ -596,24 +595,22 @@ impl Definition<Query> {
                 quote! {
                     #[allow(deprecated, non_snake_case)]
                     #[automatically_derived]
-                    impl #impl_generics ::juniper::macros::reflection::FieldMeta<
+                    impl #impl_generics ::juniper::macros::reflect::FieldMeta<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#name) }
-                    > for #impl_ty
-                        #where_clause
-                    {
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
+                    > for #impl_ty #where_clause {
                         type Context = #context;
                         type TypeInfo = ();
-                        const TYPE: ::juniper::macros::reflection::Type =
-                            <#ty as ::juniper::macros::reflection::BaseType<#scalar>>::NAME;
-                        const SUB_TYPES: ::juniper::macros::reflection::Types =
-                            <#ty as ::juniper::macros::reflection::BaseSubTypes<#scalar>>::NAMES;
-                        const WRAPPED_VALUE: juniper::macros::reflection::WrappedValue =
-                            <#ty as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE;
+                        const TYPE: ::juniper::macros::reflect::Type =
+                            <#ty as ::juniper::macros::reflect::BaseType<#scalar>>::NAME;
+                        const SUB_TYPES: ::juniper::macros::reflect::Types =
+                            <#ty as ::juniper::macros::reflect::BaseSubTypes<#scalar>>::NAMES;
+                        const WRAPPED_VALUE: juniper::macros::reflect::WrappedValue =
+                            <#ty as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE;
                         const ARGUMENTS: &'static [(
-                            ::juniper::macros::reflection::Name,
-                            ::juniper::macros::reflection::Type,
-                            ::juniper::macros::reflection::WrappedValue,
+                            ::juniper::macros::reflect::Name,
+                            ::juniper::macros::reflect::Type,
+                            ::juniper::macros::reflect::WrappedValue,
                         )] = &[#(#arguments,)*];
                     }
                 }
@@ -641,7 +638,7 @@ impl Definition<Query> {
                         ::std::panic!(
                              "Tried to resolve async field `{}` on type `{}` with a sync resolver",
                              #name,
-                             <Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
+                             <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
                          );
                     }
                 } else {
@@ -674,9 +671,9 @@ impl Definition<Query> {
                 quote! {
                     #[allow(deprecated, non_snake_case)]
                     #[automatically_derived]
-                    impl #impl_generics ::juniper::macros::reflection::Field<
+                    impl #impl_generics ::juniper::macros::reflect::Field<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
                     > for #impl_ty
                         #where_clause
                     {
@@ -735,9 +732,9 @@ impl Definition<Query> {
                 quote! {
                     #[allow(deprecated, non_snake_case)]
                     #[automatically_derived]
-                    impl #impl_generics ::juniper::macros::reflection::AsyncField<
+                    impl #impl_generics ::juniper::macros::reflect::AsyncField<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
                     > for #impl_ty
                         #where_clause
                     {
@@ -776,9 +773,9 @@ impl Definition<Query> {
             let name = &f.name;
             quote! {
                 #name => {
-                    ::juniper::macros::reflection::Field::<
+                    ::juniper::macros::reflect::Field::<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
                     >::call(self, info, args, executor)
                 }
             }
@@ -840,9 +837,9 @@ impl Definition<Query> {
             let name = &f.name;
             quote! {
                 #name => {
-                    ::juniper::macros::reflection::AsyncField::<
+                    ::juniper::macros::reflect::AsyncField::<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
                     >::call(self, info, args, executor)
                 }
             }

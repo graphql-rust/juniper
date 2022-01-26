@@ -907,23 +907,23 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar> for #ty
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar> for #ty
                 #where_clause
             {
-                const NAME: ::juniper::macros::reflection::Type = #name;
+                const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
-            impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar> for #ty
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Types =
-                    &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
-            impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar> for #ty
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar> for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         );
 
@@ -1173,26 +1173,26 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ty #type_generics_tokens
                 #where_clause
             {
-                const NAME: ::juniper::macros::reflection::Type = #name;
+                const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
-            impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ty #type_generics_tokens
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Types =
-                    &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
-            impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ty #type_generics_tokens
                 #where_clause
             {
-                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         );
 

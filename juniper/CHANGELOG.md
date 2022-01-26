@@ -10,14 +10,13 @@
 - Make `FromInputValue` methods fallible to allow post-validation. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 - Change `Option` to `Result` in `from_input_value()` return type of `#[graphql_scalar]` macro. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 - Forbid `__typename` field on `subscription` operations [accordingly to October 2021 spec](https://spec.graphql.org/October2021/#note-bc213). ([#1001](https://github.com/graphql-rust/juniper/pull/1001), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
-- Redesign `#[graphql_interface]` macro. ([#1009](https://github.com/graphql-rust/juniper/pull/1009)):
-  - Remove support for `#[graphql_interface(dyn)]`.
-  - Remove support for `downcast`.
-  - Remove support for `async` trait methods.
-  - Describe all interface trait methods with type's fields or impl block instead of `#[graphql_interface]` attribute on `impl Trait`.
-  - Forbid default impls on non-skipped trait methods.
-  - Add support for additional nullable arguments on implementer.
-  - Add support for returning sub-type on implementer.
+- Redesign `#[graphql_interface]` macro: ([#1009](https://github.com/graphql-rust/juniper/pull/1009))
+  - Remove support for `#[graphql_interface(dyn)]` (interface values as trait objects).
+  - Remove support for `downcast` (custom resolution into implementer types).
+  - Remove support for `async` trait methods (not required anymore).
+  - Remove necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching its fields).
+  - Forbid default impls on non-ignored trait methods.
+  - Support coercion of additional nullable arguments and return sub-typing on implementer.
 
 ## Features
 
