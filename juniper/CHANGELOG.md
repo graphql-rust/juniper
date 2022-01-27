@@ -1,5 +1,9 @@
 # master
 
+## Security
+
+- Fix panic on malformed queries with recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
+
 ## Breaking Changes
 
 - Replaced `Visitor` associated type with `DeserializeOwned` requirement in `ScalarValue` trait. ([#985](https://github.com/graphql-rust/juniper/pull/985))
