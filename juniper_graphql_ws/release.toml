@@ -1,4 +1,3 @@
-no-dev-version = true
 pre-release-commit-message = "Release {{crate_name}} {{version}}"
 post-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
