@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Fix panic on malformed queries with recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 
