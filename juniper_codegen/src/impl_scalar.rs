@@ -290,9 +290,11 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::marker::IsInputType<#scalar> for #ty
                 #where_clause { }
 
+            #[automatically_derived]
             impl#impl_gens ::juniper::marker::IsOutputType<#scalar> for #ty
                 #where_clause { }
         }
@@ -321,6 +323,7 @@ impl Definition {
         });
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::GraphQLType<#scalar> for #ty
                 #where_clause
             {
@@ -357,6 +360,7 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::GraphQLValue<#scalar> for #ty
                 #where_clause
             {
@@ -392,6 +396,7 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty
                 #where_clause
             {
@@ -422,6 +427,7 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::ToInputValue<#scalar> for #ty
                 #where_clause
             {
@@ -446,6 +452,7 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
@@ -471,6 +478,7 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::ParseScalarValue<#scalar> for #ty
                 #where_clause
            {
@@ -499,6 +507,7 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
+            #[automatically_derived]
             impl#impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
                 #where_clause
             {
