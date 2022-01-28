@@ -320,7 +320,7 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_traits_for_reflection_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
     }
 }
 
@@ -614,12 +614,12 @@ impl Definition {
     /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
     /// [`WrappedType`] traits for this [GraphQL union][1].
     ///
-    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
-    /// [`BaseType`]: juniper::macros::reflection::BaseType
-    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflect::BaseType
+    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     #[must_use]
-    pub(crate) fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
+    pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
         let name = &self.name;
         let variants = self.variants.iter().map(|var| &var.ty);
@@ -627,30 +627,30 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAME: ::juniper::macros::reflection::Type = #name;
+                const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Types = &[
-                    <Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
-                    #(<#variants as ::juniper::macros::reflection::BaseType<#scalar>>::NAME),*
+                const NAMES: ::juniper::macros::reflect::Types = &[
+                    <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                    #(<#variants as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
                 ];
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         }
     }

@@ -486,9 +486,9 @@ impl Definition {
     /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
     /// [`WrappedType`] traits for this [GraphQL scalar][1].
     ///
-    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
-    /// [`BaseType`]: juniper::macros::reflection::BaseType
-    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflect::BaseType
+    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
@@ -499,23 +499,23 @@ impl Definition {
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
-            impl#impl_gens ::juniper::macros::reflection::BaseType<#scalar> for #ty
+            impl#impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
                 #where_clause
             {
-                const NAME: ::juniper::macros::reflection::Type = #name;
+                const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
-            impl#impl_gens ::juniper::macros::reflection::BaseSubTypes<#scalar> for #ty
+            impl#impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Types =
-                    &[<Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
-            impl#impl_gens ::juniper::macros::reflection::WrappedType<#scalar> for #ty
+            impl#impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         }
     }

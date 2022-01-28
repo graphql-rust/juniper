@@ -791,7 +791,7 @@ mod fallible_field {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -813,7 +813,7 @@ mod fallible_field {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -835,7 +835,7 @@ mod fallible_field {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -858,8 +858,6 @@ mod fallible_field {
 
     #[tokio::test]
     async fn has_correct_graphql_type() {
-        let schema = schema(QueryRoot::Human);
-
         const DOC: &str = r#"{
             __type(name: "Character") {
                 name
@@ -876,6 +874,8 @@ mod fallible_field {
             }
         }"#;
 
+        let schema = schema(QueryRoot::Human);
+
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
@@ -885,7 +885,7 @@ mod fallible_field {
                     "fields": [{
                         "name": "id",
                         "type": {"kind": "NON_NULL", "ofType": {"name": "String"}},
-                    }]
+                    }],
                 }}),
                 vec![],
             )),
@@ -949,7 +949,7 @@ mod generic {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -971,7 +971,7 @@ mod generic {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -993,7 +993,7 @@ mod generic {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -1087,7 +1087,7 @@ mod argument {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         let schema = schema(QueryRoot);
 
         for (input, expected) in &[
@@ -1117,8 +1117,6 @@ mod argument {
 
     #[tokio::test]
     async fn camelcases_name() {
-        let schema = schema(QueryRoot);
-
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1129,6 +1127,9 @@ mod argument {
                 }
             }
         }"#;
+
+        let schema = schema(QueryRoot);
+
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
@@ -1137,11 +1138,11 @@ mod argument {
                     "args": [
                         {"name": "isNumber"},
                     ],
-                },{
+                }, {
                     "name": "idWide2",
                     "args": [
                         {"name": "isNumber"},
-                        {"name": "async"}
+                        {"name": "async"},
                     ],
                 }]}}),
                 vec![],
@@ -1151,8 +1152,6 @@ mod argument {
 
     #[tokio::test]
     async fn has_no_description() {
-        let schema = schema(QueryRoot);
-
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1162,6 +1161,8 @@ mod argument {
                 }
             }
         }"#;
+
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -1177,8 +1178,6 @@ mod argument {
 
     #[tokio::test]
     async fn has_no_defaults() {
-        let schema = schema(QueryRoot);
-
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1188,6 +1187,8 @@ mod argument {
                 }
             }
         }"#;
+
+        let schema = schema(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -1868,7 +1869,7 @@ mod explicit_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -1890,7 +1891,7 @@ mod explicit_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -1912,7 +1913,7 @@ mod explicit_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -1992,7 +1993,7 @@ mod custom_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2014,7 +2015,7 @@ mod custom_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2036,7 +2037,7 @@ mod custom_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -2114,7 +2115,7 @@ mod explicit_generic_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2136,7 +2137,7 @@ mod explicit_generic_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2158,7 +2159,7 @@ mod explicit_generic_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -2236,7 +2237,7 @@ mod bounded_generic_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2258,7 +2259,7 @@ mod bounded_generic_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2280,7 +2281,7 @@ mod bounded_generic_scalar {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -2391,7 +2392,7 @@ mod explicit_custom_context {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2413,7 +2414,7 @@ mod explicit_custom_context {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2543,7 +2544,7 @@ mod inferred_custom_context_from_field {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2566,7 +2567,7 @@ mod inferred_custom_context_from_field {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2701,7 +2702,7 @@ mod executor {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2723,7 +2724,7 @@ mod executor {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2947,7 +2948,7 @@ mod field_return_subtyping {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2969,7 +2970,7 @@ mod field_return_subtyping {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2991,7 +2992,7 @@ mod field_return_subtyping {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
@@ -3098,7 +3099,7 @@ mod field_return_union_subtyping {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -3116,14 +3117,18 @@ mod field_return_union_subtyping {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth", "keyFeature": {"value": 10}}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                    "keyFeature": {"value": 10},
+                }}),
                 vec![],
             )),
         );
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -3141,14 +3146,18 @@ mod field_return_union_subtyping {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run", "keyFeature": {"value": 42}}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                    "keyFeature": {"value": 42},
+                }}),
                 vec![],
             )),
         );
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_fields() {
         const DOC: &str = r#"{
             character {
                 id
@@ -3174,8 +3183,11 @@ mod field_return_union_subtyping {
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
-                    graphql_value!({"character": {"id": expected_id, "keyFeature": {"value": expected_val}}}),
-                    vec![]
+                    graphql_value!({"character": {
+                        "id": expected_id,
+                        "keyFeature": {"value": expected_val},
+                    }}),
+                    vec![],
                 )),
             );
         }
@@ -3241,7 +3253,7 @@ mod nullable_argument_subtyping {
     }
 
     #[tokio::test]
-    async fn enum_resolves_human() {
+    async fn resolves_human() {
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -3263,7 +3275,7 @@ mod nullable_argument_subtyping {
     }
 
     #[tokio::test]
-    async fn enum_resolves_droid() {
+    async fn resolves_droid() {
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -3285,7 +3297,7 @@ mod nullable_argument_subtyping {
     }
 
     #[tokio::test]
-    async fn enum_resolves_id_field() {
+    async fn resolves_id_field() {
         const DOC: &str = r#"{
             character {
                 id
