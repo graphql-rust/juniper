@@ -270,7 +270,7 @@ impl ToTokens for Definition {
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
-        self.impl_traits_for_reflection_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
     }
 }
 
@@ -490,7 +490,7 @@ impl Definition {
     /// [`BaseType`]: juniper::macros::reflect::BaseType
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
+    fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ty = &self.impl_for_type;
         let scalar = &self.scalar;
         let name = &self.name;

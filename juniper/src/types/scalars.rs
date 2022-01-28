@@ -276,11 +276,13 @@ where
 }
 
 #[crate::graphql_scalar(name = "Boolean")]
-impl<S> GraphQLScalar for bool
+impl<S> GraphQLScalar<S> for bool
 where
     S: ScalarValue,
 {
-    fn resolve(&self) -> Value {
+    type Error = String;
+
+    fn to_output(&self) -> Value<S> {
         Value::scalar(*self)
     }
 

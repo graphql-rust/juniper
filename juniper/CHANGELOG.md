@@ -21,6 +21,13 @@
   - Remove necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching its fields).
   - Forbid default impls on non-ignored trait methods.
   - Support coercion of additional nullable arguments and return sub-typing on implementer.
+- Redesign `#[graphql_scalar]` macro: ([#1014](https://github.com/graphql-rust/juniper/pull/1014))
+  - Support generic scalars.
+  - Introduce actual `GraphQLScalar` trait.
+    - Add `Error` associated type to the `GraphQLScalar` trait.
+    - Rename `resolve` method to `to_output`.
+    - Rename `from_input_value` method to `from_input`.
+    - Rename `from_str` method to `parse_token`.
 
 ## Features
 

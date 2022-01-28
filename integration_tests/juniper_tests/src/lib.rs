@@ -37,7 +37,37 @@ mod pre_parse;
 /// Common utilities used across tests.
 pub(crate) mod util {
     use futures::StreamExt as _;
-    use juniper::{graphql_value, ExecutionError, GraphQLError, ScalarValue, Value, ValuesStream};
+    use juniper::{
+        graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError,
+        GraphQLError, GraphQLType, RootNode, ScalarValue, Value, ValuesStream,
+    };
+
+    pub(crate) fn schema<'q, C, Q>(
+        query_root: Q,
+    ) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
+    where
+        Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
+    {
+        RootNode::new(
+            query_root,
+            EmptyMutation::<C>::new(),
+            EmptySubscription::<C>::new(),
+        )
+    }
+
+    pub(crate) fn schema_with_scalar<'q, S, C, Q>(
+        query_root: Q,
+    ) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
+    where
+        Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
+        S: ScalarValue + 'q,
+    {
+        RootNode::new_with_scalar_value(
+            query_root,
+            EmptyMutation::<C>::new(),
+            EmptySubscription::<C>::new(),
+        )
+    }
 
     /// Extracts a single next value from the result returned by
     /// [`juniper::resolve_into_stream()`] and transforms it into a regular
