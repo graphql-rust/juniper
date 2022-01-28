@@ -172,6 +172,13 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             );
 
             for frag_name2 in &fragment_names[i + 1..] {
+                // Prevent infinite fragment recursion. This case is
+                // caught by fragment validators, but because the validation is
+                // done in parallel we can't rely on fragments being
+                // non-recursive here.
+                if frag_name1 == frag_name2 {
+                    continue;
+                }
                 self.collect_conflicts_between_fragments(
                     &mut conflicts,
                     frag_name1,
@@ -195,6 +202,10 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     ) where
         S: ScalarValue,
     {
+        // Prevent infinite fragment recursion. This case is
+        // caught by fragment validators, but because the validation is
+        // done in parallel we can't rely on fragments being
+        // non-recursive here.
         if fragment_name1 == fragment_name2 {
             return;
         }
@@ -282,6 +293,13 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         self.collect_conflicts_between(conflicts, mutually_exclusive, field_map, &field_map2, ctx);
 
         for fragment_name2 in fragment_names2 {
+            // Prevent infinite fragment recursion. This case is
+            // caught by fragment validators, but because the validation is
+            // done in parallel we can't rely on fragments being
+            // non-recursive here.
+            if fragment_name == fragment_name2 {
+                return;
+            }
             self.collect_conflicts_between_fields_and_fragment(
                 conflicts,
                 field_map,
@@ -2263,6 +2281,26 @@ mod tests {
                 }
               }
             }
+        "#,
+        );
+    }
+
+    #[test]
+    fn handles_recursive_fragments() {
+        expect_passes_rule_with_schema::<
+            _,
+            EmptyMutation<()>,
+            EmptySubscription<()>,
+            _,
+            _,
+            DefaultScalarValue,
+        >(
+            QueryRoot,
+            EmptyMutation::new(),
+            EmptySubscription::new(),
+            factory,
+            r#"
+            fragment f on Query { ...f }
         "#,
         );
     }

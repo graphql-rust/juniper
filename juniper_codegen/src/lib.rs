@@ -359,8 +359,8 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// Specifying multiple `#[graphql_interface]` attributes on the same definition
 /// is totally okay. They all will be treated as a single attribute.
 ///
-/// [GraphQL interfaces][1] are more like Go's structural interfaces, while
-/// Rust's traits are more like typeclasses. Using `impl Trait` isn't an
+/// [GraphQL interfaces][1] are more like structurally-typed interfaces, while
+/// Rust's traits are more like type classes. Using `impl Trait` isn't an
 /// option, so you have to cover all trait's methods with type's fields or
 /// impl block. But no one is stopping you from additionally implementing trait
 /// manually.
@@ -370,7 +370,8 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// concrete implementers_, while in Rust, a trait is an _abstraction only_ and
 /// you need a separate type to downcast into a concrete implementer, like enum
 /// or [trait object][3], because trait doesn't represent a type itself.
-/// Macro uses Rust enum to represent a value type of [GraphQL interface][1].
+/// Macro uses Rust enums only to represent a value type of a
+/// [GraphQL interface][1].
 ///
 /// ```
 /// use juniper::{graphql_interface, GraphQLObject};

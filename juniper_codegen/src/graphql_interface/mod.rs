@@ -306,7 +306,7 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_traits_for_reflection_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
         self.impl_field_meta_tokens().to_tokens(into);
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
@@ -314,7 +314,7 @@ impl ToTokens for Definition {
 }
 
 impl Definition {
-    /// Generates enum describing all [`implementers`].
+    /// Generates enum describing all the [`implementers`].
     ///
     /// [`implementers`]: Self::implementers
     #[must_use]
@@ -329,7 +329,7 @@ impl Definition {
             .enumerate()
             .map::<syn::GenericParam, _>(|(id, _)| {
                 let par = format_ident!("__I{}", id);
-                parse_quote!( #par )
+                parse_quote! { #par }
             });
 
         let variants_idents = self
@@ -403,27 +403,33 @@ impl Definition {
             quote! { __Phantom(#(#phantom_params),*) }
         });
 
-        let from_impls = self.implementers.iter().zip(variants_idents.clone()).map(
-            |(ty, ident)| {
-                quote! {
-                    impl#trait_impl_gens ::std::convert::From<#ty> for #alias_ident#trait_ty_gens
-                        #trait_where_clause
-                    {
-                        fn from(v: #ty) -> Self {
-                            Self::#ident(v)
+        let from_impls =
+            self.implementers
+                .iter()
+                .zip(variants_idents.clone())
+                .map(|(ty, ident)| {
+                    quote! {
+                        #[automatically_derived]
+                        impl#trait_impl_gens ::std::convert::From<#ty>
+                            for #alias_ident#trait_ty_gens
+                            #trait_where_clause
+                        {
+                            fn from(v: #ty) -> Self {
+                                Self::#ident(v)
+                            }
                         }
                     }
-                }
-            },
-        );
+                });
 
         quote! {
+            #[automatically_derived]
             #[derive(Clone, Copy, Debug)]
             #vis enum #enum_ident#enum_gens {
                 #(#variants_idents(#variant_gens_pars),)*
                 #phantom_variant
             }
 
+            #[automatically_derived]
             #vis type #alias_ident#enum_alias_gens =
                 #enum_ident<#(#enum_to_alias_gens),*>;
 
@@ -452,8 +458,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar> for
-                #ty#ty_generics
+            impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar>
+                for #ty#ty_generics
                 #where_clause
             {
                 fn mark() {
@@ -489,8 +495,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for
-                #ty#ty_generics
+            impl#impl_generics ::juniper::marker::IsOutputType<#scalar>
+                for #ty#ty_generics
                 #where_clause
             {
                 fn mark() {
@@ -583,9 +589,9 @@ impl Definition {
             let name = &f.name;
             Some(quote! {
                 #name => {
-                    ::juniper::macros::reflection::Field::<
+                    ::juniper::macros::reflect::Field::<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
                     >::call(self, info, args, executor)
                 }
             })
@@ -664,9 +670,9 @@ impl Definition {
             let name = &f.name;
             quote! {
                 #name => {
-                    ::juniper::macros::reflection::AsyncField::<
+                    ::juniper::macros::reflect::AsyncField::<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#name) }
+                        { ::juniper::macros::reflect::fnv1a128(#name) }
                     >::call(self, info, args, executor)
                 }
             }
@@ -711,13 +717,13 @@ impl Definition {
     /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`],
     /// [`WrappedType`] and [`Fields`] traits for this [GraphQL interface][1].
     ///
-    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
-    /// [`BaseType`]: juniper::macros::reflection::BaseType
-    /// [`Fields`]: juniper::macros::reflection::Fields
-    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflect::BaseType
+    /// [`Fields`]: juniper::macros::reflect::Fields
+    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     #[must_use]
-    fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
+    fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let implementers = &self.implementers;
         let scalar = &self.scalar;
@@ -730,38 +736,38 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::BaseType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const NAME: ::juniper::macros::reflection::Type = #name;
+                const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::BaseSubTypes<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Types = &[
-                    <Self as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
-                    #(<#implementers as ::juniper::macros::reflection::BaseType<#scalar>>::NAME),*
+                const NAMES: ::juniper::macros::reflect::Types = &[
+                    <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                    #(<#implementers as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
                 ];
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::WrappedType<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const VALUE: ::juniper::macros::reflection::WrappedValue = 1;
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflection::Fields<#scalar>
+            impl#impl_generics ::juniper::macros::reflect::Fields<#scalar>
                 for #ty#ty_generics
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflection::Names = &[#(#fields),*];
+                const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
             }
         }
     }
@@ -769,7 +775,7 @@ impl Definition {
     /// Returns generated code implementing [`FieldMeta`] for each field of this
     /// [GraphQL interface][1].
     ///
-    /// [`FieldMeta`]: juniper::macros::reflection::FieldMeta
+    /// [`FieldMeta`]: juniper::macros::reflect::FieldMeta
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_field_meta_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -799,26 +805,27 @@ impl Definition {
 
                 quote! {
                     #[allow(non_snake_case)]
-                    impl#impl_generics ::juniper::macros::reflection::FieldMeta<
+                    #[automatically_derived]
+                    impl#impl_generics ::juniper::macros::reflect::FieldMeta<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#field_name) }
+                        { ::juniper::macros::reflect::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
                         type Context = #context;
                         type TypeInfo = ();
-                        const TYPE: ::juniper::macros::reflection::Type =
-                            <#return_ty as ::juniper::macros::reflection::BaseType<#scalar>>::NAME;
-                        const SUB_TYPES: ::juniper::macros::reflection::Types =
-                            <#return_ty as ::juniper::macros::reflection::BaseSubTypes<#scalar>>::NAMES;
-                        const WRAPPED_VALUE: ::juniper::macros::reflection::WrappedValue =
-                            <#return_ty as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE;
+                        const TYPE: ::juniper::macros::reflect::Type =
+                            <#return_ty as ::juniper::macros::reflect::BaseType<#scalar>>::NAME;
+                        const SUB_TYPES: ::juniper::macros::reflect::Types =
+                            <#return_ty as ::juniper::macros::reflect::BaseSubTypes<#scalar>>::NAMES;
+                        const WRAPPED_VALUE: ::juniper::macros::reflect::WrappedValue =
+                            <#return_ty as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE;
                         const ARGUMENTS: &'static [(
-                            ::juniper::macros::reflection::Name,
-                            ::juniper::macros::reflection::Type,
-                            ::juniper::macros::reflection::WrappedValue,
+                            ::juniper::macros::reflect::Name,
+                            ::juniper::macros::reflect::Type,
+                            ::juniper::macros::reflect::WrappedValue,
                         )] = &[#((
                             #args_names,
-                            <#args_tys as ::juniper::macros::reflection::BaseType<#scalar>>::NAME,
-                            <#args_tys as ::juniper::macros::reflection::WrappedType<#scalar>>::VALUE,
+                            <#args_tys as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                            <#args_tys as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE,
                         )),*];
                     }
                 }
@@ -829,7 +836,7 @@ impl Definition {
     /// Returns generated code implementing [`Field`] trait for each field of
     /// this [GraphQL interface][1].
     ///
-    /// [`Field`]: juniper::macros::reflection::Field
+    /// [`Field`]: juniper::macros::reflect::Field
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -864,9 +871,10 @@ impl Definition {
 
                 quote! {
                     #[allow(non_snake_case)]
-                    impl#impl_generics ::juniper::macros::reflection::Field<
+                    #[automatically_derived]
+                    impl#impl_generics ::juniper::macros::reflect::Field<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#field_name) }
+                        { ::juniper::macros::reflect::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
                         fn call(
                             &self,
@@ -883,9 +891,9 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    <_ as ::juniper::macros::reflection::Field::<
+                                    <_ as ::juniper::macros::reflect::Field::<
                                         #scalar,
-                                        { ::juniper::macros::reflection::fnv1a128(#field_name) },
+                                        { ::juniper::macros::reflect::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
                                 })*
                                 #unreachable_arm
@@ -900,7 +908,7 @@ impl Definition {
     /// Returns generated code implementing [`AsyncField`] trait for each field
     /// of this [GraphQL interface][1].
     ///
-    /// [`AsyncField`]: juniper::macros::reflection::AsyncField
+    /// [`AsyncField`]: juniper::macros::reflect::AsyncField
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     fn impl_async_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -935,9 +943,10 @@ impl Definition {
 
                 quote! {
                     #[allow(non_snake_case)]
-                    impl#impl_generics ::juniper::macros::reflection::AsyncField<
+                    #[automatically_derived]
+                    impl#impl_generics ::juniper::macros::reflect::AsyncField<
                         #scalar,
-                        { ::juniper::macros::reflection::fnv1a128(#field_name) }
+                        { ::juniper::macros::reflect::fnv1a128(#field_name) }
                     > for #ty#ty_generics #where_clause {
                         fn call<'b>(
                             &'b self,
@@ -954,9 +963,9 @@ impl Definition {
                                         #field_name,
                                     );
 
-                                    <_ as ::juniper::macros::reflection::AsyncField<
+                                    <_ as ::juniper::macros::reflect::AsyncField<
                                         #scalar,
-                                        { ::juniper::macros::reflection::fnv1a128(#field_name) },
+                                        { ::juniper::macros::reflect::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
                                 })*
                                 #unreachable_arm
@@ -1038,7 +1047,7 @@ impl Definition {
     }
 
     /// Returns generated code for the [`GraphQLValue::resolve_into_type`][0]
-    /// method, which downcasts this enum into its underlying
+    /// method, which resolves this enum into its underlying
     /// [`implementers`][1] type synchronously.
     ///
     /// [0]: juniper::GraphQLValue::resolve_into_type
@@ -1068,8 +1077,8 @@ impl Definition {
         }
     }
 
-    /// Returns trait generics replaced with default values for usage in `const`
-    /// context.
+    /// Returns trait generics replaced with the default values for usage in a
+    /// `const` context.
     #[must_use]
     fn const_trait_generics(&self) -> syn::PathArguments {
         struct GenericsForConst(syn::AngleBracketedGenericArguments);
@@ -1077,10 +1086,10 @@ impl Definition {
         impl Visit<'_> for GenericsForConst {
             fn visit_generic_param(&mut self, param: &syn::GenericParam) {
                 let arg = match param {
-                    syn::GenericParam::Lifetime(_) => parse_quote!( 'static ),
+                    syn::GenericParam::Lifetime(_) => parse_quote! { 'static },
                     syn::GenericParam::Type(ty) => {
                         if ty.default.is_none() {
-                            parse_quote!(::juniper::DefaultScalarValue)
+                            parse_quote! { ::juniper::DefaultScalarValue }
                         } else {
                             return;
                         }
@@ -1089,7 +1098,7 @@ impl Definition {
                         if c.default.is_none() {
                             // This hack works because only `min_const_generics`
                             // are enabled for now.
-                            // TODO: replace this once full `const_generics` are
+                            // TODO: Replace this once full `const_generics` are
                             //       available.
                             //       Maybe with `<_ as Default>::default()`?
                             parse_quote!({ 0_u8 as _ })

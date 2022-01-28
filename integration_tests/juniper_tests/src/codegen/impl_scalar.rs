@@ -3,34 +3,11 @@ use std::fmt;
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
     execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, DefaultScalarValue,
-    EmptyMutation, EmptySubscription, GraphQLScalar, GraphQLType, InputValue, ParseScalarResult,
-    ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
+    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue,
+    Value,
 };
 
-fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
-where
-    Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
-{
-    RootNode::new(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
-}
-
-fn schema_with_scalar<'q, S, C, Q>(
-    query_root: Q,
-) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
-where
-    Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-    S: ScalarValue + 'q,
-{
-    RootNode::new_with_scalar_value(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
-}
+use crate::util::{schema, schema_with_scalar};
 
 mod trivial {
     use super::*;
@@ -39,6 +16,84 @@ mod trivial {
 
     #[graphql_scalar]
     impl GraphQLScalar for Counter {
+        type Error = String;
+
+        fn to_output(&self) -> Value {
+            Value::scalar(self.0)
+        }
+
+        fn from_input(v: &InputValue) -> Result<Self, Self::Error> {
+            v.as_int_value()
+                .map(Self)
+                .ok_or_else(|| format!("Expected `Int`, found: {}", v))
+        }
+
+        fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
+            <i32 as ParseScalarValue>::from_str(value)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn counter(value: Counter) -> Counter {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_counter() {
+        const DOC: &str = r#"{ counter(value: 0) }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+        );
+    }
+}
+
+mod renamed_trait {
+    use super::{GraphQLScalar as CustomGraphQLScalar, *};
+
+    struct Counter(i32);
+
+    #[graphql_scalar]
+    impl CustomGraphQLScalar for Counter {
         type Error = String;
 
         fn to_output(&self) -> Value {
