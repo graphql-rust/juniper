@@ -3,13 +3,13 @@
 # release config.
 
 [tasks.release]
-args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "--execute", "${RELEASE_LEVEL}"]
 
 [tasks.release-dry-run]
-args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "--dry-run", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "--no-confirm", "--no-publish", "--no-push", "--no-tag", "${RELEASE_LEVEL}"]
 
 [tasks.release-local-test]
-args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "--no-confirm", "${RELEASE_LEVEL}"]
 
 [env]
 CARGO_MAKE_CARGO_ALL_FEATURES = ""

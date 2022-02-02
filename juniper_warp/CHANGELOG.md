@@ -6,6 +6,10 @@
 
 - Compatibility with the latest `juniper`.
 
+# [[0.6.5] 2022-01-26](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-v0.6.5)
+
+- Compatibility with the latest `juniper`.
+
 # [[0.6.4] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.4)
 
 - Compatibility with the latest `juniper`.
