@@ -4,7 +4,7 @@
 //! You should not depend on juniper_codegen directly.
 //! You only need the `juniper` crate.
 
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.8")]
+#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.9")]
 #![recursion_limit = "1024"]
 
 mod result;
@@ -495,7 +495,7 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 /// struct UserID(String);
 ///
 /// #[juniper::graphql_scalar(
-///     // You can rename the type for GraphQL by specifying the name here.    
+///     // You can rename the type for GraphQL by specifying the name here.
 ///     name = "MyName",
 ///     // You can also specify a description here.
 ///     // If present, doc comments will be ignored.
