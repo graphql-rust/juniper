@@ -13,13 +13,14 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
 }
 
+// TODO: revisit this doc, once `GraphQLScalarValue` macro is re-implemented.
 /// A trait marking a type that could be used as internal representation of
 /// scalar values in juniper
 ///
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits their
 /// needs.
-/// There is a custom derive (`#[derive(juniper::GraphQLScalar)]`) available that implements
+/// There is a custom derive (`#[derive(juniper::GraphQLScalarValue)]`) available that implements
 /// most of the required traits automatically for a enum representing a scalar value.
 /// However, [`Serialize`](trait@serde::Serialize) and [`Deserialize`](trait@serde::Deserialize)
 /// implementations are expected to be provided.

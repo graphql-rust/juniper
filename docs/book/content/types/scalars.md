@@ -276,6 +276,8 @@ mod string_or_int {
 # fn main() {}
 ```
 
+---
+
 ### `#[graphql_scalar]` attribute
 
 For more complex situations where you also need custom parsing or validation,

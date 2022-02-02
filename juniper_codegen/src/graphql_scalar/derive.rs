@@ -295,7 +295,7 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(span),
-                            ParseToken::Delegate(parsed_types),
+                            ParseToken::Delegated(parsed_types),
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -403,7 +403,7 @@ impl ToTokens for Definition {
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
         self.impl_graphql_scalar_tokens().to_tokens(into);
-        self.impl_traits_for_reflection_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
     }
 }
 
@@ -690,7 +690,7 @@ impl Definition {
     /// [`BaseType`]: juniper::macros::reflection::BaseType
     /// [`WrappedType`]: juniper::macros::reflection::WrappedType
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    fn impl_traits_for_reflection_tokens(&self) -> TokenStream {
+    fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
         let name = &self.name;
@@ -972,7 +972,7 @@ enum ParseToken {
     /// first success.
     ///
     /// [`ParseScalarValue`]: juniper::ParseScalarValue
-    Delegate(Vec<syn::Type>),
+    Delegated(Vec<syn::Type>),
 }
 
 impl ParseToken {
@@ -984,7 +984,7 @@ impl ParseToken {
             ParseToken::Custom(parse_token) => {
                 quote! { #parse_token(token) }
             }
-            ParseToken::Delegate(delegated) => delegated
+            ParseToken::Delegated(delegated) => delegated
                 .iter()
                 .fold(None, |acc, ty| {
                     acc.map_or_else(

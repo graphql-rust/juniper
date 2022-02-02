@@ -28,6 +28,7 @@
     - Rename `resolve` method to `to_output`.
     - Rename `from_input_value` method to `from_input`.
     - Rename `from_str` method to `parse_token`.
+- Split `#[derive(GraphQLScalarValue)]` into `#[derive(GraphQLScalar)]` and `#[derive(GraphQLScalarValue)]` macros: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
 
 ## Features
 
