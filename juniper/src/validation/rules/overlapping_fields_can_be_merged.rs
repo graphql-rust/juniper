@@ -33,6 +33,7 @@ struct PairSet<'a> {
     data: HashMap<&'a str, HashMap<&'a str, bool>>,
 }
 
+#[derive(Debug)]
 struct OrderedMap<K, V> {
     data: HashMap<K, V>,
     insert_order: Vec<K>,
@@ -172,13 +173,6 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             );
 
             for frag_name2 in &fragment_names[i + 1..] {
-                // Prevent infinite fragment recursion. This case is
-                // caught by fragment validators, but because the validation is
-                // done in parallel we can't rely on fragments being
-                // non-recursive here.
-                if frag_name1 == frag_name2 {
-                    continue;
-                }
                 self.collect_conflicts_between_fragments(
                     &mut conflicts,
                     frag_name1,
@@ -202,10 +196,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     ) where
         S: ScalarValue,
     {
-        // Prevent infinite fragment recursion. This case is
-        // caught by fragment validators, but because the validation is
-        // done in parallel we can't rely on fragments being
-        // non-recursive here.
+        // Early return on fragment recursion, as it makes no sense.
+        // Fragment recursions are prevented by `no_fragment_cycles` validator.
         if fragment_name1 == fragment_name2 {
             return;
         }
@@ -293,10 +285,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         self.collect_conflicts_between(conflicts, mutually_exclusive, field_map, &field_map2, ctx);
 
         for fragment_name2 in fragment_names2 {
-            // Prevent infinite fragment recursion. This case is
-            // caught by fragment validators, but because the validation is
-            // done in parallel we can't rely on fragments being
-            // non-recursive here.
+            // Early return on fragment recursion, as it makes no sense.
+            // Fragment recursions are prevented by `no_fragment_cycles` validator.
             if fragment_name == fragment_name2 {
                 return;
             }
@@ -2275,26 +2265,6 @@ mod tests {
                 }
               }
             }
-        "#,
-        );
-    }
-
-    #[test]
-    fn handles_recursive_fragments() {
-        expect_passes_rule_with_schema::<
-            _,
-            EmptyMutation<()>,
-            EmptySubscription<()>,
-            _,
-            _,
-            DefaultScalarValue,
-        >(
-            QueryRoot,
-            EmptyMutation::new(),
-            EmptySubscription::new(),
-            factory,
-            r#"
-            fragment f on Query { ...f }
         "#,
         );
     }

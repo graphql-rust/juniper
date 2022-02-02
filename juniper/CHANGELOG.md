@@ -2,6 +2,10 @@
 
 - No changes yet
 
+# [[0.15.9] 2022-02-02](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.9)
+
+- Fix infinite recursion on malformed queries with nested recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
+
 # [[0.15.8] 2022-01-26](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.8)
 
 - Fix panic on malformed queries with recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
