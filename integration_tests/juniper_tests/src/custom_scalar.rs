@@ -20,6 +20,7 @@ pub(crate) enum MyScalarValue {
     Boolean(bool),
 }
 
+// TODO: replace all underlying `From` impls with `GraphQLScalarValue` macro.
 impl From<i32> for MyScalarValue {
     fn from(v: i32) -> Self {
         Self::Int(v)

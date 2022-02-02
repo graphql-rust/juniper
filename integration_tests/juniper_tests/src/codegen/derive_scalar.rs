@@ -2,35 +2,11 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, GraphQLScalar, GraphQLType, InputValue, ParseScalarResult, ParseScalarValue,
-    RootNode, ScalarToken, ScalarValue, Value,
+    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, GraphQLScalar,
+    InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
-fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
-where
-    Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
-{
-    RootNode::new(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
-}
-
-fn schema_with_scalar<'q, S, C, Q>(
-    query_root: Q,
-) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
-where
-    Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-    S: ScalarValue + 'q,
-{
-    RootNode::new_with_scalar_value(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
-}
+use crate::util::{schema, schema_with_scalar};
 
 mod trivial_unnamed {
     use super::*;
@@ -451,12 +427,12 @@ mod generic_with_all_resolvers {
 
     #[derive(GraphQLScalar)]
     #[graphql(
-        to_output_with = Self::to_output,
-        from_input_with = Self::from_input,
-        from_input_err = String,
+        to_output_with = custom_date_time::to_output,
+        from_input_with = custom_date_time::from_input,
+        from_input_err = custom_date_time::Error,
     )]
     #[graphql(
-        parse_token_with = Self::parse_token,
+        parse_token_with = custom_date_time::parse_token,
         specified_by_url = "https://tools.ietf.org/html/rfc3339"
     )]
     struct CustomDateTime<Tz>
@@ -468,24 +444,31 @@ mod generic_with_all_resolvers {
         _unused: (),
     }
 
-    impl<S, Tz> GraphQLScalar<S> for CustomDateTime<Tz>
-    where
-        S: ScalarValue,
-        Tz: From<Utc> + TimeZone,
-        Tz::Offset: fmt::Display,
-    {
-        type Error = String;
+    mod custom_date_time {
+        use super::*;
 
-        fn to_output(&self) -> Value<S> {
-            Value::scalar(self.dt.to_rfc3339())
+        pub(super) type Error = String;
+
+        pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+        where
+            S: ScalarValue,
+            Tz: From<Utc> + TimeZone,
+            Tz::Offset: fmt::Display,
+        {
+            Value::scalar(v.dt.to_rfc3339())
         }
 
-        fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, Error>
+        where
+            S: ScalarValue,
+            Tz: From<Utc> + TimeZone,
+            Tz::Offset: fmt::Display,
+        {
             v.as_string_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .and_then(|s| {
                     DateTime::parse_from_rfc3339(s)
-                        .map(|dt| Self {
+                        .map(|dt| CustomDateTime {
                             dt: dt.with_timezone(&Tz::from(Utc)),
                             _unused: (),
                         })
@@ -493,7 +476,111 @@ mod generic_with_all_resolvers {
                 })
         }
 
-        fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        pub(super) fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+        where
+            S: ScalarValue,
+        {
+            <String as ParseScalarValue<S>>::from_str(value)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_custom_date_time() {
+        const DOC: &str = r#"{ dateTime(value: "1996-12-19T16:39:57-08:00") }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"dateTime": "1996-12-20T00:39:57+00:00"}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_specified_by_url() {
+        const DOC: &str = r#"{
+            __type(name: "CustomDateTime") {
+                specifiedByUrl
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc3339"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod generic_with_module {
+    use super::*;
+
+    #[derive(GraphQLScalar)]
+    #[graphql(
+        with = custom_date_time,
+        specified_by_url = "https://tools.ietf.org/html/rfc3339"
+    )]
+    struct CustomDateTime<Tz>
+    where
+        Tz: From<Utc> + TimeZone,
+        Tz::Offset: fmt::Display,
+    {
+        dt: DateTime<Tz>,
+        _unused: (),
+    }
+
+    mod custom_date_time {
+        use super::*;
+
+        pub(super) type Error = String;
+
+        pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+        where
+            S: ScalarValue,
+            Tz: From<Utc> + TimeZone,
+            Tz::Offset: fmt::Display,
+        {
+            Value::scalar(v.dt.to_rfc3339())
+        }
+
+        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, Error>
+        where
+            S: ScalarValue,
+            Tz: From<Utc> + TimeZone,
+            Tz::Offset: fmt::Display,
+        {
+            v.as_string_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .and_then(|s| {
+                    DateTime::parse_from_rfc3339(s)
+                        .map(|dt| CustomDateTime {
+                            dt: dt.with_timezone(&Tz::from(Utc)),
+                            _unused: (),
+                        })
+                        .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
+                })
+        }
+
+        pub(super) fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+        where
+            S: ScalarValue,
+        {
             <String as ParseScalarValue<S>>::from_str(value)
         }
     }

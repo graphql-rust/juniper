@@ -40,7 +40,9 @@ crates. They are enabled via features that are on by default.
 * url::Url
 * bson::oid::ObjectId
 
-## newtype pattern
+## Custom scalars
+
+### `#[derive(GraphQLScalar)]`
 
 Often, you might need a custom scalar that just wraps an existing type.
 
@@ -56,7 +58,7 @@ pub struct UserId(i32);
 struct User {
     id: UserId,
 }
-
+#
 # fn main() {}
 ```
 
@@ -76,14 +78,14 @@ The macro also allows for more customization:
     description = "My user id description",
 )]
 pub struct UserId(i32);
-
+#
 # fn main() {}
 ```
 
 All the methods used from newtype's field can be replaced with attributes mirroring 
 [`GraphQLScalar`](https://docs.rs/juniper/*/juniper/trait.GraphQLScalar.html) methods:
 
-#### `#[graphql(to_output_with = ...)]` attribute
+#### `#[graphql(to_output_with = <fn>)]` attribute
 
 ```rust
 # use juniper::{GraphQLScalar, ScalarValue, Value};
@@ -101,7 +103,7 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 # fn main() {}
 ```
 
-#### `#[graphql(from_input_with = ..., from_input_err = ...)]` attributes
+#### `#[graphql(from_input_with = <fn>, from_input_err = <type>)]` attributes
 
 ```rust
 # use juniper::{DefaultScalarValue, GraphQLScalar, InputValue, ScalarValue};
@@ -135,9 +137,9 @@ impl UserId {
 # fn main() {}
  ```
 
-#### `#[graphql(parse_token_with = ...]` or `#[graphql(parse_token(...)]` attributes
+#### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 
- ```rust
+```rust
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]
@@ -146,7 +148,7 @@ impl UserId {
     from_input_with = from_input,
     from_input_err = String,
     parse_token_with = parse_token,
-    // ^^^^^^^^^^^^^ Can be replaced with `parse_token(String, 32)`
+    // ^^^^^^^^^^^^^ Can be replaced with `parse_token(String, i32)`
     //               which tries to parse as `String` and then as `i32`
     //               if prior fails.
 )]
@@ -177,10 +179,104 @@ fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, 
 # fn main() {}
 ```
 
-> __NOTE:__ As you can see, once you provide all 3 custom resolvers, there is no
->           need to follow newtype pattern.
+> __NOTE:__ As you can see, once you provide all 3 custom resolvers, there
+>           is no need to follow `newtype` pattern.
 
-## Custom scalars
+#### `#[graphql(with = <module>)]` attribute
+
+Instead of providing all custom resolvers, you can provide module with `to_output`, `from_input`, `parse_token` functions and `Error` struct or type alias.
+
+```rust
+# use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+#
+#[derive(GraphQLScalar)]
+#[graphql(with = string_or_int)]
+enum StringOrInt {
+    String(String),
+    Int(i32),
+}
+
+mod string_or_int {
+    # use super::*;
+    #
+    pub(super) type Error = String;
+  
+    pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        match v {
+            StringOrInt::String(str) => Value::scalar(str.to_owned()),
+            StringOrInt::Int(i) => Value::scalar(*i),
+        }
+    }
+  
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
+    where
+        S: ScalarValue,
+    {
+        v.as_string_value()
+            .map(|s| StringOrInt::String(s.to_owned()))
+            .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+    }
+  
+    pub(super) fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+    where
+        S: ScalarValue,
+    {
+        <String as GraphQLScalar<S>>::parse_token(value)
+            .or_else(|_| <i32 as GraphQLScalar<S>>::parse_token(value))
+    }
+}
+#
+# fn main() {}
+```
+
+Also, you can partially override `#[graphql(with)]` attribute with other custom scalars.
+
+```rust
+# use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+#
+#[derive(GraphQLScalar)]
+#[graphql(
+    with = string_or_int,
+    from_input_err = String,
+    parse_token(String, i32)
+)]
+enum StringOrInt {
+    String(String),
+    Int(i32),
+}
+
+mod string_or_int {
+    # use super::*;
+    #
+    pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        match v {
+            StringOrInt::String(str) => Value::scalar(str.to_owned()),
+            StringOrInt::Int(i) => Value::scalar(*i),
+        }
+    }
+  
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
+    where
+        S: ScalarValue,
+    {
+        v.as_string_value()
+            .map(|s| StringOrInt::String(s.to_owned()))
+            .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+    }
+}
+#
+# fn main() {}
+```
+
+### `#[graphql_scalar]` attribute
 
 For more complex situations where you also need custom parsing or validation,
 you can use the `graphql_scalar` proc macro.
