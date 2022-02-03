@@ -2,7 +2,10 @@ use std::{borrow::Cow, fmt};
 
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::parser::{ParseError, ScalarToken};
+use crate::{
+    parser::{ParseError, ScalarToken},
+    GraphQLScalarValue,
+};
 
 /// The result of converting a string into a scalar value
 pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;
@@ -13,224 +16,42 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
 }
 
-// TODO: revisit this doc, once `GraphQLScalarValue` macro is re-implemented.
 /// A trait marking a type that could be used as internal representation of
 /// scalar values in juniper
 ///
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits their
 /// needs.
-/// There is a custom derive (`#[derive(juniper::GraphQLScalarValue)]`) available that implements
-/// most of the required traits automatically for a enum representing a scalar value.
-/// However, [`Serialize`](trait@serde::Serialize) and [`Deserialize`](trait@serde::Deserialize)
+/// There is a custom derive (`#[derive(juniper::`[`GraphQLScalarValue`]`)]`)
+/// available that implements most of the required traits automatically for a
+/// enum representing a scalar value. However, [`Serialize`] and [`Deserialize`]
 /// implementations are expected to be provided.
 ///
 /// # Implementing a new scalar value representation
 /// The preferred way to define a new scalar value representation is
-/// defining a enum containing a variant for each type that needs to be represented
-/// at the lowest level.
-/// The following example introduces an new variant that is able to store 64 bit integers.
+/// defining a enum containing a variant for each type that needs to be
+/// represented at the lowest level.
+/// The following example introduces an new variant that is able to store 64 bit
+/// integers.
 ///
 /// ```rust
 /// # use std::{fmt, convert::TryInto as _};
-/// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::ScalarValue;
 /// #
-/// #[derive(Clone, Debug, PartialEq, Serialize)]
+/// # use serde::{de, Deserialize, Deserializer, Serialize};
+/// # use juniper::{ScalarValue, GraphQLScalarValue};
+/// #
+/// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
+///     #[graphql(as_int, as_float)]
 ///     Int(i32),
 ///     Long(i64),
+///     #[graphql(as_float)]
 ///     Float(f64),
+///     #[graphql(as_string, into_string, as_str)]
 ///     String(String),
+///     #[graphql(as_boolean)]
 ///     Boolean(bool),
-/// }
-///
-/// impl From<i32> for MyScalarValue {
-///     fn from(v: i32) -> Self {
-///         Self::Int(v)
-///     }
-/// }
-///
-/// impl From<MyScalarValue> for Option<i32> {
-///     fn from(v: MyScalarValue) -> Self {
-///         if let MyScalarValue::Int(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl<'a> From<&'a MyScalarValue> for Option<&'a i32> {
-///     fn from(v: &'a MyScalarValue) -> Self {
-///         if let MyScalarValue::Int(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl From<i64> for MyScalarValue {
-///     fn from(v: i64) -> Self {
-///         Self::Long(v)
-///     }
-/// }
-///
-/// impl From<MyScalarValue> for Option<i64> {
-///     fn from(v: MyScalarValue) -> Self {
-///         if let MyScalarValue::Long(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl<'a> From<&'a MyScalarValue> for Option<&'a i64> {
-///     fn from(v: &'a MyScalarValue) -> Self {
-///         if let MyScalarValue::Long(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl From<f64> for MyScalarValue {
-///     fn from(v: f64) -> Self {
-///         Self::Float(v)
-///     }
-/// }
-///
-/// impl From<MyScalarValue> for Option<f64> {
-///     fn from(v: MyScalarValue) -> Self {
-///         if let MyScalarValue::Float(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl<'a> From<&'a MyScalarValue> for Option<&'a f64> {
-///     fn from(v: &'a MyScalarValue) -> Self {
-///         if let MyScalarValue::Float(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl From<String> for MyScalarValue {
-///     fn from(v: String) -> Self {
-///         Self::String(v)
-///     }
-/// }
-///
-/// impl From<MyScalarValue> for Option<String> {
-///     fn from(v: MyScalarValue) -> Self {
-///         if let MyScalarValue::String(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl<'a> From<&'a MyScalarValue> for Option<&'a String> {
-///     fn from(v: &'a MyScalarValue) -> Self {
-///         if let MyScalarValue::String(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl From<bool> for MyScalarValue {
-///     fn from(v: bool) -> Self {
-///         Self::Boolean(v)
-///     }
-/// }
-///
-/// impl From<MyScalarValue> for Option<bool> {
-///     fn from(v: MyScalarValue) -> Self {
-///         if let MyScalarValue::Boolean(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl<'a> From<&'a MyScalarValue> for Option<&'a bool> {
-///     fn from(v: &'a MyScalarValue) -> Self {
-///         if let MyScalarValue::Boolean(v) = v {
-///             Some(v)
-///         } else {
-///             None
-///         }
-///     }
-/// }
-///
-/// impl fmt::Display for MyScalarValue {
-///     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-///         match self {
-///             Self::Int(v) => v.fmt(f),
-///             Self::Long(v) => v.fmt(f),
-///             Self::Float(v) => v.fmt(f),
-///             Self::String(v) => v.fmt(f),
-///             Self::Boolean(v) => v.fmt(f),
-///         }
-///     }
-/// }
-///
-/// impl ScalarValue for MyScalarValue {
-///     fn as_int(&self) -> Option<i32> {
-///         match self {
-///            Self::Int(i) => Some(*i),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_string(&self) -> Option<String> {
-///        match self {
-///            Self::String(s) => Some(s.clone()),
-///            _ => None,
-///        }
-///    }
-///
-///    fn into_string(self) -> Option<String> {
-///        match self {
-///            Self::String(s) => Some(s),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_str(&self) -> Option<&str> {
-///        match self {
-///            Self::String(s) => Some(s.as_str()),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_float(&self) -> Option<f64> {
-///        match self {
-///            Self::Int(i) => Some(f64::from(*i)),
-///            Self::Float(f) => Some(*f),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_boolean(&self) -> Option<bool> {
-///        match self {
-///            Self::Boolean(b) => Some(*b),
-///            _ => None,
-///        }
-///    }
 /// }
 ///
 /// impl<'de> Deserialize<'de> for MyScalarValue {
@@ -298,6 +119,9 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     }
 /// }
 /// ```
+///
+/// [`Deserialize`]: trait@serde::Deserialize
+/// [`Serialize`]: trait@serde::Serialize
 pub trait ScalarValue:
     fmt::Debug
     + fmt::Display
@@ -406,12 +230,13 @@ pub trait ScalarValue:
 /// These types closely follow the [GraphQL specification][0].
 ///
 /// [0]: https://spec.graphql.org/June2018
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Int
+    #[graphql(as_int, as_float)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
@@ -419,187 +244,21 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
+    #[graphql(as_float)]
     Float(f64),
 
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
     /// sequences.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-String
+    #[graphql(as_str, as_string, into_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Boolean
+    #[graphql(as_boolean)]
     Boolean(bool),
-}
-
-impl From<i32> for DefaultScalarValue {
-    fn from(v: i32) -> Self {
-        Self::Int(v)
-    }
-}
-
-impl From<DefaultScalarValue> for Option<i32> {
-    fn from(v: DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::Int(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<&'a i32> {
-    fn from(v: &'a DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::Int(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl From<f64> for DefaultScalarValue {
-    fn from(v: f64) -> Self {
-        Self::Float(v)
-    }
-}
-
-impl From<DefaultScalarValue> for Option<f64> {
-    fn from(v: DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::Float(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<&'a f64> {
-    fn from(v: &'a DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::Float(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl From<String> for DefaultScalarValue {
-    fn from(v: String) -> Self {
-        Self::String(v)
-    }
-}
-
-impl From<DefaultScalarValue> for Option<String> {
-    fn from(v: DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::String(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<&'a String> {
-    fn from(v: &'a DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::String(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl From<bool> for DefaultScalarValue {
-    fn from(v: bool) -> Self {
-        Self::Boolean(v)
-    }
-}
-
-impl From<DefaultScalarValue> for Option<bool> {
-    fn from(v: DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::Boolean(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<&'a bool> {
-    fn from(v: &'a DefaultScalarValue) -> Self {
-        if let DefaultScalarValue::Boolean(v) = v {
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-impl fmt::Display for DefaultScalarValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Int(v) => v.fmt(f),
-            Self::Float(v) => v.fmt(f),
-            Self::String(v) => v.fmt(f),
-            Self::Boolean(v) => v.fmt(f),
-        }
-    }
-}
-
-impl ScalarValue for DefaultScalarValue {
-    fn as_int(&self) -> Option<i32> {
-        match self {
-            Self::Int(i) => Some(*i),
-            _ => None,
-        }
-    }
-
-    fn as_float(&self) -> Option<f64> {
-        match self {
-            Self::Int(i) => Some(f64::from(*i)),
-            Self::Float(f) => Some(*f),
-            _ => None,
-        }
-    }
-
-    fn as_str(&self) -> Option<&str> {
-        match self {
-            Self::String(s) => Some(s.as_str()),
-            _ => None,
-        }
-    }
-
-    fn as_string(&self) -> Option<String> {
-        match self {
-            Self::String(s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
-    fn into_string(self) -> Option<String> {
-        match self {
-            Self::String(s) => Some(s),
-            _ => None,
-        }
-    }
-
-    fn as_boolean(&self) -> Option<bool> {
-        match self {
-            Self::Boolean(b) => Some(*b),
-            _ => None,
-        }
-    }
-
-    fn into_another<S: ScalarValue>(self) -> S {
-        match self {
-            Self::Int(i) => S::from(i),
-            Self::Float(f) => S::from(f),
-            Self::String(s) => S::from(s),
-            Self::Boolean(b) => S::from(b),
-        }
-    }
 }
 
 impl<'a> From<&'a str> for DefaultScalarValue {

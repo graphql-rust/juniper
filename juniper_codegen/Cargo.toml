@@ -28,3 +28,4 @@ url = "2.0"
 derive_more = "0.99.7"
 futures = "0.3"
 juniper = { version = "0.15.7", path = "../juniper" }
+serde = "1.0"

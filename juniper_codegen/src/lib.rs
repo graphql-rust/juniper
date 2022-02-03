@@ -111,6 +111,7 @@ mod derive_input_object;
 mod graphql_scalar;
 
 mod common;
+mod derive_scalar_value;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_subscription;
@@ -377,8 +378,116 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLScalar, attributes(graphql))]
-pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
+pub fn derive_scalar(input: TokenStream) -> TokenStream {
     graphql_scalar::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
+}
+
+/// `#[derive(GraphQLScalarValue)]` macro for deriving a [`ScalarValue`]
+/// implementation.
+///
+/// To derive [`ScalarValue`] on enum you should mark corresponding enum
+/// variants with `as_int`/`as_float`/`as_string`/`into_string`/`as_str`/
+/// `as_boolean` attributes (names correspond to [`ScalarValue`] required
+/// methods).
+///
+/// ```rust
+/// # use std::{fmt, convert::TryInto as _};
+/// #
+/// # use serde::{de, Deserialize, Deserializer, Serialize};
+/// # use juniper::{ScalarValue, GraphQLScalarValue};
+/// #
+/// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
+/// #[serde(untagged)]
+/// enum MyScalarValue {
+///     #[graphql(as_int, as_float)]
+///     Int(i32),
+///     Long(i64),
+///     #[graphql(as_float)]
+///     Float(f64),
+///     #[graphql(
+///         into_string,
+///         as_str,
+///         as_string = String::clone,
+///         //          ^^^^^^^^^^^^^ You can provide custom resolvers.
+///     )]
+///     String(String),
+///     #[graphql(as_boolean)]
+///     Boolean(bool),
+/// }
+///
+/// impl<'de> Deserialize<'de> for MyScalarValue {
+///     fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+///         struct Visitor;
+///
+///         impl<'de> de::Visitor<'de> for Visitor {
+///             type Value = MyScalarValue;
+///
+///             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+///                 f.write_str("a valid input value")
+///             }
+///
+///             fn visit_bool<E: de::Error>(self, b: bool) -> Result<Self::Value, E> {
+///                 Ok(MyScalarValue::Boolean(b))
+///             }
+///
+///             fn visit_i32<E: de::Error>(self, n: i32) -> Result<Self::Value, E> {
+///                 Ok(MyScalarValue::Int(n))
+///             }
+///
+///             fn visit_i64<E: de::Error>(self, n: i64) -> Result<Self::Value, E> {
+///                 if n <= i64::from(i32::MAX) {
+///                     self.visit_i32(n.try_into().unwrap())
+///                 } else {
+///                     Ok(MyScalarValue::Long(n))
+///                 }
+///             }
+///
+///             fn visit_u32<E: de::Error>(self, n: u32) -> Result<Self::Value, E> {
+///                 if n <= i32::MAX as u32 {
+///                     self.visit_i32(n.try_into().unwrap())
+///                 } else {
+///                     self.visit_u64(n.into())
+///                 }
+///             }
+///
+///             fn visit_u64<E: de::Error>(self, n: u64) -> Result<Self::Value, E> {
+///                 if n <= i64::MAX as u64 {
+///                     self.visit_i64(n.try_into().unwrap())
+///                 } else {
+///                     // Browser's `JSON.stringify()` serialize all numbers
+///                     // having no fractional part as integers (no decimal
+///                     // point), so we must parse large integers as floating
+///                     // point, otherwise we would error on transferring large
+///                     // floating point numbers.
+///                     Ok(MyScalarValue::Float(n as f64))
+///                 }
+///             }
+///
+///             fn visit_f64<E: de::Error>(self, f: f64) -> Result<Self::Value, E> {
+///                 Ok(MyScalarValue::Float(f))
+///             }
+///
+///             fn visit_str<E: de::Error>(self, s: &str) -> Result<Self::Value, E> {
+///                 self.visit_string(s.into())
+///             }
+///
+///             fn visit_string<E: de::Error>(self, s: String) -> Result<Self::Value, E> {
+///                 Ok(MyScalarValue::String(s))
+///             }
+///         }
+///
+///         de.deserialize_any(Visitor)
+///     }
+/// }
+/// ```
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
+pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
+    derive_scalar_value::expand(input.into())
         .unwrap_or_abort()
         .into()
 }
