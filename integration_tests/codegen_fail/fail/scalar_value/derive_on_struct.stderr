@@ -1,0 +1,5 @@
+error: GraphQL built-in scalars can only be derived for enums
+ --> fail/scalar_value/derive_on_struct.rs:2:1
+  |
+2 | struct ScalarValue;
+  | ^^^^^^^^^^^^^^^^^^^

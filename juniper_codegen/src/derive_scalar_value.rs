@@ -279,7 +279,8 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl#lf_impl_gen std::convert::From<&'___a #ty_ident#ty_gen> for Option<&'___a #var_ty>
+                    impl#lf_impl_gen std::convert::From<&'___a #ty_ident#ty_gen> for
+                        Option<&'___a #var_ty>
                         #where_clause
                     {
                         fn from(ty: &'___a #ty_ident#ty_gen) -> Self {

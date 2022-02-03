@@ -1,0 +1,5 @@
+error: GraphQL built-in scalars expected exactly 1 field
+ --> fail/scalar_value/multiple_unnamed_fields.rs:3:12
+  |
+3 |     Variant(u32, i64),
+  |            ^^^^^^^^^^
