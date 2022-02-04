@@ -23,7 +23,7 @@
   - Support coercion of additional nullable arguments and return sub-typing on implementer.
 - Redesign `#[derive(GraphQLScalar)]` macro: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
   - Support generic scalars.
-  - Support single named field structs.
+  - Support structs with single named field.
   - Support for overriding resolvers.
 - Redesign `#[graphql_scalar]` macro: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
   - Use on type aliases only in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rule](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules).

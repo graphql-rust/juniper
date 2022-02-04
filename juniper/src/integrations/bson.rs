@@ -4,11 +4,7 @@ use chrono::prelude::*;
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(
-    description = "ObjectId",
-    with = object_id,
-    parse_token = String,
-)]
+#[graphql_scalar(with = object_id, parse_token = String)]
 type ObjectId = bson::oid::ObjectId;
 
 mod object_id {
@@ -29,11 +25,7 @@ mod object_id {
     }
 }
 
-#[graphql_scalar(
-    description = "UtcDateTime",
-    with = utc_date_time,
-    parse_token = String,
-)]
+#[graphql_scalar(with = utc_date_time, parse_token = String)]
 type UtcDateTime = bson::DateTime;
 
 mod utc_date_time {

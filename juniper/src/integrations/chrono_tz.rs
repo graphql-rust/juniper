@@ -5,7 +5,6 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-/// Timezone
 #[graphql_scalar(with = tz, parse_token = String)]
 type Tz = chrono_tz::Tz;
 
