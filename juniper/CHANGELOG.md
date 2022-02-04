@@ -50,6 +50,14 @@
 - Support expressions in `graphql_value!` macro. ([#996](https://github.com/graphql-rust/juniper/pull/996), [#503](https://github.com/graphql-rust/juniper/issues/503))
 - List coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004](https://github.com/graphql-rust/juniper/pull/1004))
 
+# [[0.15.9] 2022-02-02](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.9)
+
+- Fix infinite recursion on malformed queries with nested recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
+
+# [[0.15.8] 2022-01-26](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.8)
+
+- Fix panic on malformed queries with recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
+
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 
 - Fix panic on spreading untyped union fragments ([#945](https://github.com/graphql-rust/juniper/issues/945))
