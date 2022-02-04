@@ -49,7 +49,7 @@ Often, you might need a custom scalar that just wraps an existing type.
 This can be done with the newtype pattern and a custom derive, similar to how
 serde supports this pattern with `#[serde(transparent)]`.
 
-```rust
+```rust,should_fail
 # extern crate juniper;
 #[derive(juniper::GraphQLScalar)]
 pub struct UserId(i32);
@@ -66,7 +66,7 @@ That's it, you can now user `UserId` in your schema.
 
 The macro also allows for more customization:
 
-```rust
+```rust,should_fail
 # extern crate juniper;
 /// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalar)]
@@ -86,7 +86,7 @@ All the methods used from newtype's field can be replaced with attributes:
 
 #### `#[graphql(to_output_with = <fn>)]` attribute
 
-```rust
+```rust,should_fail
 # use juniper::{GraphQLScalar, ScalarValue, Value};
 #
 #[derive(GraphQLScalar)]
@@ -104,7 +104,7 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 
 #### `#[graphql(from_input_with = <fn>, from_input_err = <type>)]` attributes
 
-```rust
+```rust,should_fail
 # use juniper::{DefaultScalarValue, GraphQLScalar, InputValue, ScalarValue};
 #
 #[derive(GraphQLScalar)]
@@ -138,7 +138,7 @@ impl UserId {
 
 #### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 
-```rust
+```rust,should_fail
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]
@@ -185,7 +185,7 @@ fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, 
 
 Instead of providing all custom resolvers, you can provide module with `to_output`, `from_input`, `parse_token` functions and `Error` struct or type alias.
 
-```rust
+```rust,should_fail
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]
@@ -234,7 +234,7 @@ mod string_or_int {
 
 Also, you can partially override `#[graphql(with)]` attribute with other custom scalars.
 
-```rust
+```rust,should_fail
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]

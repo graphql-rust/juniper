@@ -6,10 +6,10 @@ mod input_object;
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    graphql_interface, graphql_object, graphql_value, graphql_vars,
+    graphql_interface, graphql_object, graphql_scalar, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    GraphQLEnum, GraphQLScalar,
+    GraphQLEnum, InputValue, ScalarValue, Value,
 };
 
 #[derive(GraphQLEnum)]
@@ -19,9 +19,26 @@ enum Sample {
     Two,
 }
 
-#[derive(GraphQLScalar)]
-#[graphql(name = "SampleScalar")]
 struct Scalar(i32);
+
+#[graphql_scalar(with = sample_scalar, parse_token = i32)]
+type SampleScalar = Scalar;
+
+mod sample_scalar {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &SampleScalar) -> Value<S> {
+        Value::scalar(v.0)
+    }
+
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<SampleScalar, Error> {
+        v.as_int_value()
+            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
+            .map(Scalar)
+    }
+}
 
 /// A sample interface
 #[graphql_interface(name = "SampleInterface", for = Root)]

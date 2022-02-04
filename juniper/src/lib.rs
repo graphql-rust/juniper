@@ -115,7 +115,7 @@ pub use futures::future::{BoxFuture, LocalBoxFuture};
 // functionality automatically.
 pub use juniper_codegen::{
     graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
-    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalar, GraphQLUnion,
+    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLUnion,
 };
 
 #[doc(hidden)]

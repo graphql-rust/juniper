@@ -1,5 +1,0 @@
-error: GraphQL scalar expected exactly 1 field, e.g., Test(i32) or all custom resolvers
- --> fail/scalar/derive_multiple_unnamed_fields.rs:4:1
-  |
-4 | struct Scalar(i32, i32);
-  | ^^^^^^^^^^^^^^^^^^^^^^^^

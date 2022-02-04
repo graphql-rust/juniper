@@ -1,18 +1,24 @@
 use crate::{
     executor::Variables,
-    graphql_object, graphql_value, graphql_vars,
+    graphql_object, graphql_scalar, graphql_value, graphql_vars,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object},
     GraphQLError::ValidationError,
-    GraphQLInputObject, GraphQLScalar, InputValue, ScalarValue, Value,
+    GraphQLInputObject, InputValue, ScalarValue, Value,
 };
 
-#[derive(Debug, GraphQLScalar)]
-#[graphql(with = test_complex_scalar, parse_token = String)]
+#[derive(Debug)]
 struct TestComplexScalar;
+
+#[graphql_scalar(
+    name = "TestComplexScalar",
+    with = test_complex_scalar,
+    parse_token = String,
+)]
+type ComplexScalar = TestComplexScalar;
 
 mod test_complex_scalar {
     use super::*;

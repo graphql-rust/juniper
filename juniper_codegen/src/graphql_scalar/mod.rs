@@ -26,7 +26,6 @@ use crate::{
 };
 
 pub mod attr;
-pub mod derive;
 
 /// Available arguments behind `#[graphql]`/`#[graphql_scalar]` attributes when
 /// generating code for [GraphQL scalar][1].
@@ -64,27 +63,27 @@ struct Attr {
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified function to be used instead of
-    /// [`GraphQLScalar::to_output`].
+    /// [`ToInputValue::to_input_value`].
     ///
-    /// [`GraphQLScalar::to_output`]: juniper::GraphQLScalar::to_output
+    /// [`ToInputValue::to_input_value`]: juniper::ToInputValue::to_input_value
     to_output: Option<SpanContainer<syn::ExprPath>>,
 
     /// Explicitly specified function to be used instead of
-    /// [`GraphQLScalar::from_input`].
+    /// [`FromInputValue::from_input_value`].
     ///
-    /// [`GraphQLScalar::from_input`]: juniper::GraphQLScalar::from_input
+    /// [`FromInputValue::from_input_value`]: juniper::FromInputValue::from_input_value
     from_input: Option<SpanContainer<syn::ExprPath>>,
 
     /// Explicitly specified type to be used instead of
-    /// [`GraphQLScalar::Error`].
+    /// [`FromInputValue::Error`].
     ///
-    /// [`GraphQLScalar::Error`]: juniper::GraphQLScalar::Error
+    /// [`FromInputValue::Error`]: juniper::FromInputValue::Error
     from_input_err: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified resolver to be used instead of
-    /// [`GraphQLScalar::parse_token`].
+    /// [`ParseScalarValue::from_str`].
     ///
-    /// [`GraphQLScalar::parse_token`]: juniper::GraphQLScalar::parse_token
+    /// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
     parse_token: Option<SpanContainer<ParseToken>>,
 
     /// Explicitly specified module with all custom resolvers for
@@ -281,6 +280,7 @@ impl Attr {
 
 /// [`syn::Type`] in case of `#[graphql_scalar]` or [`syn::Ident`] in case of
 /// `#[derive(GraphQLScalar)]`.
+#[allow(dead_code)]
 #[derive(Clone)]
 enum TypeOrIdent {
     /// [`syn::Type`].
@@ -313,7 +313,7 @@ struct Definition {
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     generics: syn::Generics,
 
-    /// [`GraphQLScalarDefinition`] representing [GraphQL scalar][1].
+    /// [`GraphQLScalarMethods`] representing [GraphQL scalar][1].
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     methods: GraphQLScalarMethods,
@@ -699,6 +699,7 @@ impl VisitMut for ModifyLifetimes {
 /// Methods representing [GraphQL scalar][1].
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+#[allow(dead_code)]
 enum GraphQLScalarMethods {
     /// [GraphQL scalar][1] represented with only custom resolvers.
     ///
@@ -895,6 +896,7 @@ impl ParseToken {
 }
 
 /// Struct field to resolve not provided methods.
+#[allow(dead_code)]
 enum Field {
     /// Named [`Field`].
     Named(syn::Field),
