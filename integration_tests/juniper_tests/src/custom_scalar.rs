@@ -6,8 +6,8 @@ use juniper::{
     graphql_vars,
     parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
-    EmptyMutation, FieldResult, GraphQLScalar, InputValue, Object, ParseScalarResult, RootNode,
-    ScalarValue, Value, Variables,
+    EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
+    Value, Variables,
 };
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -275,21 +275,25 @@ impl<'de> Deserialize<'de> for MyScalarValue {
     }
 }
 
-#[graphql_scalar(name = "Long")]
-impl GraphQLScalar<MyScalarValue> for i64 {
-    type Error = String;
+#[graphql_scalar(with = long, scalar = MyScalarValue)]
+type Long = i64;
 
-    fn to_output(&self) -> Value<MyScalarValue> {
-        Value::scalar(*self)
+mod long {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output(v: &Long) -> Value<MyScalarValue> {
+        Value::scalar(*v)
     }
 
-    fn from_input(v: &InputValue<MyScalarValue>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input(v: &InputValue<MyScalarValue>) -> Result<Long, Error> {
         v.as_scalar_value::<i64>()
             .copied()
             .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {}", v))
     }
 
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, MyScalarValue> {
+    pub(super) fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, MyScalarValue> {
         if let ScalarToken::Int(v) = value {
             v.parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))

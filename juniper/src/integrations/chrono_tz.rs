@@ -3,38 +3,27 @@
 //! [`Tz`]: chrono_tz::Tz
 //! [1]: http://www.iana.org/time-zones
 
-use chrono_tz::Tz;
+use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-use crate::{
-    graphql_scalar,
-    parser::{ParseError, ScalarToken, Token},
-    value::ParseScalarResult,
-    GraphQLScalar, InputValue, ScalarValue, Value,
-};
+#[graphql_scalar(description = "Timezone", with = tz, parse_token = String)]
+type Tz = chrono_tz::Tz;
 
-#[graphql_scalar(name = "Tz", description = "Timezone")]
-impl<S: ScalarValue> GraphQLScalar<S> for Tz {
-    type Error = String;
+mod tz {
+    use super::*;
 
-    fn to_output(&self) -> Value<S> {
-        Value::scalar(self.name().to_owned())
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Tz) -> Value<S> {
+        Value::scalar(v.name().to_owned())
     }
 
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Tz, Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
                 s.parse::<Tz>()
                     .map_err(|e| format!("Failed to parse `Tz`: {}", e))
             })
-    }
-
-    fn parse_token(val: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        if let ScalarToken::String(s) = val {
-            Ok(S::from(s.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(val)))
-        }
     }
 }
 

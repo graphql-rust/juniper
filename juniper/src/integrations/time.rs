@@ -26,61 +26,47 @@ use time::{
     macros::format_description,
 };
 
-use crate::{
-    graphql_scalar,
-    parser::{ParseError, ScalarToken, Token},
-    value::ParseScalarResult,
-    GraphQLScalar, InputValue, ScalarValue, Value,
-};
-
-pub use time::{
-    Date, OffsetDateTime as DateTime, PrimitiveDateTime as LocalDateTime, Time as LocalTime,
-    UtcOffset,
-};
+use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
 /// Format of a [`Date` scalar][1].
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/date
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
+/// Date in the proleptic Gregorian calendar (without time zone).
+///
+/// Represents a description of the date (as used for birthdays, for example).
+/// It cannot represent an instant on the time-line.
+///                   
+/// [`Date` scalar][1] compliant.
+///
+/// See also [`time::Date`][2] for details.
+///
+/// [1]: https://graphql-scalars.dev/docs/scalars/date
+/// [2]: https://docs.rs/time/*/time/struct.Date.html
 #[graphql_scalar(
-    description = "Date in the proleptic Gregorian calendar (without time \
-                   zone).\
-                   \n\n\
-                   Represents a description of the date (as used for birthdays,
-                   for example). It cannot represent an instant on the \
-                   time-line.\
-                   \n\n\
-                   [`Date` scalar][1] compliant.\
-                   \n\n\
-                   See also [`time::Date`][2] for details.\
-                   \n\n\
-                   [1]: https://graphql-scalars.dev/docs/scalars/date\n\
-                   [2]: https://docs.rs/time/*/time/struct.Date.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date"
+    with = date,
+    parse_token = String,
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date",
 )]
-impl<S: ScalarValue> GraphQLScalar<S> for Date {
-    type Error = String;
+pub type Date = time::Date;
 
-    fn to_output(&self) -> Value<S> {
+mod date {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Date) -> Value<S> {
         Value::scalar(
-            self.format(DATE_FORMAT)
+            v.format(DATE_FORMAT)
                 .unwrap_or_else(|e| panic!("Failed to format `Date`: {}", e)),
         )
     }
 
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Date, Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s| Self::parse(s, DATE_FORMAT).map_err(|e| format!("Invalid `Date`: {}", e)))
-    }
-
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        if let ScalarToken::String(s) = value {
-            Ok(S::from(s.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
+            .and_then(|s| Date::parse(s, DATE_FORMAT).map_err(|e| format!("Invalid `Date`: {}", e)))
     }
 }
 
@@ -101,56 +87,49 @@ const LOCAL_TIME_FORMAT_NO_MILLIS: &[FormatItem<'_>] =
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]:[minute]");
 
-#[graphql_scalar(
-    description = "Clock time within a given date (without time zone) in \
-                   `HH:mm[:ss[.SSS]]` format.\
-                   \n\n\
-                   All minutes are assumed to have exactly 60 seconds; no \
-                   attempt is made to handle leap seconds (either positive or \
-                   negative).\
-                   \n\n\
-                   [`LocalTime` scalar][1] compliant.\
-                   \n\n\
-                   See also [`time::Time`][2] for details.\
-                   \n\n\
-                   [1]: https://graphql-scalars.dev/docs/scalars/local-time\n\
-                   [2]: https://docs.rs/time/*/time/struct.Time.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time"
-)]
-impl<S: ScalarValue> GraphQLScalar<S> for LocalTime {
-    type Error = String;
+/// Clock time within a given date (without time zone) in `HH:mm[:ss[.SSS]]`
+/// format.
+///
+/// All minutes are assumed to have exactly 60 seconds; no attempt is made to
+/// handle leap seconds (either positive or negative).
+///
+/// [`LocalTime` scalar][1] compliant.
+///
+/// See also [`time::Time`][2] for details.
+///
+/// [1]: https://graphql-scalars.dev/docs/scalars/local-time
+/// [2]: https://docs.rs/time/*/time/struct.Time.html
+#[graphql_scalar(with = local_time, parse_token = String)]
+pub type LocalTime = time::Time;
 
-    fn to_output(&self) -> Value<S> {
+mod local_time {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &LocalTime) -> Value<S> {
         Value::scalar(
-            if self.millisecond() == 0 {
-                self.format(LOCAL_TIME_FORMAT_NO_MILLIS)
+            if v.millisecond() == 0 {
+                v.format(LOCAL_TIME_FORMAT_NO_MILLIS)
             } else {
-                self.format(LOCAL_TIME_FORMAT)
+                v.format(LOCAL_TIME_FORMAT)
             }
             .unwrap_or_else(|e| panic!("Failed to format `LocalTime`: {}", e)),
         )
     }
 
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalTime, Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
                 // error to be most informative.
-                Self::parse(s, LOCAL_TIME_FORMAT_NO_MILLIS)
-                    .or_else(|_| Self::parse(s, LOCAL_TIME_FORMAT_NO_SECS))
-                    .or_else(|_| Self::parse(s, LOCAL_TIME_FORMAT))
+                LocalTime::parse(s, LOCAL_TIME_FORMAT_NO_MILLIS)
+                    .or_else(|_| LocalTime::parse(s, LOCAL_TIME_FORMAT_NO_SECS))
+                    .or_else(|_| LocalTime::parse(s, LOCAL_TIME_FORMAT))
                     .map_err(|e| format!("Invalid `LocalTime`: {}", e))
             })
-    }
-
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        if let ScalarToken::String(s) = value {
-            Ok(S::from(s.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
     }
 }
 
@@ -158,85 +137,75 @@ impl<S: ScalarValue> GraphQLScalar<S> for LocalTime {
 const LOCAL_DATE_TIME_FORMAT: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
 
-#[graphql_scalar(
-    description = "Combined date and time (without time zone) in `yyyy-MM-dd \
-                   HH:mm:ss` format.\
-                   \n\n\
-                   See also [`time::PrimitiveDateTime`][2] for details.\
-                   \n\n\
-                   [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html"
-)]
-impl<S: ScalarValue> GraphQLScalar<S> for LocalDateTime {
-    type Error = String;
+/// Combined date and time (without time zone) in `yyyy-MM-dd HH:mm:ss` format.
+///
+/// See also [`time::PrimitiveDateTime`][2] for details.
+///
+/// [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html
+#[graphql_scalar(with = local_date_time, parse_token = String)]
+pub type LocalDateTime = time::PrimitiveDateTime;
 
-    fn to_output(&self) -> Value<S> {
+mod local_date_time {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
         Value::scalar(
-            self.format(LOCAL_DATE_TIME_FORMAT)
+            v.format(LOCAL_DATE_TIME_FORMAT)
                 .unwrap_or_else(|e| panic!("Failed to format `LocalDateTime`: {}", e)),
         )
     }
 
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDateTime, Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                Self::parse(s, LOCAL_DATE_TIME_FORMAT)
+                LocalDateTime::parse(s, LOCAL_DATE_TIME_FORMAT)
                     .map_err(|e| format!("Invalid `LocalDateTime`: {}", e))
             })
     }
-
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        if let ScalarToken::String(s) = value {
-            Ok(S::from(s.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
-    }
 }
 
+/// Combined date and time (with time zone) in [RFC 3339][0] format.
+///
+/// Represents a description of an exact instant on the time-line (such as the
+/// instant that a user account was created).
+///
+/// [`DateTime` scalar][1] compliant.
+///
+/// See also [`time::OffsetDateTime`][2] for details.
+///
+/// [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
+/// [1]: https://graphql-scalars.dev/docs/scalars/date-time
+/// [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html
 #[graphql_scalar(
-    description = "Combined date and time (with time zone) in [RFC 3339][0] \
-                   format.\
-                   \n\n\
-                   Represents a description of an exact instant on the \
-                   time-line (such as the instant that a user account was \
-                   created).\
-                   \n\n\
-                   [`DateTime` scalar][1] compliant.\
-                   \n\n\
-                   See also [`time::OffsetDateTime`][2] for details.\
-                   \n\n\
-                   [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6\n\
-                   [1]: https://graphql-scalars.dev/docs/scalars/date-time\n\
-                   [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time"
+    with = date_time,
+    parse_token = String,
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
 )]
-impl<S: ScalarValue> GraphQLScalar<S> for DateTime {
-    type Error = String;
+pub type DateTime = time::OffsetDateTime;
 
-    fn to_output(&self) -> Value<S> {
+mod date_time {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &DateTime) -> Value<S> {
         Value::scalar(
-            self.to_offset(UtcOffset::UTC)
+            v.to_offset(UtcOffset::UTC)
                 .format(&Rfc3339)
                 .unwrap_or_else(|e| panic!("Failed to format `DateTime`: {}", e)),
         )
     }
 
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTime, Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                Self::parse(s, &Rfc3339).map_err(|e| format!("Invalid `DateTime`: {}", e))
+                DateTime::parse(s, &Rfc3339).map_err(|e| format!("Invalid `DateTime`: {}", e))
             })
             .map(|dt| dt.to_offset(UtcOffset::UTC))
-    }
-
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        if let ScalarToken::String(s) = value {
-            Ok(S::from(s.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
     }
 }
 
@@ -246,43 +215,41 @@ impl<S: ScalarValue> GraphQLScalar<S> for DateTime {
 const UTC_OFFSET_FORMAT: &[FormatItem<'_>] =
     format_description!("[offset_hour sign:mandatory]:[offset_minute]");
 
+/// Offset from UTC in `±hh:mm` format. See [list of database time zones][0].
+///
+/// [`UtcOffset` scalar][1] compliant.
+///
+/// See also [`time::UtcOffset`][2] for details.
+///
+/// [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+/// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
+/// [2]: https://docs.rs/time/*/time/struct.UtcOffset.html
 #[graphql_scalar(
-    description = "Offset from UTC in `±hh:mm` format. See [list of database \
-                   time zones][0].\
-                   \n\n\
-                   [`UtcOffset` scalar][1] compliant.\
-                   \n\n\
-                   See also [`time::UtcOffset`][2] for details.\
-                   \n\n\
-                   [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones\n\
-                   [1]: https://graphql-scalars.dev/docs/scalars/utc-offset\n\
-                   [2]: https://docs.rs/time/*/time/struct.UtcOffset.html",
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset"
+    with = utc_offset,
+    parse_token = String,
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
 )]
-impl<S: ScalarValue> GraphQLScalar<S> for UtcOffset {
-    type Error = String;
+pub type UtcOffset = time::UtcOffset;
 
-    fn to_output(&self) -> Value<S> {
+mod utc_offset {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &UtcOffset) -> Value<S> {
         Value::scalar(
-            self.format(UTC_OFFSET_FORMAT)
+            v.format(UTC_OFFSET_FORMAT)
                 .unwrap_or_else(|e| panic!("Failed to format `UtcOffset`: {}", e)),
         )
     }
 
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcOffset, Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                Self::parse(s, UTC_OFFSET_FORMAT).map_err(|e| format!("Invalid `UtcOffset`: {}", e))
+                UtcOffset::parse(s, UTC_OFFSET_FORMAT)
+                    .map_err(|e| format!("Invalid `UtcOffset`: {}", e))
             })
-    }
-
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        if let ScalarToken::String(s) = value {
-            Ok(S::from(s.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
     }
 }
 

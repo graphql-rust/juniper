@@ -422,6 +422,90 @@ mod multiple_delegated_parse_token {
     }
 }
 
+mod where_attribute {
+    use super::*;
+
+    #[derive(GraphQLScalar)]
+    #[graphql(
+    to_output_with = to_output,
+    from_input_with = from_input,
+    from_input_err = String,
+    )]
+    #[graphql(
+    parse_token = String,
+    where(Tz: From<Utc>, Tz::Offset: fmt::Display),
+    specified_by_url = "https://tools.ietf.org/html/rfc3339",
+    )]
+    struct CustomDateTime<Tz: TimeZone>(DateTime<Tz>);
+
+    fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+    where
+        S: ScalarValue,
+        Tz: From<Utc> + TimeZone,
+        Tz::Offset: fmt::Display,
+    {
+        Value::scalar(v.0.to_rfc3339())
+    }
+
+    fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
+    where
+        S: ScalarValue,
+        Tz: From<Utc> + TimeZone,
+        Tz::Offset: fmt::Display,
+    {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
+                    .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
+            })
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_custom_date_time() {
+        const DOC: &str = r#"{ dateTime(value: "1996-12-19T16:39:57-08:00") }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"dateTime": "1996-12-20T00:39:57+00:00"}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_specified_by_url() {
+        const DOC: &str = r#"{
+            __type(name: "CustomDateTime") {
+                specifiedByUrl
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc3339"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod generic_with_all_resolvers {
     use super::*;
 
@@ -433,13 +517,10 @@ mod generic_with_all_resolvers {
     )]
     #[graphql(
         parse_token_with = custom_date_time::parse_token,
-        specified_by_url = "https://tools.ietf.org/html/rfc3339"
+        where(Tz: From<Utc>, Tz::Offset: fmt::Display),
+        specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
-    struct CustomDateTime<Tz>
-    where
-        Tz: From<Utc> + TimeZone,
-        Tz::Offset: fmt::Display,
-    {
+    struct CustomDateTime<Tz: TimeZone> {
         dt: DateTime<Tz>,
         _unused: (),
     }

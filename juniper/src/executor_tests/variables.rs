@@ -1,35 +1,35 @@
 use crate::{
     executor::Variables,
-    graphql_object, graphql_scalar, graphql_value, graphql_vars,
-    parser::{ScalarToken, SourcePosition},
+    graphql_object, graphql_value, graphql_vars,
+    parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue},
+    value::{DefaultScalarValue, Object},
     GraphQLError::ValidationError,
     GraphQLInputObject, GraphQLScalar, InputValue, ScalarValue, Value,
 };
 
-#[derive(Debug)]
+#[derive(Debug, GraphQLScalar)]
+#[graphql(with = test_complex_scalar, parse_token = String)]
 struct TestComplexScalar;
 
-#[graphql_scalar]
-impl<S: ScalarValue> GraphQLScalar<S> for TestComplexScalar {
-    type Error = String;
+mod test_complex_scalar {
+    use super::*;
 
-    fn to_output(&self) -> Value<S> {
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(_: &TestComplexScalar) -> Value<S> {
         graphql_value!("SerializedValue")
     }
 
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &InputValue<S>,
+    ) -> Result<TestComplexScalar, Error> {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
-            .map(|_| Self)
+            .map(|_| TestComplexScalar)
             .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {}"#, v))
-    }
-
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
