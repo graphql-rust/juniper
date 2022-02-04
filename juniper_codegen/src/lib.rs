@@ -185,8 +185,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// struct UserId(String);
 /// ```
 ///
-/// All of the methods used from `newtype`'s field can be replaced with attributes
-/// mirroring [`GraphQLScalar`] methods:
+/// All of the methods used from `newtype`'s field can be replaced with
+/// attributes:
 ///
 /// #### `#[graphql(to_output_with = <fn>)]` attribute
 ///
@@ -200,7 +200,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// /// Increments [`Incremented`] before converting into a [`Value`].
 /// fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 ///     let inc = v.0 + 1;
-///     inc.to_output()
+///     Value::from(inc)
 /// }
 /// ```
 ///
@@ -239,7 +239,10 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// #### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 ///
 /// ```rust
-/// # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+/// # use juniper::{
+/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
+/// #     ScalarValue, ScalarToken, Value,
+/// # };
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(
@@ -271,8 +274,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-///     <String as GraphQLScalar<S>>::parse_token(value)
-///         .or_else(|_| <i32 as GraphQLScalar<S>>::parse_token(value))
+///     <String as ParseScalarValue<S>>::from_str(value)
+///         .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 /// }
 /// ```
 /// > __NOTE:__ As you can see, once you provide all 3 custom resolvers, there
@@ -284,8 +287,20 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// `to_output`, `from_input`, `parse_token` functions and `Error` struct or
 /// type alias.
 ///
+/// #### `#[graphql(scalar = <maybe_bounded_type>)]`
+///
+/// Custom implementation (`scalar = `[`DefaultScalarValue`]) or generic bounded
+/// [`ScalarValue`] (`scalar = S: Trait`).
+///
+/// #### `#[graphql(where = <single_bound>)]` or `#[graphql(where(<multiple_bounds>))]`
+///
+/// Adds custom generic bounds in [scalar][1] implementation.
+///
 /// ```rust
-/// # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+/// # use juniper::{
+/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
+/// #     ScalarValue, ScalarToken, Value,
+/// # };
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(with = string_or_int)]
@@ -323,8 +338,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///     where
 ///         S: ScalarValue,
 ///     {
-///         <String as GraphQLScalar<S>>::parse_token(value)
-///             .or_else(|_| <i32 as GraphQLScalar<S>>::parse_token(value))
+///         <String as ParseScalarValue<S>>::from_str(value)
+///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 ///     }
 /// }
 /// #
@@ -375,70 +390,82 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+/// [`DefaultScalarValue`]: juniper::DefaultScalarValue
+/// [`ScalarValue`]: juniper::ScalarValue
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLScalar, attributes(graphql))]
-pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
+pub fn derive_scalar(input: TokenStream) -> TokenStream {
     graphql_scalar::derive::expand(input.into())
         .unwrap_or_abort()
         .into()
 }
 
-/// Expose GraphQL scalars
+/// In case [`GraphQLScalar`] isn't applicable because type located in other
+/// crate and you don't want to wrap it in a newtype there is
+/// `#[graphql_scalar]` macro.
 ///
-/// The GraphQL language defines a number of built-in scalars: strings, numbers, and
-/// booleans. This macro can be used either to define new types of scalars (e.g.
-/// timestamps), or expose other types as one of the built-in scalars (e.g. bigints
-/// as numbers or strings).
+/// All attributes are mirroring [`GraphQLScalar`] derive macro.
 ///
-/// Since the preferred transport protocol for GraphQL responses is JSON, most
-/// custom scalars will be transferred as strings. You therefore need to ensure that
-/// the client library you are sending data to can parse the custom value into a
-/// datatype appropriate for that platform.
-///
-/// By default the trait is implemented in terms of the default scalar value
-/// representation provided by juniper. If that does not fit your needs it is
-/// possible to specify a custom representation.
+/// > __NOTE:__ To satisfy [orphan rule] you should provide local
+/// >           [`ScalarValue`] implementation.
 ///
 /// ```rust
-/// # use juniper::{graphql_scalar, GraphQLScalar, ParseScalarResult, ScalarToken, ScalarValue, Value};
+/// # mod date {
+/// #    pub struct Date;
 /// #
-/// // The data type
-/// struct UserID(String);
+/// #    impl std::str::FromStr for Date {
+/// #        type Err = String;
+/// #
+/// #        fn from_str(_value: &str) -> Result<Self, Self::Err> {
+/// #            unimplemented!()
+/// #        }
+/// #    }
+/// #
+/// #    impl std::fmt::Display for Date {
+/// #        fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
+/// #            unimplemented!()
+/// #        }
+/// #    }
+/// # }
+/// #
+/// # use juniper::DefaultScalarValue as CustomScalarValue;
+/// use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
 ///
 /// #[graphql_scalar(
-///     // You can rename the type for GraphQL by specifying the name here.
-///     name = "MyName",
-///     // You can also specify a description here.
-///     // If present, doc comments will be ignored.
-///     description = "An opaque identifier, represented as a string",
-///    // A specification URL.
-///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
+///     with = date_scalar,
+///     parse_token = String,
+///     scalar = CustomScalarValue,
+/// //           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
 /// )]
-/// impl<S: ScalarValue> GraphQLScalar<S> for UserID {
-///     // NOTE: The Error type should implement `IntoFieldError<S>`.
-///     type Error = String;  
+/// type Date = date::Date;
+/// //          ^^^^^^^^^^ Type from another crate.
 ///
-///     fn to_output(&self) -> Value<S> {
-///         Value::scalar(self.0.to_owned())
+/// mod date_scalar {
+///     use super::*;
+///   
+///     // Error of the `from_input_value()` method.
+///     // NOTE: Should implement `IntoFieldError<S>`.
+///     pub(super) type Error = String;
+///   
+///     // Define how to convert your custom scalar into a primitive type.
+///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
+///         Value::scalar(v.to_string())
 ///     }
-///
-///     fn from_input(value: &juniper::InputValue<S>) -> Result<Self, Self::Error> {
-///         value.as_string_value()
-///             .map(|s| Self(s.to_owned()))
-///             .ok_or_else(|| format!("Expected `String`, found: {}", value))
-///     }
-///
-///     fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-///         <String as juniper::ParseScalarValue<S>>::from_str(value)
+///   
+///     // Define how to parse a primitive type into your custom scalar.
+///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, Error> {
+///       v.as_string_value()
+///           .ok_or_else(|| format!("Expected `String`, found: {}", v))
+///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
 ///     }
 /// }
-///
+/// #
 /// # fn main() { }
 /// ```
 ///
-/// In addition to implementing `GraphQLType` for the type in question,
-/// `FromInputValue` and `ToInputValue` is also implemented. This makes the type
-/// usable as arguments and default values.
+/// [orphan rule]: https://bit.ly/3glAGC2
+/// [`GraphQLScalar`]: juniper::GraphQLScalar
+/// [`ScalarValue`]: juniper::ScalarValue
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {

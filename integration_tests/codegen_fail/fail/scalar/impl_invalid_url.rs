@@ -1,23 +1,27 @@
-use juniper::graphql_scalar;
+use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
 
-struct ScalarSpecifiedByUrl(i32);
+struct ScalarSpecifiedByUrl;
 
-#[graphql_scalar(specified_by_url = "not an url")]
-impl GraphQLScalar for ScalarSpecifiedByUrl {
-    type Error = String;
+#[graphql_scalar(
+    specified_by_url = "not an url",
+    with = scalar,
+    parse_token = i32,
+)]
+type Scalar = ScalarSpecifiedByUrl;
 
-    fn to_output(&self) -> Value {
-        Value::scalar(self.0)
+mod scalar {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output<S: ScalarValue>(_: &ScalarSpecifiedByUrl) -> Value<S> {
+        Value::scalar(0)
     }
 
-    fn from_input(v: &InputValue) -> Result<Self, Self::Error> {
-        v.as_int_value()
-            .map(Self)
-            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
-    }
-
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_> {
-        <i32 as ParseScalarValue>::from_str(value)
+    pub(super) fn from_input<S: ScalarValue>(
+        _: &InputValue<S>,
+    ) -> Result<ScalarSpecifiedByUrl, Error> {
+        Ok(ScalarSpecifiedByUrl)
     }
 }
 

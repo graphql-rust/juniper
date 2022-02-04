@@ -28,8 +28,10 @@ use crate::{
 pub mod attr;
 pub mod derive;
 
-/// Available arguments behind `#[graphql]` attribute when generating
-/// code for `#[derive(GraphQLScalar)]`.
+/// Available arguments behind `#[graphql]`/`#[graphql_scalar]` attributes when
+/// generating code for [GraphQL scalar][1].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Scalars
 #[derive(Debug, Default)]
 struct Attr {
     /// Name of this [GraphQL scalar][1] in GraphQL schema.
@@ -90,7 +92,7 @@ struct Attr {
     /// [`Self::parse_token`].
     with: Option<SpanContainer<syn::ExprPath>>,
 
-    /// TODO
+    /// Explicit where clause added to [`syn::WhereClause`].
     where_clause: Option<SpanContainer<Vec<syn::WherePredicate>>>,
 }
 
@@ -277,9 +279,14 @@ impl Attr {
     }
 }
 
+/// [`syn::Type`] in case of `#[graphql_scalar]` or [`syn::Ident`] in case of
+/// `#[derive(GraphQLScalar)]`.
 #[derive(Clone)]
 enum TypeOrIdent {
-    Type(syn::Type),
+    /// [`syn::Type`].
+    Type(Box<syn::Type>),
+
+    /// [`syn::Ident`].
     Ident(syn::Ident),
 }
 
@@ -292,9 +299,12 @@ struct Definition {
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     name: String,
 
-    /// TODO
+    /// [`TypeOrIdent`] of this [GraphQL scalar][1] in GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     ty: TypeOrIdent,
 
+    /// Additional [`Self::generics`] [`syn::WhereClause`] predicates.
     where_clause: Vec<syn::WherePredicate>,
 
     /// Generics of the Rust type that this [GraphQL scalar][1] is implemented
@@ -336,7 +346,6 @@ impl ToTokens for Definition {
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
-        self.impl_graphql_scalar_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
     }
 }
@@ -512,8 +521,8 @@ impl Definition {
     fn impl_from_input_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let error_ty = self.methods.expand_from_input_err(scalar);
-        let from_input_value = self.methods.expand_from_input(scalar);
+        let error_ty = self.methods.expand_from_input_value_err(scalar);
+        let from_input_value = self.methods.expand_from_input_value(scalar);
 
         let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -540,7 +549,7 @@ impl Definition {
     fn impl_parse_scalar_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let from_str = self.methods.expand_parse_token(scalar);
+        let from_str = self.methods.expand_parse_scalar_value(scalar);
 
         let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -554,48 +563,6 @@ impl Definition {
                     token: ::juniper::parser::ScalarToken<'_>,
                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
                     #from_str
-                }
-            }
-        }
-    }
-
-    /// Returns generated code implementing [`GraphQLScalar`] trait for this
-    /// [GraphQL scalar][1].
-    ///
-    /// [`GraphQLScalar`]: juniper::GraphQLScalar
-    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    fn impl_graphql_scalar_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-
-        let (ty, generics) = self.impl_self_and_generics(false);
-        let (impl_gens, _, where_clause) = generics.split_for_impl();
-
-        let to_output = self.methods.expand_to_output(scalar);
-        let from_input_err = self.methods.expand_from_input_err(scalar);
-        let from_input = self.methods.expand_from_input(scalar);
-        let parse_token = self.methods.expand_parse_token(scalar);
-
-        quote! {
-            #[automatically_derived]
-            impl#impl_gens ::juniper::GraphQLScalar<#scalar> for #ty
-                #where_clause
-            {
-                type Error = #from_input_err;
-
-                fn to_output(&self) -> ::juniper::Value<#scalar> {
-                    #to_output
-                }
-
-                fn from_input(
-                    input: &::juniper::InputValue<#scalar>
-                ) -> Result<Self, Self::Error> {
-                    #from_input
-                }
-
-                fn parse_token(
-                    token: ::juniper::ScalarToken<'_>
-                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
-                    #parse_token
                 }
             }
         }
@@ -683,8 +650,6 @@ impl Definition {
 
         if for_async {
             let self_ty = if self.generics.lifetimes().next().is_some() {
-                // Modify lifetime names to omit "lifetime name `'a` shadows a
-                // lifetime name that is already in scope" error.
                 let mut generics = self.generics.clone();
                 ModifyLifetimes.visit_generics_mut(&mut generics);
 
@@ -721,6 +686,8 @@ impl Definition {
     }
 }
 
+/// Adds `__fa__` prefix to all lifetimes to avoid "lifetime name `'a` shadows a
+/// lifetime name that is already in scope" error.
 struct ModifyLifetimes;
 
 impl VisitMut for ModifyLifetimes {
@@ -766,7 +733,7 @@ enum GraphQLScalarMethods {
         parse_token: Option<ParseToken>,
 
         /// [`Field`] to resolve not provided methods.
-        field: Field,
+        field: Box<Field>,
     },
 }
 
@@ -796,26 +763,6 @@ impl GraphQLScalarMethods {
         }
     }
 
-    /// Expands [`GraphQLScalar::to_output`] method.
-    ///
-    /// [`GraphQLScalar::to_output`]: juniper::GraphQLScalar::to_output
-    fn expand_to_output(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { to_output, .. }
-            | Self::Delegated {
-                to_output: Some(to_output),
-                ..
-            } => {
-                quote! { #to_output(self) }
-            }
-            Self::Delegated { field, .. } => {
-                quote! {
-                    ::juniper::GraphQLScalar::<#scalar>::to_output(&self.#field)
-                }
-            }
-        }
-    }
-
     /// Expands [`ToInputValue::to_input_value`] method.
     ///
     /// [`ToInputValue::to_input_value`]: juniper::ToInputValue::to_input_value
@@ -840,7 +787,7 @@ impl GraphQLScalarMethods {
     /// Expands [`FromInputValue::Error`] type.
     ///
     /// [`FromInputValue::Error`]: juniper::FromInputValue::Error
-    fn expand_from_input_err(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_from_input_value_err(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom {
                 from_input: (_, err),
@@ -860,7 +807,7 @@ impl GraphQLScalarMethods {
     /// Expands [`FromInputValue::from_input_value`][1] method.
     ///
     /// [1]: juniper::FromInputValue::from_input_value
-    fn expand_from_input(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom {
                 from_input: (from_input, _),
@@ -886,7 +833,7 @@ impl GraphQLScalarMethods {
     /// Expands [`ParseScalarValue::from_str`] method.
     ///
     /// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
-    fn expand_parse_token(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_parse_scalar_value(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom { parse_token, .. }
             | Self::Delegated {

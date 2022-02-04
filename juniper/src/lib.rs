@@ -185,10 +185,7 @@ pub use crate::{
         },
     },
     validation::RuleError,
-    value::{
-        DefaultScalarValue, GraphQLScalar, Object, ParseScalarResult, ParseScalarValue,
-        ScalarValue, Value,
-    },
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
 };
 
 /// An error that prevented query execution

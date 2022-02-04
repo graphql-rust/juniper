@@ -62,8 +62,8 @@ fn expand_on_type_alias(
             return Err(ERR.custom_error(
                 ast.span(),
                 "all custom resolvers have to be provided via `with` or \
-                     `to_output_with`, `from_input_with`, `from_input_err_with`,
-                     `parse_token_with` attributes",
+                 combination of `to_output_with`, `from_input_with`, \
+                 `from_input_err_with`, `parse_token_with` attributes",
             ));
         }
     };
@@ -71,10 +71,10 @@ fn expand_on_type_alias(
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     let def = Definition {
-        ty: TypeOrIdent::Type(*ast.ty.clone()),
+        ty: TypeOrIdent::Type(ast.ty.clone()),
         where_clause: attr
             .where_clause
-            .map_or_else(|| Vec::new(), |cl| cl.into_inner()),
+            .map_or_else(Vec::new, |cl| cl.into_inner()),
         generics: ast.generics.clone(),
         methods: field,
         name: attr
@@ -87,6 +87,7 @@ fn expand_on_type_alias(
         scalar,
     }
     .to_token_stream();
+
     Ok(quote! {
         #ast
         #def

@@ -216,7 +216,7 @@ mod custom_to_output {
 
     fn to_output<S: ScalarValue>(val: &Increment) -> Value<S> {
         let ret = val.0 + 1;
-        ret.to_output()
+        Value::from(ret)
     }
 
     struct QueryRoot;
@@ -427,14 +427,14 @@ mod where_attribute {
 
     #[derive(GraphQLScalar)]
     #[graphql(
-    to_output_with = to_output,
-    from_input_with = from_input,
-    from_input_err = String,
+        to_output_with = to_output,
+        from_input_with = from_input,
+        from_input_err = String,
     )]
     #[graphql(
-    parse_token = String,
-    where(Tz: From<Utc>, Tz::Offset: fmt::Display),
-    specified_by_url = "https://tools.ietf.org/html/rfc3339",
+        parse_token = String,
+        where(Tz: From<Utc>, Tz::Offset: fmt::Display),
+        specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
     struct CustomDateTime<Tz: TimeZone>(DateTime<Tz>);
 

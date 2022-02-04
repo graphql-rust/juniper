@@ -82,8 +82,7 @@ pub struct UserId(i32);
 # fn main() {}
 ```
 
-All the methods used from newtype's field can be replaced with attributes mirroring 
-[`GraphQLScalar`](https://docs.rs/juniper/*/juniper/trait.GraphQLScalar.html) methods:
+All the methods used from newtype's field can be replaced with attributes:
 
 #### `#[graphql(to_output_with = <fn>)]` attribute
 
@@ -97,7 +96,7 @@ struct Incremented(i32);
 /// Increments [`Incremented`] before converting into a [`Value`].
 fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
     let inc = v.0 + 1;
-    inc.to_output()
+    Value::from(inc)
 }
 # 
 # fn main() {}
@@ -140,7 +139,7 @@ impl UserId {
 #### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 
 ```rust
-# use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+# use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]
 #[graphql(
@@ -148,9 +147,9 @@ impl UserId {
     from_input_with = from_input,
     from_input_err = String,
     parse_token_with = parse_token,
-    // ^^^^^^^^^^^^^ Can be replaced with `parse_token(String, i32)`
-    //               which tries to parse as `String` and then as `i32`
-    //               if prior fails.
+//  ^^^^^^^^^^^^^^^^ Can be replaced with `parse_token(String, i32)`
+//                   which tries to parse as `String` and then as `i32`
+//                   if prior fails.
 )]
 enum StringOrInt {
     String(String),
@@ -172,8 +171,8 @@ fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> 
 }
 
 fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-    <String as GraphQLScalar<S>>::parse_token(value)
-        .or_else(|_| <i32 as GraphQLScalar<S>>::parse_token(value))
+    <String as ParseScalarValue<S>>::from_str(value)
+        .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 }
 #
 # fn main() {}
@@ -187,7 +186,7 @@ fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, 
 Instead of providing all custom resolvers, you can provide module with `to_output`, `from_input`, `parse_token` functions and `Error` struct or type alias.
 
 ```rust
-# use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+# use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]
 #[graphql(with = string_or_int)]
@@ -197,8 +196,8 @@ enum StringOrInt {
 }
 
 mod string_or_int {
-    # use super::*;
-    #
+    use super::*;
+  
     pub(super) type Error = String;
   
     pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
@@ -225,8 +224,8 @@ mod string_or_int {
     where
         S: ScalarValue,
     {
-        <String as GraphQLScalar<S>>::parse_token(value)
-            .or_else(|_| <i32 as GraphQLScalar<S>>::parse_token(value))
+        <String as ParseScalarValue<S>>::from_str(value)
+            .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
     }
 }
 #
@@ -250,8 +249,8 @@ enum StringOrInt {
 }
 
 mod string_or_int {
-    # use super::*;
-    #
+    use super::*;
+  
     pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
     where
         S: ScalarValue,
@@ -280,31 +279,22 @@ mod string_or_int {
 
 ### `#[graphql_scalar]` attribute
 
-For more complex situations where you also need custom parsing or validation,
-you can use the `graphql_scalar` proc macro.
+For implementing custom scalars on foreign types there is `#[graphql_scalar]` attribute macro.
 
-Typically, you represent your custom scalars as strings.
-
-The example below implements a custom scalar for a custom `Date` type.
-
-Note: juniper already has built-in support for the `chrono::DateTime` type
-via `chrono` feature, which is enabled by default and should be used for this
-purpose.
-
-The example below is used just for illustration.
-
-**Note**: the example assumes that the `Date` type implements
-`std::fmt::Display` and `std::str::FromStr`.
-
+> __NOTE:__ To satisfy [orphan rule] you should provide local [`ScalarValue`] implementation.
 
 ```rust
 # extern crate juniper;
 # mod date {
 #    pub struct Date;
 #    impl std::str::FromStr for Date {
-#        type Err = String; fn from_str(_value: &str) -> Result<Self, Self::Err> { unimplemented!() }
+#        type Err = String;
+#
+#        fn from_str(_value: &str) -> Result<Self, Self::Err> { 
+#            unimplemented!()
+#        }
 #    }
-#    // And we define how to represent date as a string.
+#
 #    impl std::fmt::Display for Date {
 #        fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
 #            unimplemented!()
@@ -312,35 +302,36 @@ The example below is used just for illustration.
 #    }
 # }
 #
-use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value};
-use date::Date;
+# use juniper::DefaultScalarValue as CustomScalarValue;
+use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[juniper::graphql_scalar(description = "Date")]
-impl<S> GraphQLScalar<S> for Date
-where
-    S: ScalarValue
-{
-    // Error of the `from_input_value()` method. 
-    // NOTE: Should implement `IntoFieldError<S>`.
-    type Error = String;
-  
-    // Define how to convert your custom scalar into a primitive type.
-    fn to_output(&self) -> Value<S> {
-        Value::scalar(self.to_string())
+#[graphql_scalar(
+    with = date_scalar, 
+    parse_token = String,
+    scalar = CustomScalarValue,
+//           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
+)]
+type Date = date::Date;
+//          ^^^^^^^^^^ Type from another crate.
+
+mod date_scalar {
+    use super::*;
+
+    pub(super) type Error = String;
+
+    pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
+        Value::scalar(v.to_string())
     }
 
-    // Define how to parse a primitive type into your custom scalar.
-    fn from_input(v: &InputValue<S>) -> Result<Self, Self::Error> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
-    }
-
-    // Define how to parse a string value.
-    fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
+    pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, Error> {
+      v.as_string_value()
+          .ok_or_else(|| format!("Expected `String`, found: {}", v))
+          .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
     }
 }
 #
 # fn main() {}
 ```
+
+[orphan rule]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
+[`ScalarValue`]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
