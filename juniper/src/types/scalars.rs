@@ -22,6 +22,7 @@ use crate::{
 /// An ID as defined by the GraphQL specification
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
+/// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ID(String);
 

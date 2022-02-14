@@ -10,6 +10,7 @@ use crate::{
     GraphQLInputObject, InputValue, ScalarValue, Value,
 };
 
+/// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
 #[derive(Debug)]
 struct TestComplexScalar;
 

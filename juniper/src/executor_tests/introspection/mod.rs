@@ -19,6 +19,7 @@ enum Sample {
     Two,
 }
 
+/// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
 struct Scalar(i32);
 
 #[graphql_scalar(with = sample_scalar, parse_token(i32))]
