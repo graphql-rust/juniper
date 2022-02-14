@@ -19,7 +19,6 @@ mod all_custom_resolvers {
     #[graphql_scalar(
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
     )]
     #[graphql_scalar(
         parse_token_with = parse_token,
@@ -103,7 +102,6 @@ mod explicit_name {
         name = "Counter",
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
         parse_token_with = parse_token,
     )]
     type CounterScalar = CustomCounter;
@@ -205,8 +203,7 @@ mod delegated_parse_token {
     #[graphql_scalar(
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
-        parse_token = i32,
+        parse_token(i32),
     )]
     type Counter = CustomCounter;
 
@@ -285,7 +282,6 @@ mod multiple_delegated_parse_token {
     #[graphql_scalar(
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
         parse_token(String, i32),
     )]
     type StringOrInt = StringOrIntScalar;
@@ -346,8 +342,7 @@ mod where_attribute {
     #[graphql_scalar(
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
-        parse_token = String,
+        parse_token(String),
         where(Tz: From<Utc> + TimeZone, Tz::Offset: fmt::Display),
         specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
@@ -428,7 +423,7 @@ mod with_module {
 
     #[graphql_scalar(
         with = custom_date_time,
-        parse_token = String,
+        parse_token(String),
         where(Tz: From<Utc> + TimeZone, Tz::Offset: fmt::Display),
         specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
@@ -436,8 +431,6 @@ mod with_module {
 
     mod custom_date_time {
         use super::*;
-
-        pub(super) type Error = String;
 
         pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
         where
@@ -514,7 +507,7 @@ mod description_from_doc_comment {
     struct CustomCounter(i32);
 
     /// Description
-    #[graphql_scalar(with = counter, from_input_err = String)]
+    #[graphql_scalar(with = counter)]
     type Counter = CustomCounter;
 
     mod counter {
@@ -603,7 +596,6 @@ mod description_from_attribute {
     #[graphql_scalar(
         description = "Description from attribute",
         with = counter,
-        from_input_err = String
     )]
     type Counter = CustomCounter;
 
@@ -693,7 +685,6 @@ mod custom_scalar {
     #[graphql_scalar(
         scalar = MyScalarValue,
         with = counter,
-        from_input_err = String
     )]
     type Counter = CustomCounter;
 
@@ -783,7 +774,6 @@ mod generic_scalar {
     #[graphql_scalar(
         scalar = S: ScalarValue,
         with = counter,
-        from_input_err = String
     )]
     type Counter = CustomCounter;
 
@@ -873,7 +863,6 @@ mod bounded_generic_scalar {
     #[graphql_scalar(
         scalar = S: ScalarValue + Clone,
         with = counter,
-        from_input_err = String
     )]
     type Counter = CustomCounter;
 

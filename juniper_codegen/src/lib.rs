@@ -175,7 +175,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 /// #[graphql_scalar(
 ///     with = date_scalar,
-///     parse_token = String,
+///     parse_token(String),
 ///     scalar = CustomScalarValue,
 /// //           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
 /// )]
@@ -185,17 +185,14 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// mod date_scalar {
 ///     use super::*;
 ///   
-///     // Error of the `from_input_value()` method.
-///     // NOTE: Should implement `IntoFieldError<S>`.
-///     pub(super) type Error = String;
-///   
 ///     // Define how to convert your custom scalar into a primitive type.
 ///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
 ///         Value::scalar(v.to_string())
 ///     }
 ///   
 ///     // Define how to parse a primitive type into your custom scalar.
-///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, Error> {
+///     // NOTE: The error type should implement `IntoFieldError<S>`.
+///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
 ///       v.as_string_value()
 ///           .ok_or_else(|| format!("Expected `String`, found: {}", v))
 ///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))

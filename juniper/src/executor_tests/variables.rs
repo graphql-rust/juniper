@@ -16,22 +16,18 @@ struct TestComplexScalar;
 #[graphql_scalar(
     name = "TestComplexScalar",
     with = test_complex_scalar,
-    parse_token = String,
+    parse_token(String),
 )]
 type ComplexScalar = TestComplexScalar;
 
 mod test_complex_scalar {
     use super::*;
 
-    pub(super) type Error = String;
-
-    pub(super) fn to_output<S: ScalarValue>(_: &TestComplexScalar) -> Value<S> {
+    pub(super) fn to_output<S: ScalarValue>(_: &ComplexScalar) -> Value<S> {
         graphql_value!("SerializedValue")
     }
 
-    pub(super) fn from_input<S: ScalarValue>(
-        v: &InputValue<S>,
-    ) -> Result<TestComplexScalar, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ComplexScalar, String> {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
             .map(|_| TestComplexScalar)

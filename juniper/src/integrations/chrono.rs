@@ -20,14 +20,12 @@ use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
 #[graphql_scalar(
     with = date_time_fixed_offset,
-    parse_token = String,
+    parse_token(String),
 )]
 type DateTimeFixedOffset = chrono::DateTime<chrono::FixedOffset>;
 
 mod date_time_fixed_offset {
     use super::*;
-
-    pub(super) type Error = String;
 
     pub(super) fn to_output<S: ScalarValue>(v: &DateTimeFixedOffset) -> Value<S> {
         Value::scalar(v.to_rfc3339())
@@ -35,7 +33,7 @@ mod date_time_fixed_offset {
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &InputValue<S>,
-    ) -> Result<DateTimeFixedOffset, Error> {
+    ) -> Result<DateTimeFixedOffset, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -47,20 +45,18 @@ mod date_time_fixed_offset {
 
 #[graphql_scalar(
     with = date_time_utc,
-    parse_token = String
+    parse_token(String)
 )]
 type DateTimeUtc = chrono::DateTime<chrono::Utc>;
 
 mod date_time_utc {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &DateTimeUtc) -> Value<S> {
         Value::scalar(v.to_rfc3339())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTimeUtc, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTimeUtc, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -77,20 +73,18 @@ mod date_time_utc {
 // `NaiveDate` instead."
 #[graphql_scalar(
     with = naive_date,
-    parse_token = String,
+    parse_token(String),
 )]
 type NaiveDate = chrono::NaiveDate;
 
 mod naive_date {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &NaiveDate) -> Value<S> {
         Value::scalar(v.format("%Y-%m-%d").to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveDate, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveDate, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -101,20 +95,18 @@ mod naive_date {
 }
 
 #[cfg(feature = "scalar-naivetime")]
-#[graphql_scalar(with = naive_time, parse_token = String)]
+#[graphql_scalar(with = naive_time, parse_token(String))]
 type NaiveTime = chrono::NaiveTime;
 
 #[cfg(feature = "scalar-naivetime")]
 mod naive_time {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &NaiveTime) -> Value<S> {
         Value::scalar(v.format("%H:%M:%S").to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveTime, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -126,19 +118,17 @@ mod naive_time {
 
 // JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
 // datetimes. Values will be truncated to microsecond resolution.
-#[graphql_scalar(with = naive_date_time, parse_token = f64)]
+#[graphql_scalar(with = naive_date_time, parse_token(f64))]
 type NaiveDateTime = chrono::NaiveDateTime;
 
 mod naive_date_time {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &NaiveDateTime) -> Value<S> {
         Value::scalar(v.timestamp() as f64)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveDateTime, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveDateTime, String> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
             .and_then(|f| {

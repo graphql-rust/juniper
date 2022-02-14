@@ -21,19 +21,17 @@ enum Sample {
 
 struct Scalar(i32);
 
-#[graphql_scalar(with = sample_scalar, parse_token = i32)]
+#[graphql_scalar(with = sample_scalar, parse_token(i32))]
 type SampleScalar = Scalar;
 
 mod sample_scalar {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &SampleScalar) -> Value<S> {
         Value::scalar(v.0)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<SampleScalar, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<SampleScalar, String> {
         v.as_int_value()
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
             .map(Scalar)

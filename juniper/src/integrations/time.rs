@@ -46,15 +46,13 @@ const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]
 /// [2]: https://docs.rs/time/*/time/struct.Date.html
 #[graphql_scalar(
     with = date,
-    parse_token = String,
+    parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date",
 )]
 pub type Date = time::Date;
 
 mod date {
     use super::*;
-
-    pub(super) type Error = String;
 
     pub(super) fn to_output<S: ScalarValue>(v: &Date) -> Value<S> {
         Value::scalar(
@@ -63,7 +61,7 @@ mod date {
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Date, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Date, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| Date::parse(s, DATE_FORMAT).map_err(|e| format!("Invalid `Date`: {}", e)))
@@ -99,13 +97,11 @@ const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/time/*/time/struct.Time.html
-#[graphql_scalar(with = local_time, parse_token = String)]
+#[graphql_scalar(with = local_time, parse_token(String))]
 pub type LocalTime = time::Time;
 
 mod local_time {
     use super::*;
-
-    pub(super) type Error = String;
 
     pub(super) fn to_output<S: ScalarValue>(v: &LocalTime) -> Value<S> {
         Value::scalar(
@@ -118,7 +114,7 @@ mod local_time {
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalTime, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -142,13 +138,11 @@ const LOCAL_DATE_TIME_FORMAT: &[FormatItem<'_>] =
 /// See also [`time::PrimitiveDateTime`][2] for details.
 ///
 /// [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html
-#[graphql_scalar(with = local_date_time, parse_token = String)]
+#[graphql_scalar(with = local_date_time, parse_token(String))]
 pub type LocalDateTime = time::PrimitiveDateTime;
 
 mod local_date_time {
     use super::*;
-
-    pub(super) type Error = String;
 
     pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
         Value::scalar(
@@ -157,7 +151,7 @@ mod local_date_time {
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDateTime, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDateTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -181,15 +175,13 @@ mod local_date_time {
 /// [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html
 #[graphql_scalar(
     with = date_time,
-    parse_token = String,
+    parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
 )]
 pub type DateTime = time::OffsetDateTime;
 
 mod date_time {
     use super::*;
-
-    pub(super) type Error = String;
 
     pub(super) fn to_output<S: ScalarValue>(v: &DateTime) -> Value<S> {
         Value::scalar(
@@ -199,7 +191,7 @@ mod date_time {
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTime, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -226,15 +218,13 @@ const UTC_OFFSET_FORMAT: &[FormatItem<'_>] =
 /// [2]: https://docs.rs/time/*/time/struct.UtcOffset.html
 #[graphql_scalar(
     with = utc_offset,
-    parse_token = String,
+    parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
 )]
 pub type UtcOffset = time::UtcOffset;
 
 mod utc_offset {
     use super::*;
-
-    pub(super) type Error = String;
 
     pub(super) fn to_output<S: ScalarValue>(v: &UtcOffset) -> Value<S> {
         Value::scalar(
@@ -243,7 +233,7 @@ mod utc_offset {
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcOffset, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcOffset, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -272,7 +262,7 @@ mod date_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {}",
+                "failed to parse `{}`: {:?}",
                 raw,
                 parsed.unwrap_err(),
             );
@@ -341,7 +331,7 @@ mod local_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {}",
+                "failed to parse `{}`: {:?}",
                 raw,
                 parsed.unwrap_err(),
             );
@@ -413,7 +403,7 @@ mod local_date_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {}",
+                "failed to parse `{}`: {:?}",
                 raw,
                 parsed.unwrap_err(),
             );
@@ -501,7 +491,7 @@ mod date_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {}",
+                "failed to parse `{}`: {:?}",
                 raw,
                 parsed.unwrap_err(),
             );
@@ -585,7 +575,7 @@ mod utc_offset_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {}",
+                "failed to parse `{}`: {:?}",
                 raw,
                 parsed.unwrap_err(),
             );

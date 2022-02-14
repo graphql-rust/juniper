@@ -74,12 +74,6 @@ struct Attr {
     /// [`FromInputValue::from_input_value`]: juniper::FromInputValue::from_input_value
     from_input: Option<SpanContainer<syn::ExprPath>>,
 
-    /// Explicitly specified type to be used instead of
-    /// [`FromInputValue::Error`].
-    ///
-    /// [`FromInputValue::Error`]: juniper::FromInputValue::Error
-    from_input_err: Option<SpanContainer<syn::Type>>,
-
     /// Explicitly specified resolver to be used instead of
     /// [`ParseScalarValue::from_str`].
     ///
@@ -154,13 +148,6 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "from_input_err" => {
-                    input.parse::<token::Eq>()?;
-                    let scl = input.parse::<syn::Type>()?;
-                    out.from_input_err
-                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
-                        .none_or_else(|_| err::dup_arg(&ident))?
-                }
                 "parse_token_with" => {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<syn::ExprPath>()?;
@@ -173,27 +160,20 @@ impl Parse for Attr {
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "parse_token" => {
-                    let (span, parsed_types) = if input.parse::<token::Eq>().is_ok() {
-                        let scl = input.parse::<syn::Type>()?;
-                        (scl.span(), vec![scl])
-                    } else {
-                        let types;
-                        let _ = syn::parenthesized!(types in input);
-                        let parsed_types =
-                            types.parse_terminated::<_, token::Comma>(syn::Type::parse)?;
+                    let types;
+                    let _ = syn::parenthesized!(types in input);
+                    let parsed_types =
+                        types.parse_terminated::<_, token::Comma>(syn::Type::parse)?;
 
-                        if parsed_types.is_empty() {
-                            return Err(syn::Error::new(ident.span(), "expected at least 1 type."));
-                        }
-
-                        (parsed_types.span(), parsed_types.into_iter().collect())
-                    };
+                    if parsed_types.is_empty() {
+                        return Err(syn::Error::new(ident.span(), "expected at least 1 type."));
+                    }
 
                     out.parse_token
                         .replace(SpanContainer::new(
                             ident.span(),
-                            Some(span),
-                            ParseToken::Delegated(parsed_types),
+                            Some(parsed_types.span()),
+                            ParseToken::Delegated(parsed_types.into_iter().collect()),
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -256,7 +236,6 @@ impl Attr {
             scalar: try_merge_opt!(scalar: self, another),
             to_output: try_merge_opt!(to_output: self, another),
             from_input: try_merge_opt!(from_input: self, another),
-            from_input_err: try_merge_opt!(from_input_err: self, another),
             parse_token: try_merge_opt!(parse_token: self, another),
             with: try_merge_opt!(with: self, another),
             where_clause: try_merge_opt!(where_clause: self, another),
@@ -521,7 +500,6 @@ impl Definition {
     fn impl_from_input_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let error_ty = self.methods.expand_from_input_value_err(scalar);
         let from_input_value = self.methods.expand_from_input_value(scalar);
 
         let (ty, generics) = self.impl_self_and_generics(false);
@@ -532,10 +510,11 @@ impl Definition {
             impl#impl_gens ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
-                type Error = #error_ty;
+                type Error = ::juniper::executor::FieldError<#scalar>;
 
                 fn from_input_value(input: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
                    #from_input_value
+                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
                 }
             }
         }
@@ -708,9 +687,8 @@ enum GraphQLScalarMethods {
         /// Function provided with `#[graphql(to_output_with = ...)]`.
         to_output: syn::ExprPath,
 
-        /// Function and return type provided with
-        /// `#[graphql(from_input_with = ..., from_input_err = ...)]`.
-        from_input: (syn::ExprPath, syn::Type),
+        /// Function provided with `#[graphql(from_input_with = ...)]`.
+        from_input: syn::ExprPath,
 
         /// [`ParseToken`] provided with `#[graphql(parse_token_with = ...)]`
         /// or `#[graphql(parse_token(...))]`.
@@ -725,9 +703,8 @@ enum GraphQLScalarMethods {
         /// Function provided with `#[graphql(to_output_with = ...)]`.
         to_output: Option<syn::ExprPath>,
 
-        /// Function and return type provided with
-        /// `#[graphql(from_input_with = ..., from_input_err = ...)]`.
-        from_input: Option<(syn::ExprPath, syn::Type)>,
+        /// Function provided with `#[graphql(from_input_with = ...)]`.
+        from_input: Option<syn::ExprPath>,
 
         /// [`ParseToken`] provided with `#[graphql(parse_token_with = ...)]`
         /// or `#[graphql(parse_token(...))]`.
@@ -785,37 +762,14 @@ impl GraphQLScalarMethods {
         }
     }
 
-    /// Expands [`FromInputValue::Error`] type.
-    ///
-    /// [`FromInputValue::Error`]: juniper::FromInputValue::Error
-    fn expand_from_input_value_err(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom {
-                from_input: (_, err),
-                ..
-            }
-            | Self::Delegated {
-                from_input: Some((_, err)),
-                ..
-            } => quote! { #err },
-            Self::Delegated { field, .. } => {
-                let field_ty = field.ty();
-                quote! { <#field_ty as ::juniper::FromInputValue<#scalar>>::Error }
-            }
-        }
-    }
-
     /// Expands [`FromInputValue::from_input_value`][1] method.
     ///
     /// [1]: juniper::FromInputValue::from_input_value
     fn expand_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
-            Self::Custom {
-                from_input: (from_input, _),
-                ..
-            }
+            Self::Custom { from_input, .. }
             | Self::Delegated {
-                from_input: Some((from_input, _)),
+                from_input: Some(from_input),
                 ..
             } => {
                 quote! { #from_input(input) }
