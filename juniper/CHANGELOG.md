@@ -41,6 +41,7 @@
 - Support `isRepeatable` field on directives. ([#1003](https://github.com/graphql-rust/juniper/pull/1003), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
 - Support `__Schema.description`, `__Type.specifiedByURL` and `__Directive.isRepeatable` fields in introspection. ([#1003](https://github.com/graphql-rust/juniper/pull/1003), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
 - Support directives on variables definitions. ([#1005](https://github.com/graphql-rust/juniper/pull/1005))
+- Implement `#[derive(GraphQLScalarValue)]` macro to derive `ScalarValue` on enums. ([#1025](https://github.com/graphql-rust/juniper/pull/1025))
 
 ## Fixes
 
