@@ -159,7 +159,7 @@ impl TypeExt for syn::Type {
                             ty.lifetimes_iter_mut(func)
                         }
                         if let syn::ReturnType::Type(_, ty) = &mut args.output {
-                            (&mut *ty).lifetimes_iter_mut(func)
+                            (*ty).lifetimes_iter_mut(func)
                         }
                     }
                     syn::PathArguments::None => {}
@@ -172,7 +172,7 @@ impl TypeExt for syn::Type {
             | T::Group(syn::TypeGroup { elem, .. })
             | T::Paren(syn::TypeParen { elem, .. })
             | T::Ptr(syn::TypePtr { elem, .. })
-            | T::Slice(syn::TypeSlice { elem, .. }) => (&mut *elem).lifetimes_iter_mut(func),
+            | T::Slice(syn::TypeSlice { elem, .. }) => (*elem).lifetimes_iter_mut(func),
 
             T::Tuple(syn::TypeTuple { elems, .. }) => {
                 for ty in elems.iter_mut() {
@@ -199,7 +199,7 @@ impl TypeExt for syn::Type {
                 if let Some(lt) = ref_ty.lifetime.as_mut() {
                     func(lt)
                 }
-                (&mut *ref_ty.elem).lifetimes_iter_mut(func)
+                (*ref_ty.elem).lifetimes_iter_mut(func)
             }
 
             T::Path(ty) => iter_path(&mut ty.path, func),
@@ -228,7 +228,7 @@ impl TypeExt for syn::Type {
     fn topmost_ident(&self) -> Option<&syn::Ident> {
         match self.unparenthesized() {
             syn::Type::Path(p) => Some(&p.path),
-            syn::Type::Reference(r) => match (&*r.elem).unparenthesized() {
+            syn::Type::Reference(r) => match (*r.elem).unparenthesized() {
                 syn::Type::Path(p) => Some(&p.path),
                 syn::Type::TraitObject(o) => match o.bounds.iter().next().unwrap() {
                     syn::TypeParamBound::Trait(b) => Some(&b.path),

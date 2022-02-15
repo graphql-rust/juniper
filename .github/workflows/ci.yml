@@ -97,55 +97,55 @@ jobs:
   # Releases
   ###################################################
 
-  release:
-    name: Check release automation
+  #release:
+  #  name: Check release automation
 
-    runs-on: ubuntu-latest
+  #  runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 20
+  # steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+  #     with:
+  #       fetch-depth: 20
 
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+  #   - name: Install rust
+  #     uses: actions-rs/toolchain@v1
+  #     with:
+  #       toolchain: stable
+  #       profile: minimal
+  #       override: true
 
-      - uses: davidB/rust-cargo-make@v1
-        with:
-          version: '0.20.0'
+  #   - uses: davidB/rust-cargo-make@v1
+  #     with:
+  #       version: '0.20.0'
 
-      - name: Install cargo-release
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: --version=0.11.2 cargo-release
+  #   - name: Install cargo-release
+  #     uses: actions-rs/cargo@v1
+  #     with:
+  #       command: install
+  #       args: --version=0.19.4 cargo-release
 
-      - name: Setup git
-        run: |
-          git config --global user.email "juniper@example.com"
-          git config --global user.name "Release Test Bot"
+  #   - name: Setup git
+  #     run: |
+  #       git config --global user.email "juniper@example.com"
+  #       git config --global user.name "Release Test Bot"
 
-      - name: Dry run mode
-        env:
-          RELEASE_LEVEL: minor
-        run: |
-          cargo make release-dry-run
+  #   - name: Dry run mode
+  #     env:
+  #       RELEASE_LEVEL: minor
+  #     run: |
+  #       cargo make release-dry-run
 
-      - name: Local test mode
-        env:
-          RELEASE_LEVEL: minor
-        run: |
-          cargo make release-local-test
+  #   - name: Local test mode
+  #     env:
+  #       RELEASE_LEVEL: minor
+  #     run: |
+  #       cargo make release-local-test
 
-      - name: Echo local changes
-        run: |
-          git --no-pager log -p HEAD...HEAD~20
+  #   - name: Echo local changes
+  #     run: |
+  #       git --no-pager log -p HEAD...HEAD~20
 
-      - name: Run tests
-        run: |
-          cargo make workspace-ci-flow --no-workspace
+  #   - name: Run tests
+  #     run: |
+  #       cargo make workspace-ci-flow --no-workspace

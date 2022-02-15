@@ -1,6 +1,6 @@
 [package]
 name = "juniper"
-version = "0.15.7"
+version = "0.16.0-dev"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -32,7 +32,7 @@ scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
 
 [dependencies]
-juniper_codegen = { version = "0.15.7", path = "../juniper_codegen"  }
+juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen"  }
 
 anyhow = { version = "1.0.32", optional = true, default-features = false }
 async-trait = "0.1.39"

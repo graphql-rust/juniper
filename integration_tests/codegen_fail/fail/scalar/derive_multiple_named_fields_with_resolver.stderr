@@ -1,5 +1,5 @@
 error: GraphQL scalar expected exactly 1 field, e.g., Test { test: i32 } or all custom resolvers
- --> fail/scalar/mutliple_named_fields_with_resolver.rs:4:1
+ --> fail/scalar/derive_multiple_named_fields_with_resolver.rs:4:1
   |
 4 | / #[graphql(to_output_with = Self::to_output)]
 5 | | struct Scalar {

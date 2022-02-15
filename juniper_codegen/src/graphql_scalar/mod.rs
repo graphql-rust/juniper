@@ -2,12 +2,15 @@
 //!
 //! [1]: https://spec.graphql.org/October2021/#sec-Scalars
 
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use proc_macro2::{Literal, TokenStream};
+use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
-    parse_quote, token,
+    parse_quote,
+    spanned::Spanned as _,
+    token,
+    visit_mut::VisitMut,
 };
 use url::Url;
 
@@ -25,26 +28,65 @@ use crate::{
 pub mod attr;
 pub mod derive;
 
-/// Available arguments behind `#[graphql_scalar]` attribute when generating
-/// code for [GraphQL scalar][1] type.
+/// Available arguments behind `#[graphql]`/`#[graphql_scalar]` attributes when
+/// generating code for [GraphQL scalar][1].
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Attr {
     /// Name of this [GraphQL scalar][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    pub name: Option<SpanContainer<String>>,
+    name: Option<SpanContainer<String>>,
 
     /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    pub description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<String>>,
 
     /// Spec [`Url`] of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    pub specified_by_url: Option<SpanContainer<Url>>,
+    specified_by_url: Option<SpanContainer<Url>>,
+
+    /// Explicitly specified type (or type parameter with its bounds) of
+    /// [`ScalarValue`] to use for resolving this [GraphQL scalar][1] type with.
+    ///
+    /// If [`None`], then generated code will be generic over any
+    /// [`ScalarValue`] type, which, in turn, requires all [scalar][1] fields to
+    /// be generic over any [`ScalarValue`] type too. That's why this type
+    /// should be specified only if one of the variants implements
+    /// [`GraphQLType`] in a non-generic way over [`ScalarValue`] type.
+    ///
+    /// [`GraphQLType`]: juniper::GraphQLType
+    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    scalar: Option<SpanContainer<scalar::AttrValue>>,
+
+    /// Explicitly specified function to be used instead of
+    /// [`ToInputValue::to_input_value`].
+    ///
+    /// [`ToInputValue::to_input_value`]: juniper::ToInputValue::to_input_value
+    to_output: Option<SpanContainer<syn::ExprPath>>,
+
+    /// Explicitly specified function to be used instead of
+    /// [`FromInputValue::from_input_value`].
+    ///
+    /// [`FromInputValue::from_input_value`]: juniper::FromInputValue::from_input_value
+    from_input: Option<SpanContainer<syn::ExprPath>>,
+
+    /// Explicitly specified resolver to be used instead of
+    /// [`ParseScalarValue::from_str`].
+    ///
+    /// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
+    parse_token: Option<SpanContainer<ParseToken>>,
+
+    /// Explicitly specified module with all custom resolvers for
+    /// [`Self::to_output`], [`Self::from_input`] and [`Self::parse_token`].
+    with: Option<SpanContainer<syn::ExprPath>>,
+
+    /// Explicit where clause added to [`syn::WhereClause`].
+    where_clause: Option<SpanContainer<Vec<syn::WherePredicate>>>,
 }
 
 impl Parse for Attr {
@@ -85,6 +127,94 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(lit.span()), url))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "scalar" | "Scalar" | "ScalarValue" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<scalar::AttrValue>()?;
+                    out.scalar
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "to_output_with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.to_output
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "from_input_with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.from_input
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "parse_token_with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.parse_token
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(scl.span()),
+                            ParseToken::Custom(scl),
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "parse_token" => {
+                    let types;
+                    let _ = syn::parenthesized!(types in input);
+                    let parsed_types =
+                        types.parse_terminated::<_, token::Comma>(syn::Type::parse)?;
+
+                    if parsed_types.is_empty() {
+                        return Err(syn::Error::new(ident.span(), "expected at least 1 type."));
+                    }
+
+                    out.parse_token
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(parsed_types.span()),
+                            ParseToken::Delegated(parsed_types.into_iter().collect()),
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.with
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "where" => {
+                    let (span, parsed_predicates) = if input.parse::<token::Eq>().is_ok() {
+                        let pred = input.parse::<syn::WherePredicate>()?;
+                        (pred.span(), vec![pred])
+                    } else {
+                        let predicates;
+                        let _ = syn::parenthesized!(predicates in input);
+                        let parsed_predicates = predicates
+                            .parse_terminated::<_, token::Comma>(syn::WherePredicate::parse)?;
+
+                        if parsed_predicates.is_empty() {
+                            return Err(syn::Error::new(
+                                ident.span(),
+                                "expected at least 1 where predicate.",
+                            ));
+                        }
+
+                        (
+                            parsed_predicates.span(),
+                            parsed_predicates.into_iter().collect(),
+                        )
+                    };
+
+                    out.where_clause
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            Some(span),
+                            parsed_predicates,
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -103,6 +233,12 @@ impl Attr {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
             specified_by_url: try_merge_opt!(specified_by_url: self, another),
+            scalar: try_merge_opt!(scalar: self, another),
+            to_output: try_merge_opt!(to_output: self, another),
+            from_input: try_merge_opt!(from_input: self, another),
+            parse_token: try_merge_opt!(parse_token: self, another),
+            with: try_merge_opt!(with: self, another),
+            where_clause: try_merge_opt!(where_clause: self, another),
         })
     }
 
@@ -121,6 +257,17 @@ impl Attr {
     }
 }
 
+/// [`syn::Type`] in case of `#[graphql_scalar]` or [`syn::Ident`] in case of
+/// `#[derive(GraphQLScalar)]`.
+#[derive(Clone)]
+enum TypeOrIdent {
+    /// [`syn::Type`].
+    Type(Box<syn::Type>),
+
+    /// [`syn::Ident`].
+    Ident(syn::Ident),
+}
+
 /// Definition of [GraphQL scalar][1] for code generation.
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
@@ -130,18 +277,24 @@ struct Definition {
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     name: String,
 
-    /// Rust type that this [GraphQL scalar][1] is represented with.
-    ///
-    /// It should contain all its generics, if any.
+    /// [`TypeOrIdent`] of this [GraphQL scalar][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
-    impl_for_type: syn::Type,
+    ty: TypeOrIdent,
+
+    /// Additional [`Self::generics`] [`syn::WhereClause`] predicates.
+    where_clause: Vec<syn::WherePredicate>,
 
     /// Generics of the Rust type that this [GraphQL scalar][1] is implemented
     /// for.
     ///
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     generics: syn::Generics,
+
+    /// [`GraphQLScalarMethods`] representing [GraphQL scalar][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    methods: GraphQLScalarMethods,
 
     /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
@@ -184,10 +337,9 @@ impl Definition {
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     #[must_use]
     fn impl_output_and_input_type_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
         let scalar = &self.scalar;
 
-        let generics = self.impl_generics(false);
+        let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -207,12 +359,8 @@ impl Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_type_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
-        let name = &self.name;
         let scalar = &self.scalar;
-
-        let generics = self.impl_generics(false);
-        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let name = &self.name;
 
         let description = self
             .description
@@ -222,6 +370,9 @@ impl Definition {
             let url_lit = url.as_str();
             quote! { .specified_by_url(#url_lit) }
         });
+
+        let (ty, generics) = self.impl_self_and_generics(false);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
@@ -254,10 +405,11 @@ impl Definition {
     /// [`GraphQLValue`]: juniper::GraphQLValue
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_value_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
         let scalar = &self.scalar;
 
-        let generics = self.impl_generics(false);
+        let resolve = self.methods.expand_resolve(scalar);
+
+        let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -278,7 +430,7 @@ impl Definition {
                     selection: Option<&[::juniper::Selection<#scalar>]>,
                     executor: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
-                    Ok(::juniper::GraphQLScalar::to_output(self))
+                    #resolve
                 }
             }
         }
@@ -290,10 +442,9 @@ impl Definition {
     /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_value_async_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
         let scalar = &self.scalar;
 
-        let generics = self.impl_generics(true);
+        let (ty, generics) = self.impl_self_and_generics(true);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -321,10 +472,11 @@ impl Definition {
     /// [`InputValue`]: juniper::InputValue
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_to_input_value_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
         let scalar = &self.scalar;
 
-        let generics = self.impl_generics(false);
+        let to_input_value = self.methods.expand_to_input_value(scalar);
+
+        let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -333,8 +485,7 @@ impl Definition {
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                    let v = ::juniper::GraphQLScalar::to_output(self);
-                    ::juniper::ToInputValue::to_input_value(&v)
+                    #to_input_value
                 }
             }
         }
@@ -346,10 +497,11 @@ impl Definition {
     /// [`FromInputValue`]: juniper::FromInputValue
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_from_input_value_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
         let scalar = &self.scalar;
 
-        let generics = self.impl_generics(false);
+        let from_input_value = self.methods.expand_from_input_value(scalar);
+
+        let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -357,10 +509,11 @@ impl Definition {
             impl#impl_gens ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
-                type Error = <Self as ::juniper::GraphQLScalar<#scalar>>::Error;
+                type Error = ::juniper::executor::FieldError<#scalar>;
 
                 fn from_input_value(input: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
-                    ::juniper::GraphQLScalar::from_input(input)
+                   #from_input_value
+                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
                 }
             }
         }
@@ -372,10 +525,11 @@ impl Definition {
     /// [`ParseScalarValue`]: juniper::ParseScalarValue
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_parse_scalar_value_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
         let scalar = &self.scalar;
 
-        let generics = self.impl_generics(false);
+        let from_str = self.methods.expand_parse_scalar_value(scalar);
+
+        let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -386,7 +540,7 @@ impl Definition {
                fn from_str(
                     token: ::juniper::parser::ScalarToken<'_>,
                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
-                    <Self as ::juniper::GraphQLScalar<#scalar>>::parse_token(token)
+                    #from_str
                 }
             }
         }
@@ -395,16 +549,15 @@ impl Definition {
     /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
     /// [`WrappedType`] traits for this [GraphQL scalar][1].
     ///
-    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
-    /// [`BaseType`]: juniper::macros::reflect::BaseType
-    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
+    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
     /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
-        let ty = &self.impl_for_type;
         let scalar = &self.scalar;
         let name = &self.name;
 
-        let generics = self.impl_generics(false);
+        let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -415,6 +568,7 @@ impl Definition {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
+            #[automatically_derived]
             impl#impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
@@ -422,6 +576,7 @@ impl Definition {
                     &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
+            #[automatically_derived]
             impl#impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
                 #where_clause
             {
@@ -430,8 +585,8 @@ impl Definition {
         }
     }
 
-    /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
-    /// similar) implementation.
+    /// Returns prepared self type and [`syn::Generics`] for [`GraphQLType`]
+    /// trait (and similar) implementation.
     ///
     /// If `for_async` is `true`, then additional predicates are added to suit
     /// the [`GraphQLAsyncValue`] trait (and similar) requirements.
@@ -439,8 +594,23 @@ impl Definition {
     /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
     #[must_use]
-    fn impl_generics(&self, for_async: bool) -> syn::Generics {
+    fn impl_self_and_generics(&self, for_async: bool) -> (TokenStream, syn::Generics) {
         let mut generics = self.generics.clone();
+
+        let ty = match &self.ty {
+            TypeOrIdent::Type(ty) => ty.into_token_stream(),
+            TypeOrIdent::Ident(ident) => {
+                let (_, ty_gen, _) = self.generics.split_for_impl();
+                quote! { #ident#ty_gen }
+            }
+        };
+
+        if !self.where_clause.is_empty() {
+            generics
+                .make_where_clause()
+                .predicates
+                .extend(self.where_clause.clone())
+        }
 
         let scalar = &self.scalar;
         if scalar.is_implicit_generic() {
@@ -458,19 +628,22 @@ impl Definition {
 
         if for_async {
             let self_ty = if self.generics.lifetimes().next().is_some() {
-                // Modify lifetime names to omit "lifetime name `'a` shadows a
-                // lifetime name that is already in scope" error.
                 let mut generics = self.generics.clone();
-                for lt in generics.lifetimes_mut() {
-                    let ident = lt.lifetime.ident.unraw();
-                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
-                }
+                ModifyLifetimes.visit_generics_mut(&mut generics);
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
-                let ty = &self.impl_for_type;
-                let (_, ty_generics, _) = generics.split_for_impl();
+                let ty = match self.ty.clone() {
+                    TypeOrIdent::Type(mut ty) => {
+                        ModifyLifetimes.visit_type_mut(&mut ty);
+                        ty.into_token_stream()
+                    }
+                    TypeOrIdent::Ident(ident) => {
+                        let (_, ty_gens, _) = generics.split_for_impl();
+                        quote! { #ident#ty_gens }
+                    }
+                };
 
-                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+                quote! { for<#( #lifetimes ),*> #ty }
             } else {
                 quote! { Self }
             };
@@ -487,6 +660,228 @@ impl Definition {
             }
         }
 
-        generics
+        (ty, generics)
+    }
+}
+
+/// Adds `__fa__` prefix to all lifetimes to avoid "lifetime name `'a` shadows a
+/// lifetime name that is already in scope" error.
+struct ModifyLifetimes;
+
+impl VisitMut for ModifyLifetimes {
+    fn visit_lifetime_mut(&mut self, lf: &mut syn::Lifetime) {
+        lf.ident = format_ident!("__fa__{}", lf.ident.unraw());
+    }
+}
+
+/// Methods representing [GraphQL scalar][1].
+///
+/// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+enum GraphQLScalarMethods {
+    /// [GraphQL scalar][1] represented with only custom resolvers.
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    Custom {
+        /// Function provided with `#[graphql(to_output_with = ...)]`.
+        to_output: syn::ExprPath,
+
+        /// Function provided with `#[graphql(from_input_with = ...)]`.
+        from_input: syn::ExprPath,
+
+        /// [`ParseToken`] provided with `#[graphql(parse_token_with = ...)]`
+        /// or `#[graphql(parse_token(...))]`.
+        parse_token: ParseToken,
+    },
+
+    /// [GraphQL scalar][1] maybe partially represented with custom resolver.
+    /// Other methods are used from [`Field`].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    Delegated {
+        /// Function provided with `#[graphql(to_output_with = ...)]`.
+        to_output: Option<syn::ExprPath>,
+
+        /// Function provided with `#[graphql(from_input_with = ...)]`.
+        from_input: Option<syn::ExprPath>,
+
+        /// [`ParseToken`] provided with `#[graphql(parse_token_with = ...)]`
+        /// or `#[graphql(parse_token(...))]`.
+        parse_token: Option<ParseToken>,
+
+        /// [`Field`] to resolve not provided methods.
+        field: Box<Field>,
+    },
+}
+
+impl GraphQLScalarMethods {
+    /// Expands [`GraphQLValue::resolve`] method.
+    ///
+    /// [`GraphQLValue::resolve`]: juniper::GraphQLValue::resolve
+    fn expand_resolve(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { to_output, .. }
+            | Self::Delegated {
+                to_output: Some(to_output),
+                ..
+            } => {
+                quote! { Ok(#to_output(self)) }
+            }
+            Self::Delegated { field, .. } => {
+                quote! {
+                    ::juniper::GraphQLValue::<#scalar>::resolve(
+                        &self.#field,
+                        info,
+                        selection,
+                        executor,
+                    )
+                }
+            }
+        }
+    }
+
+    /// Expands [`ToInputValue::to_input_value`] method.
+    ///
+    /// [`ToInputValue::to_input_value`]: juniper::ToInputValue::to_input_value
+    fn expand_to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { to_output, .. }
+            | Self::Delegated {
+                to_output: Some(to_output),
+                ..
+            } => {
+                quote! {
+                    let v = #to_output(self);
+                    ::juniper::ToInputValue::to_input_value(&v)
+                }
+            }
+            Self::Delegated { field, .. } => {
+                quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field) }
+            }
+        }
+    }
+
+    /// Expands [`FromInputValue::from_input_value`][1] method.
+    ///
+    /// [1]: juniper::FromInputValue::from_input_value
+    fn expand_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { from_input, .. }
+            | Self::Delegated {
+                from_input: Some(from_input),
+                ..
+            } => {
+                quote! { #from_input(input) }
+            }
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                let self_constructor = field.closure_constructor();
+                quote! {
+                    <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
+                        .map(#self_constructor)
+                }
+            }
+        }
+    }
+
+    /// Expands [`ParseScalarValue::from_str`] method.
+    ///
+    /// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
+    fn expand_parse_scalar_value(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { parse_token, .. }
+            | Self::Delegated {
+                parse_token: Some(parse_token),
+                ..
+            } => {
+                let parse_token = parse_token.expand_from_str(scalar);
+                quote! { #parse_token }
+            }
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                quote! { <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token) }
+            }
+        }
+    }
+}
+
+/// Representation of [`ParseScalarValue::from_str`] method.
+///
+/// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
+#[derive(Clone, Debug)]
+enum ParseToken {
+    /// Custom method.
+    Custom(syn::ExprPath),
+
+    /// Tries to parse using [`syn::Type`]s [`ParseScalarValue`] impls until
+    /// first success.
+    ///
+    /// [`ParseScalarValue`]: juniper::ParseScalarValue
+    Delegated(Vec<syn::Type>),
+}
+
+impl ParseToken {
+    /// Expands [`ParseScalarValue::from_str`] method.
+    ///
+    /// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
+    fn expand_from_str(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            ParseToken::Custom(parse_token) => {
+                quote! { #parse_token(token) }
+            }
+            ParseToken::Delegated(delegated) => delegated
+                .iter()
+                .fold(None, |acc, ty| {
+                    acc.map_or_else(
+                        || Some(quote! { <#ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token) }),
+                        |prev| {
+                            Some(quote! {
+                                #prev.or_else(|_| {
+                                    <#ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token)
+                                })
+                            })
+                        }
+                    )
+                })
+                .unwrap_or_default(),
+        }
+    }
+}
+
+/// Struct field to resolve not provided methods.
+enum Field {
+    /// Named [`Field`].
+    Named(syn::Field),
+
+    /// Unnamed [`Field`].
+    Unnamed(syn::Field),
+}
+
+impl ToTokens for Field {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Field::Named(f) => f.ident.to_tokens(tokens),
+            Field::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
+        }
+    }
+}
+
+impl Field {
+    /// [`syn::Type`] of this [`Field`].
+    fn ty(&self) -> &syn::Type {
+        match self {
+            Field::Named(f) | Field::Unnamed(f) => &f.ty,
+        }
+    }
+
+    /// Closure to construct [GraphQL scalar][1] struct from [`Field`].
+    ///
+    /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
+    fn closure_constructor(&self) -> TokenStream {
+        match self {
+            Field::Named(syn::Field { ident, .. }) => {
+                quote! { |v| Self { #ident: v } }
+            }
+            Field::Unnamed(_) => quote! { Self },
+        }
     }
 }

@@ -21,14 +21,12 @@
   - Remove necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching its fields).
   - Forbid default impls on non-ignored trait methods.
   - Support coercion of additional nullable arguments and return sub-typing on implementer.
-- Redesign `#[graphql_scalar]` macro: ([#1014](https://github.com/graphql-rust/juniper/pull/1014))
+- Redesign `#[derive(GraphQLScalar)]` macro: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
   - Support generic scalars.
-  - Introduce actual `GraphQLScalar` trait.
-    - Add `Error` associated type to the `GraphQLScalar` trait.
-    - Rename `resolve` method to `to_output`.
-    - Rename `from_input_value` method to `from_input`.
-    - Rename `from_str` method to `parse_token`.
-- Split `#[derive(GraphQLScalarValue)]` into `#[derive(GraphQLScalar)]` and `#[derive(GraphQLScalarValue)]` macros: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
+  - Support structs with single named field.
+  - Support for overriding resolvers.
+- Redesign `#[graphql_scalar]` macro: ([#1014](https://github.com/graphql-rust/juniper/pull/1014))
+  - Use on type aliases only in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rule](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules).
 
 ## Features
 
@@ -49,6 +47,14 @@
 - Allow spreading interface fragments on unions and other interfaces. ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
 - Support expressions in `graphql_value!` macro. ([#996](https://github.com/graphql-rust/juniper/pull/996), [#503](https://github.com/graphql-rust/juniper/issues/503))
 - List coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004](https://github.com/graphql-rust/juniper/pull/1004))
+
+# [[0.15.9] 2022-02-02](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.9)
+
+- Fix infinite recursion on malformed queries with nested recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
+
+# [[0.15.8] 2022-01-26](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.8)
+
+- Fix panic on malformed queries with recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 
