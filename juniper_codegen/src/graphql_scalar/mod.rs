@@ -81,8 +81,7 @@ struct Attr {
     parse_token: Option<SpanContainer<ParseToken>>,
 
     /// Explicitly specified module with all custom resolvers for
-    /// [`Self::to_output`], [`Self::from_input`], [`Self::from_input_err`] and
-    /// [`Self::parse_token`].
+    /// [`Self::to_output`], [`Self::from_input`] and [`Self::parse_token`].
     with: Option<SpanContainer<syn::ExprPath>>,
 
     /// Explicit where clause added to [`syn::WhereClause`].
