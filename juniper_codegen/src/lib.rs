@@ -204,15 +204,14 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// #### `#[graphql(from_input_with = <fn>, from_input_err = <type>)]` attributes
+/// #### `#[graphql(from_input_with = <fn>)]` attribute
 ///
 /// ```rust
 /// # use juniper::{DefaultScalarValue, GraphQLScalar, InputValue, ScalarValue};
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(scalar = DefaultScalarValue)]
-/// #[graphql(from_input_with = Self::from_input, from_input_err = String)]
-/// //         Unfortunately for now there is no way to infer this ^^^^^^
+/// #[graphql(from_input_with = Self::from_input)]
 /// struct UserId(String);
 ///
 /// impl UserId {
@@ -248,7 +247,6 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// #[graphql(
 ///     to_output_with = to_output,
 ///     from_input_with = from_input,
-///     from_input_err = String,
 ///     parse_token_with = parse_token,
 ///     // ^^^^^^^^^^^^^ Can be replaced with `parse_token(String, i32)`
 ///     //               which tries to parse as `String` and then as `i32`
@@ -284,17 +282,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// #### `#[graphql(with = <module>)]` attribute
 ///
 /// Instead of providing all custom resolvers, you can provide module with
-/// `to_output`, `from_input`, `parse_token` functions and `Error` struct or
-/// type alias.
-///
-/// #### `#[graphql(scalar = <maybe_bounded_type>)]`
-///
-/// Custom implementation (`scalar = `[`DefaultScalarValue`]) or generic bounded
-/// [`ScalarValue`] (`scalar = S: Trait`).
-///
-/// #### `#[graphql(where = <single_bound>)]` or `#[graphql(where(<multiple_bounds>))]`
-///
-/// Adds custom generic bounds in [scalar][1] implementation.
+/// `to_output`, `from_input`, `parse_token` functions.
 ///
 /// ```rust
 /// # use juniper::{
@@ -312,32 +300,21 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// mod string_or_int {
 ///     # use super::*;
 ///     #
-///     pub(super) type Error = String;
-///
-///     pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
-///     where
-///         S: ScalarValue,
-///     {
+///     pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
 ///         match v {
 ///             StringOrInt::String(str) => Value::scalar(str.to_owned()),
 ///             StringOrInt::Int(i) => Value::scalar(*i),
 ///         }
 ///     }
 ///
-///     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
-///     where
-///         S: ScalarValue,
-///     {
+///     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
 ///         v.as_string_value()
 ///             .map(|s| StringOrInt::String(s.to_owned()))
 ///             .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
 ///     }
 ///
-///     pub(super) fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
-///     where
-///         S: ScalarValue,
-///     {
+///     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
 ///         <String as ParseScalarValue<S>>::from_str(value)
 ///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 ///     }
@@ -349,12 +326,14 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// Also you can partially override `with` attribute with other custom scalars.
 ///
 /// ```rust
-/// # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+/// # use juniper::{
+/// #     GraphQLScalar, InputValue, ParseScalarResult, ScalarValue,
+/// #     ScalarToken, Value
+/// # };
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(
 ///     with = string_or_int,
-///     from_input_err = String,
 ///     parse_token(String, i32)
 /// )]
 /// enum StringOrInt {
@@ -388,6 +367,15 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// #
 /// # fn main() {}
 /// ```
+///
+/// #### `#[graphql(scalar = <maybe_bounded_type>)]`
+///
+/// Custom implementation (`scalar = `[`DefaultScalarValue`]) or generic bounded
+/// [`ScalarValue`] (`scalar = S: Trait`).
+///
+/// #### `#[graphql(where = <single_bound>)]` or `#[graphql(where(<multiple_bounds>))]`
+///
+/// Adds custom generic bounds in [scalar][1] implementation.
 ///
 /// [1]: https://spec.graphql.org/October2021/#sec-Scalars
 /// [`DefaultScalarValue`]: juniper::DefaultScalarValue
@@ -433,7 +421,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///
 /// #[graphql_scalar(
 ///     with = date_scalar,
-///     parse_token = String,
+///     parse_token(String),
 ///     scalar = CustomScalarValue,
 /// //           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
 /// )]
@@ -443,17 +431,14 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// mod date_scalar {
 ///     use super::*;
 ///   
-///     // Error of the `from_input_value()` method.
-///     // NOTE: Should implement `IntoFieldError<S>`.
-///     pub(super) type Error = String;
-///   
 ///     // Define how to convert your custom scalar into a primitive type.
 ///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
 ///         Value::scalar(v.to_string())
 ///     }
 ///   
 ///     // Define how to parse a primitive type into your custom scalar.
-///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, Error> {
+///     // NOTE: The error type should implement `IntoFieldError<S>`.
+///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
 ///       v.as_string_value()
 ///           .ok_or_else(|| format!("Expected `String`, found: {}", v))
 ///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))

@@ -76,8 +76,8 @@ type String = std::string::String;
 mod string {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &String) -> Value<S> {
-        Value::scalar(v.clone())
+    pub(super) fn to_output<S: ScalarValue>(v: &str) -> Value<S> {
+        Value::scalar(v.to_owned())
     }
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<String, String> {

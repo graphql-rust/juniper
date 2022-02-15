@@ -119,7 +119,7 @@ impl GraphQLScope {
         duplicates
             .into_iter()
             .for_each(|dup| {
-                (&dup.spanned[1..])
+                let _ = &dup.spanned[1..]
                     .iter()
                     .for_each(|spanned| {
                         Diagnostic::spanned(

@@ -102,7 +102,7 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 # fn main() {}
 ```
 
-#### `#[graphql(from_input_with = <fn>, from_input_err = <type>)]` attributes
+#### `#[graphql(from_input_with = <fn>)]` attribute
 
 ```rust
 # use juniper::{DefaultScalarValue, GraphQLScalar, InputValue, ScalarValue};
@@ -181,7 +181,7 @@ fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, 
 
 #### `#[graphql(with = <module>)]` attribute
 
-Instead of providing all custom resolvers, you can provide module with `to_output`, `from_input`, `parse_token` functions and `Error` struct or type alias.
+Instead of providing all custom resolvers, you can provide module with `to_output`, `from_input`, `parse_token` functions.
 
 ```rust
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue, ScalarToken, Value};
@@ -269,6 +269,15 @@ mod string_or_int {
 #
 # fn main() {}
 ```
+
+#### `#[graphql(scalar = <maybe_bounded_type>)]`
+
+Custom implementation (`scalar = DefaultScalarValue`) or generic bounded
+[`ScalarValue`] (`scalar = S: Trait`).
+
+#### `#[graphql(where = <single_bound>)]` or `#[graphql(where(<multiple_bounds>))]`
+
+Adds custom generic bounds in scalar implementation.
 
 ---
 

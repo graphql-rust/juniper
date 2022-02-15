@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Debug, GraphQLScalar)]
-#[graphql(with = test_complex_scalar, parse_token = String)]
+#[graphql(with = test_complex_scalar, parse_token(String))]
 struct TestComplexScalar;
 
 mod test_complex_scalar {

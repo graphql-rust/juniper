@@ -20,41 +20,23 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let field = match (
         attr.to_output.as_deref().cloned(),
         attr.from_input.as_deref().cloned(),
-        attr.from_input_err.as_deref().cloned(),
         attr.parse_token.as_deref().cloned(),
         attr.with.as_deref().cloned(),
     ) {
-        (Some(to_output), Some(from_input), Some(from_input_err), Some(parse_token), None) => {
+        (Some(to_output), Some(from_input), Some(parse_token), None) => {
             GraphQLScalarMethods::Custom {
                 to_output,
-                from_input: (from_input, from_input_err),
+                from_input,
                 parse_token,
             }
         }
-        (to_output, from_input, from_input_err, parse_token, Some(module)) => {
-            GraphQLScalarMethods::Custom {
-                to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
-                from_input: (
-                    from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
-                    from_input_err.unwrap_or_else(|| parse_quote! { #module::Error }),
-                ),
-                parse_token: parse_token
-                    .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
-            }
-        }
-        (to_output, from_input, from_input_err, parse_token, None) => {
-            let from_input = match (from_input, from_input_err) {
-                (Some(from_input), Some(err)) => Some((from_input, err)),
-                (None, None) => None,
-                _ => {
-                    return Err(ERR.custom_error(
-                        ast.span(),
-                        "`from_input_with` attribute should be provided in \
-                         tandem with `from_input_err`",
-                    ))
-                }
-            };
-
+        (to_output, from_input, parse_token, Some(module)) => GraphQLScalarMethods::Custom {
+            to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
+            from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
+            parse_token: parse_token
+                .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
+        },
+        (to_output, from_input, parse_token, None) => {
             let data = if let syn::Data::Struct(data) = &ast.data {
                 data
             } else {
