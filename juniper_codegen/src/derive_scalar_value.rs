@@ -1,19 +1,19 @@
 //! Code generation for `#[derive(GraphQLScalarValue)]` macro.
-//!
+
 use std::{collections::HashMap, convert::TryFrom};
 
 use proc_macro2::{Literal, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::{quote, ToTokens, TokenStreamExt as _};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
-    spanned::Spanned,
+    spanned::Spanned as _,
     token,
     visit::Visit,
 };
 
 use crate::{
-    common::parse::{attr::err, ParseBufferExt},
+    common::parse::{attr::err, ParseBufferExt as _},
     util::{filter_attrs, span_container::SpanContainer},
     GraphQLScope,
 };
@@ -205,7 +205,7 @@ impl Definition {
             ),
         ];
         let methods = methods.iter().map(|(m, sig, def)| {
-            let arms = self.methods.get(&m).into_iter().flatten().map(|v| {
+            let arms = self.methods.get(m).into_iter().flatten().map(|v| {
                 let arm = v.match_arm();
                 let call = v.expr.as_ref().map_or(def.clone(), |f| quote! { #f(v) });
                 quote! { #arm => Some(#call), }
@@ -223,7 +223,7 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl#impl_gens ::juniper::ScalarValue for #ident#ty_gens
-            #where_clause
+                #where_clause
             {
                 #(#methods)*
             }
@@ -445,6 +445,8 @@ impl<'ast, 'gen> Visit<'ast> for IsVariantGeneric<'gen> {
             });
             if is_generic {
                 self.res = true;
+            } else {
+                syn::visit::visit_path(self, path);
             }
         }
     }

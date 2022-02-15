@@ -401,7 +401,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # use std::{fmt, convert::TryInto as _};
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::{ScalarValue, GraphQLScalarValue};
+/// # use juniper::GraphQLScalarValue;
 /// #
 /// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
