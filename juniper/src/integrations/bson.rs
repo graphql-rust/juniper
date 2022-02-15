@@ -4,19 +4,17 @@ use chrono::prelude::*;
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(with = object_id, parse_token = String)]
+#[graphql_scalar(with = object_id, parse_token(String))]
 type ObjectId = bson::oid::ObjectId;
 
 mod object_id {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &ObjectId) -> Value<S> {
         Value::scalar(v.to_hex())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ObjectId, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ObjectId, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -25,19 +23,17 @@ mod object_id {
     }
 }
 
-#[graphql_scalar(with = utc_date_time, parse_token = String)]
+#[graphql_scalar(with = utc_date_time, parse_token(String))]
 type UtcDateTime = bson::DateTime;
 
 mod utc_date_time {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &UtcDateTime) -> Value<S> {
         Value::scalar((*v).to_chrono().to_rfc3339())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcDateTime, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcDateTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {

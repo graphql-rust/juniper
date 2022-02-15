@@ -17,15 +17,13 @@ struct TestComplexScalar;
 mod test_complex_scalar {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(_: &TestComplexScalar) -> Value<S> {
         graphql_value!("SerializedValue")
     }
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &InputValue<S>,
-    ) -> Result<TestComplexScalar, Error> {
+    ) -> Result<TestComplexScalar, String> {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
             .map(|_| TestComplexScalar)

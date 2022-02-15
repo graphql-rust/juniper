@@ -4,19 +4,17 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(with = uuid_scalar, parse_token = String)]
+#[graphql_scalar(with = uuid_scalar, parse_token(String))]
 type Uuid = uuid::Uuid;
 
 mod uuid_scalar {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &Uuid) -> Value<S> {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Uuid, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Uuid, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `Uuid`: {}", e)))

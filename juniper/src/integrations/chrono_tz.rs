@@ -5,19 +5,17 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(with = tz, parse_token = String)]
+#[graphql_scalar(with = tz, parse_token(String))]
 type Tz = chrono_tz::Tz;
 
 mod tz {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &Tz) -> Value<S> {
         Value::scalar(v.name().to_owned())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Tz, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Tz, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -30,19 +28,17 @@ mod tz {
 #[cfg(test)]
 mod test {
     mod from_input_value {
-        use std::ops::Deref;
-
         use chrono_tz::Tz;
 
-        use crate::{graphql_input_value, FromInputValue, InputValue};
+        use crate::{graphql_input_value, FromInputValue, InputValue, IntoFieldError};
 
         fn tz_input_test(raw: &'static str, expected: Result<Tz, &str>) {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = FromInputValue::from_input_value(&input);
 
             assert_eq!(
-                parsed.as_ref().map_err(Deref::deref),
-                expected.as_ref().map_err(Deref::deref),
+                parsed.as_ref(),
+                expected.map_err(IntoFieldError::into_field_error).as_ref(),
             );
         }
 

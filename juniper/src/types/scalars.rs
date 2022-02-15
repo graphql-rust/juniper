@@ -30,13 +30,11 @@ pub struct ID(String);
 mod id {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &ID) -> Value<S> {
         Value::scalar(v.0.clone())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ID, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ID, String> {
         v.as_string_value()
             .map(str::to_owned)
             .or_else(|| v.as_int_value().map(|i| i.to_string()))
@@ -78,13 +76,11 @@ type String = std::string::String;
 mod string {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &String) -> Value<S> {
         Value::scalar(v.clone())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<String, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<String, String> {
         v.as_string_value()
             .map(str::to_owned)
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
@@ -281,13 +277,11 @@ type Boolean = bool;
 mod boolean {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> Value<S> {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Boolean, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Boolean, String> {
         v.as_scalar_value()
             .and_then(ScalarValue::as_boolean)
             .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
@@ -305,13 +299,11 @@ type Int = i32;
 mod int {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &Int) -> Value<S> {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Int, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Int, String> {
         v.as_int_value()
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
@@ -333,13 +325,11 @@ type Float = f64;
 mod float {
     use super::*;
 
-    pub(super) type Error = String;
-
     pub(super) fn to_output<S: ScalarValue>(v: &Float) -> Value<S> {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Float, Error> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Float, String> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
     }

@@ -280,10 +280,9 @@ mod delegated_parse_token {
     #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
     )]
     #[graphql(
-        parse_token = String,
+        parse_token(String),
         specified_by_url = "https://tools.ietf.org/html/rfc3339"
     )]
     struct CustomDateTime<Tz>(DateTime<Tz>)
@@ -366,7 +365,6 @@ mod multiple_delegated_parse_token {
     #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
         parse_token(String, i32),
     )]
     enum StringOrInt {
@@ -429,10 +427,9 @@ mod where_attribute {
     #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
-        from_input_err = String,
     )]
     #[graphql(
-        parse_token = String,
+        parse_token(String),
         where(Tz: From<Utc>, Tz::Offset: fmt::Display),
         specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
@@ -513,7 +510,6 @@ mod generic_with_all_resolvers {
     #[graphql(
         to_output_with = custom_date_time::to_output,
         from_input_with = custom_date_time::from_input,
-        from_input_err = custom_date_time::Error,
     )]
     #[graphql(
         parse_token_with = custom_date_time::parse_token,
@@ -528,8 +524,6 @@ mod generic_with_all_resolvers {
     mod custom_date_time {
         use super::*;
 
-        pub(super) type Error = String;
-
         pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
         where
             S: ScalarValue,
@@ -539,7 +533,7 @@ mod generic_with_all_resolvers {
             Value::scalar(v.dt.to_rfc3339())
         }
 
-        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, Error>
+        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
         where
             S: ScalarValue,
             Tz: From<Utc> + TimeZone,
@@ -629,8 +623,6 @@ mod generic_with_module {
     mod custom_date_time {
         use super::*;
 
-        pub(super) type Error = String;
-
         pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
         where
             S: ScalarValue,
@@ -640,7 +632,7 @@ mod generic_with_module {
             Value::scalar(v.dt.to_rfc3339())
         }
 
-        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, Error>
+        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
         where
             S: ScalarValue,
             Tz: From<Utc> + TimeZone,

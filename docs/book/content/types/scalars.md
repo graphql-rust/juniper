@@ -109,8 +109,7 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 #
 #[derive(GraphQLScalar)]
 #[graphql(scalar = DefaultScalarValue)]
-#[graphql(from_input_with = Self::from_input, from_input_err = String)]
-//         Unfortunately for now there is no way to infer this ^^^^^^
+#[graphql(from_input_with = Self::from_input)]
 struct UserId(String);
 
 impl UserId {
@@ -145,7 +144,6 @@ impl UserId {
 #[graphql(
     to_output_with = to_output,
     from_input_with = from_input,
-    from_input_err = String,
     parse_token_with = parse_token,
 //  ^^^^^^^^^^^^^^^^ Can be replaced with `parse_token(String, i32)`
 //                   which tries to parse as `String` and then as `i32`
@@ -197,9 +195,7 @@ enum StringOrInt {
 
 mod string_or_int {
     use super::*;
-  
-    pub(super) type Error = String;
-  
+
     pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
     where
         S: ScalarValue,
@@ -240,7 +236,6 @@ Also, you can partially override `#[graphql(with)]` attribute with other custom 
 #[derive(GraphQLScalar)]
 #[graphql(
     with = string_or_int,
-    from_input_err = String,
     parse_token(String, i32)
 )]
 enum StringOrInt {
@@ -307,7 +302,7 @@ use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
 
 #[graphql_scalar(
     with = date_scalar, 
-    parse_token = String,
+    parse_token(String),
     scalar = CustomScalarValue,
 //           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
 )]
@@ -316,14 +311,12 @@ type Date = date::Date;
 
 mod date_scalar {
     use super::*;
-
-    pub(super) type Error = String;
-
+  
     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, Error> {
+    pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
       v.as_string_value()
           .ok_or_else(|| format!("Expected `String`, found: {}", v))
           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
