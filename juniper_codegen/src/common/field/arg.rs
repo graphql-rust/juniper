@@ -6,7 +6,7 @@
 use std::mem;
 
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -306,7 +306,7 @@ impl OnMethod {
     #[must_use]
     pub(crate) fn method_mark_tokens(&self, scalar: &scalar::Type) -> Option<TokenStream> {
         let ty = &self.as_regular()?.ty;
-        Some(quote! {
+        Some(quote_spanned! { ty.span() =>
             <#ty as ::juniper::marker::IsInputType<#scalar>>::mark();
         })
     }
@@ -329,11 +329,12 @@ impl OnMethod {
             .map(|desc| quote! { .description(#desc) });
 
         let method = if let Some(val) = &arg.default {
+            let span = val.span();
             let val = val
                 .as_ref()
                 .map(|v| quote! { (#v).into() })
                 .unwrap_or_else(|| quote! { <#ty as Default>::default() });
-            quote! { .arg_with_default::<#ty>(#name, &#val, info) }
+            quote_spanned! { span => .arg_with_default::<#ty>(#name, &#val, info) }
         } else {
             quote! { .arg::<#ty>(#name, info) }
         };

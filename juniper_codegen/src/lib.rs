@@ -855,6 +855,14 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
         .into()
 }
 
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLInterface, attributes(graphql))]
+pub fn derive_interface(body: TokenStream) -> TokenStream {
+    self::graphql_interface::derive::expand(body.into())
+        .unwrap_or_abort()
+        .into()
+}
+
 /// `#[derive(GraphQLObject)]` macro for deriving a [GraphQL object][1]
 /// implementation for structs.
 ///

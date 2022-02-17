@@ -1,0 +1,18 @@
+error[E0119]: conflicting implementations of trait `std::convert::From<ObjA>` for type `CharacterValueEnum<ObjA, ObjA>`
+  --> fail/interface/struct/implementers_duplicate_ugly.rs:12:18
+   |
+12 | #[graphql(for = [ObjA, ObjAlias])]
+   |                  ^^^^  -------- first implementation here
+   |                  |
+   |                  conflicting implementation for `CharacterValueEnum<ObjA, ObjA>`
+
+error[E0119]: conflicting implementations of trait `<CharacterValueEnum<ObjA, ObjA> as juniper::GraphQLInterface<__S>>::mark::_::{closure#0}::MutuallyExclusive` for type `ObjA`
+  --> fail/interface/struct/implementers_duplicate_ugly.rs:11:10
+   |
+11 | #[derive(GraphQLInterface)]
+   |          ^^^^^^^^^^^^^^^^
+   |          |
+   |          first implementation here
+   |          conflicting implementation for `ObjA`
+   |
+   = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -3,11 +3,12 @@
 //! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 
 pub mod attr;
+pub mod derive;
 
 use std::{collections::HashSet, convert::TryInto as _};
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{format_ident, quote, quote_spanned, ToTokens};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -31,11 +32,12 @@ use crate::{
 };
 
 /// Available arguments behind `#[graphql_interface]` attribute placed on a
-/// trait definition, when generating code for [GraphQL interface][1] type.
+/// trait or struct definition, when generating code for [GraphQL interface][1]
+/// type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[derive(Debug, Default)]
-struct TraitAttr {
+struct Attr {
     /// Explicitly specified name of [GraphQL interface][1] type.
     ///
     /// If [`None`], then Rust trait name is used by default.
@@ -52,7 +54,7 @@ struct TraitAttr {
     description: Option<SpanContainer<String>>,
 
     /// Explicitly specified identifier of the type alias of Rust enum type
-    /// behind the trait, being an actual implementation of a
+    /// behind the trait or struct, being an actual implementation of a
     /// [GraphQL interface][1] type.
     ///
     /// If [`None`], then `{trait_name}Value` identifier will be used.
@@ -110,7 +112,7 @@ struct TraitAttr {
     is_internal: bool,
 }
 
-impl Parse for TraitAttr {
+impl Parse for Attr {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut out = Self::default();
         while !input.is_empty() {
@@ -201,7 +203,7 @@ impl Parse for TraitAttr {
     }
 }
 
-impl TraitAttr {
+impl Attr {
     /// Tries to merge two [`TraitAttr`]s into a single one, reporting about
     /// duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
@@ -237,12 +239,14 @@ impl TraitAttr {
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 struct Definition {
-    /// [`syn::Generics`] of the trait describing the [GraphQL interface][1].
+    /// [`syn::Generics`] of the trait or struct describing the
+    /// [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    trait_generics: syn::Generics,
+    generics: syn::Generics,
 
-    /// [`syn::Visibility`] of the trait describing the [GraphQL interface][1].
+    /// [`syn::Visibility`] of the trait or struct describing the
+    /// [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     vis: syn::Visibility,
@@ -323,48 +327,42 @@ impl Definition {
         let enum_ident = &self.enum_ident;
         let alias_ident = &self.enum_alias_ident;
 
-        let variant_gens_pars = self
-            .implementers
-            .iter()
-            .enumerate()
-            .map::<syn::GenericParam, _>(|(id, _)| {
-                let par = format_ident!("__I{}", id);
-                parse_quote! { #par }
-            });
+        let variant_gens_pars = (0..self.implementers.len()).map::<syn::GenericParam, _>(|id| {
+            let par = format_ident!("__I{}", id);
+            parse_quote! { #par }
+        });
 
         let variants_idents = self
             .implementers
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident));
 
-        let trait_gens = &self.trait_generics;
-        let (trait_impl_gens, trait_ty_gens, trait_where_clause) =
-            self.trait_generics.split_for_impl();
+        let interface_gens = &self.generics;
+        let (interface_impl_gens, interface_ty_gens, interface_where_clause) =
+            self.generics.split_for_impl();
 
-        let (trait_gens_lifetimes, trait_gens_tys) = trait_gens
+        let (interface_gens_lifetimes, interface_gens_tys) = interface_gens
             .params
             .clone()
             .into_iter()
-            .partition::<Punctuated<_, _>, _>(|par| {
-            matches!(par, syn::GenericParam::Lifetime(_))
-        });
+            .partition::<Punctuated<_, _>, _>(|par| matches!(par, syn::GenericParam::Lifetime(_)));
 
         let enum_gens = {
-            let mut enum_gens = trait_gens.clone();
-            enum_gens.params = trait_gens_lifetimes.clone();
+            let mut enum_gens = interface_gens.clone();
+            enum_gens.params = interface_gens_lifetimes.clone();
             enum_gens.params.extend(variant_gens_pars.clone());
-            enum_gens.params.extend(trait_gens_tys.clone());
+            enum_gens.params.extend(interface_gens_tys.clone());
             enum_gens
         };
 
         let enum_alias_gens = {
-            let mut enum_alias_gens = trait_gens.clone();
+            let mut enum_alias_gens = interface_gens.clone();
             enum_alias_gens.move_bounds_to_where_clause();
             enum_alias_gens
         };
 
         let enum_to_alias_gens = {
-            trait_gens_lifetimes
+            interface_gens_lifetimes
                 .into_iter()
                 .map(|par| match par {
                     syn::GenericParam::Lifetime(def) => {
@@ -374,7 +372,7 @@ impl Definition {
                     rest => quote! { #rest },
                 })
                 .chain(self.implementers.iter().map(ToTokens::to_token_stream))
-                .chain(trait_gens_tys.into_iter().map(|par| match par {
+                .chain(interface_gens_tys.into_iter().map(|par| match par {
                     syn::GenericParam::Type(ty) => {
                         let par_ident = &ty.ident;
                         quote! { #par_ident }
@@ -384,7 +382,7 @@ impl Definition {
         };
 
         let phantom_variant = self.has_phantom_variant().then(|| {
-            let phantom_params = trait_gens.params.iter().filter_map(|p| {
+            let phantom_params = interface_gens.params.iter().filter_map(|p| {
                 let ty = match p {
                     syn::GenericParam::Type(ty) => {
                         let ident = &ty.ident;
@@ -408,11 +406,11 @@ impl Definition {
                 .iter()
                 .zip(variants_idents.clone())
                 .map(|(ty, ident)| {
-                    quote! {
+                    quote_spanned! { ty.span() =>
                         #[automatically_derived]
-                        impl#trait_impl_gens ::std::convert::From<#ty>
-                            for #alias_ident#trait_ty_gens
-                            #trait_where_clause
+                        impl#interface_impl_gens ::std::convert::From<#ty>
+                            for #alias_ident#interface_ty_gens
+                            #interface_where_clause
                         {
                             fn from(v: #ty) -> Self {
                                 Self::#ident(v)
@@ -449,7 +447,7 @@ impl Definition {
 
         let gens = self.impl_generics(false);
         let (impl_generics, _, where_clause) = gens.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let impler_tys = &self.implementers;
         let all_implers_unique = (impler_tys.len() > 1).then(|| {
@@ -483,7 +481,7 @@ impl Definition {
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
         let ty_const_generics = self.const_trait_generics();
 
         let fields_marks = self
@@ -491,7 +489,13 @@ impl Definition {
             .iter()
             .map(|f| f.method_mark_tokens(false, scalar));
 
-        let impler_tys = self.implementers.iter().collect::<Vec<_>>();
+        let is_output = self.implementers.iter().map(|implementer| {
+            quote_spanned! { implementer.span() =>
+               <#implementer as ::juniper::marker::IsOutputType<#scalar>>::mark();
+            }
+        });
+
+        let impler_tys = self.implementers.iter();
 
         quote! {
             #[automatically_derived]
@@ -501,7 +505,7 @@ impl Definition {
             {
                 fn mark() {
                     #( #fields_marks )*
-                    #( <#impler_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
+                    #( #is_output )*
                     ::juniper::assert_interfaces_impls!(
                         #const_scalar, #ty#ty_const_generics, #(#impler_tys),*
                     );
@@ -522,7 +526,7 @@ impl Definition {
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let name = &self.name;
         let description = self
@@ -583,7 +587,7 @@ impl Definition {
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let fields_resolvers = self.fields.iter().map(|f| {
             let name = &f.name;
@@ -664,7 +668,7 @@ impl Definition {
 
         let generics = self.impl_generics(true);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let fields_resolvers = self.fields.iter().map(|f| {
             let name = &f.name;
@@ -732,7 +736,7 @@ impl Definition {
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
@@ -784,7 +788,7 @@ impl Definition {
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         self.fields
             .iter()
@@ -852,7 +856,7 @@ impl Definition {
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         self.fields
             .iter()
@@ -863,13 +867,12 @@ impl Definition {
 
                 let const_ty_generics = self.const_trait_generics();
 
-                let unreachable_arm = (self.implementers.is_empty()
-                    || !self.trait_generics.params.is_empty())
-                .then(|| {
-                    quote! { _ => unreachable!() }
-                });
+                let unreachable_arm =
+                    (self.implementers.is_empty() || !self.generics.params.is_empty()).then(|| {
+                        quote! { _ => unreachable!() }
+                    });
 
-                quote! {
+                quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
                     #[automatically_derived]
                     impl#impl_generics ::juniper::macros::reflect::Field<
@@ -924,7 +927,7 @@ impl Definition {
 
         let generics = self.impl_generics(true);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.trait_generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         self.fields
             .iter()
@@ -935,13 +938,12 @@ impl Definition {
 
                 let const_ty_generics = self.const_trait_generics();
 
-                let unreachable_arm = (self.implementers.is_empty()
-                    || !self.trait_generics.params.is_empty())
-                .then(|| {
-                    quote! { _ => unreachable!() }
-                });
+                let unreachable_arm =
+                    (self.implementers.is_empty() || !self.generics.params.is_empty()).then(|| {
+                        quote! { _ => unreachable!() }
+                    });
 
-                quote! {
+                quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
                     #[automatically_derived]
                     impl#impl_generics ::juniper::macros::reflect::AsyncField<
@@ -1000,7 +1002,7 @@ impl Definition {
             });
 
         let non_exhaustive_match_arm =
-            (!self.trait_generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+            (!self.generics.params.is_empty() || self.implementers.is_empty()).then(|| {
                 quote! { _ => unreachable!(), }
             });
 
@@ -1034,7 +1036,7 @@ impl Definition {
             })
         });
         let non_exhaustive_match_arm =
-            (!self.trait_generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+            (!self.generics.params.is_empty() || self.implementers.is_empty()).then(|| {
                 quote! { _ => unreachable!(), }
             });
 
@@ -1065,7 +1067,7 @@ impl Definition {
         });
 
         let non_exhaustive_match_arm =
-            (!self.trait_generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+            (!self.generics.params.is_empty() || self.implementers.is_empty()).then(|| {
                 quote! { _ => unreachable!(), }
             });
 
@@ -1112,7 +1114,7 @@ impl Definition {
         }
 
         let mut visitor = GenericsForConst(parse_quote!( <> ));
-        visitor.visit_generics(&self.trait_generics);
+        visitor.visit_generics(&self.generics);
         syn::PathArguments::AngleBracketed(visitor.0)
     }
 
@@ -1126,7 +1128,7 @@ impl Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     #[must_use]
     fn impl_generics(&self, for_async: bool) -> syn::Generics {
-        let mut generics = self.trait_generics.clone();
+        let mut generics = self.generics.clone();
 
         let scalar = &self.scalar;
         if scalar.is_implicit_generic() {
@@ -1143,10 +1145,10 @@ impl Definition {
         }
 
         if for_async {
-            let self_ty = if self.trait_generics.lifetimes().next().is_some() {
+            let self_ty = if self.generics.lifetimes().next().is_some() {
                 // Modify lifetime names to omit "lifetime name `'a` shadows a
                 // lifetime name that is already in scope" error.
-                let mut generics = self.trait_generics.clone();
+                let mut generics = self.generics.clone();
                 for lt in generics.lifetimes_mut() {
                     let ident = lt.lifetime.ident.unraw();
                     lt.lifetime.ident = format_ident!("__fa__{}", ident);
@@ -1180,6 +1182,6 @@ impl Definition {
     /// type parameters.
     #[must_use]
     fn has_phantom_variant(&self) -> bool {
-        !self.trait_generics.params.is_empty()
+        !self.generics.params.is_empty()
     }
 }

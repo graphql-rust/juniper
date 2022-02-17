@@ -1,11 +1,11 @@
 error: duplicated attribute argument found
- --> fail/interface/implementers_duplicate_pretty.rs:9:34
+ --> fail/interface/trait/implementers_duplicate_pretty.rs:9:34
   |
 9 | #[graphql_interface(for = [ObjA, ObjA])]
   |                                  ^^^^
 
 error[E0412]: cannot find type `CharacterValue` in this scope
- --> fail/interface/implementers_duplicate_pretty.rs:4:18
+ --> fail/interface/trait/implementers_duplicate_pretty.rs:4:18
   |
 4 | #[graphql(impl = CharacterValue)]
   |                  ^^^^^^^^^^^^^^ not found in this scope

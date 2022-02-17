@@ -16,7 +16,7 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
-use super::{Definition, TraitAttr};
+use super::{Attr, Definition};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
@@ -40,7 +40,7 @@ fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
-    let attr = TraitAttr::from_attrs("graphql_interface", &attrs)?;
+    let attr = Attr::from_attrs("graphql_interface", &attrs)?;
 
     let trait_ident = &ast.ident;
     let trait_span = ast.span();
@@ -69,14 +69,18 @@ fn expand_on_trait(
         .copied()
         .unwrap_or(RenameRule::CamelCase);
 
-    let mut fields = vec![];
-    for item in &mut ast.items {
-        if let syn::TraitItem::Method(m) = item {
-            if let Some(f) = parse_field(m, &renaming) {
-                fields.push(f)
+    let fields = ast
+        .items
+        .iter_mut()
+        .filter_map(|item| {
+            if let syn::TraitItem::Method(m) = item {
+                if let Some(f) = parse_field(m, &renaming) {
+                    return Some(f);
+                }
             }
-        }
-    }
+            None
+        })
+        .collect::<Vec<_>>();
 
     proc_macro_error::abort_if_dirty();
 
@@ -115,7 +119,7 @@ fn expand_on_trait(
     );
 
     let generated_code = Definition {
-        trait_generics: ast.generics.clone(),
+        generics: ast.generics.clone(),
         vis: ast.vis.clone(),
         enum_ident,
         enum_alias_ident,

@@ -1,5 +1,5 @@
 error: GraphQL interface must have at least one field
- --> fail/interface/no_fields.rs:4:1
+ --> fail/interface/trait/no_fields.rs:4:1
   |
 4 | trait Character {}
   | ^^^^^^^^^^^^^^^^^^

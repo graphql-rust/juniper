@@ -11,6 +11,7 @@ pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
 #[allow(unused_variables)]
 pub enum GraphQLScope {
     InterfaceAttr,
+    InterfaceDerive,
     ObjectAttr,
     ObjectDerive,
     UnionAttr,
@@ -25,7 +26,7 @@ pub enum GraphQLScope {
 impl GraphQLScope {
     pub fn spec_section(&self) -> &str {
         match self {
-            Self::InterfaceAttr => "#sec-Interfaces",
+            Self::InterfaceAttr | Self::InterfaceDerive => "#sec-Interfaces",
             Self::ObjectAttr | Self::ObjectDerive => "#sec-Objects",
             Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
             Self::DeriveInputObject => "#sec-Input-Objects",
@@ -39,7 +40,7 @@ impl GraphQLScope {
 impl fmt::Display for GraphQLScope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
-            Self::InterfaceAttr => "interface",
+            Self::InterfaceAttr | Self::InterfaceDerive => "interface",
             Self::ObjectAttr | Self::ObjectDerive => "object",
             Self::UnionAttr | Self::UnionDerive => "union",
             Self::DeriveInputObject => "input object",

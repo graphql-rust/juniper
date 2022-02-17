@@ -5,6 +5,7 @@ mod derive_scalar;
 mod derive_scalar_value;
 mod impl_scalar;
 mod interface_attr;
+mod interface_derive;
 mod object_attr;
 mod object_derive;
 mod scalar_value_transparent;
