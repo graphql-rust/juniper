@@ -416,6 +416,84 @@ mod where_attribute {
     }
 }
 
+mod with_self {
+    use super::*;
+
+    struct CustomCounter(i32);
+
+    #[graphql_scalar(with = Self)]
+    type Counter = CustomCounter;
+
+    impl Counter {
+        fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+            Value::scalar(v.0)
+        }
+
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+            v.as_int_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .map(CustomCounter)
+        }
+
+        fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(value)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn counter(value: Counter) -> Counter {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_counter() {
+        const DOC: &str = r#"{ counter(value: 0) }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+        );
+    }
+}
+
 mod with_module {
     use super::*;
 

@@ -179,9 +179,56 @@ fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, 
 > __NOTE:__ As you can see, once you provide all 3 custom resolvers, there
 >           is no need to follow `newtype` pattern.
 
-#### `#[graphql(with = <module>)]` attribute
+#### `#[graphql(with = <path>)]` attribute
 
-Instead of providing all custom resolvers, you can provide module with `to_output`, `from_input`, `parse_token` functions and `Error` struct or type alias.
+Instead of providing all custom resolvers, you can provide path to the `to_output`, `from_input`, `parse_token` functions.
+
+Path can be simply `with = Self`, in case there is an impl block with custom resolvers: 
+
+```rust,ignore
+# use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue, ScalarToken, Value};
+#
+#[derive(GraphQLScalar)]
+#[graphql(with = Self)]
+enum StringOrInt {
+    String(String),
+    Int(i32),
+}
+
+impl StringOrInt {
+    fn to_output<S>(v: &StringOrInt) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        match v {
+            StringOrInt::String(str) => Value::scalar(str.to_owned()),
+            StringOrInt::Int(i) => Value::scalar(*i),
+        }
+    }
+  
+    fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
+    where
+        S: ScalarValue,
+    {
+        v.as_string_value()
+            .map(|s| StringOrInt::String(s.to_owned()))
+            .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+    }
+  
+    fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+    where
+        S: ScalarValue,
+    {
+        <String as ParseScalarValue<S>>::from_str(value)
+            .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
+    }
+}
+#
+# fn main() {}
+```
+
+Or it can be path to a module, where custom resolvers are located.
 
 ```rust,ignore
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue, ScalarToken, Value};
@@ -276,7 +323,7 @@ mod string_or_int {
 
 For implementing custom scalars on foreign types there is `#[graphql_scalar]` attribute macro.
 
-> __NOTE:__ To satisfy [orphan rule] you should provide local [`ScalarValue`] implementation.
+> __NOTE:__ To satisfy [orphan rules] you should provide local [`ScalarValue`] implementation.
 
 ```rust
 # extern crate juniper;
@@ -326,5 +373,5 @@ mod date_scalar {
 # fn main() {}
 ```
 
-[orphan rule]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
+[orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
 [`ScalarValue`]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
