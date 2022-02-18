@@ -1,5 +1,5 @@
 error: GraphQL scalar all custom resolvers have to be provided via `with` or combination of `to_output_with`, `from_input_with`, `parse_token_with` attributes
- --> fail/scalar/impl_with_resolver.rs:6:1
+ --> fail/scalar/type_alias/impl_without_resolvers.rs:6:1
   |
 6 | type CustomScalar = Scalar;
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^

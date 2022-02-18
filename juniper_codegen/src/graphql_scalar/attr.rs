@@ -114,14 +114,19 @@ fn expand_on_derive_input(
                 parse_token,
             }
         }
-        (to_output, from_input, parse_token, module) => {
-            let module = module.unwrap_or_else(|| parse_quote!(Self));
-            GraphQLScalarMethods::Custom {
-                to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
-                from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
-                parse_token: parse_token
-                    .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
-            }
+        (to_output, from_input, parse_token, Some(module)) => GraphQLScalarMethods::Custom {
+            to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
+            from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
+            parse_token: parse_token
+                .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
+        },
+        _ => {
+            return Err(ERR.custom_error(
+                ast.span(),
+                "all custom resolvers have to be provided via `with` or \
+                 combination of `to_output_with`, `from_input_with`, \
+                 `parse_token_with` attributes",
+            ));
         }
     };
 

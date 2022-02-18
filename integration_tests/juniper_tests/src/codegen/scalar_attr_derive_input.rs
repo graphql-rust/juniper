@@ -215,27 +215,6 @@ mod explicit_name {
     }
 
     #[tokio::test]
-    async fn no_custom_counter() {
-        for name in ["CustomCounter", "CustomScalar"] {
-            let doc = format!(
-                r#"{{
-                __type(name: "{}") {{
-                    kind
-                }}
-            }}"#,
-                name
-            );
-
-            let schema = schema(QueryRoot);
-
-            assert_eq!(
-                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((graphql_value!(null), vec![])),
-            );
-        }
-    }
-
-    #[tokio::test]
     async fn resolves_counter() {
         const DOC: &str = r#"{ counter(value: 0) }"#;
 
