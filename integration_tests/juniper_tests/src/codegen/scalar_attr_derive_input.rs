@@ -18,14 +18,14 @@ mod trivial {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
+                .map(Self)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -174,14 +174,14 @@ mod explicit_name {
     struct CustomCounter(i32);
 
     impl CustomCounter {
-        fn to_output<S: ScalarValue>(v: &CustomCounter) -> Value<S> {
-            Value::scalar(v.0)
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<CustomCounter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(CustomCounter)
+                .map(Self)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -250,14 +250,14 @@ mod delegated_parse_token {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
+                .map(Self)
         }
     }
 
@@ -325,17 +325,17 @@ mod multiple_delegated_parse_token {
     }
 
     impl StringOrInt {
-        fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
-            match v {
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            match self {
                 StringOrInt::String(str) => Value::scalar(str.to_owned()),
                 StringOrInt::Int(i) => Value::scalar(*i),
             }
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_string_value()
-                .map(|s| StringOrInt::String(s.to_owned()))
-                .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+                .map(|s| Self::String(s.to_owned()))
+                .or_else(|| v.as_int_value().map(|i| Self::Int(i)))
                 .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
         }
     }
@@ -461,14 +461,14 @@ mod with_self {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
+                .map(Self)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -705,14 +705,14 @@ mod description_from_attribute {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
             Value::scalar(v.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
+                .map(Self)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -959,14 +959,14 @@ mod bounded_generic_scalar {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
+                .map(Self)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {

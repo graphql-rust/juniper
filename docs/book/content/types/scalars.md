@@ -133,7 +133,7 @@ struct UserId(String);
 impl UserId {
     /// Checks whether [`InputValue`] is `String` beginning with `id: ` and
     /// strips it.
-    fn from_input<S>(input: &InputValue<S>) -> Result<UserId, String> 
+    fn from_input<S>(input: &InputValue<S>) -> Result<Self, String> 
     where
         S: ScalarValue
     {
@@ -240,23 +240,20 @@ enum StringOrInt {
 }
 
 impl StringOrInt {
-    fn to_output<S>(v: &StringOrInt) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        match v {
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        match self {
             StringOrInt::String(str) => Value::scalar(str.to_owned()),
             StringOrInt::Int(i) => Value::scalar(*i),
         }
     }
   
-    fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
+    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
     where
         S: ScalarValue,
     {
         v.as_string_value()
-            .map(|s| StringOrInt::String(s.to_owned()))
-            .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+            .map(|s| Self::String(s.to_owned()))
+            .or_else(|| v.as_int_value().map(|i| Self::Int(i)))
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
   

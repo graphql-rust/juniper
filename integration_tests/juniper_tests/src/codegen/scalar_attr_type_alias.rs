@@ -425,14 +425,14 @@ mod with_self {
     type Counter = CustomCounter;
 
     impl Counter {
-        fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(CustomCounter)
+                .map(Self)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
