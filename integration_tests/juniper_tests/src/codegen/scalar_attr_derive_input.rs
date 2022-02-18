@@ -14,7 +14,7 @@ use crate::{
 mod trivial {
     use super::*;
 
-    #[graphql_scalar]
+    #[graphql_scalar(with = Self)]
     struct Counter(i32);
 
     impl Counter {
@@ -706,7 +706,7 @@ mod description_from_attribute {
 
     impl Counter {
         fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(v.0)
+            Value::scalar(self.0)
         }
 
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
