@@ -87,6 +87,9 @@ struct Attr {
 
     /// Explicit where clause added to [`syn::WhereClause`].
     where_clause: Option<SpanContainer<Vec<syn::WherePredicate>>>,
+
+    /// TODO
+    transparent: bool,
 }
 
 impl Parse for Attr {
@@ -215,6 +218,9 @@ impl Parse for Attr {
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "transparent" => {
+                    out.transparent = true;
+                }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -239,6 +245,7 @@ impl Attr {
             parse_token: try_merge_opt!(parse_token: self, another),
             with: try_merge_opt!(with: self, another),
             where_clause: try_merge_opt!(where_clause: self, another),
+            transparent: self.transparent || another.transparent,
         })
     }
 

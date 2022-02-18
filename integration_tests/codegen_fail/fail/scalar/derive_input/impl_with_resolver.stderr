@@ -1,0 +1,23 @@
+error: GraphQL scalar all custom resolvers have to be provided via `with` or combination of `to_output_with`, `from_input_with`, `parse_token_with` attributes
+ --> fail/scalar/derive_input/impl_with_resolver.rs:4:1
+  |
+4 | struct Scalar;
+  | ^^^^^^^^^^^^^^
+
+error[E0412]: cannot find type `Scalar` in this scope
+ --> fail/scalar/derive_input/impl_with_resolver.rs:6:6
+  |
+6 | impl Scalar {
+  |      ^^^^^^ not found in this scope
+  |
+help: there is an enum variant `crate::Value::Scalar` and 7 others; try using the variant's enum
+  |
+6 | impl crate::Value {
+  |      ~~~~~~~~~~~~
+6 | impl juniper::InputValue {
+  |      ~~~~~~~~~~~~~~~~~~~
+6 | impl juniper::LookAheadValue {
+  |      ~~~~~~~~~~~~~~~~~~~~~~~
+6 | impl juniper::TypeKind {
+  |      ~~~~~~~~~~~~~~~~~
+    and 3 other candidates
