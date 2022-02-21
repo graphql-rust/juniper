@@ -2,78 +2,41 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, GraphQLScalar,
+    execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, DefaultScalarValue,
     InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
-use crate::util::{schema, schema_with_scalar};
+use crate::{
+    custom_scalar::MyScalarValue,
+    util::{schema, schema_with_scalar},
+};
 
-mod trivial_unnamed {
+mod all_custom_resolvers {
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    struct Counter(i32);
+    struct CustomCounter(i32);
 
-    struct QueryRoot;
+    #[graphql_scalar(
+        to_output_with = to_output,
+        from_input_with = from_input,
+    )]
+    #[graphql_scalar(
+        parse_token_with = parse_token,
+    )]
+    type Counter = CustomCounter;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
-    impl QueryRoot {
-        fn counter(value: Counter) -> Counter {
-            value
-        }
+    fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+        Value::scalar(v.0)
     }
 
-    #[tokio::test]
-    async fn is_graphql_scalar() {
-        const DOC: &str = r#"{
-            __type(name: "Counter") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
-        );
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        v.as_int_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .map(CustomCounter)
     }
 
-    #[tokio::test]
-    async fn resolves_counter() {
-        const DOC: &str = r#"{ counter(value: 0) }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"counter": 0}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_no_description() {
-        const DOC: &str = r#"{
-            __type(name: "Counter") {
-                description
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
-        );
-    }
-}
-
-mod trivial_named {
-    use super::*;
-
-    #[derive(GraphQLScalar)]
-    struct Counter {
-        value: i32,
+    fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
     }
 
     struct QueryRoot;
@@ -133,15 +96,35 @@ mod trivial_named {
 mod explicit_name {
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    #[graphql(name = "Counter")]
     struct CustomCounter(i32);
+
+    #[graphql_scalar(
+        name = "Counter",
+        to_output_with = to_output,
+        from_input_with = from_input,
+        parse_token_with = parse_token,
+    )]
+    type CounterScalar = CustomCounter;
+
+    fn to_output<S: ScalarValue>(v: &CounterScalar) -> Value<S> {
+        Value::scalar(v.0)
+    }
+
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<CounterScalar, String> {
+        v.as_int_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .map(CustomCounter)
+    }
+
+    fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
+    }
 
     struct QueryRoot;
 
     #[graphql_object(scalar = DefaultScalarValue)]
     impl QueryRoot {
-        fn counter(value: CustomCounter) -> CustomCounter {
+        fn counter(value: CounterScalar) -> CounterScalar {
             value
         }
     }
@@ -164,8 +147,89 @@ mod explicit_name {
 
     #[tokio::test]
     async fn no_custom_counter() {
+        for name in ["CustomCounter", "CustomScalar"] {
+            let doc = format!(
+                r#"{{
+                __type(name: "{}") {{
+                    kind
+                }}
+            }}"#,
+                name
+            );
+
+            let schema = schema(QueryRoot);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((graphql_value!(null), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_counter() {
+        const DOC: &str = r#"{ counter(value: 0) }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
         const DOC: &str = r#"{
-            __type(name: "CustomCounter") {
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+        );
+    }
+}
+
+mod delegated_parse_token {
+    use super::*;
+
+    struct CustomCounter(i32);
+
+    #[graphql_scalar(
+        to_output_with = to_output,
+        from_input_with = from_input,
+        parse_token(i32),
+    )]
+    type Counter = CustomCounter;
+
+    fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+        Value::scalar(v.0)
+    }
+
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        v.as_int_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .map(CustomCounter)
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn counter(value: Counter) -> Counter {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
                 kind
             }
         }"#;
@@ -174,7 +238,7 @@ mod explicit_name {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!(null), vec![])),
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
         );
     }
 
@@ -207,170 +271,20 @@ mod explicit_name {
     }
 }
 
-mod custom_to_output {
-    use super::*;
-
-    #[derive(GraphQLScalar)]
-    #[graphql(to_output_with = to_output)]
-    struct Increment(i32);
-
-    fn to_output<S: ScalarValue>(val: &Increment) -> Value<S> {
-        let ret = val.0 + 1;
-        Value::from(ret)
-    }
-
-    struct QueryRoot;
-
-    #[graphql_object(scalar = DefaultScalarValue)]
-    impl QueryRoot {
-        fn increment(value: Increment) -> Increment {
-            value
-        }
-    }
-
-    #[tokio::test]
-    async fn is_graphql_scalar() {
-        const DOC: &str = r#"{
-            __type(name: "Increment") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn resolves_counter() {
-        const DOC: &str = r#"{ increment(value: 0) }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"increment": 1}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_no_description() {
-        const DOC: &str = r#"{
-            __type(name: "Increment") {
-                description
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
-        );
-    }
-}
-
-mod delegated_parse_token {
-    use super::*;
-
-    #[derive(GraphQLScalar)]
-    #[graphql(
-        to_output_with = to_output,
-        from_input_with = from_input,
-    )]
-    #[graphql(
-        parse_token(String),
-        specified_by_url = "https://tools.ietf.org/html/rfc3339"
-    )]
-    struct CustomDateTime<Tz>(DateTime<Tz>)
-    where
-        Tz: From<Utc> + TimeZone,
-        Tz::Offset: fmt::Display;
-
-    fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
-    where
-        S: ScalarValue,
-        Tz: From<Utc> + TimeZone,
-        Tz::Offset: fmt::Display,
-    {
-        Value::scalar(v.0.to_rfc3339())
-    }
-
-    fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
-    where
-        S: ScalarValue,
-        Tz: From<Utc> + TimeZone,
-        Tz::Offset: fmt::Display,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s| {
-                DateTime::parse_from_rfc3339(s)
-                    .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
-                    .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
-            })
-    }
-
-    struct QueryRoot;
-
-    #[graphql_object(scalar = DefaultScalarValue)]
-    impl QueryRoot {
-        fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
-            value
-        }
-    }
-
-    #[tokio::test]
-    async fn resolves_custom_date_time() {
-        const DOC: &str = r#"{ dateTime(value: "1996-12-19T16:39:57-08:00") }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"dateTime": "1996-12-20T00:39:57+00:00"}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_specified_by_url() {
-        const DOC: &str = r#"{
-            __type(name: "CustomDateTime") {
-                specifiedByUrl
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc3339"}}),
-                vec![],
-            )),
-        );
-    }
-}
-
 mod multiple_delegated_parse_token {
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    #[graphql(
+    enum StringOrIntScalar {
+        String(String),
+        Int(i32),
+    }
+
+    #[graphql_scalar(
         to_output_with = to_output,
         from_input_with = from_input,
         parse_token(String, i32),
     )]
-    enum StringOrInt {
-        String(String),
-        Int(i32),
-    }
+    type StringOrInt = StringOrIntScalar;
 
     fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
         match v {
@@ -423,17 +337,16 @@ mod multiple_delegated_parse_token {
 mod where_attribute {
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    #[graphql(
+    struct CustomDateTimeScalar<Tz: TimeZone>(DateTime<Tz>);
+
+    #[graphql_scalar(
         to_output_with = to_output,
         from_input_with = from_input,
-    )]
-    #[graphql(
         parse_token(String),
-        where(Tz: From<Utc>, Tz::Offset: fmt::Display),
+        where(Tz: From<Utc> + TimeZone, Tz::Offset: fmt::Display),
         specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
-    struct CustomDateTime<Tz: TimeZone>(DateTime<Tz>);
+    type CustomDateTime<Tz> = CustomDateTimeScalar<Tz>;
 
     fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
     where
@@ -454,14 +367,14 @@ mod where_attribute {
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
                 DateTime::parse_from_rfc3339(s)
-                    .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
+                    .map(|dt| CustomDateTimeScalar(dt.with_timezone(&Tz::from(Utc))))
                     .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
             })
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object(scalar = MyScalarValue)]
     impl QueryRoot {
         fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
             value
@@ -472,7 +385,7 @@ mod where_attribute {
     async fn resolves_custom_date_time() {
         const DOC: &str = r#"{ dateTime(value: "1996-12-19T16:39:57-08:00") }"#;
 
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -491,7 +404,7 @@ mod where_attribute {
             }
         }"#;
 
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -503,23 +416,96 @@ mod where_attribute {
     }
 }
 
-mod generic_with_all_resolvers {
+mod with_self {
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    #[graphql(
-        to_output_with = custom_date_time::to_output,
-        from_input_with = custom_date_time::from_input,
-    )]
-    #[graphql(
-        parse_token_with = custom_date_time::parse_token,
-        where(Tz: From<Utc>, Tz::Offset: fmt::Display),
+    struct CustomCounter(i32);
+
+    #[graphql_scalar(with = Self)]
+    type Counter = CustomCounter;
+
+    impl Counter {
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
+        }
+
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+            v.as_int_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .map(Self)
+        }
+
+        fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(value)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl QueryRoot {
+        fn counter(value: Counter) -> Counter {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_counter() {
+        const DOC: &str = r#"{ counter(value: 0) }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+        );
+    }
+}
+
+mod with_module {
+    use super::*;
+
+    struct CustomDateTimeScalar<Tz: TimeZone>(DateTime<Tz>);
+
+    #[graphql_scalar(
+        with = custom_date_time,
+        parse_token(String),
+        where(Tz: From<Utc> + TimeZone, Tz::Offset: fmt::Display),
         specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
-    struct CustomDateTime<Tz: TimeZone> {
-        dt: DateTime<Tz>,
-        _unused: (),
-    }
+    type CustomDateTime<Tz> = CustomDateTimeScalar<Tz>;
 
     mod custom_date_time {
         use super::*;
@@ -530,7 +516,7 @@ mod generic_with_all_resolvers {
             Tz: From<Utc> + TimeZone,
             Tz::Offset: fmt::Display,
         {
-            Value::scalar(v.dt.to_rfc3339())
+            Value::scalar(v.0.to_rfc3339())
         }
 
         pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
@@ -543,25 +529,15 @@ mod generic_with_all_resolvers {
                 .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .and_then(|s| {
                     DateTime::parse_from_rfc3339(s)
-                        .map(|dt| CustomDateTime {
-                            dt: dt.with_timezone(&Tz::from(Utc)),
-                            _unused: (),
-                        })
+                        .map(|dt| CustomDateTimeScalar(dt.with_timezone(&Tz::from(Utc))))
                         .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
                 })
-        }
-
-        pub(super) fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
-        where
-            S: ScalarValue,
-        {
-            <String as ParseScalarValue<S>>::from_str(value)
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object(scalar = MyScalarValue)]
     impl QueryRoot {
         fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
             value
@@ -572,7 +548,7 @@ mod generic_with_all_resolvers {
     async fn resolves_custom_date_time() {
         const DOC: &str = r#"{ dateTime(value: "1996-12-19T16:39:57-08:00") }"#;
 
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -591,106 +567,7 @@ mod generic_with_all_resolvers {
             }
         }"#;
 
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc3339"}}),
-                vec![],
-            )),
-        );
-    }
-}
-
-mod generic_with_module {
-    use super::*;
-
-    #[derive(GraphQLScalar)]
-    #[graphql(
-        with = custom_date_time,
-        specified_by_url = "https://tools.ietf.org/html/rfc3339"
-    )]
-    struct CustomDateTime<Tz>
-    where
-        Tz: From<Utc> + TimeZone,
-        Tz::Offset: fmt::Display,
-    {
-        dt: DateTime<Tz>,
-        _unused: (),
-    }
-
-    mod custom_date_time {
-        use super::*;
-
-        pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
-        where
-            S: ScalarValue,
-            Tz: From<Utc> + TimeZone,
-            Tz::Offset: fmt::Display,
-        {
-            Value::scalar(v.dt.to_rfc3339())
-        }
-
-        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
-        where
-            S: ScalarValue,
-            Tz: From<Utc> + TimeZone,
-            Tz::Offset: fmt::Display,
-        {
-            v.as_string_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .and_then(|s| {
-                    DateTime::parse_from_rfc3339(s)
-                        .map(|dt| CustomDateTime {
-                            dt: dt.with_timezone(&Tz::from(Utc)),
-                            _unused: (),
-                        })
-                        .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
-                })
-        }
-
-        pub(super) fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
-        where
-            S: ScalarValue,
-        {
-            <String as ParseScalarValue<S>>::from_str(value)
-        }
-    }
-
-    struct QueryRoot;
-
-    #[graphql_object(scalar = DefaultScalarValue)]
-    impl QueryRoot {
-        fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
-            value
-        }
-    }
-
-    #[tokio::test]
-    async fn resolves_custom_date_time() {
-        const DOC: &str = r#"{ dateTime(value: "1996-12-19T16:39:57-08:00") }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"dateTime": "1996-12-20T00:39:57+00:00"}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_specified_by_url() {
-        const DOC: &str = r#"{
-            __type(name: "CustomDateTime") {
-                specifiedByUrl
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -705,9 +582,31 @@ mod generic_with_module {
 mod description_from_doc_comment {
     use super::*;
 
-    /// Doc comment.
-    #[derive(GraphQLScalar)]
-    struct Counter(i32);
+    struct CustomCounter(i32);
+
+    /// Description
+    #[graphql_scalar(with = counter)]
+    type Counter = CustomCounter;
+
+    mod counter {
+        use super::*;
+
+        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+            Value::scalar(v.0)
+        }
+
+        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+            v.as_int_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .map(CustomCounter)
+        }
+
+        pub(super) fn parse_token<S: ScalarValue>(
+            value: ScalarToken<'_>,
+        ) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(value)
+        }
+    }
 
     struct QueryRoot;
 
@@ -716,6 +615,22 @@ mod description_from_doc_comment {
         fn counter(value: Counter) -> Counter {
             value
         }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
+        );
     }
 
     #[tokio::test]
@@ -743,8 +658,8 @@ mod description_from_doc_comment {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"description": "Doc comment."}}),
-                vec![],
+                graphql_value!({"__type": {"description": "Description"}}),
+                vec![]
             )),
         );
     }
@@ -753,11 +668,34 @@ mod description_from_doc_comment {
 mod description_from_attribute {
     use super::*;
 
-    /// Doc comment.
-    #[derive(GraphQLScalar)]
-    #[graphql(desc = "Doc comment from attribute.")]
-    #[graphql(specified_by_url = "https://tools.ietf.org/html/rfc4122")]
-    struct Counter(i32);
+    struct CustomCounter(i32);
+
+    /// Doc comment
+    #[graphql_scalar(
+        description = "Description from attribute",
+        with = counter,
+    )]
+    type Counter = CustomCounter;
+
+    mod counter {
+        use super::*;
+
+        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+            Value::scalar(v.0)
+        }
+
+        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+            v.as_int_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .map(CustomCounter)
+        }
+
+        pub(super) fn parse_token<S: ScalarValue>(
+            value: ScalarToken<'_>,
+        ) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(value)
+        }
+    }
 
     struct QueryRoot;
 
@@ -766,6 +704,22 @@ mod description_from_attribute {
         fn counter(value: Counter) -> Counter {
             value
         }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
+        );
     }
 
     #[tokio::test]
@@ -781,11 +735,10 @@ mod description_from_attribute {
     }
 
     #[tokio::test]
-    async fn has_description_and_url() {
+    async fn has_description() {
         const DOC: &str = r#"{
             __type(name: "Counter") {
                 description
-                specifiedByUrl
             }
         }"#;
 
@@ -794,26 +747,44 @@ mod description_from_attribute {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({
-                    "__type": {
-                        "description": "Doc comment from attribute.",
-                        "specifiedByUrl": "https://tools.ietf.org/html/rfc4122",
-                    }
-                }),
-                vec![],
+                graphql_value!({"__type": {"description": "Description from attribute"}}),
+                vec![]
             )),
         );
     }
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
-
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    #[graphql(scalar = MyScalarValue)]
-    struct Counter(i32);
+    struct CustomCounter(i32);
+
+    /// Description
+    #[graphql_scalar(
+        scalar = MyScalarValue,
+        with = counter,
+    )]
+    type Counter = CustomCounter;
+
+    mod counter {
+        use super::*;
+
+        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+            Value::scalar(v.0)
+        }
+
+        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+            v.as_int_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .map(CustomCounter)
+        }
+
+        pub(super) fn parse_token<S: ScalarValue>(
+            value: ScalarToken<'_>,
+        ) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(value)
+        }
+    }
 
     struct QueryRoot;
 
@@ -853,7 +824,7 @@ mod custom_scalar {
     }
 
     #[tokio::test]
-    async fn has_no_description() {
+    async fn has_description() {
         const DOC: &str = r#"{
             __type(name: "Counter") {
                 description
@@ -864,7 +835,10 @@ mod custom_scalar {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"description": "Description"}}),
+                vec![]
+            )),
         );
     }
 }
@@ -872,13 +846,38 @@ mod custom_scalar {
 mod generic_scalar {
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    #[graphql(scalar = S: ScalarValue)]
-    struct Counter(i32);
+    struct CustomCounter(i32);
+
+    /// Description
+    #[graphql_scalar(
+        scalar = S: ScalarValue,
+        with = counter,
+    )]
+    type Counter = CustomCounter;
+
+    mod counter {
+        use super::*;
+
+        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+            Value::scalar(v.0)
+        }
+
+        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+            v.as_int_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .map(CustomCounter)
+        }
+
+        pub(super) fn parse_token<S: ScalarValue>(
+            value: ScalarToken<'_>,
+        ) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(value)
+        }
+    }
 
     struct QueryRoot;
 
-    #[graphql_object]
+    #[graphql_object(scalar = MyScalarValue)]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -893,7 +892,7 @@ mod generic_scalar {
             }
         }"#;
 
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -905,11 +904,30 @@ mod generic_scalar {
     async fn resolves_counter() {
         const DOC: &str = r#"{ counter(value: 0) }"#;
 
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_description() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"description": "Description"}}),
+                vec![]
+            )),
         );
     }
 }
@@ -917,13 +935,38 @@ mod generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    #[derive(GraphQLScalar)]
-    #[graphql(scalar = S: ScalarValue + Clone)]
-    struct Counter(i32);
+    struct CustomCounter(i32);
+
+    /// Description
+    #[graphql_scalar(
+        scalar = S: ScalarValue + Clone,
+        with = counter,
+    )]
+    type Counter = CustomCounter;
+
+    mod counter {
+        use super::*;
+
+        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
+            Value::scalar(v.0)
+        }
+
+        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+            v.as_int_value()
+                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .map(CustomCounter)
+        }
+
+        pub(super) fn parse_token<S: ScalarValue>(
+            value: ScalarToken<'_>,
+        ) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(value)
+        }
+    }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = S: ScalarValue + Clone)]
+    #[graphql_object(scalar = MyScalarValue)]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -938,7 +981,7 @@ mod bounded_generic_scalar {
             }
         }"#;
 
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
@@ -950,11 +993,30 @@ mod bounded_generic_scalar {
     async fn resolves_counter() {
         const DOC: &str = r#"{ counter(value: 0) }"#;
 
-        let schema = schema(QueryRoot);
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_description() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"description": "Description"}}),
+                vec![]
+            )),
         );
     }
 }

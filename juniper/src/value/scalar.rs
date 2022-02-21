@@ -22,9 +22,9 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits their
 /// needs.
-/// There is a custom derive (`#[derive(juniper::`[`GraphQLScalarValue`]`)]`)
-/// available that implements most of the required traits automatically for a
-/// enum representing a scalar value. However, [`Serialize`] and [`Deserialize`]
+/// There is a custom derive (`#[derive(`[`GraphQLScalarValue`]`)]`) available
+/// that implements most of the required traits automatically for a enum
+/// representing a scalar value. However, [`Serialize`] and [`Deserialize`]
 /// implementations are expected to be provided.
 ///
 /// # Implementing a new scalar value representation
@@ -38,7 +38,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # use std::{fmt, convert::TryInto as _};
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::{ScalarValue, GraphQLScalarValue};
+/// # use juniper::GraphQLScalarValue;
 /// #
 /// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
@@ -121,6 +121,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// ```
 ///
 /// [`Deserialize`]: trait@serde::Deserialize
+/// [`GraphQLScalarValue`]: juniper::GraphQLScalarValue
 /// [`Serialize`]: trait@serde::Serialize
 pub trait ScalarValue:
     fmt::Debug
