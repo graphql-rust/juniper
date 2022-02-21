@@ -1,0 +1,6 @@
+error: GraphQL interface can only be derived on structs
+  --> fail/interface/derive_wrong_item_enum.rs:9:1
+   |
+9  | / #[graphql(for = ObjA)]
+10 | | enum Character {}
+   | |_________________^

@@ -1,4 +1,4 @@
-//! Tests for `#[graphql_interface]` macro.
+//! Tests for `#[derive(GraphQLInterface)]` macro.
 
 #![allow(dead_code)]
 

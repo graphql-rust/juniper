@@ -1,0 +1,5 @@
+error: GraphQL interface #[graphql_interface] attribute is applicable to trait and struct definitions only
+ --> fail/interface/attr_wrong_item_enum.rs:9:1
+  |
+9 | enum Character {}
+  | ^^^^^^^^^^^^^^^^^

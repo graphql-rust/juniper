@@ -23,7 +23,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let data = if let syn::Data::Struct(data) = &ast.data {
         data
     } else {
-        return Err(ERR.custom_error(ast.span(), "can only be derived for structs"));
+        return Err(ERR.custom_error(ast.span(), "can only be derived on structs"));
     };
 
     let struct_ident = &ast.ident;

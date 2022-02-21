@@ -255,7 +255,11 @@ fn expand_on_derive_input(
     let data = match &mut ast.data {
         syn::Data::Struct(data) => data,
         syn::Data::Enum(_) | syn::Data::Union(_) => {
-            return Err(ERR.custom_error(ast.span(), "can only be derived on structs"));
+            return Err(ERR.custom_error(
+                ast.span(),
+                "#[graphql_interface] attribute is applicable \
+                 to trait and struct definitions only",
+            ));
         }
     };
 
@@ -354,11 +358,7 @@ fn expand_on_derive_input(
 /// Returns [`None`] if parsing fails, or the method field is ignored.
 #[must_use]
 fn parse_struct_field(field: &mut syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
-    let field_ident = field
-        .ident
-        .as_ref()
-        .ok_or_else(|| proc_macro_error::emit_error!(field.span(), "expected named field"))
-        .ok()?;
+    let field_ident = field.ident.as_ref().or_else(|| err_unnamed_field(&field))?;
     let field_attrs = field.attrs.clone();
 
     // Remove repeated attributes from the method, to omit incorrect expansion.
@@ -438,5 +438,12 @@ fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
         span.span(),
         "trait method should have a shared reference receiver `&self`",
     );
+    None
+}
+
+/// Emits "expected named struct field" [`syn::Error`] pointing to the given
+/// `span`.
+fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
+    ERR.emit_custom(span.span(), "expected named struct field");
     None
 }

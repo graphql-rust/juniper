@@ -1,5 +1,0 @@
-error: GraphQL interface can only be derived on structs
- --> fail/interface/wrong_item_enum.rs:9:1
-  |
-9 | enum Character {}
-  | ^^^^^^^^^^^^^^^^^
