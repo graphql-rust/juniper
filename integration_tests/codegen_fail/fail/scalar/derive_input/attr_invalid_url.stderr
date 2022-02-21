@@ -1,17 +1,17 @@
 error: Invalid URL: relative URL without a base
- --> fail/scalar/derive_input/impl_invalid_url.rs:4:24
+ --> fail/scalar/derive_input/attr_invalid_url.rs:4:24
   |
 4 |     specified_by_url = "not an url",
   |                        ^^^^^^^^^^^^
 
 error[E0412]: cannot find type `ScalarSpecifiedByUrl` in this scope
-  --> fail/scalar/derive_input/impl_invalid_url.rs:13:49
+  --> fail/scalar/derive_input/attr_invalid_url.rs:13:49
    |
 13 |     pub(super) fn to_output<S: ScalarValue>(_: &ScalarSpecifiedByUrl) -> Value<S> {
    |                                                 ^^^^^^^^^^^^^^^^^^^^ not found in this scope
 
 error[E0412]: cannot find type `ScalarSpecifiedByUrl` in this scope
-  --> fail/scalar/derive_input/impl_invalid_url.rs:19:17
+  --> fail/scalar/derive_input/attr_invalid_url.rs:19:17
    |
 17 |     pub(super) fn from_input<S: ScalarValue>(
    |                                            - help: you might be missing a type parameter: `, ScalarSpecifiedByUrl`
@@ -20,7 +20,7 @@ error[E0412]: cannot find type `ScalarSpecifiedByUrl` in this scope
    |                 ^^^^^^^^^^^^^^^^^^^^ not found in this scope
 
 error[E0425]: cannot find value `ScalarSpecifiedByUrl` in this scope
-  --> fail/scalar/derive_input/impl_invalid_url.rs:20:12
+  --> fail/scalar/derive_input/attr_invalid_url.rs:20:12
    |
 20 |         Ok(ScalarSpecifiedByUrl)
    |            ^^^^^^^^^^^^^^^^^^^^ not found in this scope

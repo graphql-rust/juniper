@@ -5,15 +5,16 @@ use juniper::{
 };
 
 #[derive(GraphQLScalar, Debug, Eq, PartialEq)]
+#[graphql(transparent)]
 struct UserId(String);
 
 #[derive(GraphQLScalar, Debug, Eq, PartialEq)]
-#[graphql(name = "MyUserId", description = "custom description...")]
+#[graphql(name = "MyUserId", description = "custom description...", transparent)]
 struct CustomUserId(String);
 
 /// The doc comment...
 #[derive(GraphQLScalar, Debug, Eq, PartialEq)]
-#[graphql(specified_by_url = "https://tools.ietf.org/html/rfc4122")]
+#[graphql(specified_by_url = "https://tools.ietf.org/html/rfc4122", transparent)]
 struct IdWithDocComment(i32);
 
 #[derive(GraphQLObject)]

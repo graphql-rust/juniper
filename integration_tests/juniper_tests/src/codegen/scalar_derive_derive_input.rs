@@ -2,7 +2,7 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, DefaultScalarValue,
+    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, GraphQLScalar,
     InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
@@ -14,7 +14,7 @@ use crate::{
 mod trivial {
     use super::*;
 
-    #[graphql_scalar]
+    #[derive(GraphQLScalar)]
     struct Counter(i32);
 
     impl Counter {
@@ -90,7 +90,8 @@ mod trivial {
 mod transparent {
     use super::*;
 
-    #[graphql_scalar(transparent)]
+    #[derive(GraphQLScalar)]
+    #[graphql(transparent)]
     struct Counter(i32);
 
     struct QueryRoot;
@@ -150,7 +151,8 @@ mod transparent {
 mod transparent_with_resolver {
     use super::*;
 
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         transparent,
         to_output_with = Self::to_output,
     )]
@@ -219,11 +221,12 @@ mod transparent_with_resolver {
 mod all_custom_resolvers {
     use super::*;
 
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
     )]
-    #[graphql_scalar(
+    #[graphql(
         parse_token_with = parse_token,
     )]
     struct Counter(i32);
@@ -299,7 +302,8 @@ mod all_custom_resolvers {
 mod explicit_name {
     use super::*;
 
-    #[graphql_scalar(name = "Counter")]
+    #[derive(GraphQLScalar)]
+    #[graphql(name = "Counter")]
     struct CustomCounter(i32);
 
     impl CustomCounter {
@@ -375,7 +379,8 @@ mod explicit_name {
 mod delegated_parse_token {
     use super::*;
 
-    #[graphql_scalar(parse_token(i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -447,7 +452,8 @@ mod delegated_parse_token {
 mod multiple_delegated_parse_token {
     use super::*;
 
-    #[graphql_scalar(parse_token(String, i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(parse_token(String, i32))]
     enum StringOrInt {
         String(String),
         Int(i32),
@@ -506,7 +512,8 @@ mod multiple_delegated_parse_token {
 mod where_attribute {
     use super::*;
 
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
         parse_token(String),
@@ -586,7 +593,8 @@ mod where_attribute {
 mod with_self {
     use super::*;
 
-    #[graphql_scalar(with = Self)]
+    #[derive(GraphQLScalar)]
+    #[graphql(with = Self)]
     struct Counter(i32);
 
     impl Counter {
@@ -662,7 +670,8 @@ mod with_self {
 mod with_module {
     use super::*;
 
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         with = custom_date_time,
         parse_token(String),
         where(Tz: From<Utc>, Tz::Offset: fmt::Display),
@@ -746,7 +755,8 @@ mod description_from_doc_comment {
     use super::*;
 
     /// Description
-    #[graphql_scalar(with = counter)]
+    #[derive(GraphQLScalar)]
+    #[graphql(with = counter)]
     struct Counter(i32);
 
     mod counter {
@@ -830,7 +840,8 @@ mod description_from_attribute {
     use super::*;
 
     /// Doc comment
-    #[graphql_scalar(description = "Description from attribute")]
+    #[derive(GraphQLScalar)]
+    #[graphql(description = "Description from attribute")]
     struct Counter(i32);
 
     impl Counter {
@@ -910,7 +921,8 @@ mod custom_scalar {
     use super::*;
 
     /// Description
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         scalar = MyScalarValue,
         with = counter,
     )]
@@ -997,7 +1009,8 @@ mod generic_scalar {
     use super::*;
 
     /// Description
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         scalar = S: ScalarValue,
         with = counter,
     )]
@@ -1084,7 +1097,8 @@ mod bounded_generic_scalar {
     use super::*;
 
     /// Description
-    #[graphql_scalar(scalar = S: ScalarValue + Clone)]
+    #[derive(GraphQLScalar)]
+    #[graphql(scalar = S: ScalarValue + Clone)]
     struct Counter(i32);
 
     impl Counter {

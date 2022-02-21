@@ -1,3 +1,5 @@
+//! Code generation for `#[graphql_scalar]` macro.
+
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_quote, spanned::Spanned};
@@ -100,7 +102,6 @@ fn expand_on_type_alias(
     })
 }
 
-// TODO: Add `#[graphql(transparent)]`.
 /// Expands `#[graphql_scalar]` macro placed on a struct/enum/union.
 fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,
@@ -122,12 +123,15 @@ fn expand_on_derive_input(
                 parse_token,
             }
         }
-        (to_output, from_input, parse_token, Some(module), false) => GraphQLScalarMethods::Custom {
-            to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
-            from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
-            parse_token: parse_token
-                .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
-        },
+        (to_output, from_input, parse_token, module, false) => {
+            let module = module.unwrap_or_else(|| parse_quote! { Self });
+            GraphQLScalarMethods::Custom {
+                to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
+                from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
+                parse_token: parse_token
+                    .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
+            }
+        }
         (to_output, from_input, parse_token, None, true) => {
             let data = if let syn::Data::Struct(data) = &ast.data {
                 data
@@ -179,14 +183,6 @@ fn expand_on_derive_input(
                 "`with = <path>` attribute can't be combined with `transparent`. \
                  You can specify custom resolvers with `to_output`, `from_input`, `parse_token` \
                  attributes and still use `transparent` for unspecified ones.",
-            ));
-        }
-        _ => {
-            return Err(ERR.custom_error(
-                ast.span(),
-                "all custom resolvers have to be provided via `with` or \
-                 combination of `to_output_with`, `from_input_with`, \
-                 `parse_token_with` attributes",
             ));
         }
     };

@@ -1,0 +1,6 @@
+error: GraphQL scalar expected exactly 1 field, e.g., Test(i32) because of `transparent` attribute
+ --> fail/scalar/derive_input/derive_transparent_multiple_unnamed_fields.rs:4:1
+  |
+4 | / #[graphql(transparent)]
+5 | | struct Scalar(i32, i32);
+  | |________________________^

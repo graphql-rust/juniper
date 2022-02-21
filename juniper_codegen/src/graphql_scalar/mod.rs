@@ -88,7 +88,8 @@ struct Attr {
     /// Explicit where clause added to [`syn::WhereClause`].
     where_clause: Option<SpanContainer<Vec<syn::WherePredicate>>>,
 
-    /// TODO
+    /// Flag for single-field structs that allows to use that field for
+    /// non-provided resolvers.
     transparent: bool,
 }
 
