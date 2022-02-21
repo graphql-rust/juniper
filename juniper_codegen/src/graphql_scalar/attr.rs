@@ -115,7 +115,7 @@ fn expand_on_derive_input(
             }
         }
         (to_output, from_input, parse_token, module) => {
-            let module = module.unwrap_or_else(|| parse_quote!(Self));
+            let module = module.unwrap_or_else(|| parse_quote! { Self });
             GraphQLScalarMethods::Custom {
                 to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
                 from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),

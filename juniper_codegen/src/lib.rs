@@ -142,13 +142,54 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     }
 }
 
-/// In case [`GraphQLScalar`] isn't applicable because type located in other
-/// crate and you don't want to wrap it in a newtype there is
-/// `#[graphql_scalar]` macro.
+/// `#[graphql_scalar]` is interchangeable with `#[derive(`[`GraphQLScalar`]`)]`
+/// macro:
+///
+/// ```rust,ignore
+/// /// Doc comments are used for the GraphQL type description.
+/// #[derive(juniper::GraphQLScalar)]
+/// #[graphql(
+///     // Set a custom GraphQL name.
+///     name = "MyUserId",
+///     // A description can also specified in the attribute.
+///     // This will the doc comment, if one exists.
+///     description = "...",
+///     // A specification URL.
+///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
+///     // Explicit generic scalar.
+///     scalar = S: juniper::ScalarValue,
+///     transparent,
+/// )]
+/// struct UserId(String);
+/// ```
+///
+/// Is transformed into:
+///
+/// ```rust,ignore
+/// /// Doc comments are used for the GraphQL type description.
+/// #[juniper::graphql_scalar(
+///     // Set a custom GraphQL name.
+///     name = "MyUserId",
+///     // A description can also specified in the attribute.
+///     // This will the doc comment, if one exists.
+///     description = "...",
+///     // A specification URL.
+///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
+///     // Explicit generic scalar.
+///     scalar = S: juniper::ScalarValue,
+///     transparent,
+/// )]
+/// struct UserId(String);
+/// ```
+///
+/// In addition to that `#[graphql_scalar]` can be used in case
+/// [`GraphQLScalar`] isn't applicable because type located in other crate and
+/// you don't want to wrap it in a newtype. This is done by placing
+/// `#[graphql_scalar]` on a type alias.
 ///
 /// All attributes are mirroring [`GraphQLScalar`] derive macro.
 ///
-/// > __NOTE:__ To satisfy [orphan rule] you should provide local
+/// > __NOTE:__ To satisfy [orphan rules] you should provide local
 /// >           [`ScalarValue`] implementation.
 ///
 /// ```rust
@@ -202,7 +243,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// # fn main() { }
 /// ```
 ///
-/// [orphan rule]: https://bit.ly/3glAGC2
+/// [orphan rules]: https://bit.ly/3glAGC2
 /// [`GraphQLScalar`]: juniper::GraphQLScalar
 /// [`ScalarValue`]: juniper::ScalarValue
 #[proc_macro_error]

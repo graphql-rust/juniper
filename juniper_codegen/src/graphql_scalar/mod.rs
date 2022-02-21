@@ -258,7 +258,6 @@ impl Attr {
 
 /// [`syn::Type`] in case of `#[graphql_scalar]` or [`syn::Ident`] in case of
 /// `#[derive(GraphQLScalar)]`.
-#[allow(dead_code)]
 #[derive(Clone)]
 enum TypeOrIdent {
     /// [`syn::Type`].

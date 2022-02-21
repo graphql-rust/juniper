@@ -26,7 +26,8 @@
   - Support structs with single named field.
   - Support for overriding resolvers.
 - Redesign `#[graphql_scalar]` macro: ([#1014](https://github.com/graphql-rust/juniper/pull/1014))
-  - Use on type aliases only in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rule](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules).
+  - Mirror `#[derive(GraphQLScalar)]` macro.
+  - Support usage on type aliases in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules).
 
 ## Features
 

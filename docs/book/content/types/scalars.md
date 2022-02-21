@@ -42,7 +42,7 @@ crates. They are enabled via features that are on by default.
 
 ## Custom scalars
 
-#### `#[graphql(transparent]` attribute
+#### `#[graphql(transparent)]` attribute
 
 Often, you might need a custom scalar that just wraps an existing type.
 
@@ -51,6 +51,7 @@ serde supports this pattern with `#[serde(transparent)]`.
 
 ```rust,ignore
 # extern crate juniper;
+#
 #[derive(juniper::GraphQLScalar)]
 #[graphql(transparent)]
 pub struct UserId(i32);
@@ -92,12 +93,12 @@ The macro also allows for more customization:
 /// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalar)]
 #[graphql(
+    transparent,
     // Overwrite the GraphQL type name.
     name = "MyUserId",
     // Specify a custom description.
     // A description in the attribute will overwrite a doc comment.
     description = "My user id description",
-    transparent,
 )]
 pub struct UserId(i32);
 #
@@ -156,7 +157,7 @@ impl UserId {
 }
 #
 # fn main() {}
- ```
+```
 
 #### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 

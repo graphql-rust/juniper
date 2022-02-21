@@ -14,7 +14,7 @@ use crate::{
 mod trivial {
     use super::*;
 
-    #[graphql_scalar(with = Self)]
+    #[graphql_scalar]
     struct Counter(i32);
 
     impl Counter {
