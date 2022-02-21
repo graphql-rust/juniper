@@ -161,6 +161,7 @@ impl ToTokens for Definition {
         self.impl_scalar_value_tokens().to_tokens(into);
         self.impl_from_tokens().to_tokens(into);
         self.impl_display_tokens().to_tokens(into);
+        self.emit_warnings_tokens().to_tokens(into);
     }
 }
 
@@ -342,6 +343,34 @@ impl Definition {
                 }
             }
         }
+    }
+
+    // TODO: replace with proper warning, once `proc_macro_diagnostics` is
+    //       stabilized.
+    //       https://github.com/rust-lang/rust/issues/54140
+    /// Emits warnings for missing [`Method`]s.
+    fn emit_warnings_tokens(&self) -> TokenStream {
+        [
+            (Method::AsInt, "missing `as_int` attribute"),
+            (Method::AsFloat, "missing `as_float` attribute"),
+            (Method::AsStr, "missing `as_str` attribute"),
+            (Method::AsString, "missing `as_string` attribute"),
+            (Method::IntoString, "missing `into_string` attribute"),
+            (Method::AsBoolean, "missing `as_boolean` attribute"),
+        ]
+        .iter()
+        .filter_map(|(method, err)| (!self.methods.contains_key(method)).then(|| err))
+        .map(|err| {
+            quote! {
+                #[warn(deprecated)]
+                const _: () = {
+                    #[deprecated(note = #err)]
+                    const JUNIPER_DERIVE_SCALAR_VALUE_WARNING: () = ();
+                    JUNIPER_DERIVE_SCALAR_VALUE_WARNING
+                };
+            }
+        })
+        .collect()
     }
 }
 
