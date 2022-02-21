@@ -1,5 +1,5 @@
 error: GraphQL interface must have a different name for each field
- --> fail/interface/struct/fields_duplicate.rs:4:1
+ --> fail/interface/struct/derive_fields_duplicate.rs:4:1
   |
 4 | / struct Character {
 5 | |     id: String,

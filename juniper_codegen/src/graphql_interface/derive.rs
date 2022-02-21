@@ -12,10 +12,10 @@ use crate::{
 
 use super::{Attr, Definition};
 
-/// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
+/// [`GraphQLScope`] of errors for `#[derive(GraphQLInterface)]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceDerive;
 
-/// Expands `#[graphql_interface]` macro into generated code.
+/// Expands `#[derive(GraphQLInterface)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = Attr::from_attrs("graphql", &ast.attrs)?;

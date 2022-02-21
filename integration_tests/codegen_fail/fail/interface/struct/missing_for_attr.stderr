@@ -1,7 +1,0 @@
-error[E0080]: evaluation of constant value failed
- --> fail/interface/struct/missing_for_attr.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: missing implementer reference in interface's `for` attribute.', $DIR/fail/interface/struct/missing_for_attr.rs:3:10
-  |
-  = note: this error originates in the macro `$crate::panic::panic_2015` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,7 +1,0 @@
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/struct/missing_field.rs:12:5
-   |
-12 |     id: String,
-   |     ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id` isn't implemented on `ObjA`.', $DIR/fail/interface/struct/missing_field.rs:12:5
-   |
-   = note: this error originates in the macro `$crate::panic::panic_2015` (in Nightly builds, run with -Z macro-backtrace for more info)

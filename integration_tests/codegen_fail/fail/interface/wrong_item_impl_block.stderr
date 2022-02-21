@@ -1,4 +1,4 @@
-error: #[graphql_interface] attribute is applicable to trait definitions only
+error: #[graphql_interface] attribute is applicable to trait and struct definitions only
  --> fail/interface/wrong_item_impl_block.rs:8:1
   |
 8 | #[graphql_interface(for = ObjA)]
