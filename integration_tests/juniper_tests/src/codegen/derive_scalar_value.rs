@@ -6,7 +6,7 @@ mod trivial {
 
     #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
-    pub enum ScalarValue {
+    pub enum CustomScalarValue {
         #[graphql(as_int, as_float)]
         Int(i32),
         #[graphql(as_float)]
@@ -19,16 +19,16 @@ mod trivial {
 
     #[test]
     fn into_another() {
-        assert!(ScalarValue::from(5)
+        assert!(CustomScalarValue::from(5)
             .into_another::<DefaultScalarValue>()
             .is_type::<i32>());
-        assert!(ScalarValue::from(0.5_f64)
+        assert!(CustomScalarValue::from(0.5_f64)
             .into_another::<DefaultScalarValue>()
             .is_type::<f64>());
-        assert!(ScalarValue::from("str".to_owned())
+        assert!(CustomScalarValue::from("str".to_owned())
             .into_another::<DefaultScalarValue>()
             .is_type::<String>());
-        assert!(ScalarValue::from(true)
+        assert!(CustomScalarValue::from(true)
             .into_another::<DefaultScalarValue>()
             .is_type::<bool>());
     }
@@ -39,7 +39,7 @@ mod named_fields {
 
     #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
-    pub enum ScalarValue {
+    pub enum CustomScalarValue {
         #[graphql(as_int, as_float)]
         Int { int: i32 },
         #[graphql(as_float)]
@@ -52,16 +52,16 @@ mod named_fields {
 
     #[test]
     fn into_another() {
-        assert!(ScalarValue::from(5)
+        assert!(CustomScalarValue::from(5)
             .into_another::<DefaultScalarValue>()
             .is_type::<i32>());
-        assert!(ScalarValue::from(0.5_f64)
+        assert!(CustomScalarValue::from(0.5_f64)
             .into_another::<DefaultScalarValue>()
             .is_type::<f64>());
-        assert!(ScalarValue::from("str".to_owned())
+        assert!(CustomScalarValue::from("str".to_owned())
             .into_another::<DefaultScalarValue>()
             .is_type::<String>());
-        assert!(ScalarValue::from(true)
+        assert!(CustomScalarValue::from(true)
             .into_another::<DefaultScalarValue>()
             .is_type::<bool>());
     }
@@ -72,7 +72,7 @@ mod custom_fn {
 
     #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
-    pub enum ScalarValue {
+    pub enum CustomScalarValue {
         #[graphql(as_int, as_float)]
         Int(i32),
         #[graphql(as_float)]
@@ -89,16 +89,47 @@ mod custom_fn {
 
     #[test]
     fn into_another() {
-        assert!(ScalarValue::from(5)
+        assert!(CustomScalarValue::from(5)
             .into_another::<DefaultScalarValue>()
             .is_type::<i32>());
-        assert!(ScalarValue::from(0.5_f64)
+        assert!(CustomScalarValue::from(0.5_f64)
             .into_another::<DefaultScalarValue>()
             .is_type::<f64>());
-        assert!(ScalarValue::from("str".to_owned())
+        assert!(CustomScalarValue::from("str".to_owned())
             .into_another::<DefaultScalarValue>()
             .is_type::<String>());
-        assert!(ScalarValue::from(true)
+        assert!(CustomScalarValue::from(true)
+            .into_another::<DefaultScalarValue>()
+            .is_type::<bool>());
+    }
+}
+
+mod allow_missing_methods {
+    use super::*;
+
+    #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
+    #[graphql(allow_missing_methods)]
+    #[serde(untagged)]
+    pub enum CustomScalarValue {
+        Int(i32),
+        #[graphql(as_float)]
+        Float(f64),
+        #[graphql(as_str, as_string, into_string)]
+        String(String),
+        #[graphql(as_boolean)]
+        Boolean(bool),
+    }
+
+    #[test]
+    fn into_another() {
+        assert!(CustomScalarValue::Int(5).as_int().is_none());
+        assert!(CustomScalarValue::from(0.5_f64)
+            .into_another::<DefaultScalarValue>()
+            .is_type::<f64>());
+        assert!(CustomScalarValue::from("str".to_owned())
+            .into_another::<DefaultScalarValue>()
+            .is_type::<String>());
+        assert!(CustomScalarValue::from(true)
             .into_another::<DefaultScalarValue>()
             .is_type::<bool>());
     }
