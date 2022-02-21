@@ -1,0 +1,11 @@
+error: GraphQL built-in scalars missing `as_int`, `as_float` attributes. In case you are sure that it\'s ok, use `#[graphql(allow_unused_methods)]` to suppress this error.
+  --> fail/scalar_value/missing_methods.rs:4:1
+   |
+4  | / pub enum DefaultScalarValue {
+5  | |     Int(i32),
+6  | |     Float(f64),
+7  | |     #[graphql(as_str, as_string, into_string)]
+...  |
+10 | |     Boolean(bool),
+11 | | }
+   | |_^

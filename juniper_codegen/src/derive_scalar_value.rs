@@ -24,11 +24,14 @@ const ERR: GraphQLScope = GraphQLScope::DeriveScalarValue;
 /// Expands `#[derive(GraphQLScalarValue)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
+    let span = ast.span();
 
     let data_enum = match ast.data {
         syn::Data::Enum(e) => e,
         _ => return Err(ERR.custom_error(ast.span(), "can only be derived for enums")),
     };
+
+    let attr = Attr::from_attrs("graphql", &ast.attrs)?;
 
     let mut methods = HashMap::<Method, Vec<Variant>>::new();
     for var in data_enum.variants.clone() {
@@ -43,6 +46,34 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         }
     }
 
+    let missing_methods = [
+        (Method::AsInt, "`#[graphql(as_int)]`"),
+        (Method::AsFloat, "`#[graphql(as_float)]`"),
+        (Method::AsStr, "`#[graphql(as_str)]`"),
+        (Method::AsString, "`#[graphql(as_string)]`"),
+        (Method::IntoString, "`#[graphql(into_string)]`"),
+        (Method::AsBoolean, "`#[graphql(as_boolean)]`"),
+    ]
+    .iter()
+    .filter_map(|(method, err)| (!methods.contains_key(method)).then(|| err))
+    .fold(None, |acc, &method| {
+        Some(
+            acc.map(|acc| format!("{}, {}", acc, method))
+                .unwrap_or_else(|| method.to_owned()),
+        )
+    })
+    .filter(|_| !attr.allow_missing_methods);
+    if let Some(missing_methods) = missing_methods {
+        return Err(ERR.custom_error(
+            span,
+            format!(
+                "missing {} attributes. In case you are sure that it's ok, \
+                 use `#[graphql(allow_missing_methods)]` to suppress this error.",
+                missing_methods,
+            ),
+        ));
+    }
+
     Ok(Definition {
         ident: ast.ident,
         generics: ast.generics,
@@ -50,6 +81,50 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         methods,
     }
     .into_token_stream())
+}
+
+/// Available arguments behind `#[graphql]` attribute when generating code for
+/// enum container.
+#[derive(Default)]
+struct Attr {
+    /// Allows missing [`Method`]s.
+    allow_missing_methods: bool,
+}
+
+impl Parse for Attr {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Attr> {
+        let mut out = Attr::default();
+        while !input.is_empty() {
+            let ident = input.parse::<syn::Ident>()?;
+            match ident.to_string().as_str() {
+                "allow_missing_methods" => {
+                    out.allow_missing_methods = true;
+                }
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
+                }
+            };
+            input.try_parse::<token::Comma>()?;
+        }
+        Ok(out)
+    }
+}
+
+impl Attr {
+    /// Tries to merge two [`Attr`]s into a single one, reporting about
+    /// duplicates, if any.
+    fn try_merge(mut self, another: Self) -> syn::Result<Self> {
+        self.allow_missing_methods |= another.allow_missing_methods;
+        Ok(self)
+    }
+
+    /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a enum variant.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
+    }
 }
 
 /// Possible attribute names of the `#[derive(GraphQLScalarValue)]`.
@@ -161,7 +236,6 @@ impl ToTokens for Definition {
         self.impl_scalar_value_tokens().to_tokens(into);
         self.impl_from_tokens().to_tokens(into);
         self.impl_display_tokens().to_tokens(into);
-        self.emit_warnings_tokens().to_tokens(into);
     }
 }
 
@@ -343,34 +417,6 @@ impl Definition {
                 }
             }
         }
-    }
-
-    // TODO: replace with proper warning, once `proc_macro_diagnostics` is
-    //       stabilized.
-    //       https://github.com/rust-lang/rust/issues/54140
-    /// Emits warnings for missing [`Method`]s.
-    fn emit_warnings_tokens(&self) -> TokenStream {
-        [
-            (Method::AsInt, "missing `as_int` attribute"),
-            (Method::AsFloat, "missing `as_float` attribute"),
-            (Method::AsStr, "missing `as_str` attribute"),
-            (Method::AsString, "missing `as_string` attribute"),
-            (Method::IntoString, "missing `into_string` attribute"),
-            (Method::AsBoolean, "missing `as_boolean` attribute"),
-        ]
-        .iter()
-        .filter_map(|(method, err)| (!self.methods.contains_key(method)).then(|| err))
-        .map(|err| {
-            quote! {
-                #[warn(deprecated)]
-                const _: () = {
-                    #[deprecated(note = #err)]
-                    const JUNIPER_DERIVE_SCALAR_VALUE_WARNING: () = ();
-                    JUNIPER_DERIVE_SCALAR_VALUE_WARNING
-                };
-            }
-        })
-        .collect()
     }
 }
 
