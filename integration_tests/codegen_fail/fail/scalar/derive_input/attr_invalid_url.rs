@@ -1,4 +1,4 @@
-use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
+use juniper::graphql_scalar;
 
 #[graphql_scalar(specified_by_url = "not an url")]
 struct ScalarSpecifiedByUrl(i32);

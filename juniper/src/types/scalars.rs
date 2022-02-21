@@ -35,7 +35,7 @@ impl ID {
     fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
         v.as_string_value()
             .map(str::to_owned)
-            .or_else(|| v.as_int_value().map(ToString::to_string))
+            .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
             .map(Self)
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
