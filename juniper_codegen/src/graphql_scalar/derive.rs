@@ -22,34 +22,38 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         attr.from_input.as_deref().cloned(),
         attr.parse_token.as_deref().cloned(),
         attr.with.as_deref().cloned(),
+        attr.transparent,
     ) {
-        (Some(to_output), Some(from_input), Some(parse_token), None) => {
+        (Some(to_output), Some(from_input), Some(parse_token), None, false) => {
             GraphQLScalarMethods::Custom {
                 to_output,
                 from_input,
                 parse_token,
             }
         }
-        (to_output, from_input, parse_token, Some(module)) => GraphQLScalarMethods::Custom {
-            to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
-            from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
-            parse_token: parse_token
-                .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
-        },
-        (to_output, from_input, parse_token, None) => {
+        (to_output, from_input, parse_token, module, false) => {
+            let module = module.unwrap_or_else(|| parse_quote!(Self));
+            GraphQLScalarMethods::Custom {
+                to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
+                from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
+                parse_token: parse_token
+                    .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
+            }
+        }
+        (to_output, from_input, parse_token, None, true) => {
             let data = if let syn::Data::Struct(data) = &ast.data {
                 data
             } else {
                 return Err(ERR.custom_error(
                     ast.span(),
-                    "expected all custom resolvers or single-field struct",
+                    "expected single-field struct because of `transparent` attribute",
                 ));
             };
             let field = match &data.fields {
                 syn::Fields::Unit => Err(ERR.custom_error(
                     ast.span(),
                     "expected exactly 1 field, e.g.: `Test(i32)`, `Test { test: i32 }` \
-                     or all custom resolvers",
+                     because of `transparent` attribute",
                 )),
                 syn::Fields::Unnamed(fields) => fields
                     .unnamed
@@ -59,7 +63,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                         ERR.custom_error(
                             ast.span(),
                             "expected exactly 1 field, e.g., Test(i32) \
-                             or all custom resolvers",
+                             because of `transparent` attribute",
                         )
                     }),
                 syn::Fields::Named(fields) => fields
@@ -70,7 +74,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                         ERR.custom_error(
                             ast.span(),
                             "expected exactly 1 field, e.g., Test { test: i32 } \
-                             or all custom resolvers",
+                             because of `transparent` attribute",
                         )
                     }),
             }?;
@@ -80,6 +84,14 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                 parse_token,
                 field: Box::new(field),
             }
+        }
+        (_, _, _, Some(module), true) => {
+            return Err(ERR.custom_error(
+                module.span(),
+                "`with = <path>` attribute can't be combined with `transparent`. \
+                 You can specify custom resolvers with `to_output`, `from_input`, `parse_token` \
+                 attributes and still use `transparent` for unspecified ones.",
+            ));
         }
     };
 

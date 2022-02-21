@@ -20,7 +20,7 @@ enum Sample {
 }
 
 #[derive(GraphQLScalar)]
-#[graphql(name = "SampleScalar")]
+#[graphql(name = "SampleScalar", transparent)]
 struct Scalar(i32);
 
 /// A sample interface

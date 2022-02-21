@@ -24,21 +24,19 @@ use crate::{
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
 #[derive(Clone, Debug, Eq, GraphQLScalar, PartialEq, Serialize, Deserialize)]
-#[graphql(with = id, parse_token(String, i32))]
+#[graphql(parse_token(String, i32))]
 pub struct ID(String);
 
-mod id {
-    use super::*;
-
-    pub(super) fn to_output<S: ScalarValue>(v: &ID) -> Value<S> {
-        Value::scalar(v.0.clone())
+impl ID {
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        Value::scalar(self.0.clone())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ID, String> {
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
         v.as_string_value()
             .map(str::to_owned)
-            .or_else(|| v.as_int_value().map(|i| i.to_string()))
-            .map(ID)
+            .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
+            .map(Self)
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
 }
