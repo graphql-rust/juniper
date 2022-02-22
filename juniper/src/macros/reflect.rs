@@ -194,7 +194,7 @@ pub type WrappedValue = u128;
 ///
 /// const TYPE_STR: Type = <Option<Vec<Option<&str>>> as BaseType<DefaultScalarValue>>::NAME;
 /// const WRAP_VAL_STR: WrappedValue = <Option<Vec<Option<&str>>> as WrappedType<DefaultScalarValue>>::VALUE;
-/// assert_eq!(format_type!(TYPE_STRING, WRAP_VAL_STRING), "[String]");
+/// assert_eq!(format_type!(TYPE_STR, WRAP_VAL_STR), "[String]");
 /// ```
 ///
 /// [`VALUE`]: Self::VALUE

@@ -104,6 +104,8 @@ pub struct InterfaceMeta<'a, S> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub fields: Vec<Field<'a, S>>,
+    #[doc(hidden)]
+    pub interface_names: Vec<String>,
 }
 
 /// Union type metadata
@@ -583,6 +585,7 @@ impl<'a, S> InterfaceMeta<'a, S> {
             name,
             description: None,
             fields: fields.to_vec(),
+            interface_names: Vec::new(),
         }
     }
 
@@ -592,6 +595,18 @@ impl<'a, S> InterfaceMeta<'a, S> {
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
+        self
+    }
+
+    /// Set the `interfaces` this [`InterfaceMeta`] interface implements.
+    ///
+    /// Overwrites any previously set list of interfaces.
+    #[must_use]
+    pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> Self {
+        self.interface_names = interfaces
+            .iter()
+            .map(|t| t.innermost_name().to_owned())
+            .collect();
         self
     }
 

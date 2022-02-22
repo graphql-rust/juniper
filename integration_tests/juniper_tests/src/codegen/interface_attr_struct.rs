@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use juniper::{
     execute, graphql_interface, graphql_object, graphql_value, graphql_vars, DefaultScalarValue,
-    FieldError, FieldResult, GraphQLObject, GraphQLUnion, IntoFieldError, ScalarValue,
+    FieldError, FieldResult, GraphQLObject, GraphQLUnion, IntoFieldError, ScalarValue, ID,
 };
 
 use crate::util::{schema, schema_with_scalar};
@@ -2475,5 +2475,541 @@ mod nullable_argument_subtyping {
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
             );
         }
+    }
+}
+
+mod simple_inheritance {
+    use super::*;
+
+    #[graphql_interface(for = [ResourceValue, Endpoint])]
+    struct Node {
+        id: Option<ID>,
+    }
+
+    #[graphql_interface(impl = NodeValue, for = Endpoint)]
+    struct Resource {
+        id: ID,
+        url: Option<String>,
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = [ResourceValue, NodeValue])]
+    struct Endpoint {
+        id: ID,
+        url: String,
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn node() -> NodeValue {
+            Endpoint {
+                id: ID::from("1".to_owned()),
+                url: "2".to_owned(),
+            }
+            .into()
+        }
+
+        fn resource() -> ResourceValue {
+            Endpoint {
+                id: ID::from("3".to_owned()),
+                url: "4".to_owned(),
+            }
+            .into()
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_interface() {
+        for name in ["Node", "Resource"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        kind
+                    }}
+                }}"#,
+                name,
+            );
+
+            let schema = schema(QueryRoot);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_node() {
+        const DOC: &str = r#"{
+            node {
+                id
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"node": {
+                    "id": "1",
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_node_on_resource() {
+        const DOC: &str = r#"{
+            node {
+                ... on Resource {
+                    id
+                    url
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"node": {
+                    "id": "1",
+                    "url": "2",
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_node_on_endpoint() {
+        const DOC: &str = r#"{
+            node {
+                ... on Endpoint {
+                    id
+                    url
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"node": {
+                    "id": "1",
+                    "url": "2",
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_resource() {
+        const DOC: &str = r#"{
+            resource {
+                id
+                url
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"resource": {
+                    "id": "3",
+                    "url": "4",
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_resource_on_endpoint() {
+        const DOC: &str = r#"{
+            resource {
+                ... on Endpoint {
+                    id
+                    url
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"resource": {
+                    "id": "3",
+                    "url": "4",
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn registers_possible_types() {
+        for name in ["Node", "Resource"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        possibleTypes {{
+                            kind
+                            name
+                        }}
+                    }}
+                }}"#,
+                name,
+            );
+
+            let schema = schema(QueryRoot);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((
+                    graphql_value!({"__type": {"possibleTypes": [
+                        {"kind": "OBJECT", "name": "Endpoint"},
+                    ]}}),
+                    vec![],
+                )),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn registers_interfaces() {
+        let schema = schema(QueryRoot);
+
+        for (name, interfaces) in [
+            ("Node", graphql_value!([])),
+            (
+                "Resource",
+                graphql_value!([{"kind": "INTERFACE", "name": "Node"}]),
+            ),
+            (
+                "Endpoint",
+                graphql_value!([
+                    {"kind": "INTERFACE", "name": "Node"},
+                    {"kind": "INTERFACE", "name": "Resource"},
+                ]),
+            ),
+        ] {
+            let doc = format!(
+                r#"{{
+                   __type(name: "{}") {{
+                       interfaces {{
+                           kind
+                           name
+                       }}
+                   }}
+                }}"#,
+                name,
+            );
+
+            assert_eq!(
+                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((
+                    graphql_value!({"__type": {"interfaces": interfaces}}),
+                    vec![],
+                )),
+            );
+        }
+    }
+}
+
+mod branching_inheritance {
+    use super::*;
+
+    #[graphql_interface(for = [HumanValue, DroidValue, Luke, R2D2])]
+    struct Node {
+        id: ID,
+    }
+
+    #[graphql_interface(for = [HumanConnection, DroidConnection])]
+    struct Connection {
+        nodes: Vec<NodeValue>,
+    }
+
+    #[graphql_interface(impl = NodeValue, for = Luke)]
+    struct Human {
+        id: ID,
+        home_planet: String,
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = ConnectionValue)]
+    struct HumanConnection {
+        nodes: Vec<HumanValue>,
+    }
+
+    #[graphql_interface(impl = NodeValue, for = R2D2)]
+    struct Droid {
+        id: ID,
+        primary_function: String,
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = ConnectionValue)]
+    struct DroidConnection {
+        nodes: Vec<DroidValue>,
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = [HumanValue, NodeValue])]
+    struct Luke {
+        id: ID,
+        home_planet: String,
+        father: String,
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = [DroidValue, NodeValue])]
+    struct R2D2 {
+        id: ID,
+        primary_function: String,
+        charge: f64,
+    }
+
+    enum QueryRoot {
+        Luke,
+        R2D2,
+    }
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn crew(&self) -> ConnectionValue {
+            match self {
+                Self::Luke => HumanConnection {
+                    nodes: vec![Luke {
+                        id: ID::new("1"),
+                        home_planet: "earth".to_owned(),
+                        father: "SPOILER".to_owned(),
+                    }
+                    .into()],
+                }
+                .into(),
+                Self::R2D2 => DroidConnection {
+                    nodes: vec![R2D2 {
+                        id: ID::new("2"),
+                        primary_function: "roll".to_owned(),
+                        charge: 146.0,
+                    }
+                    .into()],
+                }
+                .into(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_interface() {
+        for name in ["Node", "Connection", "Human", "Droid"] {
+            let doc = format!(
+                r#"{{
+                    __type(name: "{}") {{
+                        kind
+                    }}
+                }}"#,
+                name,
+            );
+
+            let schema = schema(QueryRoot::Luke);
+
+            assert_eq!(
+                execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
+                Ok((graphql_value!({"__type": {"kind": "INTERFACE"}}), vec![])),
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves_human_connection() {
+        const DOC: &str = r#"{
+            crew {
+                ... on HumanConnection {
+                    nodes {
+                        id
+                        homePlanet
+                    }
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Luke);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"crew": {
+                    "nodes": [{
+                        "id": "1",
+                        "homePlanet": "earth",
+                    }],
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_human() {
+        const DOC: &str = r#"{
+            crew {
+                nodes {
+                    ... on Human {
+                        id
+                        homePlanet
+                    } 
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Luke);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"crew": {
+                    "nodes": [{
+                        "id": "1",
+                        "homePlanet": "earth",
+                    }],
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_luke() {
+        const DOC: &str = r#"{
+            crew {
+                nodes {
+                    ... on Luke {
+                        id
+                        homePlanet
+                        father
+                    } 
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::Luke);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"crew": {
+                    "nodes": [{
+                        "id": "1",
+                        "homePlanet": "earth",
+                        "father": "SPOILER",
+                    }],
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid_connection() {
+        const DOC: &str = r#"{
+            crew {
+                ... on DroidConnection {
+                    nodes {
+                        id
+                        primaryFunction
+                    } 
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::R2D2);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"crew": {
+                    "nodes": [{
+                        "id": "2",
+                        "primaryFunction": "roll",
+                    }],
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        const DOC: &str = r#"{
+            crew {
+                nodes {
+                    ... on Droid {
+                        id
+                        primaryFunction
+                    } 
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::R2D2);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"crew": {
+                    "nodes": [{
+                        "id": "2",
+                        "primaryFunction": "roll",
+                    }],
+                }}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_r2d2() {
+        const DOC: &str = r#"{
+            crew {
+                nodes {
+                    ... on R2D2 {
+                        id
+                        primaryFunction
+                        charge
+                    } 
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot::R2D2);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"crew": {
+                    "nodes": [{
+                        "id": "2",
+                        "primaryFunction": "roll",
+                        "charge": 146.0,
+                    }],
+                }}),
+                vec![],
+            )),
+        );
     }
 }

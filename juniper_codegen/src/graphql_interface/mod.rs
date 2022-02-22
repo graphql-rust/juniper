@@ -62,12 +62,19 @@ struct Attr {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     r#enum: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified Rust types of [GraphQL objects][2] implementing
-    /// this [GraphQL interface][1] type.
+    /// Explicitly specified Rust types of [GraphQL objects][2] or
+    /// [interfaces][1] implementing this [GraphQL interface][1] type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
-    implementers: HashSet<SpanContainer<syn::TypePath>>,
+    implemented_for: HashSet<SpanContainer<syn::TypePath>>,
+
+    /// Explicitly specified [GraphQL interfaces][2] this [interface][1] type
+    /// implements.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
+    implements: HashSet<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL interface][1] type with.
@@ -161,9 +168,21 @@ impl Parse for Attr {
                     >()? {
                         let impler_span = impler.span();
                         out
-                            .implementers
+                            .implemented_for
                             .replace(SpanContainer::new(ident.span(), Some(impler_span), impler))
                             .none_or_else(|_| err::dup_arg(impler_span))?;
+                    }
+                }
+                "impl" | "implements" | "interfaces" => {
+                    input.parse::<token::Eq>()?;
+                    for iface in input.parse_maybe_wrapped_and_punctuated::<
+                        syn::Type, token::Bracket, token::Comma,
+                    >()? {
+                        let iface_span = iface.span();
+                        out
+                            .implements
+                            .replace(SpanContainer::new(ident.span(), Some(iface_span), iface))
+                            .none_or_else(|_| err::dup_arg(iface_span))?;
                     }
                 }
                 "enum" => {
@@ -212,7 +231,8 @@ impl Attr {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
-            implementers: try_merge_hashset!(implementers: self, another => span_joined),
+            implemented_for: try_merge_hashset!(implemented_for: self, another => span_joined),
+            implements: try_merge_hashset!(implements: self, another => span_joined),
             r#enum: try_merge_opt!(r#enum: self, another),
             asyncness: try_merge_opt!(asyncness: self, another),
             rename_fields: try_merge_opt!(rename_fields: self, another),
@@ -299,7 +319,12 @@ struct Definition {
     /// Defined [`Implementer`]s of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    implementers: Vec<syn::TypePath>,
+    implemented_for: Vec<syn::TypePath>,
+
+    /// Defined [`Implementer`]s of this [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    implements: Vec<syn::Type>,
 }
 
 impl ToTokens for Definition {
@@ -327,13 +352,13 @@ impl Definition {
         let enum_ident = &self.enum_ident;
         let alias_ident = &self.enum_alias_ident;
 
-        let variant_gens_pars = (0..self.implementers.len()).map::<syn::GenericParam, _>(|id| {
+        let variant_gens_pars = (0..self.implemented_for.len()).map::<syn::GenericParam, _>(|id| {
             let par = format_ident!("__I{}", id);
             parse_quote! { #par }
         });
 
         let variants_idents = self
-            .implementers
+            .implemented_for
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident));
 
@@ -371,7 +396,7 @@ impl Definition {
                     }
                     rest => quote! { #rest },
                 })
-                .chain(self.implementers.iter().map(ToTokens::to_token_stream))
+                .chain(self.implemented_for.iter().map(ToTokens::to_token_stream))
                 .chain(interface_gens_tys.into_iter().map(|par| match par {
                     syn::GenericParam::Type(ty) => {
                         let par_ident = &ty.ident;
@@ -401,23 +426,23 @@ impl Definition {
             quote! { __Phantom(#(#phantom_params),*) }
         });
 
-        let from_impls =
-            self.implementers
-                .iter()
-                .zip(variants_idents.clone())
-                .map(|(ty, ident)| {
-                    quote_spanned! { ty.span() =>
-                        #[automatically_derived]
-                        impl#interface_impl_gens ::std::convert::From<#ty>
-                            for #alias_ident#interface_ty_gens
-                            #interface_where_clause
-                        {
-                            fn from(v: #ty) -> Self {
-                                Self::#ident(v)
-                            }
+        let from_impls = self
+            .implemented_for
+            .iter()
+            .zip(variants_idents.clone())
+            .map(|(ty, ident)| {
+                quote_spanned! { ty.span() =>
+                    #[automatically_derived]
+                    impl#interface_impl_gens ::std::convert::From<#ty>
+                        for #alias_ident#interface_ty_gens
+                        #interface_where_clause
+                    {
+                        fn from(v: #ty) -> Self {
+                            Self::#ident(v)
                         }
                     }
-                });
+                }
+            });
 
         quote! {
             #[automatically_derived]
@@ -449,7 +474,7 @@ impl Definition {
         let (impl_generics, _, where_clause) = gens.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let impler_tys = &self.implementers;
+        let impler_tys = &self.implemented_for;
         let all_implers_unique = (impler_tys.len() > 1).then(|| {
             quote! { ::juniper::sa::assert_type_ne_all!(#( #impler_tys ),*); }
         });
@@ -462,7 +487,7 @@ impl Definition {
             {
                 fn mark() {
                     #all_implers_unique
-                    #( <#impler_tys as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
+                    // #( <#impler_tys as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
                 }
             }
         }
@@ -489,13 +514,25 @@ impl Definition {
             .iter()
             .map(|f| f.method_mark_tokens(false, scalar));
 
-        let is_output = self.implementers.iter().map(|implementer| {
+        let is_output = self.implemented_for.iter().map(|implementer| {
             quote_spanned! { implementer.span() =>
                <#implementer as ::juniper::marker::IsOutputType<#scalar>>::mark();
             }
         });
 
-        let impler_tys = self.implementers.iter();
+        let impler_tys = &self.implemented_for;
+        let const_implements = self.implements.clone().into_iter().map(|mut ty| {
+            generics.replace_type_with_defaults(&mut ty);
+            ty
+        });
+
+        let transitive_check = const_implements.clone().map(|const_impl| {
+            quote! {
+                ::juniper::assert_interfaces_impls!(
+                    #const_scalar, #const_impl, #(#impler_tys),*
+                );
+            }
+        });
 
         quote! {
             #[automatically_derived]
@@ -509,6 +546,10 @@ impl Definition {
                     ::juniper::assert_interfaces_impls!(
                         #const_scalar, #ty#ty_const_generics, #(#impler_tys),*
                     );
+                    ::juniper::assert_implemented_for!(
+                        #const_scalar, #ty#ty_const_generics, #(#const_implements),*
+                    );
+                    #(#transitive_check)*
                 }
             }
         }
@@ -535,10 +576,24 @@ impl Definition {
             .map(|desc| quote! { .description(#desc) });
 
         // Sorting is required to preserve/guarantee the order of implementers registered in schema.
-        let mut impler_tys = self.implementers.clone();
+        let mut impler_tys = self.implemented_for.clone();
         impler_tys.sort_unstable_by(|a, b| {
             let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
             a.cmp(&b)
+        });
+
+        // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
+        let mut implements_tys: Vec<_> = self.implements.iter().collect();
+        implements_tys.sort_unstable_by(|a, b| {
+            let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
+            a.cmp(&b)
+        });
+        let interfaces = (!implements_tys.is_empty()).then(|| {
+            quote! {
+                .interfaces(&[
+                    #( registry.get_type::<#implements_tys>(info), )*
+                ])
+            }
         });
 
         let fields_meta = self.fields.iter().map(|f| f.method_meta_tokens(None));
@@ -567,6 +622,7 @@ impl Definition {
                     ];
                     registry.build_interface_type::<#ty#ty_generics>(info, &fields)
                         #description
+                        #interfaces
                         .into_meta()
                 }
             }
@@ -729,7 +785,8 @@ impl Definition {
     #[must_use]
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
-        let implementers = &self.implementers;
+        let implemented_for = &self.implemented_for;
+        let implements = &self.implements;
         let scalar = &self.scalar;
         let name = &self.name;
         let fields = self.fields.iter().map(|f| &f.name);
@@ -754,8 +811,17 @@ impl Definition {
             {
                 const NAMES: ::juniper::macros::reflect::Types = &[
                     <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
-                    #(<#implementers as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
+                    #(<#implemented_for as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
                 ];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
+                for #ty#ty_generics
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[#(<#implements as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*];
             }
 
             #[automatically_derived]
@@ -847,9 +913,9 @@ impl Definition {
         let scalar = &self.scalar;
         let const_scalar = self.scalar.default_ty();
 
-        let impl_tys = self.implementers.iter().collect::<Vec<_>>();
+        let impl_tys = self.implemented_for.iter().collect::<Vec<_>>();
         let impl_idents = self
-            .implementers
+            .implemented_for
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
             .collect::<Vec<_>>();
@@ -867,10 +933,11 @@ impl Definition {
 
                 let const_ty_generics = self.const_trait_generics();
 
-                let unreachable_arm =
-                    (self.implementers.is_empty() || !self.generics.params.is_empty()).then(|| {
-                        quote! { _ => unreachable!() }
-                    });
+                let unreachable_arm = (self.implemented_for.is_empty()
+                    || !self.generics.params.is_empty())
+                .then(|| {
+                    quote! { _ => unreachable!() }
+                });
 
                 quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
@@ -918,9 +985,9 @@ impl Definition {
         let scalar = &self.scalar;
         let const_scalar = self.scalar.default_ty();
 
-        let impl_tys = self.implementers.iter().collect::<Vec<_>>();
+        let impl_tys = self.implemented_for.iter().collect::<Vec<_>>();
         let impl_idents = self
-            .implementers
+            .implemented_for
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
             .collect::<Vec<_>>();
@@ -938,10 +1005,11 @@ impl Definition {
 
                 let const_ty_generics = self.const_trait_generics();
 
-                let unreachable_arm =
-                    (self.implementers.is_empty() || !self.generics.params.is_empty()).then(|| {
-                        quote! { _ => unreachable!() }
-                    });
+                let unreachable_arm = (self.implemented_for.is_empty()
+                    || !self.generics.params.is_empty())
+                .then(|| {
+                    quote! { _ => unreachable!() }
+                });
 
                 quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
@@ -990,7 +1058,7 @@ impl Definition {
         let scalar = &self.scalar;
 
         let match_arms = self
-            .implementers
+            .implemented_for
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| (&seg.ident, ty)))
             .map(|(ident, ty)| {
@@ -1002,7 +1070,7 @@ impl Definition {
             });
 
         let non_exhaustive_match_arm =
-            (!self.generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+            (!self.generics.params.is_empty() || self.implemented_for.is_empty()).then(|| {
                 quote! { _ => unreachable!(), }
             });
 
@@ -1025,7 +1093,7 @@ impl Definition {
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
         let resolving_code = gen::async_resolving_code(None);
 
-        let match_arms = self.implementers.iter().filter_map(|ty| {
+        let match_arms = self.implemented_for.iter().filter_map(|ty| {
             ty.path.segments.last().map(|ident| {
                 quote! {
                     Self::#ident(v) => {
@@ -1036,7 +1104,7 @@ impl Definition {
             })
         });
         let non_exhaustive_match_arm =
-            (!self.generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+            (!self.generics.params.is_empty() || self.implemented_for.is_empty()).then(|| {
                 quote! { _ => unreachable!(), }
             });
 
@@ -1058,7 +1126,7 @@ impl Definition {
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
         let resolving_code = gen::sync_resolving_code();
 
-        let match_arms = self.implementers.iter().filter_map(|ty| {
+        let match_arms = self.implemented_for.iter().filter_map(|ty| {
             ty.path.segments.last().map(|ident| {
                 quote! {
                     Self::#ident(res) => #resolving_code,
@@ -1067,7 +1135,7 @@ impl Definition {
         });
 
         let non_exhaustive_match_arm =
-            (!self.generics.params.is_empty() || self.implementers.is_empty()).then(|| {
+            (!self.generics.params.is_empty() || self.implemented_for.is_empty()).then(|| {
                 quote! { _ => unreachable!(), }
             });
 

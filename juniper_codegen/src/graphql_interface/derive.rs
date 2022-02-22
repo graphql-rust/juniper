@@ -105,11 +105,12 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         context,
         scalar,
         fields,
-        implementers: attr
-            .implementers
+        implemented_for: attr
+            .implemented_for
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
+        implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
     }
     .into_token_stream())
 }

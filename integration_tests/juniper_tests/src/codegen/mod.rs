@@ -5,6 +5,7 @@ mod derive_scalar_value;
 mod interface_attr_struct;
 mod interface_attr_trait;
 mod interface_derive;
+mod interface_inheritance;
 mod object_attr;
 mod object_derive;
 mod scalar_attr_derive_input;

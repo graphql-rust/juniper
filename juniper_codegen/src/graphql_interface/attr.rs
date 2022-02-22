@@ -133,11 +133,12 @@ fn expand_on_trait(
         context,
         scalar,
         fields,
-        implementers: attr
-            .implementers
+        implemented_for: attr
+            .implemented_for
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
+        implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
     };
 
     Ok(quote! {
@@ -339,11 +340,12 @@ fn expand_on_derive_input(
         context,
         scalar,
         fields,
-        implementers: attr
-            .implementers
+        implemented_for: attr
+            .implemented_for
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
+        implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
     };
 
     Ok(quote! {
