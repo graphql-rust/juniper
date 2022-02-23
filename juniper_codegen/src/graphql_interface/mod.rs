@@ -74,7 +74,7 @@ struct Attr {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
-    implements: HashSet<SpanContainer<syn::Type>>,
+    implements: HashSet<SpanContainer<syn::TypePath>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL interface][1] type with.
@@ -176,7 +176,7 @@ impl Parse for Attr {
                 "impl" | "implements" | "interfaces" => {
                     input.parse::<token::Eq>()?;
                     for iface in input.parse_maybe_wrapped_and_punctuated::<
-                        syn::Type, token::Bracket, token::Comma,
+                        syn::TypePath, token::Bracket, token::Comma,
                     >()? {
                         let iface_span = iface.span();
                         out
@@ -316,15 +316,17 @@ struct Definition {
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     fields: Vec<field::Definition>,
 
-    /// Defined [`Implementer`]s of this [GraphQL interface][1].
+    /// Specified [GraphQL objects][2] or [interfaces][1] this
+    /// [GraphQL interface][1] is implemented for type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     implemented_for: Vec<syn::TypePath>,
 
-    /// Defined [`Implementer`]s of this [GraphQL interface][1].
+    /// Specified [GraphQL interfaces][1] this [interface][1] type implements.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    implements: Vec<syn::Type>,
+    implements: Vec<syn::TypePath>,
 }
 
 impl ToTokens for Definition {
@@ -474,9 +476,47 @@ impl Definition {
         let (impl_generics, _, where_clause) = gens.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let impler_tys = &self.implemented_for;
-        let all_implers_unique = (impler_tys.len() > 1).then(|| {
-            quote! { ::juniper::sa::assert_type_ne_all!(#( #impler_tys ),*); }
+        let implemented_for = &self.implemented_for;
+        let all_impled_for_unique = (implemented_for.len() > 1).then(|| {
+            quote! { ::juniper::sa::assert_type_ne_all!(#( #implemented_for ),*); }
+        });
+
+        let mark_object_or_interface = self.implemented_for.iter().map(|impl_for| {
+            quote_spanned! { impl_for.span() =>
+                trait GraphQLObjectOrInterface<S: juniper::ScalarValue, T> {
+                    fn mark();
+                }
+
+                {
+                    struct Object;
+
+                    impl<S, T> GraphQLObjectOrInterface<S, Object> for T
+                    where
+                        S: juniper::ScalarValue,
+                        T: juniper::marker::GraphQLObject<S>,
+                    {
+                        fn mark() {
+                            <T as juniper::marker::GraphQLObject<S>>::mark()
+                        }
+                    }
+                }
+
+                {
+                    struct Interface;
+
+                    impl<S, T> GraphQLObjectOrInterface<S, Interface> for T
+                    where
+                        S: juniper::ScalarValue,
+                        T: juniper::marker::GraphQLInterface<S>,
+                    {
+                        fn mark() {
+                            <T as juniper::marker::GraphQLInterface<S>>::mark()
+                        }
+                    }
+                }
+
+                <#impl_for as GraphQLObjectOrInterface<#scalar, _>>::mark();
+            }
         });
 
         quote! {
@@ -486,8 +526,8 @@ impl Definition {
                 #where_clause
             {
                 fn mark() {
-                    #all_implers_unique
-                    // #( <#impler_tys as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
+                    #all_impled_for_unique
+                    #({ #mark_object_or_interface })*
                 }
             }
         }
@@ -520,16 +560,26 @@ impl Definition {
             }
         });
 
-        let impler_tys = &self.implemented_for;
-        let const_implements = self.implements.clone().into_iter().map(|mut ty| {
-            generics.replace_type_with_defaults(&mut ty);
+        let const_impl_for = self.implemented_for.iter().cloned().map(|mut ty| {
+            generics.replace_type_path_with_defaults(&mut ty);
             ty
         });
-
-        let transitive_check = const_implements.clone().map(|const_impl| {
-            quote! {
-                ::juniper::assert_interfaces_impls!(
-                    #const_scalar, #const_impl, #(#impler_tys),*
+        let const_implements = self
+            .implements
+            .clone()
+            .into_iter()
+            .map(|mut ty| {
+                generics.replace_type_path_with_defaults(&mut ty);
+                ty
+            })
+            .collect::<Vec<_>>();
+        let transitive_checks = const_impl_for.clone().map(|const_impl_for| {
+            quote_spanned! { const_impl_for.span() =>
+                juniper::assert_transitive_implementations!(
+                    #const_scalar,
+                    #ty#ty_const_generics,
+                    #const_impl_for,
+                    #(#const_implements),*
                 );
             }
         });
@@ -544,12 +594,16 @@ impl Definition {
                     #( #fields_marks )*
                     #( #is_output )*
                     ::juniper::assert_interfaces_impls!(
-                        #const_scalar, #ty#ty_const_generics, #(#impler_tys),*
+                        #const_scalar,
+                        #ty#ty_const_generics,
+                        #(#const_impl_for),*
                     );
                     ::juniper::assert_implemented_for!(
-                        #const_scalar, #ty#ty_const_generics, #(#const_implements),*
+                        #const_scalar,
+                        #ty#ty_const_generics,
+                        #(#const_implements),*
                     );
-                    #(#transitive_check)*
+                    #(#transitive_checks)*
                 }
             }
         }
@@ -576,22 +630,22 @@ impl Definition {
             .map(|desc| quote! { .description(#desc) });
 
         // Sorting is required to preserve/guarantee the order of implementers registered in schema.
-        let mut impler_tys = self.implemented_for.clone();
-        impler_tys.sort_unstable_by(|a, b| {
+        let mut implemented_for = self.implemented_for.clone();
+        implemented_for.sort_unstable_by(|a, b| {
             let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
             a.cmp(&b)
         });
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
-        let mut implements_tys: Vec<_> = self.implements.iter().collect();
-        implements_tys.sort_unstable_by(|a, b| {
+        let mut implements: Vec<_> = self.implements.iter().collect();
+        implements.sort_unstable_by(|a, b| {
             let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
             a.cmp(&b)
         });
-        let interfaces = (!implements_tys.is_empty()).then(|| {
+        let impl_interfaces = (!implements.is_empty()).then(|| {
             quote! {
                 .interfaces(&[
-                    #( registry.get_type::<#implements_tys>(info), )*
+                    #( registry.get_type::<#implements>(info), )*
                 ])
             }
         });
@@ -615,14 +669,14 @@ impl Definition {
                 where #scalar: 'r,
                 {
                     // Ensure all implementer types are registered.
-                    #( let _ = registry.get_type::<#impler_tys>(info); )*
+                    #( let _ = registry.get_type::<#implemented_for>(info); )*
 
                     let fields = [
                         #( #fields_meta, )*
                     ];
                     registry.build_interface_type::<#ty#ty_generics>(info, &fields)
                         #description
-                        #interfaces
+                        #impl_interfaces
                         .into_meta()
                 }
             }
@@ -913,16 +967,24 @@ impl Definition {
         let scalar = &self.scalar;
         let const_scalar = self.scalar.default_ty();
 
-        let impl_tys = self.implemented_for.iter().collect::<Vec<_>>();
-        let impl_idents = self
+        let generics = self.impl_generics(false);
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
+
+        let const_implemented_for = self
+            .implemented_for
+            .iter()
+            .cloned()
+            .map(|mut impl_for| {
+                generics.replace_type_path_with_defaults(&mut impl_for);
+                impl_for
+            })
+            .collect::<Vec<_>>();
+        let implemented_for_idents = self
             .implemented_for
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
             .collect::<Vec<_>>();
-
-        let generics = self.impl_generics(false);
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         self.fields
             .iter()
@@ -953,10 +1015,10 @@ impl Definition {
                             executor: &::juniper::Executor<Self::Context, #scalar>,
                         ) -> ::juniper::ExecutionResult<#scalar> {
                             match self {
-                                #(#ty::#impl_idents(v) => {
+                                #(#ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
                                         #ty#const_ty_generics,
-                                        #impl_tys,
+                                        #const_implemented_for,
                                         #const_scalar,
                                         #field_name,
                                     );
@@ -985,16 +1047,24 @@ impl Definition {
         let scalar = &self.scalar;
         let const_scalar = self.scalar.default_ty();
 
-        let impl_tys = self.implemented_for.iter().collect::<Vec<_>>();
-        let impl_idents = self
+        let generics = self.impl_generics(true);
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
+
+        let const_implemented_for = self
+            .implemented_for
+            .iter()
+            .cloned()
+            .map(|mut impl_for| {
+                generics.replace_type_path_with_defaults(&mut impl_for);
+                impl_for
+            })
+            .collect::<Vec<_>>();
+        let implemented_for_idents = self
             .implemented_for
             .iter()
             .filter_map(|ty| ty.path.segments.last().map(|seg| &seg.ident))
             .collect::<Vec<_>>();
-
-        let generics = self.impl_generics(true);
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.generics.split_for_impl();
 
         self.fields
             .iter()
@@ -1025,10 +1095,10 @@ impl Definition {
                             executor: &'b ::juniper::Executor<Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                             match self {
-                                #(#ty::#impl_idents(v) => {
+                                #(#ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
                                         #ty#const_ty_generics,
-                                        #impl_tys,
+                                        #const_implemented_for,
                                         #const_scalar,
                                         #field_name,
                                     );
