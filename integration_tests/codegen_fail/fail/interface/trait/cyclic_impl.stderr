@@ -1,0 +1,56 @@
+error: GraphQL interface trait method should have a shared reference receiver `&self`
+ --> fail/interface/trait/cyclic_impl.rs:8:1
+  |
+8 | #[graphql_interface(impl = Node1Value, for = Node1Value)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Interfaces
+  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0412]: cannot find type `Node2Value` in this scope
+ --> fail/interface/trait/cyclic_impl.rs:3:46
+  |
+3 | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+  |                                              ^^^^^^^^^^ not found in this scope
+  |
+help: there is an enum variant `crate::Node1ValueEnum::Node2Value`; try using the variant's enum
+  |
+3 | #[graphql_interface(impl = Node2Value, for = crate::Node1ValueEnum)]
+  |                                              ~~~~~~~~~~~~~~~~~~~~~
+
+error[E0412]: cannot find type `Node2Value` in this scope
+ --> fail/interface/trait/cyclic_impl.rs:3:46
+  |
+3 | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+  |                                              ^^^^^^^^^^ not found in this scope
+  |
+help: there is an enum variant `crate::Node1ValueEnum::Node2Value`; try using the variant's enum
+  |
+3 | #[graphql_interface(impl = Node2Value, for = crate::Node1ValueEnum)]
+  |                                              ~~~~~~~~~~~~~~~~~~~~~
+help: you might be missing a type parameter
+  |
+3 | #[graphql_interface(impl = Node2Value, for = Node2Value<Node2Value>)]
+  |                                                        ++++++++++++
+
+error[E0412]: cannot find type `Node2Value` in this scope
+ --> fail/interface/trait/cyclic_impl.rs:3:28
+  |
+3 | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+  |                            ^^^^^^^^^^ not found in this scope
+  |
+help: there is an enum variant `crate::Node1ValueEnum::Node2Value`; try using the variant's enum
+  |
+3 | #[graphql_interface(impl = crate::Node1ValueEnum, for = Node2Value)]
+  |                            ~~~~~~~~~~~~~~~~~~~~~
+
+error[E0599]: no method named `ok_or_else` found for enum `std::option::Option<&str>` in the current scope
+ --> fail/interface/trait/cyclic_impl.rs:3:1
+  |
+3 | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `std::option::Option<&str>`
+  |
+  = note: the method was found for
+          - `std::option::Option<T>`
+  = note: `#[graphql_interface(impl = Node2Value, for = Node2Value)]` is a function, perhaps you wish to call it
+  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)

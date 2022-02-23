@@ -1,9 +1,14 @@
 error[E0391]: cycle detected when expanding type alias `Node1Value`
-  --> fail/interface/struct/derive_cyclic_impl.rs:4:49
+  --> fail/interface/struct/derive_cyclic_impl.rs:4:37
    |
 4  | #[graphql(impl = Node1Value, for = [Node2Value, Node3Value])]
-   |                                                 ^^^^^^^^^^
+   |                                     ^^^^^^^^^^
    |
+note: ...which requires expanding type alias `Node2Value`...
+  --> fail/interface/struct/derive_cyclic_impl.rs:10:36
+   |
+10 | #[graphql(impl = Node1Value, for = Node3Value)]
+   |                                    ^^^^^^^^^^
 note: ...which requires expanding type alias `Node3Value`...
   --> fail/interface/struct/derive_cyclic_impl.rs:16:50
    |

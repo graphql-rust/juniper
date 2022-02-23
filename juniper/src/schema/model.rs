@@ -415,10 +415,6 @@ impl<'a, S> SchemaType<'a, S> {
                     MetaType::Object(ObjectMeta {
                         ref interface_names,
                         ..
-                    })
-                    | MetaType::Interface(InterfaceMeta {
-                        ref interface_names,
-                        ..
                     }) => interface_names.iter().any(|iname| iname == name),
                     _ => false,
                 })
