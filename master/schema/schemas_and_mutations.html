@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Input objects - Juniper - GraphQL Server for Rust</title>
+        <title>Schemas and mutations - Juniper - GraphQL Server for Rust</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html" class="active"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
+            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html" class="active"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">5.3.</strong> Implicit and explicit null</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.4.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.5.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.6.</strong> Dataloaders</a></li><li><a href="../advanced/subscriptions.html"><strong aria-hidden="true">5.7.</strong> Subscriptions</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -136,74 +136,112 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#input-objects" id="input-objects"><h1>Input objects</h1></a>
-<p>Input objects are complex data structures that can be used as arguments to
-GraphQL fields. In Juniper, you can define input objects using a custom derive
-attribute, similar to simple objects and enums:</p>
+                        <a class="header" href="#schemas" id="schemas"><h1>Schemas</h1></a>
+<p>Juniper follows a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">code-first approach</a> to defining GraphQL schemas. If you would like to use a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">schema-first approach</a> instead, consider <a href="https://github.com/davidpdrsn/juniper-from-schema">juniper-from-schema</a> for generating code from a schema file.</p>
+<p>A schema consists of three types: a query object, a mutation object, and a subscription object.
+These three define the root query fields, mutations and subscriptions of the schema, respectively.</p>
+<p>The usage of subscriptions is a little different from the mutation and query objects, so there is a specific <a href="../advanced/subscriptions.html">section</a> that discusses them.</p>
+<p>Both query and mutation objects are regular GraphQL objects, defined like any
+other object in Juniper. The mutation and subscription objects, however, are optional since schemas
+can be read-only and do not require subscriptions. If mutation/subscription functionality is not needed, consider using <a href="https://docs.rs/juniper/0.14.2/juniper/struct.EmptyMutation.html">EmptyMutation</a>/[EmptySubscription][EmptySubscription].</p>
+<p>In Juniper, the <code>RootNode</code> type represents a schema. When the schema is first created,
+Juniper will traverse the entire object graph
+and register all types it can find. This means that if you define a GraphQL
+object somewhere but never reference it, it will not be exposed in a schema.</p>
+<a class="header" href="#the-query-root" id="the-query-root"><h2>The query root</h2></a>
+<p>The query root is just a GraphQL object. You define it like any other GraphQL
+object in Juniper, most commonly using the <code>graphql_object</code> proc macro:</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
 # extern crate juniper;
-#[derive(juniper::GraphQLInputObject)]
-struct Coordinate {
-    latitude: f64,
-    longitude: f64
-}
-
+# use juniper::{graphql_object, FieldResult, GraphQLObject};
+# #[derive(GraphQLObject)] struct User { name: String }
 struct Root;
-# #[derive(juniper::GraphQLObject)] struct User { name: String }
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Root {
-    fn users_at_location(coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
-        // Send coordinate to database
-        // ...
-# unimplemented!()
+    fn userWithUsername(username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
+        // Look up user in database...
+#       unimplemented!()
+    }
+}
+#
+# fn main() { }
+</code></pre></pre>
+<a class="header" href="#mutations" id="mutations"><h2>Mutations</h2></a>
+<p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field
+that performs some mutating side-effect such as updating a database.</p>
+<pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
+# extern crate juniper;
+# use juniper::{graphql_object, FieldResult, GraphQLObject};
+# #[derive(GraphQLObject)] struct User { name: String }
+struct Mutations;
+
+#[graphql_object]
+impl Mutations {
+    fn signUpUser(name: String, email: String) -&gt; FieldResult&lt;User&gt; {
+        // Validate inputs and save user in database...
+#       unimplemented!()
+    }
+}
+#
+# fn main() { }
+</code></pre></pre>
+<a class="header" href="#converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea" id="converting-a-rust-schema-to-the-a-hrefhttpsgraphqlorglearnschematype-languagegraphql-schema-languagea"><h1>Converting a Rust schema to the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a></h1></a>
+<p>Many tools in the GraphQL ecosystem require the schema to be defined in the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a>. You can generate a <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a> representation of your schema defined in Rust using the <code>schema-language</code> feature (on by default):</p>
+<pre><pre class="playpen"><code class="language-rust"># extern crate juniper;
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode,
+};
+
+struct Query;
+
+#[graphql_object]
+impl Query {
+    fn hello(&amp;self) -&gt; FieldResult&lt;&amp;str&gt; {
+        Ok(&quot;hello world&quot;)
     }
 }
 
-# fn main() {}
-</code></pre></pre>
-<a class="header" href="#documentation-and-renaming" id="documentation-and-renaming"><h2>Documentation and renaming</h2></a>
-<p>Just like the <a href="objects/defining_objects.html">other</a> <a href="enums.html">derives</a>, you can rename
-and add documentation to both the type and the fields:</p>
-<pre><pre class="playpen"><code class="language-rust"># #![allow(unused_variables)]
-# extern crate juniper;
-#[derive(juniper::GraphQLInputObject)]
-#[graphql(name=&quot;Coordinate&quot;, description=&quot;A position on the globe&quot;)]
-struct WorldCoordinate {
-    #[graphql(name=&quot;lat&quot;, description=&quot;The latitude&quot;)]
-    latitude: f64,
+fn main() {
+    // Define our schema in Rust.
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::&lt;()&gt;::new(),
+        EmptySubscription::&lt;()&gt;::new(),
+    );
 
-    #[graphql(name=&quot;long&quot;, description=&quot;The longitude&quot;)]
-    longitude: f64
+    // Convert the Rust schema into the GraphQL Schema Language.
+    let result = schema.as_schema_language();
+
+    let expected = &quot;\
+type Query {
+  hello: String!
 }
 
-struct Root;
-# #[derive(juniper::GraphQLObject)] struct User { name: String }
-
-#[juniper::graphql_object]
-impl Root {
-    fn users_at_location(coordinate: WorldCoordinate, radius: f64) -&gt; Vec&lt;User&gt; {
-        // Send coordinate to database
-        // ...
-# unimplemented!()
-    }
+schema {
+  query: Query
 }
-
-# fn main() {}
+&quot;;
+    assert_eq!(result, expected);
+}
 </code></pre></pre>
+<p>Note the <code>schema-language</code> feature may be turned off if you do not need this functionality to reduce dependencies and speed up
+compile times.</p>
+<!--TODO: Fix This URL when the EmptySubscription become available in the Documentation  -->
+[EmptySubscription]: https://docs.rs/juniper/0.14.2/juniper/struct.EmptySubscription.html
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../types/interfaces.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../types/unions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../types/scalars.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../servers/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -215,13 +253,13 @@ impl Root {
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="../types/interfaces.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="../types/unions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a href="../types/scalars.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="../servers/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
