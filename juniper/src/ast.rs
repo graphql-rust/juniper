@@ -296,6 +296,7 @@ impl<S> InputValue<S> {
     }
 
     /// Resolve all variables to their values.
+    #[must_use]
     pub fn into_const(self, vars: &Variables<S>) -> Self
     where
         S: Clone,

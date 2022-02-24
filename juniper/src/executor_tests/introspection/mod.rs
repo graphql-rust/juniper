@@ -6,11 +6,10 @@ mod input_object;
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    graphql_interface, graphql_object, graphql_scalar, graphql_value, graphql_vars,
+    graphql_interface, graphql_object, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{ParseScalarResult, ParseScalarValue, Value},
-    GraphQLEnum,
+    GraphQLEnum, GraphQLScalar,
 };
 
 #[derive(GraphQLEnum)]
@@ -20,32 +19,15 @@ enum Sample {
     Two,
 }
 
+#[derive(GraphQLScalar)]
+#[graphql(name = "SampleScalar", transparent)]
 struct Scalar(i32);
-
-#[graphql_scalar(name = "SampleScalar")]
-impl<S: ScalarValue> GraphQLScalar for Scalar {
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0)
-    }
-
-    fn from_input_value(v: &InputValue) -> Result<Scalar, String> {
-        v.as_int_value()
-            .map(Scalar)
-            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
-    }
-}
 
 /// A sample interface
 #[graphql_interface(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface
-    fn sample_enum(&self) -> Sample {
-        Sample::One
-    }
+    fn sample_enum(&self) -> Sample;
 }
 
 struct Root;
@@ -65,9 +47,6 @@ impl Root {
         Scalar(first + second)
     }
 }
-
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Interface for Root {}
 
 #[tokio::test]
 async fn test_execution() {

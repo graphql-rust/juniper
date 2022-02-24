@@ -17,6 +17,7 @@ pub enum GraphQLScope {
     UnionDerive,
     DeriveInputObject,
     DeriveEnum,
+    DeriveScalarValue,
     DeriveScalar,
     ImplScalar,
 }
@@ -29,6 +30,7 @@ impl GraphQLScope {
             Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
             Self::DeriveInputObject => "#sec-Input-Objects",
             Self::DeriveEnum => "#sec-Enums",
+            Self::DeriveScalarValue => "#sec-Scalars.Built-in-Scalars",
             Self::DeriveScalar | Self::ImplScalar => "#sec-Scalars",
         }
     }
@@ -42,6 +44,7 @@ impl fmt::Display for GraphQLScope {
             Self::UnionAttr | Self::UnionDerive => "union",
             Self::DeriveInputObject => "input object",
             Self::DeriveEnum => "enum",
+            Self::DeriveScalarValue => "built-in scalars",
             Self::DeriveScalar | Self::ImplScalar => "scalar",
         };
 
@@ -119,7 +122,7 @@ impl GraphQLScope {
         duplicates
             .into_iter()
             .for_each(|dup| {
-                (&dup.spanned[1..])
+                dup.spanned[1..]
                     .iter()
                     .for_each(|spanned| {
                         Diagnostic::spanned(

@@ -1,20 +1,20 @@
 use fnv::FnvHashMap;
 use juniper::{
     graphql_input_value, graphql_object, DefaultScalarValue, FromInputValue, GraphQLObject,
-    GraphQLScalarValue, GraphQLType, InputValue, Registry, ToInputValue,
+    GraphQLScalar, GraphQLType, InputValue, Registry, ToInputValue,
 };
 
-#[derive(GraphQLScalarValue, Debug, Eq, PartialEq)]
+#[derive(GraphQLScalar, Debug, Eq, PartialEq)]
 #[graphql(transparent)]
 struct UserId(String);
 
-#[derive(GraphQLScalarValue, Debug, Eq, PartialEq)]
-#[graphql(transparent, name = "MyUserId", description = "custom description...")]
+#[derive(GraphQLScalar, Debug, Eq, PartialEq)]
+#[graphql(name = "MyUserId", description = "custom description...", transparent)]
 struct CustomUserId(String);
 
 /// The doc comment...
-#[derive(GraphQLScalarValue, Debug, Eq, PartialEq)]
-#[graphql(transparent, specified_by_url = "https://tools.ietf.org/html/rfc4122")]
+#[derive(GraphQLScalar, Debug, Eq, PartialEq)]
+#[graphql(specified_by_url = "https://tools.ietf.org/html/rfc4122", transparent)]
 struct IdWithDocComment(i32);
 
 #[derive(GraphQLObject)]

@@ -97,6 +97,10 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
         self.errors.push(RuleError::new(message, locations))
     }
 
+    pub(crate) fn has_errors(&self) -> bool {
+        !self.errors.is_empty()
+    }
+
     #[doc(hidden)]
     pub fn into_errors(mut self) -> Vec<RuleError> {
         self.errors.sort();

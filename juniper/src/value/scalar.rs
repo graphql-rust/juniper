@@ -22,75 +22,36 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits their
 /// needs.
-/// There is a custom derive (`#[derive(juniper::GraphQLScalarValue)]`) available that implements
-/// most of the required traits automatically for a enum representing a scalar value.
-/// However, [`Serialize`](trait@serde::Serialize) and [`Deserialize`](trait@serde::Deserialize)
+/// There is a custom derive (`#[derive(`[`GraphQLScalarValue`]`)]`) available
+/// that implements most of the required traits automatically for a enum
+/// representing a scalar value. However, [`Serialize`] and [`Deserialize`]
 /// implementations are expected to be provided.
 ///
 /// # Implementing a new scalar value representation
 /// The preferred way to define a new scalar value representation is
-/// defining a enum containing a variant for each type that needs to be represented
-/// at the lowest level.
-/// The following example introduces an new variant that is able to store 64 bit integers.
+/// defining a enum containing a variant for each type that needs to be
+/// represented at the lowest level.
+/// The following example introduces an new variant that is able to store 64 bit
+/// integers.
 ///
 /// ```rust
 /// # use std::{fmt, convert::TryInto as _};
+/// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::{GraphQLScalarValue, ScalarValue};
+/// # use juniper::GraphQLScalarValue;
 /// #
 /// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
+///     #[graphql(as_int, as_float)]
 ///     Int(i32),
 ///     Long(i64),
+///     #[graphql(as_float)]
 ///     Float(f64),
+///     #[graphql(as_string, into_string, as_str)]
 ///     String(String),
+///     #[graphql(as_boolean)]
 ///     Boolean(bool),
-/// }
-///
-/// impl ScalarValue for MyScalarValue {
-///     fn as_int(&self) -> Option<i32> {
-///         match self {
-///            Self::Int(i) => Some(*i),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_string(&self) -> Option<String> {
-///        match self {
-///            Self::String(s) => Some(s.clone()),
-///            _ => None,
-///        }
-///    }
-///
-///    fn into_string(self) -> Option<String> {
-///        match self {
-///            Self::String(s) => Some(s),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_str(&self) -> Option<&str> {
-///        match self {
-///            Self::String(s) => Some(s.as_str()),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_float(&self) -> Option<f64> {
-///        match self {
-///            Self::Int(i) => Some(f64::from(*i)),
-///            Self::Float(f) => Some(*f),
-///            _ => None,
-///        }
-///    }
-///
-///    fn as_boolean(&self) -> Option<bool> {
-///        match self {
-///            Self::Boolean(b) => Some(*b),
-///            _ => None,
-///        }
-///    }
 /// }
 ///
 /// impl<'de> Deserialize<'de> for MyScalarValue {
@@ -158,6 +119,10 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     }
 /// }
 /// ```
+///
+/// [`Deserialize`]: trait@serde::Deserialize
+/// [`GraphQLScalarValue`]: juniper::GraphQLScalarValue
+/// [`Serialize`]: trait@serde::Serialize
 pub trait ScalarValue:
     fmt::Debug
     + fmt::Display
@@ -272,6 +237,7 @@ pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Int
+    #[graphql(as_int, as_float)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
@@ -279,72 +245,21 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
+    #[graphql(as_float)]
     Float(f64),
 
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
     /// sequences.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-String
+    #[graphql(as_str, as_string, into_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Boolean
+    #[graphql(as_boolean)]
     Boolean(bool),
-}
-
-impl ScalarValue for DefaultScalarValue {
-    fn as_int(&self) -> Option<i32> {
-        match self {
-            Self::Int(i) => Some(*i),
-            _ => None,
-        }
-    }
-
-    fn as_float(&self) -> Option<f64> {
-        match self {
-            Self::Int(i) => Some(f64::from(*i)),
-            Self::Float(f) => Some(*f),
-            _ => None,
-        }
-    }
-
-    fn as_str(&self) -> Option<&str> {
-        match self {
-            Self::String(s) => Some(s.as_str()),
-            _ => None,
-        }
-    }
-
-    fn as_string(&self) -> Option<String> {
-        match self {
-            Self::String(s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
-    fn into_string(self) -> Option<String> {
-        match self {
-            Self::String(s) => Some(s),
-            _ => None,
-        }
-    }
-
-    fn as_boolean(&self) -> Option<bool> {
-        match self {
-            Self::Boolean(b) => Some(*b),
-            _ => None,
-        }
-    }
-
-    fn into_another<S: ScalarValue>(self) -> S {
-        match self {
-            Self::Int(i) => S::from(i),
-            Self::Float(f) => S::from(f),
-            Self::String(s) => S::from(s),
-            Self::Boolean(b) => S::from(b),
-        }
-    }
 }
 
 impl<'a> From<&'a str> for DefaultScalarValue {

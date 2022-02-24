@@ -1,328 +1,528 @@
-use crate::{
-    common::parse::ParseBufferExt as _,
-    result::GraphQLScope,
-    util::{self, span_container::SpanContainer},
-};
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::{spanned::Spanned, token, Data, Fields, Ident, Variant};
-use url::Url;
+//! Code generation for `#[derive(GraphQLScalarValue)]` macro.
 
-#[derive(Debug, Default)]
-struct TransparentAttributes {
-    transparent: Option<bool>,
-    name: Option<String>,
-    description: Option<String>,
-    specified_by_url: Option<Url>,
-    scalar: Option<syn::Type>,
+use std::{collections::HashMap, convert::TryFrom};
+
+use proc_macro2::{Literal, TokenStream};
+use quote::{quote, ToTokens, TokenStreamExt as _};
+use syn::{
+    parse::{Parse, ParseStream},
+    parse_quote,
+    spanned::Spanned as _,
+    token,
+    visit::Visit,
+};
+
+use crate::{
+    common::parse::{attr::err, ParseBufferExt as _},
+    util::{filter_attrs, span_container::SpanContainer},
+    GraphQLScope,
+};
+
+/// [`GraphQLScope`] of errors for `#[derive(GraphQLScalarValue)]` macro.
+const ERR: GraphQLScope = GraphQLScope::DeriveScalarValue;
+
+/// Expands `#[derive(GraphQLScalarValue)]` macro into generated code.
+pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
+    let ast = syn::parse2::<syn::DeriveInput>(input)?;
+    let span = ast.span();
+
+    let data_enum = match ast.data {
+        syn::Data::Enum(e) => e,
+        _ => return Err(ERR.custom_error(ast.span(), "can only be derived for enums")),
+    };
+
+    let attr = Attr::from_attrs("graphql", &ast.attrs)?;
+
+    let mut methods = HashMap::<Method, Vec<Variant>>::new();
+    for var in data_enum.variants.clone() {
+        let (ident, field) = (var.ident, Field::try_from(var.fields)?);
+        for attr in VariantAttr::from_attrs("graphql", &var.attrs)?.0 {
+            let (method, expr) = attr.into_inner();
+            methods.entry(method).or_default().push(Variant {
+                ident: ident.clone(),
+                field: field.clone(),
+                expr,
+            });
+        }
+    }
+
+    let missing_methods = [
+        (Method::AsInt, "`#[graphql(as_int)]`"),
+        (Method::AsFloat, "`#[graphql(as_float)]`"),
+        (Method::AsStr, "`#[graphql(as_str)]`"),
+        (Method::AsString, "`#[graphql(as_string)]`"),
+        (Method::IntoString, "`#[graphql(into_string)]`"),
+        (Method::AsBoolean, "`#[graphql(as_boolean)]`"),
+    ]
+    .iter()
+    .filter_map(|(method, err)| (!methods.contains_key(method)).then(|| err))
+    .fold(None, |acc, &method| {
+        Some(
+            acc.map(|acc| format!("{}, {}", acc, method))
+                .unwrap_or_else(|| method.to_owned()),
+        )
+    })
+    .filter(|_| !attr.allow_missing_methods);
+    if let Some(missing_methods) = missing_methods {
+        return Err(ERR.custom_error(
+            span,
+            format!(
+                "missing {} attributes. In case you are sure that it's ok, \
+                 use `#[graphql(allow_missing_methods)]` to suppress this error.",
+                missing_methods,
+            ),
+        ));
+    }
+
+    Ok(Definition {
+        ident: ast.ident,
+        generics: ast.generics,
+        variants: data_enum.variants.into_iter().collect(),
+        methods,
+    }
+    .into_token_stream())
 }
 
-impl syn::parse::Parse for TransparentAttributes {
-    fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
-        let mut output = Self {
-            transparent: None,
-            name: None,
-            description: None,
-            specified_by_url: None,
-            scalar: None,
-        };
+/// Available arguments behind `#[graphql]` attribute when generating code for
+/// enum container.
+#[derive(Default)]
+struct Attr {
+    /// Allows missing [`Method`]s.
+    allow_missing_methods: bool,
+}
 
+impl Parse for Attr {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Attr> {
+        let mut out = Attr::default();
         while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
+            let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
-                "name" => {
-                    input.parse::<token::Eq>()?;
-                    let val = input.parse::<syn::LitStr>()?;
-                    output.name = Some(val.value());
+                "allow_missing_methods" => {
+                    out.allow_missing_methods = true;
                 }
-                "description" => {
-                    input.parse::<token::Eq>()?;
-                    let val = input.parse::<syn::LitStr>()?;
-                    output.description = Some(val.value());
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
                 }
-                "specified_by_url" => {
-                    input.parse::<token::Eq>()?;
-                    let val: syn::LitStr = input.parse::<syn::LitStr>()?;
-                    output.specified_by_url =
-                        Some(val.value().parse().map_err(|e| {
-                            syn::Error::new(val.span(), format!("Invalid URL: {}", e))
-                        })?);
-                }
-                "transparent" => {
-                    output.transparent = Some(true);
-                }
-                "scalar" | "Scalar" => {
-                    input.parse::<token::Eq>()?;
-                    let val = input.parse::<syn::Type>()?;
-                    output.scalar = Some(val);
-                }
-                _ => return Err(syn::Error::new(ident.span(), "unknown attribute")),
-            }
+            };
             input.try_parse::<token::Comma>()?;
         }
-
-        Ok(output)
+        Ok(out)
     }
 }
 
-impl TransparentAttributes {
-    fn from_attrs(attrs: &[syn::Attribute]) -> syn::parse::Result<Self> {
-        match util::find_graphql_attr(attrs) {
-            Some(attr) => {
-                let mut parsed: TransparentAttributes = attr.parse_args()?;
-                if parsed.description.is_none() {
-                    parsed.description =
-                        util::get_doc_comment(attrs).map(SpanContainer::into_inner);
+impl Attr {
+    /// Tries to merge two [`Attr`]s into a single one, reporting about
+    /// duplicates, if any.
+    fn try_merge(mut self, another: Self) -> syn::Result<Self> {
+        self.allow_missing_methods |= another.allow_missing_methods;
+        Ok(self)
+    }
+
+    /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a enum variant.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
+    }
+}
+
+/// Possible attribute names of the `#[derive(GraphQLScalarValue)]`.
+#[derive(Eq, Hash, PartialEq)]
+enum Method {
+    /// `#[graphql(as_int)]`.
+    AsInt,
+
+    /// `#[graphql(as_float)]`.
+    AsFloat,
+
+    /// `#[graphql(as_str)]`.
+    AsStr,
+
+    /// `#[graphql(as_string)]`.
+    AsString,
+
+    /// `#[graphql(into_string)]`.
+    IntoString,
+
+    /// `#[graphql(as_boolean)]`.
+    AsBoolean,
+}
+
+/// Available arguments behind `#[graphql]` attribute when generating code for
+/// enum variant.
+#[derive(Default)]
+struct VariantAttr(Vec<SpanContainer<(Method, Option<syn::ExprPath>)>>);
+
+impl Parse for VariantAttr {
+    fn parse(input: ParseStream<'_>) -> syn::Result<VariantAttr> {
+        let mut out = Vec::new();
+        while !input.is_empty() {
+            let ident = input.parse::<syn::Ident>()?;
+            let method = match ident.to_string().as_str() {
+                "as_int" => Method::AsInt,
+                "as_float" => Method::AsFloat,
+                "as_str" => Method::AsStr,
+                "as_string" => Method::AsString,
+                "into_string" => Method::IntoString,
+                "as_bool" | "as_boolean" => Method::AsBoolean,
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
                 }
-                Ok(parsed)
-            }
-            None => Ok(Default::default()),
+            };
+            let expr = input
+                .parse::<token::Eq>()
+                .ok()
+                .map(|_| input.parse::<syn::ExprPath>())
+                .transpose()?;
+            out.push(SpanContainer::new(
+                ident.span(),
+                expr.as_ref().map(|e| e.span()),
+                (method, expr),
+            ));
+            input.try_parse::<token::Comma>()?;
         }
+        Ok(VariantAttr(out))
     }
 }
 
-pub fn impl_scalar_value(ast: &syn::DeriveInput, error: GraphQLScope) -> syn::Result<TokenStream> {
-    let ident = &ast.ident;
+impl VariantAttr {
+    /// Tries to merge two [`VariantAttr`]s into a single one, reporting about
+    /// duplicates, if any.
+    fn try_merge(mut self, mut another: Self) -> syn::Result<Self> {
+        let dup = another.0.iter().find(|m| self.0.contains(m));
+        if let Some(dup) = dup {
+            Err(err::dup_arg(dup.span_ident()))
+        } else {
+            self.0.append(&mut another.0);
+            Ok(self)
+        }
+    }
 
-    match ast.data {
-        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, error),
-        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, error),
-        Data::Union(_) => Err(error.custom_error(ast.span(), "may not be applied to unions")),
+    /// Parses [`VariantAttr`] from the given multiple `name`d
+    /// [`syn::Attribute`]s placed on a enum variant.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
     }
 }
 
-fn impl_scalar_struct(
-    ast: &syn::DeriveInput,
-    data: &syn::DataStruct,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
-    let field = match data.fields {
-        syn::Fields::Unnamed(ref fields) if fields.unnamed.len() == 1 => {
-            fields.unnamed.first().unwrap()
-        }
-        _ => {
-            return Err(error.custom_error(
-                data.fields.span(),
-                "requires exact one field, e.g., Test(i32)",
-            ))
-        }
-    };
-    let ident = &ast.ident;
-    let attrs = TransparentAttributes::from_attrs(&ast.attrs)?;
-    let inner_ty = &field.ty;
-    let name = attrs.name.unwrap_or_else(|| ident.to_string());
+/// Definition of the [`ScalarValue`].
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+struct Definition {
+    /// [`syn::Ident`] of the enum representing [`ScalarValue`].
+    ///
+    /// [`ScalarValue`]: juniper::ScalarValue
+    ident: syn::Ident,
 
-    let description = attrs.description.map(|val| quote!(.description(#val)));
-    let specified_by_url = attrs.specified_by_url.map(|url| {
-        let url_lit = url.as_str();
-        quote!(.specified_by_url(#url_lit))
-    });
+    /// [`syn::Generics`] of the enum representing [`ScalarValue`].
+    ///
+    /// [`ScalarValue`]: juniper::ScalarValue
+    generics: syn::Generics,
 
-    let scalar = attrs
-        .scalar
-        .as_ref()
-        .map(|s| quote!( #s ))
-        .unwrap_or_else(|| quote!(__S));
+    /// [`syn::Variant`]s of the enum representing [`ScalarValue`].
+    ///
+    /// [`ScalarValue`]: juniper::ScalarValue
+    variants: Vec<syn::Variant>,
 
-    let impl_generics = attrs
-        .scalar
-        .as_ref()
-        .map(|_| quote!())
-        .unwrap_or_else(|| quote!(<__S>));
+    /// [`Variant`]s marked with [`Method`] attribute.
+    methods: HashMap<Method, Vec<Variant>>,
+}
 
-    let _async = quote!(
-        impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ident
-        where
-            Self: Sync,
-            Self::TypeInfo: Sync,
-            Self::Context: Sync,
-            #scalar: ::juniper::ScalarValue + Send + Sync,
-        {
-            fn resolve_async<'a>(
-                &'a self,
-                info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [::juniper::Selection<#scalar>]>,
-                executor: &'a ::juniper::Executor<Self::Context, #scalar>,
-            ) -> ::juniper::BoxFuture<'a, ::juniper::ExecutionResult<#scalar>> {
-                use ::juniper::futures::future;
-                let v = ::juniper::GraphQLValue::<#scalar>::resolve(self, info, selection_set, executor);
-                Box::pin(future::ready(v))
+impl ToTokens for Definition {
+    fn to_tokens(&self, into: &mut TokenStream) {
+        self.impl_scalar_value_tokens().to_tokens(into);
+        self.impl_from_tokens().to_tokens(into);
+        self.impl_display_tokens().to_tokens(into);
+    }
+}
+
+impl Definition {
+    /// Returns generated code implementing [`ScalarValue`].
+    ///
+    /// [`ScalarValue`]: juniper::ScalarValue
+    fn impl_scalar_value_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let (impl_gens, ty_gens, where_clause) = self.generics.split_for_impl();
+
+        let methods = [
+            (
+                Method::AsInt,
+                quote! { fn as_int(&self) -> Option<i32> },
+                quote! { i32::from(*v) },
+            ),
+            (
+                Method::AsFloat,
+                quote! { fn as_float(&self) -> Option<f64> },
+                quote! { f64::from(*v) },
+            ),
+            (
+                Method::AsStr,
+                quote! { fn as_str(&self) -> Option<&str> },
+                quote! { std::convert::AsRef::as_ref(v) },
+            ),
+            (
+                Method::AsString,
+                quote! { fn as_string(&self) -> Option<String> },
+                quote! { std::string::ToString::to_string(v) },
+            ),
+            (
+                Method::IntoString,
+                quote! { fn into_string(self) -> Option<String> },
+                quote! { std::string::String::from(v) },
+            ),
+            (
+                Method::AsBoolean,
+                quote! { fn as_boolean(&self) -> Option<bool> },
+                quote! { bool::from(*v) },
+            ),
+        ];
+        let methods = methods.iter().map(|(m, sig, def)| {
+            let arms = self.methods.get(m).into_iter().flatten().map(|v| {
+                let arm = v.match_arm();
+                let call = v.expr.as_ref().map_or(def.clone(), |f| quote! { #f(v) });
+                quote! { #arm => Some(#call), }
+            });
+            quote! {
+                #sig {
+                    match self {
+                        #(#arms)*
+                        _ => None,
+                    }
+                }
             }
-        }
-    );
+        });
 
-    let content = quote!(
-        #_async
-
-        impl#impl_generics ::juniper::GraphQLType<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
-                Some(#name)
-            }
-
-            fn meta<'r>(
-                info: &Self::TypeInfo,
-                registry: &mut ::juniper::Registry<'r, #scalar>,
-            ) -> ::juniper::meta::MetaType<'r, #scalar>
-            where
-                #scalar: 'r,
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::ScalarValue for #ident#ty_gens
+                #where_clause
             {
-                registry.build_scalar_type::<Self>(info)
-                    #description
-                    #specified_by_url
-                    .into_meta()
+                #(#methods)*
             }
         }
+    }
 
-        impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            type Context = ();
-            type TypeInfo = ();
+    /// Returns generated code implementing:
+    /// - [`From`] each variant into enum itself.
+    /// - [`From`] enum into [`Option`] of each variant.
+    /// - [`From`] enum reference into [`Option`] of each variant reference.
+    fn impl_from_tokens(&self) -> TokenStream {
+        let ty_ident = &self.ident;
+        let (impl_gen, ty_gen, where_clause) = self.generics.split_for_impl();
 
-            fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
-            }
+        // We don't impose additional bounds on generic parameters, because
+        // `ScalarValue` itself has `'static` bound.
+        let mut generics = self.generics.clone();
+        generics.params.push(parse_quote! { '___a });
+        let (lf_impl_gen, _, _) = generics.split_for_impl();
 
-            fn resolve(
-                &self,
-                info: &(),
-                selection: Option<&[::juniper::Selection<#scalar>]>,
-                executor: &::juniper::Executor<Self::Context, #scalar>,
-            ) -> ::juniper::ExecutionResult<#scalar> {
-                ::juniper::GraphQLValue::<#scalar>::resolve(&self.0, info, selection, executor)
+        self.variants
+            .iter()
+            .map(|v| {
+                let var_ident = &v.ident;
+                let field = v.fields.iter().next().unwrap();
+                let var_ty = &field.ty;
+                let var_field = field
+                    .ident
+                    .as_ref()
+                    .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
+
+                quote! {
+                    #[automatically_derived]
+                    impl#impl_gen std::convert::From<#var_ty> for #ty_ident#ty_gen
+                        #where_clause
+                    {
+                        fn from(v: #var_ty) -> Self {
+                            Self::#var_ident#var_field
+                        }
+                    }
+
+                    #[automatically_derived]
+                    impl#impl_gen std::convert::From<#ty_ident#ty_gen> for Option<#var_ty>
+                        #where_clause
+                    {
+                        fn from(ty: #ty_ident#ty_gen) -> Self {
+                            if let #ty_ident::#var_ident#var_field = ty {
+                                Some(v)
+                            } else {
+                                None
+                            }
+                        }
+                    }
+
+                    #[automatically_derived]
+                    impl#lf_impl_gen std::convert::From<&'___a #ty_ident#ty_gen> for
+                        Option<&'___a #var_ty>
+                        #where_clause
+                    {
+                        fn from(ty: &'___a #ty_ident#ty_gen) -> Self {
+                            if let #ty_ident::#var_ident#var_field = ty {
+                                Some(v)
+                            } else {
+                                None
+                            }
+                        }
+                    }
+                }
+            })
+            .collect()
+    }
+
+    /// Returns generated code implementing [`Display`] by matching over each
+    /// enum variant.
+    ///
+    /// [`Display`]: std::fmt::Display
+    fn impl_display_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+
+        let mut generics = self.generics.clone();
+        generics.make_where_clause();
+        for var in &self.variants {
+            let var_ty = &var.fields.iter().next().unwrap().ty;
+            let mut check = IsVariantGeneric::new(&self.generics);
+            check.visit_type(var_ty);
+            if check.res {
+                generics
+                    .where_clause
+                    .as_mut()
+                    .unwrap()
+                    .predicates
+                    .push(parse_quote! { #var_ty: std::fmt::Display });
             }
         }
+        let (impl_gen, ty_gen, where_clause) = generics.split_for_impl();
 
-        impl#impl_generics ::juniper::ToInputValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                ::juniper::ToInputValue::<#scalar>::to_input_value(&self.0)
-            }
-        }
+        let arms = self.variants.iter().map(|v| {
+            let var_ident = &v.ident;
+            let field = v.fields.iter().next().unwrap();
+            let var_field = field
+                .ident
+                .as_ref()
+                .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
 
-        impl#impl_generics ::juniper::FromInputValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            type Error = <#inner_ty as ::juniper::FromInputValue<#scalar>>::Error;
+            quote! { Self::#var_ident#var_field => std::fmt::Display::fmt(v, f), }
+        });
 
-            fn from_input_value(
-                v: &::juniper::InputValue<#scalar>
-            ) -> Result<#ident, <#inner_ty as ::juniper::FromInputValue<#scalar>>::Error> {
-                let inner: #inner_ty = ::juniper::FromInputValue::<#scalar>::from_input_value(v)?;
-                Ok(#ident(inner))
-            }
-        }
-
-        impl#impl_generics ::juniper::ParseScalarValue<#scalar> for #ident
-        where
-            #scalar: ::juniper::ScalarValue,
-        {
-            fn from_str<'a>(
-                value: ::juniper::parser::ScalarToken<'a>,
-            ) -> ::juniper::ParseScalarResult<'a, #scalar> {
-                <#inner_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(value)
-            }
-        }
-
-        impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ident
-            where #scalar: ::juniper::ScalarValue,
-        { }
-        impl#impl_generics ::juniper::marker::IsInputType<#scalar> for #ident
-            where #scalar: ::juniper::ScalarValue,
-        { }
-    );
-
-    Ok(content)
-}
-
-fn impl_scalar_enum(
-    ident: &syn::Ident,
-    data: &syn::DataEnum,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
-    let froms = data
-        .variants
-        .iter()
-        .map(|v| derive_from_variant(v, ident, &error))
-        .collect::<Result<Vec<_>, _>>()?;
-
-    let display = derive_display(data.variants.iter(), ident);
-
-    Ok(quote! {
-        #(#froms)*
-
-        #display
-    })
-}
-
-fn derive_display<'a, I>(variants: I, ident: &Ident) -> TokenStream
-where
-    I: Iterator<Item = &'a Variant>,
-{
-    let arms = variants.map(|v| {
-        let variant = &v.ident;
-        quote!(#ident::#variant(ref v) => write!(f, "{}", v),)
-    });
-
-    quote! {
-        impl std::fmt::Display for #ident {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                match *self {
-                    #(#arms)*
+        quote! {
+            impl#impl_gen std::fmt::Display for #ident#ty_gen
+                #where_clause
+            {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    match self {
+                        #(#arms)*
+                    }
                 }
             }
         }
     }
 }
 
-fn derive_from_variant(
-    variant: &Variant,
-    ident: &Ident,
-    error: &GraphQLScope,
-) -> syn::Result<TokenStream> {
-    let ty = match variant.fields {
-        Fields::Unnamed(ref u) if u.unnamed.len() == 1 => &u.unnamed.first().unwrap().ty,
+/// Single-[`Field`] enum variant.
+#[derive(Clone)]
+struct Variant {
+    /// [`Variant`] [`syn::Ident`].
+    ident: syn::Ident,
 
-        _ => {
-            return Err(error.custom_error(
-                variant.fields.span(),
-                "requires exact one field, e.g., Test(i32)",
-            ))
+    /// Single [`Variant`] [`Field`].
+    field: Field,
+
+    /// Optional resolver provided by [`VariantAttr`].
+    expr: Option<syn::ExprPath>,
+}
+
+impl Variant {
+    /// Returns generated code for matching over this [`Variant`].
+    fn match_arm(&self) -> TokenStream {
+        let (ident, field) = (&self.ident, &self.field.match_arg());
+        quote! {
+            Self::#ident#field
         }
-    };
+    }
+}
 
-    let variant = &variant.ident;
+/// Enum [`Variant`] field.
+#[derive(Clone)]
+enum Field {
+    /// Named [`Field`].
+    Named(syn::Field),
 
-    Ok(quote! {
-        impl ::std::convert::From<#ty> for #ident {
-            fn from(t: #ty) -> Self {
-                #ident::#variant(t)
+    /// Unnamed [`Field`].
+    Unnamed(syn::Field),
+}
+
+impl ToTokens for Field {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Field::Named(f) => f.ident.to_tokens(tokens),
+            Field::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
+        }
+    }
+}
+
+impl TryFrom<syn::Fields> for Field {
+    type Error = syn::Error;
+
+    fn try_from(value: syn::Fields) -> Result<Self, Self::Error> {
+        match value {
+            syn::Fields::Named(mut f) if f.named.len() == 1 => {
+                Ok(Self::Named(f.named.pop().unwrap().into_value()))
             }
+            syn::Fields::Unnamed(mut f) if f.unnamed.len() == 1 => {
+                Ok(Self::Unnamed(f.unnamed.pop().unwrap().into_value()))
+            }
+            _ => Err(ERR.custom_error(value.span(), "expected exactly 1 field")),
         }
+    }
+}
 
-        impl<'a> ::std::convert::From<&'a #ident> for std::option::Option<&'a #ty> {
-            fn from(t: &'a #ident) -> Self {
-                match *t {
-                    #ident::#variant(ref t) => std::option::Option::Some(t),
-                    _ => std::option::Option::None
+impl Field {
+    /// Returns [`Field`] for constructing or matching over [`Variant`].
+    fn match_arg(&self) -> TokenStream {
+        match self {
+            Field::Named(_) => quote! { { #self: v } },
+            Field::Unnamed(_) => quote! { (v) },
+        }
+    }
+}
+
+/// [`Visit`]or to check whether [`Variant`] [`Field`] contains generic
+/// parameters.
+struct IsVariantGeneric<'a> {
+    /// Indicates whether [`Variant`] [`Field`] contains generic parameters.
+    res: bool,
+
+    /// [`syn::Generics`] to search parameters.
+    generics: &'a syn::Generics,
+}
+
+impl<'a> IsVariantGeneric<'a> {
+    /// Construct a new [`IsVariantGeneric`].
+    fn new(generics: &'a syn::Generics) -> Self {
+        Self {
+            res: false,
+            generics,
+        }
+    }
+}
+
+impl<'ast, 'gen> Visit<'ast> for IsVariantGeneric<'gen> {
+    fn visit_path(&mut self, path: &'ast syn::Path) {
+        if let Some(ident) = path.get_ident() {
+            let is_generic = self.generics.params.iter().any(|par| {
+                if let syn::GenericParam::Type(ty) = par {
+                    ty.ident == *ident
+                } else {
+                    false
                 }
+            });
+            if is_generic {
+                self.res = true;
+            } else {
+                syn::visit::visit_path(self, path);
             }
         }
-
-        impl ::std::convert::From<#ident> for std::option::Option<#ty> {
-            fn from(t: #ident) -> Self {
-                match t {
-                    #ident::#variant(t) => std::option::Option::Some(t),
-                    _ => std::option::Option::None
-                }
-            }
-        }
-    })
+    }
 }

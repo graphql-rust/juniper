@@ -94,7 +94,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 */
 // Due to `schema_introspection` test.
 #![cfg_attr(test, recursion_limit = "256")]
-#![doc(html_root_url = "https://docs.rs/juniper/0.15.7")]
+#![doc(html_root_url = "https://docs.rs/juniper/0.15.9")]
 #![warn(missing_docs)]
 
 // Required for using `juniper_codegen` macros inside this crate to resolve absolute `::juniper`
@@ -115,7 +115,8 @@ pub use futures::future::{BoxFuture, LocalBoxFuture};
 // functionality automatically.
 pub use juniper_codegen::{
     graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
-    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
+    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalar, GraphQLScalarValue,
+    GraphQLUnion,
 };
 
 #[doc(hidden)]
@@ -168,7 +169,7 @@ pub use crate::{
         subscription::{ExtractTypeFromStream, IntoFieldResult},
         AsDynGraphQLValue,
     },
-    parser::{ParseError, Spanning},
+    parser::{ParseError, ScalarToken, Spanning},
     schema::{
         meta,
         model::{RootNode, SchemaType},

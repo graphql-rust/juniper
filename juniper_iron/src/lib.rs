@@ -311,15 +311,15 @@ where
     Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     'a: 'static,
 {
-    fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let context = (self.context_factory)(req)?;
 
         let graphql_request = match req.method {
-            method::Get => self.handle_get(&mut req)?,
+            method::Get => self.handle_get(req)?,
             method::Post => match req.headers.get::<ContentType>().map(ContentType::deref) {
                 Some(Mime(TopLevel::Application, sub_lvl, _)) => match sub_lvl.as_str() {
-                    "json" => self.handle_post_json(&mut req)?,
-                    "graphql" => self.handle_post_graphql(&mut req)?,
+                    "json" => self.handle_post_json(req)?,
+                    "graphql" => self.handle_post_graphql(req)?,
                     _ => return Ok(Response::with(status::BadRequest)),
                 },
                 _ => return Ok(Response::with(status::BadRequest)),
@@ -369,11 +369,11 @@ enum GraphQLIronError {
 }
 
 impl fmt::Display for GraphQLIronError {
-    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GraphQLIronError::Serde(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLIronError::Url(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLIronError::InvalidData(err) => fmt::Display::fmt(err, &mut f),
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GraphQLIronError::Serde(err) => fmt::Display::fmt(err, f),
+            GraphQLIronError::Url(err) => fmt::Display::fmt(err, f),
+            GraphQLIronError::InvalidData(err) => fmt::Display::fmt(err, f),
         }
     }
 }

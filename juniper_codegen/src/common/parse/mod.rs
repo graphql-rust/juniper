@@ -11,12 +11,14 @@ use std::{
 };
 
 use proc_macro2::Span;
+use quote::quote;
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseBuffer},
     parse_quote,
     punctuated::Punctuated,
     token::{self, Token},
+    visit_mut::VisitMut,
 };
 
 /// Extension of [`ParseBuffer`] providing common function widely used by this crate for parsing.
@@ -157,7 +159,7 @@ impl TypeExt for syn::Type {
                             ty.lifetimes_iter_mut(func)
                         }
                         if let syn::ReturnType::Type(_, ty) = &mut args.output {
-                            (&mut *ty).lifetimes_iter_mut(func)
+                            (*ty).lifetimes_iter_mut(func)
                         }
                     }
                     syn::PathArguments::None => {}
@@ -170,7 +172,7 @@ impl TypeExt for syn::Type {
             | T::Group(syn::TypeGroup { elem, .. })
             | T::Paren(syn::TypeParen { elem, .. })
             | T::Ptr(syn::TypePtr { elem, .. })
-            | T::Slice(syn::TypeSlice { elem, .. }) => (&mut *elem).lifetimes_iter_mut(func),
+            | T::Slice(syn::TypeSlice { elem, .. }) => (*elem).lifetimes_iter_mut(func),
 
             T::Tuple(syn::TypeTuple { elems, .. }) => {
                 for ty in elems.iter_mut() {
@@ -197,7 +199,7 @@ impl TypeExt for syn::Type {
                 if let Some(lt) = ref_ty.lifetime.as_mut() {
                     func(lt)
                 }
-                (&mut *ref_ty.elem).lifetimes_iter_mut(func)
+                (*ref_ty.elem).lifetimes_iter_mut(func)
             }
 
             T::Path(ty) => iter_path(&mut ty.path, func),
@@ -226,7 +228,7 @@ impl TypeExt for syn::Type {
     fn topmost_ident(&self) -> Option<&syn::Ident> {
         match self.unparenthesized() {
             syn::Type::Path(p) => Some(&p.path),
-            syn::Type::Reference(r) => match (&*r.elem).unparenthesized() {
+            syn::Type::Reference(r) => match (*r.elem).unparenthesized() {
                 syn::Type::Path(p) => Some(&p.path),
                 syn::Type::TraitObject(o) => match o.bounds.iter().next().unwrap() {
                     syn::TypeParamBound::Trait(b) => Some(&b.path),
@@ -250,6 +252,10 @@ pub(crate) trait GenericsExt {
 
     /// Moves all trait and lifetime bounds of these [`syn::Generics`] to its [`syn::WhereClause`].
     fn move_bounds_to_where_clause(&mut self);
+
+    /// Replaces generic parameters in the given [`syn::Type`] with default
+    /// ones, provided by these [`syn::Generics`].
+    fn replace_type_with_defaults(&self, ty: &mut syn::Type);
 }
 
 impl GenericsExt for syn::Generics {
@@ -298,5 +304,43 @@ impl GenericsExt for syn::Generics {
                 P::Const(_) => {}
             }
         }
+    }
+
+    fn replace_type_with_defaults(&self, ty: &mut syn::Type) {
+        struct Replace<'a>(&'a syn::Generics);
+
+        impl<'a> VisitMut for Replace<'a> {
+            fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
+                match arg {
+                    syn::GenericArgument::Lifetime(lf) => {
+                        *lf = parse_quote! { 'static };
+                    }
+                    syn::GenericArgument::Type(ty) => {
+                        let is_generic = self
+                            .0
+                            .params
+                            .iter()
+                            .filter_map(|par| match par {
+                                syn::GenericParam::Type(ty) => Some(&ty.ident),
+                                _ => None,
+                            })
+                            .any(|par| {
+                                let par = quote! { #par }.to_string();
+                                let ty = quote! { #ty }.to_string();
+                                par == ty
+                            });
+
+                        if is_generic {
+                            // Replace with `DefaultScalarValue` instead of `()`
+                            // because generic parameter may be scalar.
+                            *ty = parse_quote!(::juniper::DefaultScalarValue);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        Replace(self).visit_type_mut(ty)
     }
 }

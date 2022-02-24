@@ -599,7 +599,7 @@ where
 
 #[cfg(test)]
 mod coercion {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue};
+    use crate::{graphql_input_value, FromInputValue as _, InputValue, IntoFieldError as _};
 
     use super::{FromInputValueArrayError, FromInputValueVecError};
 
@@ -685,13 +685,13 @@ mod coercion {
         assert_eq!(
             <Vec<i32>>::from_input_value(&v),
             Err(FromInputValueVecError::Item(
-                "Expected `Int`, found: null".to_owned(),
+                "Expected `Int`, found: null".into_field_error(),
             )),
         );
         assert_eq!(
             <Option<Vec<i32>>>::from_input_value(&v),
             Err(FromInputValueVecError::Item(
-                "Expected `Int`, found: null".to_owned(),
+                "Expected `Int`, found: null".into_field_error(),
             )),
         );
         assert_eq!(
@@ -795,13 +795,13 @@ mod coercion {
         assert_eq!(
             <[i32; 3]>::from_input_value(&v),
             Err(FromInputValueArrayError::Item(
-                "Expected `Int`, found: null".to_owned(),
+                "Expected `Int`, found: null".into_field_error(),
             )),
         );
         assert_eq!(
             <Option<[i32; 3]>>::from_input_value(&v),
             Err(FromInputValueArrayError::Item(
-                "Expected `Int`, found: null".to_owned(),
+                "Expected `Int`, found: null".into_field_error(),
             )),
         );
         assert_eq!(

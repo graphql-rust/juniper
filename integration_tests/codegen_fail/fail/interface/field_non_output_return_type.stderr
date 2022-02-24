@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
-  --> fail/interface/field_non_output_return_type.rs:17:1
-   |
-17 | #[graphql_interface(for = ObjA)]
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
-   |
-   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
+ --> fail/interface/field_non_output_return_type.rs:8:1
+  |
+8 | #[graphql_interface]
+  | ^^^^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
+  |
+  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)

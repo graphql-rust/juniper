@@ -35,7 +35,14 @@ pub fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a
 where
     S: ScalarValue,
 {
-    let mut mv = MultiVisitorNil
+    // Some validators are depending on the results of other ones.
+    // For example, validators checking fragments usually rely on the fact that
+    // they have no cycles (`no_fragment_cycles`), otherwise may stall in an
+    // infinite recursion. So, we should run validators in stages, moving to the
+    // next stage only once the previous succeeds. This is better than making
+    // every single validator being aware of fragments cycles and/or other
+    // assumptions.
+    let mut stage1 = MultiVisitorNil
         .with(self::arguments_of_correct_type::factory())
         .with(self::default_values_of_correct_type::factory())
         .with(self::fields_on_correct_type::factory())
@@ -49,7 +56,6 @@ where
         .with(self::no_undefined_variables::factory())
         .with(self::no_unused_fragments::factory())
         .with(self::no_unused_variables::factory())
-        .with(self::overlapping_fields_can_be_merged::factory())
         .with(self::possible_fragment_spreads::factory())
         .with(self::provided_non_null_arguments::factory())
         .with(self::scalar_leafs::factory())
@@ -60,6 +66,62 @@ where
         .with(self::unique_variable_names::factory())
         .with(self::variables_are_input_types::factory())
         .with(self::variables_in_allowed_position::factory());
+    visit(&mut stage1, ctx, doc);
+    if ctx.has_errors() {
+        return;
+    }
 
-    visit(&mut mv, ctx, doc)
+    let mut stage2 = MultiVisitorNil.with(self::overlapping_fields_can_be_merged::factory());
+    visit(&mut stage2, ctx, doc);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{parser::SourcePosition, DefaultScalarValue};
+
+    use crate::validation::{expect_fails_fn, RuleError};
+
+    #[test]
+    fn handles_recursive_fragments() {
+        expect_fails_fn::<_, DefaultScalarValue>(
+            super::visit_all_rules,
+            "fragment f on QueryRoot { ...f }",
+            &[
+                RuleError::new(
+                    "Fragment \"f\" is never used",
+                    &[SourcePosition::new(0, 0, 0)],
+                ),
+                RuleError::new(
+                    "Cannot spread fragment \"f\"",
+                    &[SourcePosition::new(26, 0, 26)],
+                ),
+            ],
+        );
+    }
+
+    #[test]
+    fn handles_nested_recursive_fragments() {
+        expect_fails_fn::<_, DefaultScalarValue>(
+            super::visit_all_rules,
+            "fragment f on QueryRoot { a { ...f a { ...f } } }",
+            &[
+                RuleError::new(
+                    "Fragment \"f\" is never used",
+                    &[SourcePosition::new(0, 0, 0)],
+                ),
+                RuleError::new(
+                    r#"Unknown field "a" on type "QueryRoot""#,
+                    &[SourcePosition::new(26, 0, 26)],
+                ),
+                RuleError::new(
+                    "Cannot spread fragment \"f\"",
+                    &[SourcePosition::new(30, 0, 30)],
+                ),
+                RuleError::new(
+                    "Cannot spread fragment \"f\"",
+                    &[SourcePosition::new(39, 0, 39)],
+                ),
+            ],
+        );
+    }
 }

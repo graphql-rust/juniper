@@ -5,6 +5,7 @@ edition = "2018"
 publish = false
 
 [dependencies]
+chrono = "0.4.19"
 derive_more = "0.99"
 futures = "0.3"
 juniper = { path = "../../juniper" }

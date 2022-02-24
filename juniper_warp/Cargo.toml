@@ -14,7 +14,7 @@ subscriptions = ["juniper_graphql_ws"]
 [dependencies]
 anyhow = "1.0"
 futures = "0.3.1"
-juniper = { version = "0.15.7", path = "../juniper", default-features = false }
+juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.3.0", path = "../juniper_graphql_ws", optional = true }
 serde = { version = "1.0.75", features = ["derive"] }
 serde_json = "1.0.24"
@@ -24,7 +24,7 @@ warp = "0.3"
 
 [dev-dependencies]
 env_logger = "0.9"
-juniper = { version = "0.15.7", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 percent-encoding = "2.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

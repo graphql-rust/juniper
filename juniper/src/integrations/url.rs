@@ -1,29 +1,21 @@
 //! GraphQL support for [url](https://github.com/servo/rust-url) types.
 
-use url::Url;
+use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-use crate::{
-    value::{ParseScalarResult, ParseScalarValue},
-    Value,
-};
+#[graphql_scalar(with = url_scalar, parse_token(String))]
+type Url = url::Url;
 
-#[crate::graphql_scalar(description = "Url")]
-impl<S> GraphQLScalar for Url
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.as_str().to_owned())
+mod url_scalar {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Url) -> Value<S> {
+        Value::scalar(v.as_str().to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Url, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Url, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse `Url`: {}", e)))
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 

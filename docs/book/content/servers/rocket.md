@@ -10,8 +10,8 @@ Juniper's Rocket integration is contained in the [`juniper_rocket`][juniper_rock
 
 ```toml
 [dependencies]
-juniper = "0.10"
-juniper_rocket = "0.2.0"
+juniper = "0.15.7"
+juniper_rocket = "0.8.0"
 ```
 
 Included in the source is a [small example][example] which sets up a basic GraphQL and [GraphiQL] handler.

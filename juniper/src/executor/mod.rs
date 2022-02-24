@@ -701,7 +701,7 @@ where
             FieldPath::Root(_) => unreachable!(),
         };
         self.parent_selection_set
-            .map(|p| {
+            .and_then(|p| {
                 // Search the parent's fields to find this field within the set
                 let found_field = p.iter().find(|&x| {
                     match *x {
@@ -721,7 +721,6 @@ where
                     None
                 }
             })
-            .flatten()
             .unwrap_or_else(|| {
                 // We didn't find a field in the parent's selection matching
                 // this field, which means we're inside a FragmentSpread
@@ -1253,7 +1252,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     /// Creates a [`ScalarMeta`] type.
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S> + 'r,
+        T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S>,
         T::Error: IntoFieldError<S>,
         S: ScalarValue,
     {

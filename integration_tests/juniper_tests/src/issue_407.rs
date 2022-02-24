@@ -20,25 +20,11 @@ struct Human {
     name: String,
 }
 
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
 #[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue)]
 struct Droid {
     id: String,
     serial_number: String,
-}
-
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
 }
 
 #[graphql_object]

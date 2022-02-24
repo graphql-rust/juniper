@@ -1,5 +1,9 @@
 # master
 
+## Security
+
+- Fix panic on malformed queries with recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
+
 ## Breaking Changes
 
 - Replaced `Visitor` associated type with `DeserializeOwned` requirement in `ScalarValue` trait. ([#985](https://github.com/graphql-rust/juniper/pull/985))
@@ -10,6 +14,21 @@
 - Make `FromInputValue` methods fallible to allow post-validation. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 - Change `Option` to `Result` in `from_input_value()` return type of `#[graphql_scalar]` macro. ([#987](https://github.com/graphql-rust/juniper/pull/987))
 - Forbid `__typename` field on `subscription` operations [accordingly to October 2021 spec](https://spec.graphql.org/October2021/#note-bc213). ([#1001](https://github.com/graphql-rust/juniper/pull/1001), [#1000](https://github.com/graphql-rust/juniper/pull/1000))
+- Redesign `#[graphql_interface]` macro: ([#1009](https://github.com/graphql-rust/juniper/pull/1009))
+  - Remove support for `#[graphql_interface(dyn)]` (interface values as trait objects).
+  - Remove support for `downcast` (custom resolution into implementer types).
+  - Remove support for `async` trait methods (not required anymore).
+  - Remove necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching its fields).
+  - Forbid default impls on non-ignored trait methods.
+  - Support coercion of additional nullable arguments and return sub-typing on implementer.
+- Redesign `#[derive(GraphQLScalar)]` macro: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
+  - Support generic scalars.
+  - Support structs with single named field.
+  - Support for overriding resolvers.
+- Redesign `#[graphql_scalar]` macro: ([#1014](https://github.com/graphql-rust/juniper/pull/1014))
+  - Mirror `#[derive(GraphQLScalar)]` macro.
+  - Support usage on type aliases in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules).
+- Redesign `#[derive(GraphQLScalarValue)]` macro to derive `ScalarValue` on enums. ([#1025](https://github.com/graphql-rust/juniper/pull/1025))
 - Change [`chrono` crate](https://docs.rs/chrono) GraphQL scalars according to the [graphql-scalars.dev](https://graphql-scalars.dev). ([#1010](https://github.com/graphql-rust/juniper/pull/1010))
 - Remove `scalar-naivetime` feature. ([#1010](https://github.com/graphql-rust/juniper/pull/1010))
 
@@ -32,6 +51,14 @@
 - Allow spreading interface fragments on unions and other interfaces. ([#965](https://github.com/graphql-rust/juniper/pull/965), [#798](https://github.com/graphql-rust/juniper/issues/798))
 - Support expressions in `graphql_value!` macro. ([#996](https://github.com/graphql-rust/juniper/pull/996), [#503](https://github.com/graphql-rust/juniper/issues/503))
 - List coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004](https://github.com/graphql-rust/juniper/pull/1004))
+
+# [[0.15.9] 2022-02-02](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.9)
+
+- Fix infinite recursion on malformed queries with nested recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
+
+# [[0.15.8] 2022-01-26](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.8)
+
+- Fix panic on malformed queries with recursive fragments. *This is a potential denial-of-service attack vector.* Thanks to [@quapka](https://github.com/quapka) for the detailed vulnerability report and reproduction steps.
 
 # [[0.15.7] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.7)
 

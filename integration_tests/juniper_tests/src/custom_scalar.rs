@@ -7,62 +7,21 @@ use juniper::{
     parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
     EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
-    RootNode, ScalarValue, Value, Variables,
+    RootNode, Value, Variables,
 };
 
-#[derive(GraphQLScalarValue, Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
 #[serde(untagged)]
 pub(crate) enum MyScalarValue {
+    #[graphql(as_int, as_float)]
     Int(i32),
     Long(i64),
+    #[graphql(as_float)]
     Float(f64),
+    #[graphql(as_string, into_string, as_str)]
     String(String),
+    #[graphql(as_boolean)]
     Boolean(bool),
-}
-
-impl ScalarValue for MyScalarValue {
-    fn as_int(&self) -> Option<i32> {
-        match self {
-            Self::Int(i) => Some(*i),
-            _ => None,
-        }
-    }
-
-    fn as_string(&self) -> Option<String> {
-        match self {
-            Self::String(s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
-    fn into_string(self) -> Option<String> {
-        match self {
-            Self::String(s) => Some(s),
-            _ => None,
-        }
-    }
-
-    fn as_str(&self) -> Option<&str> {
-        match self {
-            Self::String(s) => Some(s.as_str()),
-            _ => None,
-        }
-    }
-
-    fn as_float(&self) -> Option<f64> {
-        match self {
-            Self::Int(i) => Some(f64::from(*i)),
-            Self::Float(f) => Some(*f),
-            _ => None,
-        }
-    }
-
-    fn as_boolean(&self) -> Option<bool> {
-        match self {
-            Self::Boolean(b) => Some(*b),
-            _ => None,
-        }
-    }
 }
 
 impl<'de> Deserialize<'de> for MyScalarValue {
@@ -132,19 +91,23 @@ impl<'de> Deserialize<'de> for MyScalarValue {
     }
 }
 
-#[graphql_scalar(name = "Long")]
-impl GraphQLScalar for i64 {
-    fn resolve(&self) -> Value {
-        Value::scalar(*self)
+#[graphql_scalar(with = long, scalar = MyScalarValue)]
+type Long = i64;
+
+mod long {
+    use super::*;
+
+    pub(super) fn to_output(v: &Long) -> Value<MyScalarValue> {
+        Value::scalar(*v)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<i64, String> {
+    pub(super) fn from_input(v: &InputValue<MyScalarValue>) -> Result<Long, String> {
         v.as_scalar_value::<i64>()
             .copied()
             .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {}", v))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
+    pub(super) fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, MyScalarValue> {
         if let ScalarToken::Int(v) = value {
             v.parse()
                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))

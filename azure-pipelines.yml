@@ -75,35 +75,35 @@ jobs:
   # Releases
   ###################################################
 
-  - job: check_release_automation
-    displayName: Check release automation
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-      - script: |
-          export CARGO_HOME="$HOME/.cargo"
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
-        displayName: Install stable Rust
-      - script: |
-          _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
-        displayName: Install cargo-make binary
-      - script: |
-         cargo install --debug --version=0.11.2 cargo-release
-        displayName: Install cargo-release binary
-      - script: |
-          git config --local user.name "Release Test Bot"
-          git config --local user.email "juniper@example.com"
-        displayName: Set up git
-      - script: |
-          RELEASE_LEVEL="minor" cargo make release-dry-run
-        displayName: Dry run mode
-      - script: |
-          RELEASE_LEVEL="minor" cargo make release-local-test
-        displayName: Local test mode
-      - script: |
-          git --no-pager log -p HEAD...HEAD~20
-          # NOTE: this is rolled into one task due to onerous 
-          # "bash not found" error on Azure.
-          cargo make workspace-ci-flow --no-workspace
-        displayName: Echo local changes && make sure build and tests still work
+  #- job: check_release_automation
+  #  displayName: Check release automation
+  #  pool:
+  #    vmImage: 'ubuntu-latest'
+  #  steps:
+  #    - script: |
+  #        export CARGO_HOME="$HOME/.cargo"
+  #        curl https://sh.rustup.rs -sSf | sh -s -- -y
+  #        echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
+  #      displayName: Install stable Rust
+  #    - script: |
+  #        _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
+  #      displayName: Install cargo-make binary
+  #    - script: |
+  #       cargo install --debug --version=0.19.4 cargo-release
+  #      displayName: Install cargo-release binary
+  #    - script: |
+  #        git config --local user.name "Release Test Bot"
+  #        git config --local user.email "juniper@example.com"
+  #      displayName: Set up git
+  #    - script: |
+  #        RELEASE_LEVEL="minor" cargo make release-dry-run
+  #      displayName: Dry run mode
+  #    - script: |
+  #        RELEASE_LEVEL="minor" cargo make release-local-test
+  #      displayName: Local test mode
+  #    - script: |
+  #        git --no-pager log -p HEAD...HEAD~20
+  #        # NOTE: this is rolled into one task due to onerous
+  #        # "bash not found" error on Azure.
+  #        cargo make workspace-ci-flow --no-workspace
+  #      displayName: Echo local changes && make sure build and tests still work

@@ -286,24 +286,24 @@ enum GraphQLRequestError {
 }
 
 impl fmt::Display for GraphQLRequestError {
-    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GraphQLRequestError::BodyHyper(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::BodyUtf8(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::BodyJSONError(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::Variables(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLRequestError::Invalid(ref err) => fmt::Display::fmt(err, &mut f),
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GraphQLRequestError::BodyHyper(err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::BodyUtf8(err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::BodyJSONError(err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::Variables(err) => fmt::Display::fmt(err, f),
+            GraphQLRequestError::Invalid(err) => fmt::Display::fmt(err, f),
         }
     }
 }
 
 impl Error for GraphQLRequestError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match *self {
-            GraphQLRequestError::BodyHyper(ref err) => Some(err),
-            GraphQLRequestError::BodyUtf8(ref err) => Some(err),
-            GraphQLRequestError::BodyJSONError(ref err) => Some(err),
-            GraphQLRequestError::Variables(ref err) => Some(err),
+        match self {
+            GraphQLRequestError::BodyHyper(err) => Some(err),
+            GraphQLRequestError::BodyUtf8(err) => Some(err),
+            GraphQLRequestError::BodyJSONError(err) => Some(err),
+            GraphQLRequestError::Variables(err) => Some(err),
             GraphQLRequestError::Invalid(_) => None,
         }
     }

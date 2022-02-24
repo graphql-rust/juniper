@@ -1,6 +1,5 @@
-no-dev-version = true
 pre-release-commit-message = "Release {{crate_name}} {{version}}"
-pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
+post-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
 pre-release-replacements = [
   {file="src/lib.rs", min=0, search="docs.rs/juniper_graphql_ws/[a-z0-9\\.-]+", replace="docs.rs/juniper_graphql_ws/{{version}}"},

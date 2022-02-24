@@ -18,25 +18,11 @@ struct Human {
     home_planet: String,
 }
 
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
 #[derive(GraphQLObject)]
 #[graphql(impl = CharacterValue)]
 struct Droid {
     id: String,
     primary_function: String,
-}
-
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
 }
 
 #[derive(GraphQLUnion)]

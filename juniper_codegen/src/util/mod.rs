@@ -17,7 +17,6 @@ use syn::{
     spanned::Spanned,
     token, Attribute, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta,
 };
-use url::Url;
 
 use crate::common::parse::ParseBufferExt as _;
 
@@ -455,7 +454,6 @@ pub enum FieldAttributeParseMode {
 enum FieldAttribute {
     Name(SpanContainer<syn::LitStr>),
     Description(SpanContainer<syn::LitStr>),
-    SpecifiedByUrl(SpanContainer<syn::LitStr>),
     Deprecation(SpanContainer<DeprecationAttr>),
     Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
@@ -485,15 +483,6 @@ impl Parse for FieldAttribute {
                 input.parse::<token::Eq>()?;
                 let lit = input.parse::<syn::LitStr>()?;
                 Ok(FieldAttribute::Description(SpanContainer::new(
-                    ident.span(),
-                    Some(lit.span()),
-                    lit,
-                )))
-            }
-            "specified_by_url" => {
-                input.parse::<token::Eq>()?;
-                let lit = input.parse::<syn::LitStr>()?;
-                Ok(FieldAttribute::SpecifiedByUrl(SpanContainer::new(
                     ident.span(),
                     Some(lit.span()),
                     lit,
@@ -553,8 +542,6 @@ pub struct FieldAttributes {
     pub name: Option<SpanContainer<String>>,
     pub description: Option<SpanContainer<String>>,
     pub deprecation: Option<SpanContainer<DeprecationAttr>>,
-    /// Only relevant for scalar impl macro.
-    pub specified_by_url: Option<SpanContainer<Url>>,
     /// Only relevant for GraphQLObject derive.
     pub skip: Option<SpanContainer<syn::Ident>>,
     /// Only relevant for object macro.
@@ -576,18 +563,6 @@ impl Parse for FieldAttributes {
                 }
                 FieldAttribute::Description(name) => {
                     output.description = Some(name.map(|val| val.value()));
-                }
-                FieldAttribute::SpecifiedByUrl(url) => {
-                    output.specified_by_url = Some(
-                        url.map(|val| Url::parse(&val.value()))
-                            .transpose()
-                            .map_err(|e| {
-                                syn::Error::new(
-                                    e.span_ident(),
-                                    format!("Invalid URL: {}", e.inner()),
-                                )
-                            })?,
-                    );
                 }
                 FieldAttribute::Deprecation(attr) => {
                     output.deprecation = Some(attr);
@@ -906,6 +881,25 @@ impl GraphQLTypeDefiniton {
                     }
                 }
             }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar> for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar> for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
+            }
         );
 
         if !self.no_async {
@@ -1152,6 +1146,28 @@ impl GraphQLTypeDefiniton {
                         #( #to_inputs )*
                     ].into_iter().collect())
                 }
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         );
 
