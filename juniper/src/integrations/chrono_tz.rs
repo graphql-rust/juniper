@@ -5,21 +5,25 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
+/// See [List of tz database time zones][1] `TZ database name` column for
+/// available names.
+///
+/// [1]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 #[graphql_scalar(with = tz, parse_token(String))]
-type Tz = chrono_tz::Tz;
+pub type TimeZone = chrono_tz::Tz;
 
 mod tz {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Tz) -> Value<S> {
+    pub(super) fn to_output<S: ScalarValue>(v: &TimeZone) -> Value<S> {
         Value::scalar(v.name().to_owned())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Tz, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<TimeZone, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                s.parse::<Tz>()
+                s.parse::<TimeZone>()
                     .map_err(|e| format!("Failed to parse `Tz`: {}", e))
             })
     }
@@ -27,12 +31,14 @@ mod tz {
 
 #[cfg(test)]
 mod test {
+    use super::TimeZone;
+
     mod from_input_value {
-        use chrono_tz::Tz;
+        use super::TimeZone;
 
         use crate::{graphql_input_value, FromInputValue, InputValue, IntoFieldError};
 
-        fn tz_input_test(raw: &'static str, expected: Result<Tz, &str>) {
+        fn tz_input_test(raw: &'static str, expected: Result<TimeZone, &str>) {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = FromInputValue::from_input_value(&input);
 
