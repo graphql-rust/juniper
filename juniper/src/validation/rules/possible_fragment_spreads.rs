@@ -49,7 +49,7 @@ where
             // Even if there is no object type in the overlap of interfaces
             // implementers, it's ok to spread in case `frag_type` implements
             // `parent_type`.
-            // https://bit.ly/3t3JqTh
+            // https://spec.graphql.org/October2021/#sel-JALVFJNRDABABqDy5B
             if let MetaType::Interface(InterfaceMeta {
                 interface_names, ..
             }) = frag_type
@@ -88,7 +88,7 @@ where
             // Even if there is no object type in the overlap of interfaces
             // implementers, it's ok to spread in case `frag_type` implements
             // `parent_type`.
-            // https://bit.ly/3t3JqTh
+            // https://spec.graphql.org/October2021/#sel-JALVFJNRDABABqDy5B
             if let MetaType::Interface(InterfaceMeta {
                 interface_names, ..
             }) = frag_type

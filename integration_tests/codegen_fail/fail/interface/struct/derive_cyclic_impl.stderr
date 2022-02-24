@@ -1,14 +1,14 @@
 error[E0391]: cycle detected when expanding type alias `Node1Value`
-  --> fail/interface/struct/derive_cyclic_impl.rs:4:49
+  --> fail/interface/struct/derive_cyclic_impl.rs:4:36
    |
-4  | #[graphql(impl = Node1Value, for = [Node2Value, Node3Value])]
-   |                                                 ^^^^^^^^^^
+4  | #[graphql(impl = Node2Value, for = Node2Value)]
+   |                                    ^^^^^^^^^^
    |
-note: ...which requires expanding type alias `Node3Value`...
-  --> fail/interface/struct/derive_cyclic_impl.rs:16:50
+note: ...which requires expanding type alias `Node2Value`...
+  --> fail/interface/struct/derive_cyclic_impl.rs:10:36
    |
-16 | #[graphql(impl = [Node1Value, Node2Value], for = Node1Value)]
-   |                                                  ^^^^^^^^^^
+10 | #[graphql(impl = Node1Value, for = Node1Value)]
+   |                                    ^^^^^^^^^^
    = note: ...which again requires expanding type alias `Node1Value`, completing the cycle
    = note: type aliases cannot be recursive
    = help: consider using a struct, enum, or union instead to break the cycle
@@ -19,8 +19,8 @@ note: cycle used when collecting item types in top-level module
 1  | / use juniper::GraphQLInterface;
 2  | |
 3  | | #[derive(GraphQLInterface)]
-4  | | #[graphql(impl = Node1Value, for = [Node2Value, Node3Value])]
+4  | | #[graphql(impl = Node2Value, for = Node2Value)]
 ...  |
-20 | |
-21 | | fn main() {}
+14 | |
+15 | | fn main() {}
    | |____________^

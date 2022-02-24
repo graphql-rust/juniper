@@ -173,7 +173,7 @@ impl Parse for Attr {
                             .none_or_else(|_| err::dup_arg(impler_span))?;
                     }
                 }
-                "impl" | "implements" | "interfaces" => {
+                "impl" | "implements" => {
                     input.parse::<token::Eq>()?;
                     for iface in input.parse_maybe_wrapped_and_punctuated::<
                         syn::TypePath, token::Bracket, token::Comma,
@@ -433,7 +433,7 @@ impl Definition {
             .iter()
             .zip(variants_idents.clone())
             .map(|(ty, ident)| {
-                quote_spanned! { ty.span() =>
+                quote! {
                     #[automatically_derived]
                     impl#interface_impl_gens ::std::convert::From<#ty>
                         for #alias_ident#interface_ty_gens

@@ -1,60 +1,7 @@
-error: GraphQL interface trait method should have a shared reference receiver `&self`
- --> fail/interface/trait/missing_transitive_impl.rs:3:1
-  |
-3 | #[graphql_interface(for = Node2Value)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: https://spec.graphql.org/June2018/#sec-Interfaces
-  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: GraphQL interface trait method should have a shared reference receiver `&self`
-  --> fail/interface/trait/missing_transitive_impl.rs:13:1
-   |
-13 | #[graphql_interface(impl = Node2Value)]
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: https://spec.graphql.org/June2018/#sec-Interfaces
-   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0412]: cannot find type `Node3Value` in this scope
+error[E0080]: evaluation of constant value failed
  --> fail/interface/trait/missing_transitive_impl.rs:8:46
   |
 8 | #[graphql_interface(impl = Node1Value, for = Node3Value)]
-  |                                              ^^^^^^^^^^ not found in this scope
+  |                                              ^^^^^^^^^^ the evaluated program panicked at 'Failed to implement interface `Node2` on `Node3`: missing `impl = ` for transitive interface `Node1` on `Node3`.', $DIR/fail/interface/trait/missing_transitive_impl.rs:8:46
   |
-help: there is an enum variant `crate::Node2ValueEnum::Node3Value`; try using the variant's enum
-  |
-8 | #[graphql_interface(impl = Node1Value, for = crate::Node2ValueEnum)]
-  |                                              ~~~~~~~~~~~~~~~~~~~~~
-
-error[E0412]: cannot find type `Node3Value` in this scope
- --> fail/interface/trait/missing_transitive_impl.rs:8:46
-  |
-8 | #[graphql_interface(impl = Node1Value, for = Node3Value)]
-  |                                              ^^^^^^^^^^ not found in this scope
-  |
-help: there is an enum variant `crate::Node2ValueEnum::Node3Value`; try using the variant's enum
-  |
-8 | #[graphql_interface(impl = Node1Value, for = crate::Node2ValueEnum)]
-  |                                              ~~~~~~~~~~~~~~~~~~~~~
-help: you might be missing a type parameter
-  |
-8 | #[graphql_interface(impl = Node1Value, for = Node3Value<Node3Value>)]
-  |                                                        ++++++++++++
-
-error[E0412]: cannot find type `Node1Value` in this scope
- --> fail/interface/trait/missing_transitive_impl.rs:8:28
-  |
-8 | #[graphql_interface(impl = Node1Value, for = Node3Value)]
-  |                            ^^^^^^^^^^ not found in this scope
-
-error[E0599]: no method named `ok_or_else` found for enum `std::option::Option<&str>` in the current scope
- --> fail/interface/trait/missing_transitive_impl.rs:8:1
-  |
-8 | #[graphql_interface(impl = Node1Value, for = Node3Value)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `std::option::Option<&str>`
-  |
-  = note: the method was found for
-          - `std::option::Option<T>`
-  = note: `#[graphql_interface(impl = Node1Value, for = Node3Value)]` is a function, perhaps you wish to call it
-  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the macro `$crate::panic::panic_2015` (in Nightly builds, run with -Z macro-backtrace for more info)
