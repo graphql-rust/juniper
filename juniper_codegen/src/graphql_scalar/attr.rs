@@ -1,3 +1,5 @@
+//! Code generation for `#[graphql_scalar]` macro.
+
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_quote, spanned::Spanned};
@@ -10,7 +12,7 @@ use crate::{
 
 use super::{Attr, Definition, GraphQLScalarMethods, ParseToken};
 
-const ERR: GraphQLScope = GraphQLScope::ImplScalar;
+const ERR: GraphQLScope = GraphQLScope::ScalarAttr;
 
 /// Expands `#[graphql_scalar]` macro into generated code.
 pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
@@ -18,8 +20,7 @@ pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<T
         let attrs = parse::attr::unite(("graphql_scalar", &attr_args), &ast.attrs);
         ast.attrs = parse::attr::strip("graphql_scalar", ast.attrs);
         return expand_on_type_alias(attrs, ast);
-    }
-    if let Ok(mut ast) = syn::parse2::<syn::DeriveInput>(body) {
+    } else if let Ok(mut ast) = syn::parse2::<syn::DeriveInput>(body) {
         let attrs = parse::attr::unite(("graphql_scalar", &attr_args), &ast.attrs);
         ast.attrs = parse::attr::strip("graphql_scalar", ast.attrs);
         return expand_on_derive_input(attrs, ast);
@@ -27,7 +28,8 @@ pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<T
 
     Err(syn::Error::new(
         Span::call_site(),
-        "#[graphql_scalar] attribute is applicable to type alias only",
+        "#[graphql_scalar] attribute is applicable to type aliases, structs, \
+         enums and unions only",
     ))
 }
 
@@ -62,7 +64,7 @@ fn expand_on_type_alias(
                 ast.span(),
                 "all custom resolvers have to be provided via `with` or \
                  combination of `to_output_with`, `from_input_with`, \
-                 `parse_token_with` attributes",
+                 `parse_token_with` attribute arguments",
             ));
         }
     };
@@ -93,7 +95,7 @@ fn expand_on_type_alias(
     })
 }
 
-// TODO: Add `#[graphql(transparent)]`.
+// TODO: Support `#[graphql(transparent)]`.
 /// Expands `#[graphql_scalar]` macro placed on a struct/enum/union.
 fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,

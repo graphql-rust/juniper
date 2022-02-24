@@ -1,26 +1,17 @@
 error: Invalid URL: relative URL without a base
- --> fail/scalar/derive_input/impl_invalid_url.rs:4:24
+ --> fail/scalar/derive_input/impl_invalid_url.rs:3:37
   |
-4 |     specified_by_url = "not an url",
-  |                        ^^^^^^^^^^^^
+3 | #[graphql_scalar(specified_by_url = "not an url", parse_token(i32))]
+  |                                     ^^^^^^^^^^^^
 
 error[E0412]: cannot find type `ScalarSpecifiedByUrl` in this scope
-  --> fail/scalar/derive_input/impl_invalid_url.rs:13:49
-   |
-13 |     pub(super) fn to_output<S: ScalarValue>(_: &ScalarSpecifiedByUrl) -> Value<S> {
-   |                                                 ^^^^^^^^^^^^^^^^^^^^ not found in this scope
+ --> fail/scalar/derive_input/impl_invalid_url.rs:6:6
+  |
+6 | impl ScalarSpecifiedByUrl {
+  |      ^^^^^^^^^^^^^^^^^^^^ not found in this scope
 
-error[E0412]: cannot find type `ScalarSpecifiedByUrl` in this scope
-  --> fail/scalar/derive_input/impl_invalid_url.rs:19:17
+error: the `Self` constructor can only be used with tuple or unit structs
+  --> fail/scalar/derive_input/impl_invalid_url.rs:12:12
    |
-17 |     pub(super) fn from_input<S: ScalarValue>(
-   |                                            - help: you might be missing a type parameter: `, ScalarSpecifiedByUrl`
-18 |         _: &InputValue<S>,
-19 |     ) -> Result<ScalarSpecifiedByUrl, String> {
-   |                 ^^^^^^^^^^^^^^^^^^^^ not found in this scope
-
-error[E0425]: cannot find value `ScalarSpecifiedByUrl` in this scope
-  --> fail/scalar/derive_input/impl_invalid_url.rs:20:12
-   |
-20 |         Ok(ScalarSpecifiedByUrl)
-   |            ^^^^^^^^^^^^^^^^^^^^ not found in this scope
+12 |         Ok(Self)
+   |            ^^^^

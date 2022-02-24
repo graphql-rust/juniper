@@ -2,8 +2,8 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, DefaultScalarValue,
-    InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
+    execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, InputValue,
+    ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
 use crate::{
@@ -24,18 +24,18 @@ mod trivial {
 
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .map(Self)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
 
-        fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-            <i32 as ParseScalarValue<S>>::from_str(value)
+        fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+            <i32 as ParseScalarValue<S>>::from_str(t)
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -94,9 +94,7 @@ mod all_custom_resolvers {
         to_output_with = to_output,
         from_input_with = from_input,
     )]
-    #[graphql_scalar(
-        parse_token_with = parse_token,
-    )]
+    #[graphql_scalar(parse_token_with = parse_token)]
     struct Counter(i32);
 
     fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
@@ -105,8 +103,8 @@ mod all_custom_resolvers {
 
     fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
         v.as_int_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .map(Counter)
+            .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -115,7 +113,7 @@ mod all_custom_resolvers {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -180,8 +178,8 @@ mod explicit_name {
 
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .map(Self)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -191,7 +189,7 @@ mod explicit_name {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: CustomCounter) -> CustomCounter {
             value
@@ -256,14 +254,14 @@ mod delegated_parse_token {
 
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .map(Self)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -327,8 +325,8 @@ mod multiple_delegated_parse_token {
     impl StringOrInt {
         fn to_output<S: ScalarValue>(&self) -> Value<S> {
             match self {
-                StringOrInt::String(str) => Value::scalar(str.to_owned()),
-                StringOrInt::Int(i) => Value::scalar(*i),
+                Self::String(str) => Value::scalar(str.to_owned()),
+                Self::Int(i) => Value::scalar(*i),
             }
         }
 
@@ -357,7 +355,7 @@ mod multiple_delegated_parse_token {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"stringOrInt": "test"}), vec![],)),
+            Ok((graphql_value!({"stringOrInt": "test"}), vec![])),
         );
     }
 
@@ -369,7 +367,7 @@ mod multiple_delegated_parse_token {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"stringOrInt": 0}), vec![],)),
+            Ok((graphql_value!({"stringOrInt": 0}), vec![])),
         );
     }
 }
@@ -406,13 +404,13 @@ mod where_attribute {
             .and_then(|s| {
                 DateTime::parse_from_rfc3339(s)
                     .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
-                    .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
+                    .map_err(|e| format!("Failed to parse `CustomDateTime`: {}", e))
             })
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = MyScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
             value
@@ -467,8 +465,8 @@ mod with_self {
 
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .map(Self)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -478,7 +476,7 @@ mod with_self {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -564,14 +562,14 @@ mod with_module {
                 .and_then(|s| {
                     DateTime::parse_from_rfc3339(s)
                         .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
-                        .map_err(|e| format!("Failed to parse CustomDateTime: {}", e))
+                        .map_err(|e| format!("Failed to parse `CustomDateTime`: {}", e))
                 })
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = MyScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn date_time(value: CustomDateTime<Utc>) -> CustomDateTime<Utc> {
             value
@@ -617,32 +615,24 @@ mod description_from_doc_comment {
     use super::*;
 
     /// Description
-    #[graphql_scalar(with = counter)]
+    #[graphql_scalar(parse_token(i32))]
     struct Counter(i32);
 
-    mod counter {
-        use super::*;
-
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+    impl Counter {
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
-        }
-
-        pub(super) fn parse_token<S: ScalarValue>(
-            value: ScalarToken<'_>,
-        ) -> ParseScalarResult<'_, S> {
-            <i32 as ParseScalarValue<S>>::from_str(value)
+                .map(Self)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -691,7 +681,7 @@ mod description_from_doc_comment {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"description": "Description"}}),
-                vec![]
+                vec![],
             )),
         );
     }
@@ -701,7 +691,7 @@ mod description_from_attribute {
     use super::*;
 
     /// Doc comment
-    #[graphql_scalar(description = "Description from attribute")]
+    #[graphql_scalar(description = "Description from attribute", parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -711,18 +701,14 @@ mod description_from_attribute {
 
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .map(Self)
-        }
-
-        fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-            <i32 as ParseScalarValue<S>>::from_str(value)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -771,7 +757,7 @@ mod description_from_attribute {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"description": "Description from attribute"}}),
-                vec![]
+                vec![],
             )),
         );
     }
@@ -781,29 +767,18 @@ mod custom_scalar {
     use super::*;
 
     /// Description
-    #[graphql_scalar(
-        scalar = MyScalarValue,
-        with = counter,
-    )]
+    #[graphql_scalar(scalar = MyScalarValue, parse_token(i32))]
     struct Counter(i32);
 
-    mod counter {
-        use super::*;
-
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+    impl Counter {
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
-        }
-
-        pub(super) fn parse_token<S: ScalarValue>(
-            value: ScalarToken<'_>,
-        ) -> ParseScalarResult<'_, S> {
-            <i32 as ParseScalarValue<S>>::from_str(value)
+                .map(Self)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
     }
 
@@ -858,7 +833,7 @@ mod custom_scalar {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"description": "Description"}}),
-                vec![]
+                vec![],
             )),
         );
     }
@@ -868,35 +843,24 @@ mod generic_scalar {
     use super::*;
 
     /// Description
-    #[graphql_scalar(
-        scalar = S: ScalarValue,
-        with = counter,
-    )]
+    #[graphql_scalar(scalar = S: ScalarValue, parse_token(i32))]
     struct Counter(i32);
 
-    mod counter {
-        use super::*;
-
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+    impl Counter {
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0)
         }
 
-        pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
-                .map(Counter)
-        }
-
-        pub(super) fn parse_token<S: ScalarValue>(
-            value: ScalarToken<'_>,
-        ) -> ParseScalarResult<'_, S> {
-            <i32 as ParseScalarValue<S>>::from_str(value)
+                .map(Self)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = MyScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -954,8 +918,7 @@ mod generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    /// Description
-    #[graphql_scalar(scalar = S: ScalarValue + Clone)]
+    #[graphql_scalar(scalar = S: ScalarValue + Clone, parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -965,18 +928,14 @@ mod bounded_generic_scalar {
 
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
                 .map(Self)
-        }
-
-        fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-            <i32 as ParseScalarValue<S>>::from_str(value)
+                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
     }
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = MyScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -1008,25 +967,6 @@ mod bounded_generic_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"counter": 0}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_description() {
-        const DOC: &str = r#"{
-            __type(name: "Counter") {
-                description
-            }
-        }"#;
-
-        let schema = schema_with_scalar::<MyScalarValue, _, _>(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"__type": {"description": "Description"}}),
-                vec![]
-            )),
         );
     }
 }

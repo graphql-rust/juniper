@@ -40,9 +40,12 @@ crates. They are enabled via features that are on by default.
 * url::Url
 * bson::oid::ObjectId
 
+
+
+
 ## Custom scalars
 
-#### `#[graphql(transparent)]` attribute
+### `#[graphql(transparent)]` attribute
 
 Often, you might need a custom scalar that just wraps an existing type.
 
@@ -107,7 +110,7 @@ pub struct UserId(i32);
 
 All the methods used from newtype's field can be replaced with attributes:
 
-#### `#[graphql(to_output_with = <fn>)]` attribute
+### `#[graphql(to_output_with = <fn>)]` attribute
 
 ```rust,ignore
 # use juniper::{GraphQLScalar, ScalarValue, Value};
@@ -124,7 +127,7 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 # fn main() {}
 ```
 
-#### `#[graphql(from_input_with = <fn>)]` attribute
+### `#[graphql(from_input_with = <fn>)]` attribute
 
 ```rust,ignore
 # use juniper::{GraphQLScalar, InputValue, ScalarValue};
@@ -159,7 +162,7 @@ impl UserId {
 # fn main() {}
 ```
 
-#### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
+### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 
 ```rust,ignore
 # use juniper::{
@@ -215,7 +218,7 @@ where
 > __NOTE:__ As you can see, once you provide all 3 custom resolvers, there
 >           is no need to follow `newtype` pattern.
 
-#### `#[graphql(with = <path>)]` attribute
+### `#[graphql(with = <path>)]` attribute
 
 Instead of providing all custom resolvers, you can provide path to the `to_output`, 
 `from_input`, `parse_token` functions.

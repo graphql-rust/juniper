@@ -13,7 +13,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
 }
 
-// TODO: revisit this doc, once `GraphQLScalarValue` macro is re-implemented.
+// TODO: Revisit this doc, once `GraphQLScalarValue` macro is re-implemented.
 /// A trait marking a type that could be used as internal representation of
 /// scalar values in juniper
 ///
@@ -433,6 +433,7 @@ pub enum DefaultScalarValue {
     Boolean(bool),
 }
 
+// TODO: Revisit these impls, once `GraphQLScalarValue` macro is re-implemented.
 impl From<i32> for DefaultScalarValue {
     fn from(v: i32) -> Self {
         Self::Int(v)

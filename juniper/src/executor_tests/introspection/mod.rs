@@ -19,23 +19,19 @@ enum Sample {
     Two,
 }
 
-/// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
+// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
+#[graphql_scalar(name = "SampleScalar", parse_token(i32))]
 struct Scalar(i32);
 
-#[graphql_scalar(with = sample_scalar, parse_token(i32))]
-type SampleScalar = Scalar;
-
-mod sample_scalar {
-    use super::*;
-
-    pub(super) fn to_output<S: ScalarValue>(v: &SampleScalar) -> Value<S> {
-        Value::scalar(v.0)
+impl Scalar {
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        Value::scalar(self.0)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<SampleScalar, String> {
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
         v.as_int_value()
+            .map(Self)
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
-            .map(Scalar)
     }
 }
 

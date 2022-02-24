@@ -28,7 +28,7 @@ mod test {
     use crate::{graphql_input_value, FromInputValue, InputValue};
 
     #[test]
-    fn uuid_from_input_value() {
+    fn uuid_from_input() {
         let raw = "123e4567-e89b-12d3-a456-426655440000";
         let input: InputValue = graphql_input_value!((raw));
 

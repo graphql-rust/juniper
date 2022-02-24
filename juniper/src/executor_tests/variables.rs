@@ -10,28 +10,20 @@ use crate::{
     GraphQLInputObject, InputValue, ScalarValue, Value,
 };
 
-/// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
+// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
 #[derive(Debug)]
+#[graphql_scalar(parse_token(String))]
 struct TestComplexScalar;
 
-#[graphql_scalar(
-    name = "TestComplexScalar",
-    with = test_complex_scalar,
-    parse_token(String),
-)]
-type ComplexScalar = TestComplexScalar;
-
-mod test_complex_scalar {
-    use super::*;
-
-    pub(super) fn to_output<S: ScalarValue>(_: &ComplexScalar) -> Value<S> {
+impl TestComplexScalar {
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
         graphql_value!("SerializedValue")
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ComplexScalar, String> {
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
-            .map(|_| TestComplexScalar)
+            .map(|_| Self)
             .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {}"#, v))
     }
 }

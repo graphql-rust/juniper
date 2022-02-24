@@ -108,11 +108,11 @@ macro_rules! try_merge_hashset {
 
 mod derive_enum;
 mod derive_input_object;
-mod graphql_scalar;
 
 mod common;
 mod graphql_interface;
 mod graphql_object;
+mod graphql_scalar;
 mod graphql_subscription;
 mod graphql_union;
 
@@ -225,12 +225,12 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 /// mod date_scalar {
 ///     use super::*;
-///   
+///
 ///     // Define how to convert your custom scalar into a primitive type.
 ///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
 ///         Value::scalar(v.to_string())
 ///     }
-///   
+///
 ///     // Define how to parse a primitive type into your custom scalar.
 ///     // NOTE: The error type should implement `IntoFieldError<S>`.
 ///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {

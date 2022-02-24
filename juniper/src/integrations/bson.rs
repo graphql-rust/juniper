@@ -52,7 +52,7 @@ mod test {
     use crate::{graphql_input_value, FromInputValue, InputValue};
 
     #[test]
-    fn objectid_from_input_value() {
+    fn objectid_from_input() {
         let raw = "53e37d08776f724e42000000";
         let input: InputValue = graphql_input_value!((raw));
 
@@ -63,7 +63,7 @@ mod test {
     }
 
     #[test]
-    fn utcdatetime_from_input_value() {
+    fn utcdatetime_from_input() {
         let raw = "2020-03-23T17:38:32.446+00:00";
         let input: InputValue = graphql_input_value!((raw));
 
