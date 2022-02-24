@@ -16,65 +16,47 @@
 
 */
 #![allow(clippy::needless_lifetimes)]
-use chrono::prelude::*;
+use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-use crate::{
-    parser::{ParseError, ScalarToken, Token},
-    value::{ParseScalarResult, ParseScalarValue},
-    Value,
-};
+#[graphql_scalar(with = date_time_fixed_offset, parse_token(String))]
+type DateTimeFixedOffset = chrono::DateTime<chrono::FixedOffset>;
 
-#[crate::graphql_scalar(name = "DateTimeFixedOffset", description = "DateTime")]
-impl<S> GraphQLScalar for DateTime<FixedOffset>
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.to_rfc3339())
+mod date_time_fixed_offset {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &DateTimeFixedOffset) -> Value<S> {
+        Value::scalar(v.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<DateTime<FixedOffset>, String> {
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &InputValue<S>,
+    ) -> Result<DateTimeFixedOffset, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                DateTime::parse_from_rfc3339(s)
+                DateTimeFixedOffset::parse_from_rfc3339(s)
                     .map_err(|e| format!("Failed to parse `DateTimeFixedOffset`: {}", e))
             })
     }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
-    }
 }
 
-#[crate::graphql_scalar(name = "DateTimeUtc", description = "DateTime")]
-impl<S> GraphQLScalar for DateTime<Utc>
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.to_rfc3339())
+#[graphql_scalar(with = date_time_utc, parse_token(String))]
+type DateTimeUtc = chrono::DateTime<chrono::Utc>;
+
+mod date_time_utc {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &DateTimeUtc) -> Value<S> {
+        Value::scalar(v.to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<DateTime<Utc>, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTimeUtc, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                s.parse::<DateTime<Utc>>()
+                s.parse::<DateTimeUtc>()
                     .map_err(|e| format!("Failed to parse `DateTimeUtc`: {}", e))
             })
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
     }
 }
 
@@ -83,16 +65,17 @@ where
 // inherent lack of precision required for the time zone resolution.
 // For serialization and deserialization uses, it is best to use
 // `NaiveDate` instead."
-#[crate::graphql_scalar(description = "NaiveDate")]
-impl<S> GraphQLScalar for NaiveDate
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.format("%Y-%m-%d").to_string())
+#[graphql_scalar(with = naive_date, parse_token(String))]
+type NaiveDate = chrono::NaiveDate;
+
+mod naive_date {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &NaiveDate) -> Value<S> {
+        Value::scalar(v.format("%Y-%m-%d").to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveDate, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveDate, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -100,27 +83,21 @@ where
                     .map_err(|e| format!("Failed to parse `NaiveDate`: {}", e))
             })
     }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
-    }
 }
 
 #[cfg(feature = "scalar-naivetime")]
-#[crate::graphql_scalar(description = "NaiveTime")]
-impl<S> GraphQLScalar for NaiveTime
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.format("%H:%M:%S").to_string())
+#[graphql_scalar(with = naive_time, parse_token(String))]
+type NaiveTime = chrono::NaiveTime;
+
+#[cfg(feature = "scalar-naivetime")]
+mod naive_time {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &NaiveTime) -> Value<S> {
+        Value::scalar(v.format("%H:%M:%S").to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveTime, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -128,28 +105,21 @@ where
                     .map_err(|e| format!("Failed to parse `NaiveTime`: {}", e))
             })
     }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
-    }
 }
 
 // JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
 // datetimes. Values will be truncated to microsecond resolution.
-#[crate::graphql_scalar(description = "NaiveDateTime")]
-impl<S> GraphQLScalar for NaiveDateTime
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.timestamp() as f64)
+#[graphql_scalar(with = naive_date_time, parse_token(f64))]
+type NaiveDateTime = chrono::NaiveDateTime;
+
+mod naive_date_time {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &NaiveDateTime) -> Value<S> {
+        Value::scalar(v.timestamp() as f64)
     }
 
-    fn from_input_value(v: &InputValue) -> Result<NaiveDateTime, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<NaiveDateTime, String> {
         v.as_float_value()
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
             .and_then(|f| {
@@ -157,10 +127,6 @@ where
                 NaiveDateTime::from_timestamp_opt(secs, 0)
                     .ok_or_else(|| format!("Out-of-range number of seconds: {}", secs))
             })
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <f64 as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -180,17 +146,17 @@ mod test {
     }
 
     #[test]
-    fn datetime_fixedoffset_from_input_value() {
+    fn datetime_fixedoffset_from_input() {
         datetime_fixedoffset_test("2014-11-28T21:00:09+09:00");
     }
 
     #[test]
-    fn datetime_fixedoffset_from_input_value_with_z_timezone() {
+    fn datetime_fixedoffset_from_input_with_z_timezone() {
         datetime_fixedoffset_test("2014-11-28T21:00:09Z");
     }
 
     #[test]
-    fn datetime_fixedoffset_from_input_value_with_fractional_seconds() {
+    fn datetime_fixedoffset_from_input_with_fractional_seconds() {
         datetime_fixedoffset_test("2014-11-28T21:00:09.05+09:00");
     }
 
@@ -206,22 +172,22 @@ mod test {
     }
 
     #[test]
-    fn datetime_utc_from_input_value() {
+    fn datetime_utc_from_input() {
         datetime_utc_test("2014-11-28T21:00:09+09:00")
     }
 
     #[test]
-    fn datetime_utc_from_input_value_with_z_timezone() {
+    fn datetime_utc_from_input_with_z_timezone() {
         datetime_utc_test("2014-11-28T21:00:09Z")
     }
 
     #[test]
-    fn datetime_utc_from_input_value_with_fractional_seconds() {
+    fn datetime_utc_from_input_with_fractional_seconds() {
         datetime_utc_test("2014-11-28T21:00:09.005+09:00");
     }
 
     #[test]
-    fn naivedate_from_input_value() {
+    fn naivedate_from_input() {
         let input: InputValue = graphql_input_value!("1996-12-19");
         let y = 1996;
         let m = 12;
@@ -239,7 +205,7 @@ mod test {
 
     #[test]
     #[cfg(feature = "scalar-naivetime")]
-    fn naivetime_from_input_value() {
+    fn naivetime_from_input() {
         let input: InputValue = graphql_input_value!("21:12:19");
         let [h, m, s] = [21, 12, 19];
         let parsed: NaiveTime = FromInputValue::from_input_value(&input).unwrap();
@@ -251,7 +217,7 @@ mod test {
     }
 
     #[test]
-    fn naivedatetime_from_input_value() {
+    fn naivedatetime_from_input() {
         let raw = 1_000_000_000_f64;
         let input: InputValue = graphql_input_value!((raw));
 

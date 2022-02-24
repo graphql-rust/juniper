@@ -21,6 +21,13 @@
   - Remove necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching its fields).
   - Forbid default impls on non-ignored trait methods.
   - Support coercion of additional nullable arguments and return sub-typing on implementer.
+- Redesign `#[derive(GraphQLScalar)]` macro: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
+  - Support generic scalars.
+  - Support structs with single named field.
+  - Support overriding resolvers.
+- Redesign `#[graphql_scalar]` macro: ([#1014](https://github.com/graphql-rust/juniper/pull/1014))
+  - Mirror `#[derive(GraphQLScalar)]` macro.
+  - Support usage on type aliases in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules).
 
 ## Features
 

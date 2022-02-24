@@ -3,25 +3,19 @@
 //! [`Tz`]: chrono_tz::Tz
 //! [1]: http://www.iana.org/time-zones
 
-use chrono_tz::Tz;
+use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-use crate::{
-    graphql_scalar,
-    parser::{ParseError, ScalarToken, Token},
-    value::ParseScalarResult,
-    Value,
-};
+#[graphql_scalar(with = tz, parse_token(String))]
+type Tz = chrono_tz::Tz;
 
-#[graphql_scalar(name = "Tz", description = "Timezone")]
-impl<S> GraphQLScalar for Tz
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.name().to_owned())
+mod tz {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Tz) -> Value<S> {
+        Value::scalar(v.name().to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Tz, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Tz, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
@@ -29,32 +23,22 @@ where
                     .map_err(|e| format!("Failed to parse `Tz`: {}", e))
             })
     }
-
-    fn from_str<'a>(val: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(s) = val {
-            Ok(S::from(s.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(val)))
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
-    mod from_input_value {
-        use std::ops::Deref;
-
+    mod from_input {
         use chrono_tz::Tz;
 
-        use crate::{graphql_input_value, FromInputValue, InputValue};
+        use crate::{graphql_input_value, FromInputValue, InputValue, IntoFieldError};
 
         fn tz_input_test(raw: &'static str, expected: Result<Tz, &str>) {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = FromInputValue::from_input_value(&input);
 
             assert_eq!(
-                parsed.as_ref().map_err(Deref::deref),
-                expected.as_ref().map_err(Deref::deref),
+                parsed.as_ref(),
+                expected.map_err(IntoFieldError::into_field_error).as_ref(),
             );
         }
 

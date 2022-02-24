@@ -13,12 +13,13 @@ pub enum GraphQLScope {
     InterfaceAttr,
     ObjectAttr,
     ObjectDerive,
+    ScalarAttr,
+    #[allow(dead_code)]
+    ScalarDerive,
     UnionAttr,
     UnionDerive,
     DeriveInputObject,
     DeriveEnum,
-    DeriveScalar,
-    ImplScalar,
 }
 
 impl GraphQLScope {
@@ -26,10 +27,10 @@ impl GraphQLScope {
         match self {
             Self::InterfaceAttr => "#sec-Interfaces",
             Self::ObjectAttr | Self::ObjectDerive => "#sec-Objects",
+            Self::ScalarAttr | Self::ScalarDerive => "#sec-Scalars",
             Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
             Self::DeriveInputObject => "#sec-Input-Objects",
             Self::DeriveEnum => "#sec-Enums",
-            Self::DeriveScalar | Self::ImplScalar => "#sec-Scalars",
         }
     }
 }
@@ -39,12 +40,11 @@ impl fmt::Display for GraphQLScope {
         let name = match self {
             Self::InterfaceAttr => "interface",
             Self::ObjectAttr | Self::ObjectDerive => "object",
+            Self::ScalarAttr | Self::ScalarDerive => "scalar",
             Self::UnionAttr | Self::UnionDerive => "union",
             Self::DeriveInputObject => "input object",
             Self::DeriveEnum => "enum",
-            Self::DeriveScalar | Self::ImplScalar => "scalar",
         };
-
         write!(f, "GraphQL {}", name)
     }
 }
@@ -119,7 +119,7 @@ impl GraphQLScope {
         duplicates
             .into_iter()
             .for_each(|dup| {
-                (&dup.spanned[1..])
+                dup.spanned[1..]
                     .iter()
                     .for_each(|spanned| {
                         Diagnostic::spanned(

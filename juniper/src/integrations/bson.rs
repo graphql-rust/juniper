@@ -1,66 +1,46 @@
 //! GraphQL support for [bson](https://github.com/mongodb/bson-rust) types.
 
-use bson::{oid::ObjectId, DateTime as UtcDateTime};
 use chrono::prelude::*;
 
-use crate::{
-    graphql_scalar,
-    parser::{ParseError, ScalarToken, Token},
-    value::ParseScalarResult,
-    Value,
-};
+use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(description = "ObjectId")]
-impl<S> GraphQLScalar for ObjectId
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.to_hex())
+#[graphql_scalar(with = object_id, parse_token(String))]
+type ObjectId = bson::oid::ObjectId;
+
+mod object_id {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &ObjectId) -> Value<S> {
+        Value::scalar(v.to_hex())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<ObjectId, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ObjectId, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                Self::parse_str(s).map_err(|e| format!("Failed to parse `ObjectId`: {}", e))
+                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectId`: {}", e))
             })
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(val) = value {
-            Ok(S::from(val.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
     }
 }
 
-#[graphql_scalar(description = "UtcDateTime")]
-impl<S> GraphQLScalar for UtcDateTime
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar((*self).to_chrono().to_rfc3339())
+#[graphql_scalar(with = utc_date_time, parse_token(String))]
+type UtcDateTime = bson::DateTime;
+
+mod utc_date_time {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &UtcDateTime) -> Value<S> {
+        Value::scalar((*v).to_chrono().to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<UtcDateTime, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcDateTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
                 s.parse::<DateTime<Utc>>()
                     .map_err(|e| format!("Failed to parse `UtcDateTime`: {}", e))
             })
-            .map(Self::from_chrono)
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(val) = value {
-            Ok(S::from(val.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
+            .map(UtcDateTime::from_chrono)
     }
 }
 
@@ -72,7 +52,7 @@ mod test {
     use crate::{graphql_input_value, FromInputValue, InputValue};
 
     #[test]
-    fn objectid_from_input_value() {
+    fn objectid_from_input() {
         let raw = "53e37d08776f724e42000000";
         let input: InputValue = graphql_input_value!((raw));
 
@@ -83,7 +63,7 @@ mod test {
     }
 
     #[test]
-    fn utcdatetime_from_input_value() {
+    fn utcdatetime_from_input() {
         let raw = "2020-03-23T17:38:32.446+00:00";
         let input: InputValue = graphql_input_value!((raw));
 

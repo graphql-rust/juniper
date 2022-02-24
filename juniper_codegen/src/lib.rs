@@ -108,12 +108,11 @@ macro_rules! try_merge_hashset {
 
 mod derive_enum;
 mod derive_input_object;
-mod derive_scalar_value;
-mod impl_scalar;
 
 mod common;
 mod graphql_interface;
 mod graphql_object;
+mod graphql_scalar;
 mod graphql_subscription;
 mod graphql_union;
 
@@ -143,126 +142,116 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     }
 }
 
-/// This custom derive macro implements the #[derive(GraphQLScalarValue)]
-/// derive.
+/// `#[graphql_scalar]` is interchangeable with `#[derive(`[`GraphQLScalar`]`)]`
+/// macro:
 ///
-/// This can be used for two purposes.
-///
-/// ## Transparent Newtype Wrapper
-///
-/// Sometimes, you want to create a custerm scalar type by wrapping
-/// an existing type. In Rust, this is often called the "newtype" pattern.
-/// Thanks to this custom derive, this becomes really easy:
-///
-/// ```rust
-/// // Deriving GraphQLScalar is all that is required.
-/// #[derive(juniper::GraphQLScalarValue)]
-/// struct UserId(String);
-///
-/// #[derive(juniper::GraphQLObject)]
-/// struct User {
-///   id: UserId,
-/// }
-/// ```
-///
-/// The type can also be customized.
-///
-/// ```rust
+/// ```rust,ignore
 /// /// Doc comments are used for the GraphQL type description.
-/// #[derive(juniper::GraphQLScalarValue)]
+/// #[derive(juniper::GraphQLScalar)]
 /// #[graphql(
-///    transparent,
-///    // Set a custom GraphQL name.
-///    name= "MyUserId",
-///    // A description can also specified in the attribute.
-///    // This will the doc comment, if one exists.
-///    description = "...",
-///    // A specification URL.
-///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
+///     // Set a custom GraphQL name.
+///     name = "MyUserId",
+///     // A description can also specified in the attribute.
+///     // This will the doc comment, if one exists.
+///     description = "...",
+///     // A specification URL.
+///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
+///     // Explicit generic scalar.
+///     scalar = S: juniper::ScalarValue,
+///     transparent,
 /// )]
 /// struct UserId(String);
 /// ```
 ///
-/// ### Base ScalarValue Enum
+/// Is transformed into:
 ///
-/// TODO: write documentation.
+/// ```rust,ignore
+/// /// Doc comments are used for the GraphQL type description.
+/// #[juniper::graphql_scalar(
+///     // Set a custom GraphQL name.
+///     name = "MyUserId",
+///     // A description can also specified in the attribute.
+///     // This will the doc comment, if one exists.
+///     description = "...",
+///     // A specification URL.
+///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
+///     // Explicit generic scalar.
+///     scalar = S: juniper::ScalarValue,
+///     transparent,
+/// )]
+/// struct UserId(String);
+/// ```
 ///
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
-pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_scalar_value::impl_scalar_value(&ast, GraphQLScope::DeriveScalar);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-/// Expose GraphQL scalars
+/// In addition to that `#[graphql_scalar]` can be used in case
+/// [`GraphQLScalar`] isn't applicable because type located in other crate and
+/// you don't want to wrap it in a newtype. This is done by placing
+/// `#[graphql_scalar]` on a type alias.
 ///
-/// The GraphQL language defines a number of built-in scalars: strings, numbers, and
-/// booleans. This macro can be used either to define new types of scalars (e.g.
-/// timestamps), or expose other types as one of the built-in scalars (e.g. bigints
-/// as numbers or strings).
+/// All attributes are mirroring [`GraphQLScalar`] derive macro.
 ///
-/// Since the preferred transport protocol for GraphQL responses is JSON, most
-/// custom scalars will be transferred as strings. You therefore need to ensure that
-/// the client library you are sending data to can parse the custom value into a
-/// datatype appropriate for that platform.
-///
-/// By default the trait is implemented in terms of the default scalar value
-/// representation provided by juniper. If that does not fit your needs it is
-/// possible to specify a custom representation.
+/// > __NOTE:__ To satisfy [orphan rules] you should provide local
+/// >           [`ScalarValue`] implementation.
 ///
 /// ```rust
-/// // The data type
-/// struct UserID(String);
+/// # mod date {
+/// #    pub struct Date;
+/// #
+/// #    impl std::str::FromStr for Date {
+/// #        type Err = String;
+/// #
+/// #        fn from_str(_value: &str) -> Result<Self, Self::Err> {
+/// #            unimplemented!()
+/// #        }
+/// #    }
+/// #
+/// #    impl std::fmt::Display for Date {
+/// #        fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
+/// #            unimplemented!()
+/// #        }
+/// #    }
+/// # }
+/// #
+/// # use juniper::DefaultScalarValue as CustomScalarValue;
+/// use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
 ///
-/// #[juniper::graphql_scalar(
-///     // You can rename the type for GraphQL by specifying the name here.
-///     name = "MyName",
-///     // You can also specify a description here.
-///     // If present, doc comments will be ignored.
-///     description = "An opaque identifier, represented as a string",
-///    // A specification URL.
-///    specified_by_url = "https://tools.ietf.org/html/rfc4122",
+/// #[graphql_scalar(
+///     with = date_scalar,
+///     parse_token(String),
+///     scalar = CustomScalarValue,
+/// //           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
 /// )]
-/// impl<S> GraphQLScalar for UserID
-/// where
-///     S: juniper::ScalarValue
-///  {
-///     fn resolve(&self) -> juniper::Value {
-///         juniper::Value::scalar(self.0.to_owned())
+/// type Date = date::Date;
+/// //          ^^^^^^^^^^ Type from another crate.
+///
+/// mod date_scalar {
+///     use super::*;
+///
+///     // Define how to convert your custom scalar into a primitive type.
+///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
+///         Value::scalar(v.to_string())
 ///     }
 ///
+///     // Define how to parse a primitive type into your custom scalar.
 ///     // NOTE: The error type should implement `IntoFieldError<S>`.
-///     fn from_input_value(value: &juniper::InputValue) -> Result<UserID, String> {
-///         value.as_string_value()
-///             .map(|s| UserID(s.to_owned()))
-///             .ok_or_else(|| format!("Expected `String`, found: {}", value))
-///     }
-///
-///     fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {
-///         <String as juniper::ParseScalarValue<S>>::from_str(value)
+///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
+///       v.as_string_value()
+///           .ok_or_else(|| format!("Expected `String`, found: {}", v))
+///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
 ///     }
 /// }
-///
+/// #
 /// # fn main() { }
 /// ```
 ///
-/// In addition to implementing `GraphQLType` for the type in question,
-/// `FromInputValue` and `ToInputValue` is also implemented. This makes the type
-/// usable as arguments and default values.
+/// [orphan rules]: https://bit.ly/3glAGC2
+/// [`GraphQLScalar`]: juniper::GraphQLScalar
+/// [`ScalarValue`]: juniper::ScalarValue
 #[proc_macro_error]
 #[proc_macro_attribute]
-pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = proc_macro2::TokenStream::from(args);
-    let input = proc_macro2::TokenStream::from(input);
-    let gen = impl_scalar::build_scalar(args, input, GraphQLScope::ImplScalar);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
+    graphql_scalar::attr::expand(attr.into(), body.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[graphql_interface]` macro for generating a [GraphQL interface][1]

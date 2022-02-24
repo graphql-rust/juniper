@@ -2,35 +2,22 @@
 
 #![allow(clippy::needless_lifetimes)]
 
-use uuid::Uuid;
+use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-use crate::{
-    parser::{ParseError, ScalarToken, Token},
-    value::ParseScalarResult,
-    Value,
-};
+#[graphql_scalar(with = uuid_scalar, parse_token(String))]
+type Uuid = uuid::Uuid;
 
-#[crate::graphql_scalar(description = "Uuid")]
-impl<S> GraphQLScalar for Uuid
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.to_string())
+mod uuid_scalar {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Uuid) -> Value<S> {
+        Value::scalar(v.to_string())
     }
 
-    fn from_input_value(v: &InputValue) -> Result<Uuid, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Uuid, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `Uuid`: {}", e)))
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        if let ScalarToken::String(value) = value {
-            Ok(S::from(value.to_owned()))
-        } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-        }
     }
 }
 
@@ -41,7 +28,7 @@ mod test {
     use crate::{graphql_input_value, FromInputValue, InputValue};
 
     #[test]
-    fn uuid_from_input_value() {
+    fn uuid_from_input() {
         let raw = "123e4567-e89b-12d3-a456-426655440000";
         let input: InputValue = graphql_input_value!((raw));
 

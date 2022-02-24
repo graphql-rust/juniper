@@ -115,7 +115,7 @@ pub use futures::future::{BoxFuture, LocalBoxFuture};
 // functionality automatically.
 pub use juniper_codegen::{
     graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
-    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
+    GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLUnion,
 };
 
 #[doc(hidden)]
@@ -168,7 +168,7 @@ pub use crate::{
         subscription::{ExtractTypeFromStream, IntoFieldResult},
         AsDynGraphQLValue,
     },
-    parser::{ParseError, Spanning},
+    parser::{ParseError, ScalarToken, Spanning},
     schema::{
         meta,
         model::{RootNode, SchemaType},

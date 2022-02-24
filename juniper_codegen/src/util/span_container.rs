@@ -58,15 +58,6 @@ impl<T> SpanContainer<T> {
     }
 }
 
-impl<T, E> SpanContainer<Result<T, E>> {
-    pub fn transpose(self) -> Result<SpanContainer<T>, SpanContainer<E>> {
-        match self.val {
-            Ok(v) => Ok(SpanContainer::new(self.ident, self.expr, v)),
-            Err(e) => Err(SpanContainer::new(self.ident, self.expr, e)),
-        }
-    }
-}
-
 impl<T> AsRef<T> for SpanContainer<T> {
     fn as_ref(&self) -> &T {
         &self.val
