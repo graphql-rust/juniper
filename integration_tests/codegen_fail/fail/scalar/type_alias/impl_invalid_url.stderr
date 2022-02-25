@@ -1,5 +1,0 @@
-error: Invalid URL: relative URL without a base
- --> fail/scalar/type_alias/impl_invalid_url.rs:6:24
-  |
-6 |     specified_by_url = "not an url",
-  |                        ^^^^^^^^^^^^
