@@ -19,7 +19,7 @@ use crate::{
 };
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLScalarValue)]` macro.
-const ERR: GraphQLScope = GraphQLScope::DeriveScalarValue;
+const ERR: GraphQLScope = GraphQLScope::ScalarValueDerive;
 
 /// Expands `#[derive(GraphQLScalarValue)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -456,8 +456,8 @@ enum Field {
 impl ToTokens for Field {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Field::Named(f) => f.ident.to_tokens(tokens),
-            Field::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
+            Self::Named(f) => f.ident.to_tokens(tokens),
+            Self::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
         }
     }
 }
@@ -482,8 +482,8 @@ impl Field {
     /// Returns [`Field`] for constructing or matching over [`Variant`].
     fn match_arg(&self) -> TokenStream {
         match self {
-            Field::Named(_) => quote! { { #self: v } },
-            Field::Unnamed(_) => quote! { (v) },
+            Self::Named(_) => quote! { { #self: v } },
+            Self::Unnamed(_) => quote! { (v) },
         }
     }
 }

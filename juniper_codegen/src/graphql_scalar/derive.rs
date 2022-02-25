@@ -9,7 +9,7 @@ use crate::{common::scalar, result::GraphQLScope};
 use super::{Attr, Definition, Field, GraphQLScalarMethods, ParseToken, TypeOrIdent};
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLScalar)]` macro.
-const ERR: GraphQLScope = GraphQLScope::DeriveScalar;
+const ERR: GraphQLScope = GraphQLScope::ScalarDerive;
 
 /// Expands `#[derive(GraphQLScalar)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -32,7 +32,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
             }
         }
         (to_output, from_input, parse_token, module, false) => {
-            let module = module.unwrap_or_else(|| parse_quote!(Self));
+            let module = module.unwrap_or_else(|| parse_quote! { Self });
             GraphQLScalarMethods::Custom {
                 to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
                 from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
@@ -58,7 +58,9 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                 syn::Fields::Unnamed(fields) => fields
                     .unnamed
                     .first()
-                    .and_then(|f| (fields.unnamed.len() == 1).then(|| Field::Unnamed(f.clone())))
+                    .filter(|_| fields.unnamed.len() == 1)
+                    .cloned()
+                    .map(Field::Unnamed)
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),
@@ -69,7 +71,9 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                 syn::Fields::Named(fields) => fields
                     .named
                     .first()
-                    .and_then(|f| (fields.named.len() == 1).then(|| Field::Named(f.clone())))
+                    .filter(|_| fields.named.len() == 1)
+                    .cloned()
+                    .map(Field::Named)
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),
