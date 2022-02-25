@@ -68,10 +68,10 @@ impl fmt::Display for ID {
     }
 }
 
-#[graphql_scalar(with = string)]
+#[graphql_scalar(with = impl_string_scalar)]
 type String = std::string::String;
 
-mod string {
+mod impl_string_scalar {
     use super::*;
 
     pub(super) fn to_output<S: ScalarValue>(v: &str) -> Value<S> {
@@ -269,10 +269,10 @@ where
     }
 }
 
-#[graphql_scalar(with = boolean)]
+#[graphql_scalar(with = impl_boolean_scalar)]
 type Boolean = bool;
 
-mod boolean {
+mod impl_boolean_scalar {
     use super::*;
 
     pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> Value<S> {
@@ -286,15 +286,15 @@ mod boolean {
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        // Bools are parsed separately - they shouldn't reach this code path
+        // `Boolean`s are parsed separately, they shouldn't reach this code path.
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
 }
 
-#[graphql_scalar(with = int)]
+#[graphql_scalar(with = impl_int_scalar)]
 type Int = i32;
 
-mod int {
+mod impl_int_scalar {
     use super::*;
 
     pub(super) fn to_output<S: ScalarValue>(v: &Int) -> Value<S> {
@@ -317,10 +317,10 @@ mod int {
     }
 }
 
-#[graphql_scalar(with = float)]
+#[graphql_scalar(with = impl_float_scalar)]
 type Float = f64;
 
-mod float {
+mod impl_float_scalar {
     use super::*;
 
     pub(super) fn to_output<S: ScalarValue>(v: &Float) -> Value<S> {

@@ -108,11 +108,11 @@ macro_rules! try_merge_hashset {
 
 mod derive_enum;
 mod derive_input_object;
-mod graphql_scalar;
 
 mod common;
 mod graphql_interface;
 mod graphql_object;
+mod graphql_scalar;
 mod graphql_subscription;
 mod graphql_union;
 
@@ -152,7 +152,6 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// Thanks to this custom derive, this becomes really easy:
 ///
 /// ```rust
-/// // Deriving GraphQLScalar is all that is required.
 /// #[derive(juniper::GraphQLScalar)]
 /// #[graphql(transparent)]
 /// struct UserId(String);
@@ -222,7 +221,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// impl UserId {
 ///     /// Checks whether [`InputValue`] is `String` beginning with `id: ` and
 ///     /// strips it.
-///     fn from_input(input: &InputValue) -> Result<UserId, String> {
+///     fn from_input(input: &InputValue) -> Result<Self, String> {
+///         //            Must implement `IntoFieldError` ^^^^^^
 ///         input.as_string_value()
 ///             .ok_or_else(|| format!("Expected `String`, found: {}", input))
 ///             .and_then(|str| {
@@ -296,7 +296,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
-/// // #[graphql(with = string_or_int)] <- default behaviour
+/// // #[graphql(with = Self)] <- default behaviour, so can be omitted
 /// enum StringOrInt {
 ///     String(String),
 ///     Int(i32),
@@ -361,13 +361,13 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
 ///         v.as_string_value()
 ///             .map(|s| StringOrInt::String(s.to_owned()))
-///             .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
 ///     }
 ///
-///     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-///         <String as ParseScalarValue<S>>::from_str(value)
-///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
+///     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+///         <String as ParseScalarValue<S>>::from_str(t)
+///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(t))
 ///     }
 /// }
 /// #
@@ -393,8 +393,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// mod string_or_int {
-///     # use super::*;
-///     #
+///     use super::*;
+///
 ///     pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
 ///     where
 ///         S: ScalarValue,
@@ -411,7 +411,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///     {
 ///         v.as_string_value()
 ///             .map(|s| StringOrInt::String(s.to_owned()))
-///             .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
 ///     }
 ///
@@ -524,12 +524,12 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///
 /// mod date_scalar {
 ///     use super::*;
-///   
+///
 ///     // Define how to convert your custom scalar into a primitive type.
 ///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
 ///         Value::scalar(v.to_string())
 ///     }
-///   
+///
 ///     // Define how to parse a primitive type into your custom scalar.
 ///     // NOTE: The error type should implement `IntoFieldError<S>`.
 ///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
