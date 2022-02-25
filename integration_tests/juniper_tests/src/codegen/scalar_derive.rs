@@ -1,9 +1,11 @@
+//! Tests for `#[derive(GraphQLScalar)]` macro.
+
 use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, GraphQLScalar,
-    InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
+    execute, graphql_object, graphql_value, graphql_vars, GraphQLScalar, InputValue,
+    ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
 use crate::{
@@ -96,7 +98,7 @@ mod transparent {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -152,10 +154,7 @@ mod transparent_with_resolver {
     use super::*;
 
     #[derive(GraphQLScalar)]
-    #[graphql(
-        transparent,
-        to_output_with = Self::to_output,
-    )]
+    #[graphql(transparent, to_output_with = Self::to_output)]
     struct Counter(i32);
 
     impl Counter {
@@ -166,7 +165,7 @@ mod transparent_with_resolver {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -771,7 +770,7 @@ mod description_from_doc_comment {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = DefaultScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value
@@ -1078,7 +1077,7 @@ mod bounded_generic_scalar {
 
     struct QueryRoot;
 
-    #[graphql_object(scalar = MyScalarValue)]
+    #[graphql_object]
     impl QueryRoot {
         fn counter(value: Counter) -> Counter {
             value

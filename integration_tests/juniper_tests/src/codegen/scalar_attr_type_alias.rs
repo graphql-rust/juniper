@@ -1,3 +1,5 @@
+//! Tests for `#[graphql_scalar]` macro placed on a type alias.
+
 use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
