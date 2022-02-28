@@ -178,12 +178,12 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// /// Doc comments are used for the GraphQL type description.
 /// #[derive(GraphQLScalar)]
 /// #[graphql(
-///     // Set a custom GraphQL name.
+///     // Custom GraphQL name.
 ///     name = "MyUserId",
-///     // A description can also specified in the attribute.
+///     // Description can also specified in the attribute.
 ///     // This will the doc comment, if one exists.
 ///     description = "...",
-///     // A specification URL.
+///     // Optional specification URL.
 ///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
 ///     // Explicit generic scalar.
 ///     scalar = S: juniper::ScalarValue,
@@ -455,19 +455,21 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
         .into()
 }
 
-/// `#[graphql_scalar]` is interchangeable with `#[derive(`[`GraphQLScalar`]`)]`
-/// macro:
+/// `#[graphql_scalar]` macro.is interchangeable with
+/// `#[derive(`[`GraphQLScalar`]`)]` macro, and is used for deriving a
+/// [GraphQL scalar][0] implementation.
 ///
 /// ```rust
+/// # use juniper::graphql_scalar;
+/// #
 /// /// Doc comments are used for the GraphQL type description.
-/// #[derive(juniper::GraphQLScalar)]
-/// #[graphql(
-///     // Set a custom GraphQL name.
+/// #[graphql_scalar(
+///     // Custom GraphQL name.
 ///     name = "MyUserId",
-///     // A description can also specified in the attribute.
+///     // Description can also specified in the attribute.
 ///     // This will the doc comment, if one exists.
 ///     description = "...",
-///     // A specification URL.
+///     // Optional specification URL.
 ///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
 ///     // Explicit generic scalar.
 ///     scalar = S: juniper::ScalarValue,
@@ -476,49 +478,30 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// struct UserId(String);
 /// ```
 ///
-/// Is transformed into:
+/// # Foreign types
 ///
-/// ```rust
-/// /// Doc comments are used for the GraphQL type description.
-/// #[juniper::graphql_scalar(
-///     // Set a custom GraphQL name.
-///     name = "MyUserId",
-///     // A description can also specified in the attribute.
-///     // This will the doc comment, if one exists.
-///     description = "...",
-///     // A specification URL.
-///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
-///     // Explicit generic scalar.
-///     scalar = S: juniper::ScalarValue,
-///     transparent,
-/// )]
-/// struct UserId(String);
-/// ```
-///
-/// In addition to that `#[graphql_scalar]` can be used in case
-/// [`GraphQLScalar`] isn't applicable because type located in other crate and
-/// you don't want to wrap it in a newtype. This is done by placing
-/// `#[graphql_scalar]` on a type alias.
-///
-/// All attributes are mirroring [`GraphQLScalar`] derive macro.
+/// Additionally, `#[graphql_scalar]` can be used directly on foreign types via
+/// type alias, without using [`Newtype` pattern][1].
 ///
 /// > __NOTE:__ To satisfy [orphan rules] you should provide local
 /// >           [`ScalarValue`] implementation.
 ///
 /// ```rust
 /// # mod date {
+/// #    use std::{fmt, str::FromStr};
+/// #
 /// #    pub struct Date;
 /// #
-/// #    impl std::str::FromStr for Date {
+/// #    impl FromStr for Date {
 /// #        type Err = String;
 /// #
-/// #        fn from_str(_value: &str) -> Result<Self, Self::Err> {
+/// #        fn from_str(_: &str) -> Result<Self, Self::Err> {
 /// #            unimplemented!()
 /// #        }
 /// #    }
 /// #
-/// #    impl std::fmt::Display for Date {
-/// #        fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
+/// #    impl fmt::Display for Date {
+/// #        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
 /// #            unimplemented!()
 /// #        }
 /// #    }
@@ -531,21 +514,18 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///     with = date_scalar,
 ///     parse_token(String),
 ///     scalar = CustomScalarValue,
-/// //           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
 /// )]
+/// //           ^^^^^^^^^^^^^^^^^ local `ScalarValue` implementation
 /// type Date = date::Date;
-/// //          ^^^^^^^^^^ Type from another crate.
+/// //          ^^^^^^^^^^ type from another crate
 ///
 /// mod date_scalar {
 ///     use super::*;
 ///
-///     // Define how to convert your custom scalar into a primitive type.
 ///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
 ///         Value::scalar(v.to_string())
 ///     }
 ///
-///     // Define how to parse a primitive type into your custom scalar.
-///     // NOTE: The error type should implement `IntoFieldError<S>`.
 ///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
 ///       v.as_string_value()
 ///           .ok_or_else(|| format!("Expected `String`, found: {}", v))
@@ -556,6 +536,8 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # fn main() { }
 /// ```
 ///
+/// [0]: https://spec.graphql.org/October2021#sec-Scalars
+/// [1]: https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html
 /// [orphan rules]: https://bit.ly/3glAGC2
 /// [`GraphQLScalar`]: juniper::GraphQLScalar
 /// [`ScalarValue`]: juniper::ScalarValue
