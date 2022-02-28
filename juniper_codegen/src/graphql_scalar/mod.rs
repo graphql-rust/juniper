@@ -26,6 +26,7 @@ use crate::{
 };
 
 pub mod attr;
+pub mod derive;
 
 /// Available arguments behind `#[graphql]`/`#[graphql_scalar]` attributes when
 /// generating code for [GraphQL scalar][1].
@@ -86,6 +87,10 @@ struct Attr {
 
     /// Explicit where clause added to [`syn::WhereClause`].
     where_clause: Option<SpanContainer<Vec<syn::WherePredicate>>>,
+
+    /// Indicator for single-field structs allowing to delegate implmemntations
+    /// of non-provided resolvers to that field.
+    transparent: bool,
 }
 
 impl Parse for Attr {
@@ -184,10 +189,7 @@ impl Parse for Attr {
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "where" => {
-                    let (span, parsed_predicates) = if input.parse::<token::Eq>().is_ok() {
-                        let pred = input.parse::<syn::WherePredicate>()?;
-                        (pred.span(), vec![pred])
-                    } else {
+                    let (span, parsed_predicates) = {
                         let predicates;
                         let _ = syn::parenthesized!(predicates in input);
                         let parsed_predicates = predicates
@@ -196,7 +198,7 @@ impl Parse for Attr {
                         if parsed_predicates.is_empty() {
                             return Err(syn::Error::new(
                                 ident.span(),
-                                "expected at least 1 where predicate.",
+                                "expected at least 1 where predicate",
                             ));
                         }
 
@@ -213,6 +215,9 @@ impl Parse for Attr {
                             parsed_predicates,
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "transparent" => {
+                    out.transparent = true;
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
@@ -238,6 +243,7 @@ impl Attr {
             parse_token: try_merge_opt!(parse_token: self, another),
             with: try_merge_opt!(with: self, another),
             where_clause: try_merge_opt!(where_clause: self, another),
+            transparent: self.transparent || another.transparent,
         })
     }
 
@@ -293,7 +299,7 @@ struct Definition {
     /// [`GraphQLScalarMethods`] representing [GraphQL scalar][1].
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    methods: GraphQLScalarMethods,
+    methods: Methods,
 
     /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
@@ -535,10 +541,10 @@ impl Definition {
             #[automatically_derived]
             impl#impl_gens ::juniper::ParseScalarValue<#scalar> for #ty
                 #where_clause
-           {
-               fn from_str(
+            {
+                fn from_str(
                     token: ::juniper::parser::ScalarToken<'_>,
-               ) -> ::juniper::ParseScalarResult<'_, #scalar> {
+                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
                     #from_str
                 }
             }
@@ -676,8 +682,7 @@ impl VisitMut for ModifyLifetimes {
 /// Methods representing [GraphQL scalar][1].
 ///
 /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-#[allow(dead_code)]
-enum GraphQLScalarMethods {
+enum Methods {
     /// [GraphQL scalar][1] represented with only custom resolvers.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
@@ -713,7 +718,7 @@ enum GraphQLScalarMethods {
     },
 }
 
-impl GraphQLScalarMethods {
+impl Methods {
     /// Expands [`GraphQLValue::resolve`] method.
     ///
     /// [`GraphQLValue::resolve`]: juniper::GraphQLValue::resolve
@@ -755,7 +760,9 @@ impl GraphQLScalarMethods {
                 }
             }
             Self::Delegated { field, .. } => {
-                quote! { ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field) }
+                quote! {
+                    ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field)
+                }
             }
         }
     }
@@ -798,7 +805,9 @@ impl GraphQLScalarMethods {
             }
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();
-                quote! { <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token) }
+                quote! {
+                    <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token)
+                }
             }
         }
     }
@@ -848,7 +857,6 @@ impl ParseToken {
 }
 
 /// Struct field to resolve not provided methods.
-#[allow(dead_code)]
 enum Field {
     /// Named [`Field`].
     Named(syn::Field),

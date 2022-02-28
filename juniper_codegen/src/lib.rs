@@ -142,19 +142,48 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     }
 }
 
-/// `#[graphql_scalar]` is interchangeable with `#[derive(`[`GraphQLScalar`]`)]`
-/// macro:
+/// `#[derive(GraphQLScalar)]` macro for deriving a [GraphQL scalar][0]
+/// implementation.
 ///
-/// ```rust,ignore
+/// # Transparent delegation
+///
+/// Sometimes, you want to create a custom [GraphQL scalar][0] type by just
+/// wrapping an existing one, inheriting all its behavior. In Rust, this is
+/// often called as ["`Newtype` pattern"][1]. This may be achieved by providing
+/// a `#[graphql(transparent)]` attribute to the definition:
+/// ```rust
+/// # use juniper::{GraphQLObject, GraphQLScalar};
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(transparent)]
+/// struct UserId(String);
+///
+/// #[derive(GraphQLScalar)]
+/// #[graphql(transparent)]
+/// struct DroidId {
+///     value: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// struct Pair {
+///   user_id: UserId,
+///   droid_id: DroidId,
+/// }
+/// ```
+///
+/// The inherited behaviour may also be customized:
+/// ```rust
+/// # use juniper::GraphQLScalar;
+/// #
 /// /// Doc comments are used for the GraphQL type description.
-/// #[derive(juniper::GraphQLScalar)]
+/// #[derive(GraphQLScalar)]
 /// #[graphql(
-///     // Set a custom GraphQL name.
+///     // Custom GraphQL name.
 ///     name = "MyUserId",
-///     // A description can also specified in the attribute.
+///     // Description can also specified in the attribute.
 ///     // This will the doc comment, if one exists.
 ///     description = "...",
-///     // A specification URL.
+///     // Optional specification URL.
 ///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
 ///     // Explicit generic scalar.
 ///     scalar = S: juniper::ScalarValue,
@@ -163,17 +192,284 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// struct UserId(String);
 /// ```
 ///
-/// Is transformed into:
+/// All of the methods inherited from `Newtype`'s field may also be overridden
+/// with the attributes described below.
 ///
-/// ```rust,ignore
+/// # Custom resolving
+///
+/// Customization of a [GraphQL scalar][0] type resolving is possible via
+/// `#[graphql(to_output_with = <fn path>)]` attribute:
+/// ```rust
+/// # use juniper::{GraphQLScalar, ScalarValue, Value};
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(to_output_with = to_output, transparent)]
+/// struct Incremented(i32);
+///
+/// /// Increments [`Incremented`] before converting into a [`Value`].
+/// fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
+///     let inc = v.0 + 1;
+///     Value::from(inc)
+/// }
+/// ```
+///
+/// # Custom parsing
+///
+/// Customization of a [GraphQL scalar][0] type parsing is possible via
+/// `#[graphql(from_input_with = <fn path>)]` attribute:
+/// ```rust
+/// # use juniper::{DefaultScalarValue, GraphQLScalar, InputValue, ScalarValue};
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(from_input_with = Self::from_input, transparent)]
+/// struct UserId(String);
+///
+/// impl UserId {
+///     /// Checks whether [`InputValue`] is `String` beginning with `id: ` and
+///     /// strips it.
+///     fn from_input<S: ScalarValue>(
+///         input: &InputValue<S>,
+///     ) -> Result<Self, String> {
+///         //            ^^^^^^ must implement `IntoFieldError`
+///         input.as_string_value()
+///             .ok_or_else(|| format!("Expected `String`, found: {}", input))
+///             .and_then(|str| {
+///                 str.strip_prefix("id: ")
+///                     .ok_or_else(|| {
+///                         format!(
+///                             "Expected `UserId` to begin with `id: `, \
+///                              found: {}",
+///                             input,
+///                         )
+///                     })
+///             })
+///             .map(|id| Self(id.to_owned()))
+///     }
+/// }
+/// ```
+///
+/// # Custom token parsing
+///
+/// Customization of which tokens a [GraphQL scalar][0] type should be parsed is
+/// possible via `#[graphql(parse_token_with = <fn path>)]` or
+/// `#[graphql(parse_token(<types>)]` attributes:
+/// ```rust
+/// # use juniper::{
+/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
+/// #     ScalarValue, ScalarToken, Value,
+/// # };
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(
+///     to_output_with = to_output,
+///     from_input_with = from_input,
+///     parse_token_with = parse_token,
+/// )]
+/// //  ^^^^^^^^^^^^^^^^ Can be replaced with `parse_token(String, i32)`, which
+/// //                   tries to parse as `String` first, and then as `i32` if
+/// //                   prior fails.
+/// enum StringOrInt {
+///     String(String),
+///     Int(i32),
+/// }
+///
+/// fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+///     match v {
+///         StringOrInt::String(str) => Value::scalar(str.to_owned()),
+///         StringOrInt::Int(i) => Value::scalar(*i),
+///     }
+/// }
+///
+/// fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
+///     v.as_string_value()
+///         .map(|s| StringOrInt::String(s.to_owned()))
+///         .or_else(|| v.as_int_value().map(StringOrInt::Int))
+///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+/// }
+///
+/// fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+///     <String as ParseScalarValue<S>>::from_str(value)
+///         .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
+/// }
+/// ```
+/// > __NOTE:__ Once we provide all 3 custom functions, there is no sense to
+/// >           follow [`Newtype` pattern][1] anymore.
+///
+/// # All at once
+///
+/// Instead of providing all custom functions separately, it's possible to
+/// provide a module holding the appropriate `to_output()`, `from_input()` and
+/// `parse_token()` functions:
+/// ```rust
+/// # use juniper::{
+/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
+/// #     ScalarValue, ScalarToken, Value,
+/// # };
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(with = string_or_int)]
+/// enum StringOrInt {
+///     String(String),
+///     Int(i32),
+/// }
+///
+/// mod string_or_int {
+///     use super::*;
+///
+///     pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+///         match v {
+///             StringOrInt::String(str) => Value::scalar(str.to_owned()),
+///             StringOrInt::Int(i) => Value::scalar(*i),
+///         }
+///     }
+///
+///     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
+///         v.as_string_value()
+///             .map(|s| StringOrInt::String(s.to_owned()))
+///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+///     }
+///
+///     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+///         <String as ParseScalarValue<S>>::from_str(t)
+///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(t))
+///     }
+/// }
+/// #
+/// # fn main() {}
+/// ```
+///
+/// A regular `impl` block is also suitable for that:
+/// ```rust
+/// # use juniper::{
+/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
+/// #     ScalarValue, ScalarToken, Value,
+/// # };
+/// #
+/// #[derive(GraphQLScalar)]
+/// // #[graphql(with = Self)] <- default behaviour, so can be omitted
+/// enum StringOrInt {
+///     String(String),
+///     Int(i32),
+/// }
+///
+/// impl StringOrInt {
+///     fn to_output<S: ScalarValue>(&self) -> Value<S> {
+///         match self {
+///             Self::String(str) => Value::scalar(str.to_owned()),
+///             Self::Int(i) => Value::scalar(*i),
+///         }
+///     }
+///
+///     fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
+///     where
+///         S: ScalarValue
+///     {
+///         v.as_string_value()
+///             .map(|s| Self::String(s.to_owned()))
+///             .or_else(|| v.as_int_value().map(Self::Int))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+///     }
+///
+///     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+///     where
+///         S: ScalarValue
+///     {
+///         <String as ParseScalarValue<S>>::from_str(value)
+///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
+///     }
+/// }
+/// #
+/// # fn main() {}
+/// ```
+///
+/// At the same time, any custom function still may be specified separately:
+/// ```rust
+/// # use juniper::{
+/// #     GraphQLScalar, InputValue, ParseScalarResult, ScalarValue,
+/// #     ScalarToken, Value
+/// # };
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(
+///     with = string_or_int,
+///     parse_token(String, i32)
+/// )]
+/// enum StringOrInt {
+///     String(String),
+///     Int(i32),
+/// }
+///
+/// mod string_or_int {
+///     use super::*;
+///
+///     pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
+///     where
+///         S: ScalarValue,
+///     {
+///         match v {
+///             StringOrInt::String(str) => Value::scalar(str.to_owned()),
+///             StringOrInt::Int(i) => Value::scalar(*i),
+///         }
+///     }
+///
+///     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
+///     where
+///         S: ScalarValue,
+///     {
+///         v.as_string_value()
+///             .map(|s| StringOrInt::String(s.to_owned()))
+///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+///     }
+///
+///     // No need in `parse_token()` function.
+/// }
+/// #
+/// # fn main() {}
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, this macro generates code, which is generic over a
+/// [`ScalarValue`] type. Concrete [`ScalarValue`] type may be specified via
+/// `#[graphql(scalar = <type>)]` attribute.
+///
+/// It also may be used to provide additional bounds to the [`ScalarValue`]
+/// generic, like the following: `#[graphql(scalar = S: Trait)]`.
+///
+/// # Additional arbitrary trait bounds
+///
+/// [GraphQL scalar][0] type implementation may be bound with any additional
+/// trait bounds via `#[graphql(where(<bounds>))]` attribute, like the
+/// following: `#[graphql(where(S: Trait, Self: fmt::Debug + fmt::Display))]`.
+///
+/// [0]: https://spec.graphql.org/October2021#sec-Scalars
+/// [1]: https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html
+/// [`ScalarValue`]: juniper::ScalarValue
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLScalar, attributes(graphql))]
+pub fn derive_scalar(input: TokenStream) -> TokenStream {
+    graphql_scalar::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
+}
+
+/// `#[graphql_scalar]` macro.is interchangeable with
+/// `#[derive(`[`GraphQLScalar`]`)]` macro, and is used for deriving a
+/// [GraphQL scalar][0] implementation.
+///
+/// ```rust
+/// # use juniper::graphql_scalar;
+/// #
 /// /// Doc comments are used for the GraphQL type description.
-/// #[juniper::graphql_scalar(
-///     // Set a custom GraphQL name.
+/// #[graphql_scalar(
+///     // Custom GraphQL name.
 ///     name = "MyUserId",
-///     // A description can also specified in the attribute.
+///     // Description can also specified in the attribute.
 ///     // This will the doc comment, if one exists.
 ///     description = "...",
-///     // A specification URL.
+///     // Optional specification URL.
 ///     specified_by_url = "https://tools.ietf.org/html/rfc4122",
 ///     // Explicit generic scalar.
 ///     scalar = S: juniper::ScalarValue,
@@ -182,30 +478,30 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// struct UserId(String);
 /// ```
 ///
-/// In addition to that `#[graphql_scalar]` can be used in case
-/// [`GraphQLScalar`] isn't applicable because type located in other crate and
-/// you don't want to wrap it in a newtype. This is done by placing
-/// `#[graphql_scalar]` on a type alias.
+/// # Foreign types
 ///
-/// All attributes are mirroring [`GraphQLScalar`] derive macro.
+/// Additionally, `#[graphql_scalar]` can be used directly on foreign types via
+/// type alias, without using [`Newtype` pattern][1].
 ///
 /// > __NOTE:__ To satisfy [orphan rules] you should provide local
 /// >           [`ScalarValue`] implementation.
 ///
 /// ```rust
 /// # mod date {
+/// #    use std::{fmt, str::FromStr};
+/// #
 /// #    pub struct Date;
 /// #
-/// #    impl std::str::FromStr for Date {
+/// #    impl FromStr for Date {
 /// #        type Err = String;
 /// #
-/// #        fn from_str(_value: &str) -> Result<Self, Self::Err> {
+/// #        fn from_str(_: &str) -> Result<Self, Self::Err> {
 /// #            unimplemented!()
 /// #        }
 /// #    }
 /// #
-/// #    impl std::fmt::Display for Date {
-/// #        fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
+/// #    impl fmt::Display for Date {
+/// #        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
 /// #            unimplemented!()
 /// #        }
 /// #    }
@@ -218,21 +514,18 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///     with = date_scalar,
 ///     parse_token(String),
 ///     scalar = CustomScalarValue,
-/// //           ^^^^^^^^^^^^^^^^^ Local `ScalarValue` implementation.
 /// )]
+/// //           ^^^^^^^^^^^^^^^^^ local `ScalarValue` implementation
 /// type Date = date::Date;
-/// //          ^^^^^^^^^^ Type from another crate.
+/// //          ^^^^^^^^^^ type from another crate
 ///
 /// mod date_scalar {
 ///     use super::*;
 ///
-///     // Define how to convert your custom scalar into a primitive type.
 ///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
 ///         Value::scalar(v.to_string())
 ///     }
 ///
-///     // Define how to parse a primitive type into your custom scalar.
-///     // NOTE: The error type should implement `IntoFieldError<S>`.
 ///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
 ///       v.as_string_value()
 ///           .ok_or_else(|| format!("Expected `String`, found: {}", v))
@@ -243,6 +536,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// # fn main() { }
 /// ```
 ///
+/// [0]: https://spec.graphql.org/October2021#sec-Scalars
+/// [1]: https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html
 /// [orphan rules]: https://bit.ly/3glAGC2
 /// [`GraphQLScalar`]: juniper::GraphQLScalar
 /// [`ScalarValue`]: juniper::ScalarValue

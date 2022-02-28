@@ -1,18 +1,17 @@
 use crate::{
     executor::Variables,
-    graphql_object, graphql_scalar, graphql_value, graphql_vars,
+    graphql_object, graphql_value, graphql_vars,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object},
     GraphQLError::ValidationError,
-    GraphQLInputObject, InputValue, ScalarValue, Value,
+    GraphQLInputObject, GraphQLScalar, InputValue, ScalarValue, Value,
 };
 
-// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
-#[derive(Debug)]
-#[graphql_scalar(parse_token(String))]
+#[derive(Debug, GraphQLScalar)]
+#[graphql(parse_token(String))]
 struct TestComplexScalar;
 
 impl TestComplexScalar {

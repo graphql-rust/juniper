@@ -17,14 +17,14 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{ParseScalarResult, ScalarValue, Value},
+    GraphQLScalar,
 };
 
 /// An ID as defined by the GraphQL specification
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
-// TODO: Use `#[derive(GraphQLScalar)]` once implemented.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[graphql_scalar(parse_token(String, i32))]
+#[derive(Clone, Debug, Deserialize, Eq, GraphQLScalar, PartialEq, Serialize)]
+#[graphql(parse_token(String, i32))]
 pub struct ID(String);
 
 impl ID {
@@ -35,7 +35,7 @@ impl ID {
     fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
         v.as_string_value()
             .map(str::to_owned)
-            .or_else(|| v.as_int_value().map(|i| i.to_string()))
+            .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
             .map(Self)
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }

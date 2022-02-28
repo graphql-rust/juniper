@@ -52,7 +52,7 @@ Often, you might need a custom scalar that just wraps an existing type.
 This can be done with the newtype pattern and a custom derive, similar to how
 serde supports this pattern with `#[serde(transparent)]`.
 
-```rust,ignore
+```rust
 # extern crate juniper;
 #
 #[derive(juniper::GraphQLScalar)]
@@ -70,7 +70,7 @@ struct User {
 `#[derive(GraphQLScalar)]` is mostly interchangeable with `#[graphql_scalar]` 
 attribute:
 
-```rust,ignore
+```rust
 # extern crate juniper;
 # use juniper::graphql_scalar;
 #
@@ -91,7 +91,7 @@ That's it, you can now use `UserId` in your schema.
 
 The macro also allows for more customization:
 
-```rust,ignore
+```rust
 # extern crate juniper;
 /// You can use a doc comment to specify a description.
 #[derive(juniper::GraphQLScalar)]
@@ -112,7 +112,7 @@ All the methods used from newtype's field can be replaced with attributes:
 
 ### `#[graphql(to_output_with = <fn>)]` attribute
 
-```rust,ignore
+```rust
 # use juniper::{GraphQLScalar, ScalarValue, Value};
 #
 #[derive(GraphQLScalar)]
@@ -129,7 +129,7 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 
 ### `#[graphql(from_input_with = <fn>)]` attribute
 
-```rust,ignore
+```rust
 # use juniper::{GraphQLScalar, InputValue, ScalarValue};
 #
 #[derive(GraphQLScalar)]
@@ -164,7 +164,7 @@ impl UserId {
 
 ### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 
-```rust,ignore
+```rust
 # use juniper::{
 #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 #     ScalarValue, ScalarToken, Value
@@ -226,7 +226,7 @@ Instead of providing all custom resolvers, you can provide path to the `to_outpu
 Path can be simply `with = Self` (default path where macro expects resolvers to be), 
 in case there is an impl block with custom resolvers:
 
-```rust,ignore
+```rust
 # use juniper::{
 #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
 #     ScalarValue, ScalarToken, Value
@@ -253,7 +253,7 @@ impl StringOrInt {
     {
         v.as_string_value()
             .map(|s| Self::String(s.to_owned()))
-            .or_else(|| v.as_int_value().map(|i| Self::Int(i)))
+            .or_else(|| v.as_int_value().map(Self::Int))
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
   
@@ -271,7 +271,7 @@ impl StringOrInt {
 
 Or it can be path to a module, where custom resolvers are located.
 
-```rust,ignore
+```rust
 # use juniper::{
 #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 #     ScalarValue, ScalarToken, Value
@@ -303,7 +303,7 @@ mod string_or_int {
     {
         v.as_string_value()
             .map(|s| StringOrInt::String(s.to_owned()))
-            .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+            .or_else(|| v.as_int_value().map(StringOrInt::Int))
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
   
@@ -321,7 +321,7 @@ mod string_or_int {
 
 Also, you can partially override `#[graphql(with)]` attribute with other custom scalars.
 
-```rust,ignore
+```rust
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]
@@ -348,7 +348,7 @@ impl StringOrInt {
     {
         v.as_string_value()
             .map(|s| Self::String(s.to_owned()))
-            .or_else(|| v.as_int_value().map(|i| Self::Int(i)))
+            .or_else(|| v.as_int_value().map(Self::Int))
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
     }
 }

@@ -8,13 +8,11 @@ use std::fmt;
 /// URL of the GraphQL specification (June 2018 Edition).
 pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
 
-#[allow(unused_variables)]
 pub enum GraphQLScope {
     InterfaceAttr,
     ObjectAttr,
     ObjectDerive,
     ScalarAttr,
-    #[allow(dead_code)]
     ScalarDerive,
     UnionAttr,
     UnionDerive,
