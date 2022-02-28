@@ -1,3 +1,7 @@
+//! Tests for `#[graphql_scalar]` macro placed on [`DeriveInput`].
+//!
+//! [`DeriveInput`]: syn::DeriveInput
+
 use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
@@ -67,6 +71,135 @@ mod trivial {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+        );
+    }
+}
+
+mod transparent {
+    use super::*;
+
+    #[graphql_scalar(transparent)]
+    struct Counter(i32);
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn counter(value: Counter) -> Counter {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_counter() {
+        const DOC: &str = r#"{ counter(value: 0) }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"counter": 0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_no_description() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                description
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
+        );
+    }
+}
+
+mod transparent_with_resolver {
+    use super::*;
+
+    #[graphql_scalar(
+        transparent,
+        to_output_with = Self::to_output,
+    )]
+    struct Counter(i32);
+
+    impl Counter {
+        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+            Value::scalar(self.0 + 1)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn counter(value: Counter) -> Counter {
+            value
+        }
+    }
+
+    #[tokio::test]
+    async fn is_graphql_scalar() {
+        const DOC: &str = r#"{
+            __type(name: "Counter") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_counter() {
+        const DOC: &str = r#"{ counter(value: 0) }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"counter": 1}), vec![])),
         );
     }
 
@@ -333,7 +466,7 @@ mod multiple_delegated_parse_token {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_string_value()
                 .map(|s| Self::String(s.to_owned()))
-                .or_else(|| v.as_int_value().map(|i| Self::Int(i)))
+                .or_else(|| v.as_int_value().map(Self::Int))
                 .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
         }
     }

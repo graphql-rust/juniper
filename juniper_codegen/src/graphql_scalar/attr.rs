@@ -1,7 +1,7 @@
 //! Code generation for `#[graphql_scalar]` macro.
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::{parse_quote, spanned::Spanned};
 
 use crate::{
@@ -10,7 +10,7 @@ use crate::{
     GraphQLScope,
 };
 
-use super::{Attr, Definition, GraphQLScalarMethods, ParseToken};
+use super::{derive::parse_derived_methods, Attr, Definition, Methods, ParseToken};
 
 const ERR: GraphQLScope = GraphQLScope::ScalarAttr;
 
@@ -39,36 +39,14 @@ fn expand_on_type_alias(
     ast: syn::ItemType,
 ) -> syn::Result<TokenStream> {
     let attr = Attr::from_attrs("graphql_scalar", &attrs)?;
+    if attr.transparent {
+        return Err(ERR.custom_error(
+            ast.span(),
+            "`transparent` attribute argument isn't applicable to type aliases",
+        ));
+    }
 
-    let field = match (
-        attr.to_output.as_deref().cloned(),
-        attr.from_input.as_deref().cloned(),
-        attr.parse_token.as_deref().cloned(),
-        attr.with.as_deref().cloned(),
-    ) {
-        (Some(to_output), Some(from_input), Some(parse_token), None) => {
-            GraphQLScalarMethods::Custom {
-                to_output,
-                from_input,
-                parse_token,
-            }
-        }
-        (to_output, from_input, parse_token, Some(module)) => GraphQLScalarMethods::Custom {
-            to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
-            from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
-            parse_token: parse_token
-                .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
-        },
-        _ => {
-            return Err(ERR.custom_error(
-                ast.span(),
-                "all custom resolvers have to be provided via `with` or \
-                 combination of `to_output_with`, `from_input_with`, \
-                 `parse_token_with` attribute arguments",
-            ));
-        }
-    };
-
+    let methods = parse_type_alias_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     let def = Definition {
@@ -77,7 +55,7 @@ fn expand_on_type_alias(
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),
         generics: ast.generics.clone(),
-        methods: field,
+        methods,
         name: attr
             .name
             .as_deref()
@@ -86,8 +64,7 @@ fn expand_on_type_alias(
         description: attr.description.as_deref().cloned(),
         specified_by_url: attr.specified_by_url.as_deref().cloned(),
         scalar,
-    }
-    .to_token_stream();
+    };
 
     Ok(quote! {
         #ast
@@ -95,38 +72,13 @@ fn expand_on_type_alias(
     })
 }
 
-// TODO: Support `#[graphql(transparent)]`.
-/// Expands `#[graphql_scalar]` macro placed on a struct/enum/union.
+/// Expands `#[graphql_scalar]` macro placed on a struct, enum or union.
 fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,
     ast: syn::DeriveInput,
 ) -> syn::Result<TokenStream> {
     let attr = Attr::from_attrs("graphql_scalar", &attrs)?;
-
-    let field = match (
-        attr.to_output.as_deref().cloned(),
-        attr.from_input.as_deref().cloned(),
-        attr.parse_token.as_deref().cloned(),
-        attr.with.as_deref().cloned(),
-    ) {
-        (Some(to_output), Some(from_input), Some(parse_token), None) => {
-            GraphQLScalarMethods::Custom {
-                to_output,
-                from_input,
-                parse_token,
-            }
-        }
-        (to_output, from_input, parse_token, module) => {
-            let module = module.unwrap_or_else(|| parse_quote! { Self });
-            GraphQLScalarMethods::Custom {
-                to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
-                from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
-                parse_token: parse_token
-                    .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
-            }
-        }
-    };
-
+    let methods = parse_derived_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     let def = Definition {
@@ -135,7 +87,7 @@ fn expand_on_derive_input(
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),
         generics: ast.generics.clone(),
-        methods: field,
+        methods,
         name: attr
             .name
             .as_deref()
@@ -144,11 +96,38 @@ fn expand_on_derive_input(
         description: attr.description.as_deref().cloned(),
         specified_by_url: attr.specified_by_url.as_deref().cloned(),
         scalar,
-    }
-    .to_token_stream();
+    };
 
     Ok(quote! {
         #ast
         #def
     })
+}
+
+/// Parses [`Methods`] from the provided [`Attr`] for the specified type alias.
+fn parse_type_alias_methods(ast: &syn::ItemType, attr: &Attr) -> syn::Result<Methods> {
+    match (
+        attr.to_output.as_deref().cloned(),
+        attr.from_input.as_deref().cloned(),
+        attr.parse_token.as_deref().cloned(),
+        attr.with.as_deref().cloned(),
+    ) {
+        (Some(to_output), Some(from_input), Some(parse_token), None) => Ok(Methods::Custom {
+            to_output,
+            from_input,
+            parse_token,
+        }),
+        (to_output, from_input, parse_token, Some(module)) => Ok(Methods::Custom {
+            to_output: to_output.unwrap_or_else(|| parse_quote! { #module::to_output }),
+            from_input: from_input.unwrap_or_else(|| parse_quote! { #module::from_input }),
+            parse_token: parse_token
+                .unwrap_or_else(|| ParseToken::Custom(parse_quote! { #module::parse_token })),
+        }),
+        _ => Err(ERR.custom_error(
+            ast.span(),
+            "all the resolvers have to be provided via `with` attribute \
+             argument or a combination of `to_output_with`, `from_input_with`, \
+             `parse_token_with`/`parse_token` attribute arguments",
+        )),
+    }
 }
