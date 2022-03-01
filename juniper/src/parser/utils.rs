@@ -2,6 +2,7 @@ use std::fmt;
 
 /// A reference to a line and column in an input source file
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Copy)]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct SourcePosition {
     index: usize,
     line: usize,
@@ -14,6 +15,7 @@ pub struct SourcePosition {
 /// character pointed by the `start` field and ending just before the `end`
 /// marker.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct Spanning<T> {
     /// The wrapped item
     pub item: T,

@@ -3,6 +3,7 @@ use std::{borrow::Cow, fmt};
 use fnv::FnvHashMap;
 #[cfg(feature = "graphql-parser-integration")]
 use graphql_parser::schema::Document;
+use graphql_parser::schema::ObjectType;
 
 use crate::{
     ast::Type,
@@ -46,6 +47,43 @@ pub struct RootNode<
     pub schema: SchemaType<'a, S>,
 }
 
+#[cfg(feature = "arbitrary1")]
+impl<'a, QueryT, MutationT, SubscriptionT, S> arbitrary::Arbitrary<'a>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+where
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S>,
+    SubscriptionT: GraphQLType<S>,
+    QueryT: arbitrary::Arbitrary<'a>,
+    <QueryT as crate::types::base::GraphQLValue<S>>::TypeInfo: arbitrary::Arbitrary<'a>,
+    MutationT: arbitrary::Arbitrary<'a>,
+    <MutationT as crate::types::base::GraphQLValue<S>>::TypeInfo: arbitrary::Arbitrary<'a>,
+    SubscriptionT: arbitrary::Arbitrary<'a>,
+    <SubscriptionT as crate::types::base::GraphQLValue<S>>::TypeInfo: arbitrary::Arbitrary<'a>,
+    S: ScalarValue,
+    S: arbitrary::Arbitrary<'a>,
+    S: 'a,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let query_type: QueryT = u.arbitrary()?;
+        let query_info: QueryT::TypeInfo = u.arbitrary()?;
+        let mutation_type: MutationT = u.arbitrary()?;
+        let mutation_info: MutationT::TypeInfo = u.arbitrary()?;
+        let subscription_type: SubscriptionT = u.arbitrary()?;
+        let subscription_info: SubscriptionT::TypeInfo = u.arbitrary()?;
+        let schema: SchemaType<'a, S> = u.arbitrary()?;
+        Ok(Self {
+            query_type,
+            query_info,
+            mutation_type,
+            mutation_info,
+            subscription_type,
+            subscription_info,
+            schema,
+        })
+    }
+}
+
 /// Metadata for a schema
 #[derive(Debug)]
 pub struct SchemaType<'a, S> {
@@ -59,6 +97,49 @@ pub struct SchemaType<'a, S> {
 
 impl<'a, S> Context for SchemaType<'a, S> {}
 
+#[cfg(feature = "arbitrary1")]
+impl<'a, S: 'a> arbitrary::Arbitrary<'a> for SchemaType<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        use std::str::FromStr;
+        let description: Option<Cow<'a, str>> = u.arbitrary()?;
+        let query_type_name: String = u.arbitrary()?;
+        let mutation_type_name: Option<String> = u.arbitrary()?;
+        let subscription_type_name: Option<String> = u.arbitrary()?;
+        let directives: FnvHashMap<String, DirectiveType<'a, S>> = u.arbitrary()?;
+
+        // Custom handling we call `expect()` in some places that depends on the data.
+        let mut types: FnvHashMap<Name, MetaType<'a, S>> = u.arbitrary()?;
+        types.insert(
+            Name::from_str(&query_type_name).map_err(|_| arbitrary::Error::IncorrectFormat)?,
+            MetaType::Object(ObjectMeta::arbitrary(u)?),
+        );
+        if let Some(ref mtn) = mutation_type_name {
+            types.insert(
+                Name::from_str(&mtn.as_str()).map_err(|_| arbitrary::Error::IncorrectFormat)?,
+                MetaType::Object(ObjectMeta::arbitrary(u)?),
+            );
+        }
+        if let Some(ref stn) = subscription_type_name {
+            types.insert(
+                Name::from_str(&stn.as_str()).map_err(|_| arbitrary::Error::IncorrectFormat)?,
+                MetaType::Object(ObjectMeta::arbitrary(u)?),
+            );
+        }
+
+        Ok(Self {
+            description,
+            types,
+            query_type_name,
+            mutation_type_name,
+            subscription_type_name,
+            directives,
+        })
+    }
+}
+
 #[derive(Clone)]
 pub enum TypeType<'a, S: 'a> {
     Concrete(&'a MetaType<'a, S>),
@@ -66,7 +147,33 @@ pub enum TypeType<'a, S: 'a> {
     List(Box<TypeType<'a, S>>, Option<usize>),
 }
 
+#[cfg(feature = "arbitrary1")]
+impl<'a, S: 'a> arbitrary::Arbitrary<'a> for TypeType<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let num_choices = 2;
+
+        let ty = match u.int_in_range::<u8>(1..=num_choices)? {
+            // TODO: Arbitrary reference.
+            // 1 => {
+            //    let x = u.arbitrary::<MetaType<'a, S>>()?;
+            //    TypeType::Concrete(&x)
+            // }
+            1 | 2 => TypeType::NonNull(u.arbitrary::<Box<TypeType<'a, S>>>()?),
+            3 => TypeType::List(
+                u.arbitrary::<Box<TypeType<'a, S>>>()?,
+                u.arbitrary::<Option<usize>>()?,
+            ),
+            _ => unreachable!(),
+        };
+        Ok(ty)
+    }
+}
+
 #[derive(Debug)]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct DirectiveType<'a, S> {
     pub name: String,
     pub description: Option<String>,
@@ -76,6 +183,7 @@ pub struct DirectiveType<'a, S> {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 #[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
     Query,

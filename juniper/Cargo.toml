@@ -26,6 +26,7 @@ default = [
     "url",
     "uuid",
 ]
+arbitrary1 = ["arbitrary", "smartstring/arbitrary"]
 expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
 scalar-naivetime = []
@@ -35,6 +36,7 @@ schema-language = ["graphql-parser-integration"]
 juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen"  }
 
 anyhow = { version = "1.0.32", optional = true, default-features = false }
+arbitrary = { version = "1.1", optional = true, features = ["derive"] }
 async-trait = "0.1.39"
 bson = { version = "2.0", features = ["chrono-0_4"], optional = true }
 chrono = { version = "0.4", default-features = false, optional = true }
