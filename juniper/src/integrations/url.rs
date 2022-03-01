@@ -26,7 +26,7 @@ mod test {
     use crate::{graphql_input_value, InputValue};
 
     #[test]
-    fn url_from_input_value() {
+    fn url_from_input() {
         let raw = "https://example.net/";
         let input: InputValue = graphql_input_value!((raw));
 

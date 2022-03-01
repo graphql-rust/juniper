@@ -27,7 +27,7 @@ mod tz {
 
 #[cfg(test)]
 mod test {
-    mod from_input_value {
+    mod from_input {
         use chrono_tz::Tz;
 
         use crate::{graphql_input_value, FromInputValue, InputValue, IntoFieldError};

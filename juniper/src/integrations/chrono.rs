@@ -18,10 +18,7 @@
 #![allow(clippy::needless_lifetimes)]
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(
-    with = date_time_fixed_offset,
-    parse_token(String),
-)]
+#[graphql_scalar(with = date_time_fixed_offset, parse_token(String))]
 type DateTimeFixedOffset = chrono::DateTime<chrono::FixedOffset>;
 
 mod date_time_fixed_offset {
@@ -43,10 +40,7 @@ mod date_time_fixed_offset {
     }
 }
 
-#[graphql_scalar(
-    with = date_time_utc,
-    parse_token(String)
-)]
+#[graphql_scalar(with = date_time_utc, parse_token(String))]
 type DateTimeUtc = chrono::DateTime<chrono::Utc>;
 
 mod date_time_utc {
@@ -71,10 +65,7 @@ mod date_time_utc {
 // inherent lack of precision required for the time zone resolution.
 // For serialization and deserialization uses, it is best to use
 // `NaiveDate` instead."
-#[graphql_scalar(
-    with = naive_date,
-    parse_token(String),
-)]
+#[graphql_scalar(with = naive_date, parse_token(String))]
 type NaiveDate = chrono::NaiveDate;
 
 mod naive_date {
@@ -155,17 +146,17 @@ mod test {
     }
 
     #[test]
-    fn datetime_fixedoffset_from_input_value() {
+    fn datetime_fixedoffset_from_input() {
         datetime_fixedoffset_test("2014-11-28T21:00:09+09:00");
     }
 
     #[test]
-    fn datetime_fixedoffset_from_input_value_with_z_timezone() {
+    fn datetime_fixedoffset_from_input_with_z_timezone() {
         datetime_fixedoffset_test("2014-11-28T21:00:09Z");
     }
 
     #[test]
-    fn datetime_fixedoffset_from_input_value_with_fractional_seconds() {
+    fn datetime_fixedoffset_from_input_with_fractional_seconds() {
         datetime_fixedoffset_test("2014-11-28T21:00:09.05+09:00");
     }
 
@@ -181,22 +172,22 @@ mod test {
     }
 
     #[test]
-    fn datetime_utc_from_input_value() {
+    fn datetime_utc_from_input() {
         datetime_utc_test("2014-11-28T21:00:09+09:00")
     }
 
     #[test]
-    fn datetime_utc_from_input_value_with_z_timezone() {
+    fn datetime_utc_from_input_with_z_timezone() {
         datetime_utc_test("2014-11-28T21:00:09Z")
     }
 
     #[test]
-    fn datetime_utc_from_input_value_with_fractional_seconds() {
+    fn datetime_utc_from_input_with_fractional_seconds() {
         datetime_utc_test("2014-11-28T21:00:09.005+09:00");
     }
 
     #[test]
-    fn naivedate_from_input_value() {
+    fn naivedate_from_input() {
         let input: InputValue = graphql_input_value!("1996-12-19");
         let y = 1996;
         let m = 12;
@@ -214,7 +205,7 @@ mod test {
 
     #[test]
     #[cfg(feature = "scalar-naivetime")]
-    fn naivetime_from_input_value() {
+    fn naivetime_from_input() {
         let input: InputValue = graphql_input_value!("21:12:19");
         let [h, m, s] = [21, 12, 19];
         let parsed: NaiveTime = FromInputValue::from_input_value(&input).unwrap();
@@ -226,7 +217,7 @@ mod test {
     }
 
     #[test]
-    fn naivedatetime_from_input_value() {
+    fn naivedatetime_from_input() {
         let raw = 1_000_000_000_f64;
         let input: InputValue = graphql_input_value!((raw));
 
