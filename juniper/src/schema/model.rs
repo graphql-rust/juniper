@@ -47,7 +47,7 @@ pub struct RootNode<
     pub schema: SchemaType<'a, S>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, QueryT, MutationT, SubscriptionT, S> arbitrary::Arbitrary<'a>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
@@ -97,7 +97,7 @@ pub struct SchemaType<'a, S> {
 
 impl<'a, S> Context for SchemaType<'a, S> {}
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S: 'a> arbitrary::Arbitrary<'a> for SchemaType<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -147,7 +147,7 @@ pub enum TypeType<'a, S: 'a> {
     List(Box<TypeType<'a, S>>, Option<usize>),
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S: 'a> arbitrary::Arbitrary<'a> for TypeType<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -173,7 +173,7 @@ where
 }
 
 #[derive(Debug)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct DirectiveType<'a, S> {
     pub name: String,
     pub description: Option<String>,
@@ -183,7 +183,7 @@ pub struct DirectiveType<'a, S> {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 #[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
     Query,
