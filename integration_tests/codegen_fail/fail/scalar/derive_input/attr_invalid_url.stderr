@@ -1,5 +1,5 @@
 error: Invalid URL: relative URL without a base
  --> fail/scalar/derive_input/attr_invalid_url.rs:3:37
   |
-3 | #[graphql_scalar(specified_by_url = "not an url")]
+3 | #[graphql_scalar(specified_by_url = "not an url", transparent)]
   |                                     ^^^^^^^^^^^^

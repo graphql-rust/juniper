@@ -1,4 +1,4 @@
-error: GraphQL scalar expected exactly 1 field, e.g., Test { test: i32 } because of `transparent` attribute
+error: GraphQL scalar `transparent` attribute argument requires exactly 1 field
  --> fail/scalar/derive_input/attr_transparent_multiple_named_fields.rs:4:1
   |
 4 | / struct Scalar {

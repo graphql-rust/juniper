@@ -104,11 +104,11 @@ mod custom_fn {
     }
 }
 
-mod allow_missing_methods {
+mod allow_missing_attributes {
     use super::*;
 
     #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
-    #[graphql(allow_missing_methods)]
+    #[graphql(allow_missing_attributes)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         Int(i32),

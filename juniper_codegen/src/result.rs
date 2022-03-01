@@ -8,18 +8,17 @@ use std::fmt;
 /// URL of the GraphQL specification (June 2018 Edition).
 pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
 
-#[allow(unused_variables)]
 pub enum GraphQLScope {
     InterfaceAttr,
     ObjectAttr,
     ObjectDerive,
+    ScalarAttr,
+    ScalarDerive,
+    ScalarValueDerive,
     UnionAttr,
     UnionDerive,
     DeriveInputObject,
     DeriveEnum,
-    DeriveScalarValue,
-    DeriveScalar,
-    ImplScalar,
 }
 
 impl GraphQLScope {
@@ -27,11 +26,11 @@ impl GraphQLScope {
         match self {
             Self::InterfaceAttr => "#sec-Interfaces",
             Self::ObjectAttr | Self::ObjectDerive => "#sec-Objects",
+            Self::ScalarAttr | Self::ScalarDerive => "#sec-Scalars",
+            Self::ScalarValueDerive => "#sec-Scalars.Built-in-Scalars",
             Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
             Self::DeriveInputObject => "#sec-Input-Objects",
             Self::DeriveEnum => "#sec-Enums",
-            Self::DeriveScalarValue => "#sec-Scalars.Built-in-Scalars",
-            Self::DeriveScalar | Self::ImplScalar => "#sec-Scalars",
         }
     }
 }
@@ -41,13 +40,12 @@ impl fmt::Display for GraphQLScope {
         let name = match self {
             Self::InterfaceAttr => "interface",
             Self::ObjectAttr | Self::ObjectDerive => "object",
+            Self::ScalarAttr | Self::ScalarDerive => "scalar",
+            Self::ScalarValueDerive => "built-in scalars",
             Self::UnionAttr | Self::UnionDerive => "union",
             Self::DeriveInputObject => "input object",
             Self::DeriveEnum => "enum",
-            Self::DeriveScalarValue => "built-in scalars",
-            Self::DeriveScalar | Self::ImplScalar => "scalar",
         };
-
         write!(f, "GraphQL {}", name)
     }
 }
