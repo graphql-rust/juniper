@@ -110,12 +110,12 @@ mod derive_enum;
 mod derive_input_object;
 
 mod common;
-mod derive_scalar_value;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
 mod graphql_subscription;
 mod graphql_union;
+mod scalar_value;
 
 use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
@@ -553,10 +553,9 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// `#[derive(GraphQLScalarValue)]` macro for deriving a [`ScalarValue`]
 /// implementation.
 ///
-/// To derive [`ScalarValue`] on enum you should mark corresponding enum
+/// To derive [`ScalarValue`] on enum you should mark the corresponding enum
 /// variants with `as_int`/`as_float`/`as_string`/`into_string`/`as_str`/
-/// `as_boolean` attributes (names correspond to [`ScalarValue`] required
-/// methods).
+/// `as_bool` attributes (names correspond to [`ScalarValue`] required methods).
 ///
 /// ```rust
 /// # use std::{fmt, convert::TryInto as _};

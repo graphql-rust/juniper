@@ -22,7 +22,7 @@ use crate::{
 const ERR: GraphQLScope = GraphQLScope::ScalarValueDerive;
 
 /// Expands `#[derive(GraphQLScalarValue)]` macro into generated code.
-pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
+pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let span = ast.span();
 
@@ -67,8 +67,9 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         return Err(ERR.custom_error(
             span,
             format!(
-                "missing `#[graphql({})]` attributes. In case you are sure that it is ok, \
-                 use `#[graphql(allow_missing_attributes)]` to suppress this error.",
+                "missing `#[graphql({})]` attributes. In case you are sure \
+                 that it's ok, use `#[graphql(allow_missing_attributes)]` to \
+                 suppress this error.",
                 missing_methods,
             ),
         ));
@@ -499,7 +500,7 @@ struct IsVariantGeneric<'a> {
 }
 
 impl<'a> IsVariantGeneric<'a> {
-    /// Construct a new [`IsVariantGeneric`].
+    /// Constructs a new [`IsVariantGeneric`].
     fn new(generics: &'a syn::Generics) -> Self {
         Self {
             res: false,

@@ -43,14 +43,14 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
-///     #[graphql(as_int, as_float)]
+///     #[graphql(as_float, as_int)]
 ///     Int(i32),
 ///     Long(i64),
 ///     #[graphql(as_float)]
 ///     Float(f64),
-///     #[graphql(as_string, into_string, as_str)]
+///     #[graphql(as_str, as_string, into_string)]
 ///     String(String),
-///     #[graphql(as_boolean)]
+///     #[graphql(as_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -237,7 +237,7 @@ pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Int
-    #[graphql(as_int, as_float)]
+    #[graphql(as_float, as_int)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
@@ -258,7 +258,7 @@ pub enum DefaultScalarValue {
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Boolean
-    #[graphql(as_boolean)]
+    #[graphql(as_bool)]
     Boolean(bool),
 }
 
