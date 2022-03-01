@@ -79,9 +79,7 @@ fn expand_on_trait(
         .iter_mut()
         .filter_map(|item| {
             if let syn::TraitItem::Method(m) = item {
-                if let Some(f) = parse_trait_method(m, &renaming) {
-                    return Some(f);
-                }
+                return parse_trait_method(m, &renaming);
             }
             None
         })

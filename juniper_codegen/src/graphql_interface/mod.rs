@@ -316,11 +316,9 @@ struct Definition {
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
     fields: Vec<field::Definition>,
 
-    /// Specified [GraphQL objects][2] or [interfaces][1] this
-    /// [GraphQL interface][1] is implemented for type.
+    /// Defined [`Implementer`]s of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     implemented_for: Vec<syn::TypePath>,
 
     /// Specified [GraphQL interfaces][1] this [interface][1] type implements.

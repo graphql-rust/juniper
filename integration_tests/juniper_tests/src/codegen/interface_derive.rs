@@ -2574,12 +2574,7 @@ mod simple_inheritance {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"node": {
-                    "id": "1",
-                }}),
-                vec![],
-            )),
+            Ok((graphql_value!({"node": {"id": "1"}}), vec![])),
         );
     }
 
