@@ -28,6 +28,28 @@ pub enum Type<'a> {
     NonNullList(Box<Type<'a>>, Option<usize>),
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a> arbitrary::Arbitrary<'a> for Type<'a> {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let num_choices = 4;
+
+        let ty = match u.int_in_range::<u8>(1..=num_choices)? {
+            1 => Type::Named(u.arbitrary::<Cow<'a, str>>()?),
+            2 => Type::List(
+                u.arbitrary::<Box<Type<'a>>>()?,
+                u.arbitrary::<Option<usize>>()?,
+            ),
+            3 => Type::NonNullNamed(u.arbitrary::<Cow<'a, str>>()?),
+            4 => Type::NonNullList(
+                u.arbitrary::<Box<Type<'a>>>()?,
+                u.arbitrary::<Option<usize>>()?,
+            ),
+            _ => unreachable!(),
+        };
+        Ok(ty)
+    }
+}
+
 /// A JSON-like value that can be passed into the query execution, either
 /// out-of-band, or in-band as default variable values. These are _not_ constant
 /// and might contain variables.
@@ -35,7 +57,7 @@ pub enum Type<'a> {
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
 #[derive(Clone, Debug, PartialEq)]
-#[allow(missing_docs)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
     Scalar(S),
@@ -46,23 +68,67 @@ pub enum InputValue<S = DefaultScalarValue> {
 }
 
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct VariableDefinition<'a, S> {
     pub var_type: Spanning<Type<'a>>,
     pub default_value: Option<Spanning<InputValue<S>>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for VariableDefinition<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let var_type: Spanning<Type<'a>> = u.arbitrary()?;
+        let default_value: Option<Spanning<InputValue<S>>> = u.arbitrary()?;
+        let directives: Option<Vec<Spanning<Directive<'a, S>>>> = u.arbitrary()?;
+
+        Ok(Self {
+            var_type,
+            default_value,
+            directives,
+        })
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct Arguments<'a, S> {
     pub items: Vec<(Spanning<&'a str>, Spanning<InputValue<S>>)>,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for Arguments<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let items: Vec<(Spanning<&'a str>, Spanning<InputValue<S>>)> = u.arbitrary()?;
+        Ok(Self { items })
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct VariableDefinitions<'a, S> {
     pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for VariableDefinitions<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)> = u.arbitrary()?;
+        Ok(Self { items })
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct Field<'a, S> {
     pub alias: Option<Spanning<&'a str>>,
     pub name: Spanning<&'a str>,
@@ -71,17 +137,72 @@ pub struct Field<'a, S> {
     pub selection_set: Option<Vec<Selection<'a, S>>>,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for Field<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let alias: Option<Spanning<&'a str>> = u.arbitrary()?;
+        let name: Spanning<&'a str> = u.arbitrary()?;
+        let arguments: Option<Spanning<Arguments<'a, S>>> = u.arbitrary()?;
+        let directives: Option<Vec<Spanning<Directive<'a, S>>>> = u.arbitrary()?;
+        let selection_set: Option<Vec<Selection<'a, S>>> = u.arbitrary()?;
+
+        Ok(Self {
+            alias,
+            name,
+            arguments,
+            directives,
+            selection_set,
+        })
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct FragmentSpread<'a, S> {
     pub name: Spanning<&'a str>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for FragmentSpread<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let name: Spanning<&'a str> = u.arbitrary()?;
+        let directives: Option<Vec<Spanning<Directive<'a, S>>>> = u.arbitrary()?;
+
+        Ok(Self { name, directives })
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct InlineFragment<'a, S> {
     pub type_condition: Option<Spanning<&'a str>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
     pub selection_set: Vec<Selection<'a, S>>,
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for InlineFragment<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let type_condition: Option<Spanning<&'a str>> = u.arbitrary()?;
+        let directives: Option<Vec<Spanning<Directive<'a, S>>>> = u.arbitrary()?;
+        let selection_set: Vec<Selection<'a, S>> = u.arbitrary()?;
+
+        Ok(Self {
+            type_condition,
+            directives,
+            selection_set,
+        })
+    }
 }
 
 /// Entry in a GraphQL selection set
@@ -107,22 +228,54 @@ pub enum Selection<'a, S = DefaultScalarValue> {
     InlineFragment(Spanning<InlineFragment<'a, S>>),
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for Selection<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let num_choices = 3;
+
+        let ty = match u.int_in_range::<u8>(1..=num_choices)? {
+            1 => Selection::Field(u.arbitrary::<Spanning<Field<'a, S>>>()?),
+            2 => Selection::FragmentSpread(u.arbitrary::<Spanning<FragmentSpread<'a, S>>>()?),
+            3 => Selection::InlineFragment(u.arbitrary::<Spanning<InlineFragment<'a, S>>>()?),
+            _ => unreachable!(),
+        };
+        Ok(ty)
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct Directive<'a, S> {
     pub name: Spanning<&'a str>,
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
-#[allow(missing_docs)]
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for Directive<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let name: Spanning<&'a str> = u.arbitrary()?;
+        let arguments: Option<Spanning<Arguments<'a, S>>> = u.arbitrary()?;
+        Ok(Self { name, arguments })
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[allow(missing_docs)]
 pub enum OperationType {
     Query,
     Mutation,
     Subscription,
 }
 
-#[allow(missing_docs)]
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,
     pub name: Option<Spanning<&'a str>>,
@@ -132,6 +285,7 @@ pub struct Operation<'a, S> {
 }
 
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub struct Fragment<'a, S> {
     pub name: Spanning<&'a str>,
     pub type_condition: Spanning<&'a str>,
@@ -139,8 +293,8 @@ pub struct Fragment<'a, S> {
     pub selection_set: Vec<Selection<'a, S>>,
 }
 
-#[doc(hidden)]
 #[derive(Clone, PartialEq, Debug)]
+#[allow(missing_docs)]
 pub enum Definition<'a, S> {
     Operation(Spanning<Operation<'a, S>>),
     Fragment(Spanning<Fragment<'a, S>>),

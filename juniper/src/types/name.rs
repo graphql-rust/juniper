@@ -17,6 +17,7 @@ fn is_ascii_digit(c: char) -> bool {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Name(String);
 
 impl Name {
