@@ -59,6 +59,7 @@ your Schemas automatically.
 * [uuid][uuid]
 * [url][url]
 * [chrono][chrono]
+* [chrono-tz][chrono-tz]
 * [time][time]
 * [bson][bson]
 
@@ -88,6 +89,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [uuid]: https://crates.io/crates/uuid
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
+[chrono-tz]: https://crates.io/crates/chrono-tz
 [time]: https://crates.io/crates/time
 [bson]: https://crates.io/crates/bson
 

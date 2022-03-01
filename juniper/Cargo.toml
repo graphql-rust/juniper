@@ -26,9 +26,9 @@ default = [
     "url",
     "uuid",
 ]
+chrono-clock = ["chrono", "chrono/clock"]
 expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
-scalar-naivetime = []
 schema-language = ["graphql-parser-integration"]
 
 [dependencies]
