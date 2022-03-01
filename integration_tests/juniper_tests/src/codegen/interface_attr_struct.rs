@@ -1,4 +1,4 @@
-//! Tests for `#[graphql_interface]` macro.
+//! Tests for `#[graphql_interface]` macro placed on a struct.
 
 use std::marker::PhantomData;
 
