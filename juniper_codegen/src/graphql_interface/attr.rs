@@ -79,9 +79,7 @@ fn expand_on_trait(
         .iter_mut()
         .filter_map(|item| {
             if let syn::TraitItem::Method(m) = item {
-                if let Some(f) = parse_trait_method(m, &renaming) {
-                    return Some(f);
-                }
+                return parse_trait_method(m, &renaming);
             }
             None
         })
@@ -133,8 +131,8 @@ fn expand_on_trait(
         context,
         scalar,
         fields,
-        implementers: attr
-            .implementers
+        implemented_for: attr
+            .implemented_for
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
@@ -190,33 +188,15 @@ fn parse_trait_method(
         return None;
     }
 
-    let arguments = {
-        if method.sig.inputs.is_empty() {
-            return err_no_method_receiver(&method.sig.inputs);
-        }
-        let mut args_iter = method.sig.inputs.iter_mut();
-        match args_iter.next().unwrap() {
-            syn::FnArg::Receiver(rcv) => {
-                if rcv.reference.is_none() || rcv.mutability.is_some() {
-                    return err_invalid_method_receiver(rcv);
-                }
-            }
-            syn::FnArg::Typed(arg) => {
-                if let syn::Pat::Ident(a) = &*arg.pat {
-                    if a.ident.to_string().as_str() != "self" {
-                        return err_invalid_method_receiver(arg);
-                    }
-                }
-                return err_no_method_receiver(arg);
-            }
-        };
-        args_iter
-            .filter_map(|arg| match arg {
-                syn::FnArg::Receiver(_) => None,
-                syn::FnArg::Typed(arg) => field::MethodArgument::parse(arg, renaming, &ERR),
-            })
-            .collect()
-    };
+    let arguments = method
+        .sig
+        .inputs
+        .iter_mut()
+        .filter_map(|arg| match arg {
+            syn::FnArg::Receiver(_) => None,
+            syn::FnArg::Typed(arg) => field::MethodArgument::parse(arg, renaming, &ERR),
+        })
+        .collect();
 
     let mut ty = match &method.sig.output {
         syn::ReturnType::Default => parse_quote! { () },
@@ -339,8 +319,8 @@ fn expand_on_derive_input(
         context,
         scalar,
         fields,
-        implementers: attr
-            .implementers
+        implemented_for: attr
+            .implemented_for
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
@@ -417,26 +397,6 @@ fn err_default_impl_block<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(
         span.span(),
         "trait method can't have default implementation",
-    );
-    None
-}
-
-/// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given
-/// `span`.
-fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(
-        span.span(),
-        "trait method receiver can only be a shared reference `&self`",
-    );
-    None
-}
-
-/// Emits "no trait method receiver" [`syn::Error`] pointing to the given
-/// `span`.
-fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(
-        span.span(),
-        "trait method should have a shared reference receiver `&self`",
     );
     None
 }
