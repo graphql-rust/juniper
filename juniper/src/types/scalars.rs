@@ -401,6 +401,16 @@ impl<T> Default for EmptyMutation<T> {
     }
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, T> arbitrary::Arbitrary<'a> for EmptyMutation<T>
+where
+    T: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(_u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(EmptyMutation::new())
+    }
+}
+
 /// Utillity type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the subscription,
@@ -459,6 +469,16 @@ where
 impl<T> Default for EmptySubscription<T> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a, T> arbitrary::Arbitrary<'a> for EmptySubscription<T>
+where
+    T: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(_u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(EmptySubscription::new())
     }
 }
 

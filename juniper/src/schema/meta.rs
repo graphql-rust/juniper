@@ -17,6 +17,7 @@ use crate::{
 
 /// Whether an item is deprecated, with context.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum DeprecationStatus {
     /// The field/variant is not deprecated.
     Current,
@@ -60,8 +61,67 @@ pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), Fiel
 /// Shortcut for a [`ScalarToken`] parsing function.
 pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError>;
 
+
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for ScalarMeta<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let name: Cow<'a, str> = u.arbitrary()?;
+        let description: Option<String> = u.arbitrary()?;
+        let specified_by_url: Option<Cow<'a, str>> = u.arbitrary()?;
+
+        let parsing_should_fail = *u.choose(&[true, false])?;
+
+        fn ok_try_fn<S>(_: &InputValue<S>) -> Result<(), FieldError<S>> {
+            Ok(())
+        }
+
+        fn err_try_fn<S>(_: &InputValue<S>) -> Result<(), FieldError<S>> {
+            // TODO: Make this arbitrary
+            Err(FieldError::new(
+                String::from("Arbitrary error"),
+                juniper::Value::Null,
+            ))
+        }
+
+        let try_parse_fn = if parsing_should_fail {
+            err_try_fn
+        } else {
+            ok_try_fn
+        };
+
+        fn ok_parse_fn<'a, S: arbitrary::Arbitrary<'a>>(_: ScalarToken) -> Result<S, ParseError> {
+            // TODO: Thread this through / don't hardcode.
+            let mut u = arbitrary::Unstructured::new(&[1, 2, 3, 4]);
+            Ok(S::arbitrary(&mut u).expect("arbitrary"))
+        }
+
+        fn err_parse_fn<'a, S: arbitrary::Arbitrary<'a>>(_: ScalarToken) -> Result<S, ParseError> {
+            // TODO: Make this arbitrary
+            Err(ParseError::UnexpectedEndOfFile)
+        }
+
+        let parse_fn = if parsing_should_fail {
+            err_parse_fn
+        } else {
+            ok_parse_fn
+        };
+
+        Ok(Self {
+            name,
+            description,
+            specified_by_url,
+            try_parse_fn,
+            parse_fn,
+        })
+    }
+}
+
 /// List type metadata
 #[derive(Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ListMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -72,6 +132,7 @@ pub struct ListMeta<'a> {
 
 /// Nullable type metadata
 #[derive(Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct NullableMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -79,6 +140,7 @@ pub struct NullableMeta<'a> {
 
 /// Object type metadata
 #[derive(Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -91,6 +153,7 @@ pub struct ObjectMeta<'a, S> {
 }
 
 /// Enum type metadata
+//#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct EnumMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -101,8 +164,48 @@ pub struct EnumMeta<'a, S> {
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for EnumMeta<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let name: Cow<'a, str> = u.arbitrary()?;
+        let description: Option<String> = u.arbitrary()?;
+        let values: Vec<EnumValue> = u.arbitrary()?;
+
+        let parsing_should_fail = *u.choose(&[true, false])?;
+
+        fn ok_try_fn<S>(_: &InputValue<S>) -> Result<(), FieldError<S>> {
+            Ok(())
+        }
+
+        fn err_try_fn<S>(_: &InputValue<S>) -> Result<(), FieldError<S>> {
+            // TODO: Make this arbitrary
+            Err(FieldError::new(
+                String::from("Arbitrary error"),
+                juniper::Value::Null,
+            ))
+        }
+
+        let try_parse_fn = if parsing_should_fail {
+            err_try_fn
+        } else {
+            ok_try_fn
+        };
+
+        Ok(Self {
+            name,
+            description,
+            values,
+            try_parse_fn,
+        })
+    }
+}
+
 /// Interface type metadata
 #[derive(Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct InterfaceMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -116,6 +219,7 @@ pub struct InterfaceMeta<'a, S> {
 
 /// Union type metadata
 #[derive(Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct UnionMeta<'a> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -126,6 +230,7 @@ pub struct UnionMeta<'a> {
 }
 
 /// Input object metadata
+//#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct InputObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -136,11 +241,51 @@ pub struct InputObjectMeta<'a, S> {
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for InputObjectMeta<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let name: Cow<'a, str> = u.arbitrary()?;
+        let description: Option<String> = u.arbitrary()?;
+        let input_fields: Vec<Argument<'a, S>> = u.arbitrary()?;
+
+        let parsing_should_fail = *u.choose(&[true, false])?;
+
+        fn ok_try_fn<S>(_: &InputValue<S>) -> Result<(), FieldError<S>> {
+            Ok(())
+        }
+
+        fn err_try_fn<S>(_: &InputValue<S>) -> Result<(), FieldError<S>> {
+            // TODO: Make this arbitrary
+            Err(FieldError::new(
+                String::from("Arbitrary error"),
+                juniper::Value::Null,
+            ))
+        }
+
+        let try_parse_fn = if parsing_should_fail {
+            err_try_fn
+        } else {
+            ok_try_fn
+        };
+
+        Ok(Self {
+            name,
+            description,
+            input_fields,
+            try_parse_fn,
+        })
+    }
+}
+
 /// A placeholder for not-yet-registered types
 ///
 /// After a type's `meta` method has been called but before it has returned, a placeholder type
 /// is inserted into a registry to indicate existence.
 #[derive(Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct PlaceholderMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -169,8 +314,33 @@ pub enum MetaType<'a, S = DefaultScalarValue> {
     Placeholder(PlaceholderMeta<'a>),
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, S> arbitrary::Arbitrary<'a> for MetaType<'a, S>
+where
+    S: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let num_choices = 9;
+
+        let ty = match u.int_in_range::<u8>(1..=num_choices)? {
+            1 => MetaType::Scalar(u.arbitrary::<ScalarMeta<'a, S>>()?),
+            2 => MetaType::List(u.arbitrary::<ListMeta<'a>>()?),
+            3 => MetaType::Nullable(u.arbitrary::<NullableMeta<'a>>()?),
+            4 => MetaType::Object(u.arbitrary::<ObjectMeta<'a, S>>()?),
+            5 => MetaType::Enum(u.arbitrary::<EnumMeta<'a, S>>()?),
+            6 => MetaType::Interface(u.arbitrary::<InterfaceMeta<'a, S>>()?),
+            7 => MetaType::Union(u.arbitrary::<UnionMeta<'a>>()?),
+            8 => MetaType::InputObject(u.arbitrary::<InputObjectMeta<'a, S>>()?),
+            9 => MetaType::Placeholder(u.arbitrary::<PlaceholderMeta<'a>>()?),
+            _ => unreachable!(),
+        };
+        Ok(ty)
+    }
+}
+
 /// Metadata for a field
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Field<'a, S> {
     #[doc(hidden)]
     pub name: smartstring::alias::String,
@@ -194,6 +364,7 @@ impl<'a, S> Field<'a, S> {
 
 /// Metadata for an argument to a field
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Argument<'a, S> {
     #[doc(hidden)]
     pub name: String,
@@ -215,6 +386,7 @@ impl<'a, S> Argument<'a, S> {
 
 /// Metadata for a single value in an enum
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct EnumValue {
     /// The name of the enum value
     ///

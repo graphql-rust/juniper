@@ -21,6 +21,7 @@ pub struct Lexer<'a> {
 ///
 /// This is only used for tagging how the lexer has interpreted a value literal
 #[allow(missing_docs)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScalarToken<'a> {
     String(&'a str),
@@ -30,6 +31,7 @@ pub enum ScalarToken<'a> {
 
 /// A single token in the input source
 #[allow(missing_docs)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Token<'a> {
     Name(&'a str),
