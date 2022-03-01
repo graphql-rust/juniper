@@ -5,10 +5,13 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-/// See [List of tz database time zones][1] `TZ database name` column for
+/// Timezone based on [`IANA` database][1].
+///
+/// See [List of tz database time zones][2] `TZ database name` column for
 /// available names.
 ///
-/// [1]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+/// [1]: https://www.iana.org/time-zones
+/// [2]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 #[graphql_scalar(with = tz, parse_token(String))]
 pub type TimeZone = chrono_tz::Tz;
 

@@ -21,14 +21,15 @@ travis-ci = { repository = "graphql-rust/juniper" }
 [features]
 default = [
     "bson",
+    "chrono",
     "schema-language",
     "url",
     "uuid",
 ]
+chrono-clock = ["chrono", "chrono/clock"]
 expose-test-schema = ["anyhow", "serde_json"]
 graphql-parser-integration = ["graphql-parser"]
 schema-language = ["graphql-parser-integration"]
-chrono-clock = ["chrono", "chrono/clock"]
 
 [dependencies]
 juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen"  }
