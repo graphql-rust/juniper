@@ -1,3 +1,7 @@
+//! Tests for `#[graphql_scalar]` macro placed on [`DeriveInput`].
+//!
+//! [`DeriveInput`]: syn::DeriveInput
+
 use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
