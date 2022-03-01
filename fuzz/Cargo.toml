@@ -1,0 +1,33 @@
+[package]
+name = "fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = { version = "0.4", features = ["arbitrary-derive"] }
+apollo-smith = "0.1.0"
+
+[dependencies.juniper]
+path = "../juniper"
+features = ["arbitrary1"]
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "document_fuzzer"
+path = "fuzz_targets/document_fuzzer.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "introspection_fuzzer"
+path = "fuzz_targets/introspection_fuzzer.rs"
+test = false
+doc = false
