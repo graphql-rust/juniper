@@ -2,7 +2,7 @@ use std::fmt;
 
 /// A reference to a line and column in an input source file
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Copy)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct SourcePosition {
     index: usize,
     line: usize,
@@ -12,7 +12,7 @@ pub struct SourcePosition {
 /// Range of characters in the input source, starting at the character pointed by the `start` field
 /// and ending just before the `end` marker.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct Span {
     /// Start position of this [`Span`].
     pub start: SourcePosition,

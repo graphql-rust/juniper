@@ -31,7 +31,7 @@ default = [
     "url",
     "uuid",
 ]
-arbitrary = ["dep:arbitrary", "smartstring/arbitrary"]
+arbitrary1 = ["dep:arbitrary", "smartstring/arbitrary"]
 bigdecimal = ["dep:bigdecimal", "dep:num-bigint", "dep:ryu"]
 bson = ["dep:bson"]
 chrono = ["dep:chrono"]

@@ -230,7 +230,7 @@ pub trait ScalarValue:
 ///
 /// [0]: https://spec.graphql.org/October2021
 #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.

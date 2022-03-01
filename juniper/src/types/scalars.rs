@@ -401,7 +401,7 @@ impl<T> Default for EmptyMutation<T> {
     }
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, T> arbitrary::Arbitrary<'a> for EmptyMutation<T>
 where
     T: arbitrary::Arbitrary<'a>,
@@ -472,7 +472,7 @@ impl<T> Default for EmptySubscription<T> {
     }
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, T> arbitrary::Arbitrary<'a> for EmptySubscription<T>
 where
     T: arbitrary::Arbitrary<'a>,

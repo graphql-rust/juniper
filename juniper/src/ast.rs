@@ -28,7 +28,7 @@ pub enum Type<'a> {
     NonNullList(Box<Type<'a>>, Option<usize>),
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a> arbitrary::Arbitrary<'a> for Type<'a> {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         let num_choices = 4;
@@ -57,7 +57,7 @@ impl<'a> arbitrary::Arbitrary<'a> for Type<'a> {
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
     Scalar(S),
@@ -75,7 +75,7 @@ pub struct VariableDefinition<'a, S> {
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for VariableDefinition<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -99,7 +99,7 @@ pub struct Arguments<'a, S> {
     pub items: Vec<(Spanning<&'a str>, Spanning<InputValue<S>>)>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for Arguments<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -116,7 +116,7 @@ pub struct VariableDefinitions<'a, S> {
     pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for VariableDefinitions<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -137,7 +137,7 @@ pub struct Field<'a, S> {
     pub selection_set: Option<Vec<Selection<'a, S>>>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for Field<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -166,7 +166,7 @@ pub struct FragmentSpread<'a, S> {
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for FragmentSpread<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -187,7 +187,7 @@ pub struct InlineFragment<'a, S> {
     pub selection_set: Vec<Selection<'a, S>>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for InlineFragment<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -228,7 +228,7 @@ pub enum Selection<'a, S = DefaultScalarValue> {
     InlineFragment(Spanning<InlineFragment<'a, S>>),
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for Selection<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -253,7 +253,7 @@ pub struct Directive<'a, S> {
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for Directive<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -267,7 +267,7 @@ where
 
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub enum OperationType {
     Query,
     Mutation,

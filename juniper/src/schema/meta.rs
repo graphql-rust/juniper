@@ -17,7 +17,7 @@ use crate::{
 
 /// Whether an item is deprecated, with context.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub enum DeprecationStatus {
     /// The field/variant is not deprecated.
     Current,
@@ -62,7 +62,7 @@ pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), Fiel
 pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError>;
 
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for ScalarMeta<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -121,7 +121,7 @@ where
 
 /// List type metadata
 #[derive(Debug)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct ListMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -132,7 +132,7 @@ pub struct ListMeta<'a> {
 
 /// Nullable type metadata
 #[derive(Debug)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct NullableMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -140,7 +140,7 @@ pub struct NullableMeta<'a> {
 
 /// Object type metadata
 #[derive(Debug)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct ObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -153,7 +153,7 @@ pub struct ObjectMeta<'a, S> {
 }
 
 /// Enum type metadata
-//#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+//#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct EnumMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -164,7 +164,7 @@ pub struct EnumMeta<'a, S> {
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for EnumMeta<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -205,7 +205,7 @@ where
 
 /// Interface type metadata
 #[derive(Debug)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct InterfaceMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -219,7 +219,7 @@ pub struct InterfaceMeta<'a, S> {
 
 /// Union type metadata
 #[derive(Debug)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct UnionMeta<'a> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -230,7 +230,7 @@ pub struct UnionMeta<'a> {
 }
 
 /// Input object metadata
-//#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+//#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct InputObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -241,7 +241,7 @@ pub struct InputObjectMeta<'a, S> {
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for InputObjectMeta<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -285,7 +285,7 @@ where
 /// After a type's `meta` method has been called but before it has returned, a placeholder type
 /// is inserted into a registry to indicate existence.
 #[derive(Debug)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct PlaceholderMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -314,7 +314,7 @@ pub enum MetaType<'a, S = DefaultScalarValue> {
     Placeholder(PlaceholderMeta<'a>),
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "arbitrary1")]
 impl<'a, S> arbitrary::Arbitrary<'a> for MetaType<'a, S>
 where
     S: arbitrary::Arbitrary<'a>,
@@ -340,7 +340,7 @@ where
 
 /// Metadata for a field
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct Field<'a, S> {
     #[doc(hidden)]
     pub name: smartstring::alias::String,
@@ -364,7 +364,7 @@ impl<'a, S> Field<'a, S> {
 
 /// Metadata for an argument to a field
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct Argument<'a, S> {
     #[doc(hidden)]
     pub name: String,
@@ -386,7 +386,7 @@ impl<'a, S> Argument<'a, S> {
 
 /// Metadata for a single value in an enum
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct EnumValue {
     /// The name of the enum value
     ///
