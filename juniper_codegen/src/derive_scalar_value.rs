@@ -47,12 +47,12 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     }
 
     let missing_methods = [
-        (Method::AsInt, "`#[graphql(as_int)]`"),
-        (Method::AsFloat, "`#[graphql(as_float)]`"),
-        (Method::AsStr, "`#[graphql(as_str)]`"),
-        (Method::AsString, "`#[graphql(as_string)]`"),
-        (Method::IntoString, "`#[graphql(into_string)]`"),
-        (Method::AsBoolean, "`#[graphql(as_boolean)]`"),
+        (Method::AsInt, "as_int"),
+        (Method::AsFloat, "as_float"),
+        (Method::AsStr, "as_str"),
+        (Method::AsString, "as_string"),
+        (Method::IntoString, "into_string"),
+        (Method::AsBoolean, "as_boolean"),
     ]
     .iter()
     .filter_map(|(method, err)| (!methods.contains_key(method)).then(|| err))
@@ -62,13 +62,13 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                 .unwrap_or_else(|| method.to_owned()),
         )
     })
-    .filter(|_| !attr.allow_missing_methods);
+    .filter(|_| !attr.allow_missing_attrs);
     if let Some(missing_methods) = missing_methods {
         return Err(ERR.custom_error(
             span,
             format!(
-                "missing {} attributes. In case you are sure that it's ok, \
-                 use `#[graphql(allow_missing_methods)]` to suppress this error.",
+                "missing `#[graphql({})]` attributes. In case you are sure that it is ok, \
+                 use `#[graphql(allow_missing_attributes)]` to suppress this error.",
                 missing_methods,
             ),
         ));
@@ -88,7 +88,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 #[derive(Default)]
 struct Attr {
     /// Allows missing [`Method`]s.
-    allow_missing_methods: bool,
+    allow_missing_attrs: bool,
 }
 
 impl Parse for Attr {
@@ -97,8 +97,8 @@ impl Parse for Attr {
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
-                "allow_missing_methods" => {
-                    out.allow_missing_methods = true;
+                "allow_missing_attributes" => {
+                    out.allow_missing_attrs = true;
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
@@ -114,7 +114,7 @@ impl Attr {
     /// Tries to merge two [`Attr`]s into a single one, reporting about
     /// duplicates, if any.
     fn try_merge(mut self, another: Self) -> syn::Result<Self> {
-        self.allow_missing_methods |= another.allow_missing_methods;
+        self.allow_missing_attrs |= another.allow_missing_attrs;
         Ok(self)
     }
 

@@ -1,4 +1,4 @@
-error: GraphQL scalar all custom resolvers have to be provided via `with` or combination of `to_output_with`, `from_input_with`, `parse_token_with` attribute arguments
+error: GraphQL scalar all the resolvers have to be provided via `with` attribute argument or a combination of `to_output_with`, `from_input_with`, `parse_token_with`/`parse_token` attribute arguments
  --> fail/scalar/type_alias/attr_with_not_all_resolvers.rs:6:1
   |
 6 | type CustomScalar = Scalar;
