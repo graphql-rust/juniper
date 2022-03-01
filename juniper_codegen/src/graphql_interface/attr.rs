@@ -225,7 +225,7 @@ fn parse_trait_method(
     })
 }
 
-/// Expands `#[graphql_interface]` macro placed on trait definition.
+/// Expands `#[graphql_interface]` macro placed on struct.
 fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::DeriveInput,

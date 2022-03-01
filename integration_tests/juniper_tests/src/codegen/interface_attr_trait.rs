@@ -1,4 +1,4 @@
-//! Tests for `#[graphql_interface]` macro.
+//! Tests for `#[graphql_interface]` macro placed on a trait.
 
 use juniper::{
     execute, graphql_interface, graphql_object, graphql_value, graphql_vars, DefaultScalarValue,
