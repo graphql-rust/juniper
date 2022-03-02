@@ -31,12 +31,12 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         _ => return Err(ERR.custom_error(ast.span(), "can only be derived for enums")),
     };
 
-    let attr = Attr::from_attrs("scalar_value", &ast.attrs)?;
+    let attr = Attr::from_attrs("value", &ast.attrs)?;
 
     let mut methods = HashMap::<Method, Vec<Variant>>::new();
     for var in data_enum.variants.clone() {
         let (ident, field) = (var.ident, Field::try_from(var.fields)?);
-        for attr in VariantAttr::from_attrs("scalar_value", &var.attrs)?.0 {
+        for attr in VariantAttr::from_attrs("value", &var.attrs)?.0 {
             let (method, expr) = attr.into_inner();
             methods.entry(method).or_default().push(Variant {
                 ident: ident.clone(),
@@ -67,9 +67,9 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         return Err(ERR.custom_error(
             span,
             format!(
-                "missing `#[scalar_value({})]` attributes. In case you are sure \
-                 that it's ok, use `#[scalar_value(allow_missing_attributes)]`\
-                 to suppress this error.",
+                "missing `#[value({})]` attributes. In case you are sure \
+                 that it's ok, use `#[value(allow_missing_attributes)]` to \
+                 suppress this error.",
                 missing_methods,
             ),
         ));
@@ -84,7 +84,7 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
     .into_token_stream())
 }
 
-/// Available arguments behind `#[scalar_value]` attribute when generating code
+/// Available arguments behind `#[value]` attribute when generating code
 /// for enum container.
 #[derive(Default)]
 struct Attr {
@@ -131,26 +131,26 @@ impl Attr {
 /// Possible attribute names of the `#[derive(ScalarValue)]`.
 #[derive(Eq, Hash, PartialEq)]
 enum Method {
-    /// `#[scalar_value(as_int)]`.
+    /// `#[value(as_int)]`.
     AsInt,
 
-    /// `#[scalar_value(as_float)]`.
+    /// `#[value(as_float)]`.
     AsFloat,
 
-    /// `#[scalar_value(as_str)]`.
+    /// `#[value(as_str)]`.
     AsStr,
 
-    /// `#[scalar_value(as_string)]`.
+    /// `#[value(as_string)]`.
     AsString,
 
-    /// `#[scalar_value(into_string)]`.
+    /// `#[value(into_string)]`.
     IntoString,
 
-    /// `#[scalar_value(as_bool)]`.
+    /// `#[value(as_bool)]`.
     AsBool,
 }
 
-/// Available arguments behind `#[scalar_value]` attribute when generating code
+/// Available arguments behind `#[value]` attribute when generating code
 /// for enum variant.
 #[derive(Default)]
 struct VariantAttr(Vec<SpanContainer<(Method, Option<syn::ExprPath>)>>);

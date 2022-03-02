@@ -13,14 +13,14 @@ use juniper::{
 #[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
 #[serde(untagged)]
 pub(crate) enum MyScalarValue {
-    #[scalar_value(as_int, as_float)]
+    #[value(as_int, as_float)]
     Int(i32),
     Long(i64),
-    #[scalar_value(as_float)]
+    #[value(as_float)]
     Float(f64),
-    #[scalar_value(as_string, into_string, as_str)]
+    #[value(as_string, into_string, as_str)]
     String(String),
-    #[scalar_value(as_bool)]
+    #[value(as_bool)]
     Boolean(bool),
 }
 

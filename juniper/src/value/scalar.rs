@@ -42,14 +42,14 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// #[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
-///     #[scalar_value(as_float, as_int)]
+///     #[value(as_float, as_int)]
 ///     Int(i32),
 ///     Long(i64),
-///     #[scalar_value(as_float)]
+///     #[value(as_float)]
 ///     Float(f64),
-///     #[scalar_value(as_str, as_string, into_string)]
+///     #[value(as_str, as_string, into_string)]
 ///     String(String),
-///     #[scalar_value(as_bool)]
+///     #[value(as_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -235,7 +235,7 @@ pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Int
-    #[scalar_value(as_float, as_int)]
+    #[value(as_float, as_int)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
@@ -243,20 +243,20 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
-    #[scalar_value(as_float)]
+    #[value(as_float)]
     Float(f64),
 
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
     /// sequences.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-String
-    #[scalar_value(as_str, as_string, into_string)]
+    #[value(as_str, as_string, into_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/June2018/#sec-Boolean
-    #[scalar_value(as_bool)]
+    #[value(as_bool)]
     Boolean(bool),
 }
 

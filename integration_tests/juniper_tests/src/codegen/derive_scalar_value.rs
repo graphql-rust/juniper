@@ -7,13 +7,13 @@ mod trivial {
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[scalar_value(as_int, as_float)]
+        #[value(as_int, as_float)]
         Int(i32),
-        #[scalar_value(as_float)]
+        #[value(as_float)]
         Float(f64),
-        #[scalar_value(as_str, as_string, into_string)]
+        #[value(as_str, as_string, into_string)]
         String(String),
-        #[scalar_value(as_bool)]
+        #[value(as_bool)]
         Boolean(bool),
     }
 
@@ -40,13 +40,13 @@ mod named_fields {
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[scalar_value(as_int, as_float)]
+        #[value(as_int, as_float)]
         Int { int: i32 },
-        #[scalar_value(as_float)]
+        #[value(as_float)]
         Float(f64),
-        #[scalar_value(as_str, as_string, into_string)]
+        #[value(as_str, as_string, into_string)]
         String(String),
-        #[scalar_value(as_bool)]
+        #[value(as_bool)]
         Boolean { v: bool },
     }
 
@@ -73,17 +73,17 @@ mod custom_fn {
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[scalar_value(as_int, as_float)]
+        #[value(as_int, as_float)]
         Int(i32),
-        #[scalar_value(as_float)]
+        #[value(as_float)]
         Float(f64),
-        #[scalar_value(
+        #[value(
             as_str,
             as_string = str::to_owned,
             into_string = std::convert::identity,
         )]
         String(String),
-        #[scalar_value(as_bool)]
+        #[value(as_bool)]
         Boolean(bool),
     }
 
@@ -109,14 +109,14 @@ mod allow_missing_attributes {
 
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
-    #[scalar_value(allow_missing_attributes)]
+    #[value(allow_missing_attributes)]
     pub enum CustomScalarValue {
         Int(i32),
-        #[scalar_value(as_float)]
+        #[value(as_float)]
         Float(f64),
-        #[scalar_value(as_str, as_string, into_string)]
+        #[value(as_str, as_string, into_string)]
         String(String),
-        #[scalar_value(as_bool)]
+        #[value(as_bool)]
         Boolean(bool),
     }
 
