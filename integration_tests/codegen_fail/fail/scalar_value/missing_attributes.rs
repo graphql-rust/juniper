@@ -4,9 +4,9 @@ use juniper::ScalarValue;
 pub enum DefaultScalarValue {
     Int(i32),
     Float(f64),
-    #[graphql(as_str, as_string, into_string)]
+    #[scalar_value(as_str, as_string, into_string)]
     String(String),
-    #[graphql(as_bool)]
+    #[scalar_value(as_bool)]
     Boolean(bool),
 }
 

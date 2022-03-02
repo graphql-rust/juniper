@@ -7,13 +7,13 @@ mod trivial {
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[graphql(as_int, as_float)]
+        #[scalar_value(as_int, as_float)]
         Int(i32),
-        #[graphql(as_float)]
+        #[scalar_value(as_float)]
         Float(f64),
-        #[graphql(as_str, as_string, into_string)]
+        #[scalar_value(as_str, as_string, into_string)]
         String(String),
-        #[graphql(as_bool)]
+        #[scalar_value(as_bool)]
         Boolean(bool),
     }
 
@@ -40,13 +40,13 @@ mod named_fields {
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[graphql(as_int, as_float)]
+        #[scalar_value(as_int, as_float)]
         Int { int: i32 },
-        #[graphql(as_float)]
+        #[scalar_value(as_float)]
         Float(f64),
-        #[graphql(as_str, as_string, into_string)]
+        #[scalar_value(as_str, as_string, into_string)]
         String(String),
-        #[graphql(as_bool)]
+        #[scalar_value(as_bool)]
         Boolean { v: bool },
     }
 
@@ -73,17 +73,17 @@ mod custom_fn {
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[graphql(as_int, as_float)]
+        #[scalar_value(as_int, as_float)]
         Int(i32),
-        #[graphql(as_float)]
+        #[scalar_value(as_float)]
         Float(f64),
-        #[graphql(
+        #[scalar_value(
             as_str,
             as_string = str::to_owned,
             into_string = std::convert::identity,
         )]
         String(String),
-        #[graphql(as_bool)]
+        #[scalar_value(as_bool)]
         Boolean(bool),
     }
 
@@ -108,15 +108,15 @@ mod allow_missing_attributes {
     use super::*;
 
     #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
-    #[graphql(allow_missing_attributes)]
     #[serde(untagged)]
+    #[scalar_value(allow_missing_attributes)]
     pub enum CustomScalarValue {
         Int(i32),
-        #[graphql(as_float)]
+        #[scalar_value(as_float)]
         Float(f64),
-        #[graphql(as_str, as_string, into_string)]
+        #[scalar_value(as_str, as_string, into_string)]
         String(String),
-        #[graphql(as_bool)]
+        #[scalar_value(as_bool)]
         Boolean(bool),
     }
 
