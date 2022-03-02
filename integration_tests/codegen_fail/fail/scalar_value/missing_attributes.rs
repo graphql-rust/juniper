@@ -1,6 +1,6 @@
 use juniper::ScalarValue;
 
-#[derive(Clone, Debug, ScalarValue, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ScalarValue)]
 pub enum DefaultScalarValue {
     Int(i32),
     Float(f64),

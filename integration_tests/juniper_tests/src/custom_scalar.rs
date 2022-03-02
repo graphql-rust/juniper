@@ -10,15 +10,15 @@ use juniper::{
     Value, Variables,
 };
 
-#[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 #[serde(untagged)]
 pub(crate) enum MyScalarValue {
-    #[value(as_int, as_float)]
+    #[value(as_float, as_int)]
     Int(i32),
     Long(i64),
     #[value(as_float)]
     Float(f64),
-    #[value(as_string, into_string, as_str)]
+    #[value(as_str, as_string, into_string)]
     String(String),
     #[value(as_bool)]
     Boolean(bool),

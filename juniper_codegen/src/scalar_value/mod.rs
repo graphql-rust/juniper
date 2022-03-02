@@ -84,8 +84,8 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
     .into_token_stream())
 }
 
-/// Available arguments behind `#[value]` attribute when generating code
-/// for enum container.
+/// Available arguments behind `#[value]` attribute when generating code for
+/// an enum definition.
 #[derive(Default)]
 struct Attr {
     /// Allows missing [`Method`]s.
@@ -150,8 +150,8 @@ enum Method {
     AsBool,
 }
 
-/// Available arguments behind `#[value]` attribute when generating code
-/// for enum variant.
+/// Available arguments behind `#[value]` attribute when generating code for an
+/// enum variant.
 #[derive(Default)]
 struct VariantAttr(Vec<SpanContainer<(Method, Option<syn::ExprPath>)>>);
 
@@ -209,26 +209,26 @@ impl VariantAttr {
     }
 }
 
-/// Definition of the [`ScalarValue`].
+/// Definition of a [`ScalarValue`] for code generation.
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
 struct Definition {
-    /// [`syn::Ident`] of the enum representing [`ScalarValue`].
+    /// [`syn::Ident`] of the enum representing this [`ScalarValue`].
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     ident: syn::Ident,
 
-    /// [`syn::Generics`] of the enum representing [`ScalarValue`].
+    /// [`syn::Generics`] of the enum representing this [`ScalarValue`].
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     generics: syn::Generics,
 
-    /// [`syn::Variant`]s of the enum representing [`ScalarValue`].
+    /// [`syn::Variant`]s of the enum representing this [`ScalarValue`].
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     variants: Vec<syn::Variant>,
 
-    /// [`Variant`]s marked with [`Method`] attribute.
+    /// [`Variant`]s marked with a [`Method`] attribute.
     methods: HashMap<Method, Vec<Variant>>,
 }
 
@@ -262,17 +262,17 @@ impl Definition {
             (
                 Method::AsStr,
                 quote! { fn as_str(&self) -> Option<&str> },
-                quote! { std::convert::AsRef::as_ref(v) },
+                quote! { ::std::convert::AsRef::as_ref(v) },
             ),
             (
                 Method::AsString,
                 quote! { fn as_string(&self) -> Option<String> },
-                quote! { std::string::ToString::to_string(v) },
+                quote! { ::std::string::ToString::to_string(v) },
             ),
             (
                 Method::IntoString,
                 quote! { fn into_string(self) -> Option<String> },
-                quote! { std::string::String::from(v) },
+                quote! { ::std::string::String::from(v) },
             ),
             (
                 Method::AsBool,
@@ -333,7 +333,7 @@ impl Definition {
 
                 quote! {
                     #[automatically_derived]
-                    impl#impl_gen std::convert::From<#var_ty> for #ty_ident#ty_gen
+                    impl#impl_gen ::std::convert::From<#var_ty> for #ty_ident#ty_gen
                         #where_clause
                     {
                         fn from(v: #var_ty) -> Self {
@@ -342,7 +342,7 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl#impl_gen std::convert::From<#ty_ident#ty_gen> for Option<#var_ty>
+                    impl#impl_gen ::std::convert::From<#ty_ident#ty_gen> for Option<#var_ty>
                         #where_clause
                     {
                         fn from(ty: #ty_ident#ty_gen) -> Self {
@@ -355,7 +355,7 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl#lf_impl_gen std::convert::From<&'___a #ty_ident#ty_gen> for
+                    impl#lf_impl_gen ::std::convert::From<&'___a #ty_ident#ty_gen> for
                         Option<&'___a #var_ty>
                         #where_clause
                     {
@@ -391,7 +391,7 @@ impl Definition {
                     .as_mut()
                     .unwrap()
                     .predicates
-                    .push(parse_quote! { #var_ty: std::fmt::Display });
+                    .push(parse_quote! { #var_ty: ::std::fmt::Display });
             }
         }
         let (impl_gen, ty_gen, where_clause) = generics.split_for_impl();
@@ -404,14 +404,15 @@ impl Definition {
                 .as_ref()
                 .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
 
-            quote! { Self::#var_ident#var_field => std::fmt::Display::fmt(v, f), }
+            quote! { Self::#var_ident#var_field => ::std::fmt::Display::fmt(v, f), }
         });
 
         quote! {
-            impl#impl_gen std::fmt::Display for #ident#ty_gen
+            #[automatically_derived]
+            impl#impl_gen ::std::fmt::Display for #ident#ty_gen
                 #where_clause
             {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                     match self {
                         #(#arms)*
                     }
@@ -480,7 +481,7 @@ impl TryFrom<syn::Fields> for Field {
 }
 
 impl Field {
-    /// Returns [`Field`] for constructing or matching over [`Variant`].
+    /// Returns a [`Field`] for constructing or matching over a [`Variant`].
     fn match_arg(&self) -> TokenStream {
         match self {
             Self::Named(_) => quote! { { #self: v } },
@@ -489,18 +490,19 @@ impl Field {
     }
 }
 
-/// [`Visit`]or to check whether [`Variant`] [`Field`] contains generic
+/// [`Visit`]or checking whether a [`Variant`]'s [`Field`] contains generic
 /// parameters.
 struct IsVariantGeneric<'a> {
-    /// Indicates whether [`Variant`] [`Field`] contains generic parameters.
+    /// Indicates whether the checked [`Variant`]'s [`Field`] contains generic
+    /// parameters.
     res: bool,
 
-    /// [`syn::Generics`] to search parameters.
+    /// [`syn::Generics`] to search generic parameters in.
     generics: &'a syn::Generics,
 }
 
 impl<'a> IsVariantGeneric<'a> {
-    /// Constructs a new [`IsVariantGeneric`].
+    /// Constructs a new [`IsVariantGeneric`] [`Visit`]or.
     fn new(generics: &'a syn::Generics) -> Self {
         Self {
             res: false,

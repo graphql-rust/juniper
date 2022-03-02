@@ -553,9 +553,10 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// `#[derive(ScalarValue)]` macro for deriving a [`ScalarValue`]
 /// implementation.
 ///
-/// To derive [`ScalarValue`] on enum you should mark the corresponding enum
-/// variants with `as_int`/`as_float`/`as_string`/`into_string`/`as_str`/
-/// `as_bool` attributes (names correspond to [`ScalarValue`] required methods).
+/// To derive a [`ScalarValue`] on enum you should mark the corresponding enum
+/// variants with `as_int`, `as_float`, `as_string`, `into_string`, `as_str` and
+/// `as_bool` attribute argumentes (names correspond to [`ScalarValue`] required
+/// methods).
 ///
 /// ```rust
 /// # use std::{fmt, convert::TryInto as _};
@@ -563,10 +564,10 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
 /// # use juniper::ScalarValue;
 /// #
-/// #[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
+/// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
-///     #[value(as_int, as_float)]
+///     #[value(as_float, as_int)]
 ///     Int(i32),
 ///     Long(i64),
 ///     #[value(as_float)]
@@ -575,8 +576,8 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///         into_string,
 ///         as_str,
 ///         as_string = String::clone,
-///         //          ^^^^^^^^^^^^^ You can provide custom resolvers.
 ///     )]
+///     //              ^^^^^^^^^^^^^ custom resolvers may be provided
 ///     String(String),
 ///     #[value(as_bool)]
 ///     Boolean(bool),

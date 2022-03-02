@@ -21,10 +21,10 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits their
 /// needs.
-/// There is a custom derive (`#[derive(`[`ScalarValue`]`)]`) available
-/// that implements most of the required traits automatically for a enum
-/// representing a scalar value. However, [`Serialize`] and [`Deserialize`]
-/// implementations are expected to be provided.
+/// There is a custom derive (`#[derive(`[`ScalarValue`]`)]`) available that
+/// implements most of the required traits automatically for a enum representing
+/// a scalar value. However, [`Serialize`] and [`Deserialize`] implementations
+/// are expected to be provided.
 ///
 /// # Implementing a new scalar value representation
 /// The preferred way to define a new scalar value representation is
@@ -39,7 +39,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
 /// # use juniper::ScalarValue;
 /// #
-/// #[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
+/// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
 ///     #[value(as_float, as_int)]
@@ -229,7 +229,7 @@ pub trait ScalarValue:
 /// These types closely follow the [GraphQL specification][0].
 ///
 /// [0]: https://spec.graphql.org/June2018
-#[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.

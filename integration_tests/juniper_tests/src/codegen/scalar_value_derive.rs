@@ -1,13 +1,15 @@
+//! Tests for `#[derive(ScalarValue)]` macro.
+
 use juniper::{DefaultScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
 
 mod trivial {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[value(as_int, as_float)]
+        #[value(as_float, as_int)]
         Int(i32),
         #[value(as_float)]
         Float(f64),
@@ -37,10 +39,10 @@ mod trivial {
 mod named_fields {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[value(as_int, as_float)]
+        #[value(as_float, as_int)]
         Int { int: i32 },
         #[value(as_float)]
         Float(f64),
@@ -70,10 +72,10 @@ mod named_fields {
 mod custom_fn {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[value(as_int, as_float)]
+        #[value(as_float, as_int)]
         Int(i32),
         #[value(as_float)]
         Float(f64),
@@ -107,7 +109,7 @@ mod custom_fn {
 mod allow_missing_attributes {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     #[value(allow_missing_attributes)]
     pub enum CustomScalarValue {
