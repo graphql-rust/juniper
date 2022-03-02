@@ -2,10 +2,9 @@ use std::{borrow::Cow, fmt};
 
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{
-    parser::{ParseError, ScalarToken},
-    GraphQLScalarValue,
-};
+use crate::parser::{ParseError, ScalarToken};
+
+pub use juniper_codegen::ScalarValue;
 
 /// The result of converting a string into a scalar value
 pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;
@@ -22,7 +21,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits their
 /// needs.
-/// There is a custom derive (`#[derive(`[`GraphQLScalarValue`]`)]`) available
+/// There is a custom derive (`#[derive(`[`ScalarValue`]`)]`) available
 /// that implements most of the required traits automatically for a enum
 /// representing a scalar value. However, [`Serialize`] and [`Deserialize`]
 /// implementations are expected to be provided.
@@ -38,9 +37,9 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # use std::{fmt, convert::TryInto as _};
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::GraphQLScalarValue;
+/// # use juniper::ScalarValue;
 /// #
-/// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
+/// #[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
 ///     #[graphql(as_float, as_int)]
@@ -121,7 +120,6 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// ```
 ///
 /// [`Deserialize`]: trait@serde::Deserialize
-/// [`GraphQLScalarValue`]: juniper::GraphQLScalarValue
 /// [`Serialize`]: trait@serde::Serialize
 pub trait ScalarValue:
     fmt::Debug
@@ -208,7 +206,7 @@ pub trait ScalarValue:
     /// all possible [`ScalarValue`]s.
     ///
     /// [`GraphQLValue`]: crate::GraphQLValue
-    fn as_boolean(&self) -> Option<bool>;
+    fn as_bool(&self) -> Option<bool>;
 
     /// Converts this [`ScalarValue`] into another one.
     fn into_another<S: ScalarValue>(self) -> S {
@@ -216,7 +214,7 @@ pub trait ScalarValue:
             S::from(i)
         } else if let Some(f) = self.as_float() {
             S::from(f)
-        } else if let Some(b) = self.as_boolean() {
+        } else if let Some(b) = self.as_bool() {
             S::from(b)
         } else if let Some(s) = self.into_string() {
             S::from(s)
@@ -231,7 +229,7 @@ pub trait ScalarValue:
 /// These types closely follow the [GraphQL specification][0].
 ///
 /// [0]: https://spec.graphql.org/June2018
-#[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
+#[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.

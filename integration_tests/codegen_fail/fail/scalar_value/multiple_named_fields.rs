@@ -1,4 +1,4 @@
-#[derive(juniper::GraphQLScalarValue)]
+#[derive(juniper::ScalarValue)]
 enum ScalarValue {
     Variant { first: i32, second: u64 },
 }

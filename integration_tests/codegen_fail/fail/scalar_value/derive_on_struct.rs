@@ -1,4 +1,4 @@
-#[derive(juniper::GraphQLScalarValue)]
+#[derive(juniper::ScalarValue)]
 struct ScalarValue;
 
 fn main() {}

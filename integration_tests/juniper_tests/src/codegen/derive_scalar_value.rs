@@ -1,10 +1,10 @@
-use juniper::{DefaultScalarValue, GraphQLScalarValue, ScalarValue as _};
+use juniper::{DefaultScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
 
 mod trivial {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[graphql(as_int, as_float)]
@@ -13,7 +13,7 @@ mod trivial {
         Float(f64),
         #[graphql(as_str, as_string, into_string)]
         String(String),
-        #[graphql(as_boolean)]
+        #[graphql(as_bool)]
         Boolean(bool),
     }
 
@@ -37,7 +37,7 @@ mod trivial {
 mod named_fields {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[graphql(as_int, as_float)]
@@ -46,7 +46,7 @@ mod named_fields {
         Float(f64),
         #[graphql(as_str, as_string, into_string)]
         String(String),
-        #[graphql(as_boolean)]
+        #[graphql(as_bool)]
         Boolean { v: bool },
     }
 
@@ -70,7 +70,7 @@ mod named_fields {
 mod custom_fn {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[graphql(as_int, as_float)]
@@ -83,7 +83,7 @@ mod custom_fn {
             into_string = std::convert::identity,
         )]
         String(String),
-        #[graphql(as_boolean)]
+        #[graphql(as_bool)]
         Boolean(bool),
     }
 
@@ -107,7 +107,7 @@ mod custom_fn {
 mod allow_missing_attributes {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, GraphQLScalarValue, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, ScalarValue, PartialEq, Serialize)]
     #[graphql(allow_missing_attributes)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
@@ -116,7 +116,7 @@ mod allow_missing_attributes {
         Float(f64),
         #[graphql(as_str, as_string, into_string)]
         String(String),
-        #[graphql(as_boolean)]
+        #[graphql(as_bool)]
         Boolean(bool),
     }
 

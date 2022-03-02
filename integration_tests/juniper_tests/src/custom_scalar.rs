@@ -6,11 +6,11 @@ use juniper::{
     graphql_vars,
     parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
-    EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
-    RootNode, Value, Variables,
+    EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
+    Value, Variables,
 };
 
-#[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
+#[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
 #[serde(untagged)]
 pub(crate) enum MyScalarValue {
     #[graphql(as_int, as_float)]
@@ -20,7 +20,7 @@ pub(crate) enum MyScalarValue {
     Float(f64),
     #[graphql(as_string, into_string, as_str)]
     String(String),
-    #[graphql(as_boolean)]
+    #[graphql(as_bool)]
     Boolean(bool),
 }
 

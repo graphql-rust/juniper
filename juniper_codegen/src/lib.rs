@@ -550,7 +550,7 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
         .into()
 }
 
-/// `#[derive(GraphQLScalarValue)]` macro for deriving a [`ScalarValue`]
+/// `#[derive(ScalarValue)]` macro for deriving a [`ScalarValue`]
 /// implementation.
 ///
 /// To derive [`ScalarValue`] on enum you should mark the corresponding enum
@@ -561,9 +561,9 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// # use std::{fmt, convert::TryInto as _};
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::GraphQLScalarValue;
+/// # use juniper::ScalarValue;
 /// #
-/// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
+/// #[derive(Clone, Debug, ScalarValue, PartialEq, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
 ///     #[graphql(as_int, as_float)]
@@ -578,7 +578,7 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///         //          ^^^^^^^^^^^^^ You can provide custom resolvers.
 ///     )]
 ///     String(String),
-///     #[graphql(as_boolean)]
+///     #[graphql(as_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -650,9 +650,9 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
+#[proc_macro_derive(ScalarValue, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
-    derive_scalar_value::expand(input.into())
+    scalar_value::expand_derive(input.into())
         .unwrap_or_abort()
         .into()
 }

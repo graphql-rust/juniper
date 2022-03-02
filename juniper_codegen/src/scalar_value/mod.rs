@@ -1,4 +1,4 @@
-//! Code generation for `#[derive(GraphQLScalarValue)]` macro.
+//! Code generation for `#[derive(ScalarValue)]` macro.
 
 use std::{collections::HashMap, convert::TryFrom};
 
@@ -18,10 +18,10 @@ use crate::{
     GraphQLScope,
 };
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLScalarValue)]` macro.
+/// [`GraphQLScope`] of errors for `#[derive(ScalarValue)]` macro.
 const ERR: GraphQLScope = GraphQLScope::ScalarValueDerive;
 
-/// Expands `#[derive(GraphQLScalarValue)]` macro into generated code.
+/// Expands `#[derive(ScalarValue)]` macro into generated code.
 pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let span = ast.span();
@@ -52,7 +52,7 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         (Method::AsStr, "as_str"),
         (Method::AsString, "as_string"),
         (Method::IntoString, "into_string"),
-        (Method::AsBoolean, "as_boolean"),
+        (Method::AsBool, "as_bool"),
     ]
     .iter()
     .filter_map(|(method, err)| (!methods.contains_key(method)).then(|| err))
@@ -128,7 +128,7 @@ impl Attr {
     }
 }
 
-/// Possible attribute names of the `#[derive(GraphQLScalarValue)]`.
+/// Possible attribute names of the `#[derive(ScalarValue)]`.
 #[derive(Eq, Hash, PartialEq)]
 enum Method {
     /// `#[graphql(as_int)]`.
@@ -146,8 +146,8 @@ enum Method {
     /// `#[graphql(into_string)]`.
     IntoString,
 
-    /// `#[graphql(as_boolean)]`.
-    AsBoolean,
+    /// `#[graphql(as_bool)]`.
+    AsBool,
 }
 
 /// Available arguments behind `#[graphql]` attribute when generating code for
@@ -166,7 +166,7 @@ impl Parse for VariantAttr {
                 "as_str" => Method::AsStr,
                 "as_string" => Method::AsString,
                 "into_string" => Method::IntoString,
-                "as_bool" | "as_boolean" => Method::AsBoolean,
+                "as_bool" => Method::AsBool,
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -275,8 +275,8 @@ impl Definition {
                 quote! { std::string::String::from(v) },
             ),
             (
-                Method::AsBoolean,
-                quote! { fn as_boolean(&self) -> Option<bool> },
+                Method::AsBool,
+                quote! { fn as_bool(&self) -> Option<bool> },
                 quote! { bool::from(*v) },
             ),
         ];
