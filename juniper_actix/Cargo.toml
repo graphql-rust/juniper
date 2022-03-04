@@ -12,7 +12,7 @@ repository = "https://github.com/graphql-rust/juniper"
 subscriptions = ["juniper_graphql_ws", "tokio"]
 
 [dependencies]
-actix = "0.12"
+actix = "0.13"
 actix-http = "3.0"
 http = "0.2.4"
 actix-web = "4.0"
