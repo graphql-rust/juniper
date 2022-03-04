@@ -35,7 +35,8 @@ Juniper has built-in support for a few additional types from common third party
 crates. They are enabled via features that are on by default.
 
 * uuid::Uuid
-* chrono::DateTime
+* chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime}
+* chrono_tz::Tz;
 * time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset}
 * url::Url
 * bson::oid::ObjectId
