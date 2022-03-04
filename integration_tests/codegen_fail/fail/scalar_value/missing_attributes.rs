@@ -1,12 +1,12 @@
-use juniper::GraphQLScalarValue;
+use juniper::ScalarValue;
 
-#[derive(Clone, Debug, GraphQLScalarValue, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ScalarValue)]
 pub enum DefaultScalarValue {
     Int(i32),
     Float(f64),
-    #[graphql(as_str, as_string, into_string)]
+    #[value(as_str, as_string, into_string)]
     String(String),
-    #[graphql(as_boolean)]
+    #[value(as_bool)]
     Boolean(bool),
 }
 

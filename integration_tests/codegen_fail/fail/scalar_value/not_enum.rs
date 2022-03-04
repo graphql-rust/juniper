@@ -1,6 +1,4 @@
 #[derive(juniper::ScalarValue)]
-enum ScalarValue {
-    Variant(u32, i64),
-}
+struct ScalarValue;
 
 fn main() {}

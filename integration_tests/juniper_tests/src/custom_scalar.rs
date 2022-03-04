@@ -10,17 +10,17 @@ use juniper::{
     RootNode, Value, Variables,
 };
 
-#[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 #[serde(untagged)]
 pub(crate) enum MyScalarValue {
-    #[graphql(as_int, as_float)]
+    #[value(as_float, as_int)]
     Int(i32),
     Long(i64),
-    #[graphql(as_float)]
+    #[value(as_float)]
     Float(f64),
-    #[graphql(as_string, into_string, as_str)]
+    #[value(as_str, as_string, into_string)]
     String(String),
-    #[graphql(as_boolean)]
+    #[value(as_bool)]
     Boolean(bool),
 }
 

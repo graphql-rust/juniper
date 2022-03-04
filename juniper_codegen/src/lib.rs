@@ -110,12 +110,12 @@ mod derive_enum;
 mod derive_input_object;
 
 mod common;
-mod derive_scalar_value;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
 mod graphql_subscription;
 mod graphql_union;
+mod scalar_value;
 
 use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
@@ -550,36 +550,36 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
         .into()
 }
 
-/// `#[derive(GraphQLScalarValue)]` macro for deriving a [`ScalarValue`]
+/// `#[derive(ScalarValue)]` macro for deriving a [`ScalarValue`]
 /// implementation.
 ///
-/// To derive [`ScalarValue`] on enum you should mark corresponding enum
-/// variants with `as_int`/`as_float`/`as_string`/`into_string`/`as_str`/
-/// `as_boolean` attributes (names correspond to [`ScalarValue`] required
+/// To derive a [`ScalarValue`] on enum you should mark the corresponding enum
+/// variants with `as_int`, `as_float`, `as_string`, `into_string`, `as_str` and
+/// `as_bool` attribute argumentes (names correspond to [`ScalarValue`] required
 /// methods).
 ///
 /// ```rust
 /// # use std::{fmt, convert::TryInto as _};
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::GraphQLScalarValue;
+/// # use juniper::ScalarValue;
 /// #
-/// #[derive(Clone, Debug, GraphQLScalarValue, PartialEq, Serialize)]
+/// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
-///     #[graphql(as_int, as_float)]
+///     #[value(as_float, as_int)]
 ///     Int(i32),
 ///     Long(i64),
-///     #[graphql(as_float)]
+///     #[value(as_float)]
 ///     Float(f64),
-///     #[graphql(
+///     #[value(
 ///         into_string,
 ///         as_str,
 ///         as_string = String::clone,
-///         //          ^^^^^^^^^^^^^ You can provide custom resolvers.
 ///     )]
+///     //              ^^^^^^^^^^^^^ custom resolvers may be provided
 ///     String(String),
-///     #[graphql(as_boolean)]
+///     #[value(as_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -651,9 +651,9 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
+#[proc_macro_derive(ScalarValue, attributes(value))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
-    derive_scalar_value::expand(input.into())
+    scalar_value::expand_derive(input.into())
         .unwrap_or_abort()
         .into()
 }
