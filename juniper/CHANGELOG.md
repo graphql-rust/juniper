@@ -30,6 +30,7 @@
   - Support usage on type aliases in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules).
 - Rename `ScalarValue::as_boolean` to `ScalarValue::as_bool`. ([#1025](https://github.com/graphql-rust/juniper/pull/1025))
 - Change [`chrono` crate](https://docs.rs/chrono) GraphQL scalars according to the [graphql-scalars.dev](https://graphql-scalars.dev). ([#1010](https://github.com/graphql-rust/juniper/pull/1010))
+- Disable `chrono` feature by default. ([#1010](https://github.com/graphql-rust/juniper/pull/1010))
 - Remove `scalar-naivetime` feature. ([#1010](https://github.com/graphql-rust/juniper/pull/1010))
 
 ## Features

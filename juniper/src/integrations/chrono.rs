@@ -20,14 +20,9 @@
 
 use std::fmt;
 
-use chrono::{FixedOffset, SecondsFormat, TimeZone, Timelike as _};
+use chrono::{FixedOffset, TimeZone};
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
-
-/// Format of a [`Date` scalar][1].
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/date
-const DATE_FORMAT: &str = "%Y-%m-%d";
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -50,11 +45,16 @@ pub type Date = chrono::NaiveDate;
 mod date {
     use super::*;
 
+    /// Format of a [`Date` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/date
+    const FORMAT: &str = "%Y-%m-%d";
+
     pub(super) fn to_output<S>(v: &Date) -> Value<S>
     where
         S: ScalarValue,
     {
-        Value::scalar(v.format(DATE_FORMAT).to_string())
+        Value::scalar(v.format(FORMAT).to_string())
     }
 
     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<Date, String>
@@ -64,25 +64,10 @@ mod date {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                Date::parse_from_str(s, DATE_FORMAT).map_err(|e| format!("Invalid `Date`: {}", e))
+                Date::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `Date`: {}", e))
             })
     }
 }
-
-/// Full format of a [`LocalTime` scalar][1].
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-const LOCAL_TIME_FORMAT: &str = "%H:%M:%S%.3f";
-
-/// Format of a [`LocalTime` scalar][1] without milliseconds.
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-const LOCAL_TIME_FORMAT_NO_MILLIS: &str = "%H:%M:%S";
-
-/// Format of a [`LocalTime` scalar][1] without seconds.
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-const LOCAL_TIME_FORMAT_NO_SECS: &str = "%H:%M";
 
 /// Clock time within a given date (without time zone) in `HH:mm[:ss[.SSS]]`
 /// format.
@@ -104,7 +89,24 @@ const LOCAL_TIME_FORMAT_NO_SECS: &str = "%H:%M";
 pub type LocalTime = chrono::NaiveTime;
 
 mod local_time {
+    use chrono::Timelike as _;
+
     use super::*;
+
+    /// Full format of a [`LocalTime` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
+    const FORMAT: &str = "%H:%M:%S%.3f";
+
+    /// Format of a [`LocalTime` scalar][1] without milliseconds.
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
+    const FORMAT_NO_MILLIS: &str = "%H:%M:%S";
+
+    /// Format of a [`LocalTime` scalar][1] without seconds.
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
+    const FORMAT_NO_SECS: &str = "%H:%M";
 
     pub(super) fn to_output<S>(v: &LocalTime) -> Value<S>
     where
@@ -112,9 +114,9 @@ mod local_time {
     {
         Value::scalar(
             if v.nanosecond() == 0 {
-                v.format(LOCAL_TIME_FORMAT_NO_MILLIS)
+                v.format(FORMAT_NO_MILLIS)
             } else {
-                v.format(LOCAL_TIME_FORMAT)
+                v.format(FORMAT)
             }
             .to_string(),
         )
@@ -130,16 +132,13 @@ mod local_time {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
                 // error to be most informative.
-                LocalTime::parse_from_str(s, LOCAL_TIME_FORMAT_NO_MILLIS)
-                    .or_else(|_| LocalTime::parse_from_str(s, LOCAL_TIME_FORMAT_NO_SECS))
-                    .or_else(|_| LocalTime::parse_from_str(s, LOCAL_TIME_FORMAT))
+                LocalTime::parse_from_str(s, FORMAT_NO_MILLIS)
+                    .or_else(|_| LocalTime::parse_from_str(s, FORMAT_NO_SECS))
+                    .or_else(|_| LocalTime::parse_from_str(s, FORMAT))
                     .map_err(|e| format!("Invalid `LocalTime`: {}", e))
             })
     }
 }
-
-/// Format of a `LocalDateTime` scalar.
-const LOCAL_DATE_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
 /// Combined date and time (without time zone) in `yyyy-MM-dd HH:mm:ss` format.
 ///
@@ -152,11 +151,14 @@ pub type LocalDateTime = chrono::NaiveDateTime;
 mod local_date_time {
     use super::*;
 
+    /// Format of a `LocalDateTime` scalar.
+    const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+
     pub(super) fn to_output<S>(v: &LocalDateTime) -> Value<S>
     where
         S: ScalarValue,
     {
-        Value::scalar(v.format(LOCAL_DATE_TIME_FORMAT).to_string())
+        Value::scalar(v.format(FORMAT).to_string())
     }
 
     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDateTime, String>
@@ -166,7 +168,7 @@ mod local_date_time {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                LocalDateTime::parse_from_str(s, LOCAL_DATE_TIME_FORMAT)
+                LocalDateTime::parse_from_str(s, FORMAT)
                     .map_err(|e| format!("Invalid `LocalDateTime`: {}", e))
             })
     }
@@ -179,14 +181,11 @@ mod local_date_time {
 ///
 /// [`DateTime` scalar][1] compliant.
 ///
-/// See also [`chrono::DateTime`][2] and [`chrono::FixedOffset`][3]` for
-/// details. To implement custom [`TimeZone`]s see [`FromFixedOffset`].
+/// See also [`chrono::DateTime`][2] for details.
 ///
 /// [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/chrono/latest/chrono/struct.DateTime.html
-/// [3]: https://docs.rs/chrono/latest/chrono/offset/struct.FixedOffset.html
-/// [`TimeZone`]: chrono::TimeZone
 #[graphql_scalar(
     with = date_time,
     parse_token(String),
@@ -198,6 +197,8 @@ mod local_date_time {
 pub type DateTime<Tz> = chrono::DateTime<Tz>;
 
 mod date_time {
+    use chrono::{SecondsFormat, Utc};
+
     use super::*;
 
     pub(super) fn to_output<S, Tz>(v: &DateTime<Tz>) -> Value<S>
@@ -206,7 +207,10 @@ mod date_time {
         Tz: chrono::TimeZone,
         Tz::Offset: fmt::Display,
     {
-        Value::scalar(v.to_rfc3339_opts(SecondsFormat::AutoSi, true))
+        Value::scalar(
+            v.with_timezone(&Utc)
+                .to_rfc3339_opts(SecondsFormat::AutoSi, true),
+        )
     }
 
     pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<DateTime<Tz>, String>
@@ -218,20 +222,21 @@ mod date_time {
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
                 DateTime::<FixedOffset>::parse_from_rfc3339(s)
-                    .map(FromFixedOffset::from_fixed_offset)
                     .map_err(|e| format!("Invalid `DateTime`: {}", e))
+                    .map(FromFixedOffset::from_fixed_offset)
             })
     }
 }
 
-/// This trait allows to implement custom [`TimeZone`]s compatible with
-/// GraphQL [`DateTime`] scalar.
+/// Trait allowing to implement a custom [`TimeZone`], which preserves its
+/// [`TimeZone`] information when parsed in a [`DateTime`] GraphQL scalar.
 ///
 /// # Example
 ///
-/// Creating custom [CET] [`TimeZone`] using [`chrono-tz`] crate. This is
+/// Creating a custom [CET] [`TimeZone`] using [`chrono-tz`] crate. This is
 /// required because [`chrono-tz`] uses enum to represent all [`TimeZone`]s, so
-/// we have no knowledge of concrete underlying [`TimeZone`].
+/// we have no knowledge of the concrete underlying [`TimeZone`] on the type
+/// level.
 ///
 /// ```rust
 /// # use chrono::{FixedOffset, TimeZone};
@@ -289,14 +294,16 @@ mod date_time {
 /// }
 /// ```
 ///
+/// [`chrono-tz`]: chrono_tz
 /// [CET]: https://en.wikipedia.org/wiki/Central_European_Time
 pub trait FromFixedOffset: TimeZone {
-    /// Converts [`DateTime`]`<`[`FixedOffset`]`>` into [`DateTime`]`<Self>`.
+    /// Converts the given [`DateTime`]`<`[`FixedOffset`]`>` into a
+    /// [`DateTime`]`<Self>`.
     fn from_fixed_offset(dt: DateTime<FixedOffset>) -> DateTime<Self>;
 }
 
 impl FromFixedOffset for FixedOffset {
-    fn from_fixed_offset(dt: DateTime<FixedOffset>) -> DateTime<Self> {
+    fn from_fixed_offset(dt: DateTime<Self>) -> DateTime<Self> {
         dt
     }
 }
@@ -311,6 +318,13 @@ impl FromFixedOffset for chrono::Utc {
 impl FromFixedOffset for chrono::Local {
     fn from_fixed_offset(dt: DateTime<FixedOffset>) -> DateTime<Self> {
         dt.into()
+    }
+}
+
+#[cfg(feature = "chrono-tz")]
+impl FromFixedOffset for chrono_tz::Tz {
+    fn from_fixed_offset(dt: DateTime<FixedOffset>) -> DateTime<Self> {
+        dt.with_timezone(&chrono_tz::UTC)
     }
 }
 
@@ -684,7 +698,7 @@ mod date_time_test {
                     ),
                     FixedOffset::east(9 * 3600),
                 ),
-                graphql_input_value!("1564-01-30T14:00:00.123+09:00"),
+                graphql_input_value!("1564-01-30T05:00:00.123Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -803,7 +817,7 @@ mod integration_test {
                     "localTime": "16:07:08",
                     "localDateTime": "2016-07-08 09:10:11",
                     "dateTime": "1996-12-20T00:39:57Z",
-                    "passDateTime": "2014-11-28T13:00:09+01:00",
+                    "passDateTime": "2014-11-28T12:00:09Z",
                     "transformDateTime": "2014-11-28T12:00:09Z",
                 }),
                 vec![],

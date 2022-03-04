@@ -28,16 +28,11 @@ use time::{
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-/// Format of a [`Date` scalar][1].
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/date
-const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
-
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
 /// Represents a description of the date (as used for birthdays, for example).
 /// It cannot represent an instant on the time-line.
-///                   
+///
 /// [`Date` scalar][1] compliant.
 ///
 /// See also [`time::Date`][2] for details.
@@ -54,9 +49,14 @@ pub type Date = time::Date;
 mod date {
     use super::*;
 
+    /// Format of a [`Date` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/date
+    const FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
+
     pub(super) fn to_output<S: ScalarValue>(v: &Date) -> Value<S> {
         Value::scalar(
-            v.format(DATE_FORMAT)
+            v.format(FORMAT)
                 .unwrap_or_else(|e| panic!("Failed to format `Date`: {}", e)),
         )
     }
@@ -64,26 +64,9 @@ mod date {
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Date, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s| Date::parse(s, DATE_FORMAT).map_err(|e| format!("Invalid `Date`: {}", e)))
+            .and_then(|s| Date::parse(s, FORMAT).map_err(|e| format!("Invalid `Date`: {}", e)))
     }
 }
-
-/// Full format of a [`LocalTime` scalar][1].
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-const LOCAL_TIME_FORMAT: &[FormatItem<'_>] =
-    format_description!("[hour]:[minute]:[second].[subsecond digits:3]");
-
-/// Format of a [`LocalTime` scalar][1] without milliseconds.
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-const LOCAL_TIME_FORMAT_NO_MILLIS: &[FormatItem<'_>] =
-    format_description!("[hour]:[minute]:[second]");
-
-/// Format of a [`LocalTime` scalar][1] without seconds.
-///
-/// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-const LOCAL_TIME_FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]:[minute]");
 
 /// Clock time within a given date (without time zone) in `HH:mm[:ss[.SSS]]`
 /// format.
@@ -103,12 +86,28 @@ pub type LocalTime = time::Time;
 mod local_time {
     use super::*;
 
+    /// Full format of a [`LocalTime` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
+    const FORMAT: &[FormatItem<'_>] =
+        format_description!("[hour]:[minute]:[second].[subsecond digits:3]");
+
+    /// Format of a [`LocalTime` scalar][1] without milliseconds.
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
+    const FORMAT_NO_MILLIS: &[FormatItem<'_>] = format_description!("[hour]:[minute]:[second]");
+
+    /// Format of a [`LocalTime` scalar][1] without seconds.
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
+    const FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]:[minute]");
+
     pub(super) fn to_output<S: ScalarValue>(v: &LocalTime) -> Value<S> {
         Value::scalar(
             if v.millisecond() == 0 {
-                v.format(LOCAL_TIME_FORMAT_NO_MILLIS)
+                v.format(FORMAT_NO_MILLIS)
             } else {
-                v.format(LOCAL_TIME_FORMAT)
+                v.format(FORMAT)
             }
             .unwrap_or_else(|e| panic!("Failed to format `LocalTime`: {}", e)),
         )
@@ -121,17 +120,13 @@ mod local_time {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
                 // error to be most informative.
-                LocalTime::parse(s, LOCAL_TIME_FORMAT_NO_MILLIS)
-                    .or_else(|_| LocalTime::parse(s, LOCAL_TIME_FORMAT_NO_SECS))
-                    .or_else(|_| LocalTime::parse(s, LOCAL_TIME_FORMAT))
+                LocalTime::parse(s, FORMAT_NO_MILLIS)
+                    .or_else(|_| LocalTime::parse(s, FORMAT_NO_SECS))
+                    .or_else(|_| LocalTime::parse(s, FORMAT))
                     .map_err(|e| format!("Invalid `LocalTime`: {}", e))
             })
     }
 }
-
-/// Format of a [`LocalDateTime`] scalar.
-const LOCAL_DATE_TIME_FORMAT: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
 
 /// Combined date and time (without time zone) in `yyyy-MM-dd HH:mm:ss` format.
 ///
@@ -144,9 +139,13 @@ pub type LocalDateTime = time::PrimitiveDateTime;
 mod local_date_time {
     use super::*;
 
+    /// Format of a [`LocalDateTime`] scalar.
+    const FORMAT: &[FormatItem<'_>] =
+        format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+
     pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
         Value::scalar(
-            v.format(LOCAL_DATE_TIME_FORMAT)
+            v.format(FORMAT)
                 .unwrap_or_else(|e| panic!("Failed to format `LocalDateTime`: {}", e)),
         )
     }
@@ -155,7 +154,7 @@ mod local_date_time {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                LocalDateTime::parse(s, LOCAL_DATE_TIME_FORMAT)
+                LocalDateTime::parse(s, FORMAT)
                     .map_err(|e| format!("Invalid `LocalDateTime`: {}", e))
             })
     }
