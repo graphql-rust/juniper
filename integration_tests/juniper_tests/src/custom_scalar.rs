@@ -6,8 +6,8 @@ use juniper::{
     graphql_vars,
     parser::{ParseError, ScalarToken, Token},
     serde::{de, Deserialize, Deserializer, Serialize},
-    EmptyMutation, FieldResult, GraphQLScalarValue, InputValue, Object, ParseScalarResult,
-    RootNode, Value, Variables,
+    EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
+    Value, Variables,
 };
 
 #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
