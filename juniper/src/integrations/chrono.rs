@@ -225,7 +225,7 @@ mod date_time {
 }
 
 /// This trait allows to implement custom [`TimeZone`]s compatible with
-/// GraphQL [`DateTime`] type.
+/// GraphQL [`DateTime`] scalar.
 ///
 /// # Example
 ///
