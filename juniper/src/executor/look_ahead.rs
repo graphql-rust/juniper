@@ -153,7 +153,7 @@ where
                                 if let LookAheadValue::Scalar(s) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    s.as_boolean().unwrap_or(false)
+                                    s.as_bool().unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -168,7 +168,7 @@ where
                                 if let LookAheadValue::Scalar(b) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    b.as_boolean().map(::std::ops::Not::not).unwrap_or(false)
+                                    b.as_bool().map(::std::ops::Not::not).unwrap_or(false)
                                 } else {
                                     false
                                 }

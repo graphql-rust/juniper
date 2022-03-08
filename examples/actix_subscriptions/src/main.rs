@@ -136,7 +136,7 @@ async fn main() -> std::io::Result<()> {
                     .route(web::get().to(graphql)),
             )
             .service(web::resource("/playground").route(web::get().to(playground)))
-            .default_service(web::route().to(|| {
+            .default_service(web::to(|| async {
                 HttpResponse::Found()
                     .append_header((header::LOCATION, "/playground"))
                     .finish()

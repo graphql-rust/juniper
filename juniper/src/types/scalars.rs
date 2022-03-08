@@ -281,7 +281,7 @@ mod impl_boolean_scalar {
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Boolean, String> {
         v.as_scalar_value()
-            .and_then(ScalarValue::as_boolean)
+            .and_then(ScalarValue::as_bool)
             .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
     }
 
