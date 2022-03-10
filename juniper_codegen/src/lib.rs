@@ -110,7 +110,6 @@ mod derive_enum;
 mod derive_input_object;
 
 mod common;
-mod derive_scalar_value;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
@@ -719,8 +718,9 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// > __NOTE:__ Struct or trait representing interface acts as a blueprint and
-/// >           isn't actually used. But no-one is stopping you from
+/// > __NOTE:__ Struct or trait representing interface acts only as a blueprint
+/// >           for names of methods, their arguments and return type. So isn't
+/// >           actually used at a runtime. But no-one is stopping you from
 /// >           implementing trait manually for your own usage.
 ///
 /// # Custom name, description, deprecation and argument defaults
