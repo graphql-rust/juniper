@@ -114,9 +114,9 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     .into_token_stream())
 }
 
-/// Parses a [`field::Definition`] from the given trait method definition.
+/// Parses a [`field::Definition`] from the given struct field definition.
 ///
-/// Returns [`None`] if parsing fails, or the method field is ignored.
+/// Returns [`None`] if the parsing fails, or the struct field is ignored.
 #[must_use]
 fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
     let field_ident = field

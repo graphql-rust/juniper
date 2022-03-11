@@ -489,9 +489,9 @@ impl Definition {
             .iter()
             .map(|f| f.method_mark_tokens(false, scalar));
 
-        let is_output = self.implemented_for.iter().map(|implementer| {
-            quote_spanned! { implementer.span() =>
-               <#implementer as ::juniper::marker::IsOutputType<#scalar>>::mark();
+        let is_output = self.implemented_for.iter().map(|impler| {
+            quote_spanned! { impler.span() =>
+               <#impler as ::juniper::marker::IsOutputType<#scalar>>::mark();
             }
         });
 
@@ -512,7 +512,7 @@ impl Definition {
                     ::juniper::assert_interfaces_impls!(
                         #const_scalar,
                         #ty#ty_const_generics,
-                        #(#const_impl_for),*
+                        #( #const_impl_for ),*
                     );
                 }
             }
@@ -759,7 +759,7 @@ impl Definition {
             {
                 const NAMES: ::juniper::macros::reflect::Types = &[
                     <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
-                    #(<#implemented_for as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
+                    #( <#implemented_for as ::juniper::macros::reflect::BaseType<#scalar>>::NAME ),*
                 ];
             }
 
