@@ -15,6 +15,9 @@ eq = $(if $(or $(1),$(2)),$(and $(findstring $(1),$(2)),\
 # Aliases #
 ###########
 
+book: book.build
+
+
 fmt: cargo.fmt
 
 
@@ -57,6 +60,15 @@ cargo.test: test.cargo
 # Testing commands #
 ####################
 
+# Run Rust tests of Book.
+#
+# Usage:
+#	make test.book
+
+test.book:
+	@make test.cargo crate=juniper_book_tests
+
+
 # Run Rust tests of project crates.
 #
 # Usage:
@@ -69,10 +81,35 @@ test.cargo:
 
 
 
+#################
+# Book commands #
+#################
+
+# Build Book.
+#
+# Usage:
+#	make book.build [out=<dir>]
+
+book.build:
+	mdbook build book/ $(if $(call eq,$(out),),,-d $(out))
+
+
+# Serve Book on some port.
+#
+# Usage:
+#	make book.serve [port=(3000|<port>)]
+
+book.serve:
+	mdbook serve book/ -p=$(or $(port),3000)
+
+
+
+
 ##################
 # .PHONY section #
 ##################
 
-.PHONY: fmt lint test \
+.PHONY: book fmt lint test \
+        book.build book.serve \
         cargo.fmt cargo.lint \
-        test.cargo
+        test.book test.cargo
