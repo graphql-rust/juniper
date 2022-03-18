@@ -2,7 +2,7 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
 CARGO_MAKE_CARGO_ALL_FEATURES = ""
-CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "integration_tests/*;examples/*;juniper_benchmarks;"
+CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "tests/*;examples/*;juniper_benchmarks;"
 
 
 # Run `RELEASE_LEVEL=(patch|major|minor) cargo make release` to push a new release of every crate.

@@ -1,97 +1,174 @@
 name: CI
 
-on: [pull_request, push]
+on:
+  push:
+    branches: ["master"]
+    tags: ["juniper*"]
+  pull_request:
+    branches: ["master"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: 1
 
 jobs:
-  ###################################################
-  # Formatting
-  ###################################################
 
-  format:
-    name: Check formatting
+  ##########################
+  # Linting and formatting #
+  ##########################
 
+  clippy:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/juniper')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          components: rustfmt
           profile: minimal
+          toolchain: stable
+          components: clippy
+
+      - run: make cargo.lint
+
+  rustfmt:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/juniper')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: rustfmt
+
+      - run: make cargo.fmt check=yes
+
+
+
+
+  ###########
+  # Testing #
+  ###########
+
+  test:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/juniper')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - juniper_codegen
+          - juniper
+          - juniper_subscriptions
+          - juniper_graphql_ws
+          - juniper_integration_tests
+          - juniper_codegen_tests
+          - juniper_actix
+          - juniper_hyper
+          - juniper_iron
+          - juniper_rocket
+          - juniper_warp
+        os:
+          - ubuntu
+          - macOS
+          - windows
+        toolchain:
+          - stable
+          - beta
+          - nightly
+        exclude:
+          - crate: juniper_codegen_tests
+            toolchain: stable
+          - crate: juniper_codegen_tests
+            toolchain: beta
+          - crate: juniper_codegen_tests
+            os: macOS
+          - crate: juniper_codegen_tests
+            os: windows
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
           override: true
 
-      - name: Run rustfmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: -- --check
+      - run: make test.cargo crate=${{ matrix.crate }}
+
+
+################################################################################
 
   ###################################################
   # Main Builds
   ###################################################
 
-  build:
-    runs-on: ${{ matrix.os }}
+  #build:
+  #  runs-on: ${{ matrix.os }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        rust: [stable, beta, nightly]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      rust: [stable, beta, nightly]
+  #      os: [ubuntu-latest, windows-latest, macOS-latest]
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v2
 
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          profile: minimal
-          override: true
+  #    - name: Install rust
+  #      uses: actions-rs/toolchain@v1
+  #      with:
+  #        toolchain: ${{ matrix.rust }}
+  #        profile: minimal
+  #        override: true
 
-      - uses: davidB/rust-cargo-make@v1
-        with:
-          version: '0.20.0'
+  #    - uses: davidB/rust-cargo-make@v1
+  #      with:
+  #        version: '0.20.0'
 
-      - name: Build and run tests
-        env:
-          CARGO_MAKE_RUN_CODECOV: true
-        run: |
-          cargo make workspace-ci-flow --no-workspace
+  #    - name: Build and run tests
+  #      env:
+  #        CARGO_MAKE_RUN_CODECOV: true
+  #      run: |
+  #        cargo make workspace-ci-flow --no-workspace
 
   ###################################################
   # WASM Builds
   ###################################################
 
-  wasm:
-    runs-on: ${{ matrix.os }}
+  #wasm:
+  #  runs-on: ${{ matrix.os }}
 
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+  #  strategy:
+  #    matrix:
+  #      os: [ubuntu-latest, windows-latest, macOS-latest]
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v2
 
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          profile: minimal
-          override: true
+  #    - name: Install rust
+  #      uses: actions-rs/toolchain@v1
+  #      with:
+  #        toolchain: stable
+  #        target: wasm32-unknown-unknown
+  #        profile: minimal
+  #        override: true
 
-      - name: Check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --target wasm32-unknown-unknown --package juniper --package juniper_codegen
+  #    - name: Check
+  #      uses: actions-rs/cargo@v1
+  #      with:
+  #        command: check
+  #        args: --target wasm32-unknown-unknown --package juniper --package juniper_codegen
 
   ###################################################
   # Releases

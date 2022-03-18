@@ -8,9 +8,6 @@ members = [
   "examples/warp_async",
   "examples/warp_subscriptions",
   "examples/actix_subscriptions",
-  "integration_tests/juniper_tests",
-  "integration_tests/async_await",
-  "integration_tests/codegen_fail",
   "juniper_hyper",
   "juniper_iron",
   "juniper_rocket",
@@ -18,6 +15,8 @@ members = [
   "juniper_graphql_ws",
   "juniper_warp",
   "juniper_actix",
+  "tests/codegen",
+  "tests/integration",
 ]
 exclude = [
   "docs/book/tests",

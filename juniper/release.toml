@@ -10,7 +10,7 @@ pre-release-replacements = [
   # codegen
   {file="../juniper_codegen/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
   # Tests.
-  {file="../integration_tests/juniper_tests/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../tests/integration/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
   # Hyper
   {file="../juniper_hyper/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
   {file="../juniper_hyper/Cargo.toml", min=0, search="\\[dev-dependencies\\.juniper\\]\nversion = \"[^\"]+\"", replace="[dev-dependencies.juniper]\nversion = \"{{version}}\""},
