@@ -109,6 +109,32 @@ jobs:
 
       - run: make test.cargo crate=${{ matrix.crate }}
 
+  wasm:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/juniper')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - juniper_codegen
+          - juniper
+        toolchain:
+          - stable
+          - beta
+          - nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          target: wasm32-unknown-unknown
+          override: true
+
+      - run: cargo check --target wasm32-unknown-unknown -p ${{ matrix.crate }}
+
 
 
 
