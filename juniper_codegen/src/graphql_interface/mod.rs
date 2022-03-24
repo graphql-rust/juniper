@@ -14,7 +14,7 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,
-    spanned::Spanned as _,
+    spanned::Spanned,
     token,
     visit::Visit,
 };
@@ -29,7 +29,28 @@ use crate::{
         scalar,
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
+    GraphQLScope,
 };
+
+/// Returns [`Ident`]s for generic enum deriving [`Clone`] and [`Copy`] on it
+/// and enum alias which generic arguments are filled with
+/// [GraphQL interface][1] implementers.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [`Ident`]: syn::Ident
+fn enum_idents(
+    trait_ident: &syn::Ident,
+    alias_ident: Option<&syn::Ident>,
+) -> (syn::Ident, syn::Ident) {
+    let enum_alias_ident = alias_ident
+        .cloned()
+        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
+    let enum_ident = alias_ident.map_or_else(
+        || format_ident!("{}ValueEnum", trait_ident.to_string()),
+        |c| format_ident!("{}Enum", c.inner().to_string()),
+    );
+    (enum_ident, enum_alias_ident)
+}
 
 /// Available arguments behind `#[graphql_interface]` attribute placed on a
 /// trait or struct definition, when generating code for [GraphQL interface][1]
@@ -300,6 +321,8 @@ struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implemented_for: Vec<syn::TypePath>,
+
+    suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
 }
 
 impl ToTokens for Definition {
@@ -454,6 +477,24 @@ impl Definition {
             quote! { ::juniper::sa::assert_type_ne_all!(#( #implemented_for ),*); }
         });
 
+        let suppress_dead_code = self.suppress_dead_code.as_ref().map(|(ident, fields)| {
+            let const_gens = self.const_trait_generics();
+            let fields = fields.iter().map(|f| &f.ident);
+
+            quote! {{
+                const SUPPRESS_DEAD_CODE: () = {
+                    let none = Option::<#ident#const_gens>::None;
+                    match none {
+                        Some(unreachable) => {
+                            #(let _ = unreachable.#fields;)*
+                        }
+                        None => {}
+                    }
+                };
+                let _ = SUPPRESS_DEAD_CODE;
+            }}
+        });
+
         quote! {
             #[automatically_derived]
             impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar>
@@ -461,6 +502,7 @@ impl Definition {
                 #where_clause
             {
                 fn mark() {
+                    #suppress_dead_code
                     #all_impled_for_unique
                     #( <#implemented_for as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
                 }

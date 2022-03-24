@@ -16,7 +16,7 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
-use super::{Attr, Definition};
+use super::{enum_idents, Attr, Definition};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
@@ -111,15 +111,7 @@ fn expand_on_trait(
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let enum_alias_ident = attr
-        .r#enum
-        .as_deref()
-        .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
-    let enum_ident = attr.r#enum.as_ref().map_or_else(
-        || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.inner().to_string()),
-    );
+    let (enum_ident, enum_alias_ident) = enum_idents(trait_ident, attr.r#enum.as_deref());
 
     let generated_code = Definition {
         generics: ast.generics.clone(),
@@ -136,6 +128,7 @@ fn expand_on_trait(
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
+        suppress_dead_code: None,
     };
 
     Ok(quote! {
@@ -299,16 +292,7 @@ fn expand_on_derive_input(
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let enum_alias_ident = attr
-        .r#enum
-        .as_deref()
-        .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
-    let enum_ident = attr.r#enum.as_ref().map_or_else(
-        || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.inner().to_string()),
-    );
-
+    let (enum_ident, enum_alias_ident) = enum_idents(trait_ident, attr.r#enum.as_deref());
     let generated_code = Definition {
         generics: ast.generics.clone(),
         vis: ast.vis.clone(),
@@ -324,6 +308,7 @@ fn expand_on_derive_input(
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
+        suppress_dead_code: None,
     };
 
     Ok(quote! {
@@ -403,7 +388,7 @@ fn err_default_impl_block<T, S: Spanned>(span: &S) -> Option<T> {
 
 /// Emits "expected named struct field" [`syn::Error`] pointing to the given
 /// `span`.
-fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
+pub(crate) fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(span.span(), "expected named struct field");
     None
 }

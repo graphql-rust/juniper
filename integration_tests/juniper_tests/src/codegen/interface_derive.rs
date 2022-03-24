@@ -1,7 +1,5 @@
 //! Tests for `#[derive(GraphQLInterface)]` macro.
 
-#![allow(dead_code)]
-
 use std::marker::PhantomData;
 
 use juniper::{
