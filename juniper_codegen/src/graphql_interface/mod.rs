@@ -29,7 +29,6 @@ use crate::{
         scalar,
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
-    GraphQLScope,
 };
 
 /// Returns [`Ident`]s for generic enum deriving [`Clone`] and [`Copy`] on it
@@ -47,7 +46,7 @@ fn enum_idents(
         .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
     let enum_ident = alias_ident.map_or_else(
         || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.inner().to_string()),
+        |c| format_ident!("{}Enum", c.to_string()),
     );
     (enum_ident, enum_alias_ident)
 }
@@ -322,6 +321,12 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implemented_for: Vec<syn::TypePath>,
 
+    /// Unlike `#[graphql_interface]` maro, `#[derive(GraphQLInterface)]` can't
+    /// append `#[allow(dead_code)]` to the unused struct, representing
+    /// [GraphQL interface][1]. We generate hacky `const` which doesn't actually
+    /// use it, but suppresses this warning.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
 }
 

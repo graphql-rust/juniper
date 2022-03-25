@@ -1,7 +1,7 @@
 //! Code generation for `#[derive(GraphQLInterface)]` macro.
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, ToTokens as _};
+use quote::ToTokens as _;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{

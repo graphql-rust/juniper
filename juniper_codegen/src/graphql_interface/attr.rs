@@ -3,7 +3,7 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{format_ident, quote};
+use quote::quote;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
