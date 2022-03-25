@@ -333,7 +333,9 @@ impl OnMethod {
                 .as_ref()
                 .map(|v| quote! { (#v).into() })
                 .unwrap_or_else(|| quote! { <#ty as Default>::default() });
-            quote_spanned! { val.span() => .arg_with_default::<#ty>(#name, &#val, info) }
+            quote_spanned! { val.span() =>
+                .arg_with_default::<#ty>(#name, &#val, info)
+            }
         } else {
             quote! { .arg::<#ty>(#name, info) }
         };

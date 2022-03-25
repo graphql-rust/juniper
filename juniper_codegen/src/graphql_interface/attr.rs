@@ -36,11 +36,12 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
 
     Err(syn::Error::new(
         Span::call_site(),
-        "#[graphql_interface] attribute is applicable to trait and struct definitions only",
+        "#[graphql_interface] attribute is applicable to trait and struct \
+         definitions only",
     ))
 }
 
-/// Expands `#[graphql_interface]` macro placed on trait definition.
+/// Expands `#[graphql_interface]` macro placed on the given trait definition.
 fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
@@ -139,7 +140,7 @@ fn expand_on_trait(
 
 /// Parses a [`field::Definition`] from the given trait method definition.
 ///
-/// Returns [`None`] if parsing fails, or the method field is ignored.
+/// Returns [`None`] if the parsing fails, or the method field is ignored.
 #[must_use]
 fn parse_trait_method(
     method: &mut syn::TraitItemMethod,
@@ -215,7 +216,7 @@ fn parse_trait_method(
     })
 }
 
-/// Expands `#[graphql_interface]` macro placed on struct.
+/// Expands `#[graphql_interface]` macro placed on the given struct.
 fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::DeriveInput,
@@ -230,8 +231,8 @@ fn expand_on_derive_input(
         syn::Data::Enum(_) | syn::Data::Union(_) => {
             return Err(ERR.custom_error(
                 ast.span(),
-                "#[graphql_interface] attribute is applicable \
-                 to trait and struct definitions only",
+                "#[graphql_interface] attribute is applicable to trait and \
+                 struct definitions only",
             ));
         }
     };
@@ -318,9 +319,9 @@ fn expand_on_derive_input(
     })
 }
 
-/// Parses a [`field::Definition`] from the given trait method definition.
+/// Parses a [`field::Definition`] from the given struct field definition.
 ///
-/// Returns [`None`] if parsing fails, or the method field is ignored.
+/// Returns [`None`] if the parsing fails, or the struct field is ignored.
 #[must_use]
 fn parse_struct_field(field: &mut syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
     let field_ident = field.ident.as_ref().or_else(|| err_unnamed_field(&field))?;

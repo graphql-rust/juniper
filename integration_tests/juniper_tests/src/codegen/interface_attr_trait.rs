@@ -711,7 +711,7 @@ mod fallible_field {
 
     impl<S: ScalarValue> IntoFieldError<S> for CustomError {
         fn into_field_error(self) -> FieldError<S> {
-            juniper::FieldError::new("Whatever", graphql_value!({"code": "some"}))
+            FieldError::new("Whatever", graphql_value!({"code": "some"}))
         }
     }
 
