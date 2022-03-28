@@ -76,6 +76,70 @@ struct Human {
 # fn main() {}
 ```
 
+### Interfaces implementing other interfaces
+
+GraphQL allows implementing interfaces on other interfaces in addition to objects. Note that every interface has to specify all other interfaces/objects it implements or implemented for. Missing one of `for = ` or `impl = ` attributes is a compile time error, as with cyclic references and all other interface features, so if it builds, you won't get runtime errors or panics. 
+
+```rust
+# extern crate juniper;
+use juniper::{graphql_interface, graphql_object, ID};
+
+#[graphql_interface(for = [HumanValue, Luke])]
+struct Node {
+    id: ID,
+}
+
+#[graphql_interface(for = HumanConnection)]
+struct Connection {
+    nodes: Vec<NodeValue>,
+}
+
+#[graphql_interface(impl = NodeValue, for = Luke)]
+struct Human {
+    id: ID,
+    home_planet: String,
+}
+
+#[derive(GraphQLObject)]
+#[graphql(impl = ConnectionValue)]
+struct HumanConnection {
+    nodes: Vec<HumanValue>,
+    //         ^^^^^^^^^^ notice not `NodeValue`
+    // GraphQL allows us to return `subtypes` on implementers.
+    // This can happen, because every `Human` is a `Node` too, so we are just
+    // imposing additional bounds, which still can be resolved with
+    // `... on Connection { nodes }`.
+    // https://spec.graphql.org/October2021/#IsValidImplementation()
+}
+
+struct Luke {
+    id: ID,
+}
+
+#[graphql_object(impl = [HumanValue, NodeValue])]
+impl Luke {
+    fn id(&self) -> &ID {
+        &self.id
+    }
+    
+    // As `String` and `&str` aren't distinguished by GraphQL
+    // spec, you can use them interchangeably.  ⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+    fn home_planet(language: Option<String>) -> &'static str {
+        //                   ^^^^^^^^^^^^^^
+        // Notice additional nullable field, which is missing on `Human`.
+        // GraphQL allows that and on resolving `...on Human { homePlanet }`
+        // will provide `None` for this argument.
+        match language.as_deref() {
+            None | Some("en") => "Tatooine",
+            Some("ko") => "타투인",
+            _ => todo!(),
+        }
+    }
+}
+#
+# fn main() {}
+```
+
 
 ### Ignoring trait methods
 
