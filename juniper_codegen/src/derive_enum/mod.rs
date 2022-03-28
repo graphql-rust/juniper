@@ -1,3 +1,7 @@
+//! Code generation for [GraphQL enums][1].
+//!
+//! [1]: https://spec.graphql.org/October2021/#sec-Enums
+
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{ext::IdentExt, spanned::Spanned, Data, Fields};

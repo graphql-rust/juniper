@@ -16,16 +16,16 @@ enum Episode {
 # fn main() {}
 ```
 
-Juniper converts all enum variants to uppercase, so the corresponding string
-values for these variants are `NEWHOPE`, `EMPIRE`, and `JEDI`, respectively. If
-you want to override this, you can use the `graphql` attribute, similar to how
-it works when [defining objects](objects/defining_objects.md):
+Juniper converts all enum variants to `SCREAMING_SNAKE_CASEE`, so the
+corresponding string values for these variants are `NEW_HOPE`, `EMPIRE`, and
+`JEDI`, respectively. If you want to override this, you can use the `graphql` 
+attribute, similar to how it works when 
+[defining objects](objects/defining_objects.md):
 
 ```rust
 # extern crate juniper;
 #[derive(juniper::GraphQLEnum)]
 enum Episode {
-    #[graphql(name="NEW_HOPE")]
     NewHope,
     Empire,
     Jedi,
@@ -47,11 +47,11 @@ enum StarWarsEpisode {
     #[graphql(deprecated="We don't really talk about this one")]
     ThePhantomMenace,
 
-    #[graphql(name="NEW_HOPE")]
     NewHope,
 
     #[graphql(description="Arguably the best one in the trilogy")]
     Empire,
+    
     Jedi,
 }
 
