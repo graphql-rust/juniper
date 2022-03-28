@@ -527,7 +527,7 @@ impl Definition {
 
         let mark_object_or_interface = self.implemented_for.iter().map(|impl_for| {
             quote_spanned! { impl_for.span() =>
-                trait GraphQLObjectOrInterface<S: juniper::ScalarValue, T> {
+                trait GraphQLObjectOrInterface<S: ::juniper::ScalarValue, T> {
                     fn mark();
                 }
 
@@ -536,11 +536,11 @@ impl Definition {
 
                     impl<S, T> GraphQLObjectOrInterface<S, Object> for T
                     where
-                        S: juniper::ScalarValue,
-                        T: juniper::marker::GraphQLObject<S>,
+                        S: ::juniper::ScalarValue,
+                        T: ::juniper::marker::GraphQLObject<S>,
                     {
                         fn mark() {
-                            <T as juniper::marker::GraphQLObject<S>>::mark()
+                            <T as ::juniper::marker::GraphQLObject<S>>::mark()
                         }
                     }
                 }
@@ -550,11 +550,11 @@ impl Definition {
 
                     impl<S, T> GraphQLObjectOrInterface<S, Interface> for T
                     where
-                        S: juniper::ScalarValue,
-                        T: juniper::marker::GraphQLInterface<S>,
+                        S: ::juniper::ScalarValue,
+                        T: ::juniper::marker::GraphQLInterface<S>,
                     {
                         fn mark() {
-                            <T as juniper::marker::GraphQLInterface<S>>::mark()
+                            <T as ::juniper::marker::GraphQLInterface<S>>::mark()
                         }
                     }
                 }
@@ -572,7 +572,7 @@ impl Definition {
                 fn mark() {
                     #suppress_dead_code
                     #all_impled_for_unique
-                    #({ #mark_object_or_interface })*
+                    #( { #mark_object_or_interface } )*
                 }
             }
         }
@@ -611,8 +611,8 @@ impl Definition {
         });
         let const_implements = self
             .implements
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .map(|mut ty| {
                 generics.replace_type_path_with_defaults(&mut ty);
                 ty
@@ -620,7 +620,7 @@ impl Definition {
             .collect::<Vec<_>>();
         let transitive_checks = const_impl_for.clone().map(|const_impl_for| {
             quote_spanned! { const_impl_for.span() =>
-                juniper::assert_transitive_implementations!(
+                ::juniper::assert_transitive_implementations!(
                     #const_scalar,
                     #ty#ty_const_generics,
                     #const_impl_for,
@@ -648,7 +648,7 @@ impl Definition {
                         #ty#ty_const_generics,
                         #(#const_implements),*
                     );
-                    #(#transitive_checks)*
+                    #( #transitive_checks )*
                 }
             }
         }
@@ -682,7 +682,7 @@ impl Definition {
         });
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
-        let mut implements: Vec<_> = self.implements.iter().collect();
+        let mut implements = self.implements.clone();
         implements.sort_unstable_by(|a, b| {
             let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
             a.cmp(&b)
