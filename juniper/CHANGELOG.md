@@ -21,7 +21,7 @@
   - Remove necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching its fields).
   - Forbid default impls on non-ignored trait methods.
   - Support coercion of additional nullable arguments and return sub-typing on implementer.
-  - Support interfaces implementing other interfaces ([#1028](https://github.com/graphql-rust/juniper/pull/1028))
+  - Support interfaces implementing other interfaces ([#1028](https://github.com/graphql-rust/juniper/pull/1028), [#1000](https://github.com/graphql-rust/juniper/issues/1000))
 - Redesign `#[derive(GraphQLScalar)]` macro: ([#1017](https://github.com/graphql-rust/juniper/pull/1017))
   - Support generic scalars.
   - Support structs with single named field.
