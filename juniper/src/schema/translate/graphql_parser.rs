@@ -108,7 +108,7 @@ impl GraphQLParserTranslator {
                     ExternalValue::Int(ExternalNumber::from(v))
                 } else if let Some(v) = x.as_float() {
                     ExternalValue::Float(v)
-                } else if let Some(v) = x.as_boolean() {
+                } else if let Some(v) = x.as_bool() {
                     ExternalValue::Boolean(v)
                 } else {
                     panic!("unknown argument type")

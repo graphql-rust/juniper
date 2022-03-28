@@ -1,7 +1,5 @@
 //! GraphQL support for [bson](https://github.com/mongodb/bson-rust) types.
 
-use chrono::prelude::*;
-
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
 #[graphql_scalar(with = object_id, parse_token(String))]
@@ -30,17 +28,16 @@ mod utc_date_time {
     use super::*;
 
     pub(super) fn to_output<S: ScalarValue>(v: &UtcDateTime) -> Value<S> {
-        Value::scalar((*v).to_chrono().to_rfc3339())
+        Value::scalar((*v).to_rfc3339_string())
     }
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcDateTime, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
             .and_then(|s| {
-                s.parse::<DateTime<Utc>>()
+                UtcDateTime::parse_rfc3339_str(s)
                     .map_err(|e| format!("Failed to parse `UtcDateTime`: {}", e))
             })
-            .map(UtcDateTime::from_chrono)
     }
 }
 

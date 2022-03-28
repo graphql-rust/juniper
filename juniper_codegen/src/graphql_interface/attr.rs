@@ -3,7 +3,7 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{format_ident, quote};
+use quote::quote;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -16,7 +16,7 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
-use super::{Attr, Definition};
+use super::{enum_idents, Attr, Definition};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
@@ -36,11 +36,12 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
 
     Err(syn::Error::new(
         Span::call_site(),
-        "#[graphql_interface] attribute is applicable to trait and struct definitions only",
+        "#[graphql_interface] attribute is applicable to trait and struct \
+         definitions only",
     ))
 }
 
-/// Expands `#[graphql_interface]` macro placed on trait definition.
+/// Expands `#[graphql_interface]` macro placed on the given trait definition.
 fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
@@ -111,15 +112,7 @@ fn expand_on_trait(
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let enum_alias_ident = attr
-        .r#enum
-        .as_deref()
-        .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
-    let enum_ident = attr.r#enum.as_ref().map_or_else(
-        || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.inner().to_string()),
-    );
+    let (enum_ident, enum_alias_ident) = enum_idents(trait_ident, attr.r#enum.as_deref());
 
     let generated_code = Definition {
         generics: ast.generics.clone(),
@@ -137,6 +130,7 @@ fn expand_on_trait(
             .map(|c| c.inner().clone())
             .collect(),
         implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
+        suppress_dead_code: None,
     };
 
     Ok(quote! {
@@ -147,7 +141,7 @@ fn expand_on_trait(
 
 /// Parses a [`field::Definition`] from the given trait method definition.
 ///
-/// Returns [`None`] if parsing fails, or the method field is ignored.
+/// Returns [`None`] if the parsing fails, or the method field is ignored.
 #[must_use]
 fn parse_trait_method(
     method: &mut syn::TraitItemMethod,
@@ -223,7 +217,7 @@ fn parse_trait_method(
     })
 }
 
-/// Expands `#[graphql_interface]` macro placed on struct.
+/// Expands `#[graphql_interface]` macro placed on the given struct.
 fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::DeriveInput,
@@ -238,8 +232,8 @@ fn expand_on_derive_input(
         syn::Data::Enum(_) | syn::Data::Union(_) => {
             return Err(ERR.custom_error(
                 ast.span(),
-                "#[graphql_interface] attribute is applicable \
-                 to trait and struct definitions only",
+                "#[graphql_interface] attribute is applicable to trait and \
+                 struct definitions only",
             ));
         }
     };
@@ -300,16 +294,7 @@ fn expand_on_derive_input(
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let enum_alias_ident = attr
-        .r#enum
-        .as_deref()
-        .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
-    let enum_ident = attr.r#enum.as_ref().map_or_else(
-        || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.inner().to_string()),
-    );
-
+    let (enum_ident, enum_alias_ident) = enum_idents(trait_ident, attr.r#enum.as_deref());
     let generated_code = Definition {
         generics: ast.generics.clone(),
         vis: ast.vis.clone(),
@@ -326,6 +311,7 @@ fn expand_on_derive_input(
             .map(|c| c.inner().clone())
             .collect(),
         implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
+        suppress_dead_code: None,
     };
 
     Ok(quote! {
@@ -335,9 +321,9 @@ fn expand_on_derive_input(
     })
 }
 
-/// Parses a [`field::Definition`] from the given trait method definition.
+/// Parses a [`field::Definition`] from the given struct field definition.
 ///
-/// Returns [`None`] if parsing fails, or the method field is ignored.
+/// Returns [`None`] if the parsing fails, or the struct field is ignored.
 #[must_use]
 fn parse_struct_field(field: &mut syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
     let field_ident = field.ident.as_ref().or_else(|| err_unnamed_field(&field))?;
@@ -405,7 +391,7 @@ fn err_default_impl_block<T, S: Spanned>(span: &S) -> Option<T> {
 
 /// Emits "expected named struct field" [`syn::Error`] pointing to the given
 /// `span`.
-fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
+pub(crate) fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(span.span(), "expected named struct field");
     None
 }

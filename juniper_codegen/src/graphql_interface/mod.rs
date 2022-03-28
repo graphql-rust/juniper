@@ -14,7 +14,7 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,
-    spanned::Spanned as _,
+    spanned::Spanned,
     token,
     visit::Visit,
 };
@@ -30,6 +30,26 @@ use crate::{
     },
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
+
+/// Returns [`Ident`]s for generic enum deriving [`Clone`] and [`Copy`] on it
+/// and enum alias which generic arguments are filled with
+/// [GraphQL interface][1] implementers.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [`Ident`]: syn::Ident
+fn enum_idents(
+    trait_ident: &syn::Ident,
+    alias_ident: Option<&syn::Ident>,
+) -> (syn::Ident, syn::Ident) {
+    let enum_alias_ident = alias_ident
+        .cloned()
+        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
+    let enum_ident = alias_ident.map_or_else(
+        || format_ident!("{}ValueEnum", trait_ident.to_string()),
+        |c| format_ident!("{}Enum", c.to_string()),
+    );
+    (enum_ident, enum_alias_ident)
+}
 
 /// Available arguments behind `#[graphql_interface]` attribute placed on a
 /// trait or struct definition, when generating code for [GraphQL interface][1]
@@ -325,6 +345,14 @@ struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implements: Vec<syn::TypePath>,
+
+    /// Unlike `#[graphql_interface]` maro, `#[derive(GraphQLInterface)]` can't
+    /// append `#[allow(dead_code)]` to the unused struct, representing
+    /// [GraphQL interface][1]. We generate hacky `const` which doesn't actually
+    /// use it, but suppresses this warning.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
 }
 
 impl ToTokens for Definition {
@@ -474,6 +502,24 @@ impl Definition {
         let (impl_generics, _, where_clause) = gens.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
+        let suppress_dead_code = self.suppress_dead_code.as_ref().map(|(ident, fields)| {
+            let const_gens = self.const_trait_generics();
+            let fields = fields.iter().map(|f| &f.ident);
+
+            quote! {{
+                const SUPPRESS_DEAD_CODE: () = {
+                    let none = Option::<#ident#const_gens>::None;
+                    match none {
+                        Some(unreachable) => {
+                            #(let _ = unreachable.#fields;)*
+                        }
+                        None => {}
+                    }
+                };
+                let _ = SUPPRESS_DEAD_CODE;
+            }}
+        });
+
         let implemented_for = &self.implemented_for;
         let all_impled_for_unique = (implemented_for.len() > 1).then(|| {
             quote! { ::juniper::sa::assert_type_ne_all!(#( #implemented_for ),*); }
@@ -524,6 +570,7 @@ impl Definition {
                 #where_clause
             {
                 fn mark() {
+                    #suppress_dead_code
                     #all_impled_for_unique
                     #({ #mark_object_or_interface })*
                 }
@@ -552,9 +599,9 @@ impl Definition {
             .iter()
             .map(|f| f.method_mark_tokens(false, scalar));
 
-        let is_output = self.implemented_for.iter().map(|implementer| {
-            quote_spanned! { implementer.span() =>
-               <#implementer as ::juniper::marker::IsOutputType<#scalar>>::mark();
+        let is_output = self.implemented_for.iter().map(|impler| {
+            quote_spanned! { impler.span() =>
+               <#impler as ::juniper::marker::IsOutputType<#scalar>>::mark();
             }
         });
 
@@ -594,7 +641,7 @@ impl Definition {
                     ::juniper::assert_interfaces_impls!(
                         #const_scalar,
                         #ty#ty_const_generics,
-                        #(#const_impl_for),*
+                        #( #const_impl_for ),*
                     );
                     ::juniper::assert_implemented_for!(
                         #const_scalar,
@@ -863,7 +910,7 @@ impl Definition {
             {
                 const NAMES: ::juniper::macros::reflect::Types = &[
                     <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
-                    #(<#implemented_for as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
+                    #( <#implemented_for as ::juniper::macros::reflect::BaseType<#scalar>>::NAME ),*
                 ];
             }
 

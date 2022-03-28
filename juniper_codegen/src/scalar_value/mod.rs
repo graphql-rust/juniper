@@ -1,4 +1,4 @@
-//! Code generation for `#[derive(GraphQLScalarValue)]` macro.
+//! Code generation for `#[derive(ScalarValue)]` macro.
 
 use std::{collections::HashMap, convert::TryFrom};
 
@@ -18,11 +18,11 @@ use crate::{
     GraphQLScope,
 };
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLScalarValue)]` macro.
+/// [`GraphQLScope`] of errors for `#[derive(ScalarValue)]` macro.
 const ERR: GraphQLScope = GraphQLScope::ScalarValueDerive;
 
-/// Expands `#[derive(GraphQLScalarValue)]` macro into generated code.
-pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
+/// Expands `#[derive(ScalarValue)]` macro into generated code.
+pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let span = ast.span();
 
@@ -31,12 +31,12 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         _ => return Err(ERR.custom_error(ast.span(), "can only be derived for enums")),
     };
 
-    let attr = Attr::from_attrs("graphql", &ast.attrs)?;
+    let attr = Attr::from_attrs("value", &ast.attrs)?;
 
     let mut methods = HashMap::<Method, Vec<Variant>>::new();
     for var in data_enum.variants.clone() {
         let (ident, field) = (var.ident, Field::try_from(var.fields)?);
-        for attr in VariantAttr::from_attrs("graphql", &var.attrs)?.0 {
+        for attr in VariantAttr::from_attrs("value", &var.attrs)?.0 {
             let (method, expr) = attr.into_inner();
             methods.entry(method).or_default().push(Variant {
                 ident: ident.clone(),
@@ -52,7 +52,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         (Method::AsStr, "as_str"),
         (Method::AsString, "as_string"),
         (Method::IntoString, "into_string"),
-        (Method::AsBoolean, "as_boolean"),
+        (Method::AsBool, "as_bool"),
     ]
     .iter()
     .filter_map(|(method, err)| (!methods.contains_key(method)).then(|| err))
@@ -67,8 +67,9 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         return Err(ERR.custom_error(
             span,
             format!(
-                "missing `#[graphql({})]` attributes. In case you are sure that it is ok, \
-                 use `#[graphql(allow_missing_attributes)]` to suppress this error.",
+                "missing `#[value({})]` attributes. In case you are sure \
+                 that it's ok, use `#[value(allow_missing_attributes)]` to \
+                 suppress this error.",
                 missing_methods,
             ),
         ));
@@ -83,8 +84,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     .into_token_stream())
 }
 
-/// Available arguments behind `#[graphql]` attribute when generating code for
-/// enum container.
+/// Available arguments behind `#[value]` attribute when generating code for
+/// an enum definition.
 #[derive(Default)]
 struct Attr {
     /// Allows missing [`Method`]s.
@@ -127,29 +128,29 @@ impl Attr {
     }
 }
 
-/// Possible attribute names of the `#[derive(GraphQLScalarValue)]`.
+/// Possible attribute names of the `#[derive(ScalarValue)]`.
 #[derive(Eq, Hash, PartialEq)]
 enum Method {
-    /// `#[graphql(as_int)]`.
+    /// `#[value(as_int)]`.
     AsInt,
 
-    /// `#[graphql(as_float)]`.
+    /// `#[value(as_float)]`.
     AsFloat,
 
-    /// `#[graphql(as_str)]`.
+    /// `#[value(as_str)]`.
     AsStr,
 
-    /// `#[graphql(as_string)]`.
+    /// `#[value(as_string)]`.
     AsString,
 
-    /// `#[graphql(into_string)]`.
+    /// `#[value(into_string)]`.
     IntoString,
 
-    /// `#[graphql(as_boolean)]`.
-    AsBoolean,
+    /// `#[value(as_bool)]`.
+    AsBool,
 }
 
-/// Available arguments behind `#[graphql]` attribute when generating code for
+/// Available arguments behind `#[value]` attribute when generating code for an
 /// enum variant.
 #[derive(Default)]
 struct VariantAttr(Vec<SpanContainer<(Method, Option<syn::ExprPath>)>>);
@@ -165,7 +166,7 @@ impl Parse for VariantAttr {
                 "as_str" => Method::AsStr,
                 "as_string" => Method::AsString,
                 "into_string" => Method::IntoString,
-                "as_bool" | "as_boolean" => Method::AsBoolean,
+                "as_bool" => Method::AsBool,
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -208,26 +209,26 @@ impl VariantAttr {
     }
 }
 
-/// Definition of the [`ScalarValue`].
+/// Definition of a [`ScalarValue`] for code generation.
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
 struct Definition {
-    /// [`syn::Ident`] of the enum representing [`ScalarValue`].
+    /// [`syn::Ident`] of the enum representing this [`ScalarValue`].
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     ident: syn::Ident,
 
-    /// [`syn::Generics`] of the enum representing [`ScalarValue`].
+    /// [`syn::Generics`] of the enum representing this [`ScalarValue`].
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     generics: syn::Generics,
 
-    /// [`syn::Variant`]s of the enum representing [`ScalarValue`].
+    /// [`syn::Variant`]s of the enum representing this [`ScalarValue`].
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     variants: Vec<syn::Variant>,
 
-    /// [`Variant`]s marked with [`Method`] attribute.
+    /// [`Variant`]s marked with a [`Method`] attribute.
     methods: HashMap<Method, Vec<Variant>>,
 }
 
@@ -261,21 +262,21 @@ impl Definition {
             (
                 Method::AsStr,
                 quote! { fn as_str(&self) -> Option<&str> },
-                quote! { std::convert::AsRef::as_ref(v) },
+                quote! { ::std::convert::AsRef::as_ref(v) },
             ),
             (
                 Method::AsString,
                 quote! { fn as_string(&self) -> Option<String> },
-                quote! { std::string::ToString::to_string(v) },
+                quote! { ::std::string::ToString::to_string(v) },
             ),
             (
                 Method::IntoString,
                 quote! { fn into_string(self) -> Option<String> },
-                quote! { std::string::String::from(v) },
+                quote! { ::std::string::String::from(v) },
             ),
             (
-                Method::AsBoolean,
-                quote! { fn as_boolean(&self) -> Option<bool> },
+                Method::AsBool,
+                quote! { fn as_bool(&self) -> Option<bool> },
                 quote! { bool::from(*v) },
             ),
         ];
@@ -332,7 +333,7 @@ impl Definition {
 
                 quote! {
                     #[automatically_derived]
-                    impl#impl_gen std::convert::From<#var_ty> for #ty_ident#ty_gen
+                    impl#impl_gen ::std::convert::From<#var_ty> for #ty_ident#ty_gen
                         #where_clause
                     {
                         fn from(v: #var_ty) -> Self {
@@ -341,7 +342,7 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl#impl_gen std::convert::From<#ty_ident#ty_gen> for Option<#var_ty>
+                    impl#impl_gen ::std::convert::From<#ty_ident#ty_gen> for Option<#var_ty>
                         #where_clause
                     {
                         fn from(ty: #ty_ident#ty_gen) -> Self {
@@ -354,7 +355,7 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl#lf_impl_gen std::convert::From<&'___a #ty_ident#ty_gen> for
+                    impl#lf_impl_gen ::std::convert::From<&'___a #ty_ident#ty_gen> for
                         Option<&'___a #var_ty>
                         #where_clause
                     {
@@ -390,7 +391,7 @@ impl Definition {
                     .as_mut()
                     .unwrap()
                     .predicates
-                    .push(parse_quote! { #var_ty: std::fmt::Display });
+                    .push(parse_quote! { #var_ty: ::std::fmt::Display });
             }
         }
         let (impl_gen, ty_gen, where_clause) = generics.split_for_impl();
@@ -403,14 +404,15 @@ impl Definition {
                 .as_ref()
                 .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
 
-            quote! { Self::#var_ident#var_field => std::fmt::Display::fmt(v, f), }
+            quote! { Self::#var_ident#var_field => ::std::fmt::Display::fmt(v, f), }
         });
 
         quote! {
-            impl#impl_gen std::fmt::Display for #ident#ty_gen
+            #[automatically_derived]
+            impl#impl_gen ::std::fmt::Display for #ident#ty_gen
                 #where_clause
             {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                     match self {
                         #(#arms)*
                     }
@@ -479,7 +481,7 @@ impl TryFrom<syn::Fields> for Field {
 }
 
 impl Field {
-    /// Returns [`Field`] for constructing or matching over [`Variant`].
+    /// Returns a [`Field`] for constructing or matching over a [`Variant`].
     fn match_arg(&self) -> TokenStream {
         match self {
             Self::Named(_) => quote! { { #self: v } },
@@ -488,18 +490,19 @@ impl Field {
     }
 }
 
-/// [`Visit`]or to check whether [`Variant`] [`Field`] contains generic
+/// [`Visit`]or checking whether a [`Variant`]'s [`Field`] contains generic
 /// parameters.
 struct IsVariantGeneric<'a> {
-    /// Indicates whether [`Variant`] [`Field`] contains generic parameters.
+    /// Indicates whether the checked [`Variant`]'s [`Field`] contains generic
+    /// parameters.
     res: bool,
 
-    /// [`syn::Generics`] to search parameters.
+    /// [`syn::Generics`] to search generic parameters in.
     generics: &'a syn::Generics,
 }
 
 impl<'a> IsVariantGeneric<'a> {
-    /// Construct a new [`IsVariantGeneric`].
+    /// Constructs a new [`IsVariantGeneric`] [`Visit`]or.
     fn new(generics: &'a syn::Generics) -> Self {
         Self {
             res: false,

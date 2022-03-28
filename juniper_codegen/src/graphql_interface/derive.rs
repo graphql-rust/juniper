@@ -1,7 +1,7 @@
 //! Code generation for `#[derive(GraphQLInterface)]` macro.
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, ToTokens as _};
+use quote::ToTokens as _;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -10,7 +10,7 @@ use crate::{
     util::{span_container::SpanContainer, RenameRule},
 };
 
-use super::{Attr, Definition};
+use super::{attr::err_unnamed_field, enum_idents, Attr, Definition};
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLInterface)]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceDerive;
@@ -85,15 +85,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let enum_alias_ident = attr
-        .r#enum
-        .as_deref()
-        .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", struct_ident.to_string()));
-    let enum_ident = attr.r#enum.as_ref().map_or_else(
-        || format_ident!("{}ValueEnum", struct_ident.to_string()),
-        |c| format_ident!("{}Enum", c.inner().to_string()),
-    );
+    let (enum_ident, enum_alias_ident) = enum_idents(struct_ident, attr.r#enum.as_deref());
 
     Ok(Definition {
         generics: ast.generics.clone(),
@@ -111,19 +103,17 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
             .map(|c| c.inner().clone())
             .collect(),
         implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
+        suppress_dead_code: Some((ast.ident.clone(), data.fields.clone())),
     }
     .into_token_stream())
 }
 
-/// Parses a [`field::Definition`] from the given trait method definition.
+/// Parses a [`field::Definition`] from the given struct field definition.
 ///
-/// Returns [`None`] if parsing fails, or the method field is ignored.
+/// Returns [`None`] if the parsing fails, or the struct field is ignored.
 #[must_use]
 fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
-    let field_ident = field
-        .ident
-        .as_ref()
-        .or_else(|| err_unnamed_field(&field.span()))?;
+    let field_ident = field.ident.as_ref().or_else(|| err_unnamed_field(&field))?;
 
     let attr = field::Attr::from_attrs("graphql", &field.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
@@ -167,11 +157,4 @@ fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Defin
         has_receiver: false,
         is_async: false,
     })
-}
-
-/// Emits "expected named struct field" [`syn::Error`] pointing to the given
-/// `span`.
-fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(span.span(), "expected named struct field");
-    None
 }
