@@ -207,13 +207,10 @@ impl TypeExt for syn::Type {
             // These types unlikely will be used as GraphQL types.
             T::BareFn(_) | T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) => {}
 
-            // Following the syn idiom for exhaustive matching on Type:
-            // https://github.com/dtolnay/syn/blob/master/src/ty.rs#L66-L88
-            #[cfg(test)]
-            T::__TestExhaustive(_) => unimplemented!(),
-
-            #[cfg(not(test))]
-            _ => {}
+            // TODO: uncomment this, once lint is stabilized.
+            //       https://github.com/rust-lang/rust/issues/89554
+            // #[cfg_attr(test, deny(non_exhaustive_omitted_patterns))]
+            _ => unimplemented!(),
         }
     }
 

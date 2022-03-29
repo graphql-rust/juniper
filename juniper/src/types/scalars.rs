@@ -1,5 +1,6 @@
 use std::{
-    char, convert::From, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32,
+    borrow::Cow, char, convert::From, fmt, marker::PhantomData, ops::Deref, rc::Rc,
+    thread::JoinHandle, u32,
 };
 
 use serde::{Deserialize, Serialize};
@@ -266,6 +267,79 @@ where
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::scalar(String::from(*self))
+    }
+}
+
+impl<'s, S> reflect::WrappedType<S> for Cow<'s, str> {
+    const VALUE: reflect::WrappedValue = 1;
+}
+
+impl<'s, S> reflect::BaseType<S> for Cow<'s, str> {
+    const NAME: reflect::Type = "String";
+}
+
+impl<'s, S> reflect::BaseSubTypes<S> for Cow<'s, str> {
+    const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
+}
+
+impl<'s, S> GraphQLType<S> for Cow<'s, str>
+where
+    S: ScalarValue,
+{
+    fn name(_: &()) -> Option<&'static str> {
+        Some("String")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_scalar_type::<String>(&()).into_meta()
+    }
+}
+
+impl<'s, S> GraphQLValue<S> for Cow<'s, str>
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+
+    fn resolve(
+        &self,
+        _: &(),
+        _: Option<&[Selection<S>]>,
+        _: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        Ok(Value::scalar(self.to_string()))
+    }
+}
+
+impl<'s, S> GraphQLValueAsync<S> for Cow<'s, str>
+where
+    S: ScalarValue + Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+        use futures::future;
+        Box::pin(future::ready(self.resolve(info, selection_set, executor)))
+    }
+}
+
+impl<'s, S> ToInputValue<S> for Cow<'s, str>
+where
+    S: ScalarValue,
+{
+    fn to_input_value(&self) -> InputValue<S> {
+        InputValue::scalar(self.to_string())
     }
 }
 
