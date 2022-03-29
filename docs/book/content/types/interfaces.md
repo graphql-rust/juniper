@@ -164,7 +164,7 @@ struct Node {
     id: ID,
 }
 
-#[graphql_interface(for = HumanConnection)]
+#[graphql_interface(for = HumanConnectionValue)]
 struct Connection {
     nodes: Vec<NodeValue>,
 }
