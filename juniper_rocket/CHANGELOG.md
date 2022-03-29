@@ -4,7 +4,11 @@
 - Provide `AsRef` and `AsMut` implementation for `GraphQLRequest` to its inner type ([#968](https://github.com/graphql-rust/juniper/pull/968), [#930](https://github.com/graphql-rust/juniper/issues/930)).
 - Ability to set custom request body size limit ([#1044](https://github.com/graphql-rust/juniper/pull/1044)).
 
-# [[0.8.0] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.8.0)
+# [[0.8.1] 2022-03-29](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-v0.8.1)
+
+- Ability to set custom request body size limit ([#1044](https://github.com/graphql-rust/juniper/pull/1044)).
+
+# [[0.8.0] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-v0.8.0)
 
 - Require async rocket support (`rocket` >= 0.5-rc1).
 - Compatibility with the latest `juniper`.
