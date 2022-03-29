@@ -208,12 +208,10 @@ impl TypeExt for syn::Type {
             T::BareFn(_) | T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) => {}
 
             // Following the syn idiom for exhaustive matching on Type:
-            // https://github.com/dtolnay/syn/blob/master/src/ty.rs#L66-L88
-            #[cfg(test)]
-            T::__TestExhaustive(_) => unimplemented!(),
-
-            #[cfg(not(test))]
-            _ => {}
+            // https://github.com/dtolnay/syn/blob/1.0.90/src/ty.rs#L67-L87
+            // TODO: #[cfg_attr(test, deny(non_exhaustive_omitted_patterns))]
+            //       https://github.com/rust-lang/rust/issues/89554
+            _ => unimplemented!(),
         }
     }
 
