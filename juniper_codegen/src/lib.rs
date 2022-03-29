@@ -837,7 +837,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     id: ID,
 /// }
 ///
-/// #[graphql_interface(for = HumanConnection)]
+/// #[graphql_interface(for = HumanConnectionValue)]
 /// struct Connection {
 ///     nodes: Vec<NodeValue>,
 /// }
