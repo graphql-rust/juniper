@@ -1,4 +1,4 @@
 #[derive(juniper::GraphQLEnum)]
-pub enum Test {}
+enum Test {}
 
-fn main() { }
+fn main() {}

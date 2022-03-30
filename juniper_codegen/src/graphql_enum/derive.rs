@@ -2,6 +2,7 @@
 
 use proc_macro2::TokenStream;
 use quote::ToTokens as _;
+use std::collections::HashSet;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -47,6 +48,14 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         return Err(ERR.custom_error(
             data.variants.span(),
             "expected at least 1 non-ignored variant",
+        ));
+    }
+
+    let unique_variants = variants.iter().map(|v| &v.name).collect::<HashSet<_>>();
+    if unique_variants.len() != variants.len() {
+        return Err(ERR.custom_error(
+            data.variants.span(),
+            "expected all enum variants to have unique names",
         ));
     }
 
@@ -123,9 +132,9 @@ fn parse_variant(v: &syn::Variant, renaming: RenameRule) -> Option<VariantDefini
     })
 }
 
-/// Emits "no fields allows for non-ignored variants" [`syn::Error`] pointing to
+/// Emits "no fields allowed for non-ignored variants" [`syn::Error`] pointing to
 /// the given `span`.
 pub fn err_variant_with_fields<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(span.span(), "no fields allows for non-ignored variants");
+    ERR.emit_custom(span.span(), "no fields allowed for non-ignored variants");
     None
 }
