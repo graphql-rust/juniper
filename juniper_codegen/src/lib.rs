@@ -106,10 +106,10 @@ macro_rules! try_merge_hashset {
     };
 }
 
-mod derive_enum;
 mod derive_input_object;
 
 mod common;
+mod graphql_enum;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
@@ -124,12 +124,9 @@ use result::GraphQLScope;
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, GraphQLScope::DeriveEnum);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    graphql_enum::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 #[proc_macro_error]

@@ -119,13 +119,6 @@ struct Attr {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
-    /// Explicitly specified marker indicating that the Rust trait should be
-    /// transformed into [`async_trait`].
-    ///
-    /// If [`None`], then trait will be transformed into [`async_trait`] only if
-    /// it contains async methods.
-    asyncness: Option<SpanContainer<syn::Ident>>,
-
     /// Explicitly specified [`RenameRule`] for all fields of this
     /// [GraphQL interface][1] type.
     ///
@@ -212,12 +205,6 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(alias.span()), alias))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "async" => {
-                    let span = ident.span();
-                    out.asyncness
-                        .replace(SpanContainer::new(span, Some(span), ident))
-                        .none_or_else(|_| err::dup_arg(span))?;
-                }
                 "rename_all" => {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
@@ -254,7 +241,6 @@ impl Attr {
             implemented_for: try_merge_hashset!(implemented_for: self, another => span_joined),
             implements: try_merge_hashset!(implements: self, another => span_joined),
             r#enum: try_merge_opt!(r#enum: self, another),
-            asyncness: try_merge_opt!(asyncness: self, another),
             rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
