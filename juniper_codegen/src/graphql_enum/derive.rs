@@ -64,18 +64,22 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         );
     }
 
+    let context = attr
+        .context
+        .map_or_else(|| parse_quote! { () }, SpanContainer::into_inner);
+
+    let description = attr.description.map(SpanContainer::into_inner);
+
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     proc_macro_error::abort_if_dirty();
 
     let definition = Definition {
-        ident: ast.ident.clone(),
+        ident: ast.ident,
         generics: ast.generics,
         name,
-        description: attr.description.map(SpanContainer::into_inner),
-        context: attr
-            .context
-            .map_or_else(|| parse_quote! { () }, SpanContainer::into_inner),
+        description,
+        context,
         scalar,
         variants,
         has_ignored_variants,
@@ -102,7 +106,7 @@ fn parse_variant(v: &syn::Variant, renaming: RenameRule) -> Option<VariantDefini
 
     let name = var_attr.name.map_or_else(
         || renaming.apply(&v.ident.unraw().to_string()),
-        |name| name.into_inner(),
+        SpanContainer::into_inner,
     );
 
     let description = var_attr.description.map(SpanContainer::into_inner);
