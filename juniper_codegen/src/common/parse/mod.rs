@@ -254,6 +254,10 @@ pub(crate) trait GenericsExt {
     /// Replaces generic parameters in the given [`syn::Type`] with default
     /// ones, provided by these [`syn::Generics`].
     fn replace_type_with_defaults(&self, ty: &mut syn::Type);
+
+    /// Replaces generic parameters in the given [`syn::TypePath`] with default
+    /// ones, provided by these [`syn::Generics`].
+    fn replace_type_path_with_defaults(&self, ty: &mut syn::TypePath);
 }
 
 impl GenericsExt for syn::Generics {
@@ -305,40 +309,51 @@ impl GenericsExt for syn::Generics {
     }
 
     fn replace_type_with_defaults(&self, ty: &mut syn::Type) {
-        struct Replace<'a>(&'a syn::Generics);
+        ReplaceWithDefaults(self).visit_type_mut(ty)
+    }
 
-        impl<'a> VisitMut for Replace<'a> {
-            fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
-                match arg {
-                    syn::GenericArgument::Lifetime(lf) => {
-                        *lf = parse_quote! { 'static };
-                    }
-                    syn::GenericArgument::Type(ty) => {
-                        let is_generic = self
-                            .0
-                            .params
-                            .iter()
-                            .filter_map(|par| match par {
-                                syn::GenericParam::Type(ty) => Some(&ty.ident),
-                                _ => None,
-                            })
-                            .any(|par| {
-                                let par = quote! { #par }.to_string();
-                                let ty = quote! { #ty }.to_string();
-                                par == ty
-                            });
+    fn replace_type_path_with_defaults(&self, ty: &mut syn::TypePath) {
+        ReplaceWithDefaults(self).visit_type_path_mut(ty)
+    }
+}
 
-                        if is_generic {
-                            // Replace with `DefaultScalarValue` instead of `()`
-                            // because generic parameter may be scalar.
-                            *ty = parse_quote!(::juniper::DefaultScalarValue);
-                        }
-                    }
-                    _ => {}
+/// Replaces [`Generics`] with default values:
+/// - `'static` for [`Lifetime`]s;
+/// - `::juniper::DefaultScalarValue` for [`Type`]s.
+///
+/// [`Generics`]: syn::Generics
+/// [`Lifetime`]: syn::Lifetime
+/// [`Type`]: syn::Type
+struct ReplaceWithDefaults<'a>(&'a syn::Generics);
+
+impl<'a> VisitMut for ReplaceWithDefaults<'a> {
+    fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
+        match arg {
+            syn::GenericArgument::Lifetime(lf) => {
+                *lf = parse_quote! { 'static };
+            }
+            syn::GenericArgument::Type(ty) => {
+                let is_generic = self
+                    .0
+                    .params
+                    .iter()
+                    .filter_map(|par| match par {
+                        syn::GenericParam::Type(ty) => Some(&ty.ident),
+                        _ => None,
+                    })
+                    .any(|par| {
+                        let par = quote! { #par }.to_string();
+                        let ty = quote! { #ty }.to_string();
+                        par == ty
+                    });
+
+                if is_generic {
+                    // Replace with `DefaultScalarValue` instead of `()`
+                    // because generic parameter may be scalar.
+                    *ty = parse_quote!(::juniper::DefaultScalarValue);
                 }
             }
+            _ => {}
         }
-
-        Replace(self).visit_type_mut(ty)
     }
 }

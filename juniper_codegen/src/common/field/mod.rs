@@ -6,7 +6,7 @@
 pub(crate) mod arg;
 
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -280,7 +280,7 @@ impl Definition {
             >>::Type
         };
 
-        quote! {
+        quote_spanned! { self.ty.span() =>
             #( #args_marks )*
             <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
         }

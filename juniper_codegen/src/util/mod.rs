@@ -7,7 +7,7 @@ use std::{collections::HashMap, convert::TryFrom, str::FromStr};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use span_container::SpanContainer;
 use syn::{
     ext::IdentExt as _,
@@ -1075,7 +1075,9 @@ impl GraphQLTypeDefiniton {
 
         let marks = self.fields.iter().map(|field| {
             let field_ty = &field._type;
-            quote! { <#field_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+            quote_spanned! { field_ty.span() =>
+                <#field_ty as ::juniper::marker::IsInputType<#scalar>>::mark();
+            }
         });
 
         let mut body = quote!(

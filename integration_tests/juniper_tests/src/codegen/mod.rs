@@ -1,7 +1,9 @@
 mod derive_enum;
 mod derive_input_object;
 mod derive_object_with_raw_idents;
-mod interface_attr;
+mod interface_attr_struct;
+mod interface_attr_trait;
+mod interface_derive;
 mod object_attr;
 mod object_derive;
 mod scalar_attr_derive_input;

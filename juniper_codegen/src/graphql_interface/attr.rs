@@ -3,7 +3,7 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{format_ident, quote};
+use quote::quote;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -16,31 +16,37 @@ use crate::{
     util::{path_eq_single, span_container::SpanContainer, RenameRule},
 };
 
-use super::{Definition, TraitAttr};
+use super::{enum_idents, Attr, Definition};
 
 /// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
 const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
 
 /// Expands `#[graphql_interface]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
-    if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body) {
+    if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body.clone()) {
         let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
         ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
         return expand_on_trait(trait_attrs, ast);
     }
+    if let Ok(mut ast) = syn::parse2::<syn::DeriveInput>(body) {
+        let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
+        ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
+        return expand_on_derive_input(trait_attrs, ast);
+    }
 
     Err(syn::Error::new(
         Span::call_site(),
-        "#[graphql_interface] attribute is applicable to trait definitions only",
+        "#[graphql_interface] attribute is applicable to trait and struct \
+         definitions only",
     ))
 }
 
-/// Expands `#[graphql_interface]` macro placed on trait definition.
+/// Expands `#[graphql_interface]` macro placed on the given trait definition.
 fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
-    let attr = TraitAttr::from_attrs("graphql_interface", &attrs)?;
+    let attr = Attr::from_attrs("graphql_interface", &attrs)?;
 
     let trait_ident = &ast.ident;
     let trait_span = ast.span();
@@ -69,14 +75,16 @@ fn expand_on_trait(
         .copied()
         .unwrap_or(RenameRule::CamelCase);
 
-    let mut fields = vec![];
-    for item in &mut ast.items {
-        if let syn::TraitItem::Method(m) = item {
-            if let Some(f) = parse_field(m, &renaming) {
-                fields.push(f)
+    let fields = ast
+        .items
+        .iter_mut()
+        .filter_map(|item| {
+            if let syn::TraitItem::Method(m) = item {
+                return parse_trait_method(m, &renaming);
             }
-        }
-    }
+            None
+        })
+        .collect::<Vec<_>>();
 
     proc_macro_error::abort_if_dirty();
 
@@ -104,18 +112,10 @@ fn expand_on_trait(
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let enum_alias_ident = attr
-        .r#enum
-        .as_deref()
-        .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
-    let enum_ident = attr.r#enum.as_ref().map_or_else(
-        || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.inner().to_string()),
-    );
+    let (enum_ident, enum_alias_ident) = enum_idents(trait_ident, attr.r#enum.as_deref());
 
     let generated_code = Definition {
-        trait_generics: ast.generics.clone(),
+        generics: ast.generics.clone(),
         vis: ast.vis.clone(),
         enum_ident,
         enum_alias_ident,
@@ -124,11 +124,12 @@ fn expand_on_trait(
         context,
         scalar,
         fields,
-        implementers: attr
-            .implementers
+        implemented_for: attr
+            .implemented_for
             .iter()
             .map(|c| c.inner().clone())
             .collect(),
+        suppress_dead_code: None,
     };
 
     Ok(quote! {
@@ -139,9 +140,9 @@ fn expand_on_trait(
 
 /// Parses a [`field::Definition`] from the given trait method definition.
 ///
-/// Returns [`None`] if parsing fails, or the method field is ignored.
+/// Returns [`None`] if the parsing fails, or the method field is ignored.
 #[must_use]
-fn parse_field(
+fn parse_trait_method(
     method: &mut syn::TraitItemMethod,
     renaming: &RenameRule,
 ) -> Option<field::Definition> {
@@ -181,33 +182,15 @@ fn parse_field(
         return None;
     }
 
-    let arguments = {
-        if method.sig.inputs.is_empty() {
-            return err_no_method_receiver(&method.sig.inputs);
-        }
-        let mut args_iter = method.sig.inputs.iter_mut();
-        match args_iter.next().unwrap() {
-            syn::FnArg::Receiver(rcv) => {
-                if rcv.reference.is_none() || rcv.mutability.is_some() {
-                    return err_invalid_method_receiver(rcv);
-                }
-            }
-            syn::FnArg::Typed(arg) => {
-                if let syn::Pat::Ident(a) = &*arg.pat {
-                    if a.ident.to_string().as_str() != "self" {
-                        return err_invalid_method_receiver(arg);
-                    }
-                }
-                return err_no_method_receiver(arg);
-            }
-        };
-        args_iter
-            .filter_map(|arg| match arg {
-                syn::FnArg::Receiver(_) => None,
-                syn::FnArg::Typed(arg) => field::MethodArgument::parse(arg, renaming, &ERR),
-            })
-            .collect()
-    };
+    let arguments = method
+        .sig
+        .inputs
+        .iter_mut()
+        .filter_map(|arg| match arg {
+            syn::FnArg::Receiver(_) => None,
+            syn::FnArg::Typed(arg) => field::MethodArgument::parse(arg, renaming, &ERR),
+        })
+        .collect();
 
     let mut ty = match &method.sig.output {
         syn::ReturnType::Default => parse_quote! { () },
@@ -233,6 +216,167 @@ fn parse_field(
     })
 }
 
+/// Expands `#[graphql_interface]` macro placed on the given struct.
+fn expand_on_derive_input(
+    attrs: Vec<syn::Attribute>,
+    mut ast: syn::DeriveInput,
+) -> syn::Result<TokenStream> {
+    let attr = Attr::from_attrs("graphql_interface", &attrs)?;
+
+    let trait_ident = &ast.ident;
+    let trait_span = ast.span();
+
+    let data = match &mut ast.data {
+        syn::Data::Struct(data) => data,
+        syn::Data::Enum(_) | syn::Data::Union(_) => {
+            return Err(ERR.custom_error(
+                ast.span(),
+                "#[graphql_interface] attribute is applicable to trait and \
+                 struct definitions only",
+            ));
+        }
+    };
+
+    let name = attr
+        .name
+        .clone()
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| trait_ident.unraw().to_string());
+    if !attr.is_internal && name.starts_with("__") {
+        ERR.no_double_underscore(
+            attr.name
+                .as_ref()
+                .map(SpanContainer::span_ident)
+                .unwrap_or_else(|| trait_ident.span()),
+        );
+    }
+
+    let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
+
+    proc_macro_error::abort_if_dirty();
+
+    let renaming = attr
+        .rename_fields
+        .as_deref()
+        .copied()
+        .unwrap_or(RenameRule::CamelCase);
+
+    let fields = data
+        .fields
+        .iter_mut()
+        .filter_map(|f| parse_struct_field(f, &renaming))
+        .collect::<Vec<_>>();
+
+    proc_macro_error::abort_if_dirty();
+
+    if fields.is_empty() {
+        ERR.emit_custom(trait_span, "must have at least one field");
+    }
+    if !field::all_different(&fields) {
+        ERR.emit_custom(trait_span, "must have a different name for each field");
+    }
+
+    proc_macro_error::abort_if_dirty();
+
+    let context = attr
+        .context
+        .as_deref()
+        .cloned()
+        .or_else(|| {
+            fields.iter().find_map(|f| {
+                f.arguments.as_ref().and_then(|f| {
+                    f.iter()
+                        .find_map(field::MethodArgument::context_ty)
+                        .cloned()
+                })
+            })
+        })
+        .unwrap_or_else(|| parse_quote! { () });
+
+    let (enum_ident, enum_alias_ident) = enum_idents(trait_ident, attr.r#enum.as_deref());
+    let generated_code = Definition {
+        generics: ast.generics.clone(),
+        vis: ast.vis.clone(),
+        enum_ident,
+        enum_alias_ident,
+        name,
+        description: attr.description.as_deref().cloned(),
+        context,
+        scalar,
+        fields,
+        implemented_for: attr
+            .implemented_for
+            .iter()
+            .map(|c| c.inner().clone())
+            .collect(),
+        suppress_dead_code: None,
+    };
+
+    Ok(quote! {
+        #[allow(dead_code)]
+        #ast
+        #generated_code
+    })
+}
+
+/// Parses a [`field::Definition`] from the given struct field definition.
+///
+/// Returns [`None`] if the parsing fails, or the struct field is ignored.
+#[must_use]
+fn parse_struct_field(field: &mut syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
+    let field_ident = field.ident.as_ref().or_else(|| err_unnamed_field(&field))?;
+    let field_attrs = field.attrs.clone();
+
+    // Remove repeated attributes from the method, to omit incorrect expansion.
+    field.attrs = mem::take(&mut field.attrs)
+        .into_iter()
+        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .collect();
+
+    let attr = field::Attr::from_attrs("graphql", &field_attrs)
+        .map_err(|e| proc_macro_error::emit_error!(e))
+        .ok()?;
+
+    if attr.ignore.is_some() {
+        return None;
+    }
+
+    let name = attr
+        .name
+        .as_ref()
+        .map(|m| m.as_ref().value())
+        .unwrap_or_else(|| renaming.apply(&field_ident.unraw().to_string()));
+    if name.starts_with("__") {
+        ERR.no_double_underscore(
+            attr.name
+                .as_ref()
+                .map(SpanContainer::span_ident)
+                .unwrap_or_else(|| field_ident.span()),
+        );
+        return None;
+    }
+
+    let mut ty = field.ty.clone();
+    ty.lifetimes_anonymized();
+
+    let description = attr.description.as_ref().map(|d| d.as_ref().value());
+    let deprecated = attr
+        .deprecated
+        .as_deref()
+        .map(|d| d.as_ref().map(syn::LitStr::value));
+
+    Some(field::Definition {
+        name,
+        ty,
+        description,
+        deprecated,
+        ident: field_ident.clone(),
+        arguments: None,
+        has_receiver: false,
+        is_async: false,
+    })
+}
+
 /// Emits "trait method can't have default implementation" [`syn::Error`]
 /// pointing to the given `span`.
 fn err_default_impl_block<T, S: Spanned>(span: &S) -> Option<T> {
@@ -243,22 +387,9 @@ fn err_default_impl_block<T, S: Spanned>(span: &S) -> Option<T> {
     None
 }
 
-/// Emits "invalid trait method receiver" [`syn::Error`] pointing to the given
+/// Emits "expected named struct field" [`syn::Error`] pointing to the given
 /// `span`.
-fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(
-        span.span(),
-        "trait method receiver can only be a shared reference `&self`",
-    );
-    None
-}
-
-/// Emits "no trait method receiver" [`syn::Error`] pointing to the given
-/// `span`.
-fn err_no_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(
-        span.span(),
-        "trait method should have a shared reference receiver `&self`",
-    );
+pub(crate) fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
+    ERR.emit_custom(span.span(), "expected named struct field");
     None
 }

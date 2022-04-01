@@ -1,10 +1,8 @@
 error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
- --> fail/input-object/derive_incompatible_object.rs:6:10
+ --> fail/input-object/derive_incompatible_object.rs:8:12
   |
-6 | #[derive(juniper::GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
-  |
-  = note: this error originates in the derive macro `juniper::GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
+8 |     field: ObjectA,
+  |            ^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
     --> fail/input-object/derive_incompatible_object.rs:6:10

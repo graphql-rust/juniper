@@ -1,10 +1,8 @@
 error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
-  --> fail/subscription/argument_non_input_type.rs:15:1
+  --> fail/subscription/argument_non_input_type.rs:17:29
    |
-15 | #[graphql_subscription]
-   | ^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
-   |
-   = note: this error originates in the attribute macro `graphql_subscription` (in Nightly builds, run with -Z macro-backtrace for more info)
+17 |     async fn id(&self, obj: ObjA) -> Stream<'static, &'static str> {
+   |                             ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
 
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
     --> fail/subscription/argument_non_input_type.rs:15:1
