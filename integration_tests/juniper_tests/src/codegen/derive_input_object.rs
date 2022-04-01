@@ -12,8 +12,8 @@ use juniper::{
 )]
 struct Input {
     regular_field: String,
-    #[graphql(name = "haha", default = "33", description = "haha descr")]
-    c: i32,
+    #[graphql(name = "haha", default = Some(33), description = "haha descr")]
+    c: Option<i32>,
 
     #[graphql(default)]
     other: Option<bool>,
@@ -129,7 +129,7 @@ fn test_derived_input_object() {
         output_no_defaults,
         Input {
             regular_field: "a".into(),
-            c: 33,
+            c: Some(33),
             other: None,
         },
     );
@@ -148,7 +148,7 @@ fn test_derived_input_object() {
         output,
         Input {
             regular_field: "a".into(),
-            c: 55,
+            c: Some(55),
             other: Some(true),
         },
     );

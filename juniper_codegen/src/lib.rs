@@ -106,10 +106,9 @@ macro_rules! try_merge_hashset {
     };
 }
 
-mod derive_input_object;
-
 mod common;
 mod graphql_enum;
+mod graphql_input_object;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
@@ -124,12 +123,9 @@ use result::GraphQLScope;
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(ast, GraphQLScope::DeriveInputObject);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    graphql_input_object::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][1]
