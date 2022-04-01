@@ -551,7 +551,10 @@ mod trivial_async {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -573,7 +576,10 @@ mod trivial_async {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -783,7 +789,10 @@ mod fallible_field {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -805,7 +814,10 @@ mod fallible_field {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -861,7 +873,10 @@ mod fallible_field {
                     "kind": "INTERFACE",
                     "fields": [{
                         "name": "id",
-                        "type": {"kind": "NON_NULL", "ofType": {"name": "String"}},
+                        "type": {
+                            "kind": "NON_NULL",
+                            "ofType": {"name": "String"},
+                        },
                     }],
                 }}),
                 vec![],
@@ -963,7 +978,10 @@ mod generic {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -1580,7 +1598,11 @@ mod explicit_name_description_and_deprecation {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"myId": "human-32", "a": "a", "b": "b"}}),
+                graphql_value!({"character": {
+                    "myId": "human-32",
+                    "a": "a",
+                    "b": "b",
+                }}),
                 vec![],
             )),
         );
@@ -1861,7 +1883,10 @@ mod explicit_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -1883,7 +1908,10 @@ mod explicit_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -1985,7 +2013,10 @@ mod custom_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2007,7 +2038,10 @@ mod custom_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -2107,7 +2141,10 @@ mod explicit_generic_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2129,7 +2166,10 @@ mod explicit_generic_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -2229,7 +2269,10 @@ mod bounded_generic_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2251,7 +2294,10 @@ mod bounded_generic_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -2384,7 +2430,10 @@ mod explicit_custom_context {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2406,7 +2455,10 @@ mod explicit_custom_context {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -2537,7 +2589,10 @@ mod inferred_custom_context_from_field {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &ctx).await,
             Ok((
-                graphql_value!({"character": {"humanId": "in-ctx", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "in-ctx",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2560,7 +2615,10 @@ mod inferred_custom_context_from_field {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &ctx).await,
             Ok((
-                graphql_value!({"character": {"droidId": "in-droid", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "in-droid",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -2694,7 +2752,10 @@ mod executor {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "humanId", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "humanId",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2716,7 +2777,10 @@ mod executor {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droidId", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droidId",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -2738,7 +2802,10 @@ mod executor {
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
-                    graphql_value!({"character": {"id": "id", "info": expected_info}}),
+                    graphql_value!({"character": {
+                        "id": "id",
+                        "info": expected_info,
+                    }}),
                     vec![],
                 )),
             );
@@ -2825,7 +2892,10 @@ mod ignored_method {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2940,7 +3010,10 @@ mod field_return_subtyping {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -2962,7 +3035,10 @@ mod field_return_subtyping {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -3245,7 +3321,10 @@ mod nullable_argument_subtyping {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -3267,7 +3346,10 @@ mod nullable_argument_subtyping {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );

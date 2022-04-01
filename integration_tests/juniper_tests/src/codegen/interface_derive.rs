@@ -878,7 +878,10 @@ mod fallible_field {
                     "kind": "INTERFACE",
                     "fields": [{
                         "name": "id",
-                        "type": {"kind": "NON_NULL", "ofType": {"name": "String"}},
+                        "type": {
+                            "kind": "NON_NULL",
+                            "ofType": {"name": "String"},
+                        },
                     }],
                 }}),
                 vec![],
@@ -1571,7 +1574,10 @@ mod explicit_scalar {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );

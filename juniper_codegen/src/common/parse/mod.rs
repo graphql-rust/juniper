@@ -318,7 +318,7 @@ impl GenericsExt for syn::Generics {
 }
 
 /// Replaces [`Generics`] with default values:
-/// - `'static` for [`Lifetime`]s
+/// - `'static` for [`Lifetime`]s;
 /// - `::juniper::DefaultScalarValue` for [`Type`]s.
 ///
 /// [`Generics`]: syn::Generics

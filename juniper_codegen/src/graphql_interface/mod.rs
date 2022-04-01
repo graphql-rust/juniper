@@ -31,12 +31,11 @@ use crate::{
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
 
-/// Returns [`Ident`]s for generic enum deriving [`Clone`] and [`Copy`] on it
-/// and enum alias which generic arguments are filled with
+/// Returns [`syn::Ident`]s for a generic enum deriving [`Clone`] and [`Copy`]
+/// on it and enum alias which generic arguments are filled with
 /// [GraphQL interface][1] implementers.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-/// [`Ident`]: syn::Ident
 fn enum_idents(
     trait_ident: &syn::Ident,
     alias_ident: Option<&syn::Ident>,
@@ -451,15 +450,15 @@ impl Definition {
             #[automatically_derived]
             #[derive(Clone, Copy, Debug)]
             #vis enum #enum_ident#enum_gens {
-                #(#variants_idents(#variant_gens_pars),)*
+                #( #variants_idents(#variant_gens_pars), )*
                 #phantom_variant
             }
 
             #[automatically_derived]
             #vis type #alias_ident#enum_alias_gens =
-                #enum_ident<#(#enum_to_alias_gens),*>;
+                #enum_ident<#( #enum_to_alias_gens ),*>;
 
-            #(#from_impls)*
+            #( #from_impls )*
         }
     }
 
@@ -491,7 +490,7 @@ impl Definition {
                     let none = Option::<#ident#const_gens>::None;
                     match none {
                         Some(unreachable) => {
-                            #(let _ = unreachable.#fields;)*
+                            #( let _ = unreachable.#fields; )*
                         }
                         None => {}
                     }
@@ -878,11 +877,11 @@ impl Definition {
                             ::juniper::macros::reflect::Name,
                             ::juniper::macros::reflect::Type,
                             ::juniper::macros::reflect::WrappedValue,
-                        )] = &[#((
+                        )] = &[#( (
                             #args_names,
                             <#args_tys as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
                             <#args_tys as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE,
-                        )),*];
+                        ) ),*];
                     }
                 }
             })
@@ -947,7 +946,7 @@ impl Definition {
                             executor: &::juniper::Executor<Self::Context, #scalar>,
                         ) -> ::juniper::ExecutionResult<#scalar> {
                             match self {
-                                #(#ty::#implemented_for_idents(v) => {
+                                #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
                                         #ty#const_ty_generics,
                                         #const_implemented_for,
@@ -959,7 +958,7 @@ impl Definition {
                                         #scalar,
                                         { ::juniper::macros::reflect::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
-                                })*
+                                } )*
                                 #unreachable_arm
                             }
                         }
@@ -1027,7 +1026,7 @@ impl Definition {
                             executor: &'b ::juniper::Executor<Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                             match self {
-                                #(#ty::#implemented_for_idents(v) => {
+                                #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
                                         #ty#const_ty_generics,
                                         #const_implemented_for,
@@ -1039,7 +1038,7 @@ impl Definition {
                                         #scalar,
                                         { ::juniper::macros::reflect::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
-                                })*
+                                } )*
                                 #unreachable_arm
                             }
                         }

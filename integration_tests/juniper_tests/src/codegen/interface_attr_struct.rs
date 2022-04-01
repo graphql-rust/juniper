@@ -574,7 +574,10 @@ mod trivial_async {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -809,7 +812,10 @@ mod fallible_field {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -865,7 +871,10 @@ mod fallible_field {
                     "kind": "INTERFACE",
                     "fields": [{
                         "name": "id",
-                        "type": {"kind": "NON_NULL", "ofType": {"name": "String"}},
+                        "type": {
+                            "kind": "NON_NULL",
+                            "ofType": {"name": "String"},
+                        },
                     }],
                 }}),
                 vec![],
@@ -948,7 +957,10 @@ mod generic {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -970,7 +982,10 @@ mod generic {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                graphql_value!({"character": {
+                    "droidId": "droid-99",
+                    "primaryFunction": "run",
+                }}),
                 vec![],
             )),
         );
@@ -1279,7 +1294,11 @@ mod explicit_name_description_and_deprecation {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"myId": "human-32", "a": "a", "b": "b"}}),
+                graphql_value!({"character": {
+                    "myId": "human-32",
+                    "a": "a",
+                    "b": "b",
+                }}),
                 vec![],
             )),
         );
