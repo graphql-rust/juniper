@@ -10,6 +10,7 @@ pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
 
 pub enum GraphQLScope {
     InterfaceAttr,
+    InterfaceDerive,
     ObjectAttr,
     ObjectDerive,
     ScalarAttr,
@@ -24,7 +25,7 @@ pub enum GraphQLScope {
 impl GraphQLScope {
     pub fn spec_section(&self) -> &str {
         match self {
-            Self::InterfaceAttr => "#sec-Interfaces",
+            Self::InterfaceAttr | Self::InterfaceDerive => "#sec-Interfaces",
             Self::ObjectAttr | Self::ObjectDerive => "#sec-Objects",
             Self::ScalarAttr | Self::ScalarDerive => "#sec-Scalars",
             Self::ScalarValueDerive => "#sec-Scalars.Built-in-Scalars",
@@ -38,7 +39,7 @@ impl GraphQLScope {
 impl fmt::Display for GraphQLScope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
-            Self::InterfaceAttr => "interface",
+            Self::InterfaceAttr | Self::InterfaceDerive => "interface",
             Self::ObjectAttr | Self::ObjectDerive => "object",
             Self::ScalarAttr | Self::ScalarDerive => "scalar",
             Self::ScalarValueDerive => "built-in scalars",

@@ -1,0 +1,5 @@
+error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
+  --> fail/object/attr_field_non_output_return_type.rs:12:21
+   |
+12 |     fn id(&self) -> ObjB {
+   |                     ^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`

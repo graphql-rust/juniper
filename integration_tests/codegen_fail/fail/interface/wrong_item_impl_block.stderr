@@ -1,7 +1,0 @@
-error: #[graphql_interface] attribute is applicable to trait definitions only
- --> fail/interface/wrong_item_impl_block.rs:8:1
-  |
-8 | #[graphql_interface(for = ObjA)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)

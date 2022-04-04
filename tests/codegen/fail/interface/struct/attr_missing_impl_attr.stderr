@@ -1,0 +1,7 @@
+error[E0080]: evaluation of constant value failed
+ --> fail/interface/struct/attr_missing_impl_attr.rs:8:1
+  |
+8 | #[graphql_interface(for = ObjA)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: missing interface reference in implementer's `impl` attribute.', $DIR/fail/interface/struct/attr_missing_impl_attr.rs:8:1
+  |
+  = note: this error originates in the macro `$crate::panic::panic_2015` (in Nightly builds, run with -Z macro-backtrace for more info)

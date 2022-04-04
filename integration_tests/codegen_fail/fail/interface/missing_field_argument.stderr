@@ -1,7 +1,0 @@
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/missing_field_argument.rs:14:1
-   |
-14 | #[graphql_interface(for = ObjA)]
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` was expected, but not found.', $DIR/fail/interface/missing_field_argument.rs:14:1
-   |
-   = note: this error originates in the macro `$crate::panic::panic_2015` (in Nightly builds, run with -Z macro-backtrace for more info)

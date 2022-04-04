@@ -1,0 +1,12 @@
+error: GraphQL interface must have a different name for each field
+ --> fail/interface/struct/derive_fields_duplicate.rs:4:1
+  |
+4 | / struct Character {
+5 | |     id: String,
+6 | |
+7 | |     #[graphql(name = "id")]
+8 | |     id2: String,
+9 | | }
+  | |_^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Interfaces

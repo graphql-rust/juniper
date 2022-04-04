@@ -349,8 +349,9 @@ where
         };
 
         Box::pin(async move {
+            let limit = req.limits().get("graphql").unwrap_or(BODY_LIMIT.bytes());
+            let mut reader = data.open(limit);
             let mut body = String::new();
-            let mut reader = data.open(BODY_LIMIT.bytes());
             if let Err(e) = reader.read_to_string(&mut body).await {
                 return Failure((Status::InternalServerError, format!("{:?}", e)));
             }
