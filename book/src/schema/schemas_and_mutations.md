@@ -101,6 +101,7 @@ schema {
   query: Query
 }
 ";
+#   #[cfg(not(target_os = "windows"))]
     assert_eq!(result, expected);
 }
 ```

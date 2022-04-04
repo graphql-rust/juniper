@@ -33,7 +33,7 @@ schema-language = ["graphql-parser"]
 anyhow = { version = "1.0.32", default-features = false, optional = true }
 async-trait = "0.1.39"
 bson = { version = "2.0", features = ["chrono-0_4"], optional = true }
-chrono = { version = "0.4", default-features = false, optional = true }
+chrono = { version = "0.4", features = ["alloc"], default-features = false, optional = true }
 chrono-tz = { version = "0.6", default-features = false, optional = true }
 fnv = "1.0.3"
 futures = { version = "0.3.1", features = ["alloc"], default-features = false }

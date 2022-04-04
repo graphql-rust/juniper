@@ -193,22 +193,17 @@ impl<'a, S> SchemaType<'a, S> {
         SubscriptionT: GraphQLType<S>,
     {
         let mut directives = FnvHashMap::default();
-        let query_type_name: String;
-        let mutation_type_name: String;
-        let subscription_type_name: String;
-
         let mut registry = Registry::new(FnvHashMap::default());
-        query_type_name = registry
+
+        let query_type_name = registry
             .get_type::<QueryT>(query_info)
             .innermost_name()
             .to_owned();
-
-        mutation_type_name = registry
+        let mutation_type_name = registry
             .get_type::<MutationT>(mutation_info)
             .innermost_name()
             .to_owned();
-
-        subscription_type_name = registry
+        let subscription_type_name = registry
             .get_type::<SubscriptionT>(subscription_info)
             .innermost_name()
             .to_owned();
