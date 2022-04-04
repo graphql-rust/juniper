@@ -57,6 +57,37 @@ jobs:
   # Testing #
   ###########
 
+  example:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/juniper')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - actix_subscriptions
+          - basic_subscriptions
+          - warp_async
+          - warp_subscriptions
+        os:
+          - ubuntu
+          - macOS
+          - windows
+        toolchain:
+          - stable
+          - beta
+          - nightly
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+
+      - run: cargo check -p example_${{ matrix.example }}
+
   test:
     if: ${{ github.ref == 'refs/heads/master'
             || startsWith(github.ref, 'refs/tags/juniper')
@@ -202,35 +233,6 @@ jobs:
   #        CARGO_MAKE_RUN_CODECOV: true
   #      run: |
   #        cargo make workspace-ci-flow --no-workspace
-
-  ###################################################
-  # WASM Builds
-  ###################################################
-
-  #wasm:
-  #  runs-on: ${{ matrix.os }}
-
-  #  strategy:
-  #    matrix:
-  #      os: [ubuntu-latest, windows-latest, macOS-latest]
-
-  #  steps:
-  #    - name: Checkout
-  #      uses: actions/checkout@v2
-
-  #    - name: Install rust
-  #      uses: actions-rs/toolchain@v1
-  #      with:
-  #        toolchain: stable
-  #        target: wasm32-unknown-unknown
-  #        profile: minimal
-  #        override: true
-
-  #    - name: Check
-  #      uses: actions-rs/cargo@v1
-  #      with:
-  #        command: check
-  #        args: --target wasm32-unknown-unknown --package juniper --package juniper_codegen
 
   ###################################################
   # Releases
