@@ -88,6 +88,49 @@ jobs:
 
       - run: cargo check -p example_${{ matrix.example }}
 
+  feature:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/juniper')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { feature: <none>, crate: juniper }
+          - { feature: bson, crate: juniper }
+          - { feature: chrono, crate: juniper }
+          - { feature: chrono-clock, crate: juniper }
+          - { feature: chrono-tz, crate: juniper }
+          - { feature: expose-test-schema, crate: juniper }
+          - { feature: graphql-parser, crate: juniper }
+          - { feature: schema_language, crate: juniper }
+          - { feature: serde_json, crate: juniper }
+          - { feature: time, crate: juniper }
+          - { feature: url, crate: juniper }
+          - { feature: uuid, crate: juniper }
+          - { feature: <none>, crate: juniper_actix }
+          - { feature: subscriptions, crate: juniper_actix }
+          - { feature: <none>, crate: juniper_warp }
+          - { feature: subscriptions, crate: juniper_warp }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      # TODO: Enable once MSRV is supported.
+      #- run: cargo +nightly update -Z minimal-versions
+
+      - run: cargo check -p ${{ matrix.crate }} --no-default-features
+                   ${{ matrix.feature != '<none>'
+                       && format('--features {0}', matrix.feature)
+                       || '' }}
+        env:
+          RUSTFLAGS: -D warnings
+
   test:
     if: ${{ github.ref == 'refs/heads/master'
             || startsWith(github.ref, 'refs/tags/juniper')

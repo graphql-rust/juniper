@@ -14,30 +14,26 @@ subscriptions = ["juniper_graphql_ws", "tokio"]
 [dependencies]
 actix = "0.13"
 actix-http = "3.0"
-http = "0.2.4"
 actix-web = "4.0"
 actix-web-actors = "4.1.0"
-
-juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.3.0", path = "../juniper_graphql_ws", optional = true }
-
 anyhow = "1.0"
 futures = "0.3"
+juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
+juniper_graphql_ws = { version = "0.3.0", path = "../juniper_graphql_ws", optional = true }
+http = "0.2.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
 tokio = { version = "1.0", features = ["sync"], optional = true }
 
 [dev-dependencies]
-actix-rt = "2"
 actix-cors = "0.6"
 actix-identity = "0.4"
-tokio = "1.0"
-async-stream = "0.3"
+actix-rt = "2.0"
 actix-test = "=0.1.0-beta.13"
-
-juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
-
+async-stream = "0.3"
 bytes = "1.0"
 env_logger = "0.9"
+juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
+tokio = "1.0"

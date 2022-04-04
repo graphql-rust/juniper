@@ -6,13 +6,12 @@ authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 publish = false
 
 [dependencies]
-juniper = { version = "0.16.0-dev", path = "../../juniper" }
-juniper_iron = { version = "0.7", path = "../../juniper_iron" }
-juniper_subscriptions = { version = "0.16", path = "../../juniper_subscriptions" }
-
 derive_more = "0.99"
 futures = "0.3"
 iron = "0.5"
+juniper = { version = "0.16.0-dev", path = "../../juniper" }
+juniper_iron = { version = "0.7", path = "../../juniper_iron" }
+juniper_subscriptions = { version = "0.16", path = "../../juniper_subscriptions" }
 mount = "0.4"
 serde_json = "1.0"
 skeptic = "0.13"

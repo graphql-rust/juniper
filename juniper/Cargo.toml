@@ -1,6 +1,7 @@
 [package]
 name = "juniper"
 version = "0.16.0-dev"
+edition = "2018"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -13,7 +14,6 @@ repository = "https://github.com/graphql-rust/juniper"
 readme = "../README.md"
 keywords = ["graphql", "server", "web", "rocket"]
 categories = ["web-programming"]
-edition = "2018"
 
 [badges]
 travis-ci = { repository = "graphql-rust/juniper" }
@@ -27,13 +27,10 @@ default = [
 ]
 chrono-clock = ["chrono", "chrono/clock"]
 expose-test-schema = ["anyhow", "serde_json"]
-graphql-parser-integration = ["graphql-parser"]
-schema-language = ["graphql-parser-integration"]
+schema-language = ["graphql-parser"]
 
 [dependencies]
-juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen"  }
-
-anyhow = { version = "1.0.32", optional = true, default-features = false }
+anyhow = { version = "1.0.32", default-features = false, optional = true }
 async-trait = "0.1.39"
 bson = { version = "2.0", features = ["chrono-0_4"], optional = true }
 chrono = { version = "0.4", default-features = false, optional = true }
@@ -43,6 +40,7 @@ futures = { version = "0.3.1", features = ["alloc"], default-features = false }
 futures-enum = { version = "0.1.12", default-features = false }
 graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
+juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen" }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
 smartstring = "1.0"
