@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt};
 
 use fnv::FnvHashMap;
-#[cfg(feature = "graphql-parser-integration")]
+#[cfg(feature = "graphql-parser")]
 use graphql_parser::schema::Document;
 
 use crate::{
@@ -13,7 +13,7 @@ use crate::{
     GraphQLEnum,
 };
 
-#[cfg(feature = "graphql-parser-integration")]
+#[cfg(feature = "graphql-parser")]
 use crate::schema::translate::{graphql_parser::GraphQLParserTranslator, SchemaTranslator};
 
 /// Root query node of a schema
@@ -171,7 +171,7 @@ where
         format!("{}", doc)
     }
 
-    #[cfg(feature = "graphql-parser-integration")]
+    #[cfg(feature = "graphql-parser")]
     /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
     /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
     pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
@@ -619,7 +619,7 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
 #[cfg(test)]
 mod test {
 
-    #[cfg(feature = "graphql-parser-integration")]
+    #[cfg(feature = "graphql-parser")]
     mod graphql_parser_integration {
         use crate::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 
