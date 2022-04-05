@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: ["master"]
-    tags: ["juniper*"]
+    tags: ["juniper*@*"]
   pull_request:
     branches: ["master"]
 
@@ -262,7 +262,7 @@ jobs:
 
       - run: cargo install cargo-release
 
-      - run: make cargo.release crate=${{ matrix.crate }} ver=release
+      - run: make cargo.release crate=${{ matrix.crate }} ver=minor
                                 exec=no install=no
 
   release-github:
