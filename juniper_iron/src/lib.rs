@@ -104,8 +104,6 @@ supported.
 
 */
 
-#![doc(html_root_url = "https://docs.rs/juniper_iron/0.3.0")]
-
 use std::{error::Error, fmt, io::Read, ops::Deref as _};
 
 use iron::{

@@ -1,7 +1,5 @@
-pre-release-commit-message = "Release {{crate_name}} {{version}}"
-post-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
-tag-message = "Release {{crate_name}} {{version}}"
-pre-release-replacements = [
-  {file="../juniper/Cargo.toml", min=0, search="juniper_codegen = \\{ version = \"[^\"]+\"", replace="juniper_codegen = { version = \"{{version}}\""},
-  {file="src/lib.rs", min=0, search="docs.rs/juniper_codegen/[a-z0-9\\.-]+", replace="docs.rs/juniper_codegen/{{version}}"},
-]
+[[pre-release-replacements]]
+file = "../juniper/Cargo.toml"
+exactly = 1
+search = "juniper_codegen = \\{ version = \"[^\"]+\""
+replace = "juniper_codegen = { version = \"{{version}}\""

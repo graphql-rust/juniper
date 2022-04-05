@@ -12,8 +12,8 @@ be returned to the end user. The [`juniper_subscriptions`][juniper_subscriptions
 provides a default connection implementation. Currently subscriptions are only supported on the `master` branch. Add the following to your `Cargo.toml`:
 ```toml
 [dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper", branch = "master" }
-juniper_subscriptions = { git = "https://github.com/graphql-rust/juniper", branch = "master" }
+juniper = "0.16.0"
+juniper_subscriptions = "0.17.0"
 ```
 
 ### Schema Definition

@@ -10,8 +10,8 @@ Juniper's Warp integration is contained in the [`juniper_warp`][juniper_warp] cr
 
 ```toml
 [dependencies]
-juniper = "0.15.7"
-juniper_warp = "0.7.0"
+juniper = "0.16.0"
+juniper_warp = "0.8.0"
 ```
 
 Included in the source is a [small example][example] which sets up a basic GraphQL and [GraphiQL] handler.

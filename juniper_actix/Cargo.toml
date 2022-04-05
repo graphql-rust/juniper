@@ -2,11 +2,20 @@
 name = "juniper_actix"
 version = "0.5.0"
 edition = "2018"
-authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
-description = "Juniper GraphQL integration with Actix"
+description = "`juniper` GraphQL integration with `actix-web`."
 license = "BSD-2-Clause"
+authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
 documentation = "https://docs.rs/juniper_actix"
+homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_actix"
 repository = "https://github.com/graphql-rust/juniper"
+readme = "README.md"
+categories = ["asynchronous", "web-programming", "web-programming::http-server"]
+keywords = ["actix-web", "apollo", "graphql", "juniper", "websocket"]
+exclude = ["/examples/"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 subscriptions = ["juniper_graphql_ws", "tokio"]
@@ -18,8 +27,8 @@ actix-web = "4.0"
 actix-web-actors = "4.1.0"
 anyhow = "1.0"
 futures = "0.3"
-juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.3.0", path = "../juniper_graphql_ws", optional = true }
+juniper = { version = "0.16.0", path = "../juniper", default-features = false }
+juniper_graphql_ws = { version = "0.4.0", path = "../juniper_graphql_ws", optional = true }
 http = "0.2.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -34,6 +43,6 @@ actix-test = "=0.1.0-beta.13"
 async-stream = "0.3"
 bytes = "1.0"
 env_logger = "0.9"
-juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.16.0", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 tokio = "1.0"

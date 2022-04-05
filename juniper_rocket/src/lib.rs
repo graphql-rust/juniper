@@ -36,8 +36,6 @@ Check the LICENSE file for details.
 
 */
 
-#![doc(html_root_url = "https://docs.rs/juniper_rocket/0.7.1")]
-
 use std::{borrow::Cow, io::Cursor};
 
 use rocket::{

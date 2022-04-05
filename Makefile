@@ -27,6 +27,9 @@ lint: cargo.lint
 test: test.cargo
 
 
+release: cargo.release
+
+
 
 
 ##################
@@ -49,6 +52,27 @@ cargo.fmt:
 
 cargo.lint:
 	cargo clippy --workspace --all-features -- -D warnings
+
+
+# Release Rust crate.
+#
+# Read more about bump levels here:
+#	https://github.com/crate-ci/cargo-release/blob/master/docs/reference.md#bump-level
+#
+# Usage:
+#	make cargo.release crate=<crate-name> [ver=(release|<bump-level>)]
+#	                   ([exec=no]|exec=yes [push=(yes|no)])
+#	                   [install=(yes|no)]
+
+cargo.release:
+ifneq ($(install),no)
+	cargo install cargo-release
+endif
+	cargo release -p $(crate) --all-features \
+		$(if $(call eq,$(exec),yes),\
+			--no-publish $(if $(call eq,$(push),no),--no-push,) --execute,\
+			-v $(if $(call eq,$(CI),),,--no-verify)) \
+		$(or $(ver),release)
 
 
 cargo.test: test.cargo
@@ -109,7 +133,7 @@ book.serve:
 # .PHONY section #
 ##################
 
-.PHONY: book fmt lint test \
+.PHONY: book fmt lint release test \
         book.build book.serve \
-        cargo.fmt cargo.lint \
+        cargo.fmt cargo.lint cargo.release cargo.test \
         test.book test.cargo

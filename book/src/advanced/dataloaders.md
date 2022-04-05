@@ -50,12 +50,12 @@ DataLoader caching does not replace Redis, Memcache, or any other shared applica
 [dependencies]
 actix-identity = "0.4.0-beta.4"
 actix-rt = "1.0"
-actix-web = {version = "2.0", features = []}
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-futures = "0.3"
-postgres = "0.15.2"
-dataloader = "0.12.0"
+actix-web = "2.0"
 async-trait = "0.1.30"
+dataloader = "0.12.0"
+futures = "0.3"
+juniper = "0.16.0"
+postgres = "0.15.2"
 ```
 
 ```rust, ignore

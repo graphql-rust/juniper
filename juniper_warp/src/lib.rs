@@ -36,9 +36,9 @@ Check the LICENSE file for details.
 
 */
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 #![deny(warnings)]
-#![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use std::{collections::HashMap, str, sync::Arc};
 

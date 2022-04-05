@@ -1,0 +1,5 @@
+[[pre-release-replacements]]
+file = "../book/src/servers/warp.md"
+exactly = 1
+search = "juniper_warp = \"[^\"]+\""
+replace = "juniper_warp = \"{{version}}\""

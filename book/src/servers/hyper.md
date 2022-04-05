@@ -16,8 +16,8 @@ Juniper's Hyper integration is contained in the [`juniper_hyper`][juniper_hyper]
 
 ```toml
 [dependencies]
-juniper = "0.15.7"
-juniper_hyper = "0.8.0"
+juniper = "0.16.0"
+juniper_hyper = "0.9.0"
 ```
 
 Included in the source is a [small example][example] which sets up a basic GraphQL and [GraphiQL] handler.

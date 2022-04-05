@@ -1,0 +1,5 @@
+[[pre-release-replacements]]
+file = "../book/src/servers/iron.md"
+exactly = 1
+search = "juniper_iron = \"[^\"]+\""
+replace = "juniper_iron = \"{{version}}\""

@@ -8,7 +8,7 @@ Juniper follows a [code-first approach][schema_approach] to defining GraphQL sch
 
 ```toml
 [dependencies]
-juniper = "0.15"
+juniper = "0.16.0"
 ```
 
 ## Schema example

@@ -5,13 +5,11 @@ edition = "2018"
 authors = ["Christoph Herzog <chris@theduke.at>"]
 publish = false
 
-
 [dependencies]
-juniper = { path = "../../juniper" }
-juniper_warp = { path = "../../juniper_warp" }
-
 env_logger = "0.9"
 futures = "0.3"
+juniper = { path = "../../juniper" }
+juniper_warp = { path = "../../juniper_warp" }
 log = "0.4"
 reqwest = { version = "0.11", features = ["rustls-tls"] }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }

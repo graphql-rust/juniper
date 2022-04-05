@@ -36,9 +36,9 @@ Check the LICENSE file for details.
 [juniper_warp]: https://github.com/graphql-rust/juniper/juniper_warp
 */
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 #![deny(warnings)]
-#![doc(html_root_url = "https://docs.rs/juniper_actix/0.1.0")]
 
 use actix_web::{
     error::JsonPayloadError, http::Method, web, Error, FromRequest, HttpMessage, HttpRequest,
