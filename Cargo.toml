@@ -1,11 +1,11 @@
 [workspace]
 members = [
+    "benches",
     "book/tests",
     "examples/basic_subscriptions",
     "examples/warp_async",
     "examples/warp_subscriptions",
     "examples/actix_subscriptions",
-    "juniper_benchmarks",
     "juniper_codegen",
     "juniper",
     "juniper_hyper",
