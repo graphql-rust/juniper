@@ -15,7 +15,7 @@ exclude = ["/release.toml"]
 
 [dependencies]
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
-juniper_subscriptions = { version = "0.17.0", path = "../juniper_subscriptions" }
+juniper_subscriptions = { version = "0.17.0-dev", path = "../juniper_subscriptions" }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt", "time"], default-features = false }
 

@@ -1,12 +1,4 @@
-//! This crate supplies [`SubscriptionCoordinator`] and
-//! [`SubscriptionConnection`] implementations for the
-//! [juniper](https://github.com/graphql-rust/juniper) crate.
-//!
-//! You need both this and `juniper` crate.
-//!
-//! [`SubscriptionCoordinator`]: juniper::SubscriptionCoordinator
-//! [`SubscriptionConnection`]: juniper::SubscriptionConnection
-
+#![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 #![deny(warnings)]
 

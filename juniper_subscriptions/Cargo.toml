@@ -1,6 +1,6 @@
 [package]
 name = "juniper_subscriptions"
-version = "0.17.0"
+version = "0.17.0-dev"
 edition = "2018"
 description = "Juniper `SubscriptionCoordinator` and `SubscriptionConnection` implementations."
 license = "BSD-2-Clause"
