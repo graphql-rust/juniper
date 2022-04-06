@@ -13,24 +13,24 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 - `#[graphql_object]` and `#[graphql_subscription]` expansions now preserve defined `impl` blocks "as is" and reuse defined methods in opaque way. ([#971])
 - Renamed `rename = "<policy>"` attribute argument to `rename_all = "<policy>"` (following `serde` style). ([#971])
 - Redesigned `#[graphql_interface]` macro: ([#1009])
-    - Removed support for `dyn` attribute argument (interface values as trait objects);
-    - Removed support for `downcast` attribute argument (custom resolution into implementer types);
-    - Removed support for `async` trait methods (not required anymore);
-    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now);
-    - Forbade default implementations of non-ignored trait methods;
-    - Supported coercion of additional `null`able arguments and return sub-typing on implementer;
+    - Removed support for `dyn` attribute argument (interface values as trait objects).
+    - Removed support for `downcast` attribute argument (custom resolution into implementer types).
+    - Removed support for `async` trait methods (not required anymore).
+    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now).
+    - Forbade default implementations of non-ignored trait methods.
+    - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
     - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
 - Split `#[derive(GraphQLScalarValue)]` macro into: 
     - `#[derive(GraphQLScalar)]` for implementing GraphQL scalar: ([#1017]) 
-        - Supported generic `ScalarValue`;
-        - Supported structs with single named field;
-        - Supported overriding resolvers with external functions, methods or modules;
+        - Supported generic `ScalarValue`.
+        - Supported structs with single named field.
+        - Supported overriding resolvers with external functions, methods or modules.
         - Supported `specified_by_url` attribute argument. ([#1003], [#1000])
     - `#[derive(ScalarValue)]` for implementing `ScalarValue` trait: ([#1025])
         - Removed `Serialize` implementation (now should be provided explicitly). ([#985])
 - Redesigned `#[graphql_scalar]` macro: ([#1014])
     - Changed `from_input_value()` return type from `Option` to `Result`. ([#987]) 
-    - Mirrored new `#[derive(GraphQLScalar)]` macro;
+    - Mirrored new `#[derive(GraphQLScalar)]` macro.
     - Supported usage on type aliases in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rules].
 
 ### Added

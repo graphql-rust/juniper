@@ -1,6 +1,6 @@
 [package]
 name = "juniper"
-version = "0.16.0"
+version = "0.16.0-dev"
 edition = "2018"
 description = "GraphQL server library."
 license = "BSD-2-Clause"

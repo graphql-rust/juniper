@@ -75,3 +75,20 @@ file = "../juniper_warp/Cargo.toml"
 exactly = 2
 search = "juniper = \\{ version = \"[^\"]+\""
 replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+exactly = 1
+search = "## master"
+replace = "## [{{version}}] · {{date}}\n[{{version}}]: /../../tree/{{crate_name}}%40{{version}}/{{crate_name}}"
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+exactly = 1
+search = "...master\\)"
+replace = "...{{crate_name}}%40{{version}})"
+
+[[pre-release-replacements]]
+file = "README.md"
+exactly = 2
+search = "graphql-rust/juniper/blob/[^/]+/"
+replace = "graphql-rust/juniper/blob/{{crate_name}}%40{{version}}/"

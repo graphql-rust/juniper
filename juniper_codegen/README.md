@@ -1,6 +1,7 @@
 `juniper_codegen` crate
 =======================
 
+[![Crates.io](https://img.shields.io/crates/v/juniper_codegen.svg?maxAge=2592000)](https://crates.io/crates/juniper_codegen)
 [![Documentation](https://docs.rs/juniper_codegen/badge.svg)](https://docs.rs/juniper_codegen)
 [![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
 
