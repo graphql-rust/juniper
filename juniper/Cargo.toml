@@ -45,7 +45,7 @@ futures = { version = "0.3.1", features = ["alloc"], default-features = false }
 futures-enum = { version = "0.1.12", default-features = false }
 graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
-juniper_codegen = { version = "0.16.0", path = "../juniper_codegen" }
+juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen" }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
 smartstring = "1.0"
