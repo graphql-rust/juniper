@@ -1,6 +1,6 @@
 [package]
 name = "juniper_actix"
-version = "0.5.0"
+version = "0.5.0-dev"
 edition = "2018"
 description = "`juniper` GraphQL integration with `actix-web`."
 license = "BSD-2-Clause"
@@ -11,7 +11,7 @@ repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]
 keywords = ["actix-web", "apollo", "graphql", "juniper", "websocket"]
-exclude = ["/examples/"]
+exclude = ["/examples/", "/release.toml"]
 
 [package.metadata.docs.rs]
 all-features = true
