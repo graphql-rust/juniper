@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 
 use hyper::{

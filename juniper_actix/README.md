@@ -7,7 +7,7 @@
 
 - [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_actix/CHANGELOG.md)
 
-This repository contains the [`actix-web`] web server integration for [`juniper`] ([GraphQL] implementation for Rust).
+This repository contains the [`actix-web`] web server integration for [`juniper`] ([GraphQL] implementation for [Rust]).
 
 It's inspired and some parts are copied from [`juniper_warp`] crate.
 
@@ -25,7 +25,7 @@ A basic usage example can also be found in the [API docs][`juniper_actix`].
 
 ## Examples
 
-Check [`examples/actix_server/`][1] for example code of a working [`actix-web`] server with [GraphQL] handlers.
+Check [`examples/actix_server.rs`][1] for example code of a working [`actix-web`] server with [GraphQL] handlers.
 
 
 
@@ -43,6 +43,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`juniper_warp`]: https://docs.rs/juniper_warp
 [GraphQL]: http://graphql.org
 [Juniper Book]: https://graphql-rust.github.io
+[Rust]: https://www.rust-lang.org
 
 [1]: https://github.com/graphql-rust/juniper/blob/master/juniper_actix/examples/actix_server.rs
 
