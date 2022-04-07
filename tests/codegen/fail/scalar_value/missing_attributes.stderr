@@ -1,4 +1,4 @@
-error: GraphQL built-in scalars missing `#[value(as_int, as_float)]` attributes. In case you are sure that it\'s ok, use `#[value(allow_missing_attributes)]` to suppress this error.
+error: GraphQL built-in scalars missing `#[value(as_int, as_float)]` attributes. In case you are sure that it's ok, use `#[value(allow_missing_attributes)]` to suppress this error.
   --> fail/scalar_value/missing_attributes.rs:4:1
    |
 4  | / pub enum DefaultScalarValue {

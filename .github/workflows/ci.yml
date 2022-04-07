@@ -190,6 +190,14 @@ jobs:
             toolchain: beta
           - crate: juniper_book_tests
             toolchain: nightly
+          # TODO: LLVM ERROR: out of memory
+          - crate: juniper_integration_tests
+            os: windows
+            toolchain: beta
+          - crate: juniper_integration_tests
+            os: windows
+            toolchain: nightly
+
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
@@ -200,8 +208,6 @@ jobs:
           override: true
 
       - run: make test.cargo crate=${{ matrix.crate }}
-        env:
-          RUSTFLAGS: ${{ matrix.os == 'windows' && '-C codegen-units=1' || '' }}
 
   wasm:
     if: ${{ github.ref == 'refs/heads/master'
