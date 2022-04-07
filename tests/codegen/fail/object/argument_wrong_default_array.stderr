@@ -16,4 +16,3 @@ error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
           and 7 others
   = note: required because of the requirements on the impl of `Into<[bool; 2]>` for `[bool; 3]`
   = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
-
