@@ -7,7 +7,7 @@
 
 - [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/CHANGELOG.md)
 
-This repository contains the [`hyper`] web server integration for [`juniper`] ([GraphQL] implementation for [Rust]).
+[`hyper`] web server integration for [`juniper`] ([GraphQL] implementation for [Rust]).
 
 
 

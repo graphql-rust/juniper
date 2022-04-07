@@ -1,6 +1,6 @@
 [package]
 name = "juniper_iron"
-version = "0.8.0"
+version = "0.8.0-dev"
 edition = "2018"
 description = "`juniper` GraphQL integration with `iron`."
 license = "BSD-2-Clause"

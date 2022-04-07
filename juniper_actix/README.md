@@ -7,7 +7,7 @@
 
 - [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_actix/CHANGELOG.md)
 
-This repository contains the [`actix-web`] web server integration for [`juniper`] ([GraphQL] implementation for [Rust]).
+[`actix-web`] web server integration for [`juniper`] ([GraphQL] implementation for [Rust]).
 
 It's inspired and some parts are copied from [`juniper_warp`] crate.
 
