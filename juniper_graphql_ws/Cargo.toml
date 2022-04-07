@@ -1,8 +1,8 @@
 [package]
 name = "juniper_graphql_ws"
-version = "0.4.0"
+version = "0.4.0-dev"
 edition = "2018"
-description = "GraphQL over WebSocket protocol implementation for `juniper` crate."
+description = "GraphQL over WebSocket Protocol implementation for `juniper` crate."
 license = "BSD-2-Clause"
 authors = ["Christopher Brown <ccbrown112@gmail.com>"]
 documentation = "https://docs.rs/juniper_graphql_ws"
