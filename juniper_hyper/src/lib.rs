@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/juniper_hyper/0.2.0")]
+#![doc = include_str!("../README.md")]
 
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 

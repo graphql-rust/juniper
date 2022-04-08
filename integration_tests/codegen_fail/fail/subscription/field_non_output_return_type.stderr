@@ -1,5 +1,0 @@
-error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
-  --> fail/subscription/field_non_output_return_type.rs:17:27
-   |
-17 |     async fn id(&self) -> Stream<'static, ObjB> {
-   |                           ^^^^^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`

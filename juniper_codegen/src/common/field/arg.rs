@@ -261,13 +261,13 @@ pub(crate) enum OnMethod {
     /// Regular [GraphQL field argument][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
-    Regular(OnField),
+    Regular(Box<OnField>),
 
     /// [`Context`] passed into a [GraphQL field][2] resolving method.
     ///
     /// [`Context`]: juniper::Context
     /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    Context(syn::Type),
+    Context(Box<syn::Type>),
 
     /// [`Executor`] passed into a [GraphQL field][2] resolving method.
     ///
@@ -281,7 +281,7 @@ impl OnMethod {
     #[must_use]
     pub(crate) fn as_regular(&self) -> Option<&OnField> {
         if let Self::Regular(arg) = self {
-            Some(arg)
+            Some(&*arg)
         } else {
             None
         }
@@ -292,7 +292,7 @@ impl OnMethod {
     #[must_use]
     pub(crate) fn context_ty(&self) -> Option<&syn::Type> {
         if let Self::Context(ty) = self {
-            Some(ty)
+            Some(&*ty)
         } else {
             None
         }
@@ -411,7 +411,7 @@ impl OnMethod {
             .ok()?;
 
         if attr.context.is_some() {
-            return Some(Self::Context(argument.ty.unreferenced().clone()));
+            return Some(Self::Context(Box::new(argument.ty.unreferenced().clone())));
         }
         if attr.executor.is_some() {
             return Some(Self::Executor);
@@ -419,7 +419,7 @@ impl OnMethod {
         if let syn::Pat::Ident(name) = &*argument.pat {
             let arg = match name.ident.unraw().to_string().as_str() {
                 "context" | "ctx" | "_context" | "_ctx" => {
-                    Some(Self::Context(argument.ty.unreferenced().clone()))
+                    Some(Self::Context(Box::new(argument.ty.unreferenced().clone())))
                 }
                 "executor" | "_executor" => Some(Self::Executor),
                 _ => None,
@@ -459,11 +459,11 @@ impl OnMethod {
             return None;
         }
 
-        Some(Self::Regular(OnField {
+        Some(Self::Regular(Box::new(OnField {
             name,
             ty: argument.ty.as_ref().clone(),
             description: attr.description.as_ref().map(|d| d.as_ref().value()),
             default: attr.default.as_ref().map(|v| v.as_ref().clone()),
-        }))
+        })))
     }
 }

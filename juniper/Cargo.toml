@@ -1,22 +1,27 @@
 [package]
 name = "juniper"
 version = "0.16.0-dev"
+edition = "2018"
+description = "GraphQL server library."
+license = "BSD-2-Clause"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
     "Christian Legnitto <christian@legnitto.com>",
+    "Ilya Solovyiov <ilya.solovyiov@gmail.com>",
+    "Kai Ren <tyranron@gmail.com>",
 ]
-description = "GraphQL server library"
-license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper"
+homepage = "https://graphql-rust.github.io"
 repository = "https://github.com/graphql-rust/juniper"
-readme = "../README.md"
-keywords = ["graphql", "server", "web", "rocket"]
-categories = ["web-programming"]
-edition = "2018"
+readme = "README.md"
+categories = ["asynchronous", "web-programming", "web-programming::http-server"]
+keywords = ["apollo", "graphql", "server", "web"]
+exclude = ["/release.toml"]
 
-[badges]
-travis-ci = { repository = "graphql-rust/juniper" }
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = [
@@ -27,22 +32,20 @@ default = [
 ]
 chrono-clock = ["chrono", "chrono/clock"]
 expose-test-schema = ["anyhow", "serde_json"]
-graphql-parser-integration = ["graphql-parser"]
-schema-language = ["graphql-parser-integration"]
+schema-language = ["graphql-parser"]
 
 [dependencies]
-juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen"  }
-
-anyhow = { version = "1.0.32", optional = true, default-features = false }
+anyhow = { version = "1.0.32", default-features = false, optional = true }
 async-trait = "0.1.39"
 bson = { version = "2.0", features = ["chrono-0_4"], optional = true }
-chrono = { version = "0.4", default-features = false, optional = true }
+chrono = { version = "0.4", features = ["alloc"], default-features = false, optional = true }
 chrono-tz = { version = "0.6", default-features = false, optional = true }
 fnv = "1.0.3"
 futures = { version = "0.3.1", features = ["alloc"], default-features = false }
 futures-enum = { version = "0.1.12", default-features = false }
 graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
+juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen" }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
 smartstring = "1.0"
@@ -61,7 +64,7 @@ uuid = { version = "0.8", default-features = false, features = ["wasm-bindgen"],
 bencher = "0.1.2"
 pretty_assertions = "1.0.0"
 serde_json = "1.0.2"
-tokio = { version = "1", features = ["macros", "time", "rt-multi-thread"] }
+tokio = { version = "1.0", features = ["macros", "time", "rt-multi-thread"] }
 
 [[bench]]
 name = "bench"

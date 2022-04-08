@@ -1,31 +1,45 @@
-# juniper_iron
+`juniper_iron` crate
+====================
 
-This repository contains the [Iron][Iron] web framework integration for 
-[Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
+[![Crates.io](https://img.shields.io/crates/v/juniper_iron.svg?maxAge=2592000)](https://crates.io/crates/juniper_iron)
+[![Documentation](https://docs.rs/juniper_iron/badge.svg)](https://docs.rs/juniper_iron)
+[![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
 
-For documentation, including guides and examples, check out [Juniper][Juniper].
+- [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_iron/CHANGELOG.md)
 
-A basic usage example can also be found in the [Api documentation][documentation].
+[`iron`] web framework integration for [`juniper`] ([GraphQL] implementation for [Rust]).
+
+
+
+
+## Documentation
+
+For documentation, including guides and examples, check out [Juniper Book].
+
+A basic usage example can also be found in the [API docs][`juniper_iron`].
+
+
+
 
 ## Examples
 
-Check [examples/iron_server.rs][example] for example code of a working Iron server with GraphQL handlers.
+Check [`examples/iron_server.rs`][1] for example code of a working [`iron`] server with [GraphQL] handlers.
 
-## Links
 
-* [Juniper][Juniper]
-* [Api Reference][documetation]
-* [Iron framework][Iron]
+
 
 ## License
 
-This project is under the BSD-2 license.
+This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/master/juniper_iron/LICENSE).
 
-Check the LICENSE file for details.
 
-[Iron]: https://github.com/iron/iron
-[Juniper]: https://github.com/graphql-rust/juniper
+
+
+[`iron`]: https://docs.rs/iron
+[`juniper`]: https://docs.rs/juniper
+[`juniper_iron`]: https://docs.rs/juniper_iron
 [GraphQL]: http://graphql.org
-[documentation]: https://docs.rs/juniper_iron
-[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_iron/examples/iron_server.rs
+[Juniper Book]: https://graphql-rust.github.io
+[Rust]: https://www.rust-lang.org
 
+[1]: https://github.com/graphql-rust/juniper/blob/master/juniper_iron/examples/iron_server.rs

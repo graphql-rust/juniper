@@ -1,10 +1,4 @@
-//! This crate supplies custom derive implementations for the
-//! [juniper](https://github.com/graphql-rust/juniper) crate.
-//!
-//! You should not depend on juniper_codegen directly.
-//! You only need the `juniper` crate.
-
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.9")]
+#![doc = include_str!("../README.md")]
 #![recursion_limit = "1024"]
 
 mod result;
