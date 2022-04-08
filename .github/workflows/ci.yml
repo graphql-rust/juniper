@@ -190,13 +190,6 @@ jobs:
             toolchain: beta
           - crate: juniper_book_tests
             toolchain: nightly
-          # TODO: LLVM ERROR: out of memory
-          - crate: juniper_integration_tests
-            os: windows
-            toolchain: beta
-          - crate: juniper_integration_tests
-            os: windows
-            toolchain: nightly
 
     runs-on: ${{ matrix.os }}-latest
     steps:
