@@ -11,6 +11,8 @@ mod explicit_null;
 #[cfg(test)]
 mod infallible_as_field_error;
 #[cfg(test)]
+mod inside_macro;
+#[cfg(test)]
 mod issue_371;
 #[cfg(test)]
 mod issue_372;
