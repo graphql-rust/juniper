@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 derive_more = "0.99"
 futures = "0.3"
-iron = "0.5"
+iron = "0.6"
 juniper = { path = "../../juniper" }
 juniper_iron = { path = "../../juniper_iron" }
 juniper_subscriptions = { path = "../../juniper_subscriptions" }
