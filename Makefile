@@ -71,7 +71,7 @@ endif
 	cargo release -p $(crate) --all-features \
 		$(if $(call eq,$(exec),yes),\
 			--no-publish $(if $(call eq,$(push),no),--no-push,) --execute,\
-			-v $(if $(call eq,$(CI),),,--no-publish)) \
+			-v $(if $(call eq,$(CI),),,--no-publish --no-push)) \
 		$(or $(ver),release)
 
 

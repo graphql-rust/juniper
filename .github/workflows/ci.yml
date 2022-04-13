@@ -259,16 +259,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-      - name: Setup Git user
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
 
       - run: cargo install cargo-release
 
