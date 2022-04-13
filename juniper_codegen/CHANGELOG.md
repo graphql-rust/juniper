@@ -37,6 +37,10 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 - `#[derive(GraphQLInterface)]` macro allowing using structs as GraphQL interfaces. ([#1026])
 
+### Fixed
+
+- All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
+
 [#971]: /../../pull/971
 [#985]: /../../pull/985
 [#987]: /../../pull/987
@@ -47,6 +51,8 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 [#1017]: /../../pull/1017
 [#1025]: /../../pull/1025
 [#1026]: /../../pull/1026
+[#1051]: /../../issues/1051
+[#1054]: /../../pull/1054
 
 
 

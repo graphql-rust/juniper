@@ -127,6 +127,7 @@ impl TypeExt for syn::Type {
     fn unparenthesized(&self) -> &Self {
         match self {
             Self::Paren(ty) => ty.elem.unparenthesized(),
+            Self::Group(ty) => ty.elem.unparenthesized(),
             ty => ty,
         }
     }
