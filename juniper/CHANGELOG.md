@@ -65,6 +65,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Unsupported spreading GraphQL interface fragments on unions and other interfaces. ([#965], [#798])
 - Unsupported expressions in `graphql_value!` macro. ([#996], [#503])
 - Incorrect GraphQL list coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004])
+- All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
 
 [#503]: /../../issues/503
 [#750]: /../../issues/750
@@ -89,6 +90,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1017]: /../../pull/1017
 [#1025]: /../../pull/1025
 [#1026]: /../../pull/1026
+[#1051]: /../../issues/1051
+[#1054]: /../../pull/1054
 
 
 
