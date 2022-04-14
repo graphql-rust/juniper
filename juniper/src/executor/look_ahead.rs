@@ -1,10 +1,10 @@
+use std::collections::HashMap;
+
 use crate::{
     ast::{Directive, Fragment, InputValue, Selection},
     parser::Spanning,
     value::ScalarValue,
 };
-
-use std::collections::HashMap;
 
 use super::Variables;
 
@@ -148,7 +148,7 @@ where
                                 if let LookAheadValue::Scalar(s) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    s.as_boolean().unwrap_or(false)
+                                    s.as_bool().unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -163,7 +163,7 @@ where
                                 if let LookAheadValue::Scalar(b) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    b.as_boolean().map(::std::ops::Not::not).unwrap_or(false)
+                                    b.as_bool().map(::std::ops::Not::not).unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -433,15 +433,18 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::collections::HashMap;
+
     use crate::{
         ast::{Document, OwnedDocument},
+        graphql_vars,
         parser::UnlocatedParseResult,
         schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
         value::{DefaultScalarValue, ScalarValue},
     };
-    use std::collections::HashMap;
+
+    use super::*;
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<OwnedDocument<S>>
     where
@@ -483,7 +486,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -537,7 +540,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -595,7 +598,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -677,7 +680,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -737,8 +740,7 @@ query Hero($episode: Episode) {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let mut vars = Variables::default();
-            vars.insert("episode".into(), InputValue::Enum("JEDI".into()));
+            let vars = graphql_vars! {"episode": JEDI};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -794,7 +796,7 @@ query Hero($episode: Episode) {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -844,7 +846,7 @@ fragment commonFields on Character {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -908,7 +910,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -966,7 +968,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -1031,7 +1033,7 @@ query HeroAndHuman {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -1107,13 +1109,10 @@ fragment comparisonFields on Character {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let mut vars = Variables::default();
-            vars.insert("id".into(), InputValue::Scalar(DefaultScalarValue::Int(42)));
-            // This will normally be there
-            vars.insert(
-                "withFriends".into(),
-                InputValue::Scalar(DefaultScalarValue::Boolean(true)),
-            );
+            let vars = graphql_vars! {
+                "id": 42,
+                "withFriends": true,
+            };
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -1265,7 +1264,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -1414,7 +1413,7 @@ fragment heroFriendNames on Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -1468,7 +1467,7 @@ query Hero {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = Variables::default();
+            let vars = graphql_vars! {};
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,

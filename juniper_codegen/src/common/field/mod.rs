@@ -6,7 +6,7 @@
 pub(crate) mod arg;
 
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -16,7 +16,6 @@ use syn::{
 
 use crate::{
     common::{
-        gen,
         parse::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _,
@@ -65,20 +64,6 @@ pub(crate) struct Attr {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     pub(crate) ignore: Option<SpanContainer<syn::Ident>>,
-
-    /// Explicitly specified marker indicating that this trait method doesn't
-    /// represent a [GraphQL field][1], but is a downcasting function into the
-    /// [GraphQL object][2] implementer type returned by this trait method.
-    ///
-    /// Once this marker is specified, the [GraphQL object][2] implementer type
-    /// cannot be downcast via another trait method or external downcasting
-    /// function.
-    ///
-    /// Omit using this field if you're generating code for [GraphQL object][2].
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
-    pub(crate) downcast: Option<SpanContainer<syn::Ident>>,
 }
 
 impl Parse for Attr {
@@ -119,10 +104,6 @@ impl Parse for Attr {
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
                     .none_or_else(|_| err::dup_arg(&ident))?,
-                "downcast" => out
-                    .downcast
-                    .replace(SpanContainer::new(ident.span(), None, ident.clone()))
-                    .none_or_else(|_| err::dup_arg(&ident))?,
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -142,7 +123,6 @@ impl Attr {
             description: try_merge_opt!(description: self, another),
             deprecated: try_merge_opt!(deprecated: self, another),
             ignore: try_merge_opt!(ignore: self, another),
-            downcast: try_merge_opt!(downcast: self, another),
         })
     }
 
@@ -156,27 +136,10 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if let Some(ignore) = &attr.ignore {
-            if attr.name.is_some()
-                || attr.description.is_some()
-                || attr.deprecated.is_some()
-                || attr.downcast.is_some()
-            {
+            if attr.name.is_some() || attr.description.is_some() || attr.deprecated.is_some() {
                 return Err(syn::Error::new(
                     ignore.span(),
                     "`ignore` attribute argument is not composable with any other arguments",
-                ));
-            }
-        }
-
-        if let Some(downcast) = &attr.downcast {
-            if attr.name.is_some()
-                || attr.description.is_some()
-                || attr.deprecated.is_some()
-                || attr.ignore.is_some()
-            {
-                return Err(syn::Error::new(
-                    downcast.span(),
-                    "`downcast` attribute argument is not composable with any other arguments",
                 ));
             }
         }
@@ -268,39 +231,23 @@ impl Definition {
         self.arguments.is_some()
     }
 
-    /// Returns generated code that panics about unknown [GraphQL field][1]
+    /// Returns generated code that errors about unknown [GraphQL field][1]
     /// tried to be resolved in the [`GraphQLValue::resolve_field`] method.
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     #[must_use]
-    pub(crate) fn method_resolve_field_panic_no_field_tokens(scalar: &scalar::Type) -> TokenStream {
-        quote! {
-            panic!(
-                "Field `{}` not found on type `{}`",
-                field,
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
-            )
-        }
-    }
-
-    /// Returns generated code that panics about [GraphQL fields][1] tried to be
-    /// resolved asynchronously in the [`GraphQLValue::resolve_field`] method
-    /// (which is synchronous itself).
-    ///
-    /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    #[must_use]
-    pub(crate) fn method_resolve_field_panic_async_field_tokens(
-        field_names: &[&str],
+    pub(crate) fn method_resolve_field_err_no_field_tokens(
         scalar: &scalar::Type,
+        ty_name: &str,
     ) -> TokenStream {
         quote! {
-            #( #field_names )|* => panic!(
-                "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+            return Err(::juniper::FieldError::from(format!(
+                "Field `{}` not found on type `{}`",
                 field,
-                <Self as ::juniper::GraphQLType<#scalar>>::name(info).unwrap(),
-            ),
+                <Self as ::juniper::GraphQLType<#scalar>>::name(info)
+                    .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?,
+            )))
         }
     }
 
@@ -333,7 +280,7 @@ impl Definition {
             >>::Type
         };
 
-        quote! {
+        quote_spanned! { self.ty.span() =>
             #( #args_marks )*
             <#resolved_ty as ::juniper::marker::IsOutputType<#scalar>>::mark();
         }
@@ -384,106 +331,6 @@ impl Definition {
         }
     }
 
-    /// Returns generated code for the [`GraphQLValue::resolve_field`][0]
-    /// method, which resolves this [GraphQL field][1] synchronously.
-    ///
-    /// Returns [`None`] if this [`Definition::is_async`].
-    ///
-    /// [0]: juniper::GraphQLValue::resolve_field
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    #[must_use]
-    pub(crate) fn method_resolve_field_tokens(
-        &self,
-        scalar: &scalar::Type,
-        trait_ty: Option<&syn::Type>,
-    ) -> Option<TokenStream> {
-        if self.is_async {
-            return None;
-        }
-
-        let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
-
-        let res = if self.is_method() {
-            let args = self
-                .arguments
-                .as_ref()
-                .unwrap()
-                .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
-
-            let rcv = self.has_receiver.then(|| {
-                quote! { self, }
-            });
-
-            if trait_ty.is_some() {
-                quote! { <Self as #trait_ty>::#ident(#rcv #( #args ),*) }
-            } else {
-                quote! { Self::#ident(#rcv #( #args ),*) }
-            }
-        } else {
-            ty = parse_quote! { _ };
-            quote! { &self.#ident }
-        };
-
-        let resolving_code = gen::sync_resolving_code();
-
-        Some(quote! {
-            #name => {
-                let res: #ty = #res;
-                #resolving_code
-            }
-        })
-    }
-
-    /// Returns generated code for the
-    /// [`GraphQLValueAsync::resolve_field_async`][0] method, which resolves
-    /// this [GraphQL field][1] asynchronously.
-    ///
-    /// [0]: juniper::GraphQLValueAsync::resolve_field_async
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    #[must_use]
-    pub(crate) fn method_resolve_field_async_tokens(
-        &self,
-        scalar: &scalar::Type,
-        trait_ty: Option<&syn::Type>,
-    ) -> TokenStream {
-        let (name, mut ty, ident) = (&self.name, self.ty.clone(), &self.ident);
-
-        let mut fut = if self.is_method() {
-            let args = self
-                .arguments
-                .as_ref()
-                .unwrap()
-                .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
-
-            let rcv = self.has_receiver.then(|| {
-                quote! { self, }
-            });
-
-            if trait_ty.is_some() {
-                quote! { <Self as #trait_ty>::#ident(#rcv #( #args ),*) }
-            } else {
-                quote! { Self::#ident(#rcv #( #args ),*) }
-            }
-        } else {
-            ty = parse_quote! { _ };
-            quote! { &self.#ident }
-        };
-        if !self.is_async {
-            fut = quote! { ::juniper::futures::future::ready(#fut) };
-        }
-
-        let resolving_code = gen::async_resolving_code(Some(&ty));
-
-        quote! {
-            #name => {
-                let fut = #fut;
-                #resolving_code
-            }
-        }
-    }
-
     /// Returns generated code for the
     /// [`GraphQLSubscriptionValue::resolve_field_into_stream`][0] method, which
     /// resolves this [GraphQL field][1] as [subscription][2].
@@ -504,7 +351,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar));
+                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }

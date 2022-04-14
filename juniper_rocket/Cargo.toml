@@ -1,21 +1,26 @@
 [package]
 name = "juniper_rocket"
-version = "0.8.0"
+version = "0.9.0-dev"
 edition = "2018"
+description = "`juniper` GraphQL integration with `rocket`."
+license = "BSD-2-Clause"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
 ]
-description = "Juniper GraphQL integration with Rocket"
-license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper_rocket"
+homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_rocket"
 repository = "https://github.com/graphql-rust/juniper"
+readme = "README.md"
+categories = ["asynchronous", "web-programming", "web-programming::http-server"]
+keywords = ["apollo", "graphql", "juniper", "rocket"]
+exclude = ["/examples/", "/tests/", "/release.toml"]
 
 [dependencies]
 futures = "0.3.1"
-juniper = { version = "0.15.7", path = "../juniper", default-features = false }
+juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 rocket = { version = "0.5.0-rc.1", default-features = false }
 serde_json = "1.0.2"
 
 [dev-dependencies]
-juniper = { version = "0.15.7", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }

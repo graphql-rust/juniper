@@ -8,28 +8,30 @@ use std::fmt;
 /// URL of the GraphQL specification (June 2018 Edition).
 pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
 
-#[allow(unused_variables)]
 pub enum GraphQLScope {
     InterfaceAttr,
+    InterfaceDerive,
     ObjectAttr,
     ObjectDerive,
+    ScalarAttr,
+    ScalarDerive,
+    ScalarValueDerive,
     UnionAttr,
     UnionDerive,
     DeriveInputObject,
     DeriveEnum,
-    DeriveScalar,
-    ImplScalar,
 }
 
 impl GraphQLScope {
     pub fn spec_section(&self) -> &str {
         match self {
-            Self::InterfaceAttr => "#sec-Interfaces",
+            Self::InterfaceAttr | Self::InterfaceDerive => "#sec-Interfaces",
             Self::ObjectAttr | Self::ObjectDerive => "#sec-Objects",
+            Self::ScalarAttr | Self::ScalarDerive => "#sec-Scalars",
+            Self::ScalarValueDerive => "#sec-Scalars.Built-in-Scalars",
             Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
             Self::DeriveInputObject => "#sec-Input-Objects",
             Self::DeriveEnum => "#sec-Enums",
-            Self::DeriveScalar | Self::ImplScalar => "#sec-Scalars",
         }
     }
 }
@@ -37,14 +39,14 @@ impl GraphQLScope {
 impl fmt::Display for GraphQLScope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
-            Self::InterfaceAttr => "interface",
+            Self::InterfaceAttr | Self::InterfaceDerive => "interface",
             Self::ObjectAttr | Self::ObjectDerive => "object",
+            Self::ScalarAttr | Self::ScalarDerive => "scalar",
+            Self::ScalarValueDerive => "built-in scalars",
             Self::UnionAttr | Self::UnionDerive => "union",
             Self::DeriveInputObject => "input object",
             Self::DeriveEnum => "enum",
-            Self::DeriveScalar | Self::ImplScalar => "scalar",
         };
-
         write!(f, "GraphQL {}", name)
     }
 }
@@ -119,7 +121,7 @@ impl GraphQLScope {
         duplicates
             .into_iter()
             .for_each(|dup| {
-                (&dup.spanned[1..])
+                dup.spanned[1..]
                     .iter()
                     .for_each(|spanned| {
                         Diagnostic::spanned(

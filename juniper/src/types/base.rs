@@ -6,7 +6,7 @@ use crate::{
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
-    GraphQLEnum,
+    FieldResult, GraphQLEnum, IntoFieldError,
 };
 
 /// GraphQL type kind
@@ -73,24 +73,25 @@ pub struct Arguments<'a, S = DefaultScalarValue> {
     args: Option<IndexMap<&'a str, InputValue<S>>>,
 }
 
-impl<'a, S> Arguments<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a, S> Arguments<'a, S> {
     #[doc(hidden)]
     pub fn new(
         mut args: Option<IndexMap<&'a str, InputValue<S>>>,
         meta_args: &'a Option<Vec<Argument<S>>>,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Clone,
+    {
         if meta_args.is_some() && args.is_none() {
             args = Some(IndexMap::new());
         }
 
-        if let (&mut Some(ref mut args), &Some(ref meta_args)) = (&mut args, meta_args) {
+        if let (Some(args), Some(meta_args)) = (&mut args, meta_args) {
             for arg in meta_args {
-                if !args.contains_key(arg.name.as_str()) || args[arg.name.as_str()].is_null() {
-                    if let Some(ref default_value) = arg.default_value {
-                        args.insert(arg.name.as_str(), default_value.clone());
+                let arg_name = arg.name.as_str();
+                if args.get(arg_name).map_or(true, InputValue::is_null) {
+                    if let Some(val) = arg.default_value.as_ref() {
+                        args.insert(arg_name, val.clone());
                     }
                 }
             }
@@ -99,21 +100,28 @@ where
         Self { args }
     }
 
-    /// Gets and converts an argument into the desired type.
+    /// Gets an argument by the given `name` and converts it into the desired
+    /// type.
     ///
-    /// If the argument has been found, or a default argument has been provided,
-    /// the [`InputValue`] will be converted into the type `T`.
+    /// If the argument is found, or a default argument has been provided, the
+    /// given [`InputValue`] will be converted into the type `T`.
     ///
-    /// Returns [`Some`] if the argument is present _and_ type conversion
-    /// succeeds.
-    pub fn get<T>(&self, key: &str) -> Option<T>
+    /// Returns [`None`] if an argument with such `name` is not present.
+    ///
+    /// # Errors
+    ///
+    /// If the [`FromInputValue`] conversion fails.
+    pub fn get<T>(&self, name: &str) -> FieldResult<Option<T>, S>
     where
         T: FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
     {
         self.args
             .as_ref()
-            .and_then(|args| args.get(key))
-            .and_then(InputValue::convert)
+            .and_then(|args| args.get(name))
+            .map(InputValue::convert)
+            .transpose()
+            .map_err(IntoFieldError::into_field_error)
     }
 }
 

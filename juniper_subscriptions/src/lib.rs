@@ -1,15 +1,6 @@
-//! This crate supplies [`SubscriptionCoordinator`] and
-//! [`SubscriptionConnection`] implementations for the
-//! [juniper](https://github.com/graphql-rust/juniper) crate.
-//!
-//! You need both this and `juniper` crate.
-//!
-//! [`SubscriptionCoordinator`]: juniper::SubscriptionCoordinator
-//! [`SubscriptionConnection`]: juniper::SubscriptionConnection
-
+#![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 #![deny(warnings)]
-#![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.16.0")]
 
 use std::{
     iter::FromIterator,
@@ -183,7 +174,7 @@ where
                 ready_vec.push(None);
             }
 
-            let stream = stream::poll_fn(move |mut ctx| -> Poll<Option<ExecutionOutput<S>>> {
+            let stream = stream::poll_fn(move |ctx| -> Poll<Option<ExecutionOutput<S>>> {
                 let mut obj_iterator = object.iter_mut();
 
                 // Due to having to modify `ready_vec` contents (by-move pattern)
@@ -204,7 +195,7 @@ where
 
                     match val {
                         Value::Scalar(stream) => {
-                            match Pin::new(stream).poll_next(&mut ctx) {
+                            match Pin::new(stream).poll_next(ctx) {
                                 Poll::Ready(None) => return Poll::Ready(None),
                                 Poll::Ready(Some(value)) => {
                                     *ready = Some((field_name.clone(), value));
@@ -261,10 +252,10 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn with_error() {
         let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![ExecutionOutput {
-            data: graphql_value!(None),
+            data: graphql_value!(null),
             errors: vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
-                graphql_value!(None),
+                graphql_value!(null),
             ))],
         }];
         let expected = serde_json::to_string(&expected).unwrap();
@@ -273,7 +264,7 @@ mod whole_responses_stream {
             Value::Null,
             vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
-                graphql_value!(None),
+                graphql_value!(null),
             ))],
         )
         .collect::<Vec<_>>()
@@ -286,7 +277,7 @@ mod whole_responses_stream {
     #[tokio::test]
     async fn value_null() {
         let expected: Vec<ExecutionOutput<DefaultScalarValue>> =
-            vec![ExecutionOutput::from_data(graphql_value!(None))];
+            vec![ExecutionOutput::from_data(graphql_value!(null))];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![])
@@ -333,7 +324,7 @@ mod whole_responses_stream {
         let expected: Vec<ExecutionOutput<DefaultScalarValue>> = vec![
             ExecutionOutput::from_data(graphql_value!(1)),
             ExecutionOutput::from_data(graphql_value!(2)),
-            ExecutionOutput::from_data(graphql_value!(None)),
+            ExecutionOutput::from_data(graphql_value!(null)),
             ExecutionOutput::from_data(graphql_value!(4)),
         ];
         let expected = serde_json::to_string(&expected).unwrap();

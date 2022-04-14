@@ -1,34 +1,94 @@
-no-dev-version = true
-pre-release-commit-message = "Release {{crate_name}} {{version}}"
-pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
-tag-message = "Release {{crate_name}} {{version}}"
-pre-release-replacements = [
-  # Juniper's changelog
-  {file="CHANGELOG.md", min=0, search="# master", replace="# master\n\n- No changes yet\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-v{{version}})"},
-  {file="src/lib.rs", min=0, search="docs.rs/juniper/[a-z0-9\\.-]+", replace="docs.rs/juniper/{{version}}"},
-  # docs
-  {file="../docs/book/content/quickstart.md", min=0, search="juniper = \"[^\"]+\"", replace="juniper = \"{{version}}\""},
-  # codegen
-  {file="../juniper_codegen/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  # Tests.
-  {file="../integration_tests/juniper_tests/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  # Hyper
-  {file="../juniper_hyper/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_hyper/Cargo.toml", min=0, search="\\[dev-dependencies\\.juniper\\]\nversion = \"[^\"]+\"", replace="[dev-dependencies.juniper]\nversion = \"{{version}}\""},
-  # Iron
-  {file="../juniper_iron/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_iron/Cargo.toml", min=0, search="\\[dev-dependencies\\.juniper\\]\nversion = \"[^\"]+\"", replace="[dev-dependencies.juniper]\nversion = \"{{version}}\""},
-  # Rocket
-  {file="../juniper_rocket/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_rocket/Cargo.toml", min=0, search="\\[dev-dependencies\\.juniper\\]\nversion = \"[^\"]+\"", replace="[dev-dependencies.juniper]\nversion = \"{{version}}\""},
-  # Warp
-  {file="../juniper_warp/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_warp/Cargo.toml", min=0, search="\\[dev-dependencies\\.juniper\\]\nversion = \"[^\"]+\"", replace="[dev-dependencies.juniper]\nversion = \"{{version}}\""},
-  # Subscriptions
-  {file="../juniper_subscriptions/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  # GraphQL-WS
-  {file="../juniper_graphql_ws/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  # Actix-Web
-  {file="../juniper_actix/Cargo.toml", min=0, search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_actix/Cargo.toml", min=0, search="\\[dev-dependencies\\.juniper\\]\nversion = \"[^\"]+\"", replace="[dev-dependencies.juniper]\nversion = \"{{version}}\""},
-]
+[[pre-release-replacements]]
+file = "../book/src/advanced/dataloaders.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+[[pre-release-replacements]]
+file = "../book/src/advanced/subscriptions.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+[[pre-release-replacements]]
+file = "../book/src/quickstart.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+[[pre-release-replacements]]
+file = "../book/src/servers/hyper.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+[[pre-release-replacements]]
+file = "../book/src/servers/iron.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+[[pre-release-replacements]]
+file = "../book/src/servers/rocket.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+[[pre-release-replacements]]
+file = "../book/src/servers/warp.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_actix/Cargo.toml"
+exactly = 2
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_graphql_ws/Cargo.toml"
+exactly = 1
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_hyper/Cargo.toml"
+exactly = 2
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_iron/Cargo.toml"
+exactly = 2
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_rocket/Cargo.toml"
+exactly = 2
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_subscriptions/Cargo.toml"
+exactly = 1
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_warp/Cargo.toml"
+exactly = 2
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+exactly = 1
+search = "## master"
+replace = "## [{{version}}] · {{date}}\n[{{version}}]: /../../tree/{{crate_name}}%40{{version}}/{{crate_name}}"
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+exactly = 1
+search = "...master\\)"
+replace = "...{{crate_name}}%40{{version}})"
+
+[[pre-release-replacements]]
+file = "README.md"
+exactly = 2
+search = "graphql-rust/juniper/blob/[^/]+/"
+replace = "graphql-rust/juniper/blob/{{crate_name}}%40{{version}}/"

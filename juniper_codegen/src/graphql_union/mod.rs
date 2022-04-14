@@ -320,6 +320,7 @@ impl ToTokens for Definition {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
     }
 }
 
@@ -558,11 +559,11 @@ impl Definition {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     let context = executor.context();
                     #( #variant_resolvers )*
-                    panic!(
+                    return Err(::juniper::FieldError::from(format!(
                         "Concrete type `{}` is not handled by instance \
                          resolvers on GraphQL union `{}`",
                         type_name, #name,
-                    );
+                    )));
                 }
             }
         }
@@ -600,12 +601,56 @@ impl Definition {
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     let context = executor.context();
                     #( #variant_async_resolvers )*
-                    panic!(
+                    return ::juniper::macros::helper::err_fut(format!(
                         "Concrete type `{}` is not handled by instance \
                          resolvers on GraphQL union `{}`",
                         type_name, #name,
-                    );
+                    ));
                 }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
+    /// [`WrappedType`] traits for this [GraphQL union][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflect::BaseType
+    /// [`WrappedType`]: juniper::macros::reflect::WrappedType
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    #[must_use]
+    pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let name = &self.name;
+        let variants = self.variants.iter().map(|var| &var.ty);
+        let (impl_generics, ty, where_clause) = self.impl_generics(false);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types = &[
+                    <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
+                    #(<#variants as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*
+                ];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         }
     }
@@ -670,11 +715,14 @@ impl VariantDefinition {
     #[must_use]
     fn method_resolve_into_type_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let expr = &self.resolver_code;
         let resolving_code = gen::sync_resolving_code();
 
         quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
+            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info)
+                .ok_or_else(|| ::juniper::macros::helper::err_unnamed_type(#ty_name))?
+            {
                 let res = { #expr };
                 return #resolving_code;
             }
@@ -690,13 +738,19 @@ impl VariantDefinition {
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
         let expr = &self.resolver_code;
         let resolving_code = gen::async_resolving_code(None);
 
         quote! {
-            if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info).unwrap() {
-                let fut = ::juniper::futures::future::ready({ #expr });
-                return #resolving_code;
+            match <#ty as ::juniper::GraphQLType<#scalar>>::name(info) {
+                Some(name) => {
+                    if type_name == name {
+                        let fut = ::juniper::futures::future::ready({ #expr });
+                        return #resolving_code;
+                    }
+                }
+                None => return ::juniper::macros::helper::err_unnamed_type_fut(#ty_name),
             }
         }
     }

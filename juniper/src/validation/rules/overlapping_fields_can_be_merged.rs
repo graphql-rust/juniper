@@ -33,6 +33,7 @@ struct PairSet<'a> {
     data: HashMap<&'a str, HashMap<&'a str, bool>>,
 }
 
+#[derive(Debug)]
 struct OrderedMap<K, V> {
     data: HashMap<K, V>,
     insert_order: Vec<K>,
@@ -195,6 +196,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     ) where
         S: ScalarValue,
     {
+        // Early return on fragment recursion, as it makes no sense.
+        // Fragment recursions are prevented by `no_fragment_cycles` validator.
         if fragment_name1 == fragment_name2 {
             return;
         }
@@ -282,6 +285,11 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         self.collect_conflicts_between(conflicts, mutually_exclusive, field_map, &field_map2, ctx);
 
         for fragment_name2 in fragment_names2 {
+            // Early return on fragment recursion, as it makes no sense.
+            // Fragment recursions are prevented by `no_fragment_cycles` validator.
+            if fragment_name == fragment_name2 {
+                return;
+            }
             self.collect_conflicts_between_fields_and_fragment(
                 conflicts,
                 field_map,

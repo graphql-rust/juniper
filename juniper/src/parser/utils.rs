@@ -82,7 +82,7 @@ impl<T> Spanning<T> {
     }
 
     /// Modify the contents of the spanned item
-    pub fn map<O: fmt::Debug, F: Fn(T) -> O>(self, f: F) -> Spanning<O> {
+    pub fn map<O, F: Fn(T) -> O>(self, f: F) -> Spanning<O> {
         Spanning {
             item: f(self.item),
             start: self.start,

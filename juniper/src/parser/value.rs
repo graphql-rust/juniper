@@ -112,9 +112,7 @@ where
                 ..
             },
             _,
-        ) => Ok(parser
-            .next_token()?
-            .map(|_| InputValue::enum_value(name.to_owned()))),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::enum_value(name))),
         // This hack is required as Juniper doesn't allow at the moment
         // for custom defined types to tweak into parsing.
         // TODO: Redesign parsing layer to allow such things.

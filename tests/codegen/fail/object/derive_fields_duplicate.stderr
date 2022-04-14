@@ -1,0 +1,11 @@
+error: GraphQL object must have a different name for each field
+ --> fail/object/derive_fields_duplicate.rs:4:1
+  |
+4 | / struct ObjA {
+5 | |     id: String,
+6 | |     #[graphql(name = "id")]
+7 | |     id2: String,
+8 | | }
+  | |_^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Objects

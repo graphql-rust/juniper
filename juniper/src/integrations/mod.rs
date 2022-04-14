@@ -10,6 +10,8 @@ pub mod chrono_tz;
 pub mod json;
 #[doc(hidden)]
 pub mod serde;
+#[cfg(feature = "time")]
+pub mod time;
 #[cfg(feature = "url")]
 pub mod url;
 #[cfg(feature = "uuid")]

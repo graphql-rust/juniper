@@ -7,7 +7,7 @@ use std::{collections::HashMap, convert::TryFrom, str::FromStr};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use span_container::SpanContainer;
 use syn::{
     ext::IdentExt as _,
@@ -542,7 +542,7 @@ pub struct FieldAttributes {
     pub name: Option<SpanContainer<String>>,
     pub description: Option<SpanContainer<String>>,
     pub deprecation: Option<SpanContainer<DeprecationAttr>>,
-    // Only relevant for GraphQLObject derive.
+    /// Only relevant for GraphQLObject derive.
     pub skip: Option<SpanContainer<syn::Ident>>,
     /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
@@ -752,7 +752,7 @@ impl GraphQLTypeDefiniton {
             let resolver_code = &variant.resolver_code;
 
             quote!(
-                Some(#variant_name) => Some(#resolver_code),
+                Some(#variant_name) => Ok(#resolver_code),
             )
         });
 
@@ -860,13 +860,14 @@ impl GraphQLTypeDefiniton {
             impl#impl_generics ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
-                fn from_input_value(v: &::juniper::InputValue<#scalar>) -> Option<#ty>
-                {
-                    match v.as_enum_value().or_else(|| {
-                        v.as_string_value()
-                    }) {
+                type Error = ::std::string::String;
+
+                fn from_input_value(
+                    v: &::juniper::InputValue<#scalar>
+                ) -> Result<#ty, Self::Error> {
+                    match v.as_enum_value().or_else(|| v.as_string_value()) {
                         #( #from_inputs )*
-                        _ => None,
+                        _ => Err(format!("Unknown enum value: {}", v)),
                     }
                 }
             }
@@ -879,6 +880,25 @@ impl GraphQLTypeDefiniton {
                         #( #to_inputs )*
                     }
                 }
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar> for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar> for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         );
 
@@ -980,8 +1000,14 @@ impl GraphQLTypeDefiniton {
                     #field_ident: {
                         match obj.get(#field_name) {
                             #from_input_default
-                            Some(ref v) => ::juniper::FromInputValue::from_input_value(v)?,
-                            None => ::juniper::FromInputValue::<#scalar>::from_implicit_null()?,
+                            Some(ref v) => {
+                                ::juniper::FromInputValue::<#scalar>::from_input_value(v)
+                                    .map_err(::juniper::IntoFieldError::into_field_error)?
+                            },
+                            None => {
+                                ::juniper::FromInputValue::<#scalar>::from_implicit_null()
+                                    .map_err(::juniper::IntoFieldError::into_field_error)?
+                            },
                         }
                     },
                 )
@@ -1049,7 +1075,9 @@ impl GraphQLTypeDefiniton {
 
         let marks = self.fields.iter().map(|field| {
             let field_ty = &field._type;
-            quote! { <#field_ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+            quote_spanned! { field_ty.span() =>
+                <#field_ty as ::juniper::marker::IsInputType<#scalar>>::mark();
+            }
         });
 
         let mut body = quote!(
@@ -1096,10 +1124,17 @@ impl GraphQLTypeDefiniton {
             impl#impl_generics ::juniper::FromInputValue<#scalar> for #ty #type_generics_tokens
                 #where_clause
             {
-                fn from_input_value(value: &::juniper::InputValue<#scalar>) -> Option<Self>
-                {
-                    let obj = value.to_object_value()?;
-                    Some(#ty {
+                type Error = ::juniper::FieldError<#scalar>;
+
+                fn from_input_value(
+                    value: &::juniper::InputValue<#scalar>
+                ) -> Result<Self, Self::Error> {
+                    let obj = value
+                        .to_object_value()
+                        .ok_or_else(|| ::juniper::FieldError::<#scalar>::from(
+                            format!("Expected input object, found: {}", value))
+                        )?;
+                    Ok(#ty {
                         #( #from_inputs )*
                     })
                 }
@@ -1113,6 +1148,28 @@ impl GraphQLTypeDefiniton {
                         #( #to_inputs )*
                     ].into_iter().collect())
                 }
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+            }
+
+            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ty #type_generics_tokens
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         );
 

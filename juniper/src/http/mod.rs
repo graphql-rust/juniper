@@ -24,7 +24,7 @@ use crate::{
 ///
 /// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
-#[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GraphQLRequest<S = DefaultScalarValue>
 where
     S: ScalarValue,
@@ -37,7 +37,10 @@ where
     pub operation_name: Option<String>,
 
     /// Optional variables to execute the GraphQL operation with.
-    #[serde(bound(deserialize = "InputValue<S>: Deserialize<'de> + Serialize"))]
+    #[serde(bound(
+        deserialize = "InputValue<S>: Deserialize<'de>",
+        serialize = "InputValue<S>: Serialize",
+    ))]
     pub variables: Option<InputValue<S>>,
 }
 

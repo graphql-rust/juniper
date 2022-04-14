@@ -81,7 +81,7 @@ where
                 InputValue::Null | InputValue::Variable(_) => true,
                 ref v @ InputValue::Scalar(_) | ref v @ InputValue::Enum(_) => {
                     if let Some(parse_fn) = t.input_value_parse_fn() {
-                        parse_fn(v)
+                        parse_fn(v).is_ok()
                     } else {
                         false
                     }

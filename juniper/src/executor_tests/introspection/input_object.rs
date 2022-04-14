@@ -2,8 +2,7 @@
 
 use crate::{
     ast::{FromInputValue, InputValue},
-    executor::Variables,
-    graphql_object, graphql_value,
+    graphql_input_value, graphql_object, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
@@ -123,7 +122,7 @@ where
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -174,25 +173,25 @@ async fn default_name_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(fields.len(), 2);
         assert!(fields.contains(&graphql_value!({
             "name": "fieldOne",
-            "description": None,
+            "description": null,
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
         assert!(fields.contains(&graphql_value!({
             "name": "fieldTwo",
-            "description": None,
+            "description": null,
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
     })
     .await;
@@ -200,18 +199,14 @@ async fn default_name_introspection() {
 
 #[test]
 fn default_name_input_value() {
-    let iv: InputValue<DefaultScalarValue> = InputValue::object(
-        vec![
-            ("fieldOne", InputValue::scalar("number one")),
-            ("fieldTwo", InputValue::scalar("number two")),
-        ]
-        .into_iter()
-        .collect(),
-    );
+    let iv: InputValue = graphql_input_value!({
+        "fieldOne": "number one",
+        "fieldTwo": "number two",
+    });
 
-    let dv: Option<DefaultName> = FromInputValue::from_input_value(&iv);
+    let dv = DefaultName::from_input_value(&iv);
 
-    assert!(dv.is_some());
+    assert!(dv.is_ok(), "error: {}", dv.unwrap_err().message());
 
     let dv = dv.unwrap();
 
@@ -245,25 +240,25 @@ async fn no_trailing_comma_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(fields.len(), 2);
         assert!(fields.contains(&graphql_value!({
             "name": "fieldOne",
-            "description": None,
+            "description": null,
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
         assert!(fields.contains(&graphql_value!({
             "name": "fieldTwo",
-            "description": None,
+            "description": null,
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
     })
     .await;
@@ -295,17 +290,17 @@ async fn derive_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(fields.len(), 1);
         assert!(fields.contains(&graphql_value!({
             "name": "fieldOne",
-            "description": None,
+            "description": null,
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
     })
     .await;
@@ -350,17 +345,17 @@ async fn named_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None))
+            Some(&graphql_value!(null))
         );
 
         assert_eq!(fields.len(), 1);
         assert!(fields.contains(&graphql_value!({
             "name": "fieldOne",
-            "description": None,
+            "description": null,
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
     })
     .await;
@@ -398,11 +393,11 @@ async fn description_introspection() {
         assert_eq!(fields.len(), 1);
         assert!(fields.contains(&graphql_value!({
             "name": "fieldOne",
-            "description": None,
+            "description": null,
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
     })
     .await;
@@ -434,7 +429,7 @@ async fn field_description_introspection() {
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(None)),
+            Some(&graphql_value!(null)),
         );
 
         assert_eq!(fields.len(), 2);
@@ -444,7 +439,7 @@ async fn field_description_introspection() {
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
         assert!(fields.contains(&graphql_value!({
             "name": "fieldTwo",
@@ -452,7 +447,7 @@ async fn field_description_introspection() {
             "type": {
                 "ofType": {"name": "String"},
             },
-            "defaultValue": None,
+            "defaultValue": null,
         })));
     })
     .await;

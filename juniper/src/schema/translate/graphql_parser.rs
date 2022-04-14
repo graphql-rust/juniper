@@ -108,7 +108,7 @@ impl GraphQLParserTranslator {
                     ExternalValue::Int(ExternalNumber::from(v))
                 } else if let Some(v) = x.as_float() {
                     ExternalValue::Float(v)
-                } else if let Some(v) = x.as_boolean() {
+                } else if let Some(v) = x.as_bool() {
                     ExternalValue::Boolean(v)
                 } else {
                     panic!("unknown argument type")
@@ -190,6 +190,8 @@ impl GraphQLParserTranslator {
                 position: Pos::default(),
                 description: x.description.as_ref().map(|s| From::from(s.as_str())),
                 name: From::from(x.name.as_ref()),
+                // TODO: Support this with GraphQL October 2021 Edition.
+                implements_interfaces: vec![],
                 directives: vec![],
                 fields: x
                     .fields

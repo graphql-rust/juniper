@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::{
-    ast::{FromInputValue, InputValue},
+    ast::{Document, FromInputValue, InputValue},
     executor::Registry,
     parser::parse_document_source,
     schema::{
@@ -14,7 +14,7 @@ use crate::{
     },
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
     value::ScalarValue,
-    GraphQLInputObject,
+    FieldError, GraphQLInputObject, IntoFieldError,
 };
 
 struct Being;
@@ -208,12 +208,14 @@ impl<S> FromInputValue<S> for DogCommand
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand> {
+    type Error = &'static str;
+
+    fn from_input_value<'a>(v: &InputValue<S>) -> Result<DogCommand, Self::Error> {
         match v.as_enum_value() {
-            Some("SIT") => Some(DogCommand::Sit),
-            Some("HEEL") => Some(DogCommand::Heel),
-            Some("DOWN") => Some(DogCommand::Down),
-            _ => None,
+            Some("SIT") => Ok(DogCommand::Sit),
+            Some("HEEL") => Ok(DogCommand::Heel),
+            Some("DOWN") => Ok(DogCommand::Down),
+            _ => Err("Unknown DogCommand"),
         }
     }
 }
@@ -314,13 +316,15 @@ impl<S> FromInputValue<S> for FurColor
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor> {
+    type Error = &'static str;
+
+    fn from_input_value<'a>(v: &InputValue<S>) -> Result<FurColor, Self::Error> {
         match v.as_enum_value() {
-            Some("BROWN") => Some(FurColor::Brown),
-            Some("BLACK") => Some(FurColor::Black),
-            Some("TAN") => Some(FurColor::Tan),
-            Some("SPOTTED") => Some(FurColor::Spotted),
-            _ => None,
+            Some("BROWN") => Ok(FurColor::Brown),
+            Some("BLACK") => Ok(FurColor::Black),
+            Some("TAN") => Ok(FurColor::Tan),
+            Some("SPOTTED") => Ok(FurColor::Spotted),
+            _ => Err("Unknown FurColor"),
         }
     }
 }
@@ -612,21 +616,37 @@ impl<S> FromInputValue<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput> {
-        let obj = match v.to_object_value() {
-            Some(o) => o,
-            None => return None,
-        };
+    type Error = FieldError<S>;
 
-        Some(ComplexInput {
-            required_field: match obj.get("requiredField").and_then(|v| v.convert()) {
-                Some(f) => f,
-                None => return None,
-            },
-            int_field: obj.get("intField").and_then(|v| v.convert()),
-            string_field: obj.get("stringField").and_then(|v| v.convert()),
-            boolean_field: obj.get("booleanField").and_then(|v| v.convert()),
-            string_list_field: obj.get("stringListField").and_then(|v| v.convert()),
+    fn from_input_value<'a>(v: &InputValue<S>) -> Result<ComplexInput, Self::Error> {
+        let obj = v.to_object_value().ok_or("Expected object")?;
+
+        Ok(ComplexInput {
+            required_field: obj
+                .get("requiredField")
+                .map(|v| v.convert())
+                .transpose()?
+                .ok_or("Expected requiredField")?,
+            int_field: obj
+                .get("intField")
+                .map(|v| v.convert())
+                .transpose()?
+                .ok_or("Expected intField")?,
+            string_field: obj
+                .get("stringField")
+                .map(|v| v.convert())
+                .transpose()?
+                .ok_or("Expected stringField")?,
+            boolean_field: obj
+                .get("booleanField")
+                .map(|v| v.convert())
+                .transpose()?
+                .ok_or("Expected booleanField")?,
+            string_list_field: obj
+                .get("stringListField")
+                .map(|v| v.convert().map_err(IntoFieldError::into_field_error))
+                .transpose()?
+                .ok_or("Expected stringListField")?,
         })
     }
 }
@@ -814,20 +834,13 @@ where
     }
 }
 
-pub fn validate<'a, Q, M, Sub, V, F, S>(
-    r: Q,
-    m: M,
-    s: Sub,
-    q: &'a str,
-    factory: F,
-) -> Vec<RuleError>
+pub fn validate<'a, Q, M, Sub, F, S>(r: Q, m: M, s: Sub, q: &'a str, visit_fn: F) -> Vec<RuleError>
 where
     S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     Sub: GraphQLType<S, TypeInfo = ()>,
-    V: Visitor<'a, S> + 'a,
-    F: Fn() -> V,
+    F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
 {
     let mut root = RootNode::new_with_scalar_value(r, m, s);
 
@@ -835,39 +848,44 @@ where
         "onQuery",
         &[DirectiveLocation::Query],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onMutation",
         &[DirectiveLocation::Mutation],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onField",
         &[DirectiveLocation::Field],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onFragmentDefinition",
         &[DirectiveLocation::FragmentDefinition],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onFragmentSpread",
         &[DirectiveLocation::FragmentSpread],
         &[],
+        false,
     ));
     root.schema.add_directive(DirectiveType::new(
         "onInlineFragment",
         &[DirectiveLocation::InlineFragment],
         &[],
+        false,
     ));
 
     let doc =
         parse_document_source(q, &root.schema).expect(&format!("Parse error on input {:#?}", q));
     let mut ctx = ValidatorContext::new(unsafe { mem::transmute(&root.schema) }, &doc);
 
-    let mut mv = MultiVisitorNil.with(factory());
-    visit(&mut mv, &mut ctx, unsafe { mem::transmute(doc.as_slice()) });
+    visit_fn(&mut ctx, unsafe { mem::transmute(doc.as_slice()) });
 
     ctx.into_errors()
 }
@@ -879,6 +897,14 @@ where
     F: Fn() -> V,
 {
     expect_passes_rule_with_schema(QueryRoot, MutationRoot, SubscriptionRoot, factory, q);
+}
+
+pub fn expect_passes_fn<'a, F, S>(visit_fn: F, q: &'a str)
+where
+    S: ScalarValue + 'a,
+    F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
+{
+    expect_passes_fn_with_schema(QueryRoot, MutationRoot, SubscriptionRoot, visit_fn, q);
 }
 
 pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
@@ -893,13 +919,37 @@ pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
     M: GraphQLType<S, TypeInfo = ()>,
     Sub: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
-    F: Fn() -> V,
+    F: FnOnce() -> V,
 {
-    let errs = validate(r, m, s, q, factory);
+    let errs = validate(r, m, s, q, move |ctx, doc| {
+        let mut mv = MultiVisitorNil.with(factory());
+        visit(&mut mv, ctx, unsafe { mem::transmute(doc) });
+    });
 
     if !errs.is_empty() {
         print_errors(&errs);
         panic!("Expected rule to pass, but errors found");
+    }
+}
+
+pub fn expect_passes_fn_with_schema<'a, Q, M, Sub, F, S>(
+    r: Q,
+    m: M,
+    s: Sub,
+    visit_fn: F,
+    q: &'a str,
+) where
+    S: ScalarValue + 'a,
+    Q: GraphQLType<S, TypeInfo = ()>,
+    M: GraphQLType<S, TypeInfo = ()>,
+    Sub: GraphQLType<S, TypeInfo = ()>,
+    F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
+{
+    let errs = validate(r, m, s, q, visit_fn);
+
+    if !errs.is_empty() {
+        print_errors(&errs);
+        panic!("Expected `visit_fn` to pass, but errors found");
     }
 }
 
@@ -910,6 +960,14 @@ where
     F: Fn() -> V,
 {
     expect_fails_rule_with_schema(QueryRoot, MutationRoot, factory, q, expected_errors);
+}
+
+pub fn expect_fails_fn<'a, F, S>(visit_fn: F, q: &'a str, expected_errors: &[RuleError])
+where
+    S: ScalarValue + 'a,
+    F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
+{
+    expect_fails_fn_with_schema(QueryRoot, MutationRoot, visit_fn, q, expected_errors);
 }
 
 pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
@@ -923,12 +981,48 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
-    F: Fn() -> V,
+    F: FnOnce() -> V,
 {
-    let errs = validate(r, m, crate::EmptySubscription::<S>::new(), q, factory);
+    let errs = validate(
+        r,
+        m,
+        crate::EmptySubscription::<S>::new(),
+        q,
+        move |ctx, doc| {
+            let mut mv = MultiVisitorNil.with(factory());
+            visit(&mut mv, ctx, unsafe { mem::transmute(doc) });
+        },
+    );
 
     if errs.is_empty() {
         panic!("Expected rule to fail, but no errors were found");
+    } else if errs != expected_errors {
+        println!("==> Expected errors:");
+        print_errors(expected_errors);
+
+        println!("\n==> Actual errors:");
+        print_errors(&errs);
+
+        panic!("Unexpected set of errors found");
+    }
+}
+
+pub fn expect_fails_fn_with_schema<'a, Q, M, F, S>(
+    r: Q,
+    m: M,
+    visit_fn: F,
+    q: &'a str,
+    expected_errors: &[RuleError],
+) where
+    S: ScalarValue + 'a,
+    Q: GraphQLType<S, TypeInfo = ()>,
+    M: GraphQLType<S, TypeInfo = ()>,
+    F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
+{
+    let errs = validate(r, m, crate::EmptySubscription::<S>::new(), q, visit_fn);
+
+    if errs.is_empty() {
+        panic!("Expected `visit_fn` to fail, but no errors were found");
     } else if errs != expected_errors {
         println!("==> Expected errors:");
         print_errors(expected_errors);

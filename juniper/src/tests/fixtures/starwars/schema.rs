@@ -78,6 +78,7 @@ pub struct Human {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
+    #[allow(dead_code)]
     secret_backstory: Option<String>,
     home_planet: Option<String>,
 }
@@ -94,11 +95,7 @@ impl Human {
         Self {
             id: id.to_owned(),
             name: name.to_owned(),
-            friend_ids: friend_ids
-                .to_owned()
-                .into_iter()
-                .map(ToOwned::to_owned)
-                .collect(),
+            friend_ids: friend_ids.iter().copied().map(ToOwned::to_owned).collect(),
             appears_in: appears_in.to_vec(),
             secret_backstory: secret_backstory.map(ToOwned::to_owned),
             home_planet: home_planet.map(|p| p.to_owned()),
@@ -110,51 +107,28 @@ impl Human {
 #[graphql_object(context = Database, impl = CharacterValue)]
 impl Human {
     /// The id of the human
-    fn id(&self) -> &str {
+    pub fn id(&self) -> &str {
         &self.id
     }
 
     /// The name of the human
-    fn name(&self) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         Some(self.name.as_str())
     }
 
     /// The friends of the human
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
+    pub fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
+        ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
-    fn appears_in(&self) -> &[Episode] {
+    pub fn appears_in(&self) -> &[Episode] {
         &self.appears_in
     }
 
     /// The home planet of the human
-    fn home_planet(&self) -> &Option<String> {
+    pub fn home_planet(&self) -> &Option<String> {
         &self.home_planet
-    }
-}
-
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn name(&self) -> Option<&str> {
-        Some(&self.name)
-    }
-
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
-    }
-
-    fn appears_in(&self) -> &[Episode] {
-        &self.appears_in
-    }
-
-    fn friends_ids(&self) -> &[String] {
-        &self.friend_ids
     }
 }
 
@@ -164,6 +138,7 @@ pub struct Droid {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
+    #[allow(dead_code)]
     secret_backstory: Option<String>,
     primary_function: Option<String>,
 }
@@ -180,11 +155,7 @@ impl Droid {
         Self {
             id: id.to_owned(),
             name: name.to_owned(),
-            friend_ids: friend_ids
-                .to_owned()
-                .into_iter()
-                .map(ToOwned::to_owned)
-                .collect(),
+            friend_ids: friend_ids.iter().copied().map(ToOwned::to_owned).collect(),
             appears_in: appears_in.to_vec(),
             secret_backstory: secret_backstory.map(ToOwned::to_owned),
             primary_function: primary_function.map(ToOwned::to_owned),
@@ -196,51 +167,28 @@ impl Droid {
 #[graphql_object(context = Database, impl = CharacterValue)]
 impl Droid {
     /// The id of the droid
-    fn id(&self) -> &str {
+    pub fn id(&self) -> &str {
         &self.id
     }
 
     /// The name of the droid
-    fn name(&self) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         Some(self.name.as_str())
     }
 
     /// The friends of the droid
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
+    pub fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
+        ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
-    fn appears_in(&self) -> &[Episode] {
+    pub fn appears_in(&self) -> &[Episode] {
         &self.appears_in
     }
 
     /// The primary function of the droid
-    fn primary_function(&self) -> &Option<String> {
+    pub fn primary_function(&self) -> &Option<String> {
         &self.primary_function
-    }
-}
-
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn name(&self) -> Option<&str> {
-        Some(&self.name)
-    }
-
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
-    }
-
-    fn appears_in(&self) -> &[Episode] {
-        &self.appears_in
-    }
-
-    fn friends_ids(&self) -> &[String] {
-        &self.friend_ids
     }
 }
 
@@ -371,10 +319,7 @@ impl Database {
         }
     }
 
-    pub fn get_friends(&self, c: &dyn Character) -> Vec<CharacterValue> {
-        c.friends_ids()
-            .iter()
-            .flat_map(|id| self.get_character(id))
-            .collect()
+    pub fn get_friends(&self, ids: &[String]) -> Vec<CharacterValue> {
+        ids.iter().flat_map(|id| self.get_character(id)).collect()
     }
 }

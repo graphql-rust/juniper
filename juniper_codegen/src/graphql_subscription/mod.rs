@@ -60,7 +60,9 @@ impl Definition<Subscription> {
                     _: &::juniper::Arguments<#scalar>,
                     _: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
-                    panic!("Called `resolve_field` on subscription object");
+                    Err(::juniper::FieldError::from(
+                        "Called `resolve_field` on subscription object",
+                    ))
                 }
 
                 fn concrete_type_name(
@@ -95,12 +97,14 @@ impl Definition<Subscription> {
                 .push(parse_quote! { #scalar: Send + Sync });
         }
         let ty = &self.ty;
+        let ty_name = ty.to_token_stream().to_string();
 
         let fields_resolvers = self
             .fields
             .iter()
             .map(|f| f.method_resolve_field_into_stream_tokens(scalar));
-        let no_field_panic = field::Definition::method_resolve_field_panic_no_field_tokens(scalar);
+        let no_field_err =
+            field::Definition::method_resolve_field_err_no_field_tokens(scalar, &ty_name);
 
         quote! {
             #[allow(deprecated)]
@@ -130,7 +134,7 @@ impl Definition<Subscription> {
                 {
                     match field {
                         #( #fields_resolvers )*
-                        _ => #no_field_panic,
+                        _ => Box::pin(async move { #no_field_err }),
                     }
                 }
             }

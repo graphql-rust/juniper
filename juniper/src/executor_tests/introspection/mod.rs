@@ -6,12 +6,10 @@ mod input_object;
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    executor::Variables,
-    graphql_interface, graphql_object, graphql_scalar, graphql_value,
+    graphql_interface, graphql_object, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{ParseScalarResult, ParseScalarValue, ScalarValue, Value},
-    GraphQLEnum,
+    GraphQLEnum, GraphQLScalar,
 };
 
 #[derive(GraphQLEnum)]
@@ -21,30 +19,15 @@ enum Sample {
     Two,
 }
 
+#[derive(GraphQLScalar)]
+#[graphql(name = "SampleScalar", transparent)]
 struct Scalar(i32);
-
-#[graphql_scalar(name = "SampleScalar")]
-impl<S: ScalarValue> GraphQLScalar for Scalar {
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0)
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Scalar> {
-        v.as_scalar().and_then(ScalarValue::as_int).map(Scalar)
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
-    }
-}
 
 /// A sample interface
 #[graphql_interface(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface
-    fn sample_enum(&self) -> Sample {
-        Sample::One
-    }
+    fn sample_enum(&self) -> Sample;
 }
 
 struct Root;
@@ -65,9 +48,6 @@ impl Root {
     }
 }
 
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Interface for Root {}
-
 #[tokio::test]
 async fn test_execution() {
     let doc = r#"
@@ -83,7 +63,7 @@ async fn test_execution() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -128,7 +108,7 @@ async fn enum_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -154,23 +134,23 @@ async fn enum_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(None))
+        Some(&graphql_value!(null))
     );
 
     let values = type_info
@@ -183,16 +163,16 @@ async fn enum_introspection() {
 
     assert!(values.contains(&graphql_value!({
         "name": "ONE",
-        "description": None,
+        "description": null,
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 
     assert!(values.contains(&graphql_value!({
         "name": "TWO",
-        "description": None,
+        "description": null,
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 }
 
@@ -237,7 +217,7 @@ async fn interface_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -267,19 +247,19 @@ async fn interface_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(None))
+        Some(&graphql_value!(null))
     );
 
     let possible_types = type_info
@@ -305,7 +285,7 @@ async fn interface_introspection() {
         "description": "A sample field in the interface",
         "args": [],
         "type": {
-            "name": None,
+            "name": null,
             "kind": "NON_NULL",
             "ofType": {
                "name": "SampleEnum",
@@ -313,7 +293,7 @@ async fn interface_introspection() {
             },
         },
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 }
 
@@ -369,7 +349,7 @@ async fn object_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -403,19 +383,19 @@ async fn object_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(None))
+        Some(&graphql_value!(null))
     );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&graphql_value!(None)),
+        Some(&graphql_value!(null)),
     );
 
     let fields = type_info
@@ -430,10 +410,10 @@ async fn object_introspection() {
 
     assert!(fields.contains(&graphql_value!({
         "name": "sampleEnum",
-        "description": None,
+        "description": null,
         "args": [],
         "type": {
-            "name": None,
+            "name": null,
             "kind": "NON_NULL",
             "ofType": {
                "name": "SampleEnum",
@@ -441,7 +421,7 @@ async fn object_introspection() {
             },
         },
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 
     assert!(fields.contains(&graphql_value!({
@@ -451,27 +431,27 @@ async fn object_introspection() {
             "name": "first",
             "description": "The first number",
             "type": {
-                "name": None,
+                "name": null,
                 "kind": "NON_NULL",
                 "ofType": {
                     "name": "Int",
                     "kind": "SCALAR",
-                    "ofType": None,
+                    "ofType": null,
                 },
             },
-            "defaultValue": None,
+            "defaultValue": null,
         }, {
             "name": "second",
             "description": "The second number",
             "type": {
                 "name": "Int",
                 "kind": "SCALAR",
-                "ofType": None,
+                "ofType": null,
             },
             "defaultValue": "123",
         }],
         "type": {
-            "name": None,
+            "name": null,
             "kind": "NON_NULL",
             "ofType": {
                "name": "SampleScalar",
@@ -479,7 +459,7 @@ async fn object_introspection() {
             },
         },
         "isDeprecated": false,
-        "deprecationReason": None,
+        "deprecationReason": null,
     })));
 }
 
@@ -491,6 +471,7 @@ async fn scalar_introspection() {
             name
             kind
             description
+            specifiedByUrl
             fields { name }
             interfaces { name }
             possibleTypes { name }
@@ -506,7 +487,7 @@ async fn scalar_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -525,13 +506,14 @@ async fn scalar_introspection() {
         &graphql_value!({
             "name": "SampleScalar",
             "kind": "SCALAR",
-            "description": None,
-            "fields": None,
-            "interfaces": None,
-            "possibleTypes": None,
-            "enumValues": None,
-            "inputFields": None,
-            "ofType": None,
+            "description": null,
+            "specifiedByUrl": null,
+            "fields": null,
+            "interfaces": null,
+            "possibleTypes": null,
+            "enumValues": null,
+            "inputFields": null,
+            "ofType": null,
         }),
     );
 }

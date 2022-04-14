@@ -1,0 +1,7 @@
+error: GraphQL interface must have at least one field
+ --> fail/interface/trait/no_fields.rs:4:1
+  |
+4 | trait Character {}
+  | ^^^^^^^^^^^^^^^^^^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Interfaces

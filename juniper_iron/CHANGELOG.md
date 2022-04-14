@@ -1,68 +1,26 @@
-# master
+`juniper_iron` changelog
+========================
 
-- Compatibility with the latest `juniper`.
+All user visible changes to `juniper_iron` crate will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
-# [[0.7.4] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.4)
 
-- Compatibility with the latest `juniper`.
 
-# [[0.7.3] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.3)
 
-- Compatibility with the latest `juniper`.
+## master
 
-# [[0.7.2] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.2)
+### BC Breaks
 
-- Compatibility with the latest `juniper`.
+- Switched to 0.16 version of [`juniper` crate].
 
-# [[0.7.1] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.1)
 
-- Compatibility with the latest `juniper`.
 
-# [[0.7.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.7.0)
 
-- Compatibility with the latest `juniper`.
+## Previous releases
 
-## Breaking Changes
+See [old CHANGELOG](/../../blob/juniper_iron-v0.7.6/juniper_iron/CHANGELOG.md).
 
-- `juniper_iron::GraphiQLHandler::new` now requires a second parameter for subscriptions.
-- `400 Bad Request` is now returned if POST HTTP request contains no or invalid `Content-Type` header.
 
-# [[0.6.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.6.2)
 
-- Compatibility with the latest `juniper`.
 
-# [[0.6.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.6.1)
-
-- Compatibility with the latest `juniper`.
-
-# [[0.6.0] 2019-09-29](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.6.0)
-
-- Compatibility with the latest `juniper`.
-
-# [[0.5.1] 2019-07-29](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.5.1)
-
-- Compatibility with the latest `juniper`.
-
-# [[0.5.0] 2019-07-19](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.5.0)
-
-- Compatibility with the latest `juniper`.
-
-# [[0.4.0] 2019-05-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.4.0)
-
-- Compatibility with the latest `juniper`.
-
-# [0.3.0] 2018-12-17
-
-- Compatibility with the latest `juniper`.
-
-## [0.2.0] - 2018-09-13
-
-### Changed
-
-- (**breaking**) `context_factory` now returns `IronResult<Context>` instead of `Context`.
-
-## [0.1.2] - 2018-02-10
-
-### Changed
-
-- Extend iron support to 0.6
+[`juniper` crate]: https://docs.rs/juniper
+[Semantic Versioning 2.0.0]: https://semver.org

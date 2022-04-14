@@ -1,110 +1,4 @@
-/*!
-
-# juniper_iron
-
-This repository contains the [Iron][Iron] web framework integration for
-[Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
-
-For documentation, including guides and examples, check out [Juniper][Juniper].
-
-A basic usage example can also be found in the [Api documentation][documentation].
-
-## Links
-
-* [Juniper][Juniper]
-* [Api Reference][documentation]
-* [Iron framework][Iron]
-
-## Integrating with Iron
-
-
-For example, continuing from the schema created above and using Iron to expose
-the schema on an HTTP endpoint supporting both GET and POST requests:
-
-```rust,no_run
-# use std::collections::HashMap;
-#
-use iron::prelude::*;
-use juniper_iron::GraphQLHandler;
-use juniper::{Context, EmptyMutation, EmptySubscription};
-#
-# use juniper::FieldResult;
-#
-# struct User { id: String, name: String, friend_ids: Vec<String>  }
-# struct QueryRoot;
-# struct Database { users: HashMap<String, User> }
-#
-# #[juniper::graphql_object(context = Database)]
-# impl User {
-#     fn id(&self) -> FieldResult<&String> {
-#         Ok(&self.id)
-#     }
-#
-#     fn name(&self) -> FieldResult<&String> {
-#         Ok(&self.name)
-#     }
-#
-#     fn friends<'c>(&self, context: &'c Database) -> FieldResult<Vec<&'c User>> {
-#         Ok(self.friend_ids.iter()
-#             .filter_map(|id| context.users.get(id))
-#             .collect())
-#     }
-# }
-#
-# #[juniper::graphql_object(context = Database, scalar = juniper::DefaultScalarValue)]
-# impl QueryRoot {
-#     fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
-#         Ok(context.users.get(&id))
-#     }
-# }
-
-// This function is executed for every request. Here, we would realistically
-// provide a database connection or similar. For this example, we'll be
-// creating the database from scratch.
-fn context_factory(_: &mut Request) -> IronResult<Database> {
-    Ok(Database {
-        users: vec![
-            ( "1000".to_owned(), User {
-                id: "1000".to_owned(), name: "Robin".to_owned(),
-                friend_ids: vec!["1001".to_owned()] } ),
-            ( "1001".to_owned(), User {
-                id: "1001".to_owned(), name: "Max".to_owned(),
-                friend_ids: vec!["1000".to_owned()] } ),
-        ].into_iter().collect()
-    })
-}
-
-impl Context for Database {}
-
-fn main() {
-    // GraphQLHandler takes a context factory function, the root object,
-    // and the mutation object. If we don't have any mutations to expose, we
-    // can use the empty tuple () to indicate absence.
-    let graphql_endpoint = GraphQLHandler::new(
-        context_factory,
-        QueryRoot,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    );
-
-    // Start serving the schema at the root on port 8080.
-    Iron::new(graphql_endpoint).http("localhost:8080").unwrap();
-}
-
-```
-
-See the the [`GraphQLHandler`][3] documentation for more information on what request methods are
-supported.
-
-[3]: ./struct.GraphQLHandler.html
-[Iron]: https://github.com/iron/iron
-[Juniper]: https://github.com/graphql-rust/juniper
-[GraphQL]: http://graphql.org
-[documentation]: https://docs.rs/juniper_iron
-
-*/
-
-#![doc(html_root_url = "https://docs.rs/juniper_iron/0.3.0")]
+#![doc = include_str!("../README.md")]
 
 use std::{error::Error, fmt, io::Read, ops::Deref as _};
 
@@ -185,15 +79,12 @@ fn parse_variable_param<S>(params: Option<Vec<String>>) -> IronResult<Option<Inp
 where
     S: ScalarValue,
 {
-    if let Some(values) = params {
-        Ok(
-            serde_json::from_str::<InputValue<S>>(get_single_value(values)?.as_ref())
-                .map(Some)
-                .map_err(GraphQLIronError::Serde)?,
-        )
-    } else {
-        Ok(None)
-    }
+    params
+        .map(|vals| {
+            serde_json::from_str::<InputValue<S>>(get_single_value(vals)?.as_ref())
+                .map_err(|e| GraphQLIronError::Serde(e).into())
+        })
+        .transpose()
 }
 
 impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
@@ -314,15 +205,15 @@ where
     Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     'a: 'static,
 {
-    fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let context = (self.context_factory)(req)?;
 
         let graphql_request = match req.method {
-            method::Get => self.handle_get(&mut req)?,
+            method::Get => self.handle_get(req)?,
             method::Post => match req.headers.get::<ContentType>().map(ContentType::deref) {
                 Some(Mime(TopLevel::Application, sub_lvl, _)) => match sub_lvl.as_str() {
-                    "json" => self.handle_post_json(&mut req)?,
-                    "graphql" => self.handle_post_graphql(&mut req)?,
+                    "json" => self.handle_post_json(req)?,
+                    "graphql" => self.handle_post_graphql(req)?,
                     _ => return Ok(Response::with(status::BadRequest)),
                 },
                 _ => return Ok(Response::with(status::BadRequest)),
@@ -372,11 +263,11 @@ enum GraphQLIronError {
 }
 
 impl fmt::Display for GraphQLIronError {
-    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GraphQLIronError::Serde(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLIronError::Url(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLIronError::InvalidData(err) => fmt::Display::fmt(err, &mut f),
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GraphQLIronError::Serde(err) => fmt::Display::fmt(err, f),
+            GraphQLIronError::Url(err) => fmt::Display::fmt(err, f),
+            GraphQLIronError::InvalidData(err) => fmt::Display::fmt(err, f),
         }
     }
 }

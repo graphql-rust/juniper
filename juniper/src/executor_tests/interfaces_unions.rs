@@ -3,70 +3,26 @@ mod interface {
         graphql_interface, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
+        GraphQLObject,
     };
 
     #[graphql_interface(for = [Cat, Dog])]
     trait Pet {
         fn name(&self) -> &str;
-
-        #[graphql(downcast)]
-        fn as_dog(&self) -> Option<&Dog> {
-            None
-        }
-        #[graphql(downcast)]
-        fn as_cat(&self) -> Option<&Cat> {
-            None
-        }
     }
 
+    #[derive(GraphQLObject)]
+    #[graphql(impl = PetValue)]
     struct Dog {
         name: String,
         woofs: bool,
     }
 
-    #[graphql_interface]
-    impl Pet for Dog {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn as_dog(&self) -> Option<&Dog> {
-            Some(self)
-        }
-    }
-
-    #[graphql_object(impl = PetValue)]
-    impl Dog {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn woofs(&self) -> bool {
-            self.woofs
-        }
-    }
-
+    #[derive(GraphQLObject)]
+    #[graphql(impl = PetValue)]
     struct Cat {
         name: String,
         meows: bool,
-    }
-
-    #[graphql_interface]
-    impl Pet for Cat {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn as_cat(&self) -> Option<&Cat> {
-            Some(self)
-        }
-    }
-
-    #[graphql_object(impl = PetValue)]
-    impl Cat {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn meows(&self) -> bool {
-            self.meows
-        }
     }
 
     struct Schema {

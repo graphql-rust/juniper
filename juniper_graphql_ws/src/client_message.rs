@@ -1,4 +1,4 @@
-use juniper::{ScalarValue, Variables};
+use juniper::Variables;
 use serde::Deserialize;
 
 use crate::utils::default_for_null;
@@ -6,9 +6,9 @@ use crate::utils::default_for_null;
 /// The payload for a client's "start" message. This triggers execution of a query, mutation, or
 /// subscription.
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(bound(deserialize = "S: ScalarValue"))]
+#[serde(bound(deserialize = "S: Deserialize<'de>"))]
 #[serde(rename_all = "camelCase")]
-pub struct StartPayload<S: ScalarValue> {
+pub struct StartPayload<S> {
     /// The document body.
     pub query: String,
 
@@ -22,10 +22,10 @@ pub struct StartPayload<S: ScalarValue> {
 
 /// ClientMessage defines the message types that clients can send.
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(bound(deserialize = "S: ScalarValue"))]
+#[serde(bound(deserialize = "S: Deserialize<'de>"))]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
-pub enum ClientMessage<S: ScalarValue> {
+pub enum ClientMessage<S> {
     /// ConnectionInit is sent by the client upon connecting.
     ConnectionInit {
         /// Optional parameters of any type sent from the client. These are often used for
@@ -53,8 +53,9 @@ pub enum ClientMessage<S: ScalarValue> {
 
 #[cfg(test)]
 mod test {
+    use juniper::{graphql_vars, DefaultScalarValue};
+
     use super::*;
-    use juniper::{DefaultScalarValue, InputValue};
 
     #[test]
     fn test_deserialization() {
@@ -62,10 +63,7 @@ mod test {
 
         assert_eq!(
             ClientMessage::ConnectionInit {
-                payload: [("foo".to_string(), InputValue::scalar("bar"))]
-                    .iter()
-                    .cloned()
-                    .collect(),
+                payload: graphql_vars! {"foo": "bar"},
             },
             serde_json::from_str(r##"{"type": "connection_init", "payload": {"foo": "bar"}}"##)
                 .unwrap(),
@@ -73,7 +71,7 @@ mod test {
 
         assert_eq!(
             ClientMessage::ConnectionInit {
-                payload: Variables::default(),
+                payload: graphql_vars! {},
             },
             serde_json::from_str(r##"{"type": "connection_init"}"##).unwrap(),
         );
@@ -83,10 +81,7 @@ mod test {
                 id: "foo".to_string(),
                 payload: StartPayload {
                     query: "query MyQuery { __typename }".to_string(),
-                    variables: [("foo".to_string(), InputValue::scalar("bar"))]
-                        .iter()
-                        .cloned()
-                        .collect(),
+                    variables: graphql_vars! {"foo": "bar"},
                     operation_name: Some("MyQuery".to_string()),
                 },
             },
@@ -107,7 +102,7 @@ mod test {
                 id: "foo".to_string(),
                 payload: StartPayload {
                     query: "query MyQuery { __typename }".to_string(),
-                    variables: Variables::default(),
+                    variables: graphql_vars! {},
                     operation_name: None,
                 },
             },
@@ -139,7 +134,7 @@ mod test {
 
         let expected = StartPayload {
             query: "query".into(),
-            variables: Variables::default(),
+            variables: graphql_vars! {},
             operation_name: None,
         };
 

@@ -1,11 +1,4 @@
-/*!
-
-# juniper_graphql_ws
-
-This crate contains an implementation of the [graphql-ws protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/263844b5c1a850c1e29814564eb62cb587e5eaaf/PROTOCOL.md), as used by Apollo.
-
-*/
-
+#![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 #![deny(warnings)]
 
@@ -68,6 +61,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
     /// Specifies the maximum number of in-flight operations that a connection can have. If this
     /// number is exceeded, attempting to start more will result in an error. By default, there is
     /// no limit to in-flight operations.
+    #[must_use]
     pub fn with_max_in_flight_operations(mut self, max: usize) -> Self {
         self.max_in_flight_operations = max;
         self
@@ -75,6 +69,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
 
     /// Specifies the interval at which to send keep-alives. Specifying a zero duration will
     /// disable keep-alives. By default, keep-alives are sent every 15 seconds.
+    #[must_use]
     pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
         self.keep_alive_interval = interval;
         self
@@ -633,9 +628,9 @@ mod test {
 
     use juniper::{
         futures::sink::SinkExt,
-        graphql_object, graphql_subscription, graphql_value,
+        graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
         parser::{ParseError, Spanning, Token},
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, InputValue, RootNode,
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode,
     };
 
     use super::*;
@@ -681,7 +676,7 @@ mod test {
         async fn error(_context: &Context) -> BoxStream<'static, FieldResult<i32>> {
             stream::once(future::ready(Err(FieldError::new(
                 "field error",
-                graphql_value!(None),
+                graphql_value!(null),
             ))))
             .chain(
                 tokio::time::sleep(Duration::from_secs(10000))
@@ -707,7 +702,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -718,7 +713,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "{context}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -752,7 +747,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -763,7 +758,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "subscription Foo {context}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -785,7 +780,7 @@ mod test {
             id: "bar".to_string(),
             payload: StartPayload {
                 query: "subscription Bar {context}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -820,15 +815,12 @@ mod test {
     #[tokio::test]
     async fn test_init_params_ok() {
         let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
-            assert_eq!(params.get("foo"), Some(&InputValue::scalar("bar")));
+            assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Ok(ConnectionConfig::new(Context(1))) as Result<_, Infallible>
         });
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: [("foo".to_string(), InputValue::scalar("bar".to_string()))]
-                .iter()
-                .cloned()
-                .collect(),
+            payload: graphql_vars! {"foo": "bar"},
         })
         .await
         .unwrap();
@@ -839,15 +831,12 @@ mod test {
     #[tokio::test]
     async fn test_init_params_error() {
         let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
-            assert_eq!(params.get("foo"), Some(&InputValue::scalar("bar")));
+            assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Err(io::Error::new(io::ErrorKind::Other, "init error"))
         });
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: [("foo".to_string(), InputValue::scalar("bar".to_string()))]
-                .iter()
-                .cloned()
-                .collect(),
+            payload: graphql_vars! {"foo": "bar"},
         })
         .await
         .unwrap();
@@ -872,7 +861,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -883,7 +872,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "subscription Foo {never}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -894,7 +883,7 @@ mod test {
             id: "bar".to_string(),
             payload: StartPayload {
                 query: "subscription Bar {never}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -917,7 +906,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -928,7 +917,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "asd".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -958,7 +947,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -981,7 +970,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -991,7 +980,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "{context}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -1020,7 +1009,7 @@ mod test {
         );
 
         conn.send(ClientMessage::ConnectionInit {
-            payload: Variables::default(),
+            payload: graphql_vars! {},
         })
         .await
         .unwrap();
@@ -1031,7 +1020,7 @@ mod test {
             id: "foo".to_string(),
             payload: StartPayload {
                 query: "subscription Foo {error}".to_string(),
-                variables: Variables::default(),
+                variables: graphql_vars! {},
                 operation_name: None,
             },
         })
@@ -1044,7 +1033,7 @@ mod test {
                 payload: DataPayload { data, errors },
             } => {
                 assert_eq!(id, "foo");
-                assert_eq!(data, graphql_value!({ "error": None }),);
+                assert_eq!(data, graphql_value!({ "error": null }));
                 assert_eq!(errors.len(), 1);
             }
             msg @ _ => panic!("expected data, got: {:?}", msg),

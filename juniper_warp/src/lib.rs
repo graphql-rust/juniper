@@ -1,44 +1,9 @@
-/*!
-
-# juniper_warp
-
-This repository contains the [warp][warp] web server integration for
-[Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
-
-## Documentation
-
-For documentation, including guides and examples, check out [Juniper][Juniper].
-
-A basic usage example can also be found in the [Api documentation][documentation].
-
-## Examples
-
-Check [examples/warp_server.rs][example] for example code of a working warp
-server with GraphQL handlers.
-
-## Links
-
-* [Juniper][Juniper]
-* [Api Reference][documentation]
-* [warp][warp]
-
-## License
-
-This project is under the BSD-2 license.
-
-Check the LICENSE file for details.
-
-[warp]: https://github.com/seanmonstar/warp
-[Juniper]: https://github.com/graphql-rust/juniper
-[GraphQL]: http://graphql.org
-[documentation]: https://docs.rs/juniper_warp
-[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs
-
-*/
-
+#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 #![deny(warnings)]
-#![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
+
+use std::{collections::HashMap, str, sync::Arc};
 
 use anyhow::anyhow;
 use futures::{FutureExt as _, TryFutureExt};
@@ -46,7 +11,6 @@ use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
 };
-use std::{collections::HashMap, str, sync::Arc};
 use tokio::task;
 use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 
@@ -381,6 +345,8 @@ fn playground_response(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
+    use std::{convert::Infallible, fmt, sync::Arc};
+
     use juniper::{
         futures::{
             future::{self, Either},
@@ -390,7 +356,6 @@ pub mod subscriptions {
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
-    use std::{convert::Infallible, fmt, sync::Arc};
 
     struct Message(warp::ws::Message);
 

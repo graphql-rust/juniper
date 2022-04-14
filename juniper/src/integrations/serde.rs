@@ -1,4 +1,8 @@
-use std::{fmt, marker::PhantomData};
+use std::{
+    convert::{TryFrom as _, TryInto as _},
+    fmt,
+    marker::PhantomData,
+};
 
 use indexmap::IndexMap;
 use serde::{
@@ -12,15 +16,10 @@ use crate::{
     executor::ExecutionError,
     parser::{ParseError, SourcePosition, Spanning},
     validation::RuleError,
-    GraphQLError, Object, ScalarValue, Value,
+    DefaultScalarValue, GraphQLError, Object, Value,
 };
 
-#[derive(Serialize)]
-struct SerializeHelper {
-    message: &'static str,
-}
-
-impl<T> Serialize for ExecutionError<T> {
+impl<T: Serialize> Serialize for ExecutionError<T> {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         let mut map = ser.serialize_map(Some(4))?;
 
@@ -45,27 +44,32 @@ impl<T> Serialize for ExecutionError<T> {
 
 impl<'a> Serialize for GraphQLError<'a> {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        #[derive(Serialize)]
+        struct Helper {
+            message: &'static str,
+        }
+
         match self {
-            Self::ParseError(e) => vec![e].serialize(ser),
+            Self::ParseError(e) => [e].serialize(ser),
             Self::ValidationError(es) => es.serialize(ser),
-            Self::NoOperationProvided => [SerializeHelper {
+            Self::NoOperationProvided => [Helper {
                 message: "Must provide an operation",
             }]
             .serialize(ser),
-            Self::MultipleOperationsProvided => [SerializeHelper {
+            Self::MultipleOperationsProvided => [Helper {
                 message: "Must provide operation name \
                           if query contains multiple operations",
             }]
             .serialize(ser),
-            Self::UnknownOperationName => [SerializeHelper {
+            Self::UnknownOperationName => [Helper {
                 message: "Unknown operation",
             }]
             .serialize(ser),
-            Self::IsSubscription => [SerializeHelper {
+            Self::IsSubscription => [Helper {
                 message: "Expected query, got subscription",
             }]
             .serialize(ser),
-            Self::NotSubscription => [SerializeHelper {
+            Self::NotSubscription => [Helper {
                 message: "Expected subscription, got query",
             }]
             .serialize(ser),
@@ -80,8 +84,8 @@ impl<'de, S: Deserialize<'de>> Deserialize<'de> for InputValue<S> {
         impl<'de, S: Deserialize<'de>> de::Visitor<'de> for Visitor<S> {
             type Value = InputValue<S>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                formatter.write_str("a valid input value")
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("a valid input value")
             }
 
             fn visit_bool<E: de::Error>(self, b: bool) -> Result<Self::Value, E> {
@@ -285,12 +289,75 @@ impl<T: Serialize> Serialize for Value<T> {
     }
 }
 
+impl<'de> Deserialize<'de> for DefaultScalarValue {
+    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        struct Visitor;
+
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = DefaultScalarValue;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.write_str("a valid input value")
+            }
+
+            fn visit_bool<E: de::Error>(self, b: bool) -> Result<Self::Value, E> {
+                Ok(DefaultScalarValue::Boolean(b))
+            }
+
+            fn visit_i64<E: de::Error>(self, n: i64) -> Result<Self::Value, E> {
+                if n >= i64::from(i32::MIN) && n <= i64::from(i32::MAX) {
+                    Ok(DefaultScalarValue::Int(n.try_into().unwrap()))
+                } else {
+                    // Browser's `JSON.stringify()` serializes all numbers
+                    // having no fractional part as integers (no decimal point),
+                    // so we must parse large integers as floating point,
+                    // otherwise we would error on transferring large floating
+                    // point numbers.
+                    // TODO: Use `FloatToInt` conversion once stabilized:
+                    //       https://github.com/rust-lang/rust/issues/67057
+                    Ok(DefaultScalarValue::Float(n as f64))
+                }
+            }
+
+            fn visit_u64<E: de::Error>(self, n: u64) -> Result<Self::Value, E> {
+                if n <= u64::try_from(i32::MAX).unwrap() {
+                    self.visit_i64(n.try_into().unwrap())
+                } else {
+                    // Browser's `JSON.stringify()` serializes all numbers
+                    // having no fractional part as integers (no decimal point),
+                    // so we must parse large integers as floating point,
+                    // otherwise we would error on transferring large floating
+                    // point numbers.
+                    // TODO: Use `FloatToInt` conversion once stabilized:
+                    //       https://github.com/rust-lang/rust/issues/67057
+                    Ok(DefaultScalarValue::Float(n as f64))
+                }
+            }
+
+            fn visit_f64<E: de::Error>(self, f: f64) -> Result<Self::Value, E> {
+                Ok(DefaultScalarValue::Float(f))
+            }
+
+            fn visit_str<E: de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                self.visit_string(s.into())
+            }
+
+            fn visit_string<E: de::Error>(self, s: String) -> Result<Self::Value, E> {
+                Ok(DefaultScalarValue::String(s))
+            }
+        }
+
+        de.deserialize_any(Visitor)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::{from_str, to_string};
 
     use crate::{
         ast::InputValue,
+        graphql_input_value,
         value::{DefaultScalarValue, Object},
         FieldError, Value,
     };
@@ -300,21 +367,21 @@ mod tests {
     #[test]
     fn int() {
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("1235").unwrap(),
-            InputValue::scalar(1235),
+            from_str::<InputValue>("1235").unwrap(),
+            graphql_input_value!(1235),
         );
     }
 
     #[test]
     fn float() {
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("2.0").unwrap(),
-            InputValue::scalar(2.0),
+            from_str::<InputValue>("2.0").unwrap(),
+            graphql_input_value!(2.0),
         );
         // large value without a decimal part is also float
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
-            InputValue::scalar(123_567_890_123.0),
+            from_str::<InputValue>("123567890123").unwrap(),
+            graphql_input_value!(123_567_890_123.0),
         );
     }
 

@@ -1,8 +1,0 @@
-error: GraphQL object synchronous resolvers are not supported
-  --> $DIR/field_not_async.rs:11:5
-   |
-11 |     fn id(&self) -> Stream<'static, bool> {
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: https://spec.graphql.org/June2018/#sec-Objects
-   = note: Specify that this function is async: `async fn foo()`

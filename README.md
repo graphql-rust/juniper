@@ -73,6 +73,7 @@ your Schemas automatically.
 - [url][url]
 - [chrono][chrono]
 - [chrono-tz][chrono-tz]
+- [time][time]
 - [bson][bson]
 - [serde_json][serde_json]
 
@@ -108,10 +109,10 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [hyper]: https://hyper.rs
 [rocket]: https://rocket.rs
-[book]: https://graphql-rust.github.io/juniper/current
+[book]: https://graphql-rust.github.io
 [book_master]: https://graphql-rust.github.io/juniper/master
-[book_index]: https://graphql-rust.github.io/juniper
-[book_quickstart]: https://graphql-rust.github.io/juniper/current/quickstart.html
+[book_index]: https://graphql-rust.github.io
+[book_quickstart]: https://graphql-rust.github.io/quickstart.html
 [docsrs]: https://docs.rs/juniper
 [warp]: https://github.com/seanmonstar/warp
 [warp_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples
@@ -119,6 +120,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
 [chrono-tz]: https://crates.io/crates/chrono-tz
+[time]: https://crates.io/crates/time
 [bson]: https://crates.io/crates/bson
 [juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
 [serde_json]: https://crates.io/crates/serde_json

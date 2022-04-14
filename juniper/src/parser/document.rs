@@ -451,6 +451,8 @@ where
         None
     };
 
+    let directives = parse_directives(parser, schema)?;
+
     Ok(Spanning::start_end(
         &start_pos,
         &default_value
@@ -462,6 +464,7 @@ where
             VariableDefinition {
                 var_type,
                 default_value,
+                directives: directives.map(|s| s.item),
             },
         ),
     ))
