@@ -175,7 +175,7 @@ where
     /// It can be used to implement a schema that is partly dynamic, meaning that it can use
     /// information that is not known at compile time, for instance by reading it from a
     /// configuration file at startup.
-    type TypeInfo;
+    type TypeInfo: ?Sized;
 
     /// Returns name of the [`GraphQLType`] exposed by this [`GraphQLValue`].
     ///

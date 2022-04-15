@@ -854,6 +854,9 @@ where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
 {
     if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
@@ -945,12 +948,12 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type == OperationType::Subscription {
@@ -1092,12 +1095,12 @@ where
     'd: 'r,
     'op: 'd,
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync + 'r,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type != OperationType::Subscription {

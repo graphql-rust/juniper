@@ -1,4 +1,4 @@
-//! Helper utilities to use in test all over the crate.
+//! Helper utilities to use in tests all over the crate.
 
 use std::pin::Pin;
 
@@ -37,5 +37,5 @@ pub async fn extract_next<'a, S: ScalarValue>(
         }
     }
 
-    panic!("Expected to get Value::Object containing a Stream")
+    panic!("expected to get `Value::Object` containing a `Stream`")
 }

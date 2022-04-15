@@ -27,7 +27,7 @@ where
                     if let MetaType::Scalar(ScalarMeta { name, .. }) = t {
                         if name == "Json" {
                             if let Some(parse_fn) = t.input_value_parse_fn() {
-                                return parse_fn(arg_value);
+                                return parse_fn(arg_value).is_ok();
                             }
                         }
                     }
@@ -72,7 +72,7 @@ where
             if let MetaType::Scalar(ScalarMeta { name, .. }) = t {
                 if name == "Json" {
                     if let Some(parse_fn) = t.input_value_parse_fn() {
-                        return parse_fn(arg_value);
+                        return parse_fn(arg_value).is_ok();
                     }
                 }
             }

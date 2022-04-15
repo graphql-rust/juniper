@@ -1818,7 +1818,7 @@ mod executor {
         }
 
         struct Query;
-        #[graphql_object()]
+        #[graphql_object]
         impl Query {
             fn zero() -> FieldResult<i32> {
                 Ok(0)
