@@ -2,9 +2,7 @@
 
 use std::{
     convert::{TryFrom as _, TryInto as _},
-    fmt::format,
     marker::PhantomData,
-    mem,
     ops::{Deref, DerefMut},
     sync::atomic::AtomicPtr,
 };
@@ -25,7 +23,7 @@ use crate::{
     parser::ScalarToken,
     Arguments, BoxFuture, ExecutionResult, Executor, FieldError, FromInputValue, GraphQLType,
     GraphQLValue, GraphQLValueAsync, InputValue, IntoFieldError, ParseScalarResult,
-    ParseScalarValue, Registry, ScalarValue, Selection, Spanning, ToInputValue,
+    ParseScalarValue, Registry, ScalarValue, Selection, Spanning, ToInputValue, ID,
 };
 
 pub use serde_json::{json, Error, Value};
@@ -588,6 +586,7 @@ pub trait TypeInfo {
     fn meta<'r, T, S>(&self, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S, TypeInfo = Self> + ?Sized,
+        T::Error: IntoFieldError<S>,
         S: ScalarValue + 'r;
 }
 
@@ -599,6 +598,7 @@ impl TypeInfo for () {
     fn meta<'r, T, S>(&self, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S, TypeInfo = Self> + ?Sized,
+        T::Error: IntoFieldError<S>,
         S: ScalarValue + 'r,
     {
         registry
@@ -608,7 +608,6 @@ impl TypeInfo for () {
     }
 }
 
-/*
 #[derive(Clone, Debug, PartialEq)]
 pub struct Info {
     /// Parsed [`Schema`] containing a definition of the GraphQL type.
@@ -623,10 +622,7 @@ impl Info {
         name: N,
         schema: Schema<'_, String>,
     ) -> Result<Self, ParseError> {
-        // SAFETY: Same as `query::Document::into_static()`, see:
-        //         https://docs.rs/graphql-parser/0.3.0/src/graphql_parser/query/ast.rs.html#18-33
-        // TODO: Use `.into_static()` on `graphql_parser` 0.3.1 release.
-        let schema = unsafe { mem::transmute(schema) };
+        let schema = schema.into_static();
         let name = name.into();
 
         // TODO: validate `name` is contained in `schema`.
@@ -690,6 +686,13 @@ impl Info {
                         registry.field::<String>(field_name, &())
                     }
                 }
+                "ID" => {
+                    if nullable {
+                        registry.field::<Option<ID>>(field_name, &())
+                    } else {
+                        registry.field::<ID>(field_name, &())
+                    }
+                }
                 _ => {
                     let field_type_info = Info {
                         schema: self.schema.clone(),
@@ -724,6 +727,7 @@ impl TypeInfo for Info {
     fn meta<'r, T, S>(&self, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S, TypeInfo = Self> + ?Sized,
+        T::Error: IntoFieldError<S>,
         S: ScalarValue + 'r,
     {
         use graphql_parser::schema::{Definition, TypeDefinition};
@@ -784,7 +788,6 @@ impl TypeInfo for Info {
 
 /// Dynamic [`Json`] value typed by an [`Info`].
 pub type Typed<T = Value> = Json<T, Info>;
-*/
 
 #[cfg(test)]
 mod value_test {
@@ -793,9 +796,10 @@ mod value_test {
         use serde_json::{json, Value};
 
         use crate::{
-            execute, execute_sync, graphql_object, graphql_subscription, resolve_into_stream,
+            execute, execute_sync, graphql_object, graphql_subscription, graphql_vars,
+            resolve_into_stream,
             tests::util::{extract_next, stream, Stream},
-            EmptyMutation, EmptySubscription, FieldResult, RootNode, Variables,
+            EmptyMutation, FieldResult, RootNode,
         };
 
         struct Query;
@@ -904,15 +908,15 @@ mod value_test {
             let expected = Ok((graphql_value!({ "null": null }), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -929,15 +933,15 @@ mod value_test {
             let expected = Ok((graphql_value!({"bool": true}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -954,15 +958,15 @@ mod value_test {
             let expected = Ok((graphql_value!({"int": 42}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -979,15 +983,15 @@ mod value_test {
             let expected = Ok((graphql_value!({"float": 3.14}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1004,15 +1008,15 @@ mod value_test {
             let expected = Ok((graphql_value!({"string": "Galadriel"}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1029,15 +1033,15 @@ mod value_test {
             let expected = Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1059,15 +1063,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1089,15 +1093,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1119,15 +1123,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1163,15 +1167,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB1, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -1182,7 +1186,7 @@ mod value_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB2, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB2, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -1193,7 +1197,7 @@ mod value_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB3, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB3, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -1243,15 +1247,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB1, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -1265,7 +1269,7 @@ mod value_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB2, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB2, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -1279,7 +1283,7 @@ mod value_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB3, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB3, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -1309,15 +1313,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1342,15 +1346,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1372,15 +1376,15 @@ mod value_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1397,15 +1401,15 @@ mod value_test {
             let expected = Ok((graphql_value!({ "null": null }), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1427,7 +1431,7 @@ mod value_test {
                 "{ object { message { body } } }",
                 "{ nested { message { body { theme } } } }",
             ] {
-                let res = execute(qry, None, &schema, &Variables::new(), &()).await;
+                let res = execute(qry, None, &schema, &graphql_vars! {}, &()).await;
                 assert_eq!(
                     res.as_ref()
                         .map(|(_, errs)| errs.first().map(|e| e.error().message())),
@@ -1437,7 +1441,7 @@ mod value_test {
                     res,
                 );
 
-                let res = execute_sync(qry, None, &schema, &Variables::new(), &());
+                let res = execute_sync(qry, None, &schema, &graphql_vars! {}, &());
                 assert_eq!(
                     res.as_ref()
                         .map(|(_, errs)| errs.first().map(|e| e.error().message())),
@@ -1448,7 +1452,7 @@ mod value_test {
                 );
 
                 let sub = format!("subscription {}", qry);
-                let res = resolve_into_stream(&sub, None, &schema, &Variables::new(), &())
+                let res = resolve_into_stream(&sub, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await;
                 assert_eq!(
@@ -1471,11 +1475,11 @@ mod value_test {
             let expected = Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
         }
@@ -1485,7 +1489,7 @@ mod value_test {
         use serde_json::Value;
 
         use crate::{
-            execute, graphql_object, EmptyMutation, EmptySubscription, RootNode, Variables,
+            execute, graphql_object, graphql_vars, EmptyMutation, EmptySubscription, RootNode,
         };
 
         struct Query;
@@ -1506,7 +1510,7 @@ mod value_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({ "null": None }), vec![])),
             );
         }
@@ -1520,7 +1524,7 @@ mod value_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"bool": true}), vec![])),
             );
         }
@@ -1534,7 +1538,7 @@ mod value_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"int": 42}), vec![])),
             );
         }
@@ -1548,7 +1552,7 @@ mod value_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"float": 3.14}), vec![])),
             );
         }
@@ -1562,7 +1566,7 @@ mod value_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
             );
         }
@@ -1576,7 +1580,7 @@ mod value_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
             );
         }
@@ -1590,7 +1594,7 @@ mod value_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
                     graphql_value!({
                         "object": {"message": ["Ai", "Ambarendya!"]},
@@ -1610,9 +1614,10 @@ mod json_test {
         use serde_json::Value;
 
         use crate::{
-            execute, execute_sync, graphql_object, graphql_subscription, resolve_into_stream,
+            execute, execute_sync, graphql_object, graphql_subscription, graphql_vars,
+            resolve_into_stream,
             tests::util::{extract_next, stream, Stream},
-            EmptyMutation, FieldResult, RootNode, Variables,
+            EmptyMutation, FieldResult, RootNode,
         };
 
         use super::super::Json;
@@ -1747,15 +1752,15 @@ mod json_test {
             let expected = Ok((graphql_value!({ "null": null }), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1772,15 +1777,15 @@ mod json_test {
             let expected = Ok((graphql_value!({"bool": true}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1797,15 +1802,15 @@ mod json_test {
             let expected = Ok((graphql_value!({"int": 42}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1822,15 +1827,15 @@ mod json_test {
             let expected = Ok((graphql_value!({"float": 3.14}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1847,15 +1852,15 @@ mod json_test {
             let expected = Ok((graphql_value!({"string": "Galadriel"}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1872,15 +1877,15 @@ mod json_test {
             let expected = Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1902,15 +1907,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1932,15 +1937,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -1962,15 +1967,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -2006,15 +2011,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB1, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -2025,7 +2030,7 @@ mod json_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB2, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB2, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -2036,7 +2041,7 @@ mod json_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB3, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB3, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -2086,15 +2091,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB1, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB1, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -2108,7 +2113,7 @@ mod json_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB2, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB2, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -2122,7 +2127,7 @@ mod json_test {
                 )),
             );
             assert_eq!(
-                resolve_into_stream(SUB3, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB3, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((
@@ -2152,15 +2157,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -2185,15 +2190,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -2215,15 +2220,15 @@ mod json_test {
             ));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -2240,15 +2245,15 @@ mod json_test {
             let expected = Ok((graphql_value!({ "null": null }), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
             assert_eq!(
-                resolve_into_stream(SUB, None, &schema, &Variables::new(), &())
+                resolve_into_stream(SUB, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 expected,
@@ -2270,7 +2275,7 @@ mod json_test {
                 "{ object { message { body } } }",
                 "{ nested { envelope { message { theme } } } }",
             ] {
-                let res = execute(qry, None, &schema, &Variables::new(), &()).await;
+                let res = execute(qry, None, &schema, &graphql_vars! {}, &()).await;
                 assert_eq!(
                     res.as_ref()
                         .map(|(_, errs)| errs.first().map(|e| e.error().message())),
@@ -2280,7 +2285,7 @@ mod json_test {
                     res,
                 );
 
-                let res = execute_sync(qry, None, &schema, &Variables::new(), &());
+                let res = execute_sync(qry, None, &schema, &graphql_vars! {}, &());
                 assert_eq!(
                     res.as_ref()
                         .map(|(_, errs)| errs.first().map(|e| e.error().message())),
@@ -2291,7 +2296,7 @@ mod json_test {
                 );
 
                 let sub = format!("subscription {}", qry);
-                let res = resolve_into_stream(&sub, None, &schema, &Variables::new(), &())
+                let res = resolve_into_stream(&sub, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await;
                 assert_eq!(
@@ -2314,11 +2319,11 @@ mod json_test {
             let expected = Ok((graphql_value!({"__type": {"kind": "SCALAR"}}), vec![]));
 
             assert_eq!(
-                execute(QRY, None, &schema, &Variables::new(), &()).await,
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
                 expected,
             );
             assert_eq!(
-                execute_sync(QRY, None, &schema, &Variables::new(), &()),
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
                 expected,
             );
         }
@@ -2328,7 +2333,7 @@ mod json_test {
         use serde::{Deserialize, Serialize};
 
         use crate::{
-            execute, graphql_object, EmptyMutation, EmptySubscription, RootNode, Variables,
+            execute, graphql_object, graphql_vars, EmptyMutation, EmptySubscription, RootNode,
         };
 
         use super::super::Json;
@@ -2385,7 +2390,7 @@ mod json_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({ "null": None }), vec![])),
             );
         }
@@ -2399,7 +2404,7 @@ mod json_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"bool": true}), vec![])),
             );
         }
@@ -2413,7 +2418,7 @@ mod json_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"int": 42}), vec![])),
             );
         }
@@ -2427,7 +2432,7 @@ mod json_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"float": 3.14}), vec![])),
             );
         }
@@ -2441,7 +2446,7 @@ mod json_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"string": "Galadriel"}), vec![])),
             );
         }
@@ -2455,7 +2460,7 @@ mod json_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"array": ["Ai", "Ambarendya!"]}), vec![])),
             );
         }
@@ -2469,7 +2474,7 @@ mod json_test {
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
             assert_eq!(
-                execute(DOC, None, &schema, &Variables::new(), &()).await,
+                execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
                     graphql_value!({
                         "object": {"envelope": {"message": ["Ai", "Ambarendya!"]}},
@@ -2487,7 +2492,7 @@ mod json_test {
 
             let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
-            let res = execute(DOC, None, &schema, &Variables::new(), &()).await;
+            let res = execute(DOC, None, &schema, &graphql_vars! {}, &()).await;
             assert_eq!(
                 res.as_ref()
                     .map(|(_, errs)| errs.first().map(|e| e.error().message())),
@@ -2497,15 +2502,14 @@ mod json_test {
     }
 }
 
-/*
 #[cfg(test)]
 mod typed_test {
     mod as_output {
         use serde_json::{json, Value};
 
         use crate::{
-            execute, execute_sync, graphql_object, graphql_value, DefaultScalarValue,
-            EmptyMutation, EmptySubscription, FieldResult, RootNode, Variables,
+            execute, execute_sync, graphql_vars, DefaultScalarValue, EmptyMutation,
+            EmptySubscription, RootNode,
         };
 
         use super::super::{Info, Typed};
@@ -2519,6 +2523,7 @@ mod typed_test {
                 foo: Foo
             }
             type Foo {
+                id: [ID]
                 message: String
                 bar: Bar
             }
@@ -2527,6 +2532,7 @@ mod typed_test {
         #[tokio::test]
         async fn resolves() {
             const QRY: &str = r#"{
+                id
                 message
                 bar {
                     location
@@ -2540,6 +2546,7 @@ mod typed_test {
             }"#;
 
             let data = Typed::wrap(json!({
+                "id": ["foo-1"],
                 "message": "hello world",
                 "bar": {
                     "location": "downtown",
@@ -2551,8 +2558,8 @@ mod typed_test {
                     },
                 },
             }));
-            let schema = RootNode::new_with_info(
-                data,
+            let schema = <RootNode<_, _, _, DefaultScalarValue>>::new_with_info(
+                data.clone(),
                 EmptyMutation::new(),
                 EmptySubscription::new(),
                 Info::parse("Foo", SDL).unwrap(),
@@ -2560,32 +2567,19 @@ mod typed_test {
                 (),
             );
 
-            //let expected = data.into_inner().to;
+            let expected = Ok((data.into_inner().into(), vec![]));
 
             assert_eq!(
-                execute::<DefaultScalarValue, _, _, _>(QRY, None, &schema, &Variables::new(), &())
-                    .await,
-                Ok((
-                    graphql_value!({
-                        "message": "hello world",
-                        "bar": {
-                            "location": "downtown",
-                            "capacity": 80,
-                            "open": true,
-                            "rating": 4.5,
-                            "foo": {
-                                "message": "drink more",
-                            },
-                        },
-                    }),
-                    vec![],
-                )),
+                execute(QRY, None, &schema, &graphql_vars! {}, &()).await,
+                expected,
+            );
+            assert_eq!(
+                execute_sync(QRY, None, &schema, &graphql_vars! {}, &()),
+                expected,
             );
         }
     }
 }
-
- */
 
 //------------------------------------------------------------------------------
 
@@ -2747,7 +2741,7 @@ mod tests {
         }"#;
 
         assert_eq!(
-            execute_sync(query, None, &schema, &Variables::new(), &()),
+            execute_sync(query, None, &schema, &graphql_vars! {}, &()),
             Ok((
                 graphql_value!({
                     "message": "hello world",
@@ -2809,7 +2803,7 @@ mod tests {
         }"#;
 
         assert_eq!(
-            execute_sync(query, None, &schema, &Variables::new(), &()),
+            execute_sync(query, None, &schema, &graphql_vars! {}, &()),
             Ok((
                 graphql_value!({
                     "message": "hello world",
@@ -2864,7 +2858,7 @@ mod tests {
         }"#;
 
         assert_eq!(
-            execute_sync(query, None, &schema, &Variables::new(), &()),
+            execute_sync(query, None, &schema, &graphql_vars! {}, &()),
             Ok((
                 graphql_value!({
                     "message": ["hello world"],
@@ -2908,7 +2902,7 @@ mod tests {
             "query { foo { message } }",
             None,
             &schema,
-            &Variables::new(),
+            &graphql_vars! {},
             &(),
         )
         .unwrap();
