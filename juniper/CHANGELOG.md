@@ -59,7 +59,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### Changed
 
 - Made `GraphQLRequest` fields public. ([#750])
-- Relaxed [object safety] requirement for `GraphQLValue` and `GraphQLValueAsync` traits. ([rev])
+- Relaxed [object safety] requirement for `GraphQLValue` and `GraphQLValueAsync` traits. ([ba1ed85b])
 
 ## Fixed
 
@@ -93,6 +93,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1026]: /../../pull/1026
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
+[ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 
 
 
