@@ -69,7 +69,7 @@ pub enum FieldPath<'a> {
 /// of the current field stack, context, variables, and errors.
 pub struct Executor<'r, 'a, CtxT, S = DefaultScalarValue>
 where
-    CtxT: 'a,
+    CtxT: ?Sized + 'a,
     S: 'a,
 {
     fragments: &'r HashMap<&'a str, Fragment<'a, S>>,
