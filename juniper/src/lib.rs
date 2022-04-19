@@ -28,19 +28,20 @@ pub use juniper_codegen::{
 #[doc(hidden)]
 #[macro_use]
 pub mod macros;
+
 mod ast;
 pub mod executor;
+pub mod graphql;
+pub mod http;
+pub mod integrations;
 mod introspection;
 pub mod parser;
+pub mod resolve;
 pub(crate) mod schema;
 mod types;
 mod util;
 pub mod validation;
 mod value;
-// This needs to be public until docs have support for private modules:
-// https://github.com/rust-lang/cargo/issues/1520
-pub mod http;
-pub mod integrations;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
