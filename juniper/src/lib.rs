@@ -71,18 +71,15 @@ pub use crate::{
         LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
-    macros::helper::{
-        subscription::{ExtractTypeFromStream, IntoFieldResult},
-        AsDynGraphQLValue,
-    },
+    macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
     parser::{ParseError, ScalarToken, Spanning},
     schema::{
         meta,
         model::{RootNode, SchemaType},
     },
     types::{
-        async_await::{DynGraphQLValueAsync, GraphQLTypeAsync, GraphQLValueAsync},
-        base::{Arguments, DynGraphQLValue, GraphQLType, GraphQLValue, TypeKind},
+        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
         marker::{self, GraphQLInterface, GraphQLObject, GraphQLUnion},
         nullable::Nullable,
         scalars::{EmptyMutation, EmptySubscription, ID},

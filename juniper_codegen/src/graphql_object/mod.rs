@@ -500,7 +500,6 @@ impl ToTokens for Definition<Query> {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_as_dyn_graphql_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
         self.impl_field_meta_tokens().to_tokens(into);
         self.impl_field_tokens().to_tokens(into);
@@ -867,44 +866,5 @@ impl Definition<Query> {
                 }
             }
         }
-    }
-
-    /// Returns generated code implementing [`AsDynGraphQLValue`] trait for this
-    /// [GraphQL object][1].
-    ///
-    /// [`AsDynGraphQLValue`]: juniper::AsDynGraphQLValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    #[must_use]
-    fn impl_as_dyn_graphql_value_tokens(&self) -> Option<TokenStream> {
-        if self.interfaces.is_empty() {
-            return None;
-        }
-
-        let scalar = &self.scalar;
-
-        let (impl_generics, where_clause) = self.impl_generics(true);
-        let ty = &self.ty;
-
-        Some(quote! {
-            #[allow(non_snake_case)]
-            #[automatically_derived]
-            impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #where_clause
-            {
-                type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
-                type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;
-
-                fn as_dyn_graphql_value(
-                    &self,
-                ) -> &::juniper::DynGraphQLValue<#scalar, Self::Context, Self::TypeInfo> {
-                    self
-                }
-
-                fn as_dyn_graphql_value_async(
-                    &self,
-                ) -> &::juniper::DynGraphQLValueAsync<#scalar, Self::Context, Self::TypeInfo> {
-                    self
-                }
-            }
-        })
     }
 }

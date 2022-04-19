@@ -59,6 +59,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### Changed
 
 - Made `GraphQLRequest` fields public. ([#750])
+- Relaxed [object safety] requirement for `GraphQLValue` and `GraphQLValueAsync` traits. ([rev])
 
 ## Fixed
 
@@ -109,5 +110,6 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [graphql-scalars.dev]: https://graphql-scalars.dev
 [October 2021]: https://spec.graphql.org/October2021
+[object safety]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
 [Semantic Versioning 2.0.0]: https://semver.org
