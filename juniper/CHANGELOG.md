@@ -21,6 +21,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `#[graphql_object]` and `#[graphql_subscription]` expansions now preserve defined `impl` blocks "as is" and reuse defined methods in opaque way. ([#971])
 - Renamed `rename = "<policy>"` attribute argument to `rename_all = "<policy>"` (following `serde` style). ([#971])
 - Upgraded [`bson` crate] integration to [2.0 version](https://github.com/mongodb/bson-rust/releases/tag/v2.0.0). ([#979])
+- Upgraded [`uuid` crate] integration to [1.0 version](https://github.com/uuid-rs/uuid/releases/tag/1.0.0). ([#1057])
 - Made `FromInputValue` trait methods fallible to allow post-validation. ([#987])
 - Redesigned `#[graphql_interface]` macro: ([#1009])
     - Removed support for `dyn` attribute argument (interface values as trait objects).
@@ -93,6 +94,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1026]: /../../pull/1026
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
+[#1057]: /../../pull/1057
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 
 
