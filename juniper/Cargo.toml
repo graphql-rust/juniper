@@ -54,7 +54,7 @@ time = { version = "0.3", features = ["formatting", "macros", "parsing"], option
 url = { version = "2.0", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-uuid = { version = "0.8", default-features = false, optional = true }
+uuid = { version = "1.0", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
