@@ -56,6 +56,8 @@ uuid = { version = "1.0", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
+# not used, to fix `bson` compilation only
+uuid_08 = { version = "0.8", package = "uuid", default-features = false, features = ["wasm-bindgen"] }
 
 [dev-dependencies]
 bencher = "0.1.2"
