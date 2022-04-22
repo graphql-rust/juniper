@@ -41,7 +41,7 @@ pub(crate) mod schema;
 mod types;
 mod util;
 pub mod validation;
-mod value;
+pub(crate) mod value;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;

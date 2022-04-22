@@ -17,6 +17,7 @@ use crate::{
         Selection, ToInputValue, Type,
     },
     parser::{SourcePosition, Spanning},
+    resolve,
     schema::{
         meta::{
             Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
@@ -81,6 +82,12 @@ where
     context: &'a CtxT,
     errors: &'r RwLock<Vec<ExecutionError<S>>>,
     field_path: Arc<FieldPath<'a>>,
+}
+
+impl<'r, 'a, Ctx: ?Sized, S> Executor<'r, 'a, Ctx, S> {
+    pub(crate) fn current_type_new(&self) -> &TypeType<'a, S> {
+        &self.current_type
+    }
 }
 
 /// Error type for errors that occur during query execution
@@ -1183,6 +1190,32 @@ impl<'r, S: 'r> Registry<'r, S> {
         }
     }
 
+    /// Returns a [`Type`] meta information for the specified [`graphql::Type`],
+    /// registered in this [`Registry`].
+    ///
+    /// If this [`Registry`] doesn't contain a [`Type`] meta information with
+    /// such [`TypeName`] before, it will construct the one and store it.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn get_type_new<T, Info>(&mut self, info: &Info) -> Type<'r>
+    where
+        T: resolve::Type<Info, S> + resolve::TypeName<Info> + ?Sized,
+        Info: ?Sized,
+    {
+        let name = T::type_name(info);
+        let validated_name = name.parse::<Name>().unwrap();
+        if !self.types.contains_key(name) {
+            self.insert_placeholder(
+                validated_name.clone(),
+                Type::NonNullNamed(Cow::Owned(name.to_string())),
+            );
+            let meta = T::meta(self, info);
+            self.types.insert(validated_name, meta);
+        }
+        self.types[name].as_type()
+    }
+
     /// Creates a [`Field`] with the provided `name`.
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
@@ -1278,6 +1311,24 @@ impl<'r, S: 'r> Registry<'r, S> {
         ListMeta::new(of_type, expected_size)
     }
 
+    /// Builds a [`ListMeta`] information for the specified [`graphql::Type`].
+    ///
+    /// Specifying `expected_size` will be used in validation to ensure that
+    /// values of this type matches it.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    pub fn build_list_type_new<T, Info>(
+        &mut self,
+        info: &Info,
+        expected_size: Option<usize>,
+    ) -> ListMeta<'r>
+    where
+        T: resolve::Type<Info, S> + ?Sized,
+        Info: ?Sized,
+    {
+        ListMeta::new(T::meta(self, info).as_type(), expected_size)
+    }
+
     /// Creates a [`NullableMeta`] type.
     pub fn build_nullable_type<T>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
     where
@@ -1286,6 +1337,18 @@ impl<'r, S: 'r> Registry<'r, S> {
     {
         let of_type = self.get_type::<T>(info);
         NullableMeta::new(of_type)
+    }
+
+    /// Builds a [`NullableMeta`] information for the specified
+    /// [`graphql::Type`].
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    pub fn build_nullable_type_new<T, Info>(&mut self, info: &Info) -> NullableMeta<'r>
+    where
+        T: resolve::Type<Info, S> + ?Sized,
+        Info: ?Sized,
+    {
+        NullableMeta::new(T::meta(self, info).as_type())
     }
 
     /// Creates an [`ObjectMeta`] type with the given `fields`.
