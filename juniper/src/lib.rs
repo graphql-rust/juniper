@@ -139,6 +139,9 @@ where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
 
@@ -175,12 +178,12 @@ pub async fn execute<'a, S, QueryT, MutationT, SubscriptionT>(
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
@@ -219,12 +222,12 @@ pub async fn resolve_into_stream<'a, S, QueryT, MutationT, SubscriptionT>(
 ) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     let document: crate::ast::OwnedDocument<'a, S> =
@@ -265,6 +268,9 @@ where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
 {
     execute_sync(
         match format {

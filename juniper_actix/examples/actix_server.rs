@@ -67,7 +67,7 @@ impl Database {
 // To make our Database usable by Juniper, we have to implement a marker trait.
 impl juniper::Context for Database {}
 
-// Queries represent the callable funcitons
+// Queries represent the callable functions
 struct Query;
 #[graphql_object(context = Database)]
 impl Query {

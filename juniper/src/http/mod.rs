@@ -96,6 +96,9 @@ where
         QueryT: GraphQLType<S>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+        QueryT::TypeInfo: Sized,
+        MutationT::TypeInfo: Sized,
+        SubscriptionT::TypeInfo: Sized,
     {
         GraphQLResponse(crate::execute_sync(
             &self.query,
@@ -117,12 +120,12 @@ where
     ) -> GraphQLResponse<'a, S>
     where
         QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
+        QueryT::TypeInfo: Sync + Sized,
         QueryT::Context: Sync,
         MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
+        MutationT::TypeInfo: Sync + Sized,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-        SubscriptionT::TypeInfo: Sync,
+        SubscriptionT::TypeInfo: Sync + Sized,
         S: ScalarValue + Send + Sync,
     {
         let op = self.operation_name.as_deref();
@@ -146,12 +149,12 @@ where
     'rn: 'a,
     'ctx: 'a,
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     let op = req.operation_name.as_deref();
@@ -277,6 +280,9 @@ where
         QueryT: GraphQLType<S>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+        QueryT::TypeInfo: Sized,
+        MutationT::TypeInfo: Sized,
+        SubscriptionT::TypeInfo: Sized,
     {
         match *self {
             Self::Single(ref req) => {
@@ -301,12 +307,12 @@ where
     ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
+        QueryT::TypeInfo: Sync + Sized,
         QueryT::Context: Sync,
         MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
+        MutationT::TypeInfo: Sync + Sized,
         SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-        SubscriptionT::TypeInfo: Sync,
+        SubscriptionT::TypeInfo: Sync + Sized,
         S: Send + Sync,
     {
         match self {

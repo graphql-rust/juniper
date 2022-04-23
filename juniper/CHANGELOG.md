@@ -47,6 +47,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Reworked [`chrono` crate] integration GraphQL scalars according to [graphql-scalars.dev] specs: ([#1010])
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
+- Renamed `graphql-parser-integration` [Cargo feature] as `graphql-parser`. ([#1043])
+- Renamed `serde_json` [Cargo feature] as `json`. ([#975])
 
 ### Added
 
@@ -76,6 +78,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#965]: /../../pull/965
 [#966]: /../../pull/966
 [#971]: /../../pull/971
+[#975]: /../../pull/975
 [#979]: /../../pull/979
 [#985]: /../../pull/985
 [#987]: /../../pull/987
@@ -92,6 +95,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1017]: /../../pull/1017
 [#1025]: /../../pull/1025
 [#1026]: /../../pull/1026
+[#1043]: /../../pull/1043
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
 [#1057]: /../../pull/1057

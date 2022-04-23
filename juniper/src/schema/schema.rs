@@ -24,6 +24,9 @@ where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
 {
     fn name(info: &Self::TypeInfo) -> Option<&str> {
         QueryT::name(info)
@@ -44,6 +47,9 @@ where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
 {
     type Context = QueryT::Context;
     type TypeInfo = QueryT::TypeInfo;
@@ -102,12 +108,12 @@ impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync + 'a,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     fn resolve_field_async<'b>(

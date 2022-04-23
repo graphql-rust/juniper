@@ -28,6 +28,9 @@ pub struct RootNode<
     SubscriptionT: GraphQLType<S>,
     S = DefaultScalarValue,
 > where
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
     S: ScalarValue,
 {
     #[doc(hidden)]
@@ -134,6 +137,9 @@ where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
     SubscriptionT: GraphQLType<S>,
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
     S: ScalarValue + 'a,
 {
     /// Construct a new root node from query and mutation nodes,

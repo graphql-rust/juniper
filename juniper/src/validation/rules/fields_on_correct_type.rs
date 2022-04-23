@@ -58,6 +58,14 @@ where
                         }
                     }
 
+                    // This hack is required as Juniper doesn't allow at the
+                    // moment for custom defined types to tweak into validation.
+                    // TODO: Redesign validation layer to allow such things.
+                    #[cfg(feature = "json")]
+                    if type_name == "Json" {
+                        return;
+                    }
+
                     context.report_error(
                         &error_message(field_name.item, type_name),
                         &[field_name.start],

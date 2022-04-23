@@ -47,6 +47,7 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 - [`bson`]
 - [`chrono`] (feature gated)
 - [`chrono-tz`] (feature gated)
+- [`serde_json`] (`json` feature gated)
 - [`time`] (feature gated)
 - [`url`]
 - [`uuid`]

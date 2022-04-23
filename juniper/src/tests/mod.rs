@@ -11,3 +11,5 @@ mod schema_introspection;
 mod subscriptions;
 #[cfg(test)]
 mod type_info_tests;
+#[cfg(test)]
+pub mod util;

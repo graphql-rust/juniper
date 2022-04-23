@@ -103,8 +103,8 @@ jobs:
           - { feature: chrono-tz, crate: juniper }
           - { feature: expose-test-schema, crate: juniper }
           - { feature: graphql-parser, crate: juniper }
+          - { feature: json, crate: juniper }
           - { feature: schema-language, crate: juniper }
-          - { feature: serde_json, crate: juniper }
           - { feature: time, crate: juniper }
           - { feature: url, crate: juniper }
           - { feature: uuid, crate: juniper }

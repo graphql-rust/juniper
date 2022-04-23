@@ -175,7 +175,7 @@ where
     /// It can be used to implement a schema that is partly dynamic, meaning that it can use
     /// information that is not known at compile time, for instance by reading it from a
     /// configuration file at startup.
-    type TypeInfo;
+    type TypeInfo: ?Sized;
 
     /// Returns name of the [`GraphQLType`] exposed by this [`GraphQLValue`].
     ///
@@ -485,6 +485,16 @@ where
                 );
 
                 match field_result {
+                    // This hack is required as Juniper doesn't allow at the
+                    // moment for custom defined types to tweak into resolving.
+                    // TODO: Redesign resolving layer to allow such things.
+                    #[cfg(feature = "json")]
+                    Ok(Value::Null)
+                        if meta_field.field_type.is_non_null()
+                            && meta_field.field_type.name() == Some("Json") =>
+                    {
+                        merge_key_into(result, response_name, Value::Null)
+                    }
                     Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {

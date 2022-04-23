@@ -1797,4 +1797,64 @@ mod executor {
             )),
         );
     }
+
+    #[tokio::test]
+    async fn test_integration_json() {
+        use juniper::integrations::json::{TypedJson, TypedJsonInfo};
+        use serde_json::json;
+
+        struct Foo;
+        impl TypedJsonInfo for Foo {
+            fn type_name() -> &'static str {
+                "Foo"
+            }
+            fn schema() -> &'static str {
+                r#"
+                type Foo {
+                    message: [String]
+                }
+                "#
+            }
+        }
+
+        struct Query;
+        #[graphql_object]
+        impl Query {
+            fn zero() -> FieldResult<i32> {
+                Ok(0)
+            }
+        }
+
+        struct Subscription;
+        #[graphql_subscription(scalar = S: ScalarValue)]
+        impl Subscription {
+            // TODO: Make work for `Stream<'e, &'e str>`.
+            async fn foo<'e, S>(
+                &self,
+                _executor: &'e Executor<'_, '_, (), S>,
+            ) -> Stream<'static, TypedJson<Foo>>
+            where
+                S: ScalarValue,
+            {
+                let data = TypedJson::new(json!({"message": ["Hello World"] }));
+                Box::pin(stream::once(future::ready(data)))
+            }
+        }
+
+        let schema = juniper::RootNode::new(Query, EmptyMutation::new(), Subscription);
+
+        const DOC: &str = r#"subscription {
+            foo { message }
+        }"#;
+
+        assert_eq!(
+            resolve_into_stream(DOC, None, &schema, &Variables::new(), &())
+                .then(|s| extract_next(s))
+                .await,
+            Ok((
+                graphql_value!({"foo":{"message": ["Hello World"] }}),
+                vec![]
+            )),
+        );
+    }
 }

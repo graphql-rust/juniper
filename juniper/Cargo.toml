@@ -32,6 +32,7 @@ default = [
 ]
 chrono-clock = ["chrono", "chrono/clock"]
 expose-test-schema = ["anyhow", "serde_json"]
+json = ["ref-cast", "serde_json", "smartstring/serde"]
 schema-language = ["graphql-parser"]
 
 [dependencies]
@@ -46,6 +47,7 @@ futures-enum = { version = "0.1.12", default-features = false }
 graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
 juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen" }
+ref-cast = { version = "1.0.6", optional = true }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
 smartstring = "1.0"

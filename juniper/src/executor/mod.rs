@@ -600,6 +600,34 @@ where
         }
     }
 
+    // This hack is required as Juniper doesn't allow at the
+    // moment for custom defined types to tweak into executor.
+    // TODO: Redesign executor layer to allow such things.
+    #[cfg(feature = "json")]
+    #[doc(hidden)]
+    pub(crate) fn field_with_parent_type_sub_executor<'s>(
+        &'s self,
+        field_alias: &'a str,
+        location: SourcePosition,
+        selection_set: Option<&'s [Selection<'a, S>]>,
+    ) -> Executor<'s, 'a, CtxT, S> {
+        Executor {
+            fragments: self.fragments,
+            variables: self.variables,
+            current_selection_set: selection_set,
+            parent_selection_set: self.current_selection_set,
+            current_type: self.current_type.clone(),
+            schema: self.schema,
+            context: self.context,
+            errors: self.errors,
+            field_path: Arc::new(FieldPath::Field(
+                field_alias,
+                location,
+                Arc::clone(&self.field_path),
+            )),
+        }
+    }
+
     #[doc(hidden)]
     pub fn type_sub_executor<'s>(
         &'s self,
@@ -826,6 +854,9 @@ where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    QueryT::TypeInfo: Sized,
+    MutationT::TypeInfo: Sized,
+    SubscriptionT::TypeInfo: Sized,
 {
     if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
@@ -917,12 +948,12 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type == OperationType::Subscription {
@@ -1064,12 +1095,12 @@ where
     'd: 'r,
     'op: 'd,
     QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
+    QueryT::TypeInfo: Sync + Sized,
     QueryT::Context: Sync + 'r,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
+    MutationT::TypeInfo: Sync + Sized,
     SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-    SubscriptionT::TypeInfo: Sync,
+    SubscriptionT::TypeInfo: Sync + Sized,
     S: ScalarValue + Send + Sync,
 {
     if operation.item.operation_type != OperationType::Subscription {
