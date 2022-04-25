@@ -1,3 +1,5 @@
+//! GraphQL implementation for [`Iterator`].
+
 use crate::{graphql, resolve, ExecutionResult, Executor, Selection};
 
 pub fn resolve_list<'t, T, S, Info, Ctx, I>(

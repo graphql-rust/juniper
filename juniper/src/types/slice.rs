@@ -1,4 +1,6 @@
-//! GraphQL implementation for [`Vec`].
+//! GraphQL implementation for [slice].
+//!
+//! [slice]: primitive@std::slice
 
 use crate::{
     executor::{ExecutionResult, Executor, Registry},
@@ -9,7 +11,7 @@ use crate::{
 
 use super::iter;
 
-impl<T, Info, S> resolve::Type<Info, S> for Vec<T>
+impl<T, Info, S> resolve::Type<Info, S> for [T]
 where
     T: resolve::Type<Info, S>,
     Info: ?Sized,
@@ -22,7 +24,7 @@ where
     }
 }
 
-impl<T, Info, Ctx, S> resolve::Value<Info, Ctx, S> for Vec<T>
+impl<T, Info, Ctx, S> resolve::Value<Info, Ctx, S> for [T]
 where
     T: resolve::Value<Info, Ctx, S>,
     Info: ?Sized,
@@ -38,7 +40,7 @@ where
     }
 }
 
-impl<T, Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for Vec<T>
+impl<T, Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for [T]
 where
     T: resolve::ValueAsync<Info, Ctx, S> + Sync,
     Info: Sync + ?Sized,
@@ -60,7 +62,7 @@ where
     }
 }
 
-impl<T, S> graphql::InputType<S> for Vec<T>
+impl<T, S> graphql::InputType<S> for [T]
 where
     T: graphql::InputType<S>,
 {
@@ -69,7 +71,7 @@ where
     }
 }
 
-impl<T, S> graphql::OutputType<S> for Vec<T>
+impl<T, S> graphql::OutputType<S> for [T]
 where
     T: graphql::OutputType<S>,
 {

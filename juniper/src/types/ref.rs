@@ -1,3 +1,7 @@
+//! GraphQL implementation for [reference].
+//!
+//! [reference]: primitive@std::reference
+
 use crate::{
     graphql, meta::MetaType, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry,
     Selection,

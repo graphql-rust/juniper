@@ -1,3 +1,5 @@
+//! GraphQL implementation for [`Option`].
+
 use futures::future;
 
 use crate::{

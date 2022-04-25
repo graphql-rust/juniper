@@ -1,3 +1,5 @@
+//! GraphQL implementation for [`Arc`].
+
 use std::sync::Arc;
 
 use crate::{

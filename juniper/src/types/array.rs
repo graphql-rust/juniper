@@ -1,4 +1,6 @@
-//! GraphQL implementation for [`Vec`].
+//! GraphQL implementation for [array].
+//!
+//! [array]: primitive@std::array
 
 use crate::{
     executor::{ExecutionResult, Executor, Registry},
@@ -9,7 +11,7 @@ use crate::{
 
 use super::iter;
 
-impl<T, Info, S> resolve::Type<Info, S> for Vec<T>
+impl<T, Info, S, const N: usize> resolve::Type<Info, S> for [T; N]
 where
     T: resolve::Type<Info, S>,
     Info: ?Sized,
@@ -18,11 +20,13 @@ where
     where
         S: 'r,
     {
-        registry.build_list_type_new::<T, _>(info, None).into_meta()
+        registry
+            .build_list_type_new::<T, _>(info, Some(N))
+            .into_meta()
     }
 }
 
-impl<T, Info, Ctx, S> resolve::Value<Info, Ctx, S> for Vec<T>
+impl<T, Info, Ctx, S, const N: usize> resolve::Value<Info, Ctx, S> for [T; N]
 where
     T: resolve::Value<Info, Ctx, S>,
     Info: ?Sized,
@@ -38,7 +42,7 @@ where
     }
 }
 
-impl<T, Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for Vec<T>
+impl<T, Info, Ctx, S, const N: usize> resolve::ValueAsync<Info, Ctx, S> for [T; N]
 where
     T: resolve::ValueAsync<Info, Ctx, S> + Sync,
     Info: Sync + ?Sized,
@@ -60,7 +64,7 @@ where
     }
 }
 
-impl<T, S> graphql::InputType<S> for Vec<T>
+impl<T, S, const N: usize> graphql::InputType<S> for [T; N]
 where
     T: graphql::InputType<S>,
 {
@@ -69,7 +73,7 @@ where
     }
 }
 
-impl<T, S> graphql::OutputType<S> for Vec<T>
+impl<T, S, const N: usize> graphql::OutputType<S> for [T; N]
 where
     T: graphql::OutputType<S>,
 {

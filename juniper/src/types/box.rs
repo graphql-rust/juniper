@@ -1,3 +1,5 @@
+//! GraphQL implementation for [`Box`].
+
 use crate::{
     executor::{ExecutionResult, Executor, Registry},
     graphql, resolve,

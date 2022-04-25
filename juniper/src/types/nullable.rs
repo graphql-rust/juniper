@@ -1,40 +1,52 @@
+//! GraphQL implementation for [`Nullable`].
+
+use std::mem;
+
+use futures::future;
+
 use crate::{
-    ast::{FromInputValue, InputValue, Selection, ToInputValue},
+    ast::{FromInputValue, InputValue, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
+    graphql, resolve,
     schema::meta::MetaType,
     types::{
         async_await::GraphQLValueAsync,
         base::{GraphQLType, GraphQLValue},
         marker::IsInputType,
     },
-    value::{ScalarValue, Value},
+    BoxFuture, ScalarValue, Selection,
 };
 
-/// `Nullable` can be used in situations where you need to distinguish between an implicitly and
-/// explicitly null input value.
+/// [`Nullable`] wrapper allowing to distinguish between an implicit and
+/// explicit `null` input value.
 ///
-/// The GraphQL spec states that these two field calls are similar, but are not identical:
+/// [GraphQL spec states][0] that these two field calls are similar, but are not
+/// identical:
 ///
-/// ```graphql
-/// {
-///   field(arg: null)
-///   field
-/// }
-/// ```
+/// > ```graphql
+/// > {
+/// >   field(arg: null)
+/// >   field
+/// > }
+/// > ```
+/// > The first has explicitly provided `null` to the argument "arg", while the
+/// > second has implicitly not provided a value to the argument "arg". These
+/// > two forms may be interpreted differently. For example, a mutation
+/// > representing deleting a field vs not altering a field, respectively.
 ///
-/// The first has explicitly provided null to the argument “arg”, while the second has implicitly
-/// not provided a value to the argument “arg”. These two forms may be interpreted differently. For
-/// example, a mutation representing deleting a field vs not altering a field, respectively.
+/// In cases where there is no need to distinguish between the two types of
+/// `null`, it's better to simply use [`Option`].
 ///
-/// In cases where you do not need to be able to distinguish between the two types of null, you
-/// should simply use `Option<T>`.
+/// [0]: https://spec.graphql.org/October2021#example-1c7eb
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Nullable<T> {
-    /// No value
+    /// No value specified.
     ImplicitNull,
-    /// No value, explicitly specified to be null
+
+    /// Value explicitly specified to be `null`.
     ExplicitNull,
-    /// Some value `T`
+
+    /// Explicitly specified non-`null` value of `T`.
     Some(T),
 }
 
@@ -45,101 +57,134 @@ impl<T> Default for Nullable<T> {
 }
 
 impl<T> Nullable<T> {
-    /// Returns `true` if the nullable is a `ExplicitNull` value.
+    /// Indicates whether this [`Nullable`] represents an [`ExplicitNull`].
+    ///
+    /// [`ExplicitNull`]: Nullable::ExplicitNull
     #[inline]
     pub fn is_explicit_null(&self) -> bool {
         matches!(self, Self::ExplicitNull)
     }
 
-    /// Returns `true` if the nullable is a `ImplicitNull` value.
+    /// Indicates whether this [`Nullable`] represents an [`ImplicitNull`].
+    ///
+    /// [`ImplicitNull`]: Nullable::ImplicitNull
     #[inline]
     pub fn is_implicit_null(&self) -> bool {
         matches!(self, Self::ImplicitNull)
     }
 
-    /// Returns `true` if the nullable is a `Some` value.
+    /// Indicates whether this [`Nullable`] contains a non-`null` value.
     #[inline]
     pub fn is_some(&self) -> bool {
         matches!(self, Self::Some(_))
     }
 
-    /// Returns `true` if the nullable is not a `Some` value.
+    /// Indicates whether this [`Nullable`] represents a `null`.
     #[inline]
     pub fn is_null(&self) -> bool {
         !matches!(self, Self::Some(_))
     }
 
-    /// Converts from `&mut Nullable<T>` to `Nullable<&mut T>`.
+    /// Converts from `&Nullable<T>` to `Nullable<&T>`.
     #[inline]
-    pub fn as_mut(&mut self) -> Nullable<&mut T> {
-        match *self {
-            Self::Some(ref mut x) => Nullable::Some(x),
+    pub fn as_ref(&self) -> Nullable<&T> {
+        match self {
+            Self::Some(x) => Nullable::Some(x),
             Self::ImplicitNull => Nullable::ImplicitNull,
             Self::ExplicitNull => Nullable::ExplicitNull,
         }
     }
 
-    /// Returns the contained `Some` value, consuming the `self` value.
+    /// Converts from `&mut Nullable<T>` to `Nullable<&mut T>`.
+    #[inline]
+    pub fn as_mut(&mut self) -> Nullable<&mut T> {
+        match self {
+            Self::Some(x) => Nullable::Some(x),
+            Self::ImplicitNull => Nullable::ImplicitNull,
+            Self::ExplicitNull => Nullable::ExplicitNull,
+        }
+    }
+
+    /// Returns the contained non-`null` value, consuming the `self` value.
     ///
     /// # Panics
     ///
-    /// Panics if the value is not a `Some` with a custom panic message provided by `msg`.
+    /// With a custom `msg` if this [`Nullable`] represents a `null`.
     #[inline]
     #[track_caller]
     pub fn expect(self, msg: &str) -> T {
         self.some().expect(msg)
     }
 
-    /// Returns the contained `Some` value or a provided default.
+    /// Returns the contained non-`null` value or the provided `default` one.
     #[inline]
     pub fn unwrap_or(self, default: T) -> T {
         self.some().unwrap_or(default)
     }
 
-    /// Returns the contained `Some` value or computes it from a closure.
+    /// Returns thecontained non-`null` value  or computes it from the provided
+    /// `func`tion.
     #[inline]
-    pub fn unwrap_or_else<F: FnOnce() -> T>(self, f: F) -> T {
-        self.some().unwrap_or_else(f)
+    pub fn unwrap_or_else<F: FnOnce() -> T>(self, func: F) -> T {
+        self.some().unwrap_or_else(func)
     }
 
-    /// Maps a `Nullable<T>` to `Nullable<U>` by applying a function to a contained value.
+    /// Returns the contained non-`null` value or the [`Default`] one.
     #[inline]
-    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Nullable<U> {
+    pub fn unwrap_or_default(self) -> T
+    where
+        T: Default,
+    {
+        self.some().unwrap_or_default()
+    }
+
+    /// Maps this `Nullable<T>` to `Nullable<U>` by applying the provided
+    /// `func`tion to the contained non-`null` value.
+    #[inline]
+    pub fn map<U, F: FnOnce(T) -> U>(self, func: F) -> Nullable<U> {
         match self {
-            Self::Some(x) => Nullable::Some(f(x)),
+            Self::Some(x) => Nullable::Some(func(x)),
             Self::ImplicitNull => Nullable::ImplicitNull,
             Self::ExplicitNull => Nullable::ExplicitNull,
         }
     }
 
-    /// Applies a function to the contained value (if any), or returns the provided default (if
-    /// not).
+    /// Applies the provided `func`tion to the contained non-`null` value (if
+    /// any), or returns the provided `default` value (if not).
     #[inline]
-    pub fn map_or<U, F: FnOnce(T) -> U>(self, default: U, f: F) -> U {
-        self.some().map_or(default, f)
+    pub fn map_or<U, F: FnOnce(T) -> U>(self, default: U, func: F) -> U {
+        self.some().map_or(default, func)
     }
 
-    /// Applies a function to the contained value (if any), or computes a default (if not).
+    /// Applies the provided `func`tion to the contained non-`null` value (if
+    /// any), or computes the provided `default` one (if not).
     #[inline]
-    pub fn map_or_else<U, D: FnOnce() -> U, F: FnOnce(T) -> U>(self, default: D, f: F) -> U {
-        self.some().map_or_else(default, f)
+    pub fn map_or_else<U, D: FnOnce() -> U, F: FnOnce(T) -> U>(self, default: D, func: F) -> U {
+        self.some().map_or_else(default, func)
     }
 
-    /// Transforms the `Nullable<T>` into a `Result<T, E>`, mapping `Some(v)` to `Ok(v)` and
-    /// `ImplicitNull` or `ExplicitNull` to `Err(err)`.
+    /// Transforms this `Nullable<T>` into a `Result<T, E>`, mapping `Some(v)`
+    /// to `Ok(v)` and [`ImplicitNull`] or [`ExplicitNull`] to `Err(err)`.
+    ///
+    /// [`ExplicitNull`]: Nullable::ExplicitNull
+    /// [`ImplicitNull`]: Nullable::ImplicitNull
     #[inline]
     pub fn ok_or<E>(self, err: E) -> Result<T, E> {
         self.some().ok_or(err)
     }
 
-    /// Transforms the `Nullable<T>` into a `Result<T, E>`, mapping `Some(v)` to `Ok(v)` and
-    /// `ImplicitNull` or `ExplicitNull` to `Err(err())`.
+    /// Transforms this `Nullable<T>` into a `Result<T, E>`, mapping `Some(v)`
+    /// to `Ok(v)` and [`ImplicitNull`] or [`ExplicitNull`] to `Err(err())`.
+    ///
+    /// [`ExplicitNull`]: Nullable::ExplicitNull
+    /// [`ImplicitNull`]: Nullable::ImplicitNull
     #[inline]
     pub fn ok_or_else<E, F: FnOnce() -> E>(self, err: F) -> Result<T, E> {
         self.some().ok_or_else(err)
     }
 
-    /// Returns the nullable if it contains a value, otherwise returns `b`.
+    /// Returns this [`Nullable`] if it contains a non-`null` value, otherwise
+    /// returns the specified `b` [`Nullable`] value.
     #[inline]
     #[must_use]
     pub fn or(self, b: Self) -> Self {
@@ -149,35 +194,43 @@ impl<T> Nullable<T> {
         }
     }
 
-    /// Returns the nullable if it contains a value, otherwise calls `f` and
-    /// returns the result.
+    /// Returns this [`Nullable`] if it contains a non-`null` value, otherwise
+    /// computes a [`Nullable`] value from the specified `func`tion.
     #[inline]
     #[must_use]
-    pub fn or_else<F: FnOnce() -> Nullable<T>>(self, f: F) -> Nullable<T> {
+    pub fn or_else<F: FnOnce() -> Nullable<T>>(self, func: F) -> Nullable<T> {
         match self {
             Self::Some(_) => self,
-            _ => f(),
+            _ => func(),
         }
     }
 
-    /// Replaces the actual value in the nullable by the value given in parameter, returning the
-    /// old value if present, leaving a `Some` in its place without deinitializing either one.
+    /// Replaces the contained non-`null` value in this [`Nullable`] by the
+    /// provided `value`, returning the old one if present, leaving a [`Some`]
+    /// in its place without deinitializing either one.
+    ///
+    /// [`Some`]: Nullable::Some
     #[inline]
     #[must_use]
     pub fn replace(&mut self, value: T) -> Self {
-        std::mem::replace(self, Self::Some(value))
+        mem::replace(self, Self::Some(value))
     }
 
-    /// Converts from `Nullable<T>` to `Option<T>`.
+    /// Converts this [`Nullable`] to [Option].
+    #[inline]
     pub fn some(self) -> Option<T> {
         match self {
             Self::Some(v) => Some(v),
-            _ => None,
+            Self::ExplicitNull | Self::ImplicitNull => None,
         }
     }
 
-    /// Converts from `Nullable<T>` to `Option<Option<T>>`, mapping `Some(v)` to `Some(Some(v))`,
-    /// `ExplicitNull` to `Some(None)`, and `ImplicitNull` to `None`.
+    /// Converts this [`Nullable`] to `Option<Option<T>>`, mapping `Some(v)` to
+    /// `Some(Some(v))`, [`ExplicitNull`] to `Some(None)`, and [`ImplicitNull`]
+    /// to [`None`].
+    ///
+    /// [`ExplicitNull`]: Nullable::ExplicitNull
+    /// [`ImplicitNull`]: Nullable::ImplicitNull
     pub fn explicit(self) -> Option<Option<T>> {
         match self {
             Self::Some(v) => Some(Some(v)),
@@ -188,30 +241,104 @@ impl<T> Nullable<T> {
 }
 
 impl<T: Copy> Nullable<&T> {
-    /// Maps a `Nullable<&T>` to a `Nullable<T>` by copying the contents of the nullable.
+    /// Maps this `Nullable<&T>` to a `Nullable<T>` by [`Copy`]ing the contents
+    /// of this [`Nullable`].
     pub fn copied(self) -> Nullable<T> {
         self.map(|&t| t)
     }
 }
 
 impl<T: Copy> Nullable<&mut T> {
-    /// Maps a `Nullable<&mut T>` to a `Nullable<T>` by copying the contents of the nullable.
+    /// Maps this `Nullable<&mut T>` to a `Nullable<T>` by [`Copy`]ing the
+    /// contents of this [`Nullable`].
     pub fn copied(self) -> Nullable<T> {
         self.map(|&mut t| t)
     }
 }
 
 impl<T: Clone> Nullable<&T> {
-    /// Maps a `Nullable<&T>` to a `Nullable<T>` by cloning the contents of the nullable.
+    /// Maps this `Nullable<&T>` to a `Nullable<T>` by [`Clone`]ing the contents
+    /// of this [`Nullable`].
     pub fn cloned(self) -> Nullable<T> {
         self.map(|t| t.clone())
     }
 }
 
 impl<T: Clone> Nullable<&mut T> {
-    /// Maps a `Nullable<&mut T>` to a `Nullable<T>` by cloning the contents of the nullable.
+    /// Maps this `Nullable<&mut T>` to a `Nullable<T>` by [`Clone`]ing the
+    /// contents of this [`Nullable`].
     pub fn cloned(self) -> Nullable<T> {
         self.map(|t| t.clone())
+    }
+}
+
+impl<T, Info, S> resolve::Type<Info, S> for Nullable<T>
+where
+    T: resolve::Type<Info, S>,
+    Info: ?Sized,
+{
+    fn meta<'r>(registry: &mut Registry<'r, S>, info: &Info) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_nullable_type_new::<T, _>(info).into_meta()
+    }
+}
+
+impl<T, Info, Ctx, S> resolve::Value<Info, Ctx, S> for Nullable<T>
+where
+    T: resolve::Value<Info, Ctx, S>,
+    Info: ?Sized,
+    Ctx: ?Sized,
+{
+    fn resolve_value(
+        &self,
+        selection_set: Option<&[Selection<'_, S>]>,
+        info: &Info,
+        executor: &Executor<Ctx, S>,
+    ) -> ExecutionResult<S> {
+        match self {
+            Self::Some(v) => v.resolve_value(selection_set, info, executor),
+            Self::ExplicitNull | Self::ImplicitNull => Ok(graphql::Value::Null),
+        }
+    }
+}
+
+impl<T, Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for Nullable<T>
+where
+    T: resolve::ValueAsync<Info, Ctx, S>,
+    Info: ?Sized,
+    Ctx: ?Sized,
+    S: Send,
+{
+    fn resolve_value_async<'r>(
+        &'r self,
+        selection_set: Option<&'r [Selection<'_, S>]>,
+        info: &'r Info,
+        executor: &'r Executor<Ctx, S>,
+    ) -> BoxFuture<'r, ExecutionResult<S>> {
+        match self {
+            Self::Some(v) => v.resolve_value_async(selection_set, info, executor),
+            Self::ExplicitNull | Self::ImplicitNull => Box::pin(future::ok(graphql::Value::Null)),
+        }
+    }
+}
+
+impl<T, S> graphql::InputType<S> for Nullable<T>
+where
+    T: graphql::InputType<S>,
+{
+    fn assert_input_type() {
+        T::assert_input_type()
+    }
+}
+
+impl<T, S> graphql::OutputType<S> for Nullable<T>
+where
+    T: graphql::OutputType<S>,
+{
+    fn assert_output_type() {
+        T::assert_output_type()
     }
 }
 
@@ -252,7 +379,7 @@ where
     ) -> ExecutionResult<S> {
         match *self {
             Self::Some(ref obj) => executor.resolve(info, obj),
-            _ => Ok(Value::null()),
+            _ => Ok(graphql::Value::null()),
         }
     }
 }
@@ -269,11 +396,11 @@ where
         info: &'a Self::TypeInfo,
         _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
         let f = async move {
             let value = match self {
                 Self::Some(obj) => executor.resolve_into_value_async(info, obj).await,
-                _ => Value::null(),
+                _ => graphql::Value::null(),
             };
             Ok(value)
         };

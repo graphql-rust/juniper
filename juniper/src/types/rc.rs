@@ -1,3 +1,5 @@
+//! GraphQL implementation for [`Rc`].
+
 use std::rc::Rc;
 
 use crate::{
