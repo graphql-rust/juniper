@@ -8,7 +8,7 @@ pub mod bson;
 pub mod chrono;
 #[cfg(feature = "chrono-tz")]
 pub mod chrono_tz;
-#[cfg(feature = "rust-decimal")]
+#[cfg(feature = "rust_decimal")]
 pub mod rust_decimal;
 #[doc(hidden)]
 pub mod serde;
