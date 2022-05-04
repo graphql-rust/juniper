@@ -1,7 +1,5 @@
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-use super::*;
-
 #[graphql_scalar(with = bigdecimal_scalar, parse_token(String))]
 type BigDecimal = ::bigdecimal::BigDecimal;
 use std::str::FromStr;
@@ -23,13 +21,12 @@ pub mod bigdecimal_scalar {
 
     #[cfg(test)]
     mod test {
-        use super::BigDecimal;
-        use std::str::FromStr;
+        use super::*;
 
         use crate::{graphql_input_value, FromInputValue, InputValue};
 
         #[test]
-        fn uuid_from_input() {
+        fn bigdecimal_from_input() {
             let raw = "4.20";
             let input: InputValue = graphql_input_value!((raw));
 
