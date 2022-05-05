@@ -1,12 +1,16 @@
+use std::convert::TryFrom;
+
 use crate::{
-    meta::MetaType, Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, Registry,
-    Selection,
+    graphql,
+    meta::MetaType,
+    parser::{self, ParseError},
+    Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, Registry, Selection,
 };
 
 pub trait Type<Info: ?Sized, S = DefaultScalarValue> {
     fn meta<'r>(registry: &mut Registry<'r, S>, info: &Info) -> MetaType<'r, S>
     where
-        S: 'r;
+        S: 'r; // TODO: remove?
 }
 
 pub trait TypeName<Info: ?Sized> {
@@ -73,4 +77,41 @@ pub trait FieldAsync<Info: ?Sized, Ctx: ?Sized, S = DefaultScalarValue> {
         info: &'r Info,
         executor: &'r Executor<Ctx, S>,
     ) -> BoxFuture<'r, ExecutionResult<S>>;
+}
+
+pub trait InputValue<'inp, S: 'inp>: TryFrom<&'inp graphql::InputValue<S>> {
+    fn try_from_implicit_null() -> Result<Self, Self::Error> {
+        Self::try_from(&graphql::InputValue::<S>::Null)
+    }
+}
+
+pub trait InputValueOwned<S>: for<'inp> InputValue<'inp, S> {}
+
+impl<T, S> InputValueOwned<S> for T where T: for<'inp> InputValue<'inp, S> {}
+
+pub trait ValidateInputValue<S>: Sized {
+    fn validate_input_value<'inp>(
+        v: &'inp graphql::InputValue<S>,
+    ) -> Result<(), crate::FieldError<S>>
+    where
+        Self: TryFrom<&'inp graphql::InputValue<S>>,
+        <Self as TryFrom<&'inp graphql::InputValue<S>>>::Error: crate::IntoFieldError<S>;
+}
+
+impl<T, S> ValidateInputValue<S> for T {
+    fn validate_input_value<'inp>(
+        v: &'inp graphql::InputValue<S>,
+    ) -> Result<(), crate::FieldError<S>>
+    where
+        Self: TryFrom<&'inp graphql::InputValue<S>>,
+        <Self as TryFrom<&'inp graphql::InputValue<S>>>::Error: crate::IntoFieldError<S>,
+    {
+        Self::try_from(v)
+            .map(drop)
+            .map_err(crate::IntoFieldError::<S>::into_field_error)
+    }
+}
+
+pub trait ScalarToken<S = DefaultScalarValue> {
+    fn parse_scalar_token(token: parser::ScalarToken<'_>) -> Result<S, ParseError<'_>>;
 }

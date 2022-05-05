@@ -3,10 +3,10 @@
 use std::sync::Arc;
 
 use crate::{
-    executor::{ExecutionResult, Executor, Registry},
-    graphql, resolve,
-    schema::meta::MetaType,
-    Arguments, BoxFuture, Selection,
+    graphql,
+    meta::MetaType,
+    parser::{ParseError, ScalarToken},
+    resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
 };
 
 impl<T, Info, S> resolve::Type<Info, S> for Arc<T>
@@ -142,6 +142,15 @@ where
     }
 }
 
+impl<T, S> resolve::ScalarToken<S> for Arc<T>
+where
+    T: resolve::ScalarToken<S> + ?Sized,
+{
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
+        T::parse_scalar_token(token)
+    }
+}
+
 impl<T, S> graphql::InputType<S> for Arc<T>
 where
     T: graphql::InputType<S> + ?Sized,
@@ -175,6 +184,15 @@ where
 {
     fn assert_object() {
         T::assert_object()
+    }
+}
+
+impl<T, S> graphql::Scalar<S> for Arc<T>
+where
+    T: graphql::Scalar<S> + ?Sized,
+{
+    fn assert_scalar() {
+        T::assert_scalar()
     }
 }
 

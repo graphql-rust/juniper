@@ -8,6 +8,7 @@ mod rc;
 mod r#ref;
 mod ref_mut;
 mod slice;
+mod r#str;
 mod vec;
 
 pub mod async_await;

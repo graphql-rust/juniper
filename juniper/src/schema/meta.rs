@@ -1,18 +1,19 @@
 //! Types used to describe a `GraphQL` schema
 
-use juniper::IntoFieldError;
 use std::{
     borrow::{Cow, ToOwned},
+    convert::TryFrom,
     fmt,
 };
 
 use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{ParseError, ScalarToken},
+    resolve,
     schema::model::SchemaType,
     types::base::TypeKind,
     value::{DefaultScalarValue, ParseScalarValue},
-    FieldError,
+    FieldError, IntoFieldError,
 };
 
 /// Whether an item is deprecated, with context.
@@ -28,16 +29,16 @@ impl DeprecationStatus {
     /// If this deprecation status indicates the item is deprecated.
     pub fn is_deprecated(&self) -> bool {
         match self {
-            DeprecationStatus::Current => false,
-            DeprecationStatus::Deprecated(_) => true,
+            Self::Current => false,
+            Self::Deprecated(_) => true,
         }
     }
 
     /// An optional reason for the deprecation, or none if `Current`.
     pub fn reason(&self) -> Option<&str> {
         match self {
-            DeprecationStatus::Current => None,
-            DeprecationStatus::Deprecated(rsn) => rsn.as_deref(),
+            Self::Current => None,
+            Self::Deprecated(rsn) => rsn.as_deref(),
         }
     }
 }
@@ -448,6 +449,27 @@ impl<'a, S> ScalarMeta<'a, S> {
         }
     }
 
+    /// Builds a new [`ScalarMeta`] information with the specified `name`.
+    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
+    //       `explicit_generic_args_with_impl_trait` hits stable:
+    //       https://github.com/rust-lang/rust/issues/83701
+    pub fn new_new<T, N>(name: N) -> Self
+    where
+        T: resolve::ValidateInputValue<S> + resolve::ScalarToken<S>,
+        //T: for<'inp> resolve::InputValue<'inp, S> + resolve::ScalarToken<S>,
+        //for<'inp> <T as TryFrom<&'inp InputValue<S>>>::Error: IntoFieldError<S>,
+        Cow<'a, str>: From<N>,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            specified_by_url: None,
+            try_parse_fn: <T as resolve::ValidateInputValue<S>>::validate_input_value,
+            //try_parse_fn: |inp| try_parse_fn_new::<S, T>(inp),
+            parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
+        }
+    }
+
     /// Sets the `description` of this [`ScalarMeta`] type.
     ///
     /// Overwrites any previously set description.
@@ -798,4 +820,12 @@ where
     T::from_input_value(v)
         .map(drop)
         .map_err(T::Error::into_field_error)
+}
+
+fn try_parse_fn_new<'inp, 'b: 'inp, S: 'inp, T>(v: &'b InputValue<S>) -> Result<(), FieldError<S>>
+where
+    T: resolve::InputValue<'inp, S>,
+    T::Error: IntoFieldError<S>,
+{
+    T::try_from(v).map(drop).map_err(T::Error::into_field_error)
 }

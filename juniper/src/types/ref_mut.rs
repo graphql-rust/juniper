@@ -3,8 +3,10 @@
 //! [reference]: primitive@std::reference
 
 use crate::{
-    graphql, meta::MetaType, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry,
-    Selection,
+    graphql,
+    meta::MetaType,
+    parser::{ParseError, ScalarToken},
+    resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
 };
 
 impl<'me, T, Info, S> resolve::Type<Info, S> for &'me mut T
@@ -140,6 +142,15 @@ where
     }
 }
 
+impl<'me, T, S> resolve::ScalarToken<S> for &'me mut T
+where
+    T: resolve::ScalarToken<S> + ?Sized,
+{
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
+        T::parse_scalar_token(token)
+    }
+}
+
 impl<'me, T, S> graphql::InputType<S> for &'me mut T
 where
     T: graphql::InputType<S> + ?Sized,
@@ -173,6 +184,15 @@ where
 {
     fn assert_object() {
         T::assert_object()
+    }
+}
+
+impl<'me, T, S> graphql::Scalar<S> for &'me mut T
+where
+    T: graphql::Scalar<S> + ?Sized,
+{
+    fn assert_scalar() {
+        T::assert_scalar()
     }
 }
 

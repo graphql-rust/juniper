@@ -2,7 +2,9 @@ pub mod resolve;
 
 use crate::DefaultScalarValue;
 
-pub use crate::value::Value;
+pub use crate::{
+    ast::InputValue, graphql_input_value as input_value, graphql_value as value, value::Value,
+};
 
 pub use self::resolve::Type;
 
@@ -32,6 +34,17 @@ pub trait Object<S = DefaultScalarValue>:
     + resolve::FieldAsync<S>
 {
     fn assert_object();
+}
+
+pub trait Scalar<S = DefaultScalarValue>:
+    InputType<S>
+    + OutputType<S>
+    + Type<S>
+    + resolve::TypeName
+    + resolve::Value<S>
+    + resolve::ValueAsync<S>
+{
+    fn assert_scalar();
 }
 
 pub trait Union<S = DefaultScalarValue>:
