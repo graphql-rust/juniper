@@ -56,6 +56,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `graphql_input_value!` and `graphql_vars!` macros. ([#996])
 - [`time` crate] integration behind `time` [Cargo feature]. ([#1006])
 - `#[derive(GraphQLInterface)]` macro allowing using structs as GraphQL interfaces. ([#1026])
+- [`bigdecimal` crate] integration behind `bigdecimal` [Cargo feature]. ([#1060])
+- [`rust_decimal` crate] integration behind `rust_decimal` [Cargo feature]. ([#1060])
 
 ### Changed
 
@@ -95,6 +97,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
 [#1057]: /../../pull/1057
+[#1060]: /../../pull/1060
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 
 

@@ -44,9 +44,11 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 ### Data types
 
 [Juniper] has automatic integration with some very common [Rust] crates to make building schemas a breeze. The types from these crates will be usable in your schemas automatically:
+- [`bigdecimal`] (feature gated)
 - [`bson`]
 - [`chrono`] (feature gated)
 - [`chrono-tz`] (feature gated)
+- [`rust_decimal`] (feature gated)
 - [`time`] (feature gated)
 - [`url`]
 - [`uuid`]
@@ -78,6 +80,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 
 
 [`actix-web`]: https://docs.rs/actix-web
+[`bigdecimal`]: https://docs.rs/bigdecimal
 [`bson`]: https://docs.rs/bson
 [`chrono`]: https://docs.rs/chrono
 [`chrono-tz`]: https://docs.rs/chrono-tz
@@ -89,6 +92,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`hyper`]: https://docs.rs/hyper
 [`iron`]: https://docs.rs/iron
 [`rocket`]: https://docs.rs/rocket
+[`rust_decimal`]: https://docs.rs/rust_decimal
 [`time`]: https://docs.rs/time
 [`url`]: https://docs.rs/url
 [`uuid`]: https://docs.rs/uuid
