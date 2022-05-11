@@ -2558,3 +2558,46 @@ mod nullable_argument_subtyping {
         }
     }
 }
+
+mod preserves_visibility {
+    use super::*;
+
+    #[allow(dead_code)]
+    type Foo = self::inner::CharacterValue;
+
+    pub(crate) mod inner {
+        use super::*;
+
+        #[derive(GraphQLInterface)]
+        #[graphql(for = Human)]
+        pub(crate) struct Character {
+            id: String,
+        }
+
+        #[derive(GraphQLObject)]
+        #[graphql(impl = CharacterValue)]
+        pub(crate) struct Human {
+            id: String,
+            home_planet: String,
+        }
+    }
+}
+
+mod has_no_missing_docs {
+    #![deny(missing_docs)]
+
+    use super::*;
+
+    #[derive(GraphQLInterface)]
+    #[graphql(for = Human)]
+    pub struct Character {
+        id: String,
+    }
+
+    #[derive(GraphQLObject)]
+    #[graphql(impl = CharacterValue)]
+    pub struct Human {
+        id: String,
+        home_planet: String,
+    }
+}
