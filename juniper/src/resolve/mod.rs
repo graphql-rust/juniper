@@ -79,39 +79,32 @@ pub trait FieldAsync<Info: ?Sized, Ctx: ?Sized, S = DefaultScalarValue> {
     ) -> BoxFuture<'r, ExecutionResult<S>>;
 }
 
-pub trait InputValue<'inp, S: 'inp>: TryFrom<&'inp graphql::InputValue<S>> {
-    fn try_from_implicit_null() -> Result<Self, Self::Error> {
-        Self::try_from(&graphql::InputValue::<S>::Null)
-    }
-}
-
-pub trait InputValueOwned<S>: for<'inp> InputValue<'inp, S> {}
-
-impl<T, S> InputValueOwned<S> for T where T: for<'inp> InputValue<'inp, S> {}
-
-pub trait ValidateInputValue<S>: Sized {
-    fn validate_input_value<'inp>(
-        v: &'inp graphql::InputValue<S>,
-    ) -> Result<(), crate::FieldError<S>>
-    where
-        Self: TryFrom<&'inp graphql::InputValue<S>>,
-        <Self as TryFrom<&'inp graphql::InputValue<S>>>::Error: crate::IntoFieldError<S>;
-}
-
-impl<T, S> ValidateInputValue<S> for T {
-    fn validate_input_value<'inp>(
-        v: &'inp graphql::InputValue<S>,
-    ) -> Result<(), crate::FieldError<S>>
-    where
-        Self: TryFrom<&'inp graphql::InputValue<S>>,
-        <Self as TryFrom<&'inp graphql::InputValue<S>>>::Error: crate::IntoFieldError<S>,
-    {
-        Self::try_from(v)
-            .map(drop)
-            .map_err(crate::IntoFieldError::<S>::into_field_error)
-    }
-}
-
 pub trait ScalarToken<S = DefaultScalarValue> {
     fn parse_scalar_token(token: parser::ScalarToken<'_>) -> Result<S, ParseError<'_>>;
+}
+
+pub trait InputValue<'input, S: 'input = DefaultScalarValue>: Sized {
+    type Error;
+
+    fn try_from_input_value(v: &'input graphql::InputValue<S>) -> Result<Self, Self::Error>;
+
+    fn try_from_implicit_null() -> Result<Self, Self::Error> {
+        Self::try_from_input_value(&graphql::InputValue::<S>::Null)
+    }
+}
+
+pub trait InputValueOwned<S = DefaultScalarValue>: for<'i> InputValue<'i, S> {}
+
+impl<T, S> InputValueOwned<S> for T where T: for<'i> InputValue<'i, S> {}
+
+pub trait InputValueAsRef<S = DefaultScalarValue> {
+    type Error;
+
+    fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error>;
+
+    fn try_from_implicit_null() -> Result<&'static Self, Self::Error>
+    where S: 'static
+    {
+        Self::try_from_input_value(&graphql::InputValue::<S>::Null)
+    }
 }

@@ -19,7 +19,8 @@ impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
     where
         S: 'r,
     {
-        registry.build_scalar_type_new::<&Self, _>(info).into_meta()
+       // registry.build_scalar_type_new::<&Self, _>(info).into_meta()
+        unimplemented!()
     }
 }
 
@@ -68,8 +69,17 @@ where
 
 impl<'me, S: ScalarValue> resolve::ScalarToken<S> for str {
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
-        // TODO: replace with `resolve::ScalarToken<S>`
+        // TODO: Replace with `resolve::ScalarToken<S>`
         <String as crate::ParseScalarValue<S>>::from_str(token)
+    }
+}
+
+impl<'me, S: ScalarValue> resolve::InputValueAsRef<S> for str {
+    type Error = String;
+
+    fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error> {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {}", v))
     }
 }
 
@@ -84,14 +94,3 @@ impl<S> graphql::OutputType<S> for str {
 impl<S> graphql::Scalar<S> for str {
     fn assert_scalar() {}
 }
-
-impl<'inp: 'me, 'me, S: ScalarValue> TryFrom<&'inp graphql::InputValue<S>> for &'me str {
-    type Error = String;
-
-    fn try_from(v: &'inp graphql::InputValue<S>) -> Result<Self, Self::Error> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
-    }
-}
-
-impl<'inp: 'me, 'me, S: ScalarValue> resolve::InputValue<'inp, S> for &'me str {}

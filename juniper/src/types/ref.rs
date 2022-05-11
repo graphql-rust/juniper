@@ -151,6 +151,21 @@ where
     }
 }
 
+impl<'inp: 'me, 'me, T, S: 'inp> resolve::InputValue<'inp, S> for &'me T
+where
+    T: resolve::InputValueAsRef<S> + ?Sized,
+{
+    type Error = <T as resolve::InputValueAsRef<S>>::Error;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Self, Self::Error> {
+        <T as resolve::InputValueAsRef<S>>::try_from_input_value(v)
+    }
+
+    fn try_from_implicit_null() -> Result<Self, Self::Error> {
+        <T as resolve::InputValueAsRef<S>>::try_from_implicit_null()
+    }
+}
+
 impl<'me, T, S> graphql::InputType<S> for &'me T
 where
     T: graphql::InputType<S> + ?Sized,

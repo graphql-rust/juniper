@@ -1295,6 +1295,7 @@ impl<'r, S: 'r> Registry<'r, S> {
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
+    /*
     /// Builds a [`ScalarMeta`] information for the specified [`graphql::Type`].
     ///
     /// [`graphql::Type`]: resolve::Type
@@ -1309,6 +1310,7 @@ impl<'r, S: 'r> Registry<'r, S> {
         // TODO: Allow using references.
         ScalarMeta::new_new::<T, _>(T::type_name(info).to_owned())
     }
+    */
 
     /// Creates a [`ListMeta`] type.
     ///
