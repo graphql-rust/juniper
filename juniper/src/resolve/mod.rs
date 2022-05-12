@@ -1,10 +1,9 @@
-use std::convert::TryFrom;
-
 use crate::{
     graphql,
     meta::MetaType,
     parser::{self, ParseError},
-    Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, Registry, Selection,
+    Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, IntoFieldError, Registry,
+    Selection,
 };
 
 pub trait Type<Info: ?Sized, S = DefaultScalarValue> {
@@ -84,7 +83,7 @@ pub trait ScalarToken<S = DefaultScalarValue> {
 }
 
 pub trait InputValue<'input, S: 'input = DefaultScalarValue>: Sized {
-    type Error;
+    type Error: IntoFieldError<S>;
 
     fn try_from_input_value(v: &'input graphql::InputValue<S>) -> Result<Self, Self::Error>;
 
@@ -98,13 +97,24 @@ pub trait InputValueOwned<S = DefaultScalarValue>: for<'i> InputValue<'i, S> {}
 impl<T, S> InputValueOwned<S> for T where T: for<'i> InputValue<'i, S> {}
 
 pub trait InputValueAsRef<S = DefaultScalarValue> {
-    type Error;
+    type Error: IntoFieldError<S>;
 
     fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error>;
 
-    fn try_from_implicit_null() -> Result<&'static Self, Self::Error>
-    where S: 'static
+    fn try_from_implicit_null<'a>() -> Result<&'a Self, Self::Error>
+    where
+        S: 'a,
     {
         Self::try_from_input_value(&graphql::InputValue::<S>::Null)
     }
 }
+
+/*
+impl<T, S> InputValueAsRef<S> for T where T: InputValueOwned<S> {
+    type Error = <T as InputValueOwned<S>>::Error;
+
+    fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error> {
+        <T as InputValueOwned<S>>::try_from_input_value(v).as_ref()
+    }
+}
+*/

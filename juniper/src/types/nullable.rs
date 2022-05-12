@@ -324,6 +324,25 @@ where
     }
 }
 
+impl<'inp, T, S: 'inp> resolve::InputValue<'inp, S> for Nullable<T>
+where
+    T: resolve::InputValue<'inp, S>,
+{
+    type Error = <T as resolve::InputValue<'inp, S>>::Error;
+
+    fn try_from_input_value(v: &'inp InputValue<S>) -> Result<Self, Self::Error> {
+        if v.is_null() {
+            Ok(Self::ExplicitNull)
+        } else {
+            <T as resolve::InputValue<'inp, S>>::try_from_input_value(v).map(Self::Some)
+        }
+    }
+
+    fn try_from_implicit_null() -> Result<Self, Self::Error> {
+        Ok(Self::ImplicitNull)
+    }
+}
+
 impl<T, S> graphql::InputType<S> for Nullable<T>
 where
     T: graphql::InputType<S>,

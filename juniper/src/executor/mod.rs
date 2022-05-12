@@ -4,7 +4,6 @@ use std::{
     borrow::Cow,
     cmp::Ordering,
     collections::HashMap,
-    convert::TryFrom,
     fmt::{Debug, Display},
     sync::{Arc, RwLock},
 };
@@ -1295,22 +1294,30 @@ impl<'r, S: 'r> Registry<'r, S> {
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
-    /*
     /// Builds a [`ScalarMeta`] information for the specified [`graphql::Type`].
     ///
     /// [`graphql::Type`]: resolve::Type
-    pub fn build_scalar_type_new<'info, T, Info>(&mut self, info: &Info) -> ScalarMeta<'r, S>
+    pub fn build_scalar_type_new<T, Info>(&mut self, info: &Info) -> ScalarMeta<'r, S>
     where
-        T: resolve::TypeName<Info>
-            + resolve::ScalarToken<S>
-            + for<'inp> resolve::InputValue<'inp, S>,
-        for<'i> <T as TryFrom<&'i InputValue<S>>>::Error: IntoFieldError<S>,
+        T: resolve::TypeName<Info> + resolve::ScalarToken<S> + resolve::InputValueOwned<S>,
         Info: ?Sized,
     {
         // TODO: Allow using references.
         ScalarMeta::new_new::<T, _>(T::type_name(info).to_owned())
     }
-    */
+
+    /// Builds a [`ScalarMeta`] information for the [`?Sized`] specified
+    /// [`graphql::Type`].
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    pub fn build_scalar_type_unsized<T, Info>(&mut self, info: &Info) -> ScalarMeta<'r, S>
+    where
+        T: resolve::TypeName<Info> + resolve::ScalarToken<S> + resolve::InputValueAsRef<S> + ?Sized,
+        Info: ?Sized,
+    {
+        // TODO: Allow using references.
+        ScalarMeta::new_unsized::<T, _>(T::type_name(info).to_owned())
+    }
 
     /// Creates a [`ListMeta`] type.
     ///

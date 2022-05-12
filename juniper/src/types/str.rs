@@ -2,16 +2,13 @@
 //!
 //! [`str`]: primitive@std::str
 
-use std::convert::TryFrom;
-
 use futures::future;
 
 use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, BoxFuture, ExecutionResult, Executor, IntoFieldError, Registry, ScalarValue,
-    Selection,
+    resolve, BoxFuture, ExecutionResult, Executor, Registry, ScalarValue, Selection,
 };
 
 impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
@@ -19,8 +16,9 @@ impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
     where
         S: 'r,
     {
-       // registry.build_scalar_type_new::<&Self, _>(info).into_meta()
-        unimplemented!()
+        registry
+            .build_scalar_type_unsized::<Self, _>(info)
+            .into_meta()
     }
 }
 

@@ -82,12 +82,12 @@ pub use crate::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},
         base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
         marker::{self, GraphQLInterface, GraphQLObject, GraphQLUnion},
-        Nullable,
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{
             ExecutionOutput, GraphQLSubscriptionType, GraphQLSubscriptionValue,
             SubscriptionConnection, SubscriptionCoordinator,
         },
+        Nullable,
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},

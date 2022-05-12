@@ -61,6 +61,21 @@ where
     }
 }
 
+impl<'inp, T, S: 'inp> resolve::InputValue<'inp, S> for Option<T>
+where
+    T: resolve::InputValue<'inp, S>,
+{
+    type Error = <T as resolve::InputValue<'inp, S>>::Error;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Self, Self::Error> {
+        if v.is_null() {
+            Ok(None)
+        } else {
+            <T as resolve::InputValue<'inp, S>>::try_from_input_value(v).map(Some)
+        }
+    }
+}
+
 impl<T, S> graphql::InputType<S> for Option<T>
 where
     T: graphql::InputType<S>,

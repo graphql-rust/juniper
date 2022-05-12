@@ -2,7 +2,6 @@
 
 use std::{
     borrow::{Cow, ToOwned},
-    convert::TryFrom,
     fmt,
 };
 
@@ -449,28 +448,42 @@ impl<'a, S> ScalarMeta<'a, S> {
         }
     }
 
-    /*
     /// Builds a new [`ScalarMeta`] information with the specified `name`.
     // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
     //       `explicit_generic_args_with_impl_trait` hits stable:
     //       https://github.com/rust-lang/rust/issues/83701
     pub fn new_new<T, N>(name: N) -> Self
     where
-        T: resolve::ValidateInputValue<S> + resolve::ScalarToken<S>,
-        //T: for<'inp> resolve::InputValue<'inp, S> + resolve::ScalarToken<S>,
-        //for<'inp> <T as TryFrom<&'inp InputValue<S>>>::Error: IntoFieldError<S>,
+        T: resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
         Cow<'a, str>: From<N>,
     {
         Self {
             name: name.into(),
             description: None,
             specified_by_url: None,
-            try_parse_fn: <T as resolve::ValidateInputValue<S>>::validate_input_value,
-            //try_parse_fn: |inp| try_parse_fn_new::<S, T>(inp),
+            try_parse_fn: try_parse_fn_new::<S, T>,
             parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
         }
     }
-    */
+
+    /// Builds a new [`ScalarMeta`] information with the specified `name` for
+    /// the [`?Sized`] `T`ype that may only be parsed as a reference.
+    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
+    //       `explicit_generic_args_with_impl_trait` hits stable:
+    //       https://github.com/rust-lang/rust/issues/83701
+    pub fn new_unsized<T, N>(name: N) -> Self
+    where
+        T: resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
+        Cow<'a, str>: From<N>,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            specified_by_url: None,
+            try_parse_fn: try_parse_unsized_fn::<S, T>,
+            parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
+        }
+    }
 
     /// Sets the `description` of this [`ScalarMeta`] type.
     ///
@@ -824,12 +837,20 @@ where
         .map_err(T::Error::into_field_error)
 }
 
-/*
-fn try_parse_fn_new<'inp, 'b: 'inp, S: 'inp, T>(v: &'b InputValue<S>) -> Result<(), FieldError<S>>
+fn try_parse_fn_new<S, T>(v: &InputValue<S>) -> Result<(), FieldError<S>>
 where
-    T: resolve::InputValue<'inp, S>,
-    T::Error: IntoFieldError<S>,
+    T: resolve::InputValueOwned<S>,
 {
-    T::try_from(v).map(drop).map_err(T::Error::into_field_error)
+    T::try_from_input_value(v)
+        .map(drop)
+        .map_err(T::Error::into_field_error)
 }
-*/
+
+fn try_parse_unsized_fn<S, T>(v: &InputValue<S>) -> Result<(), FieldError<S>>
+where
+    T: resolve::InputValueAsRef<S> + ?Sized,
+{
+    T::try_from_input_value(v)
+        .map(drop)
+        .map_err(T::Error::into_field_error)
+}

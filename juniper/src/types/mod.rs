@@ -1,5 +1,5 @@
-mod array;
 mod arc;
+mod array;
 mod r#box;
 pub mod iter;
 mod nullable;
