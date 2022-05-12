@@ -11,6 +11,7 @@ All user visible changes to `juniper_rocket` crate will be documented in this fi
 ### BC Breaks
 
 - Switched to 0.16 version of [`juniper` crate].
+- Switched to 0.5.0-rc.2 version of [`rocket` crate].
 
 ### Added
 
@@ -30,4 +31,5 @@ See [old CHANGELOG](/../../blob/juniper_rocket-v0.8.1/juniper_rocket/CHANGELOG.m
 
 
 [`juniper` crate]: https://docs.rs/juniper
+[`rocket` crate]: https://docs.rs/rocket
 [Semantic Versioning 2.0.0]: https://semver.org

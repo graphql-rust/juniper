@@ -327,6 +327,12 @@ struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
+
+    /// Intra-doc link to the [`syn::Item`] defining this
+    /// [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    src_intra_doc_link: String,
 }
 
 impl ToTokens for Definition {
@@ -358,7 +364,6 @@ impl Definition {
             let par = format_ident!("__I{}", id);
             parse_quote! { #par }
         });
-
         let variants_idents = self
             .implemented_for
             .iter()
@@ -367,7 +372,6 @@ impl Definition {
         let interface_gens = &self.generics;
         let (interface_impl_gens, interface_ty_gens, interface_where_clause) =
             self.generics.split_for_impl();
-
         let (interface_gens_lifetimes, interface_gens_tys) = interface_gens
             .params
             .clone()
@@ -381,13 +385,11 @@ impl Definition {
             enum_gens.params.extend(interface_gens_tys.clone());
             enum_gens
         };
-
         let enum_alias_gens = {
             let mut enum_alias_gens = interface_gens.clone();
             enum_alias_gens.move_bounds_to_where_clause();
             enum_alias_gens
         };
-
         let enum_to_alias_gens = {
             interface_gens_lifetimes
                 .into_iter()
@@ -407,26 +409,42 @@ impl Definition {
                     rest => quote! { #rest },
                 }))
         };
+        let enum_doc = format!(
+            "Enum building an opaque value represented by [`{}`]({}) \
+             [GraphQL interface][0].\
+             \n\n\
+             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+            self.name, self.src_intra_doc_link,
+        );
+        let enum_alias_doc = format!(
+            "Opaque value represented by [`{}`]({}) [GraphQL interface][0].\
+             \n\n\
+             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+            self.name, self.src_intra_doc_link,
+        );
 
-        let phantom_variant = self.has_phantom_variant().then(|| {
-            let phantom_params = interface_gens.params.iter().filter_map(|p| {
-                let ty = match p {
-                    syn::GenericParam::Type(ty) => {
-                        let ident = &ty.ident;
-                        quote! { #ident }
-                    }
-                    syn::GenericParam::Lifetime(lt) => {
-                        let lifetime = &lt.lifetime;
-                        quote! { &#lifetime () }
-                    }
-                    syn::GenericParam::Const(_) => return None,
-                };
-                Some(quote! {
-                    ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
-                })
-            });
-            quote! { __Phantom(#(#phantom_params),*) }
-        });
+        let phantom_variant = self
+            .has_phantom_variant()
+            .then(|| {
+                let phantom_params = interface_gens.params.iter().filter_map(|p| {
+                    let ty = match p {
+                        syn::GenericParam::Type(ty) => {
+                            let ident = &ty.ident;
+                            quote! { #ident }
+                        }
+                        syn::GenericParam::Lifetime(lt) => {
+                            let lifetime = &lt.lifetime;
+                            quote! { &#lifetime () }
+                        }
+                        syn::GenericParam::Const(_) => return None,
+                    };
+                    Some(quote! {
+                        ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
+                    })
+                });
+                quote! { __Phantom(#(#phantom_params),*) }
+            })
+            .into_iter();
 
         let from_impls = self
             .implemented_for
@@ -449,12 +467,14 @@ impl Definition {
         quote! {
             #[automatically_derived]
             #[derive(Clone, Copy, Debug)]
+            #[doc = #enum_doc]
             #vis enum #enum_ident#enum_gens {
-                #( #variants_idents(#variant_gens_pars), )*
-                #phantom_variant
+                #( #[doc(hidden)] #variants_idents(#variant_gens_pars), )*
+                #( #[doc(hidden)] #phantom_variant, )*
             }
 
             #[automatically_derived]
+            #[doc = #enum_alias_doc]
             #vis type #alias_ident#enum_alias_gens =
                 #enum_ident<#( #enum_to_alias_gens ),*>;
 
@@ -676,8 +696,8 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     field: &str,
-                    args: &::juniper::Arguments<#scalar>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    args: &::juniper::Arguments<'_, #scalar>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
@@ -697,8 +717,8 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[::juniper::Selection<#scalar>]>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    _: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     #downcast
                 }
@@ -747,8 +767,8 @@ impl Definition {
                     &'b self,
                     info: &'b Self::TypeInfo,
                     field: &'b str,
-                    args: &'b ::juniper::Arguments<#scalar>,
-                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                    args: &'b ::juniper::Arguments<'_, #scalar>,
+                    executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
@@ -942,8 +962,8 @@ impl Definition {
                         fn call(
                             &self,
                             info: &Self::TypeInfo,
-                            args: &::juniper::Arguments<#scalar>,
-                            executor: &::juniper::Executor<Self::Context, #scalar>,
+                            args: &::juniper::Arguments<'_, #scalar>,
+                            executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::ExecutionResult<#scalar> {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
@@ -1022,8 +1042,8 @@ impl Definition {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
-                            args: &'b ::juniper::Arguments<#scalar>,
-                            executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                            args: &'b ::juniper::Arguments<'_, #scalar>,
+                            executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {

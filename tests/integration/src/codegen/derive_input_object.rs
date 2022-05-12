@@ -114,7 +114,7 @@ fn test_derived_input_object() {
     );
 
     // Validate meta info.
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = Input::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyInput"));
     assert_eq!(meta.description(), Some("input descr"));
@@ -171,21 +171,21 @@ fn test_derived_input_object() {
 
 #[test]
 fn test_doc_comment() {
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some("Object comment."));
 }
 
 #[test]
 fn test_multi_doc_comment() {
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some("Doc 1. Doc 2.\n\nDoc 4."));
 }
 
 #[test]
 fn test_doc_comment_override() {
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some("obj override"));
 }

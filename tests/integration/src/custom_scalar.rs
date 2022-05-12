@@ -31,7 +31,7 @@ impl<'de> Deserialize<'de> for MyScalarValue {
         impl<'de> de::Visitor<'de> for Visitor {
             type Value = MyScalarValue;
 
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.write_str("a valid input value")
             }
 

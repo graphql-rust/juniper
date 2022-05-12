@@ -2,12 +2,12 @@ use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
-use rocket::{response::content, Rocket, State};
+use rocket::{response::content, State};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
 #[rocket::get("/")]
-fn graphiql() -> content::Html<String> {
+fn graphiql() -> content::RawHtml<String> {
     juniper_rocket::graphiql_source("/graphql", None)
 }
 
@@ -31,7 +31,7 @@ fn post_graphql_handler(
 
 #[rocket::main]
 async fn main() {
-    Rocket::build()
+    let _ = rocket::build()
         .manage(Database::new())
         .manage(Schema::new(
             Query,

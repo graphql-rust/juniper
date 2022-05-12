@@ -46,8 +46,8 @@ pub struct GraphQLResponse(pub Status, pub String);
 pub fn graphiql_source(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&str>,
-) -> content::Html<String> {
-    content::Html(juniper::http::graphiql::graphiql_source(
+) -> content::RawHtml<String> {
+    content::RawHtml(juniper::http::graphiql::graphiql_source(
         graphql_endpoint_url,
         subscriptions_endpoint_url,
     ))
@@ -57,8 +57,8 @@ pub fn graphiql_source(
 pub fn playground_source(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&str>,
-) -> content::Html<String> {
-    content::Html(juniper::http::playground::playground_source(
+) -> content::RawHtml<String> {
+    content::RawHtml(juniper::http::playground::playground_source(
         graphql_endpoint_url,
         subscriptions_endpoint_url,
     ))
