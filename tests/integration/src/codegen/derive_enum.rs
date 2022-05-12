@@ -65,7 +65,7 @@ fn test_derived_enum() {
     );
 
     // Ensure validity of meta info.
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = SomeEnum::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("Some"));
@@ -100,21 +100,21 @@ fn test_derived_enum() {
 
 #[test]
 fn test_doc_comment() {
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = DocEnum::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some("Enum doc."));
 }
 
 #[test]
 fn test_multi_doc_comment() {
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = MultiDocEnum::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some("Doc 1. Doc 2.\n\nDoc 4."));
 }
 
 #[test]
 fn test_doc_comment_override() {
-    let mut registry: Registry = Registry::new(FnvHashMap::default());
+    let mut registry: Registry<'_> = Registry::new(FnvHashMap::default());
     let meta = OverrideDocEnum::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some("enum override"));
 }

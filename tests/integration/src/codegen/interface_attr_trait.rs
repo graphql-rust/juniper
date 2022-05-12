@@ -3407,7 +3407,7 @@ mod has_no_missing_docs {
     use super::*;
 
     #[graphql_interface(for = Human)]
-    trait Character {
+    pub trait Character {
         fn id(&self) -> &str;
     }
 

@@ -2569,7 +2569,7 @@ mod has_no_missing_docs {
 
     #[graphql_interface(for = Human)]
     pub struct Character {
-        id: String,
+        pub id: String,
     }
 
     #[derive(GraphQLObject)]

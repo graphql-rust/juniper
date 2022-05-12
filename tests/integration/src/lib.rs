@@ -1,3 +1,5 @@
+#![deny(rust_2018_idioms)]
+
 #[cfg(test)]
 mod arc_fields;
 #[cfg(test)]

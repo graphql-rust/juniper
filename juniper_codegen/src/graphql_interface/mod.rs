@@ -696,8 +696,8 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     field: &str,
-                    args: &::juniper::Arguments<#scalar>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    args: &::juniper::Arguments<'_, #scalar>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
@@ -717,8 +717,8 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[::juniper::Selection<#scalar>]>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    _: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     #downcast
                 }
@@ -767,8 +767,8 @@ impl Definition {
                     &'b self,
                     info: &'b Self::TypeInfo,
                     field: &'b str,
-                    args: &'b ::juniper::Arguments<#scalar>,
-                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                    args: &'b ::juniper::Arguments<'_, #scalar>,
+                    executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
@@ -962,8 +962,8 @@ impl Definition {
                         fn call(
                             &self,
                             info: &Self::TypeInfo,
-                            args: &::juniper::Arguments<#scalar>,
-                            executor: &::juniper::Executor<Self::Context, #scalar>,
+                            args: &::juniper::Arguments<'_, #scalar>,
+                            executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::ExecutionResult<#scalar> {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
@@ -1042,8 +1042,8 @@ impl Definition {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
-                            args: &'b ::juniper::Arguments<#scalar>,
-                            executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                            args: &'b ::juniper::Arguments<'_, #scalar>,
+                            executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
