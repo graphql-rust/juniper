@@ -1,11 +1,11 @@
-mod arc;
+pub mod arc;
 mod array;
-mod r#box;
+pub mod r#box;
 pub mod iter;
 mod nullable;
 mod option;
-mod rc;
-mod r#ref;
+pub mod rc;
+pub mod r#ref;
 mod ref_mut;
 mod slice;
 mod r#str;

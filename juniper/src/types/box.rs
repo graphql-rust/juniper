@@ -4,7 +4,8 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
+    resolve, Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, IntoFieldError,
+    Registry, Selection,
 };
 
 impl<T, Info, S> resolve::Type<Info, S> for Box<T>
@@ -149,19 +150,45 @@ where
     }
 }
 
-// TODO: how to parse unsized?
-impl<'inp, T, S: 'inp> resolve::InputValue<'inp, S> for Box<T>
+impl<'inp, T, S> resolve::InputValue<'inp, S> for Box<T>
 where
-    T: resolve::InputValue<'inp, S>,
+    T: resolve::InputValueAsBox<'inp, S> + ?Sized,
+    S: 'inp,
 {
-    type Error = <T as resolve::InputValue<'inp, S>>::Error;
+    type Error = <T as resolve::InputValueAsBox<'inp, S>>::Error;
 
     fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Self, Self::Error> {
-        <T as resolve::InputValue<'inp, S>>::try_from_input_value(v).map(Self::new)
+        <T as resolve::InputValueAsBox<'inp, S>>::try_from_input_value(v)
     }
 
     fn try_from_implicit_null() -> Result<Self, Self::Error> {
-        <T as resolve::InputValue<'inp, S>>::try_from_implicit_null().map(Self::new)
+        <T as resolve::InputValueAsBox<'inp, S>>::try_from_implicit_null()
+    }
+}
+
+pub trait TryFromInputValue<'input, S: 'input = DefaultScalarValue> {
+    type Error: IntoFieldError<S>;
+
+    fn try_from_input_value(v: &'input graphql::InputValue<S>) -> Result<Box<Self>, Self::Error>;
+
+    fn try_from_implicit_null() -> Result<Box<Self>, Self::Error> {
+        Self::try_from_input_value(&graphql::InputValue::<S>::Null)
+    }
+}
+
+impl<'inp, T, S> TryFromInputValue<'inp, S> for T
+where
+    T: resolve::InputValue<'inp, S>,
+    S: 'inp,
+{
+    type Error = <T as resolve::InputValue<'inp, S>>::Error;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Box<Self>, Self::Error> {
+        <T as resolve::InputValue<'inp, S>>::try_from_input_value(v).map(Box::new)
+    }
+
+    fn try_from_implicit_null() -> Result<Box<Self>, Self::Error> {
+        <T as resolve::InputValue<'inp, S>>::try_from_implicit_null().map(Box::new)
     }
 }
 

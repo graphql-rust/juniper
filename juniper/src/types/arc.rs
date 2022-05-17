@@ -6,7 +6,8 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
+    resolve, Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, IntoFieldError,
+    Registry, Selection,
 };
 
 impl<T, Info, S> resolve::Type<Info, S> for Arc<T>
@@ -148,6 +149,48 @@ where
 {
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
         T::parse_scalar_token(token)
+    }
+}
+
+impl<'inp, T, S> resolve::InputValue<'inp, S> for Arc<T>
+where
+    T: resolve::InputValueAsArc<'inp, S> + ?Sized,
+    S: 'inp,
+{
+    type Error = <T as resolve::InputValueAsArc<'inp, S>>::Error;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Self, Self::Error> {
+        <T as resolve::InputValueAsArc<'inp, S>>::try_from_input_value(v)
+    }
+
+    fn try_from_implicit_null() -> Result<Self, Self::Error> {
+        <T as resolve::InputValueAsArc<'inp, S>>::try_from_implicit_null()
+    }
+}
+
+pub trait TryFromInputValue<'input, S: 'input = DefaultScalarValue> {
+    type Error: IntoFieldError<S>;
+
+    fn try_from_input_value(v: &'input graphql::InputValue<S>) -> Result<Arc<Self>, Self::Error>;
+
+    fn try_from_implicit_null() -> Result<Arc<Self>, Self::Error> {
+        Self::try_from_input_value(&graphql::InputValue::<S>::Null)
+    }
+}
+
+impl<'inp, T, S> TryFromInputValue<'inp, S> for T
+where
+    T: resolve::InputValue<'inp, S>,
+    S: 'inp,
+{
+    type Error = <T as resolve::InputValue<'inp, S>>::Error;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Arc<Self>, Self::Error> {
+        <T as resolve::InputValue<'inp, S>>::try_from_input_value(v).map(Arc::new)
+    }
+
+    fn try_from_implicit_null() -> Result<Arc<Self>, Self::Error> {
+        <T as resolve::InputValue<'inp, S>>::try_from_implicit_null().map(Arc::new)
     }
 }
 

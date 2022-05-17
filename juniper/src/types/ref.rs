@@ -6,7 +6,8 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
+    resolve, Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, IntoFieldError,
+    Registry, Selection,
 };
 
 impl<'me, T, Info, S> resolve::Type<Info, S> for &'me T
@@ -163,6 +164,19 @@ where
 
     fn try_from_implicit_null() -> Result<Self, Self::Error> {
         <T as resolve::InputValueAsRef<S>>::try_from_implicit_null()
+    }
+}
+
+pub trait TryFromInputValue<S = DefaultScalarValue> {
+    type Error: IntoFieldError<S>;
+
+    fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error>;
+
+    fn try_from_implicit_null<'a>() -> Result<&'a Self, Self::Error>
+    where
+        S: 'a,
+    {
+        Self::try_from_input_value(&graphql::InputValue::<S>::Null)
     }
 }
 

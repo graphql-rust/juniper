@@ -2,6 +2,8 @@
 //!
 //! [`str`]: primitive@std::str
 
+use std::{sync::Arc, rc::Rc};
+
 use futures::future;
 
 use crate::{
@@ -65,19 +67,43 @@ where
     }
 }
 
-impl<'me, S: ScalarValue> resolve::ScalarToken<S> for str {
+impl<S: ScalarValue> resolve::ScalarToken<S> for str {
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
         // TODO: Replace with `resolve::ScalarToken<S>`
         <String as crate::ParseScalarValue<S>>::from_str(token)
     }
 }
 
-impl<'me, S: ScalarValue> resolve::InputValueAsRef<S> for str {
+impl<S: ScalarValue> resolve::InputValueAsRef<S> for str {
     type Error = String;
 
     fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
+    }
+}
+
+impl<'inp, S: ScalarValue> resolve::InputValueAsBox<'inp, S> for str {
+    type Error = String;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Box<Self>, Self::Error> {
+        <str as resolve::InputValueAsRef<S>>::try_from_input_value(v).map(Into::into)
+    }
+}
+
+impl<'inp, S: ScalarValue> resolve::InputValueAsArc<'inp, S> for str {
+    type Error = String;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Arc<Self>, Self::Error> {
+        <str as resolve::InputValueAsRef<S>>::try_from_input_value(v).map(Into::into)
+    }
+}
+
+impl<'inp, S: ScalarValue> resolve::InputValueAsRc<'inp, S> for str {
+    type Error = String;
+
+    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Rc<Self>, Self::Error> {
+        <str as resolve::InputValueAsRef<S>>::try_from_input_value(v).map(Into::into)
     }
 }
 
