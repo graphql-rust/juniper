@@ -48,7 +48,7 @@ graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "1.0", features = ["serde-1"] }
 juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen" }
 rust_decimal = { version = "1.0", default-features = false, optional = true }
-serde = { version = "1.0.8", features = ["derive", "std"], default-features = false }
+serde = { version = "1.0.8", features = ["derive"] }
 serde_json = { version = "1.0.2", default-features = false, optional = true }
 smartstring = "1.0"
 static_assertions = "1.1"
@@ -63,6 +63,7 @@ uuid_08 = { version = "0.8", package = "uuid", default-features = false, feature
 
 [dev-dependencies]
 bencher = "0.1.2"
+chrono = { version = "0.4", features = ["alloc"], default-features = false }
 pretty_assertions = "1.0.0"
 serde_json = "1.0.2"
 tokio = { version = "1.0", features = ["macros", "time", "rt-multi-thread"] }

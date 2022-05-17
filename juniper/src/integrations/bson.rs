@@ -43,7 +43,7 @@ mod utc_date_time {
 
 #[cfg(test)]
 mod test {
-    use bson::oid::ObjectId;
+    use bson::{oid::ObjectId, DateTime as UtcDateTime};
 
     use crate::{graphql_input_value, FromInputValue, InputValue};
 
@@ -58,10 +58,8 @@ mod test {
         assert_eq!(parsed, id);
     }
 
-    #[cfg(chrono)]
-    #[cfg_attr(chrono, test)]
+    #[test]
     fn utcdatetime_from_input() {
-        use bson::DateTime as UtcDateTime;
         use chrono::{DateTime, Utc};
 
         let raw = "2020-03-23T17:38:32.446+00:00";
