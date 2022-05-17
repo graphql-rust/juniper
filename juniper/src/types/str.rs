@@ -2,7 +2,7 @@
 //!
 //! [`str`]: primitive@std::str
 
-use std::{sync::Arc, rc::Rc};
+use std::{rc::Rc, sync::Arc};
 
 use futures::future;
 

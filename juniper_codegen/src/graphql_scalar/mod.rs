@@ -330,6 +330,8 @@ impl ToTokens for Definition {
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
+        ////////////////////////////////////////////////////////////////////////
+        self.impl_resolve_input_value_tokens().to_tokens(into);
     }
 }
 
@@ -519,6 +521,37 @@ impl Definition {
                 fn from_input_value(input: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
                     #from_input_value
                         .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::InputValue`] trait for
+    /// this [GraphQL scalar][1].
+    ///
+    /// [`resolve::InputValue`]: juniper::resolve::InputValue
+    /// [1]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_resolve_input_value_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let conversion = self.methods.expand_try_from_input_value(scalar);
+
+        let (ty, mut generics) = self.impl_self_and_generics(false);
+        generics.params.push(parse_quote! { '__inp });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::InputValue<'__inp, #scalar> for #ty
+                #where_clause
+            {
+                type Error = ::juniper::FieldError<#scalar>;
+
+                fn try_from_input_value(
+                    input: &'__inp ::juniper::graphql::InputValue<#scalar>,
+                ) -> Result<Self, Self::Error> {
+                    #conversion
+                        .map_err(::juniper::IntoFieldError::<#scalar>::into_field_error)
                 }
             }
         }
@@ -784,6 +817,31 @@ impl Methods {
                 let self_constructor = field.closure_constructor();
                 quote! {
                     <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
+                        .map(#self_constructor)
+                }
+            }
+        }
+    }
+
+    /// Expands [`resolve::InputValue::try_from_input_value()`][0] method.
+    ///
+    /// [0]: juniper::resolve::InputValue::try_from_input_value
+    fn expand_try_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { from_input, .. }
+            | Self::Delegated {
+                from_input: Some(from_input),
+                ..
+            } => {
+                quote! { #from_input(input) }
+            }
+
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                let self_constructor = field.closure_constructor();
+
+                quote! {
+                    <#field_ty as ::juniper::resolve::InputValue<'__inp, #scalar>>::try_from_input_value(input)
                         .map(#self_constructor)
                 }
             }
