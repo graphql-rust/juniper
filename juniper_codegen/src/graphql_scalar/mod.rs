@@ -331,7 +331,9 @@ impl ToTokens for Definition {
         self.impl_parse_scalar_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        self.impl_resolve_input_value_tokens().to_tokens(into);
+        self.impl_resolve_type_name().to_tokens(into);
+        self.impl_resolve_input_value().to_tokens(into);
+        self.impl_resolve_scalar_token().to_tokens(into);
     }
 }
 
@@ -401,6 +403,30 @@ impl Definition {
                         #description
                         #specified_by_url
                         .into_meta()
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::TypeName`] trait for this
+    /// [GraphQL scalar][1].
+    ///
+    /// [`resolve::TypeName`]: juniper::resolve::TypeName
+    /// [1]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_resolve_type_name(&self) -> TokenStream {
+        let name = &self.name;
+
+        let (ty, generics) = self.ty_and_generics();
+        let (info_ty, generics) = self.mix_info_ty(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::TypeName<#info_ty> for #ty
+                #where_clause
+            {
+                fn type_name(_: &#info_ty) -> &'static str {
+                    #name
                 }
             }
         }
@@ -531,27 +557,28 @@ impl Definition {
     ///
     /// [`resolve::InputValue`]: juniper::resolve::InputValue
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    fn impl_resolve_input_value_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
+    fn impl_resolve_input_value(&self) -> TokenStream {
+        let conversion = self.methods.expand_try_from_input_value(&self.scalar);
 
-        let conversion = self.methods.expand_try_from_input_value(scalar);
-
-        let (ty, mut generics) = self.impl_self_and_generics(false);
-        generics.params.push(parse_quote! { '__inp });
+        let (ty, generics) = self.ty_and_generics();
+        let (scalar, mut generics) = self.mix_scalar_ty(generics);
+        let lt: syn::GenericParam = parse_quote! { '__inp };
+        generics.params.push(lt.clone());
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::InputValue<'__inp, #scalar> for #ty
+            impl#impl_gens ::juniper::resolve::InputValue<#lt, #scalar> for #ty
                 #where_clause
             {
                 type Error = ::juniper::FieldError<#scalar>;
 
                 fn try_from_input_value(
-                    input: &'__inp ::juniper::graphql::InputValue<#scalar>,
+                    input: &#lt ::juniper::graphql::InputValue<#scalar>,
                 ) -> Result<Self, Self::Error> {
-                    #conversion
-                        .map_err(::juniper::IntoFieldError::<#scalar>::into_field_error)
+                    #conversion.map_err(
+                        ::juniper::IntoFieldError::<#scalar>::into_field_error,
+                    )
                 }
             }
         }
@@ -579,6 +606,35 @@ impl Definition {
                     token: ::juniper::parser::ScalarToken<'_>,
                 ) -> ::juniper::ParseScalarResult<'_, #scalar> {
                     #from_str
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::ScalarToken`] trait for
+    /// this [GraphQL scalar][1].
+    ///
+    /// [`resolve::ScalarToken`]: juniper::resolve::ScalarToken
+    /// [1]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_resolve_scalar_token(&self) -> TokenStream {
+        let body = self.methods.expand_parse_scalar_token(&self.scalar);
+
+        let (ty, generics) = self.ty_and_generics();
+        let (scalar, generics) = self.mix_scalar_ty(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::ScalarToken<#scalar> for #ty
+                #where_clause
+            {
+                fn parse_scalar_token(
+                    token: ::juniper::parser::ScalarToken<'_>,
+                ) -> ::std::result::Result<
+                    #scalar,
+                    ::juniper::parser::ParseError<'_>,
+                > {
+                    #body
                 }
             }
         }
@@ -699,6 +755,57 @@ impl Definition {
         }
 
         (ty, generics)
+    }
+
+    #[must_use]
+    fn ty_and_generics(&self) -> (syn::Type, syn::Generics) {
+        let mut generics = self.generics.clone();
+
+        let ty = match &self.ty {
+            TypeOrIdent::Type(ty) => (**ty).clone(),
+            TypeOrIdent::Ident(ident) => {
+                let (_, ty_gen, _) = self.generics.split_for_impl();
+                parse_quote! { #ident#ty_gen }
+            }
+        };
+
+        if !self.where_clause.is_empty() {
+            generics
+                .make_where_clause()
+                .predicates
+                .extend(self.where_clause.clone())
+        }
+
+        (ty, generics)
+    }
+
+    #[must_use]
+    fn mix_info_ty(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
+        let ty = parse_quote! { __Info };
+
+        generics.params.push(parse_quote! { #ty: ?Sized });
+
+        (ty, generics)
+    }
+
+    #[must_use]
+    fn mix_scalar_ty(&self, mut generics: syn::Generics) -> (&scalar::Type, syn::Generics) {
+        let scalar = &self.scalar;
+
+        if scalar.is_implicit_generic() {
+            generics.params.push(parse_quote! { #scalar });
+        }
+        if scalar.is_generic() {
+            generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote! { #scalar: ::juniper::ScalarValue });
+        }
+        if let Some(bound) = scalar.bounds() {
+            generics.make_where_clause().predicates.push(bound);
+        }
+
+        (scalar, generics)
     }
 }
 
@@ -823,7 +930,8 @@ impl Methods {
         }
     }
 
-    /// Expands [`resolve::InputValue::try_from_input_value()`][0] method.
+    /// Expands body of [`resolve::InputValue::try_from_input_value()`][0]
+    /// method.
     ///
     /// [0]: juniper::resolve::InputValue::try_from_input_value
     fn expand_try_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
@@ -841,8 +949,9 @@ impl Methods {
                 let self_constructor = field.closure_constructor();
 
                 quote! {
-                    <#field_ty as ::juniper::resolve::InputValue<'__inp, #scalar>>::try_from_input_value(input)
-                        .map(#self_constructor)
+                    <#field_ty as ::juniper::resolve::InputValue<'_, #scalar>>
+                        ::try_from_input_value(input)
+                            .map(#self_constructor)
                 }
             }
         }
@@ -865,6 +974,27 @@ impl Methods {
                 let field_ty = field.ty();
                 quote! {
                     <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token)
+                }
+            }
+        }
+    }
+
+    /// Expands body of [`resolve::ScalarToken::parse_scalar_token()`][0]
+    /// method.
+    ///
+    /// [0]: resolve::ScalarToken::parse_scalar_token
+    fn expand_parse_scalar_token(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { parse_token, .. }
+            | Self::Delegated {
+                parse_token: Some(parse_token),
+                ..
+            } => parse_token.expand_parse_scalar_token(scalar),
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                quote! {
+                    <#field_ty as ::juniper::resolve::ScalarToken<#scalar>>
+                        ::parse_scalar_token(token)
                 }
             }
         }
@@ -907,6 +1037,39 @@ impl ParseToken {
                                 })
                             })
                         }
+                    )
+                })
+                .unwrap_or_default(),
+        }
+    }
+
+    /// Expands body of [`resolve::ScalarToken::parse_scalar_token()`][0]
+    /// method.
+    ///
+    /// [0]: resolve::ScalarToken::parse_scalar_token
+    fn expand_parse_scalar_token(&self, scalar: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom(parse_token) => {
+                quote! { #parse_token(token) }
+            }
+            Self::Delegated(delegated) => delegated
+                .iter()
+                .fold(None, |acc, ty| {
+                    acc.map_or_else(
+                        || {
+                            Some(quote! {
+                                <#ty as ::juniper::resolve::ScalarToken<#scalar>>
+                                    ::parse_scalar_token(token)
+                            })
+                        },
+                        |prev| {
+                            Some(quote! {
+                                #prev.or_else(|_| {
+                                    <#ty as ::juniper::resolve::ScalarToken<#scalar>>
+                                        ::parse_scalar_token(token)
+                                })
+                            })
+                        },
                     )
                 })
                 .unwrap_or_default(),

@@ -25,9 +25,8 @@ impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
 }
 
 impl<Info: ?Sized> resolve::TypeName<Info> for str {
-    fn type_name(_: &Info) -> &'static str {
-        // TODO: Reuse from `String`.
-        "String"
+    fn type_name(info: &Info) -> &str {
+        <String as resolve::TypeName<Info>>::type_name(info)
     }
 }
 
@@ -69,8 +68,7 @@ where
 
 impl<S: ScalarValue> resolve::ScalarToken<S> for str {
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
-        // TODO: Replace with `resolve::ScalarToken<S>`
-        <String as crate::ParseScalarValue<S>>::from_str(token)
+        <String as resolve::ScalarToken<S>>::parse_scalar_token(token)
     }
 }
 
