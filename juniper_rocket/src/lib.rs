@@ -36,7 +36,7 @@ Check the LICENSE file for details.
 
 */
 
-#![doc(html_root_url = "https://docs.rs/juniper_rocket/0.7.1")]
+#![doc(html_root_url = "https://docs.rs/juniper_rocket/0.8.2")]
 
 use std::{borrow::Cow, io::Cursor};
 
@@ -72,8 +72,8 @@ pub struct GraphQLResponse(pub Status, pub String);
 pub fn graphiql_source(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&str>,
-) -> content::Html<String> {
-    content::Html(juniper::http::graphiql::graphiql_source(
+) -> content::RawHtml<String> {
+    content::RawHtml(juniper::http::graphiql::graphiql_source(
         graphql_endpoint_url,
         subscriptions_endpoint_url,
     ))
@@ -83,8 +83,8 @@ pub fn graphiql_source(
 pub fn playground_source(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&str>,
-) -> content::Html<String> {
-    content::Html(juniper::http::playground::playground_source(
+) -> content::RawHtml<String> {
+    content::RawHtml(juniper::http::playground::playground_source(
         graphql_endpoint_url,
         subscriptions_endpoint_url,
     ))
@@ -337,7 +337,10 @@ where
         };
 
         Box::pin(async move {
-            let limit = req.limits().get("graphql").unwrap_or(BODY_LIMIT.bytes());
+            let limit = req
+                .limits()
+                .get("graphql")
+                .unwrap_or_else(|| BODY_LIMIT.bytes());
             let mut reader = data.open(limit);
             let mut body = String::new();
             if let Err(e) = reader.read_to_string(&mut body).await {

@@ -2,6 +2,10 @@
 
 - Compatibility with the latest `juniper`.
 
+# [[0.8.2] 2022-05-25](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-v0.8.2)
+
+- `rocket` version is now `0.5.0-rc.2`.
+
 # [[0.8.1] 2022-03-29](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-v0.8.1)
 
 - Ability to set custom request body size limit ([#1044](https://github.com/graphql-rust/juniper/pull/1044)).
