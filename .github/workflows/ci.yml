@@ -16,6 +16,28 @@ env:
 
 jobs:
 
+  ################
+  # Pull Request #
+  ################
+
+  pr:
+    if: ${{ github.event_name == 'pull_request'
+            && !contains(github.event.head_commit.message, '[skip ci]') }}
+    needs:
+      - clippy
+      - example
+      - feature
+      - release-check
+      - rustfmt
+      - test
+      - wasm
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
+
+
+
+
   ##########################
   # Linting and formatting #
   ##########################
