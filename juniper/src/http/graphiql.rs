@@ -54,7 +54,9 @@ pub fn graphiql_source(
             return null
         }
 
-        function graphQLFetcher(graphQLParams) {
+        function graphQLFetcher(graphQLParams, opts) {
+            const { headers = {} } = opts;
+
             return fetch(
                 GRAPHQL_URL,
                 {
@@ -62,6 +64,7 @@ pub fn graphiql_source(
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
+                        ...headers,
                     },
                     body: JSON.stringify(graphQLParams),
                     credentials: 'omit',
