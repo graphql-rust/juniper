@@ -66,7 +66,10 @@ where
     }
 }
 
-impl<S: ScalarValue> resolve::ScalarToken<S> for str {
+impl<S> resolve::ScalarToken<S> for str
+where
+    String: resolve::ScalarToken<S>,
+{
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
         <String as resolve::ScalarToken<S>>::parse_scalar_token(token)
     }
