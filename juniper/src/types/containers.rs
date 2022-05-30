@@ -220,6 +220,45 @@ where
     }
 }
 
+impl<S, T> GraphQLType<S> for std::collections::HashSet<T>
+where
+    T: GraphQLType<S>,
+    S: ScalarValue,
+{
+    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+        None
+    }
+
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_list_type::<T>(info, None).into_meta()
+    }
+}
+
+impl<S, T> GraphQLValue<S> for std::collections::HashSet<T>
+where
+    T: GraphQLValue<S>,
+    S: ScalarValue,
+{
+    type Context = T::Context;
+    type TypeInfo = T::TypeInfo;
+
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+        None
+    }
+
+    fn resolve(
+        &self,
+        info: &Self::TypeInfo,
+        _: Option<&[Selection<S>]>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        resolve_into_list(executor, info, self.iter())
+    }
+}
+
 impl<S, T> GraphQLType<S> for [T]
 where
     S: ScalarValue,
