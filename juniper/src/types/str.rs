@@ -7,7 +7,7 @@ use std::{rc::Rc, sync::Arc};
 use futures::future;
 
 use crate::{
-    graphql,
+    graphql, reflect,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
     resolve, BoxFuture, ExecutionResult, Executor, Registry, ScalarValue, Selection,
@@ -25,8 +25,8 @@ impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
 }
 
 impl<Info: ?Sized> resolve::TypeName<Info> for str {
-    fn type_name(info: &Info) -> &str {
-        <String as resolve::TypeName<Info>>::type_name(info)
+    fn type_name(_: &Info) -> &'static str {
+        <Self as reflect::BaseType<()>>::NAME
     }
 }
 
@@ -118,4 +118,16 @@ impl<S> graphql::OutputType<S> for str {
 
 impl<S> graphql::Scalar<S> for str {
     fn assert_scalar() {}
+}
+
+impl<S> reflect::BaseType<S> for str {
+    const NAME: reflect::Type = <String as reflect::BaseType<S>>::NAME;
+}
+
+impl<S> reflect::BaseSubTypes<S> for str {
+    const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
+}
+
+impl<S> reflect::WrappedType<S> for str {
+    const VALUE: reflect::WrappedValue = 1;
 }

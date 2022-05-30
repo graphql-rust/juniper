@@ -196,18 +196,6 @@ where
     })
 }
 
-impl<S> reflect::WrappedType<S> for str {
-    const VALUE: reflect::WrappedValue = 1;
-}
-
-impl<S> reflect::BaseType<S> for str {
-    const NAME: reflect::Type = "String";
-}
-
-impl<S> reflect::BaseSubTypes<S> for str {
-    const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
-}
-
 impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,

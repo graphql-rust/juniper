@@ -329,12 +329,14 @@ impl ToTokens for Definition {
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
-        self.impl_reflection_traits_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        self.impl_resolve_type_name().to_tokens(into);
         self.impl_resolve_type().to_tokens(into);
+        self.impl_resolve_type_name().to_tokens(into);
         self.impl_resolve_input_value().to_tokens(into);
         self.impl_resolve_scalar_token().to_tokens(into);
+        self.impl_input_and_output_type().to_tokens(into);
+        //self.impl_scalar().to_tokens(into);
+        self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -360,6 +362,56 @@ impl Definition {
             #[automatically_derived]
             impl#impl_gens ::juniper::marker::IsOutputType<#scalar> for #ty
                 #where_clause { }
+        }
+    }
+
+    /// Returns generated code implementing [`graphql::InputType`] and
+    /// [`graphql::OutputType`] traits for this [GraphQL scalar][0].
+    ///
+    /// [`graphql::InputType`]: juniper::graphql::InputType
+    /// [`graphql::OutputType`]: juniper::graphql::OutputType
+    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    #[must_use]
+    fn impl_input_and_output_type(&self) -> TokenStream {
+        let (ty, generics) = self.ty_and_generics();
+        let (scalar, generics) = self.mix_scalar(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::graphql::InputType<#scalar> for #ty
+                #where_clause
+            {
+                fn assert_input_type() {}
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::graphql::OutputType<#scalar> for #ty
+                #where_clause
+            {
+                fn assert_output_type() {}
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`graphql::Scalar`] trait for this
+    /// [GraphQL scalar][0].
+    ///
+    /// [`graphql::Scalar`]: juniper::graphql::Scalar
+    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    #[must_use]
+    fn impl_scalar(&self) -> TokenStream {
+        let (ty, generics) = self.ty_and_generics();
+        let (scalar, generics) = self.mix_scalar(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::graphql::Scalar<#scalar> for #ty
+                #where_clause
+            {
+                fn assert_scalar() {}
+            }
         }
     }
 
@@ -696,41 +748,42 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
-    /// [`WrappedType`] traits for this [GraphQL scalar][1].
+    /// Returns generated code implementing [`reflect::BaseType`],
+    /// [`reflect::BaseSubTypes`] and [`reflect::WrappedType`] traits for this
+    /// [GraphQL scalar][0].
     ///
-    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
-    /// [`BaseType`]: juniper::macros::reflection::BaseType
-    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
-    /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    fn impl_reflection_traits_tokens(&self) -> TokenStream {
-        let scalar = &self.scalar;
-        let name = &self.name;
-
-        let (ty, generics) = self.impl_self_and_generics(false);
+    /// [`reflect::BaseSubTypes`]: juniper::reflection::BaseSubTypes
+    /// [`reflect::BaseType`]: juniper::reflection::BaseType
+    /// [`reflect::WrappedType`]: juniper::reflection::WrappedType
+    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_reflect(&self) -> TokenStream {
+        let (ty, generics) = self.ty_and_generics();
+        let (scalar, generics) = self.mix_scalar(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let name = &self.name;
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
+            impl#impl_gens ::juniper::reflect::BaseType<#scalar> for #ty
                 #where_clause
             {
-                const NAME: ::juniper::macros::reflect::Type = #name;
+                const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
+            impl#impl_gens ::juniper::reflect::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflect::Types =
-                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+                const NAMES: ::juniper::reflect::Types =
+                    &[<Self as ::juniper::reflect::BaseType<#scalar>>::NAME];
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
+            impl#impl_gens ::juniper::reflect::WrappedType<#scalar> for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
+                const VALUE: ::juniper::reflect::WrappedValue = 1;
             }
         }
     }

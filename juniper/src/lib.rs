@@ -36,6 +36,7 @@ pub mod http;
 pub mod integrations;
 mod introspection;
 pub mod parser;
+pub mod reflect;
 pub mod resolve;
 pub(crate) mod schema;
 mod types;
