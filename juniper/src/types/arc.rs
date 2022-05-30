@@ -6,8 +6,8 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor, IntoFieldError,
-    Registry, Selection,
+    reflect, resolve, Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor,
+    IntoFieldError, Registry, Selection,
 };
 
 impl<T, Info, S> resolve::Type<Info, S> for Arc<T>
@@ -246,4 +246,25 @@ where
     fn assert_union() {
         T::assert_union()
     }
+}
+
+impl<T, S> reflect::BaseType<S> for Arc<T>
+where
+    T: reflect::BaseType<S> + ?Sized,
+{
+    const NAME: reflect::Type = T::NAME;
+}
+
+impl<T, S> reflect::BaseSubTypes<S> for Arc<T>
+where
+    T: reflect::BaseSubTypes<S> + ?Sized,
+{
+    const NAMES: reflect::Types = T::NAMES;
+}
+
+impl<T, S> reflect::WrappedType<S> for Arc<T>
+where
+    T: reflect::WrappedType<S> + ?Sized,
+{
+    const VALUE: reflect::WrappedValue = T::VALUE;
 }

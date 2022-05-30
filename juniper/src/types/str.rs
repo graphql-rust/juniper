@@ -7,10 +7,10 @@ use std::{rc::Rc, sync::Arc};
 use futures::future;
 
 use crate::{
-    graphql, reflect,
+    graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, BoxFuture, ExecutionResult, Executor, Registry, ScalarValue, Selection,
+    reflect, resolve, BoxFuture, ExecutionResult, Executor, Registry, ScalarValue, Selection,
 };
 
 impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
@@ -129,5 +129,5 @@ impl<S> reflect::BaseSubTypes<S> for str {
 }
 
 impl<S> reflect::WrappedType<S> for str {
-    const VALUE: reflect::WrappedValue = 1;
+    const VALUE: reflect::WrappedValue = reflect::wrap::SINGULAR;
 }

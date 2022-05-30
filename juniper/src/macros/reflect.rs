@@ -44,51 +44,11 @@ pub trait BaseType<S> {
     const NAME: Type;
 }
 
-impl<'a, S, T: BaseType<S> + ?Sized> BaseType<S> for &'a T {
-    const NAME: Type = T::NAME;
-}
-
 impl<'ctx, S, T> BaseType<S> for (&'ctx T::Context, T)
 where
     S: ScalarValue,
     T: BaseType<S> + GraphQLValue<S>,
 {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S>> BaseType<S> for Option<T> {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S>> BaseType<S> for Nullable<T> {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S>, E> BaseType<S> for Result<T, E> {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S>> BaseType<S> for Vec<T> {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S>> BaseType<S> for [T] {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S>, const N: usize> BaseType<S> for [T; N] {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Box<T> {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Arc<T> {
-    const NAME: Type = T::NAME;
-}
-
-impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Rc<T> {
     const NAME: Type = T::NAME;
 }
 
@@ -105,51 +65,11 @@ pub trait BaseSubTypes<S> {
     const NAMES: Types;
 }
 
-impl<'a, S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for &'a T {
-    const NAMES: Types = T::NAMES;
-}
-
 impl<'ctx, S, T> BaseSubTypes<S> for (&'ctx T::Context, T)
 where
     S: ScalarValue,
     T: BaseSubTypes<S> + GraphQLValue<S>,
 {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Option<T> {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Nullable<T> {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S>, E> BaseSubTypes<S> for Result<T, E> {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Vec<T> {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for [T] {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S>, const N: usize> BaseSubTypes<S> for [T; N] {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Box<T> {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Arc<T> {
-    const NAMES: Types = T::NAMES;
-}
-
-impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
     const NAMES: Types = T::NAMES;
 }
 
@@ -163,7 +83,7 @@ pub type WrappedValue = u128;
 /// because of the [wrapping types][2]. To work around this we use a
 /// [`WrappedValue`] which is represented via [`u128`] number in the following
 /// encoding:
-/// - In base case of non-nullable [object][1] [`VALUE`] is `1`.
+/// - In base case of non-nullable singular [object][1] [`VALUE`] is `1`.
 /// - To represent nullability we "append" `2` to the [`VALUE`], so
 ///   [`Option`]`<`[object][1]`>` has [`VALUE`] of `12`.
 /// - To represent list we "append" `3` to the [`VALUE`], so
@@ -213,44 +133,18 @@ where
     const VALUE: u128 = T::VALUE;
 }
 
-impl<S, T: WrappedType<S>> WrappedType<S> for Option<T> {
-    const VALUE: u128 = T::VALUE * 10 + 2;
-}
+pub mod wrap {
+    use super::WrappedValue;
 
-impl<S, T: WrappedType<S>> WrappedType<S> for Nullable<T> {
-    const VALUE: u128 = T::VALUE * 10 + 2;
-}
+    pub const SINGULAR: WrappedValue = 1;
 
-impl<S, T: WrappedType<S>, E> WrappedType<S> for Result<T, E> {
-    const VALUE: u128 = T::VALUE;
-}
+    pub const fn nullable(val: WrappedValue) -> WrappedValue {
+        val * 10 + 2
+    }
 
-impl<S, T: WrappedType<S>> WrappedType<S> for Vec<T> {
-    const VALUE: u128 = T::VALUE * 10 + 3;
-}
-
-impl<S, T: WrappedType<S>> WrappedType<S> for [T] {
-    const VALUE: u128 = T::VALUE * 10 + 3;
-}
-
-impl<S, T: WrappedType<S>, const N: usize> WrappedType<S> for [T; N] {
-    const VALUE: u128 = T::VALUE * 10 + 3;
-}
-
-impl<'a, S, T: WrappedType<S> + ?Sized> WrappedType<S> for &'a T {
-    const VALUE: u128 = T::VALUE;
-}
-
-impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Box<T> {
-    const VALUE: u128 = T::VALUE;
-}
-
-impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Arc<T> {
-    const VALUE: u128 = T::VALUE;
-}
-
-impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
-    const VALUE: u128 = T::VALUE;
+    pub const fn list(val: WrappedValue) -> WrappedValue {
+        val * 10 + 3
+    }
 }
 
 /// Alias for a [GraphQL object][1] or [interface][2] [field argument][3] name.

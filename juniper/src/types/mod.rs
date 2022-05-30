@@ -7,6 +7,7 @@ mod option;
 pub mod rc;
 pub mod r#ref;
 mod ref_mut;
+mod result;
 mod slice;
 mod r#str;
 mod vec;

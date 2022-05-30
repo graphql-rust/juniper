@@ -7,7 +7,7 @@ use futures::future;
 use crate::{
     ast::{FromInputValue, InputValue, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
-    graphql, resolve,
+    graphql, reflect, resolve,
     schema::meta::MetaType,
     types::{
         async_await::GraphQLValueAsync,
@@ -360,6 +360,29 @@ where
         T::assert_output_type()
     }
 }
+
+impl<T, S> reflect::BaseType<S> for Nullable<T>
+where
+    T: reflect::BaseType<S>,
+{
+    const NAME: reflect::Type = T::NAME;
+}
+
+impl<T, S> reflect::BaseSubTypes<S> for Nullable<T>
+where
+    T: reflect::BaseSubTypes<S>,
+{
+    const NAMES: reflect::Types = T::NAMES;
+}
+
+impl<T, S> reflect::WrappedType<S> for Nullable<T>
+where
+    T: reflect::WrappedType<S>,
+{
+    const VALUE: reflect::WrappedValue = reflect::wrap::nullable(T::VALUE);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 impl<S, T> GraphQLType<S> for Nullable<T>
 where

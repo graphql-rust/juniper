@@ -471,15 +471,13 @@ impl Definition {
         let (info, generics) = self.mix_info(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-        let name = &self.name;
-
         quote! {
             #[automatically_derived]
             impl#impl_gens ::juniper::resolve::TypeName<#info> for #ty
                 #where_clause
             {
                 fn type_name(_: &#info) -> &'static str {
-                    #name
+                    <Self as ::juniper::reflect::BaseType<()>>::NAME
                 }
             }
         }
@@ -783,7 +781,8 @@ impl Definition {
             impl#impl_gens ::juniper::reflect::WrappedType<#scalar> for #ty
                 #where_clause
             {
-                const VALUE: ::juniper::reflect::WrappedValue = 1;
+                const VALUE: ::juniper::reflect::WrappedValue =
+                    ::juniper::reflect::wrap::SINGULAR;
             }
         }
     }

@@ -4,7 +4,7 @@
 
 use crate::{
     executor::{ExecutionResult, Executor, Registry},
-    graphql, resolve,
+    graphql, reflect, resolve,
     schema::meta::MetaType,
     BoxFuture, Selection,
 };
@@ -80,4 +80,25 @@ where
     fn assert_output_type() {
         T::assert_output_type()
     }
+}
+
+impl<T, S, const N: usize> reflect::BaseType<S> for [T; N]
+where
+    T: reflect::BaseType<S>,
+{
+    const NAME: reflect::Type = T::NAME;
+}
+
+impl<T, S, const N: usize> reflect::BaseSubTypes<S> for [T; N]
+where
+    T: reflect::BaseSubTypes<S>,
+{
+    const NAMES: reflect::Types = T::NAMES;
+}
+
+impl<T, S, const N: usize> reflect::WrappedType<S> for [T; N]
+where
+    T: reflect::WrappedType<S>,
+{
+    const VALUE: reflect::WrappedValue = reflect::wrap::list(T::VALUE);
 }

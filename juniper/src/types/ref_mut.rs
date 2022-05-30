@@ -6,7 +6,7 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
+    reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
 };
 
 impl<'me, T, Info, S> resolve::Type<Info, S> for &'me mut T
@@ -203,4 +203,25 @@ where
     fn assert_union() {
         T::assert_union()
     }
+}
+
+impl<'me, T, S> reflect::BaseType<S> for &'me mut T
+where
+    T: reflect::BaseType<S> + ?Sized,
+{
+    const NAME: reflect::Type = T::NAME;
+}
+
+impl<'me, T, S> reflect::BaseSubTypes<S> for &'me mut T
+where
+    T: reflect::BaseSubTypes<S> + ?Sized,
+{
+    const NAMES: reflect::Types = T::NAMES;
+}
+
+impl<'me, T, S> reflect::WrappedType<S> for &'me mut T
+where
+    T: reflect::WrappedType<S> + ?Sized,
+{
+    const VALUE: reflect::WrappedValue = T::VALUE;
 }
