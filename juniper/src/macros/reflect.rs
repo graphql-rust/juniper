@@ -1,7 +1,5 @@
 //! Compile-time reflection of Rust types into GraphQL types.
 
-use std::{rc::Rc, sync::Arc};
-
 use futures::future::BoxFuture;
 
 use crate::{
