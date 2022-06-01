@@ -64,6 +64,15 @@ where
     }
 }
 
+impl<T, S, const N: usize> resolve::ToInputValue<S> for [T; N]
+where
+    T: resolve::ToInputValue<S>,
+{
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        graphql::InputValue::list(self.iter().map(T::to_input_value))
+    }
+}
+
 impl<T, S, const N: usize> graphql::InputType<S> for [T; N]
 where
     T: graphql::InputType<S>,

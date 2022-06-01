@@ -2,9 +2,7 @@
 
 use futures::future::BoxFuture;
 
-use crate::{
-    Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, Nullable, ScalarValue,
-};
+use crate::{Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, ScalarValue};
 
 /// Alias for a [GraphQL object][1], [scalar][2] or [interface][3] type's name
 /// in a GraphQL schema.

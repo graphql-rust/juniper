@@ -334,6 +334,7 @@ impl ToTokens for Definition {
         self.impl_resolve_type_name().to_tokens(into);
         self.impl_resolve_value().to_tokens(into);
         self.impl_resolve_value_async().to_tokens(into);
+        self.impl_resolve_to_input_value().to_tokens(into);
         self.impl_resolve_input_value().to_tokens(into);
         self.impl_resolve_scalar_token().to_tokens(into);
         self.impl_input_and_output_type().to_tokens(into);
@@ -680,7 +681,7 @@ impl Definition {
     fn impl_to_input_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let to_input_value = self.methods.expand_to_input_value(scalar);
+        let to_input_value = self.methods.expand_old_to_input_value(scalar);
 
         let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -692,6 +693,34 @@ impl Definition {
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
                     #to_input_value
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::ToInputValue`] trait for
+    /// this [GraphQL scalar][0].
+    ///
+    /// [`resolve::ToInputValue`]: juniper::resolve::ToInputValue
+    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_resolve_to_input_value(&self) -> TokenStream {
+        let (ty, generics) = self.ty_and_generics();
+        let (sv, mut generics) = self.mix_scalar_value(generics);
+        generics
+            .make_where_clause()
+            .predicates
+            .push(self.methods.bound_to_input_value(sv));
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let body = self.methods.expand_to_input_value(sv);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::ToInputValue<#sv> for #ty
+                #where_clause
+            {
+                fn to_input_value(&self) -> ::juniper::graphql::InputValue<#sv> {
+                    #body
                 }
             }
         }
@@ -1084,7 +1113,7 @@ impl Methods {
         }
     }
 
-    /// Expands [`resolve::Value::resolve_value()`][0] method.
+    /// Expands body of [`resolve::Value::resolve_value()`][0] method.
     ///
     /// [0]: juniper::resolve::Value::resolve_value
     fn expand_resolve_value(
@@ -1152,7 +1181,7 @@ impl Methods {
     /// Expands [`ToInputValue::to_input_value`] method.
     ///
     /// [`ToInputValue::to_input_value`]: juniper::ToInputValue::to_input_value
-    fn expand_to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_old_to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom { to_output, .. }
             | Self::Delegated {
@@ -1167,6 +1196,60 @@ impl Methods {
             Self::Delegated { field, .. } => {
                 quote! {
                     ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field)
+                }
+            }
+        }
+    }
+
+    /// Expands body of [`resolve::ToInputValue::to_input_value()`][0] method.
+    ///
+    /// [0]: juniper::resolve::ToInputValue::to_input_value
+    fn expand_to_input_value(&self, sv: &scalar::Type) -> TokenStream {
+        match self {
+            Self::Custom { to_output, .. }
+            | Self::Delegated {
+                to_output: Some(to_output),
+                ..
+            } => {
+                quote! {
+                    let v = #to_output(self);
+                    ::juniper::resolve::ToInputValue::<#sv>::to_input_value(&v)
+                }
+            }
+
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+
+                quote! {
+                    <#field_ty as ::juniper::resolve::ToInputValue<#sv>>
+                        ::to_input_value(&self.#field)
+                }
+            }
+        }
+    }
+
+    /// Generates additional trait bounds for [`resolve::ToInputValue`]
+    /// implementation allowing to execute
+    /// [`resolve::ToInputValue::to_input_value()`][0] method.
+    ///
+    /// [`resolve::ToInputValue`]: juniper::resolve::ToInputValue
+    /// [0]: juniper::resolve::ToInputValue::to_input_value
+    fn bound_to_input_value(&self, sv: &scalar::Type) -> syn::WherePredicate {
+        match self {
+            Self::Custom { .. }
+            | Self::Delegated {
+                to_output: Some(_), ..
+            } => {
+                parse_quote! {
+                    #sv: ::juniper::ScalarValue
+                }
+            }
+
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+
+                parse_quote! {
+                    #field_ty: ::juniper::resolve::ToInputValue<#sv>>
                 }
             }
         }

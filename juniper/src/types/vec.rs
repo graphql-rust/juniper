@@ -60,6 +60,15 @@ where
     }
 }
 
+impl<T, S> resolve::ToInputValue<S> for Vec<T>
+where
+    T: resolve::ToInputValue<S>,
+{
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        graphql::InputValue::list(self.iter().map(T::to_input_value))
+    }
+}
+
 impl<T, S> graphql::InputType<S> for Vec<T>
 where
     T: graphql::InputType<S>,

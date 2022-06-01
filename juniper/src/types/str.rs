@@ -66,12 +66,12 @@ where
     }
 }
 
-impl<S> resolve::ScalarToken<S> for str
+impl<S> resolve::ToInputValue<S> for str
 where
-    String: resolve::ScalarToken<S>,
+    S: From<String>,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
-        <String as resolve::ScalarToken<S>>::parse_scalar_token(token)
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        graphql::InputValue::scalar(self.to_owned())
     }
 }
 
@@ -105,6 +105,15 @@ impl<'inp, S: ScalarValue> resolve::InputValueAsRc<'inp, S> for str {
 
     fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Rc<Self>, Self::Error> {
         <str as resolve::InputValueAsRef<S>>::try_from_input_value(v).map(Into::into)
+    }
+}
+
+impl<S> resolve::ScalarToken<S> for str
+where
+    String: resolve::ScalarToken<S>,
+{
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
+        <String as resolve::ScalarToken<S>>::parse_scalar_token(token)
     }
 }
 

@@ -6,6 +6,7 @@ use std::{any::TypeId, borrow::Cow, fmt, mem};
 use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
+    resolve,
 };
 
 pub use self::{
@@ -186,6 +187,27 @@ impl<S: Clone> ToInputValue<S> for Value<S> {
                     })
                     .collect(),
             ),
+        }
+    }
+}
+
+impl<S: Clone> resolve::ToInputValue<S> for Value<S> {
+    fn to_input_value(&self) -> InputValue<S> {
+        // TODO: Simplify recursive calls syntax, once old `ToInputValue` trait
+        //       is removed.
+        match self {
+            Self::Null => InputValue::Null,
+            Self::Scalar(s) => InputValue::Scalar(s.clone()),
+            Self::List(l) => InputValue::list(
+                l.iter()
+                    .map(<Self as resolve::ToInputValue<S>>::to_input_value),
+            ),
+            Self::Object(o) => InputValue::object(o.iter().map(|(k, v)| {
+                (
+                    k.clone(),
+                    <Self as resolve::ToInputValue<S>>::to_input_value(v),
+                )
+            })),
         }
     }
 }

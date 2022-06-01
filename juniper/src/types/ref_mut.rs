@@ -142,6 +142,15 @@ where
     }
 }
 
+impl<'me, T, S> resolve::ToInputValue<S> for &'me mut T
+where
+    T: resolve::ToInputValue<S> + ?Sized,
+{
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        (**self).to_input_value()
+    }
+}
+
 impl<'me, T, S> resolve::ScalarToken<S> for &'me mut T
 where
     T: resolve::ScalarToken<S> + ?Sized,

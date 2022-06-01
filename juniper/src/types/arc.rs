@@ -143,12 +143,12 @@ where
     }
 }
 
-impl<T, S> resolve::ScalarToken<S> for Arc<T>
+impl<T, S> resolve::ToInputValue<S> for Arc<T>
 where
-    T: resolve::ScalarToken<S> + ?Sized,
+    T: resolve::ToInputValue<S> + ?Sized,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
-        T::parse_scalar_token(token)
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        (**self).to_input_value()
     }
 }
 
@@ -191,6 +191,15 @@ where
 
     fn try_from_implicit_null() -> Result<Arc<Self>, Self::Error> {
         <T as resolve::InputValue<'inp, S>>::try_from_implicit_null().map(Arc::new)
+    }
+}
+
+impl<T, S> resolve::ScalarToken<S> for Arc<T>
+where
+    T: resolve::ScalarToken<S> + ?Sized,
+{
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
+        T::parse_scalar_token(token)
     }
 }
 

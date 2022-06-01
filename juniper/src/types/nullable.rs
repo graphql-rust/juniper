@@ -324,6 +324,18 @@ where
     }
 }
 
+impl<T, S> resolve::ToInputValue<S> for Nullable<T>
+where
+    T: resolve::ToInputValue<S>,
+{
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        match self {
+            Self::Some(v) => v.to_input_value(),
+            Self::ExplicitNull | Self::ImplicitNull => graphql::InputValue::Null,
+        }
+    }
+}
+
 impl<'inp, T, S: 'inp> resolve::InputValue<'inp, S> for Nullable<T>
 where
     T: resolve::InputValue<'inp, S>,

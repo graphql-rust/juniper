@@ -101,3 +101,7 @@ pub trait InputValue<'input, S: 'input = DefaultScalarValue>: Sized {
 pub trait InputValueOwned<S = DefaultScalarValue>: for<'i> InputValue<'i, S> {}
 
 impl<T, S> InputValueOwned<S> for T where T: for<'i> InputValue<'i, S> {}
+
+pub trait ToInputValue<S> {
+    fn to_input_value(&self) -> graphql::InputValue<S>;
+}

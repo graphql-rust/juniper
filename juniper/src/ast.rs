@@ -256,13 +256,17 @@ impl<S> InputValue<S> {
         Self::Variable(v.as_ref().to_owned())
     }
 
-    /// Construct a [`Spanning::unlocated`] list.
+    /// Constructs a [`Spanning::unlocated`] [`InputValue::List`].
     ///
-    /// Convenience function to make each [`InputValue`] in the input vector
-    /// not contain any location information. Can be used from [`ToInputValue`]
-    /// implementations, where no source code position information is available.
-    pub fn list(l: Vec<Self>) -> Self {
-        Self::List(l.into_iter().map(Spanning::unlocated).collect())
+    /// Convenience function to make each [`InputValue`] in the input `list` to
+    /// not contain any location information.
+    ///
+    /// Intended for [`resolve::ToInputValue`] implementations, where no source
+    /// code position information is available.
+    ///
+    /// [`resolve::ToInputValue`]: juniper::resolve::ToInputValue
+    pub fn list(list: impl IntoIterator<Item = Self>) -> Self {
+        Self::List(list.into_iter().map(Spanning::unlocated).collect())
     }
 
     /// Construct a located list.
@@ -270,16 +274,25 @@ impl<S> InputValue<S> {
         Self::List(l)
     }
 
-    /// Construct aa [`Spanning::unlocated`] object.
+    /// Construct a [`Spanning::unlocated`] [`InputValue::Onject`].
     ///
-    /// Similarly to [`InputValue::list`] it makes each key and value in the
-    /// given hash map not contain any location information.
-    pub fn object<K>(o: IndexMap<K, Self>) -> Self
+    /// Similarly to [`InputValue::list()`] it makes each key and value in the
+    /// given `obj`ect to not contain any location information.
+    ///
+    /// Intended for [`resolve::ToInputValue`] implementations, where no source
+    /// code position information is available.
+    ///
+    /// [`resolve::ToInputValue`]: juniper::resolve::ToInputValue
+    // TODO: Use `impl IntoIterator<Item = (K, Self)>` argument once feature
+    //       `explicit_generic_args_with_impl_trait` hits stable:
+    //       https://github.com/rust-lang/rust/issues/83701
+    pub fn object<K, O>(obj: O) -> Self
     where
         K: AsRef<str> + Eq + Hash,
+        O: IntoIterator<Item = (K, Self)>,
     {
         Self::Object(
-            o.into_iter()
+            obj.into_iter()
                 .map(|(k, v)| {
                     (
                         Spanning::unlocated(k.as_ref().to_owned()),

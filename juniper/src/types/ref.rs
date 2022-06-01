@@ -143,12 +143,12 @@ where
     }
 }
 
-impl<'me, T, S> resolve::ScalarToken<S> for &'me T
+impl<'me, T, S> resolve::ToInputValue<S> for &'me T
 where
-    T: resolve::ScalarToken<S> + ?Sized,
+    T: resolve::ToInputValue<S> + ?Sized,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
-        T::parse_scalar_token(token)
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        (**self).to_input_value()
     }
 }
 
@@ -177,6 +177,15 @@ pub trait TryFromInputValue<S = DefaultScalarValue> {
         S: 'a,
     {
         Self::try_from_input_value(&graphql::InputValue::<S>::Null)
+    }
+}
+
+impl<'me, T, S> resolve::ScalarToken<S> for &'me T
+where
+    T: resolve::ScalarToken<S> + ?Sized,
+{
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
+        T::parse_scalar_token(token)
     }
 }
 

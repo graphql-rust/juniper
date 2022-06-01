@@ -61,6 +61,18 @@ where
     }
 }
 
+impl<T, S> resolve::ToInputValue<S> for Option<T>
+where
+    T: resolve::ToInputValue<S>,
+{
+    fn to_input_value(&self) -> graphql::InputValue<S> {
+        match self {
+            Some(v) => v.to_input_value(),
+            None => graphql::InputValue::Null,
+        }
+    }
+}
+
 impl<'inp, T, S: 'inp> resolve::InputValue<'inp, S> for Option<T>
 where
     T: resolve::InputValue<'inp, S>,
