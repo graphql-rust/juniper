@@ -333,6 +333,7 @@ impl ToTokens for Definition {
         self.impl_resolve_type().to_tokens(into);
         self.impl_resolve_type_name().to_tokens(into);
         self.impl_resolve_value().to_tokens(into);
+        self.impl_resolve_value_async().to_tokens(into);
         self.impl_resolve_input_value().to_tokens(into);
         self.impl_resolve_scalar_token().to_tokens(into);
         self.impl_input_and_output_type().to_tokens(into);
@@ -375,19 +376,19 @@ impl Definition {
     #[must_use]
     fn impl_input_and_output_type(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (scalar, generics) = self.mix_scalar(generics);
+        let (sv, generics) = self.mix_scalar_value(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::InputType<#scalar> for #ty
+            impl#impl_gens ::juniper::graphql::InputType<#sv> for #ty
                 #where_clause
             {
                 fn assert_input_type() {}
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::OutputType<#scalar> for #ty
+            impl#impl_gens ::juniper::graphql::OutputType<#sv> for #ty
                 #where_clause
             {
                 fn assert_output_type() {}
@@ -403,12 +404,12 @@ impl Definition {
     #[must_use]
     fn impl_scalar(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (scalar, generics) = self.mix_scalar(generics);
+        let (sv, generics) = self.mix_scalar_value(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::Scalar<#scalar> for #ty
+            impl#impl_gens ::juniper::graphql::Scalar<#sv> for #ty
                 #where_clause
             {
                 fn assert_scalar() {}
@@ -469,7 +470,7 @@ impl Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_resolve_type_name(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_info(generics);
+        let (inf, generics) = self.mix_type_info(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -491,12 +492,12 @@ impl Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_resolve_type(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_info(generics);
-        let (scalar, mut generics) = self.mix_scalar(generics);
+        let (inf, generics) = self.mix_type_info(generics);
+        let (sv, mut generics) = self.mix_scalar_value(generics);
         generics.make_where_clause().predicates.push(parse_quote! {
             Self: ::juniper::resolve::TypeName<#inf>
-                  + ::juniper::resolve::ScalarToken<#scalar>
-                  + ::juniper::resolve::InputValueOwned<#scalar>
+                  + ::juniper::resolve::ScalarToken<#sv>
+                  + ::juniper::resolve::InputValueOwned<#sv>
         });
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
@@ -512,15 +513,15 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::Type<#inf, #scalar> for #ty
+            impl#impl_gens ::juniper::resolve::Type<#inf, #sv> for #ty
                 #where_clause
             {
-                fn meta<'r>(
-                    registry: &mut ::juniper::Registry<'r, #scalar>,
+                fn meta<'__r>(
+                    registry: &mut ::juniper::Registry<'__r, #sv>,
                     info: &#inf,
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
+                ) -> ::juniper::meta::MetaType<'__r, #sv>
                 where
-                    #scalar: 'r,
+                    #sv: '__r,
                 {
                     registry.build_scalar_type_new::<Self, _>(info)
                         #description
@@ -575,28 +576,28 @@ impl Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_resolve_value(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_info(generics);
+        let (inf, generics) = self.mix_type_info(generics);
         let (cx, generics) = self.mix_context(generics);
-        let (scalar, mut generics) = self.mix_scalar(generics);
+        let (sv, mut generics) = self.mix_scalar_value(generics);
         generics
             .make_where_clause()
             .predicates
-            .push(self.methods.bound_resolve_value(&inf, &cx, scalar));
+            .push(self.methods.bound_resolve_value(&inf, &cx, sv));
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-        let body = self.methods.expand_resolve_value(scalar);
+        let body = self.methods.expand_resolve_value(&inf, &cx, sv);
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::Value<#inf, #cx, #scalar> for #ty
+            impl#impl_gens ::juniper::resolve::Value<#inf, #cx, #sv> for #ty
                 #where_clause
             {
                 fn resolve_value(
                     &self,
-                    selection: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    selection: Option<&[::juniper::Selection<'_, #sv>]>,
                     info: &#inf,
-                    executor: &::juniper::Executor<'_, '_, #cx, #scalar>,
-                ) -> ::juniper::ExecutionResult<#scalar> {
+                    executor: &::juniper::Executor<'_, '_, #cx, #sv>,
+                ) -> ::juniper::ExecutionResult<#sv> {
                     #body
                 }
             }
@@ -628,6 +629,44 @@ impl Definition {
                     use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
                     Box::pin(future::ready(v))
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::ValueAsync`] trait for
+    /// this [GraphQL scalar][0].
+    ///
+    /// [`resolve::ValueAsync`]: juniper::resolve::ValueAsync
+    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_resolve_value_async(&self) -> TokenStream {
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = self.mix_type_info(generics);
+        let (cx, generics) = self.mix_context(generics);
+        let (sv, mut generics) = self.mix_scalar_value(generics);
+        let preds = &mut generics.make_where_clause().predicates;
+        preds.push(parse_quote! {
+            Self: ::juniper::resolve::Value<#inf, #cx, #sv>
+        });
+        preds.push(parse_quote! {
+            #sv: Send
+        });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::ValueAsync<#inf, #cx, #sv> for #ty
+                #where_clause
+            {
+                fn resolve_value_async<'__r>(
+                    &'__r self,
+                    selection: Option<&'__r [::juniper::Selection<'_, #sv>]>,
+                    info: &'__r #inf,
+                    executor: &'__r ::juniper::Executor<'_, '_, #cx, #sv>,
+                ) -> ::juniper::BoxFuture<'__r, ::juniper::ExecutionResult<#sv>> {
+                    let v = <Self as ::juniper::resolve::Value<#inf, #cx, #sv>>
+                        ::resolve_value(self, selection, info, executor);
+                    ::std::boxed::Box::pin(::juniper::futures::future::ready(v))
                 }
             }
         }
@@ -693,29 +732,29 @@ impl Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_resolve_input_value(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (scalar, mut generics) = self.mix_scalar(generics);
+        let (sv, mut generics) = self.mix_scalar_value(generics);
         let lt: syn::GenericParam = parse_quote! { '__inp };
         generics.params.push(lt.clone());
         generics
             .make_where_clause()
             .predicates
-            .push(self.methods.bound_try_from_input_value(scalar, &lt));
+            .push(self.methods.bound_try_from_input_value(sv, &lt));
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-        let conversion = self.methods.expand_try_from_input_value(scalar);
+        let conversion = self.methods.expand_try_from_input_value(sv);
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::InputValue<#lt, #scalar> for #ty
+            impl#impl_gens ::juniper::resolve::InputValue<#lt, #sv> for #ty
                 #where_clause
             {
-                type Error = ::juniper::FieldError<#scalar>;
+                type Error = ::juniper::FieldError<#sv>;
 
                 fn try_from_input_value(
-                    input: &#lt ::juniper::graphql::InputValue<#scalar>,
+                    input: &#lt ::juniper::graphql::InputValue<#sv>,
                 ) -> ::std::result::Result<Self, Self::Error> {
                     #conversion.map_err(
-                        ::juniper::IntoFieldError::<#scalar>::into_field_error,
+                        ::juniper::IntoFieldError::<#sv>::into_field_error,
                     )
                 }
             }
@@ -756,24 +795,24 @@ impl Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_resolve_scalar_token(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (scalar, mut generics) = self.mix_scalar(generics);
+        let (sv, mut generics) = self.mix_scalar_value(generics);
         generics
             .make_where_clause()
             .predicates
-            .extend(self.methods.bound_parse_scalar_token(scalar));
+            .extend(self.methods.bound_parse_scalar_token(sv));
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-        let body = self.methods.expand_parse_scalar_token(scalar);
+        let body = self.methods.expand_parse_scalar_token(sv);
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::ScalarToken<#scalar> for #ty
+            impl#impl_gens ::juniper::resolve::ScalarToken<#sv> for #ty
                 #where_clause
             {
                 fn parse_scalar_token(
                     token: ::juniper::parser::ScalarToken<'_>,
                 ) -> ::std::result::Result<
-                    #scalar,
+                    #sv,
                     ::juniper::parser::ParseError<'_>,
                 > {
                     #body
@@ -792,29 +831,29 @@ impl Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_reflect(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
-        let (scalar, generics) = self.mix_scalar(generics);
+        let (sv, generics) = self.mix_scalar_value(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         let name = &self.name;
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseType<#scalar> for #ty
+            impl#impl_gens ::juniper::reflect::BaseType<#sv> for #ty
                 #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseSubTypes<#scalar> for #ty
+            impl#impl_gens ::juniper::reflect::BaseSubTypes<#sv> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Types =
-                    &[<Self as ::juniper::reflect::BaseType<#scalar>>::NAME];
+                    &[<Self as ::juniper::reflect::BaseType<#sv>>::NAME];
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::WrappedType<#scalar> for #ty
+            impl#impl_gens ::juniper::reflect::WrappedType<#sv> for #ty
                 #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
@@ -928,7 +967,7 @@ impl Definition {
     /// Mixes a type info [`syn::GenericParam`] into the provided
     /// [`syn::Generics`] and returns its [`syn::Ident`].
     #[must_use]
-    fn mix_info(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
+    fn mix_type_info(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
         let ty = parse_quote! { __Info };
 
         generics.params.push(parse_quote! { #ty: ?Sized });
@@ -956,7 +995,7 @@ impl Definition {
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     #[must_use]
-    fn mix_scalar(&self, mut generics: syn::Generics) -> (&scalar::Type, syn::Generics) {
+    fn mix_scalar_value(&self, mut generics: syn::Generics) -> (&scalar::Type, syn::Generics) {
         let scalar = &self.scalar;
 
         if scalar.is_implicit_generic() {
@@ -1048,7 +1087,12 @@ impl Methods {
     /// Expands [`resolve::Value::resolve_value()`][0] method.
     ///
     /// [0]: juniper::resolve::Value::resolve_value
-    fn expand_resolve_value(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_resolve_value(
+        &self,
+        inf: &syn::Ident,
+        cx: &syn::Ident,
+        sv: &scalar::Type,
+    ) -> TokenStream {
         match self {
             Self::Custom { to_output, .. }
             | Self::Delegated {
@@ -1059,13 +1103,16 @@ impl Methods {
             }
 
             Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+
                 quote! {
-                    ::juniper::resolve::Value::<#scalar>::resolve_value(
-                        &self.#field,
-                        info,
-                        selection,
-                        executor,
-                    )
+                    <#field_ty as ::juniper::resolve::Value<#inf, #cx, #sv>>
+                        ::resolve_value(
+                            &self.#field,
+                            info,
+                            selection,
+                            executor,
+                        )
                 }
             }
         }
@@ -1080,7 +1127,7 @@ impl Methods {
         &self,
         inf: &syn::Ident,
         cx: &syn::Ident,
-        scalar: &scalar::Type,
+        sv: &scalar::Type,
     ) -> syn::WherePredicate {
         match self {
             Self::Custom { .. }
@@ -1088,7 +1135,7 @@ impl Methods {
                 to_output: Some(_), ..
             } => {
                 parse_quote! {
-                    #scalar: ::juniper::ScalarValue
+                    #sv: ::juniper::ScalarValue
                 }
             }
 
@@ -1096,7 +1143,7 @@ impl Methods {
                 let field_ty = field.ty();
 
                 parse_quote! {
-                    #field_ty: ::juniper::resolve::Value<#inf, #cx, #scalar>
+                    #field_ty: ::juniper::resolve::Value<#inf, #cx, #sv>
                 }
             }
         }
@@ -1152,7 +1199,7 @@ impl Methods {
     /// method.
     ///
     /// [0]: juniper::resolve::InputValue::try_from_input_value
-    fn expand_try_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_try_from_input_value(&self, sv: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom { from_input, .. }
             | Self::Delegated {
@@ -1167,7 +1214,7 @@ impl Methods {
                 let self_constructor = field.closure_constructor();
 
                 quote! {
-                    <#field_ty as ::juniper::resolve::InputValue<'_, #scalar>>
+                    <#field_ty as ::juniper::resolve::InputValue<'_, #sv>>
                         ::try_from_input_value(input)
                             .map(#self_constructor)
                 }
@@ -1183,7 +1230,7 @@ impl Methods {
     /// [0]: juniper::resolve::InputValue::try_from_input_value
     fn bound_try_from_input_value(
         &self,
-        scalar: &scalar::Type,
+        sv: &scalar::Type,
         lt: &syn::GenericParam,
     ) -> syn::WherePredicate {
         match self {
@@ -1193,7 +1240,7 @@ impl Methods {
                 ..
             } => {
                 parse_quote! {
-                    #scalar: ::juniper::ScalarValue
+                    #sv: ::juniper::ScalarValue
                 }
             }
 
@@ -1201,7 +1248,7 @@ impl Methods {
                 let field_ty = field.ty();
 
                 parse_quote! {
-                    #field_ty: ::juniper::resolve::InputValue<#lt, #scalar>
+                    #field_ty: ::juniper::resolve::InputValue<#lt, #sv>
                 }
             }
         }
@@ -1233,19 +1280,19 @@ impl Methods {
     /// method.
     ///
     /// [0]: juniper::resolve::ScalarToken::parse_scalar_token
-    fn expand_parse_scalar_token(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_parse_scalar_token(&self, sv: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom { parse_token, .. }
             | Self::Delegated {
                 parse_token: Some(parse_token),
                 ..
-            } => parse_token.expand_parse_scalar_token(scalar),
+            } => parse_token.expand_parse_scalar_token(sv),
 
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();
 
                 quote! {
-                    <#field_ty as ::juniper::resolve::ScalarToken<#scalar>>
+                    <#field_ty as ::juniper::resolve::ScalarToken<#sv>>
                         ::parse_scalar_token(token)
                 }
             }
@@ -1258,19 +1305,19 @@ impl Methods {
     ///
     /// [`resolve::ScalarToken`]: juniper::resolve::ScalarToken
     /// [0]: juniper::resolve::ScalarToken::parse_scalar_token
-    fn bound_parse_scalar_token(&self, scalar: &scalar::Type) -> Vec<syn::WherePredicate> {
+    fn bound_parse_scalar_token(&self, sv: &scalar::Type) -> Vec<syn::WherePredicate> {
         match self {
             Self::Custom { parse_token, .. }
             | Self::Delegated {
                 parse_token: Some(parse_token),
                 ..
-            } => parse_token.bound_parse_scalar_token(scalar),
+            } => parse_token.bound_parse_scalar_token(sv),
 
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();
 
                 vec![parse_quote! {
-                    #field_ty: ::juniper::resolve::ScalarToken<#scalar>
+                    #field_ty: ::juniper::resolve::ScalarToken<#sv>
                 }]
             }
         }
@@ -1323,7 +1370,7 @@ impl ParseToken {
     /// method.
     ///
     /// [0]: juniper::resolve::ScalarToken::parse_scalar_token
-    fn expand_parse_scalar_token(&self, scalar: &scalar::Type) -> TokenStream {
+    fn expand_parse_scalar_token(&self, sv: &scalar::Type) -> TokenStream {
         match self {
             Self::Custom(parse_token) => {
                 quote! { #parse_token(token) }
@@ -1335,14 +1382,14 @@ impl ParseToken {
                     acc.map_or_else(
                         || {
                             Some(quote! {
-                                <#ty as ::juniper::resolve::ScalarToken<#scalar>>
+                                <#ty as ::juniper::resolve::ScalarToken<#sv>>
                                     ::parse_scalar_token(token)
                             })
                         },
                         |prev| {
                             Some(quote! {
                                 #prev.or_else(|_| {
-                                    <#ty as ::juniper::resolve::ScalarToken<#scalar>>
+                                    <#ty as ::juniper::resolve::ScalarToken<#sv>>
                                         ::parse_scalar_token(token)
                                 })
                             })
@@ -1359,11 +1406,11 @@ impl ParseToken {
     ///
     /// [`resolve::ScalarToken`]: juniper::resolve::ScalarToken
     /// [0]: juniper::resolve::ScalarToken::parse_scalar_token
-    fn bound_parse_scalar_token(&self, scalar: &scalar::Type) -> Vec<syn::WherePredicate> {
+    fn bound_parse_scalar_token(&self, sv: &scalar::Type) -> Vec<syn::WherePredicate> {
         match self {
             Self::Custom(_) => {
                 vec![parse_quote! {
-                    #scalar: ::juniper::ScalarValue
+                    #sv: ::juniper::ScalarValue
                 }]
             }
 
@@ -1371,7 +1418,7 @@ impl ParseToken {
                 .iter()
                 .map(|ty| {
                     parse_quote! {
-                        #ty: ::juniper::resolve::ScalarToken<#scalar>
+                        #ty: ::juniper::resolve::ScalarToken<#sv>
                     }
                 })
                 .collect(),
