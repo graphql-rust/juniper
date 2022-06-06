@@ -189,14 +189,16 @@ where
     }
 }
 
-impl<'me, T, S> graphql::InputType<S> for &'me T
+/*
+impl<'me, 'i, T, Info, S: 'i> graphql::InputType<'i, Info, S> for &'me T
 where
-    T: graphql::InputType<S> + ?Sized,
+    Self: resolve::Type<Info, S> + resolve::ToInputValue<S> + resolve::InputValue<'i, S>,
+    Info: ?Sized,
 {
     fn assert_input_type() {
         T::assert_input_type()
     }
-}
+}*/
 
 impl<'me, T, S> graphql::OutputType<S> for &'me T
 where

@@ -30,6 +30,7 @@ pub use juniper_codegen::{
 pub mod macros;
 
 mod ast;
+pub mod behavior;
 pub mod executor;
 pub mod graphql;
 pub mod http;

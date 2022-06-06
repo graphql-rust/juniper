@@ -203,9 +203,10 @@ where
     }
 }
 
-impl<T, S> graphql::InputType<S> for Rc<T>
+impl<'i, T, Info, S: 'i> graphql::InputType<'i, Info, S> for Rc<T>
 where
-    T: graphql::InputType<S> + ?Sized,
+    T: graphql::InputType<'i, Info, S> + ?Sized,
+    Info: ?Sized,
 {
     fn assert_input_type() {
         T::assert_input_type()

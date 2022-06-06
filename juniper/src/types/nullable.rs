@@ -355,9 +355,10 @@ where
     }
 }
 
-impl<T, S> graphql::InputType<S> for Nullable<T>
+impl<'i, T, Info, S: 'i> graphql::InputType<'i, Info, S> for Nullable<T>
 where
-    T: graphql::InputType<S>,
+    T: graphql::InputType<'i, Info, S>,
+    Info: ?Sized,
 {
     fn assert_input_type() {
         T::assert_input_type()

@@ -160,15 +160,6 @@ where
     }
 }
 
-impl<'me, T, S> graphql::InputType<S> for &'me mut T
-where
-    T: graphql::InputType<S> + ?Sized,
-{
-    fn assert_input_type() {
-        T::assert_input_type()
-    }
-}
-
 impl<'me, T, S> graphql::OutputType<S> for &'me mut T
 where
     T: graphql::OutputType<S> + ?Sized,

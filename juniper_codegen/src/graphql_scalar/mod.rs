@@ -337,8 +337,8 @@ impl ToTokens for Definition {
         self.impl_resolve_to_input_value().to_tokens(into);
         self.impl_resolve_input_value().to_tokens(into);
         self.impl_resolve_scalar_token().to_tokens(into);
-        self.impl_input_and_output_type().to_tokens(into);
-        //self.impl_scalar().to_tokens(into);
+        //self.impl_graphql_input_and_output_type().to_tokens(into);
+        //self.impl_graphql_scalar().to_tokens(into);
         self.impl_reflect().to_tokens(into);
     }
 }
@@ -375,7 +375,7 @@ impl Definition {
     /// [`graphql::OutputType`]: juniper::graphql::OutputType
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     #[must_use]
-    fn impl_input_and_output_type(&self) -> TokenStream {
+    fn impl_graphql_input_and_output_type(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
         let (sv, generics) = self.mix_scalar_value(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
@@ -403,7 +403,7 @@ impl Definition {
     /// [`graphql::Scalar`]: juniper::graphql::Scalar
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     #[must_use]
-    fn impl_scalar(&self) -> TokenStream {
+    fn impl_graphql_scalar(&self) -> TokenStream {
         let (ty, generics) = self.ty_and_generics();
         let (sv, generics) = self.mix_scalar_value(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();

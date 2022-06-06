@@ -73,14 +73,17 @@ where
     }
 }
 
-impl<T, S, const N: usize> graphql::InputType<S> for [T; N]
+/*
+impl<'i, T, Info, S, const N: usize> graphql::InputType<'i, Info, S> for [T; N]
 where
-    T: graphql::InputType<S>,
+    T: graphql::InputType<'i, Info, S>,
+    Info: ?Sized,
 {
     fn assert_input_type() {
         T::assert_input_type()
     }
 }
+*/
 
 impl<T, S, const N: usize> graphql::OutputType<S> for [T; N]
 where

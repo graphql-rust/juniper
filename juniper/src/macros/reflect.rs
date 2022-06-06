@@ -2,22 +2,10 @@
 
 use futures::future::BoxFuture;
 
-use crate::{Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, ScalarValue};
-
-/// Alias for a [GraphQL object][1], [scalar][2] or [interface][3] type's name
-/// in a GraphQL schema.
-///
-/// See [`BaseType`] for more info.
-///
-/// [1]: https://spec.graphql.org/October2021#sec-Objects
-/// [2]: https://spec.graphql.org/October2021#sec-Scalars
-/// [3]: https://spec.graphql.org/October2021#sec-Interfaces
-pub type Type = &'static str;
-
-/// Alias for a slice of [`Type`]s.
-///
-/// See [`BaseSubTypes`] for more info.
-pub type Types = &'static [Type];
+use crate::{
+    reflect::{Type, Types, WrappedValue},
+    Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, ScalarValue,
+};
 
 /// Naming of a [GraphQL object][1], [scalar][2] or [interface][3] [`Type`].
 ///
@@ -68,9 +56,6 @@ where
 {
     const NAMES: Types = T::NAMES;
 }
-
-/// Alias for a value of a [`WrappedType`] (composed GraphQL type).
-pub type WrappedValue = u128;
 
 // TODO: Just use `&str`s once they're allowed in `const` generics.
 /// Encoding of a composed GraphQL type in numbers.

@@ -71,6 +71,7 @@ where
     }
 }
 
+/*
 impl<T, S> graphql::InputType<S> for [T]
 where
     T: graphql::InputType<S>,
@@ -79,6 +80,7 @@ where
         T::assert_input_type()
     }
 }
+*/
 
 impl<T, S> graphql::OutputType<S> for [T]
 where

@@ -117,9 +117,15 @@ where
     }
 }
 
-impl<S> graphql::InputType<S> for str {
+/*
+impl<'i, Info, S: 'i> graphql::InputType<'i, Info, S> for str
+where
+    Self: resolve::Type<Info, S> + resolve::ToInputValue<S> + resolve::InputValue<'i, S>,
+    Info: ?Sized,
+{
     fn assert_input_type() {}
 }
+*/
 
 impl<S> graphql::OutputType<S> for str {
     fn assert_output_type() {}
