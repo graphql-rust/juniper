@@ -1,8 +1,10 @@
 use crate::{behavior, resolve};
 
 pub use crate::{
-    ast::InputValue, graphql_value as value, macros::input_value,
-    resolve::Type, value::Value,
+    ast::InputValue,
+    macros::{input_value, value},
+    resolve::Type,
+    value::Value,
 };
 
 pub trait Interface<S>

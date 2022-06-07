@@ -7,10 +7,9 @@ pub mod helper;
 pub mod reflect;
 
 mod input_value;
-#[macro_use]
-mod graphql_value;
+mod value;
 #[macro_use]
 mod graphql_vars;
 
 #[doc(inline)]
-pub use self::input_value::input_value;
+pub use self::{input_value::input_value, value::value};

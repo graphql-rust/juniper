@@ -7,7 +7,7 @@
 /// - [`InputValue::Enum`] is constructed with `ident`, so to capture outer
 ///   variable as [`InputValue::Scalar`] surround it with parens: `(var)`.
 /// ```rust
-/// # use juniper::{graphql, graphql_value};
+/// # use juniper::graphql;
 /// #
 /// # type InputValue = graphql::InputValue;
 /// # type Value = graphql::Value;
