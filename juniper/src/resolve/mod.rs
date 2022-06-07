@@ -2,7 +2,7 @@ use crate::{
     behavior, graphql,
     meta::MetaType,
     parser::{self, ParseError},
-    Arguments, BoxFuture, ExecutionResult, Executor, IntoFieldError, Registry, Selection,
+    reflect, Arguments, BoxFuture, ExecutionResult, Executor, IntoFieldError, Registry, Selection,
 };
 
 #[doc(inline)]
@@ -100,6 +100,22 @@ pub trait Field<
     ) -> ExecutionResult<ScalarValue>;
 }
 
+pub trait StaticField<
+    const N: reflect::FieldName,
+    TypeInfo: ?Sized,
+    Context: ?Sized,
+    ScalarValue,
+    Behavior: ?Sized = behavior::Standard,
+>
+{
+    fn resolve_static_field(
+        &self,
+        arguments: &Arguments<ScalarValue>,
+        type_info: &TypeInfo,
+        executor: &Executor<Context, ScalarValue>,
+    ) -> ExecutionResult<ScalarValue>;
+}
+
 pub trait FieldAsync<
     TypeInfo: ?Sized,
     Context: ?Sized,
@@ -110,6 +126,22 @@ pub trait FieldAsync<
     fn resolve_field_async<'r>(
         &'r self,
         field_name: &'r str,
+        arguments: &'r Arguments<ScalarValue>,
+        type_info: &'r TypeInfo,
+        executor: &'r Executor<Context, ScalarValue>,
+    ) -> BoxFuture<'r, ExecutionResult<ScalarValue>>;
+}
+
+pub trait StaticFieldAsync<
+    const N: reflect::FieldName,
+    TypeInfo: ?Sized,
+    Context: ?Sized,
+    ScalarValue,
+    Behavior: ?Sized = behavior::Standard,
+>
+{
+    fn resolve_static_field_async<'r>(
+        &'r self,
         arguments: &'r Arguments<ScalarValue>,
         type_info: &'r TypeInfo,
         executor: &'r Executor<Context, ScalarValue>,
