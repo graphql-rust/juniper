@@ -2,6 +2,7 @@
 
 use crate::reflect;
 
+/*
 impl<T, E, S> reflect::BaseType<S> for Result<T, E>
 where
     T: reflect::BaseType<S>,
@@ -22,3 +23,4 @@ where
 {
     const VALUE: reflect::WrappedValue = T::VALUE;
 }
+*/

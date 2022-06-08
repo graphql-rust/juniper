@@ -448,6 +448,7 @@ impl<'a, S> ScalarMeta<'a, S> {
         }
     }
 
+    /*
     /// Builds a new [`ScalarMeta`] information with the specified `name`.
     // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
     //       `explicit_generic_args_with_impl_trait` hits stable:
@@ -483,7 +484,7 @@ impl<'a, S> ScalarMeta<'a, S> {
             try_parse_fn: try_parse_unsized_fn::<S, T>,
             parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
         }
-    }
+    }*/
 
     /// Sets the `description` of this [`ScalarMeta`] type.
     ///
@@ -837,6 +838,7 @@ where
         .map_err(T::Error::into_field_error)
 }
 
+/*
 fn try_parse_fn_new<S, T>(v: &InputValue<S>) -> Result<(), FieldError<S>>
 where
     T: resolve::InputValueOwned<S>,
@@ -854,3 +856,4 @@ where
         .map(drop)
         .map_err(T::Error::into_field_error)
 }
+*/

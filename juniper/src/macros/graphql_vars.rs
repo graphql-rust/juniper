@@ -24,7 +24,8 @@
 ///
 /// [`graphql::input_value!`]: crate::graphql::input_value
 /// [`graphql::Variables`]: crate::graphql::Variables
-macro_rules! vars {
+#[macro_export]
+macro_rules! graphql_vars {
     ////////////
     // Object //
     ////////////
@@ -196,7 +197,7 @@ macro_rules! vars {
 }
 
 #[doc(inline)]
-pub(super) use vars;
+pub use graphql_vars as vars;
 
 #[cfg(test)]
 mod tests {

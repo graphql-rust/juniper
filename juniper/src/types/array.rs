@@ -11,6 +11,7 @@ use crate::{
 
 use super::iter;
 
+/*
 impl<T, Info, S, const N: usize> resolve::Type<Info, S> for [T; N]
 where
     T: resolve::Type<Info, S>,
@@ -114,3 +115,4 @@ where
 {
     const VALUE: reflect::WrappedValue = reflect::wrap::list(T::VALUE);
 }
+*/

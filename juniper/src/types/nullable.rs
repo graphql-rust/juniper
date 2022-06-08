@@ -272,6 +272,7 @@ impl<T: Clone> Nullable<&mut T> {
     }
 }
 
+/*
 impl<T, Info, S> resolve::Type<Info, S> for Nullable<T>
 where
     T: resolve::Type<Info, S>,
@@ -395,6 +396,7 @@ where
     const VALUE: reflect::WrappedValue = reflect::wrap::nullable(T::VALUE);
 }
 
+ */
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<S, T> GraphQLType<S> for Nullable<T>

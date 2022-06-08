@@ -9,6 +9,7 @@ use crate::{
     reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
 };
 
+/*
 impl<'me, T, Info, S> resolve::Type<Info, S> for &'me mut T
 where
     T: resolve::Type<Info, S> + ?Sized,
@@ -225,3 +226,4 @@ where
 {
     const VALUE: reflect::WrappedValue = T::VALUE;
 }
+*/

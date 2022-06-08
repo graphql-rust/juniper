@@ -1,13 +1,16 @@
 //! Compile-time reflection of Rust types into GraphQL types.
 
+use std::{rc::Rc, sync::Arc};
+
 use futures::future::BoxFuture;
 
 use crate::{
-    reflect::{
-        can_be_subtype, fnv1a128, str_eq, str_exists_in_arr, type_len_with_wrapped_val, wrap,
-        Argument, Arguments, FieldName, Name, Names, Type, Types, WrappedValue,
-    },
-    Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, ScalarValue, Nullable,
+    Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, Nullable, ScalarValue,
+};
+
+pub use crate::reflect::{
+    can_be_subtype, fnv1a128, str_eq, str_exists_in_arr, type_len_with_wrapped_val, Argument,
+    Arguments, FieldName, Name, Names, Type, Types, WrappedValue,
 };
 
 /// Naming of a [GraphQL object][1], [scalar][2] or [interface][3] [`Type`].

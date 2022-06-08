@@ -7,8 +7,8 @@ use crate::{
 
 #[doc(inline)]
 pub use crate::types::{
-    arc::TryFromInputValue as InputValueAsArc, r#box::TryFromInputValue as InputValueAsBox,
-    r#ref::TryFromInputValue as InputValueAsRef, rc::TryFromInputValue as InputValueAsRc,
+    /*arc::TryFromInputValue as InputValueAsArc,*/ r#box::TryFromInputValue as InputValueAsBox,
+    /*r#ref::TryFromInputValue as InputValueAsRef, rc::TryFromInputValue as InputValueAsRc,*/
 };
 
 pub trait Type<TypeInfo: ?Sized, ScalarValue, Behavior: ?Sized = behavior::Standard> {
@@ -24,7 +24,7 @@ pub trait TypeName<TypeInfo: ?Sized, Behavior: ?Sized = behavior::Standard> {
     fn type_name(type_info: &TypeInfo) -> &str;
 }
 
-pub trait ConcreteTypeName<TypeInfo: ?Sized> {
+pub trait ConcreteTypeName<TypeInfo: ?Sized, Behavior: ?Sized = behavior::Standard> {
     fn concrete_type_name<'i>(&self, type_info: &'i TypeInfo) -> &'i str;
 }
 
@@ -74,7 +74,13 @@ pub trait ConcreteValue<
     ) -> ExecutionResult<ScalarValue>;
 }
 
-pub trait ConcreteValueAsync<TypeInfo: ?Sized, Context: ?Sized, ScalarValue> {
+pub trait ConcreteValueAsync<
+    TypeInfo: ?Sized,
+    Context: ?Sized,
+    ScalarValue,
+    Behavior: ?Sized = behavior::Standard,
+>
+{
     fn resolve_concrete_value_async<'r>(
         &'r self,
         type_name: &str,
@@ -171,7 +177,7 @@ pub trait InputValueOwned<ScalarValue, Behavior: ?Sized = behavior::Standard>:
 {
 }
 
-impl<T, S, B: ?Sized> InputValueOwned<S, B> for T where T: for<'i> InputValue<'i, S, B> {}
+impl<T, SV, BH: ?Sized> InputValueOwned<SV, BH> for T where T: for<'i> InputValue<'i, SV, BH> {}
 
 pub trait ScalarToken<ScalarValue, Behavior: ?Sized = behavior::Standard> {
     fn parse_scalar_token(token: parser::ScalarToken<'_>) -> Result<ScalarValue, ParseError<'_>>;

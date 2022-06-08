@@ -2,6 +2,7 @@
 
 use crate::{graphql, resolve, ExecutionResult, Executor, Selection};
 
+/*
 pub fn resolve_list<'t, T, S, Info, Ctx, I>(
     iter: I,
     selection_set: Option<&[Selection<'_, S>]>,
@@ -65,3 +66,4 @@ where
     }
     Ok(graphql::Value::list(values))
 }
+*/

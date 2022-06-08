@@ -13,6 +13,7 @@ use crate::{
     reflect, resolve, BoxFuture, ExecutionResult, Executor, Registry, ScalarValue, Selection,
 };
 
+/*
 impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
     fn meta<'r>(registry: &mut Registry<'r, S>, info: &Info) -> MetaType<'r, S>
     where
@@ -146,3 +147,4 @@ impl<S> reflect::BaseSubTypes<S> for str {
 impl<S> reflect::WrappedType<S> for str {
     const VALUE: reflect::WrappedValue = reflect::wrap::SINGULAR;
 }
+*/

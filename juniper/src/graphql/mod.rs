@@ -8,8 +8,8 @@ pub use crate::{
     executor::Variables,
 };
 
-pub trait Interface<S>
-/*: OutputType<S>
+/*
+pub trait Interface<S>: OutputType<S>
    + resolve::TypeName
    + resolve::ConcreteTypeName
    + resolve::Value<S>
@@ -18,25 +18,20 @@ pub trait Interface<S>
    + resolve::ConcreteValueAsync<S>
    + resolve::Field<S>
    + resolve::FieldAsync<S>
-
-*/
 {
     fn assert_interface();
 }
 
-pub trait Object<S>
-/*: OutputType<S>
+pub trait Object<S>: OutputType<S>
    + resolve::TypeName
    + resolve::ConcreteTypeName
    + resolve::Value<S>
    + resolve::ValueAsync<S>
    + resolve::Field<S>
    + resolve::FieldAsync<S>
-
-*/
 {
     fn assert_object();
-}
+}*/
 
 pub trait Scalar<
     'inp,
@@ -52,17 +47,18 @@ pub trait Scalar<
     fn assert_scalar();
 }
 
+/*
 pub trait Union<S>
-/*: OutputType<S>
+ OutputType<S>
 + resolve::TypeName
 + resolve::ConcreteTypeName
 + resolve::Value<S>
 + resolve::ValueAsync<S>
 + resolve::ConcreteValue<S>
-+ resolve::ConcreteValueAsync<S> */
++ resolve::ConcreteValueAsync<S>
 {
     fn assert_union();
-}
+}*/
 
 pub trait InputType<
     'inp,

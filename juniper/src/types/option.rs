@@ -8,7 +8,7 @@ use crate::{
     schema::meta::MetaType,
     BoxFuture, Selection,
 };
-
+/*
 impl<T, Info, S> resolve::Type<Info, S> for Option<T>
 where
     T: resolve::Type<Info, S>,
@@ -127,3 +127,4 @@ where
 {
     const VALUE: reflect::WrappedValue = reflect::wrap::nullable(T::VALUE);
 }
+*/

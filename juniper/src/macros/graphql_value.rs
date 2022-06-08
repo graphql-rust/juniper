@@ -43,7 +43,8 @@
 ///
 /// [`graphql::Value`]: crate::graphql::Value
 /// [`Value::Object`]: crate::graphql::Value::Object
-macro_rules! value {
+#[macro_export]
+macro_rules! graphql_value {
     ///////////
     // Array //
     ///////////
@@ -270,7 +271,7 @@ macro_rules! value {
 }
 
 #[doc(inline)]
-pub(super) use value;
+pub use graphql_value as value;
 
 #[cfg(test)]
 mod tests {

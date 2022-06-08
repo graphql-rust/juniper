@@ -5,7 +5,7 @@ use crate::behavior;
 #[doc(inline)]
 pub use self::macros::{
     assert_field, assert_field_args, assert_field_type, assert_has_field, assert_implemented_for,
-    assert_interfaces_impls, checked_hash, const_concat, format_type,
+    assert_interfaces_impls, const_concat, format_type,
 };
 
 /// Name of a [GraphQL type][0] in a GraphQL schema.
@@ -329,7 +329,8 @@ mod macros {
     /// types referencing this interface in the `impl = ...` attribute argument.
     ///
     /// Symmetrical to [`assert_interfaces_impls!`].
-    macro_rules! assert_implemented_for {
+    #[macro_export]
+    macro_rules! reflect_assert_implemented_for {
         ($behavior: ty, $implementor: ty $(, $interfaces: ty)* $(,)?) => {
             const _: () = {
                 $({
@@ -356,7 +357,8 @@ mod macros {
     /// referencing this type in `#[graphql::interface(for = ...)]` attribute.
     ///
     /// Symmetrical to [`assert_implemented_for!`].
-    macro_rules! assert_interfaces_impls {
+    #[macro_export]
+    macro_rules! reflect_assert_interfaces_impls {
         ($behavior: ty, $interface: ty $(, $implementers: ty)* $(,)?) => {
             const _: () = {
                 $({
@@ -390,7 +392,8 @@ mod macros {
     /// [`Field`]: super::Field
     /// [`Type`]: super::Type
     /// [0]: https://spec.graphql.org/October2021#IsValidImplementation()
-    macro_rules! assert_field {
+    #[macro_export]
+    macro_rules! reflect_assert_field {
         (
             $base_ty: ty,
             $impl_ty: ty,
@@ -409,7 +412,7 @@ mod macros {
     /// [`Field`]: super::Field
     /// [0]: https://spec.graphql.org/October2021#IsValidImplementationFieldType()
     #[macro_export]
-    macro_rules! assert_field_type {
+    macro_rules! reflect_assert_field_type {
         (
             $base_ty: ty,
             $impl_ty: ty,
@@ -492,7 +495,7 @@ mod macros {
     /// [`Field`]: super::Field
     /// [0]: https://spec.graphql.org/October2021#sel-IAHZhCHCDEEFAAADHD8Cxob
     #[macro_export]
-    macro_rules! assert_field_args {
+    macro_rules! reflect_assert_field_args {
         (
             $base_ty: ty,
             $impl_ty: ty,
@@ -677,7 +680,8 @@ mod macros {
     ///
     /// [`Field`]: super::Field
     /// [`fnv1a128`]: super::fnv1a128
-    macro_rules! assert_has_field {
+    #[macro_export]
+    macro_rules! reflect_assert_has_field {
         (
             $field_name: expr,
             $impl_ty: ty,
@@ -703,7 +707,8 @@ mod macros {
     }
 
     /// Concatenates `const` [`str`](prim@str)s in a `const` context.
-    macro_rules! const_concat {
+    #[macro_export]
+    macro_rules! reflect_const_concat {
         ($($s:expr),* $(,)?) => {{
             const LEN: usize = 0 $(+ $s.as_bytes().len())*;
             const CNT: usize = [$($s),*].len();
@@ -745,7 +750,8 @@ mod macros {
     ///
     /// [`Type`]: super::Type
     /// [`WrappedValue`]: super::WrappedValue
-    macro_rules! format_type {
+    #[macro_export]
+    macro_rules! reflect_format_type {
         ($ty: expr, $wrapped_value: expr $(,)?) => {{
             const TYPE: ($crate::reflect::Type, $crate::reflect::WrappedValue) =
                 ($ty, $wrapped_value);
@@ -831,8 +837,12 @@ mod macros {
     }
 
     #[doc(inline)]
-    pub(super) use {
-        assert_field, assert_field_args, assert_field_type, assert_has_field,
-        assert_implemented_for, assert_interfaces_impls, checked_hash, const_concat, format_type,
+    pub use {
+        reflect_assert_field as assert_field, reflect_assert_field_args as assert_field_args,
+        reflect_assert_field_type as assert_field_type,
+        reflect_assert_has_field as assert_has_field,
+        reflect_assert_implemented_for as assert_implemented_for,
+        reflect_assert_interfaces_impls as assert_interfaces_impls,
+        reflect_const_concat as const_concat, reflect_format_type as format_type,
     };
 }

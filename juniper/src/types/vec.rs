@@ -9,6 +9,7 @@ use crate::{
 
 use super::iter;
 
+/*
 impl<T, Info, S> resolve::Type<Info, S> for Vec<T>
 where
     T: resolve::Type<Info, S>,
@@ -69,7 +70,7 @@ where
     }
 }
 
-/*
+
 impl<'i, T, Info, S> graphql::InputType<'i, Info, S> for Vec<T>
 where
     T: graphql::InputType<'i, Info, S>,
@@ -79,7 +80,7 @@ where
         T::assert_input_type()
     }
 }
- */
+
 
 impl<T, S> graphql::OutputType<S> for Vec<T>
 where
@@ -110,3 +111,4 @@ where
 {
     const VALUE: reflect::WrappedValue = reflect::wrap::list(T::VALUE);
 }
+*/

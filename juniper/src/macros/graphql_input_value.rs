@@ -83,7 +83,8 @@
 /// [`InputValue::Scalar`]: crate::graphql::InputValue::Scalar
 /// [`InputValue::Variable`]: crate::graphql::InputValue::Variable
 /// [`Spanning::unlocated`]: crate::Spanning::unlocated
-macro_rules! input_value {
+#[macro_export]
+macro_rules! graphql_input_value {
     ///////////
     // Array //
     ///////////
@@ -379,7 +380,7 @@ macro_rules! input_value {
 }
 
 #[doc(inline)]
-pub(super) use input_value;
+pub use graphql_input_value as input_value;
 
 #[cfg(test)]
 mod tests {

@@ -10,6 +10,7 @@ use crate::{
     IntoFieldError, Registry, Selection,
 };
 
+/*
 impl<T, Info, S> resolve::Type<Info, S> for Rc<T>
 where
     T: resolve::Type<Info, S> + ?Sized,
@@ -278,3 +279,4 @@ where
 {
     const VALUE: reflect::WrappedValue = T::VALUE;
 }
+*/

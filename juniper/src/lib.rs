@@ -74,10 +74,7 @@ pub use crate::{
         LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
-    macros::{
-        helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
-        input_value as graphql_input_value, value as graphql_value, vars as graphql_vars,
-    },
+    macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
     parser::{ParseError, ScalarToken, Spanning},
     schema::{
         meta,
