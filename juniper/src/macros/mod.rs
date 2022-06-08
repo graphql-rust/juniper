@@ -8,8 +8,7 @@ pub mod reflect;
 
 mod input_value;
 mod value;
-#[macro_use]
-mod graphql_vars;
+mod vars;
 
 #[doc(inline)]
-pub use self::{input_value::input_value, value::value};
+pub use self::{input_value::input_value, value::value, vars::vars};

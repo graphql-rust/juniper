@@ -76,7 +76,7 @@ pub use crate::{
     introspection::IntrospectionFormat,
     macros::{
         helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
-        input_value as graphql_input_value, value as graphql_value,
+        input_value as graphql_input_value, value as graphql_value, vars as graphql_vars,
     },
     parser::{ParseError, ScalarToken, Spanning},
     schema::{

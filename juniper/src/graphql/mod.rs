@@ -2,9 +2,10 @@ use crate::{behavior, resolve};
 
 pub use crate::{
     ast::InputValue,
-    macros::{input_value, value},
+    macros::{input_value, value, vars},
     resolve::Type,
     value::Value,
+    executor::Variables,
 };
 
 pub trait Interface<S>
