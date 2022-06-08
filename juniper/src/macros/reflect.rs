@@ -7,7 +7,7 @@ use crate::{
         can_be_subtype, fnv1a128, str_eq, str_exists_in_arr, type_len_with_wrapped_val, wrap,
         Argument, Arguments, FieldName, Name, Names, Type, Types, WrappedValue,
     },
-    Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, ScalarValue,
+    Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, ScalarValue, Nullable,
 };
 
 /// Naming of a [GraphQL object][1], [scalar][2] or [interface][3] [`Type`].
@@ -31,11 +31,51 @@ pub trait BaseType<S> {
     const NAME: Type;
 }
 
+impl<'a, S, T: BaseType<S> + ?Sized> BaseType<S> for &'a T {
+    const NAME: Type = T::NAME;
+}
+
 impl<'ctx, S, T> BaseType<S> for (&'ctx T::Context, T)
 where
     S: ScalarValue,
     T: BaseType<S> + GraphQLValue<S>,
 {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S>> BaseType<S> for Option<T> {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S>> BaseType<S> for Nullable<T> {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S>, E> BaseType<S> for Result<T, E> {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S>> BaseType<S> for Vec<T> {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S>> BaseType<S> for [T] {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S>, const N: usize> BaseType<S> for [T; N] {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Box<T> {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Arc<T> {
+    const NAME: Type = T::NAME;
+}
+
+impl<S, T: BaseType<S> + ?Sized> BaseType<S> for Rc<T> {
     const NAME: Type = T::NAME;
 }
 
@@ -52,11 +92,51 @@ pub trait BaseSubTypes<S> {
     const NAMES: Types;
 }
 
+impl<'a, S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for &'a T {
+    const NAMES: Types = T::NAMES;
+}
+
 impl<'ctx, S, T> BaseSubTypes<S> for (&'ctx T::Context, T)
 where
     S: ScalarValue,
     T: BaseSubTypes<S> + GraphQLValue<S>,
 {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Option<T> {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Nullable<T> {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S>, E> BaseSubTypes<S> for Result<T, E> {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Vec<T> {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for [T] {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S>, const N: usize> BaseSubTypes<S> for [T; N] {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Box<T> {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Arc<T> {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
     const NAMES: Types = T::NAMES;
 }
 
@@ -114,6 +194,46 @@ where
     S: ScalarValue,
     T: GraphQLValue<S>,
 {
+    const VALUE: u128 = T::VALUE;
+}
+
+impl<S, T: WrappedType<S>> WrappedType<S> for Option<T> {
+    const VALUE: u128 = T::VALUE * 10 + 2;
+}
+
+impl<S, T: WrappedType<S>> WrappedType<S> for Nullable<T> {
+    const VALUE: u128 = T::VALUE * 10 + 2;
+}
+
+impl<S, T: WrappedType<S>, E> WrappedType<S> for Result<T, E> {
+    const VALUE: u128 = T::VALUE;
+}
+
+impl<S, T: WrappedType<S>> WrappedType<S> for Vec<T> {
+    const VALUE: u128 = T::VALUE * 10 + 3;
+}
+
+impl<S, T: WrappedType<S>> WrappedType<S> for [T] {
+    const VALUE: u128 = T::VALUE * 10 + 3;
+}
+
+impl<S, T: WrappedType<S>, const N: usize> WrappedType<S> for [T; N] {
+    const VALUE: u128 = T::VALUE * 10 + 3;
+}
+
+impl<'a, S, T: WrappedType<S> + ?Sized> WrappedType<S> for &'a T {
+    const VALUE: u128 = T::VALUE;
+}
+
+impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Box<T> {
+    const VALUE: u128 = T::VALUE;
+}
+
+impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Arc<T> {
+    const VALUE: u128 = T::VALUE;
+}
+
+impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
     const VALUE: u128 = T::VALUE;
 }
 

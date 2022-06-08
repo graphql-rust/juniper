@@ -244,7 +244,7 @@ impl<T: Copy> Nullable<&T> {
     /// Maps this `Nullable<&T>` to a `Nullable<T>` by [`Copy`]ing the contents
     /// of this [`Nullable`].
     pub fn copied(self) -> Nullable<T> {
-        self.map(|&t| t)
+        self.map(|t| *t)
     }
 }
 
@@ -252,7 +252,7 @@ impl<T: Copy> Nullable<&mut T> {
     /// Maps this `Nullable<&mut T>` to a `Nullable<T>` by [`Copy`]ing the
     /// contents of this [`Nullable`].
     pub fn copied(self) -> Nullable<T> {
-        self.map(|&mut t| t)
+        self.map(|t| *t)
     }
 }
 
@@ -260,7 +260,7 @@ impl<T: Clone> Nullable<&T> {
     /// Maps this `Nullable<&T>` to a `Nullable<T>` by [`Clone`]ing the contents
     /// of this [`Nullable`].
     pub fn cloned(self) -> Nullable<T> {
-        self.map(|t| t.clone())
+        self.map(T::clone)
     }
 }
 

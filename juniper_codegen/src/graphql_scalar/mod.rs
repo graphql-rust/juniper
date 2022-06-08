@@ -329,17 +329,19 @@ impl ToTokens for Definition {
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
+        self.impl_reflection_traits_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        self.impl_resolve_type().to_tokens(into);
-        self.impl_resolve_type_name().to_tokens(into);
-        self.impl_resolve_value().to_tokens(into);
-        self.impl_resolve_value_async().to_tokens(into);
-        self.impl_resolve_to_input_value().to_tokens(into);
-        self.impl_resolve_input_value().to_tokens(into);
-        self.impl_resolve_scalar_token().to_tokens(into);
-        //self.impl_graphql_input_and_output_type().to_tokens(into);
+        //self.impl_resolve_type().to_tokens(into);
+        //self.impl_resolve_type_name().to_tokens(into);
+        //self.impl_resolve_value().to_tokens(into);
+        //self.impl_resolve_value_async().to_tokens(into);
+        //self.impl_resolve_to_input_value().to_tokens(into);
+        //self.impl_resolve_input_value().to_tokens(into);
+        //self.impl_resolve_scalar_token().to_tokens(into);
+        //self.impl_graphql_output_type().to_tokens(into);
+        //self.impl_graphql_output_type().to_tokens(into);
         //self.impl_graphql_scalar().to_tokens(into);
-        self.impl_reflect().to_tokens(into);
+        //self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -846,6 +848,45 @@ impl Definition {
                 > {
                     #body
                 }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
+    /// [`WrappedType`] traits for this [GraphQL scalar][1].
+    ///
+    /// [`BaseSubTypes`]: juniper::macros::reflection::BaseSubTypes
+    /// [`BaseType`]: juniper::macros::reflection::BaseType
+    /// [`WrappedType`]: juniper::macros::reflection::WrappedType
+    /// [1]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_reflection_traits_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+        let name = &self.name;
+
+        let (ty, generics) = self.impl_self_and_generics(false);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::macros::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
         }
     }
