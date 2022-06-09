@@ -3,7 +3,7 @@
 use std::{
     borrow::Cow,
     cmp::Ordering,
-    collections::HashMap,
+    collections::{hash_map, HashMap},
     fmt::{Debug, Display},
     sync::{Arc, RwLock},
 };
@@ -1190,30 +1190,19 @@ impl<'r, S: 'r> Registry<'r, S> {
         }
     }
 
-    /// Returns a [`Type`] meta information for the specified [`graphql::Type`],
-    /// registered in this [`Registry`].
-    ///
-    /// If this [`Registry`] doesn't contain a [`Type`] meta information with
-    /// such [`TypeName`] before, it will construct the one and store it.
+    /// Returns an entry with a [`Type`] meta information for the specified
+    /// named [`graphql::Type`], registered in this [`Registry`].
     ///
     /// [`graphql::Type`]: resolve::Type
-    /// [`TypeName`]: resolve::TypeName
-    pub fn get_type_new<T, Info>(&mut self, info: &Info) -> Type<'r>
+    pub fn entry_type<T, TI>(
+        &mut self,
+        type_info: &TI,
+    ) -> hash_map::Entry<'_, Name, MetaType<'r, S>>
     where
-        T: resolve::Type<Info, S> + resolve::TypeName<Info> + ?Sized,
-        Info: ?Sized,
+        T: resolve::TypeName<TI> + ?Sized,
+        TI: ?Sized,
     {
-        let name = T::type_name(info);
-        let validated_name = name.parse::<Name>().unwrap();
-        if !self.types.contains_key(name) {
-            self.insert_placeholder(
-                validated_name.clone(),
-                Type::NonNullNamed(Cow::Owned(name.to_string())),
-            );
-            let meta = T::meta(self, info);
-            self.types.insert(validated_name, meta);
-        }
-        self.types[name].as_type()
+        self.types.entry(T::type_name(type_info).parse().unwrap())
     }
 
     /// Creates a [`Field`] with the provided `name`.
@@ -1306,19 +1295,20 @@ impl<'r, S: 'r> Registry<'r, S> {
         // TODO: Allow using references.
         ScalarMeta::new_new::<T, _>(T::type_name(info).to_owned())
     }
+    */
 
-    /// Builds a [`ScalarMeta`] information for the [`?Sized`] specified
+    /// Builds a [`ScalarMeta`] information for the specified [`?Sized`]
     /// [`graphql::Type`].
     ///
     /// [`graphql::Type`]: resolve::Type
-    pub fn build_scalar_type_unsized<T, Info>(&mut self, info: &Info) -> ScalarMeta<'r, S>
+    pub fn build_scalar_type_unsized<T, TI>(&mut self, type_info: &TI) -> ScalarMeta<'r, S>
     where
-        T: resolve::TypeName<Info> + resolve::ScalarToken<S> + resolve::InputValueAsRef<S> + ?Sized,
-        Info: ?Sized,
+        T: resolve::TypeName<TI> + resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
+        TI: ?Sized,
     {
         // TODO: Allow using references.
-        ScalarMeta::new_unsized::<T, _>(T::type_name(info).to_owned())
-    }*/
+        ScalarMeta::new_unsized::<T, _>(T::type_name(type_info).to_owned())
+    }
 
     /// Creates a [`ListMeta`] type.
     ///

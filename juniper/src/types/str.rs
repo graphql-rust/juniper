@@ -13,24 +13,28 @@ use crate::{
     reflect, resolve, BoxFuture, ExecutionResult, Executor, Registry, ScalarValue, Selection,
 };
 
-/*
-impl<Info: ?Sized, S: ScalarValue> resolve::Type<Info, S> for str {
-    fn meta<'r>(registry: &mut Registry<'r, S>, info: &Info) -> MetaType<'r, S>
+impl<TI: ?Sized, SV: ScalarValue> resolve::Type<TI, SV> for str {
+    fn meta<'r>(registry: &mut Registry<'r, SV>, type_info: &TI) -> MetaType<'r, SV>
     where
-        S: 'r,
+        SV: 'r,
     {
+        let meta = registry
+            .build_scalar_type_unsized::<Self, _>(type_info)
+            .into_meta();
         registry
-            .build_scalar_type_unsized::<Self, _>(info)
-            .into_meta()
+            .entry_type::<Self, _>(type_info)
+            .or_insert(meta)
+            .clone()
     }
 }
 
-impl<Info: ?Sized> resolve::TypeName<Info> for str {
-    fn type_name(_: &Info) -> &'static str {
-        <Self as reflect::BaseType<()>>::NAME
+impl<TI: ?Sized> resolve::TypeName<TI> for str {
+    fn type_name(_: &TI) -> &'static str {
+        <Self as reflect::BaseType>::NAME
     }
 }
 
+/*
 impl<Info, Ctx, S> resolve::Value<Info, Ctx, S> for str
 where
     Info: ?Sized,
@@ -76,49 +80,65 @@ where
     }
 }
 
-impl<S: ScalarValue> resolve::InputValueAsRef<S> for str {
+ */
+
+impl<SV: ScalarValue> resolve::InputValueAsRef<SV> for str {
     type Error = String;
 
-    fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error> {
+    fn try_from_input_value(v: &graphql::InputValue<SV>) -> Result<&Self, Self::Error> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
     }
 }
 
-impl<'inp, S: ScalarValue> resolve::InputValueAsBox<'inp, S> for str {
-    type Error = String;
-
-    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Box<Self>, Self::Error> {
-        <str as resolve::InputValueAsRef<S>>::try_from_input_value(v).map(Into::into)
-    }
-}
-
-impl<'inp, S: ScalarValue> resolve::InputValueAsArc<'inp, S> for str {
-    type Error = String;
-
-    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Arc<Self>, Self::Error> {
-        <str as resolve::InputValueAsRef<S>>::try_from_input_value(v).map(Into::into)
-    }
-}
-
-impl<'inp, S: ScalarValue> resolve::InputValueAsRc<'inp, S> for str {
-    type Error = String;
-
-    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Rc<Self>, Self::Error> {
-        <str as resolve::InputValueAsRef<S>>::try_from_input_value(v).map(Into::into)
-    }
-}
-
-impl<S> resolve::ScalarToken<S> for str
+impl<'i, SV> resolve::InputValueAs<'i, Box<str>, SV> for str
 where
-    String: resolve::ScalarToken<S>,
+    SV: 'i,
+    Self: resolve::InputValueAsRef<SV>,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
-        <String as resolve::ScalarToken<S>>::parse_scalar_token(token)
+    type Error = <Self as resolve::InputValueAsRef<SV>>::Error;
+
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Box<Self>, Self::Error> {
+        <Self as resolve::InputValueAsRef<SV>>::try_from_input_value(v).map(Into::into)
     }
 }
 
+impl<'i, SV> resolve::InputValueAs<'i, Rc<str>, SV> for str
+where
+    SV: 'i,
+    Self: resolve::InputValueAsRef<SV>,
+{
+    type Error = <Self as resolve::InputValueAsRef<SV>>::Error;
+
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Rc<Self>, Self::Error> {
+        <Self as resolve::InputValueAsRef<SV>>::try_from_input_value(v).map(Into::into)
+    }
+}
+
+impl<'i, SV> resolve::InputValueAs<'i, Arc<str>, SV> for str
+where
+    SV: 'i,
+    Self: resolve::InputValueAsRef<SV>,
+{
+    type Error = <Self as resolve::InputValueAsRef<SV>>::Error;
+
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Arc<Self>, Self::Error> {
+        <Self as resolve::InputValueAsRef<SV>>::try_from_input_value(v).map(Into::into)
+    }
+}
+
+impl<SV> resolve::ScalarToken<SV> for str
+//TODO: where String: resolve::ScalarToken<SV>,
+where
+    String: crate::ParseScalarValue<SV>,
+{
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
+        // TODO: <String as resolve::ScalarToken<SV>>::parse_scalar_token(token)
+        <String as crate::ParseScalarValue<SV>>::from_str(token)
+    }
+}
 /*
+
 impl<'i, Info, S: 'i> graphql::InputType<'i, Info, S> for str
 where
     Self: resolve::Type<Info, S> + resolve::ToInputValue<S> + resolve::InputValue<'i, S>,
@@ -126,7 +146,7 @@ where
 {
     fn assert_input_type() {}
 }
-*/
+
 
 impl<S> graphql::OutputType<S> for str {
     fn assert_output_type() {}
@@ -134,17 +154,16 @@ impl<S> graphql::OutputType<S> for str {
 
 impl<S> graphql::Scalar<S> for str {
     fn assert_scalar() {}
+}*/
+
+impl reflect::BaseType for str {
+    const NAME: reflect::Type = "String"; // TODO: <String as reflect::BaseType<BH>>::NAME;
 }
 
-impl<S> reflect::BaseType<S> for str {
-    const NAME: reflect::Type = <String as reflect::BaseType<S>>::NAME;
+impl reflect::BaseSubTypes for str {
+    const NAMES: reflect::Types = &[<Self as reflect::BaseType>::NAME];
 }
 
-impl<S> reflect::BaseSubTypes<S> for str {
-    const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
-}
-
-impl<S> reflect::WrappedType<S> for str {
+impl reflect::WrappedType for str {
     const VALUE: reflect::WrappedValue = reflect::wrap::SINGULAR;
 }
-*/

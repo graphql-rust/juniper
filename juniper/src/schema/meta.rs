@@ -54,6 +54,20 @@ pub struct ScalarMeta<'a, S> {
     pub(crate) parse_fn: ScalarTokenParseFn<S>,
 }
 
+// Manual implementation is required here to omit redundant `S: Clone` trait
+// bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for ScalarMeta<'a, S> {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            description: self.description.clone(),
+            specified_by_url: self.specified_by_url.clone(),
+            try_parse_fn: self.try_parse_fn,
+            parse_fn: self.parse_fn,
+        }
+    }
+}
+
 /// Shortcut for an [`InputValue`] parsing function.
 pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>;
 
@@ -61,7 +75,7 @@ pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), Fiel
 pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>;
 
 /// List type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ListMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -71,14 +85,14 @@ pub struct ListMeta<'a> {
 }
 
 /// Nullable type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NullableMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
 }
 
 /// Object type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -101,8 +115,21 @@ pub struct EnumMeta<'a, S> {
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
+// Manual implementation is required here to omit redundant `S: Clone` trait
+// bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for EnumMeta<'a, S> {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            description: self.description.clone(),
+            values: self.values.clone(),
+            try_parse_fn: self.try_parse_fn,
+        }
+    }
+}
+
 /// Interface type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InterfaceMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -113,7 +140,7 @@ pub struct InterfaceMeta<'a, S> {
 }
 
 /// Union type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct UnionMeta<'a> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -124,6 +151,7 @@ pub struct UnionMeta<'a> {
 }
 
 /// Input object metadata
+#[derive(Clone)]
 pub struct InputObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -138,14 +166,14 @@ pub struct InputObjectMeta<'a, S> {
 ///
 /// After a type's `meta` method has been called but before it has returned, a placeholder type
 /// is inserted into a registry to indicate existence.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PlaceholderMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
 }
 
 /// Generic type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum MetaType<'a, S = DefaultScalarValue> {
     #[doc(hidden)]
     Scalar(ScalarMeta<'a, S>),
@@ -168,7 +196,7 @@ pub enum MetaType<'a, S = DefaultScalarValue> {
 }
 
 /// Metadata for a field
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Field<'a, S> {
     #[doc(hidden)]
     pub name: smartstring::alias::String,
@@ -191,7 +219,7 @@ impl<'a, S> Field<'a, S> {
 }
 
 /// Metadata for an argument to a field
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Argument<'a, S> {
     #[doc(hidden)]
     pub name: String,
@@ -465,7 +493,7 @@ impl<'a, S> ScalarMeta<'a, S> {
             try_parse_fn: try_parse_fn_new::<S, T>,
             parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
         }
-    }
+    }*/
 
     /// Builds a new [`ScalarMeta`] information with the specified `name` for
     /// the [`?Sized`] `T`ype that may only be parsed as a reference.
@@ -481,10 +509,10 @@ impl<'a, S> ScalarMeta<'a, S> {
             name: name.into(),
             description: None,
             specified_by_url: None,
-            try_parse_fn: try_parse_unsized_fn::<S, T>,
+            try_parse_fn: try_parse_unsized_fn::<T, S>,
             parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
         }
-    }*/
+    }
 
     /// Sets the `description` of this [`ScalarMeta`] type.
     ///
@@ -847,13 +875,13 @@ where
         .map(drop)
         .map_err(T::Error::into_field_error)
 }
+*/
 
-fn try_parse_unsized_fn<S, T>(v: &InputValue<S>) -> Result<(), FieldError<S>>
+fn try_parse_unsized_fn<T, SV>(v: &InputValue<SV>) -> Result<(), FieldError<SV>>
 where
-    T: resolve::InputValueAsRef<S> + ?Sized,
+    T: resolve::InputValueAsRef<SV> + ?Sized,
 {
     T::try_from_input_value(v)
         .map(drop)
         .map_err(T::Error::into_field_error)
 }
-*/
