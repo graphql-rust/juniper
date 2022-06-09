@@ -1,11 +1,10 @@
 //! GraphQL implementation for [`Box`].
 
 use crate::{
-    behavior, graphql,
+    graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, IntoFieldError, Registry,
-    Selection,
+    reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
 };
 
 impl<T, TI, SV, BH> resolve::Type<TI, SV, BH> for Box<T>
@@ -162,7 +161,7 @@ where
 
 impl<'i, T, SV, BH> resolve::InputValue<'i, SV, BH> for Box<T>
 where
-    T: resolve::InputValueAsBox<'i, SV, BH> + ?Sized,
+    T: resolve::InputValueAs<'i, Self, SV, BH> + ?Sized,
     SV: 'i,
     BH: ?Sized,
 {
@@ -177,19 +176,7 @@ where
     }
 }
 
-pub trait TryFromInputValue<'input, ScalarValue: 'input, Behavior: ?Sized = behavior::Standard> {
-    type Error: IntoFieldError<ScalarValue>;
-
-    fn try_from_input_value(
-        v: &'input graphql::InputValue<ScalarValue>,
-    ) -> Result<Box<Self>, Self::Error>;
-
-    fn try_from_implicit_null() -> Result<Box<Self>, Self::Error> {
-        Self::try_from_input_value(&graphql::InputValue::<ScalarValue>::Null)
-    }
-}
-
-impl<'i, T, SV, BH> TryFromInputValue<'i, SV, BH> for T
+impl<'i, T, SV, BH> resolve::InputValueAs<'i, Box<T>, SV, BH> for T
 where
     T: resolve::InputValue<'i, SV, BH>,
     SV: 'i,
@@ -218,6 +205,18 @@ where
 
 impl<'i, T, TI, SV, BH> graphql::InputType<'i, TI, SV, BH> for Box<T>
 where
+    T: graphql::InputTypeAs<'i, Self, TI, SV, BH> + ?Sized,
+    TI: ?Sized,
+    SV: 'i,
+    BH: ?Sized,
+{
+    fn assert_input_type() {
+        T::assert_input_type()
+    }
+}
+
+impl<'i, T, TI, SV, BH> graphql::InputTypeAs<'i, Box<T>, TI, SV, BH> for T
+where
     T: graphql::InputType<'i, TI, SV, BH>,
     TI: ?Sized,
     SV: 'i,
@@ -241,6 +240,19 @@ where
 }
 
 impl<'i, T, TI, CX, SV, BH> graphql::Scalar<'i, TI, CX, SV, BH> for Box<T>
+where
+    T: graphql::ScalarAs<'i, Self, TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    SV: 'i,
+    BH: ?Sized,
+{
+    fn assert_scalar() {
+        T::assert_scalar()
+    }
+}
+
+impl<'i, T, TI, CX, SV, BH> graphql::ScalarAs<'i, Box<T>, TI, CX, SV, BH> for T
 where
     T: graphql::Scalar<'i, TI, CX, SV, BH>,
     TI: ?Sized,

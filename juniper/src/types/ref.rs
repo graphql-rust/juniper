@@ -6,264 +6,266 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    reflect, resolve, Arguments, BoxFuture, DefaultScalarValue, ExecutionResult, Executor,
-    IntoFieldError, Registry, Selection,
+    reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
 };
 
-/*
-impl<'me, T, Info, S> resolve::Type<Info, S> for &'me T
+impl<'me, T, TI, SV, BH> resolve::Type<TI, SV, BH> for &'me T
 where
-    T: resolve::Type<Info, S> + ?Sized,
-    Info: ?Sized,
+    T: resolve::Type<TI, SV, BH> + ?Sized,
+    TI: ?Sized,
+    BH: ?Sized,
 {
-    fn meta<'r>(registry: &mut Registry<'r, S>, info: &Info) -> MetaType<'r, S>
+    fn meta<'r>(registry: &mut Registry<'r, SV>, info: &TI) -> MetaType<'r, SV>
     where
-        S: 'r,
+        SV: 'r,
     {
         T::meta(registry, info)
     }
 }
 
-impl<'me, T, Info> resolve::TypeName<Info> for &'me T
+impl<'me, T, TI, BH> resolve::TypeName<TI, BH> for &'me T
 where
-    T: resolve::TypeName<Info> + ?Sized,
-    Info: ?Sized,
+    T: resolve::TypeName<TI, BH> + ?Sized,
+    TI: ?Sized,
+    BH: ?Sized,
 {
-    fn type_name(info: &Info) -> &str {
+    fn type_name(info: &TI) -> &str {
         T::type_name(info)
     }
 }
 
-impl<'me, T, Info> resolve::ConcreteTypeName<Info> for &'me T
+impl<'me, T, TI, BH> resolve::ConcreteTypeName<TI, BH> for &'me T
 where
-    T: resolve::ConcreteTypeName<Info> + ?Sized,
-    Info: ?Sized,
+    T: resolve::ConcreteTypeName<TI, BH> + ?Sized,
+    TI: ?Sized,
+    BH: ?Sized,
 {
-    fn concrete_type_name<'i>(&self, info: &'i Info) -> &'i str {
+    fn concrete_type_name<'i>(&self, info: &'i TI) -> &'i str {
         (**self).concrete_type_name(info)
     }
 }
 
-impl<'me, T, Info, Ctx, S> resolve::Value<Info, Ctx, S> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::Value<TI, CX, SV, BH> for &'me T
 where
-    T: resolve::Value<Info, Ctx, S> + ?Sized,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::Value<TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_value(
         &self,
-        selection_set: Option<&[Selection<'_, S>]>,
-        info: &Info,
-        executor: &Executor<Ctx, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_value(selection_set, info, executor)
+        selection_set: Option<&[Selection<'_, SV>]>,
+        type_info: &TI,
+        executor: &Executor<CX, SV>,
+    ) -> ExecutionResult<SV> {
+        (**self).resolve_value(selection_set, type_info, executor)
     }
 }
 
-impl<'me, T, Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::ValueAsync<TI, CX, SV, BH> for &'me T
 where
-    T: resolve::ValueAsync<Info, Ctx, S> + ?Sized,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::ValueAsync<TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_value_async<'r>(
         &'r self,
-        selection_set: Option<&'r [Selection<'_, S>]>,
-        info: &'r Info,
-        executor: &'r Executor<Ctx, S>,
-    ) -> BoxFuture<'r, ExecutionResult<S>> {
-        (**self).resolve_value_async(selection_set, info, executor)
+        selection_set: Option<&'r [Selection<'_, SV>]>,
+        type_info: &'r TI,
+        executor: &'r Executor<CX, SV>,
+    ) -> BoxFuture<'r, ExecutionResult<SV>> {
+        (**self).resolve_value_async(selection_set, type_info, executor)
     }
 }
 
-impl<'me, T, Info, Ctx, S> resolve::ConcreteValue<Info, Ctx, S> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::ConcreteValue<TI, CX, SV, BH> for &'me T
 where
-    T: resolve::ConcreteValue<Info, Ctx, S> + ?Sized,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::ConcreteValue<TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_concrete_value(
         &self,
         type_name: &str,
-        selection_set: Option<&[Selection<'_, S>]>,
-        info: &Info,
-        executor: &Executor<Ctx, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_concrete_value(type_name, selection_set, info, executor)
+        selection_set: Option<&[Selection<'_, SV>]>,
+        type_info: &TI,
+        executor: &Executor<CX, SV>,
+    ) -> ExecutionResult<SV> {
+        (**self).resolve_concrete_value(type_name, selection_set, type_info, executor)
     }
 }
 
-impl<'me, T, Info, Ctx, S> resolve::ConcreteValueAsync<Info, Ctx, S> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::ConcreteValueAsync<TI, CX, SV, BH> for &'me T
 where
-    T: resolve::ConcreteValueAsync<Info, Ctx, S> + ?Sized,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::ConcreteValueAsync<TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_concrete_value_async<'r>(
         &'r self,
         type_name: &str,
-        selection_set: Option<&'r [Selection<'_, S>]>,
-        info: &'r Info,
-        executor: &'r Executor<Ctx, S>,
-    ) -> BoxFuture<'r, ExecutionResult<S>> {
-        (**self).resolve_concrete_value_async(type_name, selection_set, info, executor)
+        selection_set: Option<&'r [Selection<'_, SV>]>,
+        type_info: &'r TI,
+        executor: &'r Executor<CX, SV>,
+    ) -> BoxFuture<'r, ExecutionResult<SV>> {
+        (**self).resolve_concrete_value_async(type_name, selection_set, type_info, executor)
     }
 }
 
-impl<'me, T, Info, Ctx, S> resolve::Field<Info, Ctx, S> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::Field<TI, CX, SV, BH> for &'me T
 where
-    T: resolve::Field<Info, Ctx, S> + ?Sized,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::Field<TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_field(
         &self,
         field_name: &str,
-        arguments: &Arguments<S>,
-        info: &Info,
-        executor: &Executor<Ctx, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_field(field_name, arguments, info, executor)
+        arguments: &Arguments<SV>,
+        type_info: &TI,
+        executor: &Executor<CX, SV>,
+    ) -> ExecutionResult<SV> {
+        (**self).resolve_field(field_name, arguments, type_info, executor)
     }
 }
 
-impl<'me, T, Info, Ctx, S> resolve::FieldAsync<Info, Ctx, S> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::FieldAsync<TI, CX, SV, BH> for &'me T
 where
-    T: resolve::FieldAsync<Info, Ctx, S> + ?Sized,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::FieldAsync<TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_field_async<'r>(
         &'r self,
         field_name: &'r str,
-        arguments: &'r Arguments<S>,
-        info: &'r Info,
-        executor: &'r Executor<Ctx, S>,
-    ) -> BoxFuture<'r, ExecutionResult<S>> {
-        (**self).resolve_field_async(field_name, arguments, info, executor)
+        arguments: &'r Arguments<SV>,
+        type_info: &'r TI,
+        executor: &'r Executor<CX, SV>,
+    ) -> BoxFuture<'r, ExecutionResult<SV>> {
+        (**self).resolve_field_async(field_name, arguments, type_info, executor)
     }
 }
 
-impl<'me, T, S> resolve::ToInputValue<S> for &'me T
+impl<'me, T, SV, BH> resolve::ToInputValue<SV, BH> for &'me T
 where
-    T: resolve::ToInputValue<S> + ?Sized,
+    T: resolve::ToInputValue<SV, BH> + ?Sized,
+    BH: ?Sized,
 {
-    fn to_input_value(&self) -> graphql::InputValue<S> {
+    fn to_input_value(&self) -> graphql::InputValue<SV> {
         (**self).to_input_value()
     }
 }
 
-impl<'inp: 'me, 'me, T, S: 'inp> resolve::InputValue<'inp, S> for &'me T
+impl<'me, 'i, T, SV, BH> resolve::InputValue<'i, SV, BH> for &'me T
 where
-    T: resolve::InputValueAsRef<S> + ?Sized,
+    'i: 'me,
+    T: resolve::InputValueAs<'i, &'me T, SV, BH> + ?Sized,
+    SV: 'i,
+    BH: ?Sized,
 {
-    type Error = <T as resolve::InputValueAsRef<S>>::Error;
+    type Error = T::Error;
 
-    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Self, Self::Error> {
-        <T as resolve::InputValueAsRef<S>>::try_from_input_value(v)
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Self, Self::Error> {
+        T::try_from_input_value(v)
     }
 
     fn try_from_implicit_null() -> Result<Self, Self::Error> {
-        <T as resolve::InputValueAsRef<S>>::try_from_implicit_null()
+        T::try_from_implicit_null()
     }
 }
 
-pub trait TryFromInputValue<S = DefaultScalarValue> {
-    type Error: IntoFieldError<S>;
-
-    fn try_from_input_value(v: &graphql::InputValue<S>) -> Result<&Self, Self::Error>;
-
-    fn try_from_implicit_null<'a>() -> Result<&'a Self, Self::Error>
-    where
-        S: 'a,
-    {
-        Self::try_from_input_value(&graphql::InputValue::<S>::Null)
-    }
-}
-
-impl<'me, T, S> resolve::ScalarToken<S> for &'me T
+impl<'me, 'i, T, SV, BH> resolve::InputValueAs<'i, &'me T, SV, BH> for T
 where
-    T: resolve::ScalarToken<S> + ?Sized,
+    'i: 'me,
+    T: resolve::InputValueAsRef<SV, BH> + ?Sized,
+    SV: 'i,
+    BH: ?Sized,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<S, ParseError<'_>> {
+    type Error = T::Error;
+
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<&'me T, Self::Error> {
+        T::try_from_input_value(v)
+    }
+
+    fn try_from_implicit_null() -> Result<&'me T, Self::Error> {
+        T::try_from_implicit_null()
+    }
+}
+
+impl<'me, T, SV, BH> resolve::ScalarToken<SV, BH> for &'me T
+where
+    T: resolve::ScalarToken<SV, BH> + ?Sized,
+    BH: ?Sized,
+{
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
         T::parse_scalar_token(token)
     }
 }
 
-/*
-impl<'me, 'i, T, Info, S: 'i> graphql::InputType<'i, Info, S> for &'me T
+impl<'me, 'i, T, TI, SV, BH> graphql::InputType<'i, TI, SV, BH> for &'me T
 where
-    Self: resolve::Type<Info, S> + resolve::ToInputValue<S> + resolve::InputValue<'i, S>,
-    Info: ?Sized,
+    'i: 'me,
+    T: graphql::InputTypeAs<'i, Self, TI, SV, BH> + ?Sized + 'me,
+    TI: ?Sized,
+    SV: 'i,
+    BH: ?Sized,
 {
     fn assert_input_type() {
         T::assert_input_type()
     }
-}*/
+}
 
-impl<'me, T, S> graphql::OutputType<S> for &'me T
+impl<'me, T, TI, CX, SV, BH> graphql::OutputType<TI, CX, SV, BH> for &'me T
 where
-    T: graphql::OutputType<S> + ?Sized,
+    T: graphql::OutputType<TI, CX, SV, BH> + ?Sized,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn assert_output_type() {
         T::assert_output_type()
     }
 }
 
-impl<'me, T, S> graphql::Interface<S> for &'me T
+impl<'me, 'i, T, TI, CX, SV, BH> graphql::Scalar<'i, TI, CX, SV, BH> for &'me T
 where
-    T: graphql::Interface<S> + ?Sized,
-{
-    fn assert_interface() {
-        T::assert_interface()
-    }
-}
-
-impl<'me, T, S> graphql::Object<S> for &'me T
-where
-    T: graphql::Object<S> + ?Sized,
-{
-    fn assert_object() {
-        T::assert_object()
-    }
-}
-
-impl<'me, T, S> graphql::Scalar<S> for &'me T
-where
-    T: graphql::Scalar<S> + ?Sized,
+    'i: 'me,
+    T: graphql::ScalarAs<'i, Self, TI, CX, SV, BH> + ?Sized + 'me,
+    TI: ?Sized,
+    CX: ?Sized,
+    SV: 'i,
+    BH: ?Sized,
 {
     fn assert_scalar() {
         T::assert_scalar()
     }
 }
 
-impl<'me, T, S> graphql::Union<S> for &'me T
+impl<'me, T, BH> reflect::BaseType<BH> for &'me T
 where
-    T: graphql::Union<S> + ?Sized,
-{
-    fn assert_union() {
-        T::assert_union()
-    }
-}
-
-impl<'me, T, S> reflect::BaseType<S> for &'me T
-where
-    T: reflect::BaseType<S> + ?Sized,
+    T: reflect::BaseType<BH> + ?Sized,
+    BH: ?Sized,
 {
     const NAME: reflect::Type = T::NAME;
 }
 
-impl<'me, T, S> reflect::BaseSubTypes<S> for &'me T
+impl<'me, T, BH> reflect::BaseSubTypes<BH> for &'me T
 where
-    T: reflect::BaseSubTypes<S> + ?Sized,
+    T: reflect::BaseSubTypes<BH> + ?Sized,
+    BH: ?Sized,
 {
     const NAMES: reflect::Types = T::NAMES;
 }
 
-impl<'me, T, S> reflect::WrappedType<S> for &'me T
+impl<'me, T, BH> reflect::WrappedType<BH> for &'me T
 where
-    T: reflect::WrappedType<S> + ?Sized,
+    T: reflect::WrappedType<BH> + ?Sized,
+    BH: ?Sized,
 {
     const VALUE: reflect::WrappedValue = T::VALUE;
 }
-*/

@@ -5,12 +5,6 @@ use crate::{
     reflect, Arguments, BoxFuture, ExecutionResult, Executor, IntoFieldError, Registry, Selection,
 };
 
-#[doc(inline)]
-pub use crate::types::{
-    /*arc::TryFromInputValue as InputValueAsArc,*/ r#box::TryFromInputValue as InputValueAsBox,
-    /*r#ref::TryFromInputValue as InputValueAsRef, rc::TryFromInputValue as InputValueAsRc,*/
-};
-
 pub trait Type<TypeInfo: ?Sized, ScalarValue, Behavior: ?Sized = behavior::Standard> {
     fn meta<'r>(
         registry: &mut Registry<'r, ScalarValue>,
@@ -178,6 +172,32 @@ pub trait InputValueOwned<ScalarValue, Behavior: ?Sized = behavior::Standard>:
 }
 
 impl<T, SV, BH: ?Sized> InputValueOwned<SV, BH> for T where T: for<'i> InputValue<'i, SV, BH> {}
+
+pub trait InputValueAs<'input, Wrapper, ScalarValue: 'input, Behavior: ?Sized = behavior::Standard>
+{
+    type Error: IntoFieldError<ScalarValue>;
+
+    fn try_from_input_value(
+        v: &'input graphql::InputValue<ScalarValue>,
+    ) -> Result<Wrapper, Self::Error>;
+
+    fn try_from_implicit_null() -> Result<Wrapper, Self::Error> {
+        Self::try_from_input_value(&graphql::InputValue::<ScalarValue>::Null)
+    }
+}
+
+pub trait InputValueAsRef<ScalarValue, Behavior: ?Sized = behavior::Standard> {
+    type Error: IntoFieldError<ScalarValue>;
+
+    fn try_from_input_value(v: &graphql::InputValue<ScalarValue>) -> Result<&Self, Self::Error>;
+
+    fn try_from_implicit_null<'a>() -> Result<&'a Self, Self::Error>
+    where
+        ScalarValue: 'a,
+    {
+        Self::try_from_input_value(&graphql::InputValue::<ScalarValue>::Null)
+    }
+}
 
 pub trait ScalarToken<ScalarValue, Behavior: ?Sized = behavior::Standard> {
     fn parse_scalar_token(token: parser::ScalarToken<'_>) -> Result<ScalarValue, ParseError<'_>>;

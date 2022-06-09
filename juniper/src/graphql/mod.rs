@@ -2,10 +2,10 @@ use crate::{behavior, resolve};
 
 pub use crate::{
     ast::InputValue,
+    executor::Variables,
     macros::{input_value, value, vars},
     resolve::Type,
     value::Value,
-    executor::Variables,
 };
 
 /*
@@ -47,6 +47,21 @@ pub trait Scalar<
     fn assert_scalar();
 }
 
+pub trait ScalarAs<
+    'inp,
+    Wrapper,
+    TypeInfo: ?Sized,
+    Context: ?Sized,
+    ScalarValue: 'inp,
+    Behavior: ?Sized = behavior::Standard,
+>:
+    InputTypeAs<'inp, Wrapper, TypeInfo, ScalarValue, Behavior>
+    + OutputType<TypeInfo, Context, ScalarValue, Behavior>
+    + resolve::ScalarToken<ScalarValue, Behavior>
+{
+    fn assert_scalar();
+}
+
 /*
 pub trait Union<S>
  OutputType<S>
@@ -69,6 +84,20 @@ pub trait InputType<
     Type<TypeInfo, ScalarValue, Behavior>
     + resolve::ToInputValue<ScalarValue, Behavior>
     + resolve::InputValue<'inp, ScalarValue, Behavior>
+{
+    fn assert_input_type();
+}
+
+pub trait InputTypeAs<
+    'inp,
+    Wrapper,
+    TypeInfo: ?Sized,
+    ScalarValue: 'inp,
+    Behavior: ?Sized = behavior::Standard,
+>:
+    Type<TypeInfo, ScalarValue, Behavior>
+    + resolve::ToInputValue<ScalarValue, Behavior>
+    + resolve::InputValueAs<'inp, Wrapper, ScalarValue, Behavior>
 {
     fn assert_input_type();
 }
