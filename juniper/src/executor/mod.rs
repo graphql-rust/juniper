@@ -1369,12 +1369,13 @@ impl<'r, S: 'r> Registry<'r, S> {
     /// [`graphql::Type`].
     ///
     /// [`graphql::Type`]: resolve::Type
-    pub fn build_nullable_type_new<T, Info>(&mut self, info: &Info) -> NullableMeta<'r>
+    pub fn build_nullable_type_reworked<T, BH, TI>(&mut self, type_info: &TI) -> NullableMeta<'r>
     where
-        T: resolve::Type<Info, S> + ?Sized,
-        Info: ?Sized,
+        T: resolve::Type<TI, S, BH> + ?Sized,
+        BH: ?Sized,
+        TI: ?Sized,
     {
-        NullableMeta::new(T::meta(self, info).as_type())
+        NullableMeta::new(T::meta(self, type_info).as_type())
     }
 
     /// Creates an [`ObjectMeta`] type with the given `fields`.

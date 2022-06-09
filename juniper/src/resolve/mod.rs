@@ -162,7 +162,7 @@ pub trait InputValue<'input, ScalarValue: 'input, Behavior: ?Sized = behavior::S
     ) -> Result<Self, Self::Error>;
 
     fn try_from_implicit_null() -> Result<Self, Self::Error> {
-        Self::try_from_input_value(&graphql::InputValue::<ScalarValue>::Null)
+        Self::try_from_input_value(&graphql::InputValue::Null)
     }
 }
 
@@ -182,7 +182,7 @@ pub trait InputValueAs<'input, Wrapper, ScalarValue: 'input, Behavior: ?Sized = 
     ) -> Result<Wrapper, Self::Error>;
 
     fn try_from_implicit_null() -> Result<Wrapper, Self::Error> {
-        Self::try_from_input_value(&graphql::InputValue::<ScalarValue>::Null)
+        Self::try_from_input_value(&graphql::InputValue::Null)
     }
 }
 
@@ -195,7 +195,7 @@ pub trait InputValueAsRef<ScalarValue, Behavior: ?Sized = behavior::Standard> {
     where
         ScalarValue: 'a,
     {
-        Self::try_from_input_value(&graphql::InputValue::<ScalarValue>::Null)
+        Self::try_from_input_value(&graphql::InputValue::Null)
     }
 }
 

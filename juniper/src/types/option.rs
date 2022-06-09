@@ -8,64 +8,70 @@ use crate::{
     schema::meta::MetaType,
     BoxFuture, Selection,
 };
-/*
-impl<T, Info, S> resolve::Type<Info, S> for Option<T>
+
+impl<T, TI, SV, BH> resolve::Type<TI, SV, BH> for Option<T>
 where
-    T: resolve::Type<Info, S>,
-    Info: ?Sized,
+    T: resolve::Type<TI, SV, BH>,
+    TI: ?Sized,
+    BH: ?Sized,
 {
-    fn meta<'r>(registry: &mut Registry<'r, S>, info: &Info) -> MetaType<'r, S>
+    fn meta<'r>(registry: &mut Registry<'r, SV>, type_info: &TI) -> MetaType<'r, SV>
     where
-        S: 'r,
+        SV: 'r,
     {
-        registry.build_nullable_type_new::<T, _>(info).into_meta()
+        registry
+            .build_nullable_type_reworked::<T, BH, _>(type_info)
+            .into_meta()
     }
 }
 
-impl<T, Info, Ctx, S> resolve::Value<Info, Ctx, S> for Option<T>
+impl<T, TI, CX, SV, BH> resolve::Value<TI, CX, SV, BH> for Option<T>
 where
-    T: resolve::Value<Info, Ctx, S>,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::Value<TI, CX, SV, BH>,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_value(
         &self,
-        selection_set: Option<&[Selection<'_, S>]>,
-        info: &Info,
-        executor: &Executor<Ctx, S>,
-    ) -> ExecutionResult<S> {
+        selection_set: Option<&[Selection<'_, SV>]>,
+        type_info: &TI,
+        executor: &Executor<CX, SV>,
+    ) -> ExecutionResult<SV> {
         match self {
-            Some(v) => v.resolve_value(selection_set, info, executor),
+            Some(v) => v.resolve_value(selection_set, type_info, executor),
             None => Ok(graphql::Value::Null),
         }
     }
 }
 
-impl<T, Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for Option<T>
+impl<T, TI, CX, SV, BH> resolve::ValueAsync<TI, CX, SV, BH> for Option<T>
 where
-    T: resolve::ValueAsync<Info, Ctx, S>,
-    Info: ?Sized,
-    Ctx: ?Sized,
-    S: Send,
+    T: resolve::ValueAsync<TI, CX, SV, BH>,
+    TI: ?Sized,
+    CX: ?Sized,
+    SV: Send,
+    BH: ?Sized,
 {
     fn resolve_value_async<'r>(
         &'r self,
-        selection_set: Option<&'r [Selection<'_, S>]>,
-        info: &'r Info,
-        executor: &'r Executor<Ctx, S>,
-    ) -> BoxFuture<'r, ExecutionResult<S>> {
+        selection_set: Option<&'r [Selection<'_, SV>]>,
+        type_info: &'r TI,
+        executor: &'r Executor<CX, SV>,
+    ) -> BoxFuture<'r, ExecutionResult<SV>> {
         match self {
-            Some(v) => v.resolve_value_async(selection_set, info, executor),
+            Some(v) => v.resolve_value_async(selection_set, type_info, executor),
             None => Box::pin(future::ok(graphql::Value::Null)),
         }
     }
 }
 
-impl<T, S> resolve::ToInputValue<S> for Option<T>
+impl<T, SV, BH> resolve::ToInputValue<SV, BH> for Option<T>
 where
-    T: resolve::ToInputValue<S>,
+    T: resolve::ToInputValue<SV, BH>,
+    BH: ?Sized,
 {
-    fn to_input_value(&self) -> graphql::InputValue<S> {
+    fn to_input_value(&self) -> graphql::InputValue<SV> {
         match self {
             Some(v) => v.to_input_value(),
             None => graphql::InputValue::Null,
@@ -73,58 +79,68 @@ where
     }
 }
 
-impl<'inp, T, S: 'inp> resolve::InputValue<'inp, S> for Option<T>
+impl<'i, T, SV, BH> resolve::InputValue<'i, SV, BH> for Option<T>
 where
-    T: resolve::InputValue<'inp, S>,
+    T: resolve::InputValue<'i, SV, BH>,
+    SV: 'i,
+    BH: ?Sized,
 {
-    type Error = <T as resolve::InputValue<'inp, S>>::Error;
+    type Error = T::Error;
 
-    fn try_from_input_value(v: &'inp graphql::InputValue<S>) -> Result<Self, Self::Error> {
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Self, Self::Error> {
         if v.is_null() {
             Ok(None)
         } else {
-            <T as resolve::InputValue<'inp, S>>::try_from_input_value(v).map(Some)
+            T::try_from_input_value(v).map(Some)
         }
     }
 }
 
-impl<'i, T, Info, S: 'i> graphql::InputType<'i, Info, S> for Option<T>
+impl<'i, T, TI, SV, BH> graphql::InputType<'i, TI, SV, BH> for Option<T>
 where
-    T: graphql::InputType<'i, Info, S>,
-    Info: ?Sized,
+    T: graphql::InputType<'i, TI, SV, BH>,
+    TI: ?Sized,
+    SV: 'i,
+    BH: ?Sized,
 {
     fn assert_input_type() {
         T::assert_input_type()
     }
 }
 
-impl<T, S> graphql::OutputType<S> for Option<T>
+impl<T, TI, CX, SV, BH> graphql::OutputType<TI, CX, SV, BH> for Option<T>
 where
-    T: graphql::OutputType<S>,
+    T: graphql::OutputType<TI, CX, SV, BH>,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
+    Self: resolve::ValueAsync<TI, CX, SV, BH>,
 {
     fn assert_output_type() {
         T::assert_output_type()
     }
 }
 
-impl<T, S> reflect::BaseType<S> for Option<T>
+impl<T, BH> reflect::BaseType<BH> for Option<T>
 where
-    T: reflect::BaseType<S>,
+    T: reflect::BaseType<BH>,
+    BH: ?Sized,
 {
     const NAME: reflect::Type = T::NAME;
 }
 
-impl<T, S> reflect::BaseSubTypes<S> for Option<T>
+impl<T, BH> reflect::BaseSubTypes<BH> for Option<T>
 where
-    T: reflect::BaseSubTypes<S>,
+    T: reflect::BaseSubTypes<BH>,
+    BH: ?Sized,
 {
     const NAMES: reflect::Types = T::NAMES;
 }
 
-impl<T, S> reflect::WrappedType<S> for Option<T>
+impl<T, BH> reflect::WrappedType<BH> for Option<T>
 where
-    T: reflect::WrappedType<S>,
+    T: reflect::WrappedType<BH>,
+    BH: ?Sized,
 {
     const VALUE: reflect::WrappedValue = reflect::wrap::nullable(T::VALUE);
 }
-*/

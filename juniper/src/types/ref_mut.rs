@@ -15,11 +15,11 @@ where
     TI: ?Sized,
     BH: ?Sized,
 {
-    fn meta<'r>(registry: &mut Registry<'r, SV>, info: &TI) -> MetaType<'r, SV>
+    fn meta<'r>(registry: &mut Registry<'r, SV>, type_info: &TI) -> MetaType<'r, SV>
     where
         SV: 'r,
     {
-        T::meta(registry, info)
+        T::meta(registry, type_info)
     }
 }
 
@@ -29,8 +29,8 @@ where
     TI: ?Sized,
     BH: ?Sized,
 {
-    fn type_name(info: &TI) -> &str {
-        T::type_name(info)
+    fn type_name(type_info: &TI) -> &str {
+        T::type_name(type_info)
     }
 }
 
@@ -40,8 +40,8 @@ where
     TI: ?Sized,
     BH: ?Sized,
 {
-    fn concrete_type_name<'i>(&self, info: &'i TI) -> &'i str {
-        (**self).concrete_type_name(info)
+    fn concrete_type_name<'i>(&self, type_info: &'i TI) -> &'i str {
+        (**self).concrete_type_name(type_info)
     }
 }
 
