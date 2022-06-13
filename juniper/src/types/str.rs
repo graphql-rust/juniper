@@ -34,53 +34,50 @@ impl<TI: ?Sized> resolve::TypeName<TI> for str {
     }
 }
 
-/*
-impl<Info, Ctx, S> resolve::Value<Info, Ctx, S> for str
+impl<TI, CX, SV> resolve::Value<TI, CX, SV> for str
 where
-    Info: ?Sized,
-    Ctx: ?Sized,
-    S: From<String>,
+    TI: ?Sized,
+    CX: ?Sized,
+    SV: From<String>,
 {
     fn resolve_value(
         &self,
-        _: Option<&[Selection<'_, S>]>,
-        _: &Info,
-        _: &Executor<Ctx, S>,
-    ) -> ExecutionResult<S> {
+        _: Option<&[Selection<'_, SV>]>,
+        _: &TI,
+        _: &Executor<CX, SV>,
+    ) -> ExecutionResult<SV> {
         // TODO: Remove redundant `.to_owned()` allocation by allowing
         //       `ScalarValue` creation from reference?
         Ok(graphql::Value::scalar(self.to_owned()))
     }
 }
 
-impl<Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for str
+impl<TI, CX, SV> resolve::ValueAsync<TI, CX, SV> for str
 where
-    Info: ?Sized,
-    Ctx: ?Sized,
-    S: From<String> + Send,
+    TI: ?Sized,
+    CX: ?Sized,
+    SV: From<String> + Send,
 {
     fn resolve_value_async<'r>(
         &'r self,
-        _: Option<&'r [Selection<'_, S>]>,
-        _: &'r Info,
-        _: &'r Executor<Ctx, S>,
-    ) -> BoxFuture<'r, ExecutionResult<S>> {
+        _: Option<&'r [Selection<'_, SV>]>,
+        _: &'r TI,
+        _: &'r Executor<CX, SV>,
+    ) -> BoxFuture<'r, ExecutionResult<SV>> {
         // TODO: Remove redundant `.to_owned()` allocation by allowing
         //       `ScalarValue` creation from reference?
         Box::pin(future::ok(graphql::Value::scalar(self.to_owned())))
     }
 }
 
-impl<S> resolve::ToInputValue<S> for str
+impl<SV> resolve::ToInputValue<SV> for str
 where
-    S: From<String>,
+    SV: From<String>,
 {
-    fn to_input_value(&self) -> graphql::InputValue<S> {
+    fn to_input_value(&self) -> graphql::InputValue<SV> {
         graphql::InputValue::scalar(self.to_owned())
     }
 }
-
- */
 
 impl<SV: ScalarValue> resolve::InputValueAsRef<SV> for str {
     type Error = String;
@@ -91,7 +88,7 @@ impl<SV: ScalarValue> resolve::InputValueAsRef<SV> for str {
     }
 }
 
-impl<'i, SV> resolve::InputValueAs<'i, Box<str>, SV> for str
+impl<'i, SV> resolve::InputValueAs<'i, Box<Self>, SV> for str
 where
     SV: 'i,
     Self: resolve::InputValueAsRef<SV>,
@@ -103,7 +100,7 @@ where
     }
 }
 
-impl<'i, SV> resolve::InputValueAs<'i, Rc<str>, SV> for str
+impl<'i, SV> resolve::InputValueAs<'i, Rc<Self>, SV> for str
 where
     SV: 'i,
     Self: resolve::InputValueAsRef<SV>,
@@ -115,7 +112,7 @@ where
     }
 }
 
-impl<'i, SV> resolve::InputValueAs<'i, Arc<str>, SV> for str
+impl<'i, SV> resolve::InputValueAs<'i, Arc<Self>, SV> for str
 where
     SV: 'i,
     Self: resolve::InputValueAsRef<SV>,
@@ -137,24 +134,102 @@ where
         <String as crate::ParseScalarValue<SV>>::from_str(token)
     }
 }
-/*
 
-impl<'i, Info, S: 'i> graphql::InputType<'i, Info, S> for str
+impl<'me, 'i, TI, SV> graphql::InputTypeAs<'i, &'me Self, TI, SV> for str
 where
-    Self: resolve::Type<Info, S> + resolve::ToInputValue<S> + resolve::InputValue<'i, S>,
-    Info: ?Sized,
+    Self: graphql::Type<TI, SV>
+        + resolve::ToInputValue<SV>
+        + resolve::InputValueAs<'i, &'me Self, SV>,
+    TI: ?Sized,
+    SV: 'i,
 {
     fn assert_input_type() {}
 }
 
+impl<'i, TI, SV> graphql::InputTypeAs<'i, Box<Self>, TI, SV> for str
+where
+    Self: graphql::Type<TI, SV>
+        + resolve::ToInputValue<SV>
+        + resolve::InputValueAs<'i, Box<Self>, SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_input_type() {}
+}
 
-impl<S> graphql::OutputType<S> for str {
+impl<'i, TI, SV> graphql::InputTypeAs<'i, Rc<Self>, TI, SV> for str
+where
+    Self:
+        graphql::Type<TI, SV> + resolve::ToInputValue<SV> + resolve::InputValueAs<'i, Rc<Self>, SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_input_type() {}
+}
+
+impl<'i, TI, SV> graphql::InputTypeAs<'i, Arc<Self>, TI, SV> for str
+where
+    Self: graphql::Type<TI, SV>
+        + resolve::ToInputValue<SV>
+        + resolve::InputValueAs<'i, Arc<Self>, SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_input_type() {}
+}
+
+impl<TI, CX, SV> graphql::OutputType<TI, CX, SV> for str
+where
+    Self: graphql::Type<TI, SV> + resolve::Value<TI, CX, SV> + resolve::ValueAsync<TI, CX, SV>,
+    TI: ?Sized,
+    CX: ?Sized,
+{
     fn assert_output_type() {}
 }
 
-impl<S> graphql::Scalar<S> for str {
+impl<'me, 'i, TI, CX, SV> graphql::ScalarAs<'i, &'me Self, TI, CX, SV> for str
+where
+    Self: graphql::InputTypeAs<'i, &'me Self, TI, SV>
+        + graphql::OutputType<TI, CX, SV>
+        + resolve::ScalarToken<SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
     fn assert_scalar() {}
-}*/
+}
+
+impl<'i, TI, CX, SV> graphql::ScalarAs<'i, Box<Self>, TI, CX, SV> for str
+where
+    Self: graphql::InputTypeAs<'i, Box<Self>, TI, SV>
+        + graphql::OutputType<TI, CX, SV>
+        + resolve::ScalarToken<SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_scalar() {}
+}
+
+impl<'i, TI, CX, SV> graphql::ScalarAs<'i, Rc<Self>, TI, CX, SV> for str
+where
+    Self: graphql::InputTypeAs<'i, Rc<Self>, TI, SV>
+        + graphql::OutputType<TI, CX, SV>
+        + resolve::ScalarToken<SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_scalar() {}
+}
+
+impl<'i, TI, CX, SV> graphql::ScalarAs<'i, Arc<Self>, TI, CX, SV> for str
+where
+    Self: graphql::InputTypeAs<'i, Arc<Self>, TI, SV>
+        + graphql::OutputType<TI, CX, SV>
+        + resolve::ScalarToken<SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_scalar() {}
+}
 
 impl reflect::BaseType for str {
     const NAME: reflect::Type = "String"; // TODO: <String as reflect::BaseType<BH>>::NAME;
