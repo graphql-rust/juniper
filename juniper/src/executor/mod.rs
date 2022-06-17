@@ -1277,19 +1277,37 @@ impl<'r, S: 'r> Registry<'r, S> {
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
-    /*
-    /// Builds a [`ScalarMeta`] information for the specified [`graphql::Type`].
+    /// Builds a [`ScalarMeta`] information for the specified [`graphql::Type`],
+    /// allowing to `customize` the created [`ScalarMeta`], and stores it in
+    /// this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
     ///
     /// [`graphql::Type`]: resolve::Type
-    pub fn build_scalar_type_new<T, Info>(&mut self, info: &Info) -> ScalarMeta<'r, S>
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_scalar_with<'ti, T, TI, F>(
+        &mut self,
+        type_info: &'ti TI,
+        customize: F,
+    ) -> MetaType<'r, S>
     where
-        T: resolve::TypeName<Info> + resolve::ScalarToken<S> + resolve::InputValueOwned<S>,
-        Info: ?Sized,
+        T: resolve::TypeName<TI> + resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
+        TI: ?Sized,
+        'ti: 'r,
+        F: FnOnce(&mut ScalarMeta<'r, S>),
+        S: Clone,
     {
-        // TODO: Allow using references.
-        ScalarMeta::new_new::<T, _>(T::type_name(info).to_owned())
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                let mut scalar = ScalarMeta::new_reworked::<T, _>(T::type_name(type_info));
+                customize(&mut scalar);
+                scalar.into_meta()
+            })
+            .clone()
     }
-    */
 
     /// Builds a [`ScalarMeta`] information for the specified non-[`Sized`]
     /// [`graphql::Type`], and stores it in this [`Registry`].

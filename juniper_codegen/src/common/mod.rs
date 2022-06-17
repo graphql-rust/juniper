@@ -4,3 +4,4 @@ pub(crate) mod field;
 pub(crate) mod gen;
 pub(crate) mod parse;
 pub(crate) mod scalar;
+pub(crate) mod behavior;

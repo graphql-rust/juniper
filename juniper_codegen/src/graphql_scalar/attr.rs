@@ -64,6 +64,7 @@ fn expand_on_type_alias(
         description: attr.description.as_deref().cloned(),
         specified_by_url: attr.specified_by_url.as_deref().cloned(),
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
     };
 
     Ok(quote! {
@@ -96,6 +97,7 @@ fn expand_on_derive_input(
         description: attr.description.as_deref().cloned(),
         specified_by_url: attr.specified_by_url.as_deref().cloned(),
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
     };
 
     Ok(quote! {

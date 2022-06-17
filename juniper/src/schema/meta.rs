@@ -499,12 +499,11 @@ impl<'a, S> ScalarMeta<'a, S> {
         }
     }
 
-    /*
     /// Builds a new [`ScalarMeta`] information with the specified `name`.
     // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
     //       `explicit_generic_args_with_impl_trait` hits stable:
     //       https://github.com/rust-lang/rust/issues/83701
-    pub fn new_new<T, N>(name: N) -> Self
+    pub fn new_reworked<T, N>(name: N) -> Self
     where
         T: resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
         Cow<'a, str>: From<N>,
@@ -513,13 +512,13 @@ impl<'a, S> ScalarMeta<'a, S> {
             name: name.into(),
             description: None,
             specified_by_url: None,
-            try_parse_fn: try_parse_fn_new::<S, T>,
+            try_parse_fn: try_parse_fn_reworked::<T, S>,
             parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
         }
-    }*/
+    }
 
     /// Builds a new [`ScalarMeta`] information with the specified `name` for
-    /// the [`?Sized`] `T`ype that may only be parsed as a reference.
+    /// the non-[`Sized`] `T`ype that may only be parsed as a reference.
     // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
     //       `explicit_generic_args_with_impl_trait` hits stable:
     //       https://github.com/rust-lang/rust/issues/83701
@@ -889,16 +888,14 @@ where
         .map_err(T::Error::into_field_error)
 }
 
-/*
-fn try_parse_fn_new<S, T>(v: &InputValue<S>) -> Result<(), FieldError<S>>
+fn try_parse_fn_reworked<T, SV>(v: &InputValue<SV>) -> Result<(), FieldError<SV>>
 where
-    T: resolve::InputValueOwned<S>,
+    T: resolve::InputValueOwned<SV>,
 {
     T::try_from_input_value(v)
         .map(drop)
         .map_err(T::Error::into_field_error)
 }
-*/
 
 fn try_parse_unsized_fn<T, SV>(v: &InputValue<SV>) -> Result<(), FieldError<SV>>
 where

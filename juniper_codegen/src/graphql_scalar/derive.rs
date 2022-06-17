@@ -33,6 +33,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description: attr.description.as_deref().cloned(),
         specified_by_url: attr.specified_by_url.as_deref().cloned(),
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
     }
     .to_token_stream())
 }
@@ -82,7 +83,11 @@ pub(super) fn parse_derived_methods(ast: &syn::DeriveInput, attr: &Attr) -> syn:
                     .first()
                     .filter(|_| fields.unnamed.len() == 1)
                     .cloned()
-                    .map(Field::Unnamed)
+                    .map(|f| Field {
+                        itself: f,
+                        is_named: false,
+                        behavior: None.unwrap_or_default(), // TODO: Parse attribute!
+                    })
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),
@@ -95,7 +100,11 @@ pub(super) fn parse_derived_methods(ast: &syn::DeriveInput, attr: &Attr) -> syn:
                     .first()
                     .filter(|_| fields.named.len() == 1)
                     .cloned()
-                    .map(Field::Named)
+                    .map(|f| Field {
+                        itself: f,
+                        is_named: true,
+                        behavior: None.unwrap_or_default(), // TODO: Parse attribute!
+                    })
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),

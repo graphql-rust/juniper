@@ -121,13 +121,11 @@ where
 }
 
 impl<SV> resolve::ScalarToken<SV> for str
-//TODO: where String: resolve::ScalarToken<SV>,
 where
-    String: crate::ParseScalarValue<SV>,
+    String: resolve::ScalarToken<SV>,
 {
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
-        // TODO: <String as resolve::ScalarToken<SV>>::parse_scalar_token(token)
-        <String as crate::ParseScalarValue<SV>>::from_str(token)
+        <String as resolve::ScalarToken<SV>>::parse_scalar_token(token)
     }
 }
 
@@ -228,7 +226,7 @@ where
 }
 
 impl reflect::BaseType for str {
-    const NAME: reflect::Type = "String"; // TODO: <String as reflect::BaseType<BH>>::NAME;
+    const NAME: reflect::Type = <String as reflect::BaseType>::NAME;
 }
 
 impl reflect::BaseSubTypes for str {
