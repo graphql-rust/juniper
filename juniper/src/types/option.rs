@@ -3,6 +3,7 @@
 use futures::future;
 
 use crate::{
+    behavior,
     executor::{ExecutionResult, Executor, Registry},
     graphql, reflect, resolve,
     schema::meta::MetaType,
@@ -15,13 +16,11 @@ where
     TI: ?Sized,
     BH: ?Sized,
 {
-    fn meta<'r>(registry: &mut Registry<'r, SV>, type_info: &TI) -> MetaType<'r, SV>
+    fn meta<'r, 'ti: 'r>(registry: &mut Registry<'r, SV>, type_info: &'ti TI) -> MetaType<'r, SV>
     where
         SV: 'r,
     {
-        registry
-            .build_nullable_type_reworked::<T, BH, _>(type_info)
-            .into_meta()
+        registry.wrap_nullable::<behavior::Coerce<T, BH>, _>(type_info)
     }
 }
 

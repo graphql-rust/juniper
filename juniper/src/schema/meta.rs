@@ -460,6 +460,29 @@ impl<'a, S> MetaType<'a, S> {
     }
 }
 
+impl<'a, S> From<MetaType<'a, S>> for Type<'a> {
+    fn from(meta: MetaType<'a, S>) -> Self {
+        match meta {
+            MetaType::Scalar(ScalarMeta { name, .. })
+            | MetaType::Object(ObjectMeta { name, .. })
+            | MetaType::Enum(EnumMeta { name, .. })
+            | MetaType::Interface(InterfaceMeta { name, .. })
+            | MetaType::Union(UnionMeta { name, .. })
+            | MetaType::InputObject(InputObjectMeta { name, .. }) => Type::NonNullNamed(name),
+            MetaType::List(ListMeta {
+                of_type,
+                expected_size,
+            }) => Type::NonNullList(Box::new(of_type), expected_size),
+            MetaType::Nullable(NullableMeta { of_type }) => match of_type {
+                Type::NonNullNamed(inner) => Type::Named(inner),
+                Type::NonNullList(inner, expected_size) => Type::List(inner, expected_size),
+                t => t,
+            },
+            MetaType::Placeholder(PlaceholderMeta { of_type }) => of_type,
+        }
+    }
+}
+
 impl<'a, S> ScalarMeta<'a, S> {
     /// Builds a new [`ScalarMeta`] type with the specified `name`.
     pub fn new<T>(name: Cow<'a, str>) -> Self

@@ -14,17 +14,11 @@ use crate::{
 };
 
 impl<TI: ?Sized, SV: ScalarValue> resolve::Type<TI, SV> for str {
-    fn meta<'r>(registry: &mut Registry<'r, SV>, type_info: &TI) -> MetaType<'r, SV>
+    fn meta<'r, 'ti: 'r>(registry: &mut Registry<'r, SV>, type_info: &'ti TI) -> MetaType<'r, SV>
     where
         SV: 'r,
     {
-        let meta = registry
-            .build_scalar_type_unsized::<Self, _>(type_info)
-            .into_meta();
-        registry
-            .entry_type::<Self, _>(type_info)
-            .or_insert(meta)
-            .clone()
+        registry.register_scalar_unsized::<Self, _>(type_info)
     }
 }
 
@@ -75,6 +69,8 @@ where
     SV: From<String>,
 {
     fn to_input_value(&self) -> graphql::InputValue<SV> {
+        // TODO: Remove redundant `.to_owned()` allocation by allowing
+        //       `ScalarValue` creation from reference?
         graphql::InputValue::scalar(self.to_owned())
     }
 }

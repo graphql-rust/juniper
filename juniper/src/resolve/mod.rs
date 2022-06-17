@@ -6,9 +6,9 @@ use crate::{
 };
 
 pub trait Type<TypeInfo: ?Sized, ScalarValue, Behavior: ?Sized = behavior::Standard> {
-    fn meta<'r>(
+    fn meta<'r, 'ti: 'r>(
         registry: &mut Registry<'r, ScalarValue>,
-        type_info: &TypeInfo,
+        type_info: &'ti TypeInfo,
     ) -> MetaType<'r, ScalarValue>
     where
         ScalarValue: 'r; // TODO: remove?

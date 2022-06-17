@@ -13,7 +13,7 @@ where
     TI: ?Sized,
     BH: ?Sized,
 {
-    fn meta<'r>(registry: &mut Registry<'r, SV>, type_info: &TI) -> MetaType<'r, SV>
+    fn meta<'r, 'ti: 'r>(registry: &mut Registry<'r, SV>, type_info: &'ti TI) -> MetaType<'r, SV>
     where
         SV: 'r,
     {

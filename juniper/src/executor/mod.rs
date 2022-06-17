@@ -84,12 +84,6 @@ where
     field_path: Arc<FieldPath<'a>>,
 }
 
-impl<'r, 'a, Ctx: ?Sized, S> Executor<'r, 'a, Ctx, S> {
-    pub(crate) fn current_type_new(&self) -> &TypeType<'a, S> {
-        &self.current_type
-    }
-}
-
 /// Error type for errors that occur during query execution
 ///
 /// All execution errors contain the source position in the query of the field
@@ -1297,17 +1291,58 @@ impl<'r, S: 'r> Registry<'r, S> {
     }
     */
 
-    /// Builds a [`ScalarMeta`] information for the specified [`?Sized`]
-    /// [`graphql::Type`].
+    /// Builds a [`ScalarMeta`] information for the specified non-[`Sized`]
+    /// [`graphql::Type`], and stores it in this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
     ///
     /// [`graphql::Type`]: resolve::Type
-    pub fn build_scalar_type_unsized<T, TI>(&mut self, type_info: &TI) -> ScalarMeta<'r, S>
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_scalar_unsized<'ti, T, TI>(&mut self, type_info: &'ti TI) -> MetaType<'r, S>
     where
         T: resolve::TypeName<TI> + resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
         TI: ?Sized,
+        'ti: 'r,
+        S: Clone,
     {
-        // TODO: Allow using references.
-        ScalarMeta::new_unsized::<T, _>(T::type_name(type_info).to_owned())
+        // TODO: Use `drop` instead of `|_| {}` once Rust's inference becomes
+        //       better for HRTB closures.
+        self.register_scalar_unsized_with::<T, TI, _>(type_info, |_| {})
+    }
+
+    /// Builds a [`ScalarMeta`] information for the specified non-[`Sized`]
+    /// [`graphql::Type`], allowing to `customize` the created [`ScalarMeta`],
+    /// and stores it in this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_scalar_unsized_with<'ti, T, TI, F>(
+        &mut self,
+        type_info: &'ti TI,
+        customize: F,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
+        TI: ?Sized,
+        'ti: 'r,
+        F: FnOnce(&mut ScalarMeta<'r, S>),
+        S: Clone,
+    {
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                let mut scalar = ScalarMeta::new_unsized::<T, _>(T::type_name(type_info));
+                customize(&mut scalar);
+                scalar.into_meta()
+            })
+            .clone()
     }
 
     /// Creates a [`ListMeta`] type.
@@ -1342,7 +1377,8 @@ impl<'r, S: 'r> Registry<'r, S> {
         T: resolve::Type<Info, S> + ?Sized,
         Info: ?Sized,
     {
-        ListMeta::new(T::meta(self, info).as_type(), expected_size)
+        todo!()
+        //ListMeta::new(T::meta(self, info).as_type(), expected_size)
     }
 
     /// Creates a [`NullableMeta`] type.
@@ -1359,13 +1395,13 @@ impl<'r, S: 'r> Registry<'r, S> {
     /// [`graphql::Type`].
     ///
     /// [`graphql::Type`]: resolve::Type
-    pub fn build_nullable_type_reworked<T, BH, TI>(&mut self, type_info: &TI) -> NullableMeta<'r>
+    pub fn wrap_nullable<'ti, T, TI>(&mut self, type_info: &'ti TI) -> MetaType<'r, S>
     where
-        T: resolve::Type<TI, S, BH> + ?Sized,
-        BH: ?Sized,
+        T: resolve::Type<TI, S> + ?Sized,
         TI: ?Sized,
+        'ti: 'r,
     {
-        NullableMeta::new(T::meta(self, type_info).as_type())
+        NullableMeta::new(T::meta(self, type_info).into()).into_meta()
     }
 
     /// Creates an [`ObjectMeta`] type with the given `fields`.
