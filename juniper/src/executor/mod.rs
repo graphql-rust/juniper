@@ -4,6 +4,7 @@ use std::{
     borrow::Cow,
     cmp::Ordering,
     collections::{hash_map, HashMap},
+    convert,
     fmt::{Debug, Display},
     sync::{Arc, RwLock},
 };
@@ -1297,14 +1298,12 @@ impl<'r, S: 'r> Registry<'r, S> {
         T: resolve::TypeName<TI> + resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
         TI: ?Sized,
         'ti: 'r,
-        F: FnOnce(&mut ScalarMeta<'r, S>),
+        F: FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
         S: Clone,
     {
         self.entry_type::<T, _>(type_info)
             .or_insert_with(move || {
-                let mut scalar = ScalarMeta::new_reworked::<T, _>(T::type_name(type_info));
-                customize(&mut scalar);
-                scalar.into_meta()
+                customize(ScalarMeta::new_reworked::<T, _>(T::type_name(type_info))).into_meta()
             })
             .clone()
     }
@@ -1326,9 +1325,7 @@ impl<'r, S: 'r> Registry<'r, S> {
         'ti: 'r,
         S: Clone,
     {
-        // TODO: Use `drop` instead of `|_| {}` once Rust's inference becomes
-        //       better for HRTB closures.
-        self.register_scalar_unsized_with::<T, TI, _>(type_info, |_| {})
+        self.register_scalar_unsized_with::<T, TI, _>(type_info, convert::identity)
     }
 
     /// Builds a [`ScalarMeta`] information for the specified non-[`Sized`]
@@ -1351,14 +1348,12 @@ impl<'r, S: 'r> Registry<'r, S> {
         T: resolve::TypeName<TI> + resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
         TI: ?Sized,
         'ti: 'r,
-        F: FnOnce(&mut ScalarMeta<'r, S>),
+        F: FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
         S: Clone,
     {
         self.entry_type::<T, _>(type_info)
             .or_insert_with(move || {
-                let mut scalar = ScalarMeta::new_unsized::<T, _>(T::type_name(type_info));
-                customize(&mut scalar);
-                scalar.into_meta()
+                customize(ScalarMeta::new_unsized::<T, _>(T::type_name(type_info))).into_meta()
             })
             .clone()
     }

@@ -529,9 +529,10 @@ impl Definition {
         let predicates = &mut generics.make_where_clause().predicates;
         predicates.push(parse_quote! { #sv: Clone });
         predicates.push(parse_quote! {
-            Self: ::juniper::resolve::TypeName<#inf, #bh>
-                  + ::juniper::resolve::ScalarToken<#sv, #bh>
-                  + ::juniper::resolve::InputValueOwned<#sv, #bh>
+            ::juniper::behavior::Coerce<Self, #bh>:
+                ::juniper::resolve::TypeName<#inf, #bh>
+                + ::juniper::resolve::ScalarToken<#sv, #bh>
+                + ::juniper::resolve::InputValueOwned<#sv, #bh>
         });
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
@@ -561,7 +562,7 @@ impl Definition {
                         ::juniper::behavior::Coerce<Self, #bh>, _, _,
                     >(type_info, |meta| {
                         meta#description
-                            #specified_by_url;
+                            #specified_by_url
                     })
                 }
             }
