@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
+use std::{any::TypeId, borrow::Cow, convert::Into, fmt, hash::Hash, mem, slice, vec};
 
 use indexmap::IndexMap;
 
@@ -459,6 +459,42 @@ impl<S> InputValue<S> {
                     })
             }
             _ => false,
+        }
+    }
+
+    /// Maps the [`ScalarValue`] type of this [`InputValue`] into the specified
+    /// one.
+    pub fn map_scalar_value<To>(self) -> InputValue<To>
+    where
+        To: From<S> + 'static,
+        S: 'static,
+    {
+        if TypeId::of::<To>() == TypeId::of::<S>() {
+            // SAFETY: This is safe, because we're transmuting the value into
+            //         itself, so no invariants may change and we're just
+            //         satisfying the type checker.
+            //         As `mem::transmute_copy` creates a copy of data, we need
+            //         `mem::ManuallyDrop` here to omit double-free when
+            //         `S: Drop`.
+            let val = mem::ManuallyDrop::new(self);
+            unsafe { mem::transmute_copy(&*val) }
+        } else {
+            match self {
+                Self::Null => InputValue::Null,
+                Self::Scalar(s) => InputValue::Scalar(s.into()),
+                Self::Enum(v) => InputValue::Enum(v),
+                Self::Variable(n) => InputValue::Variable(n),
+                Self::List(l) => InputValue::List(
+                    l.into_iter()
+                        .map(|i| i.map(InputValue::map_scalar_value))
+                        .collect(),
+                ),
+                Self::Object(o) => InputValue::Object(
+                    o.into_iter()
+                        .map(|(k, v)| (k, v.map(InputValue::map_scalar_value)))
+                        .collect(),
+                ),
+            }
         }
     }
 }

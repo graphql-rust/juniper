@@ -33,6 +33,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description: attr.description.as_deref().cloned(),
         specified_by_url: attr.specified_by_url.as_deref().cloned(),
         scalar,
+        scalar_value: attr.scalar.as_deref().into(),
         behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
     }
     .to_token_stream())
