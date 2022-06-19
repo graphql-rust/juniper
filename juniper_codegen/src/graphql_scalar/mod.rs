@@ -2,6 +2,8 @@
 //!
 //! [1]: https://spec.graphql.org/October2021#sec-Scalars
 
+use std::convert::TryFrom;
+
 use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use syn::{
@@ -536,10 +538,10 @@ impl Definition {
         let predicates = &mut generics.make_where_clause().predicates;
         predicates.push(parse_quote! { #sv: Clone });
         predicates.push(parse_quote! {
-            ::juniper::behavior::Coerce<Self, #bh>:
-                ::juniper::resolve::TypeName<#inf, #bh>
-                + ::juniper::resolve::ScalarToken<#sv, #bh>
-                + ::juniper::resolve::InputValueOwned<#sv, #bh>
+            ::juniper::behavior::Coerce<Self>:
+                ::juniper::resolve::TypeName<#inf>
+                + ::juniper::resolve::ScalarToken<#sv>
+                + ::juniper::resolve::InputValueOwned<#sv>
         });
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
@@ -566,7 +568,7 @@ impl Definition {
                     #sv: '__r,
                 {
                     registry.register_scalar_with::<
-                        ::juniper::behavior::Coerce<Self, #bh>, _, _,
+                        ::juniper::behavior::Coerce<Self>, _, _,
                     >(type_info, |meta| {
                         meta#description
                             #specified_by_url
@@ -808,27 +810,25 @@ impl Definition {
         let (sv, mut generics) = self.mix_scalar_value(generics);
         let lt: syn::GenericParam = parse_quote! { '__inp };
         generics.params.push(lt.clone());
-        generics
-            .make_where_clause()
-            .predicates
-            .extend(self.methods.bound_try_from_input_value(&lt, sv, bh));
+        let predicates = &mut generics.make_where_clause().predicates;
+        predicates.push(parse_quote! { #sv: #lt });
+        predicates.extend(self.methods.bound_try_from_input_value(&lt, sv, bh));
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-        let conversion = self.methods.expand_try_from_input_value(sv, bh);
+        let error_ty = self.methods.expand_try_from_input_value_error(&lt, sv, bh);
+        let body = self.methods.expand_try_from_input_value(sv, bh);
 
         quote! {
             #[automatically_derived]
             impl#impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh> for #ty
                 #where_clause
             {
-                type Error = ::juniper::FieldError<#sv>;
+                type Error = #error_ty;
 
                 fn try_from_input_value(
                     input: &#lt ::juniper::graphql::InputValue<#sv>,
                 ) -> ::std::result::Result<Self, Self::Error> {
-                    #conversion.map_err(
-                        ::juniper::IntoFieldError::<#sv>::into_field_error,
-                    )
+                    #body
                 }
             }
         }
@@ -1363,13 +1363,14 @@ impl Methods {
                 from_input: Some(from_input),
                 ..
             } => {
-                let map_sv = sv.custom.as_ref().map(|custom_ty| {
-                    quote! {
-                        .map_scalar_value()
-                    }
+                let map_sv = sv.custom.is_some().then(|| {
+                    quote! { .map_scalar_value() }
                 });
                 quote! {
                     #from_input(input#map_sv)
+                        .map_err(
+                            ::juniper::IntoFieldError::<#sv>::into_field_error,
+                        )
                 }
             }
 
@@ -1382,8 +1383,40 @@ impl Methods {
                     <::juniper::behavior::Coerce<#field_ty, #bh> as
                      ::juniper::resolve::InputValue<'_, #sv, #field_bh>>
                         ::try_from_input_value(input)
-                            .into_inner()
+                            .map(::juniper::behavior::Coerce::into_inner)
                             .map(#self_constructor)
+                }
+            }
+        }
+    }
+
+    /// Expands error type of [`resolve::InputValue`] trait.
+    ///
+    /// [`resolve::InputValue`]: juniper::resolve::InputValue
+    fn expand_try_from_input_value_error(
+        &self,
+        lt: &syn::GenericParam,
+        sv: &ScalarValue,
+        bh: &behavior::Type,
+    ) -> syn::Type {
+        match self {
+            Self::Custom { .. }
+            | Self::Delegated {
+                from_input: Some(_),
+                ..
+            } => {
+                parse_quote! {
+                    ::juniper::FieldError<#sv>
+                }
+            }
+
+            Self::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                let field_bh = &field.behavior;
+
+                parse_quote! {
+                    <::juniper::behavior::Coerce<#field_ty, #bh> as
+                     ::juniper::resolve::InputValue<#lt, #sv, #field_bh>>::Error
                 }
             }
         }
@@ -1407,15 +1440,15 @@ impl Methods {
                 from_input: Some(_),
                 ..
             } => {
+                let mut bounds = vec![parse_quote! {
+                    #sv: ::juniper::ScalarValue
+                }];
                 if let Some(custom_sv) = &sv.custom {
-                    vec![
-                        parse_quote! { #custom_sv: ::std::convert::From<#sv> },
-                        parse_quote! { #custom_sv: 'static },
-                        parse_quote! { #sv: 'static },
-                    ]
-                } else {
-                    vec![parse_quote! { #sv: ::juniper::ScalarValue }]
+                    bounds.push(parse_quote! {
+                        #custom_sv: ::juniper::ScalarValue
+                    });
                 }
+                bounds
             }
 
             Self::Delegated { field, .. } => {
@@ -1557,10 +1590,8 @@ impl ParseToken {
     fn expand_parse_scalar_token(&self, sv: &ScalarValue, bh: &behavior::Type) -> TokenStream {
         match self {
             Self::Custom(parse_token) => {
-                let into = sv.custom.as_ref().map(|custom_ty| {
-                    quote! {
-                        .map(<#sv as ::std::convert::From<#custom_ty>>::from)
-                    }
+                let into = sv.custom.is_some().then(|| {
+                    quote! { .map(::juniper::ScalarValue::into_another) }
                 });
                 quote! {
                     #parse_token(token)#into
@@ -1606,15 +1637,15 @@ impl ParseToken {
     ) -> Vec<syn::WherePredicate> {
         match self {
             Self::Custom(_) => {
-                vec![if let Some(custom_sv) = &sv.custom {
-                    parse_quote! {
-                        #sv: ::std::convert::From<#custom_sv>
-                    }
-                } else {
-                    parse_quote! {
-                        #sv: ::juniper::ScalarValue
-                    }
-                }]
+                let mut bounds = vec![parse_quote! {
+                    #sv: ::juniper::ScalarValue
+                }];
+                if let Some(custom_sv) = &sv.custom {
+                    bounds.push(parse_quote! {
+                        #custom_sv: ::juniper::ScalarValue
+                    });
+                }
+                bounds
             }
 
             Self::Delegated(delegated) => delegated
@@ -1630,6 +1661,65 @@ impl ParseToken {
     }
 }
 
+/// Available arguments behind `#[graphql]` attribute on a [`Field`] when
+/// generating code for a [GraphQL scalar][0] implementation.
+///
+/// [0]: https://spec.graphql.org/October2021#sec-Scalars
+#[derive(Debug, Default)]
+struct FieldAttr {
+    /// Explicitly specified type of the custom [`Behavior`] used for
+    /// [GraphQL scalar][0] implementation by the [`Field`].
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    behavior: Option<SpanContainer<behavior::Type>>,
+}
+
+impl Parse for FieldAttr {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let mut out = Self::default();
+        while !input.is_empty() {
+            let ident = input.parse_any_ident()?;
+            match ident.to_string().as_str() {
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                name => {
+                    return Err(err::unknown_arg(&ident, name));
+                }
+            }
+            input.try_parse::<token::Comma>()?;
+        }
+        Ok(out)
+    }
+}
+
+impl FieldAttr {
+    /// Tries to merge two [`FieldAttr`]s into a single one, reporting about
+    /// duplicates, if any.
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
+        Ok(Self {
+            behavior: try_merge_opt!(behavior: self, another),
+        })
+    }
+
+    /// Parses [`FieldAttr`] from the given multiple `name`d [`syn::Attribute`]s
+    /// placed on a field definition.
+    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        filter_attrs(name, attrs)
+            .map(|attr| attr.parse_args())
+            .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
+    }
+}
+
 /// Inner field of a type implementing [GraphQL scalar][0], that the
 /// implementation delegates calls to.
 ///
@@ -1638,19 +1728,28 @@ struct Field {
     /// This [`Field`] itself.
     itself: syn::Field,
 
-    /// Indicator whether this [`Field`] is named.
-    is_named: bool,
-
     /// [`Behavior`] parametrization of this [`Field`].
     ///
     /// [`Behavior`]: juniper::behavior
     behavior: behavior::Type,
 }
 
+impl TryFrom<syn::Field> for Field {
+    type Error = syn::Error;
+
+    fn try_from(field: syn::Field) -> syn::Result<Self> {
+        let attr = FieldAttr::from_attrs("graphql", &field.attrs)?;
+        Ok(Self {
+            itself: field,
+            behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+        })
+    }
+}
+
 impl ToTokens for Field {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.is_named {
-            self.itself.ident.to_tokens(tokens)
+        if let Some(name) = &self.itself.ident {
+            name.to_tokens(tokens)
         } else {
             tokens.append(Literal::u8_unsuffixed(0))
         }
@@ -1668,10 +1767,8 @@ impl Field {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn closure_constructor(&self) -> TokenStream {
-        if self.is_named {
-            let ident = &self.itself.ident;
-
-            quote! { |v| Self { #ident: v } }
+        if let Some(name) = &self.itself.ident {
+            quote! { |v| Self { #name: v } }
         } else {
             quote! { Self }
         }

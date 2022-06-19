@@ -1,5 +1,7 @@
 //! Code generation for `#[derive(GraphQLScalar)]` macro.
 
+use std::convert::TryFrom;
+
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{parse_quote, spanned::Spanned};
@@ -84,11 +86,8 @@ pub(super) fn parse_derived_methods(ast: &syn::DeriveInput, attr: &Attr) -> syn:
                     .first()
                     .filter(|_| fields.unnamed.len() == 1)
                     .cloned()
-                    .map(|f| Field {
-                        itself: f,
-                        is_named: false,
-                        behavior: None.unwrap_or_default(), // TODO: Parse attribute!
-                    })
+                    .map(Field::try_from)
+                    .transpose()?
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),
@@ -101,11 +100,8 @@ pub(super) fn parse_derived_methods(ast: &syn::DeriveInput, attr: &Attr) -> syn:
                     .first()
                     .filter(|_| fields.named.len() == 1)
                     .cloned()
-                    .map(|f| Field {
-                        itself: f,
-                        is_named: true,
-                        behavior: None.unwrap_or_default(), // TODO: Parse attribute!
-                    })
+                    .map(Field::try_from)
+                    .transpose()?
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),

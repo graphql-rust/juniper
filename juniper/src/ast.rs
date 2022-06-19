@@ -464,12 +464,12 @@ impl<S> InputValue<S> {
 
     /// Maps the [`ScalarValue`] type of this [`InputValue`] into the specified
     /// one.
-    pub fn map_scalar_value<To>(self) -> InputValue<To>
+    pub fn map_scalar_value<Into>(self) -> InputValue<Into>
     where
-        To: From<S> + 'static,
-        S: 'static,
+        S: ScalarValue,
+        Into: ScalarValue,
     {
-        if TypeId::of::<To>() == TypeId::of::<S>() {
+        if TypeId::of::<Into>() == TypeId::of::<S>() {
             // SAFETY: This is safe, because we're transmuting the value into
             //         itself, so no invariants may change and we're just
             //         satisfying the type checker.
@@ -481,7 +481,7 @@ impl<S> InputValue<S> {
         } else {
             match self {
                 Self::Null => InputValue::Null,
-                Self::Scalar(s) => InputValue::Scalar(s.into()),
+                Self::Scalar(s) => InputValue::Scalar(s.into_another()),
                 Self::Enum(v) => InputValue::Enum(v),
                 Self::Variable(n) => InputValue::Variable(n),
                 Self::List(l) => InputValue::List(

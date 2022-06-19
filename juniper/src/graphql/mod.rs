@@ -6,6 +6,7 @@ pub use crate::{
     macros::{input_value, value, vars},
     resolve::Type,
     value::Value,
+    GraphQLScalar as Scalar,
 };
 
 /*
