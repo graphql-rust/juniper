@@ -1,4 +1,4 @@
-//! Default GraphQL behaviors.
+//! GraphQL types behavior machinery.
 
 use std::{marker::PhantomData, sync::atomic::AtomicPtr};
 
@@ -13,22 +13,25 @@ use crate::{
 #[derive(Debug)]
 pub enum Standard {}
 
-/// Coercion of behavior types and type parameters.
+/// Transparent wrapper allowing coercion of behavior types and type parameters.
 #[repr(transparent)]
 pub struct Coerce<T: ?Sized, To: ?Sized = Standard>(PhantomData<AtomicPtr<Box<To>>>, T);
 
 impl<T, To: ?Sized> Coerce<T, To> {
+    /// Wraps the provided `value` into a [`Coerce`] wrapper.
     #[must_use]
     pub const fn wrap(value: T) -> Self {
         Self(PhantomData, value)
     }
 
+    /// Unwraps into the inner value.
     #[must_use]
     pub fn into_inner(self) -> T {
         self.1
     }
 }
 
+/// Wraps the provided `value` into a [`Coerce`] wrapper.
 #[must_use]
 pub const fn coerce<T, To: ?Sized>(value: T) -> Coerce<T, To> {
     Coerce::wrap(value)

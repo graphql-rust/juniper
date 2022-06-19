@@ -6,7 +6,6 @@ use syn::{parse_quote, spanned::Spanned};
 
 use crate::{
     common::{parse, scalar},
-    graphql_scalar::TypeOrIdent,
     GraphQLScope,
 };
 
@@ -50,7 +49,7 @@ fn expand_on_type_alias(
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     let def = Definition {
-        ty: TypeOrIdent::Type(ast.ty.clone()),
+        ident: ast.ident.clone(),
         where_clause: attr
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),
@@ -80,11 +79,12 @@ fn expand_on_derive_input(
     ast: syn::DeriveInput,
 ) -> syn::Result<TokenStream> {
     let attr = Attr::from_attrs("graphql_scalar", &attrs)?;
+
     let methods = parse_derived_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     let def = Definition {
-        ty: TypeOrIdent::Ident(ast.ident.clone()),
+        ident: ast.ident.clone(),
         where_clause: attr
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),

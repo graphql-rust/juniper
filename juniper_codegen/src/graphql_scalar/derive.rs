@@ -8,7 +8,7 @@ use syn::{parse_quote, spanned::Spanned};
 
 use crate::{common::scalar, result::GraphQLScope};
 
-use super::{Attr, Definition, Field, Methods, ParseToken, TypeOrIdent};
+use super::{Attr, Definition, Field, Methods, ParseToken};
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLScalar)]` macro.
 const ERR: GraphQLScope = GraphQLScope::ScalarDerive;
@@ -17,21 +17,23 @@ const ERR: GraphQLScope = GraphQLScope::ScalarDerive;
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = Attr::from_attrs("graphql", &ast.attrs)?;
+
     let methods = parse_derived_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
+    let name = attr
+        .name
+        .as_deref()
+        .cloned()
+        .unwrap_or_else(|| ast.ident.to_string());
 
     Ok(Definition {
-        ty: TypeOrIdent::Ident(ast.ident.clone()),
+        ident: ast.ident,
         where_clause: attr
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),
-        generics: ast.generics.clone(),
+        generics: ast.generics,
         methods,
-        name: attr
-            .name
-            .as_deref()
-            .cloned()
-            .unwrap_or_else(|| ast.ident.to_string()),
+        name,
         description: attr.description.as_deref().cloned(),
         specified_by_url: attr.specified_by_url.as_deref().cloned(),
         scalar,
