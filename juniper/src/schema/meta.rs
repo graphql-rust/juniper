@@ -563,7 +563,7 @@ impl<'a, S> ScalarMeta<'a, S> {
 }
 
 impl<'a> ListMeta<'a> {
-    /// Build a new [`ListMeta`] type by wrapping the specified [`Type`].
+    /// Builds a new [`ListMeta`] type by wrapping the specified [`Type`].
     ///
     /// Specifying `expected_size` will be used to ensure that values of this
     /// type will always match it.
@@ -581,7 +581,7 @@ impl<'a> ListMeta<'a> {
 }
 
 impl<'a> NullableMeta<'a> {
-    /// Build a new [`NullableMeta`] type by wrapping the specified [`Type`].
+    /// Builds a new [`NullableMeta`] type by wrapping the specified [`Type`].
     pub fn new(of_type: Type<'a>) -> Self {
         Self { of_type }
     }

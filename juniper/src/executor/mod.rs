@@ -85,6 +85,12 @@ where
     field_path: Arc<FieldPath<'a>>,
 }
 
+impl<'r, 'a, CX: ?Sized, SV> Executor<'r, 'a, CX, SV> {
+    pub(crate) fn current_type_reworked(&self) -> &TypeType<'a, SV> {
+        &self.current_type
+    }
+}
+
 /// Error type for errors that occur during query execution
 ///
 /// All execution errors contain the source position in the query of the field
@@ -1381,17 +1387,17 @@ impl<'r, S: 'r> Registry<'r, S> {
     /// values of this type matches it.
     ///
     /// [`graphql::Type`]: resolve::Type
-    pub fn build_list_type_new<T, Info>(
+    pub fn wrap_list<'ti, T, TI>(
         &mut self,
-        info: &Info,
+        type_info: &'ti TI,
         expected_size: Option<usize>,
-    ) -> ListMeta<'r>
+    ) -> MetaType<'r, S>
     where
-        T: resolve::Type<Info, S> + ?Sized,
-        Info: ?Sized,
+        T: resolve::Type<TI, S> + ?Sized,
+        TI: ?Sized,
+        'ti: 'r,
     {
-        todo!()
-        //ListMeta::new(T::meta(self, info).as_type(), expected_size)
+        ListMeta::new(T::meta(self, type_info).into(), expected_size).into_meta()
     }
 
     /// Creates a [`NullableMeta`] type.

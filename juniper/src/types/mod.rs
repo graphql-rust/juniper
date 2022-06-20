@@ -10,7 +10,7 @@ mod ref_mut;
 mod result;
 mod slice;
 mod r#str;
-mod vec;
+pub mod vec;
 
 pub mod async_await;
 pub mod base;

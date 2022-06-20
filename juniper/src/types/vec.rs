@@ -1,114 +1,175 @@
 //! GraphQL implementation for [`Vec`].
 
 use crate::{
+    behavior,
     executor::{ExecutionResult, Executor, Registry},
     graphql, reflect, resolve,
     schema::meta::MetaType,
-    BoxFuture, Selection,
+    BoxFuture, FieldError, IntoFieldError, Selection,
 };
 
 use super::iter;
 
-/*
-impl<T, Info, S> resolve::Type<Info, S> for Vec<T>
+impl<T, TI, SV, BH> resolve::Type<TI, SV, BH> for Vec<T>
 where
-    T: resolve::Type<Info, S>,
-    Info: ?Sized,
+    T: resolve::Type<TI, SV, BH>,
+    TI: ?Sized,
+    BH: ?Sized,
 {
-    fn meta<'r>(registry: &mut Registry<'r, S>, info: &Info) -> MetaType<'r, S>
+    fn meta<'r, 'ti: 'r>(registry: &mut Registry<'r, SV>, type_info: &'ti TI) -> MetaType<'r, SV>
     where
-        S: 'r,
+        SV: 'r,
     {
-        registry.build_list_type_new::<T, _>(info, None).into_meta()
+        registry.wrap_list::<behavior::Coerce<T, BH>, _>(type_info, None)
     }
 }
 
-impl<T, Info, Ctx, S> resolve::Value<Info, Ctx, S> for Vec<T>
+impl<T, TI, CX, SV, BH> resolve::Value<TI, CX, SV, BH> for Vec<T>
 where
-    T: resolve::Value<Info, Ctx, S>,
-    Info: ?Sized,
-    Ctx: ?Sized,
+    T: resolve::Value<TI, CX, SV, BH>,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
 {
     fn resolve_value(
         &self,
-        selection_set: Option<&[Selection<'_, S>]>,
-        info: &Info,
-        executor: &Executor<Ctx, S>,
-    ) -> ExecutionResult<S> {
-        iter::resolve_list(self.iter(), selection_set, info, executor)
+        selection_set: Option<&[Selection<'_, SV>]>,
+        type_info: &TI,
+        executor: &Executor<CX, SV>,
+    ) -> ExecutionResult<SV> {
+        iter::resolve_list(self.iter(), selection_set, type_info, executor)
     }
 }
 
-impl<T, Info, Ctx, S> resolve::ValueAsync<Info, Ctx, S> for Vec<T>
+impl<T, TI, CX, SV, BH> resolve::ValueAsync<TI, CX, SV, BH> for Vec<T>
 where
-    T: resolve::ValueAsync<Info, Ctx, S> + Sync,
-    Info: Sync + ?Sized,
-    Ctx: Sync + ?Sized,
-    S: Send + Sync,
+    T: resolve::ValueAsync<TI, CX, SV, BH> + Sync,
+    TI: Sync + ?Sized,
+    CX: Sync + ?Sized,
+    SV: Send + Sync,
+    BH: ?Sized + 'static, // TODO: Lift `'static` bound if possible.
 {
     fn resolve_value_async<'r>(
         &'r self,
-        selection_set: Option<&'r [Selection<'_, S>]>,
-        info: &'r Info,
-        executor: &'r Executor<Ctx, S>,
-    ) -> BoxFuture<'r, ExecutionResult<S>> {
+        selection_set: Option<&'r [Selection<'_, SV>]>,
+        type_info: &'r TI,
+        executor: &'r Executor<CX, SV>,
+    ) -> BoxFuture<'r, ExecutionResult<SV>> {
         Box::pin(iter::resolve_list_async(
             self.iter(),
             selection_set,
-            info,
+            type_info,
             executor,
         ))
     }
 }
 
-impl<T, S> resolve::ToInputValue<S> for Vec<T>
+impl<T, SV, BH> resolve::ToInputValue<SV, BH> for Vec<T>
 where
-    T: resolve::ToInputValue<S>,
+    T: resolve::ToInputValue<SV, BH>,
+    BH: ?Sized,
 {
-    fn to_input_value(&self) -> graphql::InputValue<S> {
+    fn to_input_value(&self) -> graphql::InputValue<SV> {
         graphql::InputValue::list(self.iter().map(T::to_input_value))
     }
 }
 
-
-impl<'i, T, Info, S> graphql::InputType<'i, Info, S> for Vec<T>
+impl<'i, T, SV, BH> resolve::InputValue<'i, SV, BH> for Vec<T>
 where
-    T: graphql::InputType<'i, Info, S>,
-    Info: ?Sized,
+    T: resolve::InputValue<'i, SV, BH>,
+    SV: 'i,
+    BH: ?Sized,
+{
+    type Error = TryFromInputValueError<T::Error>;
+
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Self, Self::Error> {
+        match v {
+            graphql::InputValue::List(l) => l
+                .iter()
+                .map(|i| T::try_from_input_value(&i.item).map_err(TryFromInputValueError::Item))
+                .collect(),
+            // See "Input Coercion" on List types:
+            // https://spec.graphql.org/October2021#sec-Combining-List-and-Non-Null
+            graphql::InputValue::Null => Err(TryFromInputValueError::IsNull),
+            other => T::try_from_input_value(other)
+                .map(|e| vec![e])
+                .map_err(TryFromInputValueError::Item),
+        }
+    }
+}
+
+impl<'i, T, TI, SV, BH> graphql::InputType<'i, TI, SV, BH> for Vec<T>
+where
+    T: graphql::InputType<'i, TI, SV, BH>,
+    TI: ?Sized,
+    SV: 'i,
+    BH: ?Sized,
 {
     fn assert_input_type() {
         T::assert_input_type()
     }
 }
 
-
-impl<T, S> graphql::OutputType<S> for Vec<T>
+impl<T, TI, CX, SV, BH> graphql::OutputType<TI, CX, SV, BH> for Vec<T>
 where
-    T: graphql::OutputType<S>,
+    T: graphql::OutputType<TI, CX, SV, BH>,
+    TI: ?Sized,
+    CX: ?Sized,
+    BH: ?Sized,
+    Self: resolve::ValueAsync<TI, CX, SV, BH>,
 {
     fn assert_output_type() {
         T::assert_output_type()
     }
 }
 
-impl<T, S> reflect::BaseType<S> for Vec<T>
+impl<T, BH> reflect::BaseType<BH> for Vec<T>
 where
-    T: reflect::BaseType<S>,
+    T: reflect::BaseType<BH>,
+    BH: ?Sized,
 {
     const NAME: reflect::Type = T::NAME;
 }
 
-impl<T, S> reflect::BaseSubTypes<S> for Vec<T>
+impl<T, BH> reflect::BaseSubTypes<BH> for Vec<T>
 where
-    T: reflect::BaseSubTypes<S>,
+    T: reflect::BaseSubTypes<BH>,
+    BH: ?Sized,
 {
     const NAMES: reflect::Types = T::NAMES;
 }
 
-impl<T, S> reflect::WrappedType<S> for Vec<T>
+impl<T, BH> reflect::WrappedType<BH> for Vec<T>
 where
-    T: reflect::WrappedType<S>,
+    T: reflect::WrappedType<BH>,
+    BH: ?Sized,
 {
     const VALUE: reflect::WrappedValue = reflect::wrap::list(T::VALUE);
 }
-*/
+
+/// Possible errors of converting a [`graphql::InputValue`] into a [`Vec`].
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TryFromInputValueError<E> {
+    /// [`graphql::InputValue`] cannot be [`Null`].
+    ///
+    /// See ["Combining List and Non-Null" section of spec][0].
+    ///
+    /// [`Null`]: [`InputValue::Null`]
+    /// [0]: https://spec.graphql.org/October2021#sec-Combining-List-and-Non-Null
+    IsNull,
+
+    /// Error of converting a [`graphql::InputValue::List`]'s item.
+    Item(E),
+}
+
+impl<E, SV> IntoFieldError<SV> for TryFromInputValueError<E>
+where
+    E: IntoFieldError<SV>,
+{
+    fn into_field_error(self) -> FieldError<SV> {
+        match self {
+            Self::IsNull => "Failed to convert into `Vec`: Value cannot be `null`".into(),
+            Self::Item(e) => e.into_field_error(),
+        }
+    }
+}
