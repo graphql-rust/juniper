@@ -2,7 +2,7 @@
 //!
 //! [`str`]: primitive@std::str
 
-use std::{rc::Rc, sync::Arc};
+use std::{borrow::Cow, rc::Rc, sync::Arc};
 
 use futures::future;
 
@@ -84,6 +84,19 @@ impl<SV: ScalarValue> resolve::InputValueAsRef<SV> for str {
     }
 }
 
+impl<'me, 'i, SV> resolve::InputValueAs<'i, Cow<'me, Self>, SV> for str
+where
+    'i: 'me,
+    SV: 'i,
+    Self: resolve::InputValueAsRef<SV>,
+{
+    type Error = <Self as resolve::InputValueAsRef<SV>>::Error;
+
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Cow<'me, Self>, Self::Error> {
+        <Self as resolve::InputValueAsRef<SV>>::try_from_input_value(v).map(Cow::Borrowed)
+    }
+}
+
 impl<'i, SV> resolve::InputValueAs<'i, Box<Self>, SV> for str
 where
     SV: 'i,
@@ -140,6 +153,17 @@ where
     fn assert_input_type() {}
 }
 
+impl<'me, 'i, TI, SV> graphql::InputTypeAs<'i, Cow<'me, Self>, TI, SV> for str
+where
+    Self: graphql::Type<TI, SV>
+        + resolve::ToInputValue<SV>
+        + resolve::InputValueAs<'i, Cow<'me, Self>, SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_input_type() {}
+}
+
 impl<'i, TI, SV> graphql::InputTypeAs<'i, Box<Self>, TI, SV> for str
 where
     Self: graphql::Type<TI, SV>
@@ -184,6 +208,17 @@ where
 impl<'me, 'i, TI, CX, SV> graphql::ScalarAs<'i, &'me Self, TI, CX, SV> for str
 where
     Self: graphql::InputTypeAs<'i, &'me Self, TI, SV>
+        + graphql::OutputType<TI, CX, SV>
+        + resolve::ScalarToken<SV>,
+    TI: ?Sized,
+    SV: 'i,
+{
+    fn assert_scalar() {}
+}
+
+impl<'me, 'i, TI, CX, SV> graphql::ScalarAs<'i, Cow<'me, Self>, TI, CX, SV> for str
+where
+    Self: graphql::InputTypeAs<'i, Cow<'me, Self>, TI, SV>
         + graphql::OutputType<TI, CX, SV>
         + resolve::ScalarToken<SV>,
     TI: ?Sized,

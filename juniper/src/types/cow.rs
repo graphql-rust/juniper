@@ -1,6 +1,6 @@
-//! GraphQL implementation for [reference].
-//!
-//! [reference]: primitive@std::reference
+//! GraphQL implementation for [`Cow`].
+
+use std::{borrow::Cow, ops::Deref};
 
 use crate::{
     graphql,
@@ -9,11 +9,12 @@ use crate::{
     reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
 };
 
-impl<'me, T, TI, SV, BH> resolve::Type<TI, SV, BH> for &'me T
+impl<'me, T, TI, SV, BH> resolve::Type<TI, SV, BH> for Cow<'me, T>
 where
-    T: resolve::Type<TI, SV, BH> + ?Sized,
+    T: resolve::Type<TI, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn meta<'r, 'ti: 'r>(registry: &mut Registry<'r, SV>, type_info: &'ti TI) -> MetaType<'r, SV>
     where
@@ -23,34 +24,37 @@ where
     }
 }
 
-impl<'me, T, TI, BH> resolve::TypeName<TI, BH> for &'me T
+impl<'me, T, TI, BH> resolve::TypeName<TI, BH> for Cow<'me, T>
 where
-    T: resolve::TypeName<TI, BH> + ?Sized,
+    T: resolve::TypeName<TI, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn type_name(type_info: &TI) -> &str {
         T::type_name(type_info)
     }
 }
 
-impl<'me, T, TI, BH> resolve::ConcreteTypeName<TI, BH> for &'me T
+impl<'me, T, TI, BH> resolve::ConcreteTypeName<TI, BH> for Cow<'me, T>
 where
-    T: resolve::ConcreteTypeName<TI, BH> + ?Sized,
+    T: resolve::ConcreteTypeName<TI, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn concrete_type_name<'i>(&self, type_info: &'i TI) -> &'i str {
         (**self).concrete_type_name(type_info)
     }
 }
 
-impl<'me, T, TI, CX, SV, BH> resolve::Value<TI, CX, SV, BH> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::Value<TI, CX, SV, BH> for Cow<'me, T>
 where
-    T: resolve::Value<TI, CX, SV, BH> + ?Sized,
+    T: resolve::Value<TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn resolve_value(
         &self,
@@ -62,12 +66,13 @@ where
     }
 }
 
-impl<'me, T, TI, CX, SV, BH> resolve::ValueAsync<TI, CX, SV, BH> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::ValueAsync<TI, CX, SV, BH> for Cow<'me, T>
 where
-    T: resolve::ValueAsync<TI, CX, SV, BH> + ?Sized,
+    T: resolve::ValueAsync<TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn resolve_value_async<'r>(
         &'r self,
@@ -79,12 +84,13 @@ where
     }
 }
 
-impl<'me, T, TI, CX, SV, BH> resolve::ConcreteValue<TI, CX, SV, BH> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::ConcreteValue<TI, CX, SV, BH> for Cow<'me, T>
 where
-    T: resolve::ConcreteValue<TI, CX, SV, BH> + ?Sized,
+    T: resolve::ConcreteValue<TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn resolve_concrete_value(
         &self,
@@ -97,12 +103,13 @@ where
     }
 }
 
-impl<'me, T, TI, CX, SV, BH> resolve::ConcreteValueAsync<TI, CX, SV, BH> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::ConcreteValueAsync<TI, CX, SV, BH> for Cow<'me, T>
 where
-    T: resolve::ConcreteValueAsync<TI, CX, SV, BH> + ?Sized,
+    T: resolve::ConcreteValueAsync<TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn resolve_concrete_value_async<'r>(
         &'r self,
@@ -115,12 +122,13 @@ where
     }
 }
 
-impl<'me, T, TI, CX, SV, BH> resolve::Field<TI, CX, SV, BH> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::Field<TI, CX, SV, BH> for Cow<'me, T>
 where
-    T: resolve::Field<TI, CX, SV, BH> + ?Sized,
+    T: resolve::Field<TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn resolve_field(
         &self,
@@ -133,12 +141,13 @@ where
     }
 }
 
-impl<'me, T, TI, CX, SV, BH> resolve::FieldAsync<TI, CX, SV, BH> for &'me T
+impl<'me, T, TI, CX, SV, BH> resolve::FieldAsync<TI, CX, SV, BH> for Cow<'me, T>
 where
-    T: resolve::FieldAsync<TI, CX, SV, BH> + ?Sized,
+    T: resolve::FieldAsync<TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn resolve_field_async<'r>(
         &'r self,
@@ -151,22 +160,24 @@ where
     }
 }
 
-impl<'me, T, SV, BH> resolve::ToInputValue<SV, BH> for &'me T
+impl<'me, T, SV, BH> resolve::ToInputValue<SV, BH> for Cow<'me, T>
 where
-    T: resolve::ToInputValue<SV, BH> + ?Sized,
+    T: resolve::ToInputValue<SV, BH> + ToOwned + ?Sized + 'me,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn to_input_value(&self) -> graphql::InputValue<SV> {
         (**self).to_input_value()
     }
 }
 
-impl<'me, 'i, T, SV, BH> resolve::InputValue<'i, SV, BH> for &'me T
+impl<'me, 'i, T, SV, BH> resolve::InputValue<'i, SV, BH> for Cow<'me, T>
 where
     'i: 'me,
-    T: resolve::InputValueAs<'i, Self, SV, BH> + ?Sized,
+    T: resolve::InputValueAs<'i, Self, SV, BH> + ToOwned + ?Sized + 'me,
     SV: 'i,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     type Error = T::Error;
 
@@ -179,93 +190,102 @@ where
     }
 }
 
-impl<'me, 'i, T, SV, BH> resolve::InputValueAs<'i, &'me Self, SV, BH> for T
+impl<'me, 'i, T, SV, BH> resolve::InputValueAs<'i, Cow<'me, Self>, SV, BH> for T
 where
     'i: 'me,
-    T: resolve::InputValueAsRef<SV, BH> + ?Sized,
+    T: resolve::InputValueAsRef<SV, BH> + ToOwned + 'me,
     SV: 'i,
     BH: ?Sized,
+    Cow<'me, Self>: Deref<Target = Self>,
 {
     type Error = T::Error;
 
-    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<&'me Self, Self::Error> {
-        T::try_from_input_value(v)
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Cow<'me, Self>, Self::Error> {
+        T::try_from_input_value(v).map(Cow::Borrowed)
     }
 
-    fn try_from_implicit_null() -> Result<&'me Self, Self::Error> {
-        T::try_from_implicit_null()
+    fn try_from_implicit_null() -> Result<Cow<'me, Self>, Self::Error> {
+        T::try_from_implicit_null().map(Cow::Borrowed)
     }
 }
 
-impl<'me, T, SV, BH> resolve::ScalarToken<SV, BH> for &'me T
+impl<'me, T, SV, BH> resolve::ScalarToken<SV, BH> for Cow<'me, T>
 where
-    T: resolve::ScalarToken<SV, BH> + ?Sized,
+    T: resolve::ScalarToken<SV, BH> + ToOwned + ?Sized + 'me,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
         T::parse_scalar_token(token)
     }
 }
 
-impl<'me, 'i, T, TI, SV, BH> graphql::InputType<'i, TI, SV, BH> for &'me T
+impl<'me, 'i, T, TI, SV, BH> graphql::InputType<'i, TI, SV, BH> for Cow<'me, T>
 where
     'i: 'me,
-    T: graphql::InputTypeAs<'i, Self, TI, SV, BH> + ?Sized + 'me,
+    T: graphql::InputTypeAs<'i, Self, TI, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     SV: 'i,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn assert_input_type() {
         T::assert_input_type()
     }
 }
 
-impl<'me, T, TI, CX, SV, BH> graphql::OutputType<TI, CX, SV, BH> for &'me T
+impl<'me, T, TI, CX, SV, BH> graphql::OutputType<TI, CX, SV, BH> for Cow<'me, T>
 where
-    T: graphql::OutputType<TI, CX, SV, BH> + ?Sized,
+    T: graphql::OutputType<TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     fn assert_output_type() {
         T::assert_output_type()
     }
 }
 
-impl<'me, 'i, T, TI, CX, SV, BH> graphql::Scalar<'i, TI, CX, SV, BH> for &'me T
+impl<'me, 'i, T, TI, CX, SV, BH> graphql::Scalar<'i, TI, CX, SV, BH> for Cow<'me, T>
 where
     'i: 'me,
-    T: graphql::ScalarAs<'i, Self, TI, CX, SV, BH> + ?Sized + 'me,
+    T: graphql::ScalarAs<'i, Self, TI, CX, SV, BH> + ToOwned + ?Sized + 'me,
     TI: ?Sized,
     CX: ?Sized,
     SV: 'i,
     BH: ?Sized,
+
+    Self: Deref<Target = T>,
 {
     fn assert_scalar() {
         T::assert_scalar()
     }
 }
 
-impl<'me, T, BH> reflect::BaseType<BH> for &'me T
+impl<'me, T, BH> reflect::BaseType<BH> for Cow<'me, T>
 where
-    T: reflect::BaseType<BH> + ?Sized,
+    T: reflect::BaseType<BH> + ToOwned + ?Sized + 'me,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     const NAME: reflect::Type = T::NAME;
 }
 
-impl<'me, T, BH> reflect::BaseSubTypes<BH> for &'me T
+impl<'me, T, BH> reflect::BaseSubTypes<BH> for Cow<'me, T>
 where
-    T: reflect::BaseSubTypes<BH> + ?Sized,
+    T: reflect::BaseSubTypes<BH> + ToOwned + ?Sized + 'me,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     const NAMES: reflect::Types = T::NAMES;
 }
 
-impl<'me, T, BH> reflect::WrappedType<BH> for &'me T
+impl<'me, T, BH> reflect::WrappedType<BH> for Cow<'me, T>
 where
-    T: reflect::WrappedType<BH> + ?Sized,
+    T: reflect::WrappedType<BH> + ToOwned + ?Sized + 'me,
     BH: ?Sized,
+    Self: Deref<Target = T>,
 {
     const VALUE: reflect::WrappedValue = T::VALUE;
 }

@@ -176,7 +176,7 @@ where
     }
 }
 
-impl<'i, T, SV, BH> resolve::InputValueAs<'i, Box<T>, SV, BH> for T
+impl<'i, T, SV, BH> resolve::InputValueAs<'i, Box<Self>, SV, BH> for T
 where
     T: resolve::InputValue<'i, SV, BH>,
     SV: 'i,

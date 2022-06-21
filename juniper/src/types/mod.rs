@@ -1,6 +1,7 @@
 mod arc;
 pub mod array;
 mod r#box;
+mod cow;
 pub mod iter;
 mod nullable;
 mod option;

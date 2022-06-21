@@ -2,7 +2,7 @@
 //!
 //! [slice]: prim@slice
 
-use std::{rc::Rc, sync::Arc};
+use std::{borrow::Cow, rc::Rc, sync::Arc};
 
 use crate::{
     behavior,
@@ -75,6 +75,21 @@ where
 {
     fn to_input_value(&self) -> graphql::InputValue<SV> {
         graphql::InputValue::list(self.iter().map(T::to_input_value))
+    }
+}
+
+impl<'me, 'i, T, SV, BH> resolve::InputValueAs<'i, Cow<'me, Self>, SV, BH> for [T]
+where
+    Vec<T>: resolve::InputValue<'i, SV, BH>,
+    SV: 'i,
+    BH: ?Sized,
+    Self: ToOwned,
+{
+    type Error = <Vec<T> as resolve::InputValue<'i, SV, BH>>::Error;
+
+    fn try_from_input_value(v: &'i graphql::InputValue<SV>) -> Result<Cow<'me, Self>, Self::Error> {
+        <Vec<T> as resolve::InputValue<'i, SV, BH>>::try_from_input_value(v)
+            .map(|v| Cow::Owned(v.to_owned()))
     }
 }
 
