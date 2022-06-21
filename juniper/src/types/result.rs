@@ -2,25 +2,26 @@
 
 use crate::reflect;
 
-/*
-impl<T, E, S> reflect::BaseType<S> for Result<T, E>
+impl<T, E, BH> reflect::BaseType<BH> for Result<T, E>
 where
-    T: reflect::BaseType<S>,
+    T: reflect::BaseType<BH>,
+    BH: ?Sized,
 {
     const NAME: reflect::Type = T::NAME;
 }
 
-impl<T, E, S> reflect::BaseSubTypes<S> for Result<T, E>
+impl<T, E, BH> reflect::BaseSubTypes<BH> for Result<T, E>
 where
-    T: reflect::BaseSubTypes<S>,
+    T: reflect::BaseSubTypes<BH>,
+    BH: ?Sized,
 {
     const NAMES: reflect::Types = T::NAMES;
 }
 
-impl<T, E, S> reflect::WrappedType<S> for Result<T, E>
+impl<T, E, BH> reflect::WrappedType<BH> for Result<T, E>
 where
-    T: reflect::WrappedType<S>,
+    T: reflect::WrappedType<BH>,
+    BH: ?Sized,
 {
     const VALUE: reflect::WrappedValue = T::VALUE;
 }
-*/
