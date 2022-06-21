@@ -143,3 +143,22 @@ where
 {
     const VALUE: reflect::WrappedValue = reflect::wrap::nullable(T::VALUE);
 }
+
+#[cfg(test)]
+mod coercion {
+    use crate::{graphql, resolve::InputValue as _};
+
+    type V = graphql::InputValue;
+
+    #[test]
+    fn from_null() {
+        let v: V = graphql::input_value!(null);
+        assert_eq!(<Option<i32>>::try_from_input_value(&v), Ok(None));
+    }
+
+    #[test]
+    fn from_value() {
+        let v: V = graphql::input_value!(1);
+        assert_eq!(<Option<i32>>::try_from_input_value(&v), Ok(Some(1)));
+    }
+}

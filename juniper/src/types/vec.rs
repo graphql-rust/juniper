@@ -173,3 +173,130 @@ where
         }
     }
 }
+
+// See "Input Coercion" examples on List types:
+// https://spec.graphql.org/October2021#sec-List.Input-Coercion
+#[cfg(test)]
+mod coercion {
+    use crate::{graphql, resolve::InputValue as _, IntoFieldError as _};
+
+    use super::TryFromInputValueError;
+
+    type V = graphql::InputValue;
+
+    #[test]
+    fn from_null() {
+        let v: V = graphql::input_value!(null);
+        assert_eq!(
+            <Vec<i32>>::try_from_input_value(&v),
+            Err(TryFromInputValueError::IsNull),
+        );
+        assert_eq!(
+            <Vec<Option<i32>>>::try_from_input_value(&v),
+            Err(TryFromInputValueError::IsNull),
+        );
+        assert_eq!(<Option<Vec<i32>>>::try_from_input_value(&v), Ok(None));
+        assert_eq!(
+            <Option<Vec<Option<i32>>>>::try_from_input_value(&v),
+            Ok(None),
+        );
+        assert_eq!(
+            <Vec<Vec<i32>>>::try_from_input_value(&v),
+            Err(TryFromInputValueError::IsNull),
+        );
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::try_from_input_value(&v),
+            Ok(None),
+        );
+    }
+
+    #[test]
+    fn from_value() {
+        let v: V = graphql::input_value!(1);
+        assert_eq!(<Vec<i32>>::try_from_input_value(&v), Ok(vec![1]));
+        assert_eq!(
+            <Vec<Option<i32>>>::try_from_input_value(&v),
+            Ok(vec![Some(1)]),
+        );
+        assert_eq!(
+            <Option<Vec<i32>>>::try_from_input_value(&v),
+            Ok(Some(vec![1])),
+        );
+        assert_eq!(
+            <Option<Vec<Option<i32>>>>::try_from_input_value(&v),
+            Ok(Some(vec![Some(1)])),
+        );
+        assert_eq!(<Vec<Vec<i32>>>::try_from_input_value(&v), Ok(vec![vec![1]]));
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::try_from_input_value(&v),
+            Ok(Some(vec![Some(vec![Some(1)])])),
+        );
+    }
+
+    #[test]
+    fn from_list() {
+        let v: V = graphql::input_value!([1, 2, 3]);
+        assert_eq!(<Vec<i32>>::try_from_input_value(&v), Ok(vec![1, 2, 3]));
+        assert_eq!(
+            <Option<Vec<i32>>>::try_from_input_value(&v),
+            Ok(Some(vec![1, 2, 3])),
+        );
+        assert_eq!(
+            <Vec<Option<i32>>>::try_from_input_value(&v),
+            Ok(vec![Some(1), Some(2), Some(3)]),
+        );
+        assert_eq!(
+            <Option<Vec<Option<i32>>>>::try_from_input_value(&v),
+            Ok(Some(vec![Some(1), Some(2), Some(3)])),
+        );
+        assert_eq!(
+            <Vec<Vec<i32>>>::try_from_input_value(&v),
+            Ok(vec![vec![1], vec![2], vec![3]]),
+        );
+        // Looks like the spec ambiguity.
+        // See: https://github.com/graphql/graphql-spec/pull/515
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::try_from_input_value(&v),
+            Ok(Some(vec![
+                Some(vec![Some(1)]),
+                Some(vec![Some(2)]),
+                Some(vec![Some(3)]),
+            ])),
+        );
+    }
+
+    #[test]
+    fn from_list_with_null() {
+        let v: V = graphql::input_value!([1, 2, null]);
+        assert_eq!(
+            <Vec<i32>>::try_from_input_value(&v),
+            Err(TryFromInputValueError::Item(
+                "Expected `Int`, found: null".into_field_error(),
+            )),
+        );
+        assert_eq!(
+            <Option<Vec<i32>>>::try_from_input_value(&v),
+            Err(TryFromInputValueError::Item(
+                "Expected `Int`, found: null".into_field_error(),
+            )),
+        );
+        assert_eq!(
+            <Vec<Option<i32>>>::try_from_input_value(&v),
+            Ok(vec![Some(1), Some(2), None]),
+        );
+        assert_eq!(
+            <Option<Vec<Option<i32>>>>::try_from_input_value(&v),
+            Ok(Some(vec![Some(1), Some(2), None])),
+        );
+        assert_eq!(
+            <Vec<Vec<i32>>>::try_from_input_value(&v),
+            Err(TryFromInputValueError::Item(TryFromInputValueError::IsNull)),
+        );
+        // Looks like the spec ambiguity.
+        // See: https://github.com/graphql/graphql-spec/pull/515
+        assert_eq!(
+            <Option<Vec<Option<Vec<Option<i32>>>>>>::try_from_input_value(&v),
+            Ok(Some(vec![Some(vec![Some(1)]), Some(vec![Some(2)]), None])),
+        );
+    }
+}
