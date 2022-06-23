@@ -1,4 +1,4 @@
-use crate::value::Value;
+use crate::graphql::{self, Value};
 
 // Sort a nested schema Value.
 // In particular, lists are sorted by the "name" key of children, if present.
@@ -34,7 +34,7 @@ pub(super) fn sort_schema_value(value: &mut Value) {
 }
 
 pub(crate) fn schema_introspection_result() -> Value {
-    let mut v = graphql_value!({
+    let mut v = graphql::value!({
         "__schema": {
           "description": null,
           "queryType": {
@@ -1451,7 +1451,7 @@ pub(crate) fn schema_introspection_result() -> Value {
 }
 
 pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
-    let mut v = graphql_value!({
+    let mut v = graphql::value!({
         "__schema": {
           "queryType": {
             "name": "Query"

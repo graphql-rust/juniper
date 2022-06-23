@@ -1,6 +1,6 @@
 mod interface {
     use crate::{
-        graphql_interface, graphql_object,
+        graphql_interface, graphql_object, graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
         GraphQLObject,
@@ -96,7 +96,7 @@ mod interface {
 
 mod union {
     use crate::{
-        graphql_object, graphql_union,
+        graphql_object, graphql_union, graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };

@@ -1144,9 +1144,9 @@ impl GraphQLTypeDefiniton {
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                    ::juniper::InputValue::object(vec![
+                    ::juniper::InputValue::object([
                         #( #to_inputs )*
-                    ].into_iter().collect())
+                    ])
                 }
             }
 
