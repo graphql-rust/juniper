@@ -123,6 +123,7 @@ fn expand_on_trait(
         description: attr.description.as_deref().cloned(),
         context,
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
         fields,
         implemented_for: attr
             .implemented_for
@@ -304,6 +305,7 @@ fn expand_on_derive_input(
         description: attr.description.as_deref().cloned(),
         context,
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
         fields,
         implemented_for: attr
             .implemented_for

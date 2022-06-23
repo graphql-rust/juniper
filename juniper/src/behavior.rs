@@ -6,7 +6,7 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    resolve, Registry,
+    reflect, resolve, Registry,
 };
 
 /// Default standard behavior of GraphQL types implementation.
@@ -91,4 +91,40 @@ where
     fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
         T::parse_scalar_token(token)
     }
+}
+
+impl<T, B1, B2> reflect::BaseType<B1> for Coerce<T, B2>
+where
+    T: reflect::BaseType<B2> + ?Sized,
+    B1: ?Sized,
+    B2: ?Sized,
+{
+    const NAME: reflect::Type = T::NAME;
+}
+
+impl<T, B1, B2> reflect::BaseSubTypes<B1> for Coerce<T, B2>
+where
+    T: reflect::BaseSubTypes<B2> + ?Sized,
+    B1: ?Sized,
+    B2: ?Sized,
+{
+    const NAMES: reflect::Types = T::NAMES;
+}
+
+impl<T, B1, B2> reflect::WrappedType<B1> for Coerce<T, B2>
+where
+    T: reflect::WrappedType<B2> + ?Sized,
+    B1: ?Sized,
+    B2: ?Sized,
+{
+    const VALUE: reflect::WrappedValue = T::VALUE;
+}
+
+impl<T, B1, B2> reflect::Implements<B1> for Coerce<T, B2>
+where
+    T: reflect::Implements<B2> + ?Sized,
+    B1: ?Sized,
+    B2: ?Sized,
+{
+    const NAMES: reflect::Types = T::NAMES;
 }

@@ -96,6 +96,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description: attr.description.as_deref().cloned(),
         context,
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
         fields,
         implemented_for: attr
             .implemented_for

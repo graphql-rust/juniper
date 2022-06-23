@@ -971,9 +971,9 @@ impl Definition {
     /// [`reflect::BaseSubTypes`] and [`reflect::WrappedType`] traits for this
     /// [GraphQL scalar][0].
     ///
-    /// [`reflect::BaseSubTypes`]: juniper::reflection::BaseSubTypes
-    /// [`reflect::BaseType`]: juniper::reflection::BaseType
-    /// [`reflect::WrappedType`]: juniper::reflection::WrappedType
+    /// [`reflect::BaseSubTypes`]: juniper::reflect::BaseSubTypes
+    /// [`reflect::BaseType`]: juniper::reflect::BaseType
+    /// [`reflect::WrappedType`]: juniper::reflect::WrappedType
     /// [0]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_reflect(&self) -> TokenStream {
         let bh = &self.behavior;
@@ -1087,7 +1087,7 @@ impl Definition {
 
         let ty = {
             let ident = &self.ident;
-            let (_, ty_gen, _) = self.generics.split_for_impl();
+            let (_, ty_gen, _) = generics.split_for_impl();
             parse_quote! { #ident#ty_gen }
         };
 

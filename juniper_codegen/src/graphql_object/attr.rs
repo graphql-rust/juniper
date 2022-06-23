@@ -121,6 +121,7 @@ where
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
         fields,
         interfaces: attr
             .interfaces

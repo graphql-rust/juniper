@@ -98,6 +98,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
             .map(SpanContainer::into_inner)
             .unwrap_or_else(|| parse_quote! { () }),
         scalar,
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
         fields,
         interfaces: attr
             .interfaces

@@ -18,7 +18,7 @@ use syn::{
 
 use crate::{
     common::{
-        field, gen,
+        behavior, field, gen,
         parse::{
             attr::{err, OptionExt as _},
             GenericsExt as _, ParseBufferExt as _, TypeExt,
@@ -72,6 +72,17 @@ pub(crate) struct Attr {
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     pub(crate) scalar: Option<SpanContainer<scalar::AttrValue>>,
+
+    /// Explicitly specified type of the custom [`Behavior`] to parametrize this
+    /// [GraphQL object][0] type implementation with.
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Objects
+    pub(crate) behavior: Option<SpanContainer<behavior::Type>>,
 
     /// Explicitly specified [GraphQL interfaces][2] this [GraphQL object][1]
     /// type implements.
@@ -135,6 +146,13 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "impl" | "implements" | "interfaces" => {
                     input.parse::<token::Eq>()?;
                     for iface in input.parse_maybe_wrapped_and_punctuated::<
@@ -180,6 +198,7 @@ impl Attr {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
+            behavior: try_merge_opt!(behavior: self, another),
             interfaces: try_merge_hashset!(interfaces: self, another => span_joined),
             rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
@@ -244,6 +263,13 @@ pub(crate) struct Definition<Operation: ?Sized> {
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     pub(crate) scalar: scalar::Type,
+
+    /// [`Behavior`] parametrization to generate code with for this
+    /// [GraphQL object][0].
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [0]: https://spec.graphql.org/October2021#sec-Objects
+    pub(crate) behavior: behavior::Type,
 
     /// Defined [GraphQL fields][2] of this [GraphQL object][1].
     ///
@@ -327,6 +353,13 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         (quote! { #impl_generics }, where_clause.cloned())
+    }
+
+    /// Returns prepared self [`syn::Type`] and [`syn::Generics`] for a trait
+    /// implementation.
+    #[must_use]
+    fn ty_and_generics(&self) -> (&syn::Type, syn::Generics) {
+        (&self.ty, self.generics.clone())
     }
 
     /// Returns generated code implementing [`marker::IsOutputType`] trait for
@@ -423,6 +456,69 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         }
     }
 
+    /// Returns generated code implementing [`reflect::BaseType`],
+    /// [`reflect::BaseSubTypes`], [`reflect::Implements`],
+    /// [`reflect::WrappedType`] and [`reflect::Fields`] traits for this
+    /// [GraphQL object][0].
+    ///
+    /// [`reflect::BaseSubTypes`]: juniper::reflect::BaseSubTypes
+    /// [`reflect::BaseType`]: juniper::reflect::BaseType
+    /// [`reflect::Fields`]: juniper::reflect::Fields
+    /// [`reflect::Implements`]: juniper::reflect::Implements
+    /// [`reflect::WrappedType`]: juniper::reflect::WrappedType
+    /// [0]: https://spec.graphql.org/October2021#sec-Objects
+    #[must_use]
+    pub(crate) fn impl_reflect(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let name = &self.name;
+        let interfaces = self.interfaces.iter();
+        let fields = self.fields.iter().map(|f| &f.name);
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::BaseType<#bh> for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::reflect::Types =
+                    &[<Self as ::juniper::reflect::BaseType<#bh>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::Implements<#bh> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::reflect::Types = &[#(
+                    <#interfaces as ::juniper::reflect::BaseType<#bh>>::NAME
+                ),*];
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::reflect::WrappedValue =
+                    ::juniper::reflect::wrap::SINGULAR;
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::Fields<#bh> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::reflect::Names = &[#( #fields ),*];
+            }
+        }
+    }
+
     /// Returns generated code implementing [`GraphQLType`] trait for this
     /// [GraphQL object][1].
     ///
@@ -504,6 +600,8 @@ impl ToTokens for Definition<Query> {
         self.impl_field_meta_tokens().to_tokens(into);
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
+        ////////////////////////////////////////////////////////////////////////
+        self.impl_reflect().to_tokens(into);
     }
 }
 
