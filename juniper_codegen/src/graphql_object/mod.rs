@@ -519,6 +519,70 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         }
     }
 
+    /// Returns generated code implementing [`reflect::Field`] trait for each
+    /// [field][1] of this [GraphQL object][0].
+    ///
+    /// [`reflect::Field`]: juniper::reflect::Field
+    /// [0]: https://spec.graphql.org/October2021#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
+    #[must_use]
+    pub(crate) fn impl_reflect_field(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        self.fields
+            .iter()
+            .map(|field| {
+                let (f_name, f_ty, f_bh) = (&field.name, &field.ty, &field.behavior);
+
+                let arguments = field
+                    .arguments
+                    .as_ref()
+                    .iter()
+                    .flat_map(|vec| vec.iter().filter_map(field::MethodArgument::as_regular))
+                    .map(|arg| {
+                        let (a_name, a_ty, a_bh) = (&arg.name, &arg.ty, &arg.behavior);
+
+                        quote! {(
+                            #a_name,
+                            <#a_ty as ::juniper::reflect::BaseType<#a_bh>>
+                                ::NAME,
+                            <#a_ty as ::juniper::reflect::WrappedType<#a_bh>>
+                                ::VALUE,
+                        )}
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    #[allow(deprecated, non_snake_case)]
+                    #[automatically_derived]
+                    impl#impl_gens ::juniper::reflect::Field<
+                        { ::juniper::reflect::fnv1a128(#f_name) }, #bh,
+                    > for #ty #where_clause {
+                        const TYPE: ::juniper::reflect::Type =
+                            <#f_ty as ::juniper::reflect::BaseType<#f_bh>>
+                                ::NAME;
+
+                        const SUB_TYPES: ::juniper::reflect::Types =
+                            <#f_ty as ::juniper::reflect::BaseSubTypes<#f_bh>>
+                                ::NAMES;
+
+                        const WRAPPED_VALUE: juniper::reflect::WrappedValue =
+                            <#f_ty as ::juniper::reflect::WrappedType<#f_bh>>
+                                ::VALUE;
+
+                        const ARGUMENTS: &'static [(
+                            ::juniper::reflect::Name,
+                            ::juniper::reflect::Type,
+                            ::juniper::reflect::WrappedValue,
+                        )] = &[#( #arguments ),*];
+                    }
+                }
+            })
+            .collect()
+    }
+
     /// Returns generated code implementing [`GraphQLType`] trait for this
     /// [GraphQL object][1].
     ///
@@ -602,6 +666,8 @@ impl ToTokens for Definition<Query> {
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
         self.impl_reflect().to_tokens(into);
+        self.impl_reflect_field().to_tokens(into);
+        //self.impl_resolve_field_static().to_tokens(into);
     }
 }
 

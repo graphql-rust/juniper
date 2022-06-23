@@ -229,6 +229,7 @@ fn parse_field(
         description,
         deprecated,
         ident: method_ident.clone(),
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
         arguments: Some(arguments),
         has_receiver: method.sig.receiver().is_some(),
         is_async: method.sig.asyncness.is_some(),

@@ -154,6 +154,7 @@ fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Defin
         description,
         deprecated,
         ident: field_ident.clone(),
+        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
         arguments: None,
         has_receiver: false,
         is_async: false,

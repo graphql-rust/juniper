@@ -16,6 +16,7 @@ use syn::{
 
 use crate::{
     common::{
+        behavior,
         parse::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _,
@@ -57,6 +58,19 @@ pub(crate) struct Attr {
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     /// [2]: https://spec.graphql.org/June2018/#sec-Deprecation
     pub(crate) deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
+
+    /// Explicitly specified type of the custom [`Behavior`] this
+    /// [GraphQL field][0] implementation is parametrized with, to [coerce] in
+    /// the generated code from.
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [coerce]: juniper::behavior::Coerce
+    pub(crate) behavior: Option<SpanContainer<behavior::Type>>,
 
     /// Explicitly specified marker indicating that this method (or struct
     /// field) should be omitted by code generation and not considered as the
@@ -100,6 +114,13 @@ impl Parse for Attr {
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "ignore" | "skip" => out
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
@@ -122,6 +143,7 @@ impl Attr {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
             deprecated: try_merge_opt!(deprecated: self, another),
+            behavior: try_merge_opt!(behavior: self, another),
             ignore: try_merge_opt!(ignore: self, another),
         })
     }
@@ -198,6 +220,14 @@ pub(crate) struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     pub(crate) ident: syn::Ident,
+
+    /// [`Behavior`] parametrization of this [GraphQL field][0] implementation
+    /// to [coerce] from in the generated code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [0]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [coerce]: juniper::behavior::Coerce
+    pub(crate) behavior: behavior::Type,
 
     /// Rust [`MethodArgument`]s required to call the method representing this
     /// [GraphQL field][1].
