@@ -1,124 +1,134 @@
-<img src="https://github.com/graphql-rust/juniper/raw/master/assets/logo/juniper-dark-word.png" alt="Juniper" width="500" />
+Enums
+=====
 
-> GraphQL server library for Rust
+Enums in GraphQL are string constants grouped together to represent a set of
+possible values. Simple Rust enums can be converted to GraphQL enums by using a
+custom derive attribute:
 
-[![Build Status](https://dev.azure.com/graphql-rust/GraphQL%20Rust/_apis/build/status/graphql-rust.juniper)](https://dev.azure.com/graphql-rust/GraphQL%20Rust/_build/latest?definitionId=1)
-[![codecov](https://codecov.io/gh/graphql-rust/juniper/branch/master/graph/badge.svg)](https://codecov.io/gh/graphql-rust/juniper)
-[![Crates.io](https://img.shields.io/crates/v/juniper.svg?maxAge=2592000)](https://crates.io/crates/juniper)
-[![Gitter chat](https://badges.gitter.im/juniper-graphql/gitter.svg)](https://gitter.im/juniper-graphql)
+```rust
+# extern crate juniper;
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
+enum Episode {
+    NewHope,
+    Empire,
+    Jedi,
+}
+#
+# fn main() {}
+```
 
----
+## Custom name, description and deprecation
 
-[GraphQL][graphql] is a data query language developed by Facebook intended to
-serve mobile and web application frontends.
+The name of [GraphQL enum][1] or its variants may be overridden with a `name`
+attribute's argument. By default, a type name is used or `SCREAMING_SNAKE_CASE`
+variant name.
 
-_Juniper_ makes it possible to write GraphQL servers in Rust that are
-type-safe and blazingly fast. We also try to make declaring and resolving
-GraphQL schemas as convenient as Rust will allow.
+The description of [GraphQL enum][1] or its variants may be specified either
+with a `description`/`desc` attribute's argument, or with a regular Rust doc
+comment.
 
-Juniper does not include a web server - instead it provides building blocks to
-make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the [Actix][actix], [Hyper][hyper], [Iron][iron], [Rocket], and [Warp][warp] frameworks, including
-embedded [Graphiql][graphiql] and [GraphQL Playground][playground] for easy debugging.
+A variant of [GraphQL enum][1] may be deprecated by specifying a `deprecated`
+attribute's argument, or with regular Rust `#[deprecated]` attribute.
 
-- [Cargo crate](https://crates.io/crates/juniper)
-- [API Reference][docsrs]
-- [Book][book]: Guides and Examples ([current][book] | [master][book_master])
+```rust
+# extern crate juniper;
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
+#[graphql(
+    // Rename the type for GraphQL by specifying the name here.
+    name = "AvailableEpisodes",
+    // You may also specify a description here.
+    // If present, doc comments will be ignored.
+    desc = "Possible episodes.",
+)]
+enum Episode {
+    /// Doc comment, also acting as description.
+     #[deprecated(note = "Don't use it")]
+    NewHope,
+ 
+    #[graphql(name = "Jedi", desc = "Arguably the best one in the trilogy")]
+    #[graphql(deprecated = "Don't use it")]
+    Jedi,
+ 
+    Empire,
+}
+#
+# fn main() {}
+```
 
-The book is also available for the master branch and older versions published after 0.11.1. See the [book index][book_index].
+## Renaming policy
+
+By default, all [GraphQL enum][1] variants are renamed via
+`SCREAMING_SNAKE_CASE` policy (so `NewHope` becomes `NEW_HOPE` variant in
+GraphQL schema, and so on). This complies with default GraphQL naming
+conventions [demonstrated in spec][1].
+
+However, if you need for some reason apply another naming convention, it's
+possible to do by using `rename_all` attribute's argument. At the moment it
+supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+`none` (disables any renaming).
+
+```rust
+# extern crate juniper;
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
+#[graphql(rename_all = "none")] // disables renaming
+enum Episode {
+    NewHope,
+    Empire,
+    Jedi,
+}
+#
+# fn main() {}
+```
+
+## Ignoring struct fields
+
+To omit exposing a struct field in the GraphQL schema, use an `ignore`
+attribute's argument directly on that field. Only ignored variants can contain
+fields.
+
+```rust
+# extern crate juniper;
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
+enum Episode<T> {
+    NewHope,
+    Empire,
+    Jedi,
+    #[graphql(ignore)]
+    Legends(T),
+}
+#
+# fn main() {}
+```
+
+## Custom `ScalarValue`
+
+By default, `#[derive(GraphQLEnum)]` macro generates code, which is generic over
+a [`ScalarValue`] type. This can be changed with `scalar` attribute.
+
+```rust
+# extern crate juniper;
+# use juniper::{DefaultScalarValue, GraphQLEnum};
+#
+#[derive(GraphQLEnum)]
+#[graphql(scalar = DefaultScalarValue)]
+enum Episode {
+    NewHope,
+    Empire,
+    Jedi,
+}
+#
+# fn main() {}
+```
 
 
-## Getting Started
 
-The best place to get started is the [Juniper Book][book], which contains
-guides with plenty of examples, covering all features of Juniper. (very much WIP)
 
-To get started quickly and get a feel for Juniper, check out the
-[Quickstart][book_quickstart] section.
-
-For specific information about macros, types and the Juniper api, the
-[API Reference][docsrs] is the best place to look.
-
-You can also check out the [Star Wars schema][test_schema_rs] to see a complex
-example including polymorphism with traits and interfaces.
-For an example of web framework integration,
-see the [actix][actix_examples], [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples], and [warp][warp_examples] examples folders.
-
-## Features
-
-Juniper supports the full GraphQL query language according to the
-[specification][graphql_spec], including interfaces, unions, schema
-introspection, and validations. It can also output the schema in the [GraphQL Schema Language][schema_language].
-
-As an exception to other GraphQL libraries for other languages, Juniper builds
-non-null types by default. A field of type `Vec<Episode>` will be converted into
-`[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
-`Option<Vec<Option<Episode>>>`.
-
-Juniper is agnostic to serialization format and network transport.
-
-Juniper supports both asynchronous and synchronous execution using `execute()` and `execute_sync()` respectively. Asynchronous execution is runtime agnostic.
-
-Juniper follows a [code-first approach][schema_approach] to defining GraphQL schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider [juniper-from-schema][] for generating code from a schema file.
-
-## Integrations
-
-### Data types
-
-Juniper has automatic integration with some very common Rust crates to make
-building schemas a breeze. The types from these crates will be usable in
-your Schemas automatically.
-
-- [uuid][uuid]
-- [url][url]
-- [chrono][chrono]
-- [chrono-tz][chrono-tz]
-- [time][time]
-- [bson][bson]
-
-### Web Frameworks
-
-- [actix][actix]
-- [hyper][hyper]
-- [rocket][rocket]
-- [iron][iron]
-- [warp][warp]
-
-## Guides & Examples
-
-- [Juniper + actix-web example](https://github.com/actix/examples/tree/master/graphql/juniper)
-
-## API Stability
-
-Juniper has not reached 1.0 yet, thus some API instability should be expected.
-
-[actix]: https://actix.rs/
-[graphql]: http://graphql.org
-[graphiql]: https://github.com/graphql/graphiql
-[playground]: https://github.com/prisma/graphql-playground
-[iron]: https://github.com/iron/iron
-[graphql_spec]: http://facebook.github.io/graphql
-[schema_language]: https://graphql.org/learn/schema/#type-language
-[schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
-[test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/fixtures/starwars/schema.rs
-[tokio]: https://github.com/tokio-rs/tokio
-[actix_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_actix/examples
-[hyper_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_hyper/examples
-[rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
-[iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
-[hyper]: https://hyper.rs
-[rocket]: https://rocket.rs
-[book]: https://graphql-rust.github.io
-[book_master]: https://graphql-rust.github.io/juniper/master
-[book_index]: https://graphql-rust.github.io
-[book_quickstart]: https://graphql-rust.github.io/quickstart.html
-[docsrs]: https://docs.rs/juniper
-[warp]: https://github.com/seanmonstar/warp
-[warp_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples
-[uuid]: https://crates.io/crates/uuid
-[url]: https://crates.io/crates/url
-[chrono]: https://crates.io/crates/chrono
-[chrono-tz]: https://crates.io/crates/chrono-tz
-[time]: https://crates.io/crates/time
-[bson]: https://crates.io/crates/bson
-[juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
+[1]: https://spec.graphql.org/October2021/#sec-Enums
