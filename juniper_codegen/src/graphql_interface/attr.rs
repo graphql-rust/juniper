@@ -131,6 +131,7 @@ fn expand_on_trait(
             .collect(),
         implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
         suppress_dead_code: None,
+        src_intra_doc_link: format!("trait@{}", trait_ident),
     };
 
     Ok(quote! {
@@ -224,8 +225,8 @@ fn expand_on_derive_input(
 ) -> syn::Result<TokenStream> {
     let attr = Attr::from_attrs("graphql_interface", &attrs)?;
 
-    let trait_ident = &ast.ident;
-    let trait_span = ast.span();
+    let struct_ident = &ast.ident;
+    let struct_span = ast.span();
 
     let data = match &mut ast.data {
         syn::Data::Struct(data) => data,
@@ -242,13 +243,13 @@ fn expand_on_derive_input(
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| trait_ident.unraw().to_string());
+        .unwrap_or_else(|| struct_ident.unraw().to_string());
     if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             attr.name
                 .as_ref()
                 .map(SpanContainer::span_ident)
-                .unwrap_or_else(|| trait_ident.span()),
+                .unwrap_or_else(|| struct_ident.span()),
         );
     }
 
@@ -271,10 +272,10 @@ fn expand_on_derive_input(
     proc_macro_error::abort_if_dirty();
 
     if fields.is_empty() {
-        ERR.emit_custom(trait_span, "must have at least one field");
+        ERR.emit_custom(struct_span, "must have at least one field");
     }
     if !field::all_different(&fields) {
-        ERR.emit_custom(trait_span, "must have a different name for each field");
+        ERR.emit_custom(struct_span, "must have a different name for each field");
     }
 
     proc_macro_error::abort_if_dirty();
@@ -294,7 +295,7 @@ fn expand_on_derive_input(
         })
         .unwrap_or_else(|| parse_quote! { () });
 
-    let (enum_ident, enum_alias_ident) = enum_idents(trait_ident, attr.r#enum.as_deref());
+    let (enum_ident, enum_alias_ident) = enum_idents(struct_ident, attr.r#enum.as_deref());
     let generated_code = Definition {
         generics: ast.generics.clone(),
         vis: ast.vis.clone(),
@@ -312,6 +313,7 @@ fn expand_on_derive_input(
             .collect(),
         implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
         suppress_dead_code: None,
+        src_intra_doc_link: format!("struct@{}", struct_ident),
     };
 
     Ok(quote! {

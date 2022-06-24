@@ -1,10 +1,4 @@
-//! This crate supplies custom derive implementations for the
-//! [juniper](https://github.com/graphql-rust/juniper) crate.
-//!
-//! You should not depend on juniper_codegen directly.
-//! You only need the `juniper` crate.
-
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.15.9")]
+#![doc = include_str!("../README.md")]
 #![recursion_limit = "1024"]
 
 mod result;
@@ -106,10 +100,10 @@ macro_rules! try_merge_hashset {
     };
 }
 
-mod derive_enum;
 mod derive_input_object;
 
 mod common;
+mod graphql_enum;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
@@ -122,17 +116,6 @@ use proc_macro_error::{proc_macro_error, ResultExt as _};
 use result::GraphQLScope;
 
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
-pub fn derive_enum(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, GraphQLScope::DeriveEnum);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
@@ -141,6 +124,132 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
     }
+}
+
+/// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][1]
+/// implementation for enums.
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived
+/// implementation. Specifying multiple `#[graphql]` attributes on the same
+/// definition is totally okay. They all will be treated as a single attribute.
+///
+/// ```
+/// use juniper::GraphQLEnum;
+///
+/// #[derive(GraphQLEnum)]
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// # Custom name, description and deprecation
+///
+/// The name of [GraphQL enum][1] or its variants may be overridden with a
+/// `name` attribute's argument. By default, a type name is used or
+/// `SCREAMING_SNAKE_CASE` variant name.
+///
+/// The description of [GraphQL enum][1] or its variants may be specified either
+/// with a `description`/`desc` attribute's argument, or with a regular Rust doc
+/// comment.
+///
+/// A variant of [GraphQL enum][1] may be deprecated by specifying a
+/// `deprecated` attribute's argument, or with regular Rust `#[deprecated]`
+/// attribute.
+///
+/// ```
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "AvailableEpisodes",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "Possible episodes.",
+/// )]
+/// enum Episode {
+///     /// Doc comment, also acting as description.
+///      #[deprecated(note = "Don't use it")]
+///     NewHope,
+///
+///     #[graphql(name = "Jedi", desc = "Arguably the best one in the trilogy")]
+///     #[graphql(deprecated = "Don't use it")]
+///     Jedi,
+///
+///     Empire,
+/// }
+/// ```
+///
+/// # Renaming policy
+///
+/// By default, all [GraphQL enum][1] variants are renamed via
+/// `SCREAMING_SNAKE_CASE` policy (so `NewHope` becomes `NEW_HOPE` variant in
+/// GraphQL schema, and so on). This complies with default GraphQL naming
+/// conventions [demonstrated in spec][1].
+///
+/// However, if you need for some reason apply another naming convention, it's
+/// possible to do by using `rename_all` attribute's argument. At the moment it
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// `none` (disables any renaming).
+///
+/// ```
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(rename_all = "none")] // disables renaming
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// # Ignoring struct fields
+///
+/// To omit exposing a struct field in the GraphQL schema, use an `ignore`
+/// attribute's argument directly on that field. Only ignored variants can
+/// contain fields.
+///
+/// ```
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// enum Episode<T> {
+///     NewHope,
+///     Empire,
+///     Jedi,
+///     #[graphql(ignore)]
+///     Legends(T),
+/// }
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, `#[derive(GraphQLEnum)]` macro generates code, which is generic
+/// over a [`ScalarValue`] type. This can be changed with `scalar` attribute.
+///
+/// ```
+/// # use juniper::{DefaultScalarValue, GraphQLEnum};
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(scalar = DefaultScalarValue)]
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+/// [1]: https://spec.graphql.org/October2021/#sec-Enums
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
+pub fn derive_enum(input: TokenStream) -> TokenStream {
+    graphql_enum::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[derive(GraphQLScalar)]` macro for deriving a [GraphQL scalar][0]
@@ -680,7 +789,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// [GraphQL interface][1] can be represented with struct in case methods don't
 /// have any arguments:
 ///
-/// ```
+/// ```rust
 /// use juniper::{graphql_interface, GraphQLObject};
 ///
 /// // NOTICE: By default a `CharacterValue` enum is generated by macro to represent values of this
@@ -700,7 +809,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///
 /// Also [GraphQL interface][1] can be represented with trait:
 ///
-/// ```
+/// ```rust
 /// use juniper::{graphql_interface, GraphQLObject};
 ///
 /// // NOTICE: By default a `CharacterValue` enum is generated by macro to represent values of this
@@ -719,7 +828,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// > __NOTE:__ Struct or trait representing interface acts only as a blueprint
-/// >           for names of methods, their arguments and return type. So isn't
+/// >           for names of methods, their arguments and return type, so isn't
 /// >           actually used at a runtime. But no-one is stopping you from
 /// >           implementing trait manually for your own usage.
 ///
@@ -738,7 +847,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// The default value of a field argument may be specified with a `default` attribute argument (if
 /// no exact value is specified then [`Default::default`] is used).
 ///
-/// ```
+/// ```rust
 /// # use juniper::graphql_interface;
 /// #
 /// #[graphql_interface(name = "Character", desc = "Possible episode characters.")]
@@ -895,7 +1004,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
 /// `none` (disables any renaming).
 ///
-/// ```
+/// ```rust
 /// # use juniper::{graphql_interface, graphql_object};
 /// #
 /// #[graphql_interface(for = Human, rename_all = "none")] // disables renaming
@@ -934,7 +1043,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// To omit some trait method to be assumed as a [GraphQL interface][1] field
 /// and ignore it, use an `ignore` attribute's argument directly on that method.
 ///
-/// ```
+/// ```rust
 /// # use juniper::graphql_interface;
 /// #
 /// #[graphql_interface]
@@ -958,7 +1067,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// or `ctx` then this argument is assumed as [`Context`] and will be omitted in GraphQL schema.
 /// Additionally, any argument may be marked as [`Context`] with a `context` attribute's argument.
 ///
-/// ```
+/// ```rust
 /// # use std::collections::HashMap;
 /// # use juniper::{graphql_interface, graphql_object};
 /// #
@@ -1017,7 +1126,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///
 /// However, this requires to explicitly parametrize over [`ScalarValue`], as [`Executor`] does so.
 ///
-/// ```
+/// ```rust
 /// # use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _, ScalarValue};
 /// #
 /// // NOTICE: Specifying `ScalarValue` as existing type parameter.
@@ -1059,7 +1168,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// concrete [`ScalarValue`] type should be specified with a `scalar`
 /// attribute's argument.
 ///
-/// ```
+/// ```rust
 /// # use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
 /// #
 /// // NOTICE: Removing `Scalar` argument will fail compilation.
@@ -1096,9 +1205,9 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// implementation for traits and its implementers.
 ///
 /// This macro is applicable only to structs and useful in case [interface][1]
-/// methods doesn't have any arguments:
+/// fields don't have any arguments:
 ///
-/// ```
+/// ```rust
 /// use juniper::{GraphQLInterface, GraphQLObject};
 ///
 /// // NOTICE: By default a `CharacterValue` enum is generated by macro to represent values of this
@@ -1117,8 +1226,9 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// For more info and possibilities see `#[`[`graphql_interface`]`]` macro.
+/// For more info and possibilities see [`#[graphql_interface]`] macro.
 ///
+/// [`#[graphql_interface]`]: crate::graphql_interface
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInterface, attributes(graphql))]

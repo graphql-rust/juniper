@@ -104,6 +104,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
             .collect(),
         implements: attr.implements.iter().map(|c| c.inner().clone()).collect(),
         suppress_dead_code: Some((ast.ident.clone(), data.fields.clone())),
+        src_intra_doc_link: format!("struct@{}", struct_ident),
     }
     .into_token_stream())
 }

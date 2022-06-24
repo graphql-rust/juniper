@@ -1,17 +1,16 @@
 [package]
-name = "warp_async"
-version = "0.1.0"
+name = "example_warp_async"
+version = "0.0.0"
 edition = "2018"
-publish = false
 authors = ["Christoph Herzog <chris@theduke.at>"]
+publish = false
 
 [dependencies]
+env_logger = "0.9"
+futures = "0.3"
 juniper = { path = "../../juniper" }
 juniper_warp = { path = "../../juniper_warp" }
-
-env_logger = "0.9"
-futures = "0.3.1"
-log = "0.4.8"
+log = "0.4"
 reqwest = { version = "0.11", features = ["rustls-tls"] }
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 warp = "0.3"

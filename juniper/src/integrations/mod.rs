@@ -1,11 +1,15 @@
 //! Provides GraphQLType implementations for some external types
 
+#[cfg(feature = "bigdecimal")]
+pub mod bigdecimal;
 #[cfg(feature = "bson")]
 pub mod bson;
 #[cfg(feature = "chrono")]
 pub mod chrono;
 #[cfg(feature = "chrono-tz")]
 pub mod chrono_tz;
+#[cfg(feature = "rust_decimal")]
+pub mod rust_decimal;
 #[doc(hidden)]
 pub mod serde;
 #[cfg(feature = "time")]

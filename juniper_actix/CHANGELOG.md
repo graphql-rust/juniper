@@ -1,34 +1,32 @@
-# master
+`juniper_actix` changelog
+=========================
 
-- Compatibility with the latest `juniper`.
+All user visible changes to `juniper_actix` crate will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
-# [[0.4.0] 2021-07-08](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.4.0)
 
-- Require `actix-web` >= `4.0.0-beta8`.
-- Compatibility with the latest `juniper`.
 
-# [[0.2.5] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.5)
 
-- Compatibility with the latest `juniper`.
+## master
 
-# [[0.2.4] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.4)
+### BC Breaks
 
-- Compatibility with the latest `juniper`.
+- Switched to 4.0 version of [`actix-web` crate] and its ecosystem. ([#1034])
+- Switched to 0.16 version of [`juniper` crate].
+- Switched to 0.4 version of [`juniper_graphql_ws` crate].
 
-# [[0.2.3] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.3)
+[#1034]: /../../pull/1034
 
-- Compatibility with the latest `juniper`.
-- Fix Content-Type charset parsing ([#863](https://github.com/graphql-rust/juniper/pull/863))
 
-# [[0.2.2] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.2)
 
-- Compatibility with the latest `juniper`.
 
-# [[0.2.1] 2020-12-12](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.1)
+## Previous releases
 
-- Actix package updated to 3.3.
+See [old CHANGELOG](/../../blob/juniper_actix-v0.4.0/juniper_actix/CHANGELOG.md).
 
-# [[0.2.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_actix-0.2.0)
-- Actix package updated to 3.0.0
-- Subscription support
-- Initial Release
+
+
+
+[`actix-web` crate]: https://docs.rs/actix-web
+[`juniper` crate]: https://docs.rs/juniper
+[`juniper_graphql_ws` crate]: https://docs.rs/juniper_graphql_ws
+[Semantic Versioning 2.0.0]: https://semver.org

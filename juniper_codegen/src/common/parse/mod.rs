@@ -127,6 +127,7 @@ impl TypeExt for syn::Type {
     fn unparenthesized(&self) -> &Self {
         match self {
             Self::Paren(ty) => ty.elem.unparenthesized(),
+            Self::Group(ty) => ty.elem.unparenthesized(),
             ty => ty,
         }
     }
@@ -207,9 +208,10 @@ impl TypeExt for syn::Type {
             // These types unlikely will be used as GraphQL types.
             T::BareFn(_) | T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) => {}
 
-            // TODO: uncomment this, once lint is stabilized.
+            // Following the syn idiom for exhaustive matching on Type:
+            // https://github.com/dtolnay/syn/blob/1.0.90/src/ty.rs#L67-L87
+            // TODO: #[cfg_attr(test, deny(non_exhaustive_omitted_patterns))]
             //       https://github.com/rust-lang/rust/issues/89554
-            // #[cfg_attr(test, deny(non_exhaustive_omitted_patterns))]
             _ => unimplemented!(),
         }
     }
@@ -317,7 +319,7 @@ impl GenericsExt for syn::Generics {
 }
 
 /// Replaces [`Generics`] with default values:
-/// - `'static` for [`Lifetime`]s
+/// - `'static` for [`Lifetime`]s;
 /// - `::juniper::DefaultScalarValue` for [`Type`]s.
 ///
 /// [`Generics`]: syn::Generics

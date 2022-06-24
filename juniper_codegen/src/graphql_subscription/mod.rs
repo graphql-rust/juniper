@@ -57,8 +57,8 @@ impl Definition<Subscription> {
                     &self,
                     _: &Self::TypeInfo,
                     _: &str,
-                    _: &::juniper::Arguments<#scalar>,
-                    _: &::juniper::Executor<Self::Context, #scalar>,
+                    _: &::juniper::Arguments<'_, #scalar>,
+                    _: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     Err(::juniper::FieldError::from(
                         "Called `resolve_field` on subscription object",
