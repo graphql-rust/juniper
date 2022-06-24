@@ -100,10 +100,10 @@ macro_rules! try_merge_hashset {
     };
 }
 
-mod derive_enum;
 mod derive_input_object;
 
 mod common;
+mod graphql_enum;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
@@ -116,17 +116,6 @@ use proc_macro_error::{proc_macro_error, ResultExt as _};
 use result::GraphQLScope;
 
 #[proc_macro_error]
-#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
-pub fn derive_enum(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, GraphQLScope::DeriveEnum);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
@@ -135,6 +124,133 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
         Ok(gen) => gen.into(),
         Err(err) => proc_macro_error::abort!(err),
     }
+}
+
+/// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][0]
+/// implementation for Rust enums.
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived
+/// implementation. Specifying multiple `#[graphql]` attributes on the same
+/// definition is totally okay. They all will be treated as a single attribute.
+///
+/// ```rust
+/// use juniper::GraphQLEnum;
+///
+/// #[derive(GraphQLEnum)]
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// # Custom name, description and deprecation
+///
+/// The name of a [GraphQL enum][0] or its [values][1] may be overridden with
+/// the `name` attribute's argument. By default, a type name is used or a
+/// variant name in `SCREAMING_SNAKE_CASE`.
+///
+/// The description of a [GraphQL enum][0] or its [values][1] may be specified
+/// either with the `description`/`desc` attribute's argument, or with a regular
+/// Rust doc comment.
+///
+/// [GraphQL enum value][1] may be deprecated by specifying the `deprecated`
+/// attribute's argument, or with regular a Rust `#[deprecated]` attribute.
+///
+/// ```rust
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "AvailableEpisodes",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "Possible episodes.",
+/// )]
+/// enum Episode {
+///     /// Doc comment, also acting as description.
+///     #[deprecated(note = "Don't use it")]
+///     NewHope,
+///
+///     #[graphql(name = "Jedi", desc = "Arguably the best one in the trilogy")]
+///     #[graphql(deprecated = "Don't use it")]
+///     Jedai,
+///
+///     Empire,
+/// }
+/// ```
+///
+/// # Renaming policy
+///
+/// By default, all [GraphQL enum values][1] are renamed in a
+/// `SCREAMING_SNAKE_CASE` manner (so a `NewHope` Rust enum variant becomes a
+/// `NEW_HOPE` [value][1] in GraphQL schema, and so on). This complies with
+/// default GraphQL naming conventions as [demonstrated in spec][0].
+///
+/// However, if you need for some reason another naming convention, it's
+/// possible to do so by using the `rename_all` attribute's argument. At the
+/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
+/// `camelCase`, `none` (disables any renaming).
+///
+/// ```rust
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(rename_all = "none")] // disables renaming
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// # Ignoring enum variants
+///
+/// To omit exposing a Rust enum variant in a GraphQL schema, use the `ignore`
+/// attribute's argument directly on that variant. Only ignored Rust enum
+/// variants are allowed to contain fields.
+///
+/// ```rust
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// enum Episode<T> {
+///     NewHope,
+///     Empire,
+///     Jedi,
+///     #[graphql(ignore)]
+///     Legends(T),
+/// }
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, `#[derive(GraphQLEnum)]` macro generates code, which is generic
+/// over a [`ScalarValue`] type. This can be changed with the `scalar`
+/// attribute's argument.
+///
+/// ```rust
+/// # use juniper::{DefaultScalarValue, GraphQLEnum};
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(scalar = DefaultScalarValue)]
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+/// [0]: https://spec.graphql.org/October2021#sec-Enums
+/// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
+pub fn derive_enum(input: TokenStream) -> TokenStream {
+    graphql_enum::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[derive(GraphQLScalar)]` macro for deriving a [GraphQL scalar][0]

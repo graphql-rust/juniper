@@ -9,6 +9,7 @@ use std::fmt;
 pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
 
 pub enum GraphQLScope {
+    EnumDerive,
     InterfaceAttr,
     InterfaceDerive,
     ObjectAttr,
@@ -19,19 +20,18 @@ pub enum GraphQLScope {
     UnionAttr,
     UnionDerive,
     DeriveInputObject,
-    DeriveEnum,
 }
 
 impl GraphQLScope {
     pub fn spec_section(&self) -> &str {
         match self {
+            Self::EnumDerive => "#sec-Enums",
             Self::InterfaceAttr | Self::InterfaceDerive => "#sec-Interfaces",
             Self::ObjectAttr | Self::ObjectDerive => "#sec-Objects",
             Self::ScalarAttr | Self::ScalarDerive => "#sec-Scalars",
             Self::ScalarValueDerive => "#sec-Scalars.Built-in-Scalars",
             Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
             Self::DeriveInputObject => "#sec-Input-Objects",
-            Self::DeriveEnum => "#sec-Enums",
         }
     }
 }
@@ -39,13 +39,13 @@ impl GraphQLScope {
 impl fmt::Display for GraphQLScope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
+            Self::EnumDerive => "enum",
             Self::InterfaceAttr | Self::InterfaceDerive => "interface",
             Self::ObjectAttr | Self::ObjectDerive => "object",
             Self::ScalarAttr | Self::ScalarDerive => "scalar",
             Self::ScalarValueDerive => "built-in scalars",
             Self::UnionAttr | Self::UnionDerive => "union",
             Self::DeriveInputObject => "input object",
-            Self::DeriveEnum => "enum",
         };
         write!(f, "GraphQL {}", name)
     }
@@ -56,9 +56,7 @@ impl fmt::Display for GraphQLScope {
 pub enum UnsupportedAttribute {
     Skip,
     Interface,
-    Scalar,
     Deprecation,
-    Default,
 }
 
 impl GraphQLScope {
