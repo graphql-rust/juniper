@@ -50,9 +50,15 @@ pub struct ScalarMeta<'a, S> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub specified_by_url: Option<Cow<'a, str>>,
-    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>,
-    pub(crate) parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
+    pub(crate) try_parse_fn: InputValueParseFn<S>,
+    pub(crate) parse_fn: ScalarTokenParseFn<S>,
 }
+
+/// Shortcut for an [`InputValue`] parsing function.
+pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>;
+
+/// Shortcut for a [`ScalarToken`] parsing function.
+pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>;
 
 /// List type metadata
 #[derive(Debug)]
@@ -92,7 +98,7 @@ pub struct EnumMeta<'a, S> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub values: Vec<EnumValue>,
-    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>,
+    pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
 /// Interface type metadata
@@ -104,8 +110,6 @@ pub struct InterfaceMeta<'a, S> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub fields: Vec<Field<'a, S>>,
-    #[doc(hidden)]
-    pub interface_names: Vec<String>,
 }
 
 /// Union type metadata
@@ -127,7 +131,7 @@ pub struct InputObjectMeta<'a, S> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub input_fields: Vec<Argument<'a, S>>,
-    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>,
+    pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
 /// A placeholder for not-yet-registered types
@@ -344,9 +348,7 @@ impl<'a, S> MetaType<'a, S> {
     /// `true` if it can be parsed as the provided type.
     ///
     /// Only scalars, enums, and input objects have parse functions.
-    pub fn input_value_parse_fn(
-        &self,
-    ) -> Option<for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>> {
+    pub fn input_value_parse_fn(&self) -> Option<InputValueParseFn<S>> {
         match *self {
             MetaType::Scalar(ScalarMeta {
                 ref try_parse_fn, ..
@@ -585,7 +587,6 @@ impl<'a, S> InterfaceMeta<'a, S> {
             name,
             description: None,
             fields: fields.to_vec(),
-            interface_names: Vec::new(),
         }
     }
 
@@ -595,18 +596,6 @@ impl<'a, S> InterfaceMeta<'a, S> {
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
-        self
-    }
-
-    /// Set the `interfaces` this [`InterfaceMeta`] interface implements.
-    ///
-    /// Overwrites any previously set list of interfaces.
-    #[must_use]
-    pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> Self {
-        self.interface_names = interfaces
-            .iter()
-            .map(|t| t.innermost_name().to_owned())
-            .collect();
         self
     }
 

@@ -1173,7 +1173,7 @@ pub(crate) fn schema_introspection_result() -> Value {
                 }
               ],
               "inputFields": null,
-              "interfaces": [],
+              "interfaces": null,
               "enumValues": null,
               "possibleTypes": [
                 {
@@ -2500,7 +2500,7 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                 }
               ],
               "inputFields": null,
-              "interfaces": [],
+              "interfaces": null,
               "enumValues": null,
               "possibleTypes": [
                 {

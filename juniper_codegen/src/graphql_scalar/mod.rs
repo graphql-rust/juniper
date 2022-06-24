@@ -432,8 +432,8 @@ impl Definition {
                 fn resolve(
                     &self,
                     info: &(),
-                    selection: Option<&[::juniper::Selection<#scalar>]>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    selection: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     #resolve
                 }
@@ -460,8 +460,8 @@ impl Definition {
                 fn resolve_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
-                    selection_set: Option<&'b [::juniper::Selection<#scalar>]>,
-                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                    selection_set: Option<&'b [::juniper::Selection<'_, #scalar>]>,
+                    executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);

@@ -2,7 +2,6 @@ use std::fmt::Debug;
 
 use crate::{
     ast::{Definition, Document, FragmentSpread, InlineFragment},
-    meta::InterfaceMeta,
     parser::Spanning,
     schema::meta::MetaType,
     validation::{ValidatorContext, Visitor},
@@ -46,23 +45,6 @@ where
                 .as_ref()
                 .and_then(|s| ctx.schema.concrete_type_by_name(s.item)),
         ) {
-            // Even if there is no object type in the overlap of interfaces
-            // implementers, it's ok to spread in case `frag_type` implements
-            // `parent_type`.
-            // https://spec.graphql.org/October2021/#sel-JALVFJNRDABABqDy5B
-            if let MetaType::Interface(InterfaceMeta {
-                interface_names, ..
-            }) = frag_type
-            {
-                let implements_parent = parent_type
-                    .name()
-                    .map(|parent| interface_names.iter().any(|i| i == parent))
-                    .unwrap_or_default();
-                if implements_parent {
-                    return;
-                }
-            }
-
             if !ctx.schema.type_overlap(parent_type, frag_type) {
                 ctx.report_error(
                     &error_message(
@@ -85,23 +67,6 @@ where
             ctx.parent_type(),
             self.fragment_types.get(spread.item.name.item),
         ) {
-            // Even if there is no object type in the overlap of interfaces
-            // implementers, it's ok to spread in case `frag_type` implements
-            // `parent_type`.
-            // https://spec.graphql.org/October2021/#sel-JALVFJNRDABABqDy5B
-            if let MetaType::Interface(InterfaceMeta {
-                interface_names, ..
-            }) = frag_type
-            {
-                let implements_parent = parent_type
-                    .name()
-                    .map(|parent| interface_names.iter().any(|i| i == parent))
-                    .unwrap_or_default();
-                if implements_parent {
-                    return;
-                }
-            }
-
             if !ctx.schema.type_overlap(parent_type, frag_type) {
                 ctx.report_error(
                     &error_message(
@@ -257,27 +222,6 @@ mod tests {
             r#"
           fragment interfaceWithinUnion on CatOrDog { ...petFragment }
           fragment petFragment on Pet { name }
-        "#,
-        );
-    }
-
-    #[test]
-    fn no_object_overlap_but_implements_parent() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
-            factory,
-            r#"
-          fragment beingFragment on Being { ...unpopulatedFragment }
-          fragment unpopulatedFragment on Unpopulated { name }
-        "#,
-        );
-    }
-
-    #[test]
-    fn no_object_overlap_but_implements_parent_inline() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
-            factory,
-            r#"
-          fragment beingFragment on Being { ...on Unpopulated { name } }
         "#,
         );
     }

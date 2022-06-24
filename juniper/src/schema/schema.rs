@@ -244,16 +244,10 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
     fn interfaces<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
-            TypeType::Concrete(
-                &MetaType::Object(ObjectMeta {
-                    ref interface_names,
-                    ..
-                })
-                | &MetaType::Interface(InterfaceMeta {
-                    ref interface_names,
-                    ..
-                }),
-            ) => Some(
+            TypeType::Concrete(&MetaType::Object(ObjectMeta {
+                ref interface_names,
+                ..
+            })) => Some(
                 interface_names
                     .iter()
                     .filter_map(|n| context.type_by_name(n))

@@ -127,6 +127,7 @@ impl TypeExt for syn::Type {
     fn unparenthesized(&self) -> &Self {
         match self {
             Self::Paren(ty) => ty.elem.unparenthesized(),
+            Self::Group(ty) => ty.elem.unparenthesized(),
             ty => ty,
         }
     }
@@ -318,7 +319,7 @@ impl GenericsExt for syn::Generics {
 }
 
 /// Replaces [`Generics`] with default values:
-/// - `'static` for [`Lifetime`]s
+/// - `'static` for [`Lifetime`]s;
 /// - `::juniper::DefaultScalarValue` for [`Type`]s.
 ///
 /// [`Generics`]: syn::Generics

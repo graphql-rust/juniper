@@ -551,38 +551,6 @@ macro_rules! assert_interfaces_impls {
     };
 }
 
-/// Asserts that all `transitive` interfaces that are implemented by `interface`
-/// are also implemented by `implementor`. See [spec] for more info.
-///
-/// [spec]: https://spec.graphql.org/October2021/#sel-FAHbhBHCAACGB35P
-#[macro_export]
-macro_rules! assert_transitive_implementations {
-    ($scalar: ty, $interface: ty, $implementor: ty $(, $transitive: ty)* $(,)?) => {
-        const _: () = {
-            $({
-                let is_present = $crate::macros::reflect::str_exists_in_arr(
-                    <$implementor as ::juniper::macros::reflect::BaseType<$scalar>>::NAME,
-                    <$transitive as ::juniper::macros::reflect::BaseSubTypes<$scalar>>::NAMES,
-                );
-                if !is_present {
-                    const MSG: &str = $crate::const_concat!(
-                        "Failed to implement interface `",
-                        <$interface as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                        "` on `",
-                        <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                        "`: missing `impl = ` for transitive interface `",
-                        <$transitive as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                        "` on `",
-                        <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                        "`."
-                    );
-                    ::std::panic!("{}", MSG);
-                }
-            })*
-        };
-    };
-}
-
 /// Asserts validness of [`Field`] [`Arguments`] and returned [`Type`].
 ///
 /// This assertion is a combination of [`assert_subtype`] and

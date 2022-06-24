@@ -1,3 +1,7 @@
-target
-Cargo.lock
-.idea
+/.idea/
+/.vscode/
+/*.iml
+.DS_Store
+
+/Cargo.lock
+/target/

@@ -31,12 +31,11 @@ use crate::{
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
 
-/// Returns [`Ident`]s for generic enum deriving [`Clone`] and [`Copy`] on it
-/// and enum alias which generic arguments are filled with
+/// Returns [`syn::Ident`]s for a generic enum deriving [`Clone`] and [`Copy`]
+/// on it and enum alias which generic arguments are filled with
 /// [GraphQL interface][1] implementers.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-/// [`Ident`]: syn::Ident
 fn enum_idents(
     trait_ident: &syn::Ident,
     alias_ident: Option<&syn::Ident>,
@@ -82,19 +81,12 @@ struct Attr {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     r#enum: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified Rust types of [GraphQL objects][2] or
-    /// [interfaces][1] implementing this [GraphQL interface][1] type.
+    /// Explicitly specified Rust types of [GraphQL objects][2] implementing
+    /// this [GraphQL interface][1] type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     implemented_for: HashSet<SpanContainer<syn::TypePath>>,
-
-    /// Explicitly specified [GraphQL interfaces][2] this [interface][1] type
-    /// implements.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
-    implements: HashSet<SpanContainer<syn::TypePath>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL interface][1] type with.
@@ -118,6 +110,13 @@ struct Attr {
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     scalar: Option<SpanContainer<scalar::AttrValue>>,
+
+    /// Explicitly specified marker indicating that the Rust trait should be
+    /// transformed into [`async_trait`].
+    ///
+    /// If [`None`], then trait will be transformed into [`async_trait`] only if
+    /// it contains async methods.
+    asyncness: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified [`RenameRule`] for all fields of this
     /// [GraphQL interface][1] type.
@@ -186,24 +185,18 @@ impl Parse for Attr {
                             .none_or_else(|_| err::dup_arg(impler_span))?;
                     }
                 }
-                "impl" | "implements" => {
-                    input.parse::<token::Eq>()?;
-                    for iface in input.parse_maybe_wrapped_and_punctuated::<
-                        syn::TypePath, token::Bracket, token::Comma,
-                    >()? {
-                        let iface_span = iface.span();
-                        out
-                            .implements
-                            .replace(SpanContainer::new(ident.span(), Some(iface_span), iface))
-                            .none_or_else(|_| err::dup_arg(iface_span))?;
-                    }
-                }
                 "enum" => {
                     input.parse::<token::Eq>()?;
                     let alias = input.parse::<syn::Ident>()?;
                     out.r#enum
                         .replace(SpanContainer::new(ident.span(), Some(alias.span()), alias))
                         .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "async" => {
+                    let span = ident.span();
+                    out.asyncness
+                        .replace(SpanContainer::new(span, Some(span), ident))
+                        .none_or_else(|_| err::dup_arg(span))?;
                 }
                 "rename_all" => {
                     input.parse::<token::Eq>()?;
@@ -239,8 +232,8 @@ impl Attr {
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
             implemented_for: try_merge_hashset!(implemented_for: self, another => span_joined),
-            implements: try_merge_hashset!(implements: self, another => span_joined),
             r#enum: try_merge_opt!(r#enum: self, another),
+            asyncness: try_merge_opt!(asyncness: self, another),
             rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
@@ -327,11 +320,6 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implemented_for: Vec<syn::TypePath>,
 
-    /// Specified [GraphQL interfaces][1] this [interface][1] type implements.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    implements: Vec<syn::TypePath>,
-
     /// Unlike `#[graphql_interface]` maro, `#[derive(GraphQLInterface)]` can't
     /// append `#[allow(dead_code)]` to the unused struct, representing
     /// [GraphQL interface][1]. We generate hacky `const` which doesn't actually
@@ -339,6 +327,12 @@ struct Definition {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
+
+    /// Intra-doc link to the [`syn::Item`] defining this
+    /// [GraphQL interface][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    src_intra_doc_link: String,
 }
 
 impl ToTokens for Definition {
@@ -370,7 +364,6 @@ impl Definition {
             let par = format_ident!("__I{}", id);
             parse_quote! { #par }
         });
-
         let variants_idents = self
             .implemented_for
             .iter()
@@ -379,7 +372,6 @@ impl Definition {
         let interface_gens = &self.generics;
         let (interface_impl_gens, interface_ty_gens, interface_where_clause) =
             self.generics.split_for_impl();
-
         let (interface_gens_lifetimes, interface_gens_tys) = interface_gens
             .params
             .clone()
@@ -393,13 +385,11 @@ impl Definition {
             enum_gens.params.extend(interface_gens_tys.clone());
             enum_gens
         };
-
         let enum_alias_gens = {
             let mut enum_alias_gens = interface_gens.clone();
             enum_alias_gens.move_bounds_to_where_clause();
             enum_alias_gens
         };
-
         let enum_to_alias_gens = {
             interface_gens_lifetimes
                 .into_iter()
@@ -419,26 +409,42 @@ impl Definition {
                     rest => quote! { #rest },
                 }))
         };
+        let enum_doc = format!(
+            "Enum building an opaque value represented by [`{}`]({}) \
+             [GraphQL interface][0].\
+             \n\n\
+             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+            self.name, self.src_intra_doc_link,
+        );
+        let enum_alias_doc = format!(
+            "Opaque value represented by [`{}`]({}) [GraphQL interface][0].\
+             \n\n\
+             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+            self.name, self.src_intra_doc_link,
+        );
 
-        let phantom_variant = self.has_phantom_variant().then(|| {
-            let phantom_params = interface_gens.params.iter().filter_map(|p| {
-                let ty = match p {
-                    syn::GenericParam::Type(ty) => {
-                        let ident = &ty.ident;
-                        quote! { #ident }
-                    }
-                    syn::GenericParam::Lifetime(lt) => {
-                        let lifetime = &lt.lifetime;
-                        quote! { &#lifetime () }
-                    }
-                    syn::GenericParam::Const(_) => return None,
-                };
-                Some(quote! {
-                    ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
-                })
-            });
-            quote! { __Phantom(#(#phantom_params),*) }
-        });
+        let phantom_variant = self
+            .has_phantom_variant()
+            .then(|| {
+                let phantom_params = interface_gens.params.iter().filter_map(|p| {
+                    let ty = match p {
+                        syn::GenericParam::Type(ty) => {
+                            let ident = &ty.ident;
+                            quote! { #ident }
+                        }
+                        syn::GenericParam::Lifetime(lt) => {
+                            let lifetime = &lt.lifetime;
+                            quote! { &#lifetime () }
+                        }
+                        syn::GenericParam::Const(_) => return None,
+                    };
+                    Some(quote! {
+                        ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
+                    })
+                });
+                quote! { __Phantom(#(#phantom_params),*) }
+            })
+            .into_iter();
 
         let from_impls = self
             .implemented_for
@@ -461,16 +467,18 @@ impl Definition {
         quote! {
             #[automatically_derived]
             #[derive(Clone, Copy, Debug)]
+            #[doc = #enum_doc]
             #vis enum #enum_ident#enum_gens {
-                #(#variants_idents(#variant_gens_pars),)*
-                #phantom_variant
+                #( #[doc(hidden)] #variants_idents(#variant_gens_pars), )*
+                #( #[doc(hidden)] #phantom_variant, )*
             }
 
             #[automatically_derived]
+            #[doc = #enum_alias_doc]
             #vis type #alias_ident#enum_alias_gens =
-                #enum_ident<#(#enum_to_alias_gens),*>;
+                #enum_ident<#( #enum_to_alias_gens ),*>;
 
-            #(#from_impls)*
+            #( #from_impls )*
         }
     }
 
@@ -488,6 +496,11 @@ impl Definition {
         let (impl_generics, _, where_clause) = gens.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
+        let implemented_for = &self.implemented_for;
+        let all_impled_for_unique = (implemented_for.len() > 1).then(|| {
+            quote! { ::juniper::sa::assert_type_ne_all!(#( #implemented_for ),*); }
+        });
+
         let suppress_dead_code = self.suppress_dead_code.as_ref().map(|(ident, fields)| {
             let const_gens = self.const_trait_generics();
             let fields = fields.iter().map(|f| &f.ident);
@@ -497,56 +510,13 @@ impl Definition {
                     let none = Option::<#ident#const_gens>::None;
                     match none {
                         Some(unreachable) => {
-                            #(let _ = unreachable.#fields;)*
+                            #( let _ = unreachable.#fields; )*
                         }
                         None => {}
                     }
                 };
                 let _ = SUPPRESS_DEAD_CODE;
             }}
-        });
-
-        let implemented_for = &self.implemented_for;
-        let all_impled_for_unique = (implemented_for.len() > 1).then(|| {
-            quote! { ::juniper::sa::assert_type_ne_all!(#( #implemented_for ),*); }
-        });
-
-        let mark_object_or_interface = self.implemented_for.iter().map(|impl_for| {
-            quote_spanned! { impl_for.span() =>
-                trait GraphQLObjectOrInterface<S: ::juniper::ScalarValue, T> {
-                    fn mark();
-                }
-
-                {
-                    struct Object;
-
-                    impl<S, T> GraphQLObjectOrInterface<S, Object> for T
-                    where
-                        S: ::juniper::ScalarValue,
-                        T: ::juniper::marker::GraphQLObject<S>,
-                    {
-                        fn mark() {
-                            <T as ::juniper::marker::GraphQLObject<S>>::mark()
-                        }
-                    }
-                }
-
-                {
-                    struct Interface;
-
-                    impl<S, T> GraphQLObjectOrInterface<S, Interface> for T
-                    where
-                        S: ::juniper::ScalarValue,
-                        T: ::juniper::marker::GraphQLInterface<S>,
-                    {
-                        fn mark() {
-                            <T as ::juniper::marker::GraphQLInterface<S>>::mark()
-                        }
-                    }
-                }
-
-                <#impl_for as GraphQLObjectOrInterface<#scalar, _>>::mark();
-            }
         });
 
         quote! {
@@ -558,7 +528,7 @@ impl Definition {
                 fn mark() {
                     #suppress_dead_code
                     #all_impled_for_unique
-                    #( { #mark_object_or_interface } )*
+                    #( <#implemented_for as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
                 }
             }
         }
@@ -595,25 +565,6 @@ impl Definition {
             generics.replace_type_path_with_defaults(&mut ty);
             ty
         });
-        let const_implements = self
-            .implements
-            .iter()
-            .cloned()
-            .map(|mut ty| {
-                generics.replace_type_path_with_defaults(&mut ty);
-                ty
-            })
-            .collect::<Vec<_>>();
-        let transitive_checks = const_impl_for.clone().map(|const_impl_for| {
-            quote_spanned! { const_impl_for.span() =>
-                ::juniper::assert_transitive_implementations!(
-                    #const_scalar,
-                    #ty#ty_const_generics,
-                    #const_impl_for,
-                    #(#const_implements),*
-                );
-            }
-        });
 
         quote! {
             #[automatically_derived]
@@ -629,12 +580,6 @@ impl Definition {
                         #ty#ty_const_generics,
                         #( #const_impl_for ),*
                     );
-                    ::juniper::assert_implemented_for!(
-                        #const_scalar,
-                        #ty#ty_const_generics,
-                        #(#const_implements),*
-                    );
-                    #( #transitive_checks )*
                 }
             }
         }
@@ -667,20 +612,6 @@ impl Definition {
             a.cmp(&b)
         });
 
-        // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
-        let mut implements = self.implements.clone();
-        implements.sort_unstable_by(|a, b| {
-            let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
-            a.cmp(&b)
-        });
-        let impl_interfaces = (!implements.is_empty()).then(|| {
-            quote! {
-                .interfaces(&[
-                    #( registry.get_type::<#implements>(info), )*
-                ])
-            }
-        });
-
         let fields_meta = self.fields.iter().map(|f| f.method_meta_tokens(None));
 
         quote! {
@@ -707,7 +638,6 @@ impl Definition {
                     ];
                     registry.build_interface_type::<#ty#ty_generics>(info, &fields)
                         #description
-                        #impl_interfaces
                         .into_meta()
                 }
             }
@@ -766,8 +696,8 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     field: &str,
-                    args: &::juniper::Arguments<#scalar>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    args: &::juniper::Arguments<'_, #scalar>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
@@ -787,8 +717,8 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[::juniper::Selection<#scalar>]>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    _: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     #downcast
                 }
@@ -837,8 +767,8 @@ impl Definition {
                     &'b self,
                     info: &'b Self::TypeInfo,
                     field: &'b str,
-                    args: &'b ::juniper::Arguments<#scalar>,
-                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                    args: &'b ::juniper::Arguments<'_, #scalar>,
+                    executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
@@ -871,7 +801,6 @@ impl Definition {
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let implemented_for = &self.implemented_for;
-        let implements = &self.implements;
         let scalar = &self.scalar;
         let name = &self.name;
         let fields = self.fields.iter().map(|f| &f.name);
@@ -898,15 +827,6 @@ impl Definition {
                     <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
                     #( <#implemented_for as ::juniper::macros::reflect::BaseType<#scalar>>::NAME ),*
                 ];
-            }
-
-            #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
-                for #ty#ty_generics
-                #where_clause
-            {
-                const NAMES: ::juniper::macros::reflect::Types =
-                    &[#(<#implements as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*];
             }
 
             #[automatically_derived]
@@ -977,11 +897,11 @@ impl Definition {
                             ::juniper::macros::reflect::Name,
                             ::juniper::macros::reflect::Type,
                             ::juniper::macros::reflect::WrappedValue,
-                        )] = &[#((
+                        )] = &[#( (
                             #args_names,
                             <#args_tys as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
                             <#args_tys as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE,
-                        )),*];
+                        ) ),*];
                     }
                 }
             })
@@ -1042,11 +962,11 @@ impl Definition {
                         fn call(
                             &self,
                             info: &Self::TypeInfo,
-                            args: &::juniper::Arguments<#scalar>,
-                            executor: &::juniper::Executor<Self::Context, #scalar>,
+                            args: &::juniper::Arguments<'_, #scalar>,
+                            executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::ExecutionResult<#scalar> {
                             match self {
-                                #(#ty::#implemented_for_idents(v) => {
+                                #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
                                         #ty#const_ty_generics,
                                         #const_implemented_for,
@@ -1058,7 +978,7 @@ impl Definition {
                                         #scalar,
                                         { ::juniper::macros::reflect::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
-                                })*
+                                } )*
                                 #unreachable_arm
                             }
                         }
@@ -1122,11 +1042,11 @@ impl Definition {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
-                            args: &'b ::juniper::Arguments<#scalar>,
-                            executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                            args: &'b ::juniper::Arguments<'_, #scalar>,
+                            executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                             match self {
-                                #(#ty::#implemented_for_idents(v) => {
+                                #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
                                         #ty#const_ty_generics,
                                         #const_implemented_for,
@@ -1138,7 +1058,7 @@ impl Definition {
                                         #scalar,
                                         { ::juniper::macros::reflect::fnv1a128(#field_name) },
                                     >>::call(v, info, args, executor)
-                                })*
+                                } )*
                                 #unreachable_arm
                             }
                         }
