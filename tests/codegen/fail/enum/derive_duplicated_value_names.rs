@@ -1,4 +1,6 @@
-#[derive(juniper::GraphQLEnum)]
+use juniper::GraphQLEnum;
+
+#[derive(GraphQLEnum)]
 enum Test {
     Test,
     #[graphql(name = "TEST")]

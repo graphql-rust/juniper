@@ -30,7 +30,7 @@ mod utc_date_time {
     pub(super) fn to_output<S: ScalarValue>(v: &UtcDateTime) -> Value<S> {
         Value::scalar(
             (*v).try_to_rfc3339_string()
-                .expect("failed to format DateTime as RFC3339"),
+                .unwrap_or_else(|e| panic!("failed to format `UtcDateTime` as RFC3339: {}", e)),
         )
     }
 
