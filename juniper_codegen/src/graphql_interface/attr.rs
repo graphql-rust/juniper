@@ -124,7 +124,7 @@ fn expand_on_trait(
         description: attr.description.map(|d| d.into_inner().into_boxed_str()),
         context,
         scalar,
-        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+        behavior: attr.behavior.into(),
         fields,
         implemented_for: attr
             .implemented_for
@@ -218,7 +218,7 @@ fn parse_trait_method(
         description,
         deprecated,
         ident: method_ident.clone(),
-        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+        behavior: attr.behavior.into(),
         arguments: Some(arguments),
         has_receiver: method.sig.receiver().is_some(),
         is_async: method.sig.asyncness.is_some(),
@@ -313,7 +313,7 @@ fn expand_on_derive_input(
         description: attr.description.map(|d| d.into_inner().into_boxed_str()),
         context,
         scalar,
-        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+        behavior: attr.behavior.into(),
         fields,
         implemented_for: attr
             .implemented_for
@@ -388,7 +388,7 @@ fn parse_struct_field(field: &mut syn::Field, renaming: &RenameRule) -> Option<f
         description,
         deprecated,
         ident: field_ident.clone(),
-        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+        behavior: attr.behavior.into(),
         arguments: None,
         has_receiver: false,
         is_async: false,

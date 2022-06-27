@@ -18,6 +18,7 @@ use syn::{
 
 use crate::{
     common::{
+        behavior,
         parse::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _,
@@ -70,6 +71,17 @@ struct ContainerAttr {
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     scalar: Option<SpanContainer<scalar::AttrValue>>,
+
+    /// Explicitly specified type of the custom [`Behavior`] to parametrize this
+    /// [GraphQL enum][0] implementation with.
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    behavior: Option<SpanContainer<behavior::Type>>,
 
     /// Explicitly specified [`RenameRule`] for all [values][1] of this
     /// [GraphQL enum][0].
@@ -128,6 +140,13 @@ impl Parse for ContainerAttr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "rename_all" => {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
@@ -161,6 +180,7 @@ impl ContainerAttr {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
+            behavior: try_merge_opt!(behavior: self, another),
             rename_values: try_merge_opt!(rename_values: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
@@ -389,6 +409,13 @@ struct Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     scalar: scalar::Type,
 
+    /// [`Behavior`] parametrization to generate code with for this
+    /// [GraphQL enum][0].
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    behavior: behavior::Type,
+
     /// [Values][1] of this [GraphQL enum][0].
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
@@ -411,6 +438,8 @@ impl ToTokens for Definition {
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
+        ////////////////////////////////////////////////////////////////////////
+        self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -729,6 +758,47 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`reflect::BaseType`],
+    /// [`reflect::BaseSubTypes`] and [`reflect::WrappedType`] traits for this
+    /// [GraphQL enum][0].
+    ///
+    /// [`reflect::BaseSubTypes`]: juniper::reflect::BaseSubTypes
+    /// [`reflect::BaseType`]: juniper::reflect::BaseType
+    /// [`reflect::WrappedType`]: juniper::reflect::WrappedType
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    fn impl_reflect(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let name = &self.name;
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::BaseType<#bh> for #ty
+                #where_clause
+            {
+                const NAME: ::juniper::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
+                #where_clause
+            {
+                const NAMES: ::juniper::reflect::Types =
+                    &[<Self as ::juniper::reflect::BaseType<#bh>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl#impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
+                #where_clause
+            {
+                const VALUE: ::juniper::reflect::WrappedValue =
+                    ::juniper::reflect::wrap::SINGULAR;
+            }
+        }
+    }
+
     /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
     /// similar) implementation of this enum.
     ///
@@ -786,5 +856,20 @@ impl Definition {
         }
 
         generics
+    }
+
+    /// Returns prepared self [`syn::Type`] and [`syn::Generics`] for a trait
+    /// implementation.
+    #[must_use]
+    fn ty_and_generics(&self) -> (syn::Type, syn::Generics) {
+        let generics = self.generics.clone();
+
+        let ty = {
+            let ident = &self.ident;
+            let (_, ty_gen, _) = generics.split_for_impl();
+            parse_quote! { #ident#ty_gen }
+        };
+
+        (ty, generics)
     }
 }

@@ -74,7 +74,7 @@ pub(crate) struct Attr {
     pub(crate) scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified type of the custom [`Behavior`] to parametrize this
-    /// [GraphQL object][0] type implementation with.
+    /// [GraphQL object][0] implementation with.
     ///
     /// If [`None`], then [`behavior::Standard`] will be used for the generated
     /// code.

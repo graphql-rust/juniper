@@ -97,7 +97,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description: attr.description.map(|d| d.into_inner().into_boxed_str()),
         context,
         scalar,
-        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+        behavior: attr.behavior.into(),
         fields,
         implemented_for: attr
             .implemented_for
@@ -160,7 +160,7 @@ fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Defin
         description,
         deprecated,
         ident: field_ident.clone(),
-        behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+        behavior: attr.behavior.into(),
         arguments: None,
         has_receiver: false,
         is_async: false,

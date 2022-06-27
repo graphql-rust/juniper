@@ -10,6 +10,8 @@ use syn::{
     parse_quote,
 };
 
+use crate::util::span_container::SpanContainer;
+
 /// [`Behaviour`] parametrization of the code generation.
 ///
 /// [`Behaviour`]: juniper::behavior
@@ -53,5 +55,11 @@ impl Type {
             Self::Standard => parse_quote! { ::juniper::behavior::Standard },
             Self::Custom(ty) => ty.clone(),
         }
+    }
+}
+
+impl From<Option<SpanContainer<Self>>> for Type {
+    fn from(attr: Option<SpanContainer<Self>>) -> Self {
+        attr.map(SpanContainer::into_inner).unwrap_or_default()
     }
 }

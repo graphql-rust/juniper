@@ -67,7 +67,7 @@ struct Attr {
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified type of the custom [`Behavior`] to parametrize this
-    /// [GraphQL scalar][0] type implementation with.
+    /// [GraphQL scalar][0] implementation with.
     ///
     /// If [`None`], then [`behavior::Standard`] will be used for the generated
     /// code.
@@ -1721,7 +1721,7 @@ impl ParseToken {
 #[derive(Debug, Default)]
 struct FieldAttr {
     /// Explicitly specified type of the custom [`Behavior`] used for
-    /// [GraphQL scalar][0] implementation by the [`Field`].
+    /// [GraphQL scalar][0] implementation by this [`Field`].
     ///
     /// If [`None`], then [`behavior::Standard`] will be used for the generated
     /// code.

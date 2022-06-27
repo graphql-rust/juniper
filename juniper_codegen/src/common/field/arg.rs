@@ -494,7 +494,7 @@ impl OnMethod {
             ty: argument.ty.as_ref().clone(),
             description: attr.description.as_ref().map(|d| d.as_ref().value()),
             default: attr.default.as_ref().map(|v| v.as_ref().clone()),
-            behavior: attr.behavior.map(|bh| bh.into_inner()).unwrap_or_default(),
+            behavior: attr.behavior.into(),
         })))
     }
 }

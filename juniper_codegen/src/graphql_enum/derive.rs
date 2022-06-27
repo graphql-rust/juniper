@@ -92,6 +92,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description,
         context,
         scalar,
+        behavior: attr.behavior.into(),
         values,
         has_ignored_variants,
     };
