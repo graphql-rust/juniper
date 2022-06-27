@@ -6,8 +6,21 @@ pub use crate::{
     macros::{input_value, value, vars},
     resolve::Type,
     value::Value,
-    GraphQLScalar as Scalar,
+    GraphQLEnum as Enum, GraphQLScalar as Scalar,
 };
+
+pub trait Enum<
+    'inp,
+    TypeInfo: ?Sized,
+    Context: ?Sized,
+    ScalarValue: 'inp,
+    Behavior: ?Sized = behavior::Standard,
+>:
+    InputType<'inp, TypeInfo, ScalarValue, Behavior>
+    + OutputType<TypeInfo, Context, ScalarValue, Behavior>
+{
+    fn assert_enum();
+}
 
 /*
 pub trait Interface<S>: OutputType<S>

@@ -445,9 +445,9 @@ impl ToTokens for Definition {
         self.impl_resolve_value_async().to_tokens(into);
         self.impl_resolve_to_input_value().to_tokens(into);
         self.impl_resolve_input_value().to_tokens(into);
-        //self.impl_graphql_input_type().to_tokens(into);
-        //self.impl_graphql_output_type().to_tokens(into);
-        //self.impl_graphql_enum().to_tokens(into);
+        self.impl_graphql_input_type().to_tokens(into);
+        self.impl_graphql_output_type().to_tokens(into);
+        self.impl_graphql_enum().to_tokens(into);
         self.impl_reflect().to_tokens(into);
     }
 }
@@ -476,6 +476,93 @@ impl Definition {
             impl#impl_generics ::juniper::marker::IsOutputType<#scalar>
                 for #ident#ty_generics
                 #where_clause {}
+        }
+    }
+
+    /// Returns generated code implementing [`graphql::InputType`] trait for
+    /// this [GraphQL enum][0].
+    ///
+    /// [`graphql::InputType`]: juniper::graphql::InputType
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    #[must_use]
+    fn impl_graphql_input_type(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = self.mix_type_info(generics);
+        let (sv, generics) = self.mix_scalar_value(generics);
+        let (lt, mut generics) = self.mix_input_lifetime(generics, &sv);
+        generics.make_where_clause().predicates.push(parse_quote! {
+            Self: ::juniper::resolve::Type<#inf, #sv, #bh>
+                  + ::juniper::resolve::ToInputValue<#sv, #bh>
+                  + ::juniper::resolve::InputValue<#lt, #sv, #bh>
+        });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
+                for #ty #where_clause
+            {
+                fn assert_input_type() {}
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`graphql::OutputType`] trait for
+    /// this [GraphQL enum][0].
+    ///
+    /// [`graphql::OutputType`]: juniper::graphql::OutputType
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    #[must_use]
+    fn impl_graphql_output_type(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = self.mix_type_info(generics);
+        let (cx, generics) = self.mix_context(generics);
+        let (sv, mut generics) = self.mix_scalar_value(generics);
+        generics.make_where_clause().predicates.push(parse_quote! {
+            Self: ::juniper::resolve::Type<#inf, #sv, #bh>
+                  + ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
+                  + ::juniper::resolve::ValueAsync<#inf, #cx, #sv, #bh>
+        });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
+                for #ty #where_clause
+            {
+                fn assert_output_type() {}
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`graphql::Enum`] trait for this
+    /// [GraphQL enum][0].
+    ///
+    /// [`graphql::Enum`]: juniper::graphql::Enum
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    #[must_use]
+    fn impl_graphql_enum(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = self.mix_type_info(generics);
+        let (cx, generics) = self.mix_context(generics);
+        let (sv, generics) = self.mix_scalar_value(generics);
+        let (lt, mut generics) = self.mix_input_lifetime(generics, &sv);
+        generics.make_where_clause().predicates.push(parse_quote! {
+            Self: ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
+                  + ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
+        });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::graphql::Enum<#lt, #inf, #cx, #sv, #bh>
+                for #ty #where_clause
+            {
+                fn assert_enum() {}
+            }
         }
     }
 
