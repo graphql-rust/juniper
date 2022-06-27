@@ -76,6 +76,7 @@ struct Human {
 # fn main() {}
 ```
 
+
 ### Interfaces implementing other interfaces
 
 GraphQL allows implementing interfaces on other interfaces in addition to objects.
@@ -138,20 +139,22 @@ struct Character {
 fn main() {}
 ```
 
-### GraphQL subtyping and additional nullable fields
 
-GraphQL allows implementers (both objects and other interfaces) to return "subtypes" instead of an original value. Basically this allows you to impose additional bounds on implementation.
+### GraphQL subtyping and additional `null`able fields
 
-Valid "subtypes":
-- interface implementer instead of an interface itself
-  - `I implements T` in place of a T
-  - `Vec<I implements T>` in place of a `Vec<T>`
+GraphQL allows implementers (both objects and other interfaces) to return "subtypes" instead of an original value. Basically, this allows you to impose additional bounds on the implementation.
+
+Valid "subtypes" are:
+- interface implementer instead of an interface itself:
+  - `I implements T` in place of a `T`;
+  - `Vec<I implements T>` in place of a `Vec<T>`.
 - non-null value in place of a nullable:
-  - `T` in place of a `Option<T>`
-  - `Vec<T>` in place of a `Vec<Option<T>>`
-Those rules are recursively applied, so `Vec<Vec<I implements T>>` is a valid "subtype" of a `Option<Vec<Option<Vec<Option<T>>>>>`.
+  - `T` in place of a `Option<T>`;
+  - `Vec<T>` in place of a `Vec<Option<T>>`.
 
-Also, GraphQL allows implementers to add nullable fields, which aren't present on an original interface.
+These rules are recursively applied, so `Vec<Vec<I implements T>>` is a valid "subtype" of a `Option<Vec<Option<Vec<Option<T>>>>>`.
+
+Also, GraphQL allows implementers to add `null`able fields, which aren't present on an original interface.
 
 ```rust
 # extern crate juniper;
@@ -194,7 +197,7 @@ impl Luke {
     
     fn home_planet(language: Option<String>) -> &'static str {
         //                   ^^^^^^^^^^^^^^
-        // Notice additional nullable field, which is missing on `Human`.
+        // Notice additional `null`able field, which is missing on `Human`.
         // Resolving `...on Human { homePlanet }` will provide `None` for this
         // argument.
         match language.as_deref() {
@@ -256,6 +259,7 @@ struct Character {
 #
 # fn main() {}
 ```
+
 
 ### Ignoring trait methods
 

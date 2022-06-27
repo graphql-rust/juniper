@@ -2539,7 +2539,7 @@ mod nullable_argument_subtyping {
     }
 }
 
-mod simple_inheritance {
+mod simple_subtyping {
     use super::*;
 
     #[graphql_interface(for = [ResourceValue, Endpoint])]
@@ -2786,7 +2786,7 @@ mod simple_inheritance {
     }
 }
 
-mod branching_inheritance {
+mod branching_subtyping {
     use super::*;
 
     #[graphql_interface(for = [HumanValue, DroidValue, Luke, R2D2])]
@@ -2928,7 +2928,7 @@ mod branching_inheritance {
                     ... on Human {
                         id
                         homePlanet
-                    } 
+                    }
                 }
             }
         }"#;
@@ -2958,7 +2958,7 @@ mod branching_inheritance {
                         id
                         homePlanet
                         father
-                    } 
+                    }
                 }
             }
         }"#;
@@ -2988,7 +2988,7 @@ mod branching_inheritance {
                     nodes {
                         id
                         primaryFunction
-                    } 
+                    }
                 }
             }
         }"#;
@@ -3017,7 +3017,7 @@ mod branching_inheritance {
                     ... on Droid {
                         id
                         primaryFunction
-                    } 
+                    }
                 }
             }
         }"#;
@@ -3047,7 +3047,7 @@ mod branching_inheritance {
                         id
                         primaryFunction
                         charge
-                    } 
+                    }
                 }
             }
         }"#;

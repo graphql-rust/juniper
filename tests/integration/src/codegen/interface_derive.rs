@@ -2559,7 +2559,7 @@ mod nullable_argument_subtyping {
     }
 }
 
-mod simple_inheritance {
+mod simple_subtyping {
     use super::*;
 
     #[derive(GraphQLInterface)]
@@ -2808,7 +2808,7 @@ mod simple_inheritance {
     }
 }
 
-mod branching_inheritance {
+mod branching_subtyping {
     use super::*;
 
     #[derive(GraphQLInterface)]
@@ -2954,7 +2954,7 @@ mod branching_inheritance {
                     ... on Human {
                         id
                         homePlanet
-                    } 
+                    }
                 }
             }
         }"#;
@@ -2984,7 +2984,7 @@ mod branching_inheritance {
                         id
                         homePlanet
                         father
-                    } 
+                    }
                 }
             }
         }"#;
@@ -3014,7 +3014,7 @@ mod branching_inheritance {
                     nodes {
                         id
                         primaryFunction
-                    } 
+                    }
                 }
             }
         }"#;
@@ -3043,7 +3043,7 @@ mod branching_inheritance {
                     ... on Droid {
                         id
                         primaryFunction
-                    } 
+                    }
                 }
             }
         }"#;
@@ -3073,7 +3073,7 @@ mod branching_inheritance {
                         id
                         primaryFunction
                         charge
-                    } 
+                    }
                 }
             }
         }"#;

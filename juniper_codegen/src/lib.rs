@@ -879,7 +879,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// objects.
 ///
 /// > __NOTE:__ Every interface has to specify all other interfaces/objects it
-/// >           implements or implemented for. Missing one of `for = ` or
+/// >           implements or is implemented for. Missing one of `for = ` or
 /// >           `impl = ` attributes is an understandable compile-time error.
 ///
 /// ```rust
@@ -917,23 +917,24 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// # GraphQL subtyping and additional nullable fields
+/// # GraphQL subtyping and additional `null`able fields
 ///
 /// GraphQL allows implementers (both objects and other interfaces) to return
-/// "subtypes" instead of an original value. Basically this allows you to impose
-/// additional bounds on implementation.
+/// "subtypes" instead of an original value. Basically, this allows you to
+/// impose additional bounds on the implementation.
 ///
-/// Valid "subtypes":
-/// - interface implementer instead of an interface itself
-///   - `I implements T` in place of a T
-///   - `Vec<I implements T>` in place of a `Vec<T>`
-/// - non-null value in place of a nullable:
-///   - `T` in place of a `Option<T>`
-///   - `Vec<T>` in place of a `Vec<Option<T>>`
-/// Those rules are recursively applied, so `Vec<Vec<I implements T>>` is a
+/// Valid "subtypes" are:
+/// - interface implementer instead of an interface itself:
+///   - `I implements T` in place of a `T`;
+///   - `Vec<I implements T>` in place of a `Vec<T>`.
+/// - non-`null` value in place of a `null`able:
+///   - `T` in place of a `Option<T>`;
+///   - `Vec<T>` in place of a `Vec<Option<T>>`.
+///
+/// These rules are recursively applied, so `Vec<Vec<I implements T>>` is a
 /// valid "subtype" of a `Option<Vec<Option<Vec<Option<T>>>>>`.
 ///
-/// Also, GraphQL allows implementers to add nullable fields, which aren't
+/// Also, GraphQL allows implementers to add `null`able fields, which aren't
 /// present on an original interface.
 ///
 /// ```rust
@@ -974,10 +975,10 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     fn id(&self) -> &ID {
 ///         &self.id
 ///     }
-///     
+///
 ///     fn home_planet(language: Option<String>) -> &'static str {
 ///         //                   ^^^^^^^^^^^^^^
-///         // Notice additional nullable field, which is missing on `Human`.
+///         // Notice additional `null`able field, which is missing on `Human`.
 ///         // Resolving `...on Human { homePlanet }` will provide `None` for
 ///         // this argument.
 ///         match language.as_deref() {
