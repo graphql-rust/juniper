@@ -266,8 +266,10 @@ impl Parse for RenameRule {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use proc_macro2::Span;
     use syn::{Ident, LitStr};
+
+    use super::*;
 
     fn is_valid_name(field_name: &str) -> bool {
         let mut chars = field_name.chars();
