@@ -1,6 +1,6 @@
-//! Code generation for [GraphQL enums][1].
+//! Code generation for [GraphQL enums][0].
 //!
-//! [1]: https://spec.graphql.org/October2021/#sec-Enums
+//! [0]: https://spec.graphql.org/October2021#sec-Enums
 
 pub(crate) mod derive;
 
@@ -29,55 +29,57 @@ use crate::{
     },
 };
 
-/// Available arguments behind `#[graphql]` attribute placed on an enum
-/// definition, when generating code for [GraphQL enum][1]  type.
+/// Available arguments behind `#[graphql]` attribute placed on a Rust enum
+/// definition, when generating code for a [GraphQL enum][0] type.
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Enums
+/// [0]: https://spec.graphql.org/October2021#sec-Enums
 #[derive(Debug, Default)]
 struct ContainerAttr {
-    /// Explicitly specified name of [GraphQL enum][1] type.
+    /// Explicitly specified name of this [GraphQL enum][0].
     ///
-    /// If [`None`], then Rust trait name is used by default.
+    /// If [`None`], then Rust enum name will be used by default.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     name: Option<SpanContainer<String>>,
 
-    /// Explicitly specified [description][2] of [GraphQL enum][1] type.
+    /// Explicitly specified [description][2] of this [GraphQL enum][0].
     ///
-    /// If [`None`], then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment will be used as [description][2], if
+    /// any.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    /// [2]: https://spec.graphql.org/October2021/#sec-Descriptions
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     description: Option<SpanContainer<String>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
-    /// [GraphQL enum][1] type with.
+    /// [GraphQL enum][0] type with.
     ///
     /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
     ///
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     context: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type (or type parameter with its bounds) of
-    /// [`ScalarValue`] to resolve this [GraphQL enum][1] type with.
+    /// [`ScalarValue`] to resolve this [GraphQL enum][0] type with.
     ///
     /// If [`None`], then generated code will be generic over any
-    /// [`ScalarValue`] type, which.
+    /// [`ScalarValue`] type.
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
-    /// Explicitly specified [`RenameRule`] for all variants of this
-    /// [GraphQL enum][1] type.
+    /// Explicitly specified [`RenameRule`] for all [values][1] of this
+    /// [GraphQL enum][0].
     ///
-    /// If [`None`] then the default rule will be
-    /// [`RenameRule::ScreamingSnakeCase`].
+    /// If [`None`], then the [`RenameRule::ScreamingSnakeCase`] rule will be
+    /// applied by default.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    rename: Option<SpanContainer<RenameRule>>,
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    /// [1]: https://spec.graphql.org/October2021#EnumValuesDefinition
+    rename_values: Option<SpanContainer<RenameRule>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -126,10 +128,10 @@ impl Parse for ContainerAttr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "rename" | "rename_all" => {
+                "rename_all" => {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
-                    out.rename
+                    out.rename_values
                         .replace(SpanContainer::new(
                             ident.span(),
                             Some(val.span()),
@@ -159,7 +161,7 @@ impl ContainerAttr {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
-            rename: try_merge_opt!(rename: self, another),
+            rename_values: try_merge_opt!(rename_values: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
     }
@@ -180,40 +182,44 @@ impl ContainerAttr {
 }
 
 /// Available arguments behind `#[graphql]` attribute when generating code for
-/// [GraphQL enum][1]'s variant.
+/// a [GraphQL enum][0]'s [value][1].
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Enums
+/// [0]: https://spec.graphql.org/October2021#sec-Enums
+/// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
 #[derive(Debug, Default)]
 struct VariantAttr {
-    /// Explicitly specified name of [GraphQL enum][1] variant.
+    /// Explicitly specified name of this [GraphQL enum value][1].
     ///
-    /// If [`None`], then Rust trait name is used by default.
+    /// If [`None`], then Rust enum variant's name is used by default.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     name: Option<SpanContainer<String>>,
 
-    /// Explicitly specified [description][2] of [GraphQL enum][1] variant.
+    /// Explicitly specified [description][2] of this [GraphQL enum value][1].
     ///
     /// If [`None`], then Rust doc comment is used as [description][2], if any.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    /// [2]: https://spec.graphql.org/October2021/#sec-Descriptions
+    /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     description: Option<SpanContainer<String>>,
 
-    /// Explicitly specified [deprecation][2] of this [GraphQL enum][1]'s
-    /// variant.
+    /// Explicitly specified [deprecation][2] of this [GraphQL enum value][1].
     ///
     /// If [`None`], then Rust `#[deprecated]` attribute is used as the
     /// [deprecation][2], if any.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    /// [2]: https://spec.graphql.org/October2021/#sec-Deprecation
+    /// If the inner [`Option`] is [`None`], then no [reason][3] was provided.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
+    /// [2]: https://spec.graphql.org/October2021#sec--deprecated
+    /// [3]: https://spec.graphql.org/October2021#sel-GAHnBZDACEDDGAA_6L
     deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
 
-    /// Explicitly specified marker for the variant being ignored and not
-    /// included into [GraphQL enum][1].
+    /// Explicitly specified marker for the Rust enum variant to be ignored and
+    /// not included into the code generated for a [GraphQL enum][0]
+    /// implementation.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [0]: https://spec.graphql.org/October20210#sec-Enums
     ignore: Option<SpanContainer<syn::Ident>>,
 }
 
@@ -307,85 +313,92 @@ impl VariantAttr {
     }
 }
 
-/// Representation of a [GraphQL enum][1]'s variant for code generation.
+/// Representation of a [GraphQL enum value][1] for code generation.
 ///
-/// [1]: https://spec.graphql.org/October2021/#sec-Enums
+/// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
 #[derive(Debug)]
-pub(crate) struct VariantDefinition {
-    /// [`Ident`] of this [GraphQL enum][1]'s variant.
+struct ValueDefinition {
+    /// [`Ident`] of the Rust enum variant behind this [GraphQL enum value][1].
     ///
     /// [`Ident`]: syn::Ident
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    pub(crate) ident: syn::Ident,
-
-    /// Name of this [GraphQL enum][1]'s variant in GraphQL schema.
-    ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    pub(crate) name: String,
-
-    /// [Description][2] of this [GraphQL enum][1]'s variant to put into GraphQL
-    /// schema.
-    ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    pub(crate) description: Option<String>,
-
-    /// [Deprecation][2] of this [GraphQL enum][1]'s variant to put into GraphQL
-    /// schema.
-    ///
-    /// If inner [`Option`] is [`None`], then deprecation has no message
-    /// attached.
-    ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    /// [2]: https://spec.graphql.org/October2021/#sec-Deprecation
-    pub(crate) deprecated: Option<Option<String>>,
-}
-
-/// Definition of [GraphQL enum][1] for code generation.
-///
-/// [1]: https://spec.graphql.org/October2021/#sec-Enums
-struct Definition {
-    /// [`Ident`] of this [GraphQL enum][1].
-    ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     ident: syn::Ident,
 
-    /// [`syn::Generics`] of the enum describing the [GraphQL enum][1].
+    /// Name of this [GraphQL enum value][1] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
+    name: Box<str>,
+
+    /// [Description][2] of this [GraphQL enum value][1] to put into GraphQL
+    /// schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    description: Option<Box<str>>,
+
+    /// [Deprecation][2] of this [GraphQL enum value][1] to put into GraphQL
+    /// schema.
+    ///
+    /// If the inner [`Option`] is [`None`], then [deprecation][2] has no
+    /// [reason][3] attached.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
+    /// [2]: https://spec.graphql.org/October2021#sec--deprecated
+    /// [3]: https://spec.graphql.org/October2021#sel-GAHnBZDACEDDGAA_6L
+    deprecated: Option<Option<Box<str>>>,
+}
+
+/// Representation of a [GraphQL enum][0] for code generation.
+///
+/// [0]: https://spec.graphql.org/October2021#sec-Enums
+struct Definition {
+    /// [`Ident`] of the Rust enum behind this [GraphQL enum][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    ident: syn::Ident,
+
+    /// [`syn::Generics`] of the Rust enum behind this [GraphQL enum][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     generics: syn::Generics,
 
-    /// Name of this [GraphQL enum][1] in GraphQL schema.
+    /// Name of this [GraphQL enum][0] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    name: String,
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    name: Box<str>,
 
-    /// Description of this [GraphQL enum][1] to put into GraphQL schema.
+    /// [Description][2] of this [GraphQL enum][0] to put into GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    description: Option<String>,
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    description: Option<Box<str>>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
-    /// for this [GraphQL enum][1].
+    /// for this [GraphQL enum][0].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
-    /// implementation with for this [GraphQL enum][1].
+    /// implementation with for this [GraphQL enum][0].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     scalar: scalar::Type,
 
-    /// Defined variants of this [GraphQL enum][1].
+    /// [Values][1] of this [GraphQL enum][0].
     ///
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    variants: Vec<VariantDefinition>,
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    /// [1]: https://spec.graphql.org/October2021#EnumValuesDefinition
+    values: Vec<ValueDefinition>,
 
-    /// Indicates, whether this enum contains ignored variants.
+    /// Indicates whether the Rust enum behind this [GraphQL enum][0] contains
+    /// ignored variants.
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     has_ignored_variants: bool,
 }
 
@@ -403,11 +416,10 @@ impl ToTokens for Definition {
 
 impl Definition {
     /// Returns generated code implementing [`marker::IsOutputType`] trait for
-    /// this [GraphQL enum][1].
+    /// this [GraphQL enum][0].
     ///
     /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    #[must_use]
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_input_and_output_type_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
@@ -430,11 +442,10 @@ impl Definition {
     }
 
     /// Returns generated code implementing [`GraphQLType`] trait for this
-    /// [GraphQL enum][1].
+    /// [GraphQL enum][0].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    #[must_use]
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_graphql_type_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
@@ -449,7 +460,7 @@ impl Definition {
             .as_ref()
             .map(|desc| quote! { .description(#desc) });
 
-        let variants_meta = self.variants.iter().map(|v| {
+        let variants_meta = self.values.iter().map(|v| {
             let name = &v.name;
             let description = v.description.as_ref().map_or_else(
                 || quote! { None },
@@ -505,11 +516,10 @@ impl Definition {
     }
 
     /// Returns generated code implementing [`GraphQLValue`] trait for this
-    /// [GraphQL enum][1].
+    /// [GraphQL enum][0].
     ///
     /// [`GraphQLValue`]: juniper::GraphQLValue
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    #[must_use]
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
@@ -519,7 +529,7 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let variants = self.variants.iter().map(|v| {
+        let variants = self.values.iter().map(|v| {
             let ident = &v.ident;
             let name = &v.name;
 
@@ -531,13 +541,12 @@ impl Definition {
         let ignored = self.has_ignored_variants.then(|| {
             quote! {
                 _ => Err(::juniper::FieldError::<#scalar>::from(
-                    "Unable to resolve skipped enum variant",
+                    "Cannot resolve ignored enum variant",
                 )),
             }
         });
 
         quote! {
-            #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValue<#scalar>
                 for #ident#ty_generics
                 #where_clause
@@ -565,11 +574,10 @@ impl Definition {
     }
 
     /// Returns generated code implementing [`GraphQLValueAsync`] trait for this
-    /// [GraphQL enum][1].
+    /// [GraphQL enum][0].
     ///
     /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums    
-    #[must_use]
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
@@ -579,7 +587,6 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         quote! {
-            #[automatically_derived]
             impl#impl_generics ::juniper::GraphQLValueAsync<#scalar>
                 for #ident#ty_generics
                 #where_clause
@@ -598,11 +605,10 @@ impl Definition {
     }
 
     /// Returns generated code implementing [`FromInputValue`] trait for this
-    /// [GraphQL enum][1].
+    /// [GraphQL enum][0].
     ///
     /// [`FromInputValue`]: juniper::FromInputValue
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums        
-    #[must_use]
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_from_input_value_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
@@ -611,7 +617,7 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let variants = self.variants.iter().map(|v| {
+        let variants = self.values.iter().map(|v| {
             let ident = &v.ident;
             let name = &v.name;
 
@@ -621,7 +627,6 @@ impl Definition {
         });
 
         quote! {
-            #[automatically_derived]
             impl#impl_generics ::juniper::FromInputValue<#scalar>
                 for #ident#ty_generics
                 #where_clause
@@ -639,11 +644,10 @@ impl Definition {
     }
 
     /// Returns generated code implementing [`ToInputValue`] trait for this
-    /// [GraphQL enum][1].
+    /// [GraphQL enum][0].
     ///
     /// [`ToInputValue`]: juniper::ToInputValue
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums
-    #[must_use]
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_to_input_value_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
@@ -652,7 +656,7 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let variants = self.variants.iter().map(|v| {
+        let variants = self.values.iter().map(|v| {
             let var_ident = &v.ident;
             let name = &v.name;
 
@@ -665,12 +669,11 @@ impl Definition {
 
         let ignored = self.has_ignored_variants.then(|| {
             quote! {
-                _ => panic!("Unable to resolve skipped enum variant"),
+                _ => panic!("Cannot resolve ignored enum variant"),
             }
         });
 
         quote! {
-            #[automatically_derived]
             impl#impl_generics ::juniper::ToInputValue<#scalar>
                 for #ident#ty_generics
                 #where_clause
@@ -686,13 +689,12 @@ impl Definition {
     }
 
     /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
-    /// [`WrappedType`] traits for this [GraphQL enum][1].
+    /// [`WrappedType`] traits for this [GraphQL enum][0].
     ///
     /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
     /// [`BaseType`]: juniper::macros::reflect::BaseType
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
-    /// [1]: https://spec.graphql.org/October2021/#sec-Enums        
-    #[must_use]
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let name = &self.name;
@@ -703,7 +705,6 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         quote! {
-            #[automatically_derived]
             impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ident#ty_generics
                 #where_clause
@@ -711,7 +712,6 @@ impl Definition {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
-            #[automatically_derived]
             impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ident#ty_generics
                 #where_clause
@@ -720,7 +720,6 @@ impl Definition {
                     &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
-            #[automatically_derived]
             impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ident#ty_generics
                 #where_clause
@@ -738,7 +737,6 @@ impl Definition {
     ///
     /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
-    #[must_use]
     fn impl_generics(&self, for_async: bool) -> syn::Generics {
         let mut generics = self.generics.clone();
 

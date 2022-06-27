@@ -1,7 +1,0 @@
-error: GraphQL enum expected all enum variants to have unique names
- --> fail/enum/derive_duplicated_variant_names.rs:3:5
-  |
-3 | /     Test,
-4 | |     #[graphql(name = "TEST")]
-5 | |     Test1,
-  | |__________^

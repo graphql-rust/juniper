@@ -1,9 +1,9 @@
 //!
 
-use crate::util::duplicate::Duplicate;
+use std::fmt;
+
 use proc_macro2::Span;
 use proc_macro_error::{Diagnostic, Level};
-use std::fmt;
 
 /// URL of the GraphQL specification (June 2018 Edition).
 pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
@@ -51,14 +51,6 @@ impl fmt::Display for GraphQLScope {
     }
 }
 
-#[allow(unused_variables)]
-#[derive(Debug)]
-pub enum UnsupportedAttribute {
-    Skip,
-    Interface,
-    Deprecation,
-}
-
 impl GraphQLScope {
     fn spec_link(&self) -> String {
         format!("{}{}", SPEC_URL, self.spec_section())
@@ -80,61 +72,6 @@ impl GraphQLScope {
 
     pub fn custom_error<S: AsRef<str>>(&self, span: Span, msg: S) -> syn::Error {
         syn::Error::new(span, format!("{} {}", self, msg.as_ref()))
-    }
-
-    pub fn unsupported_attribute(&self, attribute: Span, kind: UnsupportedAttribute) {
-        Diagnostic::spanned(
-            attribute,
-            Level::Error,
-            format!("attribute `{:?}` can not be used at the top level of {}", kind, self),
-        )
-        .note("The macro is known to Juniper. However, not all valid #[graphql] attributes are available for each macro".to_string())
-        .emit();
-    }
-
-    pub fn unsupported_attribute_within(&self, attribute: Span, kind: UnsupportedAttribute) {
-        Diagnostic::spanned(
-            attribute,
-            Level::Error,
-            format!("attribute `{:?}` can not be used inside of {}", kind, self),
-        )
-        .note("The macro is known to Juniper. However, not all valid #[graphql] attributes are available for each macro".to_string())
-        .emit();
-    }
-
-    pub fn not_empty(&self, container: Span) {
-        Diagnostic::spanned(
-            container,
-            Level::Error,
-            format!("{} expects at least one field", self),
-        )
-        .note(self.spec_link())
-        .emit();
-    }
-
-    pub fn duplicate<'a, T: syn::spanned::Spanned + 'a>(
-        &self,
-        duplicates: impl IntoIterator<Item = &'a Duplicate<T>>,
-    ) {
-        duplicates
-            .into_iter()
-            .for_each(|dup| {
-                dup.spanned[1..]
-                    .iter()
-                    .for_each(|spanned| {
-                        Diagnostic::spanned(
-                            spanned.span(),
-                            Level::Error,
-                            format!(
-                                "{} does not allow fields with the same name",
-                                self
-                            ),
-                        )
-                            .help(format!("There is at least one other field with the same name `{}`, possibly renamed via the #[graphql] attribute", dup.name))
-                            .note(self.spec_link())
-                            .emit();
-                    });
-            })
     }
 
     pub fn no_double_underscore(&self, field: Span) {

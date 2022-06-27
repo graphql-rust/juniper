@@ -500,7 +500,6 @@ impl ToTokens for Definition<Query> {
         self.impl_graphql_type_tokens().to_tokens(into);
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
-        self.impl_as_dyn_graphql_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
         self.impl_field_meta_tokens().to_tokens(into);
         self.impl_field_tokens().to_tokens(into);
@@ -680,8 +679,8 @@ impl Definition<Query> {
                         fn call(
                             &self,
                             info: &Self::TypeInfo,
-                            args: &::juniper::Arguments<#scalar>,
-                            executor: &::juniper::Executor<Self::Context, #scalar>,
+                            args: &::juniper::Arguments<'_, #scalar>,
+                            executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::ExecutionResult<#scalar> {
                             #resolve
                         }
@@ -741,8 +740,8 @@ impl Definition<Query> {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
-                            args: &'b ::juniper::Arguments<#scalar>,
-                            executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                            args: &'b ::juniper::Arguments<'_, #scalar>,
+                            executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                             let fut = #res;
                             #resolving_code
@@ -800,8 +799,8 @@ impl Definition<Query> {
                     &self,
                     info: &Self::TypeInfo,
                     field: &str,
-                    args: &::juniper::Arguments<#scalar>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    args: &::juniper::Arguments<'_, #scalar>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match field {
                         #( #fields_resolvers )*
@@ -857,8 +856,8 @@ impl Definition<Query> {
                     &'b self,
                     info: &'b Self::TypeInfo,
                     field: &'b str,
-                    args: &'b ::juniper::Arguments<#scalar>,
-                    executor: &'b ::juniper::Executor<Self::Context, #scalar>,
+                    args: &'b ::juniper::Arguments<'_, #scalar>,
+                    executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
@@ -867,44 +866,5 @@ impl Definition<Query> {
                 }
             }
         }
-    }
-
-    /// Returns generated code implementing [`AsDynGraphQLValue`] trait for this
-    /// [GraphQL object][1].
-    ///
-    /// [`AsDynGraphQLValue`]: juniper::AsDynGraphQLValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    #[must_use]
-    fn impl_as_dyn_graphql_value_tokens(&self) -> Option<TokenStream> {
-        if self.interfaces.is_empty() {
-            return None;
-        }
-
-        let scalar = &self.scalar;
-
-        let (impl_generics, where_clause) = self.impl_generics(true);
-        let ty = &self.ty;
-
-        Some(quote! {
-            #[allow(non_snake_case)]
-            #[automatically_derived]
-            impl#impl_generics ::juniper::AsDynGraphQLValue<#scalar> for #ty #where_clause
-            {
-                type Context = <Self as ::juniper::GraphQLValue<#scalar>>::Context;
-                type TypeInfo = <Self as ::juniper::GraphQLValue<#scalar>>::TypeInfo;
-
-                fn as_dyn_graphql_value(
-                    &self,
-                ) -> &::juniper::DynGraphQLValue<#scalar, Self::Context, Self::TypeInfo> {
-                    self
-                }
-
-                fn as_dyn_graphql_value_async(
-                    &self,
-                ) -> &::juniper::DynGraphQLValueAsync<#scalar, Self::Context, Self::TypeInfo> {
-                    self
-                }
-            }
-        })
     }
 }

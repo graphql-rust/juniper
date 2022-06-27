@@ -1,0 +1,10 @@
+error: GraphQL input object expected all fields to have unique names
+ --> fail/input-object/derive_unique_name.rs:4:15
+  |
+4 |   struct Object {
+  |  _______________^
+5 | |     test: String,
+6 | |     #[graphql(name = "test")]
+7 | |     test2: String,
+8 | | }
+  | |_^

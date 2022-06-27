@@ -1,8 +1,9 @@
 //! Code generation for `#[derive(GraphQLInputObject)]` macro.
 
+use std::collections::HashSet;
+
 use proc_macro2::TokenStream;
 use quote::ToTokens as _;
-use std::collections::HashSet;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -16,6 +17,7 @@ use super::{ContainerAttr, Definition, FieldAttr, FieldDefinition};
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLInputObject)]` macro.
 const ERR: GraphQLScope = GraphQLScope::DeriveInputObject;
 
+/// Expands `#[derive(GraphQLInputObject)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = ContainerAttr::from_attrs("graphql", &ast.attrs)?;
@@ -31,10 +33,11 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .map(SpanContainer::into_inner)
         .unwrap_or(RenameRule::CamelCase);
 
+    let is_internal = attr.is_internal;
     let fields = data
         .fields
         .iter()
-        .filter_map(|f| parse_field(f, renaming))
+        .filter_map(|f| parse_field(f, renaming, is_internal))
         .collect::<Vec<_>>();
 
     proc_macro_error::abort_if_dirty();
@@ -55,7 +58,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| ast.ident.unraw().to_string());
+        .unwrap_or_else(|| ast.ident.unraw().to_string())
+        .into_boxed_str();
     if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             attr.name
@@ -69,7 +73,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .context
         .map_or_else(|| parse_quote! { () }, SpanContainer::into_inner);
 
-    let description = attr.description.map(SpanContainer::into_inner);
+    let description = attr.description.map(|d| d.into_inner().into_boxed_str());
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
@@ -88,23 +92,31 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     Ok(definition.into_token_stream())
 }
 
-/// Parses a [`VariantDefinition`] from the given struct field definition.
+/// Parses a [`FieldDefinition`] from the given struct field definition.
 ///
 /// Returns [`None`] if the parsing fails, or the enum variant is ignored.
-fn parse_field(f: &syn::Field, renaming: RenameRule) -> Option<FieldDefinition> {
+fn parse_field(f: &syn::Field, renaming: RenameRule, is_internal: bool) -> Option<FieldDefinition> {
     let field_attr = FieldAttr::from_attrs("graphql", &f.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
 
     let ident = f.ident.as_ref().or_else(|| err_unnamed_field(f))?;
 
-    let name = field_attr.name.map_or_else(
-        || renaming.apply(&ident.unraw().to_string()),
-        SpanContainer::into_inner,
-    );
+    let name = field_attr
+        .name
+        .map_or_else(
+            || renaming.apply(&ident.unraw().to_string()),
+            SpanContainer::into_inner,
+        )
+        .into_boxed_str();
+    if !is_internal && name.starts_with("__") {
+        ERR.no_double_underscore(f.span());
+    }
 
-    let default = field_attr.default.map(SpanContainer::into_inner);
-    let description = field_attr.description.map(SpanContainer::into_inner);
+    let default = field_attr.default.map(|d| d.into_inner().into());
+    let description = field_attr
+        .description
+        .map(|d| d.into_inner().into_boxed_str());
 
     Some(FieldDefinition {
         ident: ident.clone(),
@@ -114,13 +126,6 @@ fn parse_field(f: &syn::Field, renaming: RenameRule) -> Option<FieldDefinition> 
         description,
         ignored: field_attr.ignore.is_some(),
     })
-}
-
-/// Emits "no fields allowed for non-ignored variants" [`syn::Error`] pointing to
-/// the given `span`.
-pub fn err_variant_with_fields<T, S: Spanned>(span: &S) -> Option<T> {
-    ERR.emit_custom(span.span(), "no fields allowed for non-ignored variants");
-    None
 }
 
 /// Emits "expected named struct field" [`syn::Error`] pointing to the given

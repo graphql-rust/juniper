@@ -294,14 +294,6 @@ where
     }
 }
 
-crate::sa::assert_obj_safe!(GraphQLValue<Context = (), TypeInfo = ()>);
-
-/// Helper alias for naming [trait objects][1] of [`GraphQLValue`].
-///
-/// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
-pub type DynGraphQLValue<S, C, TI> =
-    dyn GraphQLValue<S, Context = C, TypeInfo = TI> + Send + Sync + 'static;
-
 /// Primary trait used to expose Rust types in a GraphQL schema.
 ///
 /// All of the convenience macros ultimately expand into an implementation of

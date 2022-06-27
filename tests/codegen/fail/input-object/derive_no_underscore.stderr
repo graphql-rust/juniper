@@ -1,0 +1,8 @@
+error: All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.
+ --> fail/input-object/derive_no_underscore.rs:5:5
+  |
+5 | /     #[graphql(name = "__test")]
+6 | |     test: String,
+  | |________________^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Schema

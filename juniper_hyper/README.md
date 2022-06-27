@@ -1,35 +1,45 @@
-# juniper_hyper
+`juniper_hyper` crate
+=====================
 
-This repository contains the [Hyper][Hyper] web server integration for 
-[Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
+[![Crates.io](https://img.shields.io/crates/v/juniper_hyper.svg?maxAge=2592000)](https://crates.io/crates/juniper_hyper)
+[![Documentation](https://docs.rs/juniper_hyper/badge.svg)](https://docs.rs/juniper_hyper)
+[![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
+
+- [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/CHANGELOG.md)
+
+[`hyper`] web server integration for [`juniper`] ([GraphQL] implementation for [Rust]).
+
+
+
 
 ## Documentation
 
-For documentation, including guides and examples, check out [Juniper][Juniper].
+For documentation, including guides and examples, check out [Juniper Book].
 
-A basic usage example can also be found in the [API documentation][documentation].
+A basic usage example can also be found in the [API docs][`juniper_hyper`].
+
+
+
 
 ## Examples
 
-Check [examples/hyper_server.rs][example] for example code of a working Hyper 
-server with GraphQL handlers.
+Check [`examples/hyper_server.rs`][1] for example code of a working [`hyper`] server with [GraphQL] handlers.
 
-## Links
 
-* [Juniper][Juniper]
-* [API documentation][documentation]
-* [Hyper][Hyper]
+
 
 ## License
 
-This project is under the BSD-2 license.
+This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/LICENSE).
 
-Check the LICENSE file for details.
 
-[Hyper]: https://hyper.rs
-[Juniper]: https://github.com/graphql-rust/juniper
+
+
+[`hyper`]: https://docs.rs/hyper
+[`juniper`]: https://docs.rs/juniper
+[`juniper_hyper`]: https://docs.rs/juniper_hyper
 [GraphQL]: http://graphql.org
-[documentation]: https://docs.rs/juniper_hyper
-[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/examples/hyper_server.rs
+[Juniper Book]: https://graphql-rust.github.io
+[Rust]: https://www.rust-lang.org
 
-
+[1]: https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/examples/hyper_server.rs

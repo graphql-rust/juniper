@@ -554,8 +554,8 @@ impl Definition {
                     &self,
                     info: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[::juniper::Selection<#scalar>]>,
-                    executor: &::juniper::Executor<Self::Context, #scalar>,
+                    _: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     let context = executor.context();
                     #( #variant_resolvers )*

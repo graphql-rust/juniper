@@ -1,8 +1,9 @@
 //! Code generation for `#[derive(GraphQLEnum)]` macro.
 
+use std::collections::HashSet;
+
 use proc_macro2::TokenStream;
 use quote::ToTokens as _;
-use std::collections::HashSet;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{
@@ -11,12 +12,13 @@ use crate::{
     util::{span_container::SpanContainer, RenameRule},
 };
 
-use super::{ContainerAttr, Definition, VariantAttr, VariantDefinition};
+use super::{ContainerAttr, Definition, ValueDefinition, VariantAttr};
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLEnum)]` macro.
 const ERR: GraphQLScope = GraphQLScope::EnumDerive;
 
-pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
+/// Expands `#[derive(GraphQLEnum)]` macro into generated code.
+pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = ContainerAttr::from_attrs("graphql", &ast.attrs)?;
 
@@ -28,14 +30,14 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
     let mut has_ignored_variants = false;
     let renaming = attr
-        .rename
+        .rename_values
         .map(SpanContainer::into_inner)
         .unwrap_or(RenameRule::ScreamingSnakeCase);
-    let variants = data
+    let values = data
         .variants
         .iter()
         .filter_map(|v| {
-            parse_variant(v, renaming).or_else(|| {
+            parse_value(v, renaming).or_else(|| {
                 has_ignored_variants = true;
                 None
             })
@@ -44,18 +46,18 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
     proc_macro_error::abort_if_dirty();
 
-    if variants.is_empty() {
+    if values.is_empty() {
         return Err(ERR.custom_error(
             data.variants.span(),
-            "expected at least 1 non-ignored variant",
+            "expected at least 1 non-ignored enum variant",
         ));
     }
 
-    let unique_variants = variants.iter().map(|v| &v.name).collect::<HashSet<_>>();
-    if unique_variants.len() != variants.len() {
+    let unique_values = values.iter().map(|v| &v.name).collect::<HashSet<_>>();
+    if unique_values.len() != values.len() {
         return Err(ERR.custom_error(
             data.variants.span(),
-            "expected all enum variants to have unique names",
+            "expected all GraphQL enum values to have unique names",
         ));
     }
 
@@ -63,7 +65,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| ast.ident.unraw().to_string());
+        .unwrap_or_else(|| ast.ident.unraw().to_string())
+        .into_boxed_str();
     if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             attr.name
@@ -77,7 +80,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .context
         .map_or_else(|| parse_quote! { () }, SpanContainer::into_inner);
 
-    let description = attr.description.map(SpanContainer::into_inner);
+    let description = attr.description.map(|d| d.into_inner().into_boxed_str());
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
@@ -90,22 +93,22 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description,
         context,
         scalar,
-        variants,
+        values,
         has_ignored_variants,
     };
 
     Ok(definition.into_token_stream())
 }
 
-/// Parses a [`VariantDefinition`] from the given struct field definition.
+/// Parses a [`ValueDefinition`] from the given Rust enum variant definition.
 ///
 /// Returns [`None`] if the parsing fails, or the enum variant is ignored.
-fn parse_variant(v: &syn::Variant, renaming: RenameRule) -> Option<VariantDefinition> {
-    let var_attr = VariantAttr::from_attrs("graphql", &v.attrs)
+fn parse_value(v: &syn::Variant, renaming: RenameRule) -> Option<ValueDefinition> {
+    let attr = VariantAttr::from_attrs("graphql", &v.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
 
-    if var_attr.ignore.is_some() {
+    if attr.ignore.is_some() {
         return None;
     }
 
@@ -113,18 +116,23 @@ fn parse_variant(v: &syn::Variant, renaming: RenameRule) -> Option<VariantDefini
         err_variant_with_fields(&v.fields)?;
     }
 
-    let name = var_attr.name.map_or_else(
-        || renaming.apply(&v.ident.unraw().to_string()),
-        SpanContainer::into_inner,
-    );
+    let name = attr
+        .name
+        .map_or_else(
+            || renaming.apply(&v.ident.unraw().to_string()),
+            SpanContainer::into_inner,
+        )
+        .into_boxed_str();
 
-    let description = var_attr.description.map(SpanContainer::into_inner);
+    let description = attr.description.map(|d| d.into_inner().into_boxed_str());
 
-    let deprecated = var_attr
-        .deprecated
-        .map(|desc| desc.into_inner().as_ref().map(syn::LitStr::value));
+    let deprecated = attr.deprecated.map(|desc| {
+        desc.into_inner()
+            .as_ref()
+            .map(|lit| lit.value().into_boxed_str())
+    });
 
-    Some(VariantDefinition {
+    Some(ValueDefinition {
         ident: v.ident.clone(),
         name,
         description,
@@ -132,8 +140,8 @@ fn parse_variant(v: &syn::Variant, renaming: RenameRule) -> Option<VariantDefini
     })
 }
 
-/// Emits "no fields allowed for non-ignored variants" [`syn::Error`] pointing to
-/// the given `span`.
+/// Emits "no fields allowed for non-ignored variants" [`syn::Error`] pointing
+/// to the given `span`.
 pub fn err_variant_with_fields<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(span.span(), "no fields allowed for non-ignored variants");
     None

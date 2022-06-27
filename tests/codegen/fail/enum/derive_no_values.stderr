@@ -1,0 +1,7 @@
+error: GraphQL enum expected at least 1 non-ignored enum variant
+ --> fail/enum/derive_no_values.rs:3:10
+  |
+3 | #[derive(GraphQLEnum)]
+  |          ^^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `GraphQLEnum` (in Nightly builds, run with -Z macro-backtrace for more info)

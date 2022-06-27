@@ -554,7 +554,7 @@ macro_rules! assert_interfaces_impls {
 /// Asserts that all `transitive` interfaces that are implemented by `interface`
 /// are also implemented by `implementor`. See [spec] for more info.
 ///
-/// [spec]: https://spec.graphql.org/October2021/#sel-FAHbhBHCAACGB35P
+/// [spec]: https://spec.graphql.org/October2021#sel-FAHbhBHCAACGB35P
 #[macro_export]
 macro_rules! assert_transitive_implementations {
     ($scalar: ty, $interface: ty, $implementor: ty $(, $transitive: ty)* $(,)?) => {
