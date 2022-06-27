@@ -1084,7 +1084,6 @@ impl Definition {
     #[must_use]
     fn ty_and_generics(&self) -> (syn::Type, syn::Generics) {
         let mut generics = self.generics.clone();
-
         let ty = {
             let ident = &self.ident;
             let (_, ty_gen, _) = generics.split_for_impl();
@@ -1248,7 +1247,7 @@ impl Methods {
                 let into = sv.custom.is_some().then(|| {
                     quote! { .map_scalar_value() }
                 });
-                quote! { Ok(#to_output(self)#into) }
+                quote! { ::std::result::Result::Ok(#to_output(self)#into) }
             }
 
             Self::Delegated { field, .. } => {
