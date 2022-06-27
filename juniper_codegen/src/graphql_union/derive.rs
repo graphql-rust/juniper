@@ -98,7 +98,7 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<Definition> {
 /// On failure returns [`None`] and internally fills up [`proc_macro_error`]
 /// with the corresponding errors.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 fn parse_variant_from_enum_variant(
     var: syn::Variant,
     enum_ident: &syn::Ident,

@@ -1,6 +1,6 @@
 //! Code generation for [GraphQL subscription][1].
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Subscription
+//! [1]: https://spec.graphql.org/October2021#sec-Subscription
 
 pub mod attr;
 
@@ -13,7 +13,7 @@ use crate::{common::field, graphql_object::Definition};
 /// [GraphQL subscription operation][2] of the [`Definition`] to generate code
 /// for.
 ///
-/// [2]: https://spec.graphql.org/June2018/#sec-Subscription
+/// [2]: https://spec.graphql.org/October2021#sec-Subscription
 struct Subscription;
 
 impl ToTokens for Definition<Subscription> {
@@ -31,7 +31,7 @@ impl Definition<Subscription> {
     /// [GraphQL subscription][1].
     ///
     /// [`GraphQLValue`]: juniper::GraphQLValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+    /// [1]: https://spec.graphql.org/October2021#sec-Subscription
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -80,7 +80,7 @@ impl Definition<Subscription> {
     /// for this [GraphQL subscription][1].
     ///
     /// [`GraphQLSubscriptionValue`]: juniper::GraphQLSubscriptionValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+    /// [1]: https://spec.graphql.org/October2021#sec-Subscription
     #[must_use]
     fn impl_graphql_subscription_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;

@@ -5,8 +5,8 @@ use std::fmt;
 use proc_macro2::Span;
 use proc_macro_error::{Diagnostic, Level};
 
-/// URL of the GraphQL specification (June 2018 Edition).
-pub const SPEC_URL: &str = "https://spec.graphql.org/June2018/";
+/// URL of the GraphQL specification (October 2021 Edition).
+pub const SPEC_URL: &str = "https://spec.graphql.org/October2021";
 
 pub enum GraphQLScope {
     EnumDerive,

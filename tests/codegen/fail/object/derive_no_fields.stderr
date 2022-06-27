@@ -4,4 +4,4 @@ error: GraphQL object must have at least one field
 4 | struct Obj {}
   | ^^^^^^^^^^^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Objects
+  = note: https://spec.graphql.org/October2021#sec-Objects

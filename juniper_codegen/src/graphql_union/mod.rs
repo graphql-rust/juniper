@@ -1,6 +1,6 @@
 //! Code generation for [GraphQL union][1].
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Unions
+//! [1]: https://spec.graphql.org/October2021#sec-Unions
 
 pub mod attr;
 pub mod derive;
@@ -35,22 +35,22 @@ type AttrResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
 /// Available arguments behind `#[graphql]` (or `#[graphql_union]`) attribute
 /// when generating code for [GraphQL union][1] type.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 #[derive(Debug, Default)]
 struct Attr {
     /// Explicitly specified name of [GraphQL union][1] type.
     ///
     /// If [`None`], then Rust type name is used by default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of [GraphQL union][1] type.
     ///
     /// If [`None`], then Rust doc comment is used as [description][2], if any.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     description: Option<SpanContainer<String>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
@@ -59,7 +59,7 @@ struct Attr {
     /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
     ///
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     context: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type of [`ScalarValue`] to use for resolving this
@@ -73,7 +73,7 @@ struct Attr {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified external resolver functions for [GraphQL union][1]
@@ -84,7 +84,7 @@ struct Attr {
     /// external resolver function has sense, when some custom [union][1]
     /// variant resolving logic is involved, or variants cannot be inferred.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     external_resolvers: AttrResolvers,
 
     /// Indicator whether the generated code is intended to be used only inside
@@ -191,13 +191,13 @@ impl Attr {
 /// Available arguments behind `#[graphql]` attribute when generating code for
 /// [GraphQL union][1]'s variant.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 #[derive(Debug, Default)]
 struct VariantAttr {
     /// Explicitly specified marker for the variant/field being ignored and not
     /// included into [GraphQL union][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     ignore: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified external resolver function for this [GraphQL union][1] variant.
@@ -206,7 +206,7 @@ struct VariantAttr {
     /// Usually, specifying an external resolver function has sense, when some custom resolving
     /// logic is involved.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     external_resolver: Option<SpanContainer<syn::ExprPath>>,
 }
 
@@ -258,22 +258,22 @@ impl VariantAttr {
 
 /// Definition of [GraphQL union][1] for code generation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 struct Definition {
     /// Name of this [GraphQL union][1] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     name: String,
 
     /// Rust type that this [GraphQL union][1] is represented with.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     ty: syn::Type,
 
     /// Generics of the Rust type that this [GraphQL union][1] is implemented
     /// for.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     generics: syn::Generics,
 
     /// Indicator whether code should be generated for a trait object, rather
@@ -282,7 +282,7 @@ struct Definition {
 
     /// Description of this [GraphQL union][1] to put into GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     description: Option<String>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
@@ -290,7 +290,7 @@ struct Definition {
     ///
     /// [`Context`]: juniper::Context
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     context: syn::Type,
 
     /// Rust type of [`ScalarValue`] to generate [`GraphQLType`] implementation
@@ -304,12 +304,12 @@ struct Definition {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     scalar: scalar::Type,
 
     /// Variants definitions of this [GraphQL union][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     variants: Vec<VariantDefinition>,
 }
 
@@ -333,7 +333,7 @@ impl Definition {
     ///
     /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
     fn impl_generics(
         &self,
@@ -410,7 +410,7 @@ impl Definition {
     /// [GraphQL union][1].
     ///
     /// [`GraphQLUnion`]: juniper::GraphQLUnion
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
     fn impl_graphql_union_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -438,7 +438,7 @@ impl Definition {
     /// this [GraphQL union][1].
     ///
     /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
     fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -462,7 +462,7 @@ impl Definition {
     /// [GraphQL union][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
     fn impl_graphql_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -506,7 +506,7 @@ impl Definition {
     /// [GraphQL union][1].
     ///
     /// [`GraphQLValue`]: juniper::GraphQLValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -573,7 +573,7 @@ impl Definition {
     /// [GraphQL union][1].
     ///
     /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -617,7 +617,7 @@ impl Definition {
     /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
     /// [`BaseType`]: juniper::macros::reflect::BaseType
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
     pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -658,22 +658,22 @@ impl Definition {
 
 /// Definition of [GraphQL union][1] variant for code generation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 struct VariantDefinition {
     /// Rust type that this [GraphQL union][1] variant resolves into.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     ty: syn::Type,
 
     /// Rust code for value resolution of this [GraphQL union][1] variant.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     resolver_code: syn::Expr,
 
     /// Rust code for checking whether [GraphQL union][1] should be resolved
     /// into this variant.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     resolver_check: syn::Expr,
 
     /// Rust type of [`Context`] that this [GraphQL union][1] variant requires
@@ -683,7 +683,7 @@ struct VariantDefinition {
     /// trait method contains context argument.
     ///
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [1]: https://spec.graphql.org/October2021#sec-Unions
     context: Option<syn::Type>,
 }
 
@@ -762,7 +762,7 @@ impl VariantDefinition {
 /// If duplication happens, then resolving code is overwritten with the one from
 /// `external_resolvers`.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 fn emerge_union_variants_from_attr(
     variants: &mut Vec<VariantDefinition>,
     external_resolvers: AttrResolvers,
@@ -809,7 +809,7 @@ fn emerge_union_variants_from_attr(
 /// used to enforce this requirement in the generated code. However, due to the
 /// bad error message this implementation should stay and provide guidance.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 /// [2]: juniper::sa::assert_type_ne_all
 fn all_variants_different(variants: &[VariantDefinition]) -> bool {
     let mut types: Vec<_> = variants.iter().map(|var| &var.ty).collect();

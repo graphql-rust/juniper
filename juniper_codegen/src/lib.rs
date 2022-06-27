@@ -1285,8 +1285,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// [`Context`]: juniper::Context
 /// [`Executor`]: juniper::Executor
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [0]: https://spec.graphql.org/June2018
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [0]: https://spec.graphql.org/October2021
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 /// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
 /// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
@@ -1326,7 +1326,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// For more info and possibilities see [`#[graphql_interface]`] macro.
 ///
 /// [`#[graphql_interface]`]: crate::graphql_interface
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInterface, attributes(graphql))]
 pub fn derive_interface(body: TokenStream) -> TokenStream {
@@ -1463,7 +1463,7 @@ pub fn derive_interface(body: TokenStream) -> TokenStream {
 /// ```
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(body: TokenStream) -> TokenStream {
@@ -1787,8 +1787,8 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// [`GraphQLType`]: juniper::GraphQLType
 /// [`GraphQLValue`]: juniper::GraphQLValue
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [0]: https://spec.graphql.org/June2018
-/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+/// [0]: https://spec.graphql.org/October2021
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
@@ -1841,7 +1841,7 @@ pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [`GraphQLType`]: juniper::GraphQLType
 /// [`GraphQLSubscriptionValue`]: juniper::GraphQLSubscriptionValue
 /// [`Stream`]: futures::Stream
-/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+/// [1]: https://spec.graphql.org/October2021#sec-Subscription
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
@@ -2148,7 +2148,7 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///
 /// [`Context`]: juniper::Context
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLUnion, attributes(graphql))]
@@ -2438,7 +2438,7 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 ///
 /// [`Context`]: juniper::Context
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 /// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
 /// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html

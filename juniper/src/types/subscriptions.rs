@@ -94,8 +94,8 @@ pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> 
 ///
 /// See trait methods for more detailed explanation on how this trait works.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
-/// [2]: https://spec.graphql.org/June2018/#sec-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Subscription
+/// [2]: https://spec.graphql.org/October2021#sec-Objects
 pub trait GraphQLSubscriptionValue<S = DefaultScalarValue>: GraphQLValue<S> + Sync
 where
     Self::TypeInfo: Sync,
@@ -204,7 +204,7 @@ crate::sa::assert_obj_safe!(GraphQLSubscriptionValue<Context = (), TypeInfo = ()
 /// It's automatically implemented for [`GraphQLSubscriptionValue`] and [`GraphQLType`]
 /// implementers, so doesn't require manual or code-generated implementation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+/// [1]: https://spec.graphql.org/October2021#sec-Subscription
 pub trait GraphQLSubscriptionType<S = DefaultScalarValue>:
     GraphQLSubscriptionValue<S> + GraphQLType<S>
 where
