@@ -873,6 +873,125 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
+/// # Interfaces implementing other interfaces
+///
+/// GraphQL allows implementing interfaces on other interfaces in addition to
+/// objects.
+///
+/// > __NOTE:__ Every interface has to specify all other interfaces/objects it
+/// >           implements or is implemented for. Missing one of `for = ` or
+/// >           `impl = ` attributes is an understandable compile-time error.
+///
+/// ```rust
+/// # extern crate juniper;
+/// use juniper::{graphql_interface, graphql_object, ID};
+///
+/// #[graphql_interface(for = [HumanValue, Luke])]
+/// struct Node {
+///     id: ID,
+/// }
+///
+/// #[graphql_interface(impl = NodeValue, for = Luke)]
+/// struct Human {
+///     id: ID,
+///     home_planet: String,
+/// }
+///
+/// struct Luke {
+///     id: ID,
+/// }
+///
+/// #[graphql_object(impl = [HumanValue, NodeValue])]
+/// impl Luke {
+///     fn id(&self) -> &ID {
+///         &self.id
+///     }
+///
+///     // As `String` and `&str` aren't distinguished by
+///     // GraphQL spec, you can use them interchangeably.
+///     // Same is applied for `Cow<'a, str>`.
+///     //                  ⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+///     fn home_planet() -> &'static str {
+///         "Tatooine"
+///     }
+/// }
+/// ```
+///
+/// # GraphQL subtyping and additional `null`able fields
+///
+/// GraphQL allows implementers (both objects and other interfaces) to return
+/// "subtypes" instead of an original value. Basically, this allows you to
+/// impose additional bounds on the implementation.
+///
+/// Valid "subtypes" are:
+/// - interface implementer instead of an interface itself:
+///   - `I implements T` in place of a `T`;
+///   - `Vec<I implements T>` in place of a `Vec<T>`.
+/// - non-`null` value in place of a `null`able:
+///   - `T` in place of a `Option<T>`;
+///   - `Vec<T>` in place of a `Vec<Option<T>>`.
+///
+/// These rules are recursively applied, so `Vec<Vec<I implements T>>` is a
+/// valid "subtype" of a `Option<Vec<Option<Vec<Option<T>>>>>`.
+///
+/// Also, GraphQL allows implementers to add `null`able fields, which aren't
+/// present on an original interface.
+///
+/// ```rust
+/// # extern crate juniper;
+/// use juniper::{graphql_interface, graphql_object, ID};
+///
+/// #[graphql_interface(for = [HumanValue, Luke])]
+/// struct Node {
+///     id: ID,
+/// }
+///
+/// #[graphql_interface(for = HumanConnectionValue)]
+/// struct Connection {
+///     nodes: Vec<NodeValue>,
+/// }
+///
+/// #[graphql_interface(impl = NodeValue, for = Luke)]
+/// struct Human {
+///     id: ID,
+///     home_planet: String,
+/// }
+///
+/// #[graphql_interface(impl = ConnectionValue)]
+/// struct HumanConnection {
+///     nodes: Vec<HumanValue>,
+///     //         ^^^^^^^^^^ notice not `NodeValue`
+///     // This can happen, because every `Human` is a `Node` too, so we are
+///     // just imposing additional bounds, which still can be resolved with
+///     // `... on Connection { nodes }`.
+/// }
+///
+/// struct Luke {
+///     id: ID,
+/// }
+///
+/// #[graphql_object(impl = [HumanValue, NodeValue])]
+/// impl Luke {
+///     fn id(&self) -> &ID {
+///         &self.id
+///     }
+///
+///     fn home_planet(language: Option<String>) -> &'static str {
+///         //                   ^^^^^^^^^^^^^^
+///         // Notice additional `null`able field, which is missing on `Human`.
+///         // Resolving `...on Human { homePlanet }` will provide `None` for
+///         // this argument.
+///         match language.as_deref() {
+///             None | Some("en") => "Tatooine",
+///             Some("ko") => "타투인",
+///             _ => todo!(),
+///         }
+///     }
+/// }
+/// #
+/// # fn main() {}
+/// ```
+///
 /// # Renaming policy
 ///
 /// By default, all [GraphQL interface][1] fields and their arguments are renamed

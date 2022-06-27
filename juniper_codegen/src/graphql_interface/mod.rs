@@ -81,12 +81,19 @@ struct Attr {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     r#enum: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified Rust types of [GraphQL objects][2] implementing
-    /// this [GraphQL interface][1] type.
+    /// Explicitly specified Rust types of [GraphQL objects][2] or
+    /// [interfaces][1] implementing this [GraphQL interface][1] type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     implemented_for: HashSet<SpanContainer<syn::TypePath>>,
+
+    /// Explicitly specified [GraphQL interfaces, implemented][1] by this
+    /// [GraphQL interface][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sel-GAHbhBDABAB_E-0b
+    implements: HashSet<SpanContainer<syn::TypePath>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL interface][1] type with.
@@ -185,6 +192,18 @@ impl Parse for Attr {
                             .none_or_else(|_| err::dup_arg(impler_span))?;
                     }
                 }
+                "impl" | "implements" => {
+                    input.parse::<token::Eq>()?;
+                    for iface in input.parse_maybe_wrapped_and_punctuated::<
+                        syn::TypePath, token::Bracket, token::Comma,
+                    >()? {
+                        let iface_span = iface.span();
+                        out
+                            .implements
+                            .replace(SpanContainer::new(ident.span(), Some(iface_span), iface))
+                            .none_or_else(|_| err::dup_arg(iface_span))?;
+                    }
+                }
                 "enum" => {
                     input.parse::<token::Eq>()?;
                     let alias = input.parse::<syn::Ident>()?;
@@ -232,6 +251,7 @@ impl Attr {
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
             implemented_for: try_merge_hashset!(implemented_for: self, another => span_joined),
+            implements: try_merge_hashset!(implements: self, another => span_joined),
             r#enum: try_merge_opt!(r#enum: self, another),
             asyncness: try_merge_opt!(asyncness: self, another),
             rename_fields: try_merge_opt!(rename_fields: self, another),
@@ -283,15 +303,15 @@ struct Definition {
     /// [`implementers`]: Self::implementers
     enum_alias_ident: syn::Ident,
 
-    /// Name of this [GraphQL interface][1] in GraphQL schema.
+    /// Name of this [GraphQL interface][0] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    name: String,
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    name: Box<str>,
 
-    /// Description of this [GraphQL interface][1] to put into GraphQL schema.
+    /// Description of this [GraphQL interface][0] to put into GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    description: Option<String>,
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    description: Option<Box<str>>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL interface][1].
@@ -320,6 +340,12 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implemented_for: Vec<syn::TypePath>,
 
+    /// [GraphQL interfaces implemented][1] by this [GraphQL interface][0].
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sel-GAHbhBDABAB_E-0b
+    implements: Vec<syn::TypePath>,
+
     /// Unlike `#[graphql_interface]` maro, `#[derive(GraphQLInterface)]` can't
     /// append `#[allow(dead_code)]` to the unused struct, representing
     /// [GraphQL interface][1]. We generate hacky `const` which doesn't actually
@@ -329,10 +355,10 @@ struct Definition {
     suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
 
     /// Intra-doc link to the [`syn::Item`] defining this
-    /// [GraphQL interface][1].
+    /// [GraphQL interface][0].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    src_intra_doc_link: String,
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    src_intra_doc_link: Box<str>,
 }
 
 impl ToTokens for Definition {
@@ -496,11 +522,6 @@ impl Definition {
         let (impl_generics, _, where_clause) = gens.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let implemented_for = &self.implemented_for;
-        let all_impled_for_unique = (implemented_for.len() > 1).then(|| {
-            quote! { ::juniper::sa::assert_type_ne_all!(#( #implemented_for ),*); }
-        });
-
         let suppress_dead_code = self.suppress_dead_code.as_ref().map(|(ident, fields)| {
             let const_gens = self.const_trait_generics();
             let fields = fields.iter().map(|f| &f.ident);
@@ -519,6 +540,49 @@ impl Definition {
             }}
         });
 
+        let implemented_for = &self.implemented_for;
+        let all_impled_for_unique = (implemented_for.len() > 1).then(|| {
+            quote! { ::juniper::sa::assert_type_ne_all!(#( #implemented_for ),*); }
+        });
+
+        let mark_object_or_interface = self.implemented_for.iter().map(|impl_for| {
+            quote_spanned! { impl_for.span() =>
+                trait GraphQLObjectOrInterface<S: ::juniper::ScalarValue, T> {
+                    fn mark();
+                }
+
+                {
+                    struct Object;
+
+                    impl<S, T> GraphQLObjectOrInterface<S, Object> for T
+                    where
+                        S: ::juniper::ScalarValue,
+                        T: ::juniper::marker::GraphQLObject<S>,
+                    {
+                        fn mark() {
+                            <T as ::juniper::marker::GraphQLObject<S>>::mark()
+                        }
+                    }
+                }
+
+                {
+                    struct Interface;
+
+                    impl<S, T> GraphQLObjectOrInterface<S, Interface> for T
+                    where
+                        S: ::juniper::ScalarValue,
+                        T: ::juniper::marker::GraphQLInterface<S>,
+                    {
+                        fn mark() {
+                            <T as ::juniper::marker::GraphQLInterface<S>>::mark()
+                        }
+                    }
+                }
+
+                <#impl_for as GraphQLObjectOrInterface<#scalar, _>>::mark();
+            }
+        });
+
         quote! {
             #[automatically_derived]
             impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar>
@@ -528,7 +592,7 @@ impl Definition {
                 fn mark() {
                     #suppress_dead_code
                     #all_impled_for_unique
-                    #( <#implemented_for as ::juniper::marker::GraphQLObject<#scalar>>::mark(); )*
+                    #( { #mark_object_or_interface } )*
                 }
             }
         }
@@ -565,6 +629,25 @@ impl Definition {
             generics.replace_type_path_with_defaults(&mut ty);
             ty
         });
+        let const_implements = self
+            .implements
+            .iter()
+            .cloned()
+            .map(|mut ty| {
+                generics.replace_type_path_with_defaults(&mut ty);
+                ty
+            })
+            .collect::<Vec<_>>();
+        let transitive_checks = const_impl_for.clone().map(|const_impl_for| {
+            quote_spanned! { const_impl_for.span() =>
+                ::juniper::assert_transitive_impls!(
+                    #const_scalar,
+                    #ty#ty_const_generics,
+                    #const_impl_for,
+                    #( #const_implements ),*
+                );
+            }
+        });
 
         quote! {
             #[automatically_derived]
@@ -580,6 +663,12 @@ impl Definition {
                         #ty#ty_const_generics,
                         #( #const_impl_for ),*
                     );
+                    ::juniper::assert_implemented_for!(
+                        #const_scalar,
+                        #ty#ty_const_generics,
+                        #( #const_implements ),*
+                    );
+                    #( #transitive_checks )*
                 }
             }
         }
@@ -612,6 +701,20 @@ impl Definition {
             a.cmp(&b)
         });
 
+        // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
+        let mut implements = self.implements.clone();
+        implements.sort_unstable_by(|a, b| {
+            let (a, b) = (quote!(#a).to_string(), quote!(#b).to_string());
+            a.cmp(&b)
+        });
+        let impl_interfaces = (!implements.is_empty()).then(|| {
+            quote! {
+                .interfaces(&[
+                    #( registry.get_type::<#implements>(info), )*
+                ])
+            }
+        });
+
         let fields_meta = self.fields.iter().map(|f| f.method_meta_tokens(None));
 
         quote! {
@@ -638,6 +741,7 @@ impl Definition {
                     ];
                     registry.build_interface_type::<#ty#ty_generics>(info, &fields)
                         #description
+                        #impl_interfaces
                         .into_meta()
                 }
             }
@@ -801,6 +905,7 @@ impl Definition {
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let implemented_for = &self.implemented_for;
+        let implements = &self.implements;
         let scalar = &self.scalar;
         let name = &self.name;
         let fields = self.fields.iter().map(|f| &f.name);
@@ -827,6 +932,15 @@ impl Definition {
                     <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
                     #( <#implemented_for as ::juniper::macros::reflect::BaseType<#scalar>>::NAME ),*
                 ];
+            }
+
+            #[automatically_derived]
+            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
+                for #ty#ty_generics
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Types =
+                    &[#( <#implements as ::juniper::macros::reflect::BaseType<#scalar>>::NAME ),*];
             }
 
             #[automatically_derived]

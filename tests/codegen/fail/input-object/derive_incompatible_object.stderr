@@ -60,7 +60,7 @@ error[E0599]: no method named `to_input_value` found for struct `ObjectA` in the
  --> fail/input-object/derive_incompatible_object.rs:6:10
   |
 2 | struct ObjectA {
-  | -------------- method `to_input_value` not found for this
+  |        ------- method `to_input_value` not found for this struct
 ...
 6 | #[derive(juniper::GraphQLInputObject)]
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `ObjectA`
