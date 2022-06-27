@@ -45,10 +45,6 @@ impl<T> SpanContainer<T> {
         self.val
     }
 
-    pub fn inner(&self) -> &T {
-        &self.val
-    }
-
     pub fn map<U, F: Fn(T) -> U>(self, f: F) -> SpanContainer<U> {
         SpanContainer {
             expr: self.expr,

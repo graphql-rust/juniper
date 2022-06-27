@@ -5,7 +5,7 @@ use crate::behavior;
 #[doc(inline)]
 pub use self::macros::{
     assert_field, assert_field_args, assert_field_type, assert_has_field, assert_implemented_for,
-    assert_interfaces_impls, const_concat, format_type,
+    assert_interfaces_impls, assert_transitive_impls, const_concat, format_type,
 };
 
 /// Name of a [GraphQL type][0] in a GraphQL schema.
@@ -332,24 +332,22 @@ mod macros {
     #[macro_export]
     macro_rules! reflect_assert_implemented_for {
         ($behavior: ty, $implementor: ty $(, $interfaces: ty)* $(,)?) => {
-            const _: () = {
-                $({
-                    let is_present = $crate::reflect::str_exists_in_arr(
+            const _: () = { $({
+                let is_present = $crate::reflect::str_exists_in_arr(
+                    <$implementor as $crate::reflect::BaseType<$behavior>>::NAME,
+                    <$interfaces as $crate::reflect::BaseSubTypes<$behavior>>::NAMES,
+                );
+                if !is_present {
+                    const MSG: &str = $crate::reflect::const_concat!(
+                        "Failed to implement interface `",
+                        <$interfaces as $crate::reflect::BaseType<$behavior>>::NAME,
+                        "` on `",
                         <$implementor as $crate::reflect::BaseType<$behavior>>::NAME,
-                        <$interfaces as $crate::reflect::BaseSubTypes<$behavior>>::NAMES,
+                        "`: missing implementer reference in interface's `for` attribute.",
                     );
-                    if !is_present {
-                        const MSG: &str = $crate::reflect::const_concat!(
-                            "Failed to implement interface `",
-                            <$interfaces as $crate::reflect::BaseType<$behavior>>::NAME,
-                            "` on `",
-                            <$implementor as $crate::reflect::BaseType<$behavior>>::NAME,
-                            "`: missing implementer reference in interface's `for` attribute.",
-                        );
-                        ::std::panic!("{}", MSG);
-                    }
-                })*
-            };
+                    ::std::panic!("{}", MSG);
+                }
+            })* };
         };
     }
 
@@ -360,24 +358,52 @@ mod macros {
     #[macro_export]
     macro_rules! reflect_assert_interfaces_impls {
         ($behavior: ty, $interface: ty $(, $implementers: ty)* $(,)?) => {
-            const _: () = {
-                $({
-                    let is_present = $crate::reflect::str_exists_in_arr(
+            const _: () = { $({
+                let is_present = $crate::reflect::str_exists_in_arr(
+                    <$interface as $crate::reflect::BaseType<$behavior>>::NAME,
+                    <$implementers as $crate::reflect::Implements<$behavior>>::NAMES,
+                );
+                if !is_present {
+                    const MSG: &str = $crate::reflect::const_concat!(
+                        "Failed to implement interface `",
                         <$interface as $crate::reflect::BaseType<$behavior>>::NAME,
-                        <$implementers as $crate::reflect::Implements<$behavior>>::NAMES,
+                        "` on `",
+                        <$implementers as $crate::reflect::BaseType<$behavior>>::NAME,
+                        "`: missing interface reference in implementer's `impl` attribute.",
                     );
-                    if !is_present {
-                        const MSG: &str = $crate::reflect::const_concat!(
-                            "Failed to implement interface `",
-                            <$interface as $crate::reflect::BaseType<$behavior>>::NAME,
-                            "` on `",
-                            <$implementers as $crate::reflect::BaseType<$behavior>>::NAME,
-                            "`: missing interface reference in implementer's `impl` attribute.",
-                        );
-                        ::std::panic!("{}", MSG);
-                    }
-                })*
-            };
+                    ::std::panic!("{}", MSG);
+                }
+            })* };
+        };
+    }
+
+    /// Asserts that all [transitive interfaces][0] (the ones implemented by the
+    /// `$interface`) are also implemented by the `$implementor`.
+    ///
+    /// [0]: https://spec.graphql.org/October2021#sel-FAHbhBHCAACGB35P
+    #[macro_export]
+    macro_rules! reflect_assert_transitive_impls {
+        ($behavior: ty, $interface: ty, $implementor: ty $(, $transitive: ty)* $(,)?) => {
+            const _: () = { $({
+                let is_present = $crate::reflect::str_exists_in_arr(
+                    <$implementor as $crate::reflect::BaseType<$behavior>>::NAME,
+                    <$transitive as $crate::reflect::BaseSubTypes<$behavior>>::NAMES,
+                );
+                if !is_present {
+                    const MSG: &str = $crate::reflect::const_concat!(
+                        "Failed to implement interface `",
+                        <$interface as $crate::reflect::BaseType<$behavior>>::NAME,
+                        "` on `",
+                        <$implementor as $crate::reflect::BaseType<$behavior>>::NAME,
+                        "`: missing `impl = ` for transitive interface `",
+                        <$transitive as $crate::reflect::BaseType<$behavior>>::NAME,
+                        "` on `",
+                        <$implementor as $crate::reflect::BaseType<$behavior>>::NAME,
+                        "`.",
+                    );
+                    ::std::panic!("{}", MSG);
+                }
+            })* };
         };
     }
 
@@ -843,6 +869,7 @@ mod macros {
         reflect_assert_has_field as assert_has_field,
         reflect_assert_implemented_for as assert_implemented_for,
         reflect_assert_interfaces_impls as assert_interfaces_impls,
+        reflect_assert_transitive_impls as assert_transitive_impls,
         reflect_const_concat as const_concat, reflect_format_type as format_type,
     };
 }

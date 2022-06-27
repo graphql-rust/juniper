@@ -247,7 +247,7 @@ async fn interface_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!(null)),
+        Some(&graphql_value!([])),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
