@@ -444,8 +444,7 @@ impl ToTokens for Definition {
         self.impl_resolve_value().to_tokens(into);
         self.impl_resolve_value_async().to_tokens(into);
         self.impl_resolve_to_input_value().to_tokens(into);
-        //self.impl_resolve_input_value().to_tokens(into);
-        //self.impl_resolve_scalar_token().to_tokens(into);
+        self.impl_resolve_input_value().to_tokens(into);
         //self.impl_graphql_input_type().to_tokens(into);
         //self.impl_graphql_output_type().to_tokens(into);
         //self.impl_graphql_enum().to_tokens(into);
@@ -775,6 +774,49 @@ impl Definition {
                 fn from_input_value(v: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
                     match v.as_enum_value().or_else(|| v.as_string_value()) {
                         #( #variants )*
+                        _ => Err(::std::format!("Unknown enum value: {}", v)),
+                    }
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::InputValue`] trait for
+    /// this [GraphQL scalar][0].
+    ///
+    /// [`resolve::InputValue`]: juniper::resolve::InputValue
+    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_resolve_input_value(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (sv, generics) = self.mix_scalar_value(generics);
+        let (lt, mut generics) = self.mix_input_lifetime(generics, sv);
+        generics.make_where_clause().predicates.push(parse_quote! {
+            #sv: ::juniper::ScalarValue
+        });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let variant_arms = self.values.iter().map(|v| {
+            let v_ident = &v.ident;
+            let v_name = &v.name;
+
+            quote! {
+                Some(#v_name) => Ok(Self::#v_ident),
+            }
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh> for #ty
+                #where_clause
+            {
+                type Error = ::std::string::String;
+
+                fn try_from_input_value(
+                    input: &#lt ::juniper::graphql::InputValue<#sv>,
+                ) -> ::std::result::Result<Self, Self::Error> {
+                    match v.as_enum_value().or_else(|| v.as_string_value()) {
+                        #( #variant_arms )*
                         _ => Err(::std::format!("Unknown enum value: {}", v)),
                     }
                 }
