@@ -1411,6 +1411,179 @@ struct Human {
 <span class="boring">
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
+<h3 id="interfaces-implementing-other-interfaces"><a class="header" href="#interfaces-implementing-other-interfaces">Interfaces implementing other interfaces</a></h3>
+<p>GraphQL allows implementing interfaces on other interfaces in addition to objects.</p>
+<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+</span>use juniper::{graphql_interface, graphql_object, ID};
+
+#[graphql_interface(for = [HumanValue, Luke])]
+struct Node {
+    id: ID,
+}
+
+#[graphql_interface(impl = NodeValue, for = Luke)]
+struct Human {
+    id: ID,
+    home_planet: String,
+}
+
+struct Luke {
+    id: ID,
+}
+
+#[graphql_object(impl = [HumanValue, NodeValue])]
+impl Luke {
+    fn id(&amp;self) -&gt; &amp;ID {
+        &amp;self.id
+    }
+
+    // As `String` and `&amp;str` aren't distinguished by 
+    // GraphQL spec, you can use them interchangeably.
+    // Same is applied for `Cow&lt;'a, str&gt;`.
+    //                  ⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+    fn home_planet() -&gt; &amp;'static str {
+        &quot;Tatooine&quot;
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
+<blockquote>
+<p><strong>NOTE:</strong> Every interface has to specify all other interfaces/objects it implements or implemented for. Missing one of <code>for = </code> or <code>impl = </code> attributes is a compile-time error.</p>
+</blockquote>
+<pre><code class="language-compile_fail"># extern crate juniper;
+use juniper::{graphql_interface, GraphQLObject};
+
+#[derive(GraphQLObject)]
+pub struct ObjA {
+  id: String,
+}
+
+#[graphql_interface(for = ObjA)]
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at 
+// 'Failed to implement interface `Character` on `ObjA`: missing interface reference in implementer's `impl` attribute.'
+struct Character {
+  id: String,
+}
+
+fn main() {}
+</code></pre>
+<h3 id="graphql-subtyping-and-additional-nullable-fields"><a class="header" href="#graphql-subtyping-and-additional-nullable-fields">GraphQL subtyping and additional <code>null</code>able fields</a></h3>
+<p>GraphQL allows implementers (both objects and other interfaces) to return &quot;subtypes&quot; instead of an original value. Basically, this allows you to impose additional bounds on the implementation.</p>
+<p>Valid &quot;subtypes&quot; are:</p>
+<ul>
+<li>interface implementer instead of an interface itself:
+<ul>
+<li><code>I implements T</code> in place of a <code>T</code>;</li>
+<li><code>Vec&lt;I implements T&gt;</code> in place of a <code>Vec&lt;T&gt;</code>.</li>
+</ul>
+</li>
+<li>non-null value in place of a nullable:
+<ul>
+<li><code>T</code> in place of a <code>Option&lt;T&gt;</code>;</li>
+<li><code>Vec&lt;T&gt;</code> in place of a <code>Vec&lt;Option&lt;T&gt;&gt;</code>.</li>
+</ul>
+</li>
+</ul>
+<p>These rules are recursively applied, so <code>Vec&lt;Vec&lt;I implements T&gt;&gt;</code> is a valid &quot;subtype&quot; of a <code>Option&lt;Vec&lt;Option&lt;Vec&lt;Option&lt;T&gt;&gt;&gt;&gt;&gt;</code>.</p>
+<p>Also, GraphQL allows implementers to add <code>null</code>able fields, which aren't present on an original interface.</p>
+<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+</span>use juniper::{graphql_interface, graphql_object, ID};
+
+#[graphql_interface(for = [HumanValue, Luke])]
+struct Node {
+    id: ID,
+}
+
+#[graphql_interface(for = HumanConnectionValue)]
+struct Connection {
+    nodes: Vec&lt;NodeValue&gt;,
+}
+
+#[graphql_interface(impl = NodeValue, for = Luke)]
+struct Human {
+    id: ID,
+    home_planet: String,
+}
+
+#[graphql_interface(impl = ConnectionValue)]
+struct HumanConnection {
+    nodes: Vec&lt;HumanValue&gt;,
+    //         ^^^^^^^^^^ notice not `NodeValue`
+    // This can happen, because every `Human` is a `Node` too, so we are just
+    // imposing additional bounds, which still can be resolved with
+    // `... on Connection { nodes }`.
+}
+
+struct Luke {
+    id: ID,
+}
+
+#[graphql_object(impl = [HumanValue, NodeValue])]
+impl Luke {
+    fn id(&amp;self) -&gt; &amp;ID {
+        &amp;self.id
+    }
+    
+    fn home_planet(language: Option&lt;String&gt;) -&gt; &amp;'static str {
+        //                   ^^^^^^^^^^^^^^
+        // Notice additional `null`able field, which is missing on `Human`.
+        // Resolving `...on Human { homePlanet }` will provide `None` for this
+        // argument.
+        match language.as_deref() {
+            None | Some(&quot;en&quot;) =&gt; &quot;Tatooine&quot;,
+            Some(&quot;ko&quot;) =&gt; &quot;타투인&quot;,
+            _ =&gt; todo!(),
+        }
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}
+</span></code></pre></pre>
+<p>Violating GraphQL &quot;subtyping&quot; or additional nullable field rules is a compile-time error.</p>
+<pre><code class="language-compile_fail"># extern crate juniper;
+use juniper::{graphql_interface, graphql_object};
+
+pub struct ObjA {
+    id: String,
+}
+
+#[graphql_object(impl = CharacterValue)]
+impl ObjA {
+    fn id(&amp;self, is_present: bool) -&gt; &amp;str {
+//     ^^ the evaluated program panicked at 
+//        'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` 
+//         isn't present on the interface and so has to be nullable.'        
+        is_present.then(|| self.id.as_str()).unwrap_or(&quot;missing&quot;)
+    }
+}
+
+#[graphql_interface(for = ObjA)]
+struct Character {
+    id: String,
+}
+#
+# fn main() {}
+</code></pre>
+<pre><code class="language-compile_fail"># extern crate juniper;
+use juniper::{graphql_interface, GraphQLObject};
+
+#[derive(GraphQLObject)]
+#[graphql(impl = CharacterValue)]
+pub struct ObjA {
+    id: Vec&lt;String&gt;,
+//  ^^ the evaluated program panicked at 
+//     'Failed to implement interface `Character` on `ObjA`: Field `id`: implementor is expected to return a subtype of 
+//      interface's return object: `[String!]!` is not a subtype of `String!`.'    
+}
+
+#[graphql_interface(for = ObjA)]
+struct Character {
+    id: String,
+}
+#
+# fn main() {}
+</code></pre>
 <h3 id="ignoring-trait-methods"><a class="header" href="#ignoring-trait-methods">Ignoring trait methods</a></h3>
 <p>We may want to omit some trait methods to be assumed as <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> fields and ignore them.</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
