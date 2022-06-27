@@ -3378,7 +3378,7 @@ mod nullable_argument_subtyping {
     }
 }
 
-mod simple_inheritance {
+mod simple_subtyping {
     use super::*;
 
     #[graphql_interface(for = [ResourceValue, Endpoint])]
@@ -3625,7 +3625,7 @@ mod simple_inheritance {
     }
 }
 
-mod branching_inheritance {
+mod branching_subtyping {
     use super::*;
 
     #[graphql_interface(for = [HumanValue, DroidValue, Luke, R2D2])]

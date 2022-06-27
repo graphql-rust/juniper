@@ -88,11 +88,11 @@ struct Attr {
     /// [2]: https://spec.graphql.org/June2018/#sec-Objects
     implemented_for: HashSet<SpanContainer<syn::TypePath>>,
 
-    /// Explicitly specified [GraphQL interfaces][2] this [interface][1] type
-    /// implements.
+    /// Explicitly specified [GraphQL interfaces, implemented][1] by this
+    /// [GraphQL interface][0].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sel-GAHbhBDABAB_E-0b
     implements: HashSet<SpanContainer<syn::TypePath>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
@@ -303,14 +303,14 @@ struct Definition {
     /// [`implementers`]: Self::implementers
     enum_alias_ident: syn::Ident,
 
-    /// Name of this [GraphQL interface][1] in GraphQL schema.
+    /// Name of this [GraphQL interface][0] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
     name: Box<str>,
 
-    /// Description of this [GraphQL interface][1] to put into GraphQL schema.
+    /// Description of this [GraphQL interface][0] to put into GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
     description: Option<Box<str>>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
@@ -340,9 +340,10 @@ struct Definition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     implemented_for: Vec<syn::TypePath>,
 
-    /// Specified [GraphQL interfaces][1] this [interface][1] type implements.
+    /// [GraphQL interfaces implemented][1] by this [GraphQL interface][0].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sel-GAHbhBDABAB_E-0b
     implements: Vec<syn::TypePath>,
 
     /// Unlike `#[graphql_interface]` maro, `#[derive(GraphQLInterface)]` can't
@@ -354,9 +355,9 @@ struct Definition {
     suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
 
     /// Intra-doc link to the [`syn::Item`] defining this
-    /// [GraphQL interface][1].
+    /// [GraphQL interface][0].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
     src_intra_doc_link: Box<str>,
 }
 
@@ -639,7 +640,7 @@ impl Definition {
             .collect::<Vec<_>>();
         let transitive_checks = const_impl_for.clone().map(|const_impl_for| {
             quote_spanned! { const_impl_for.span() =>
-                ::juniper::assert_transitive_implementations!(
+                ::juniper::assert_transitive_impls!(
                     #const_scalar,
                     #ty#ty_const_generics,
                     #const_impl_for,

@@ -47,7 +47,7 @@ where
                 .and_then(|s| ctx.schema.concrete_type_by_name(s.item)),
         ) {
             // Even if there is no object type in the overlap of interfaces
-            // implementers, it's ok to spread in case `frag_type` implements
+            // implementers, it's OK to spread in case `frag_type` implements
             // `parent_type`.
             // https://spec.graphql.org/October2021#sel-JALVFJNRDABABqDy5B
             if let MetaType::Interface(InterfaceMeta {
@@ -86,7 +86,7 @@ where
             self.fragment_types.get(spread.item.name.item),
         ) {
             // Even if there is no object type in the overlap of interfaces
-            // implementers, it's ok to spread in case `frag_type` implements
+            // implementers, it's OK to spread in case `frag_type` implements
             // `parent_type`.
             // https://spec.graphql.org/October2021/#sel-JALVFJNRDABABqDy5B
             if let MetaType::Interface(InterfaceMeta {

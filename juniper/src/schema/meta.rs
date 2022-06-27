@@ -602,7 +602,7 @@ impl<'a, S> InterfaceMeta<'a, S> {
         self
     }
 
-    /// Set the `interfaces` this [`InterfaceMeta`] interface implements.
+    /// Sets the `interfaces` this [`InterfaceMeta`] interface implements.
     ///
     /// Overwrites any previously set list of interfaces.
     #[must_use]
