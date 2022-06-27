@@ -2812,9 +2812,22 @@ mod branching_inheritance {
     use super::*;
 
     #[derive(GraphQLInterface)]
-    #[graphql(for = Human)]
-    pub struct Character {
-        pub id: String,
+    #[graphql(for = [HumanValue, DroidValue, Luke, R2D2])]
+    struct Node {
+        id: ID,
+    }
+
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [HumanConnection, DroidConnection])]
+    struct Connection {
+        nodes: Vec<NodeValue>,
+    }
+
+    #[derive(GraphQLInterface)]
+    #[graphql(impl = NodeValue, for = Luke)]
+    struct Human {
+        id: ID,
+        home_planet: String,
     }
 
     #[derive(GraphQLObject)]
