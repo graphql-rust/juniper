@@ -31,6 +31,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Forbade default implementations of non-ignored trait methods.
     - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
     - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
+    - Supported interfaces implementing other interfaces. ([#1028])
 - Split `#[derive(GraphQLScalarValue)]` macro into: 
     - `#[derive(GraphQLScalar)]` for implementing GraphQL scalar: ([#1017]) 
         - Supported generic `ScalarValue`.
@@ -94,6 +95,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1017]: /../../pull/1017
 [#1025]: /../../pull/1025
 [#1026]: /../../pull/1026
+[#1028]: /../../pull/1028
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
 [#1057]: /../../pull/1057

@@ -306,12 +306,12 @@ struct Definition {
     /// Name of this [GraphQL interface][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    name: String,
+    name: Box<str>,
 
     /// Description of this [GraphQL interface][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    description: Option<String>,
+    description: Option<Box<str>>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL interface][1].
@@ -357,7 +357,7 @@ struct Definition {
     /// [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    src_intra_doc_link: String,
+    src_intra_doc_link: Box<str>,
 }
 
 impl ToTokens for Definition {
@@ -643,7 +643,7 @@ impl Definition {
                     #const_scalar,
                     #ty#ty_const_generics,
                     #const_impl_for,
-                    #(#const_implements),*
+                    #( #const_implements ),*
                 );
             }
         });
@@ -665,7 +665,7 @@ impl Definition {
                     ::juniper::assert_implemented_for!(
                         #const_scalar,
                         #ty#ty_const_generics,
-                        #(#const_implements),*
+                        #( #const_implements ),*
                     );
                     #( #transitive_checks )*
                 }
@@ -939,7 +939,7 @@ impl Definition {
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types =
-                    &[#(<#implements as ::juniper::macros::reflect::BaseType<#scalar>>::NAME),*];
+                    &[#( <#implements as ::juniper::macros::reflect::BaseType<#scalar>>::NAME ),*];
             }
 
             #[automatically_derived]

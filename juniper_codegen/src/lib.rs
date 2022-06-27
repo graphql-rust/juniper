@@ -927,11 +927,9 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// - interface implementer instead of an interface itself
 ///   - `I implements T` in place of a T
 ///   - `Vec<I implements T>` in place of a `Vec<T>`
-///   - ...
 /// - non-null value in place of a nullable:
 ///   - `T` in place of a `Option<T>`
 ///   - `Vec<T>` in place of a `Vec<Option<T>>`
-///   - ...
 /// Those rules are recursively applied, so `Vec<Vec<I implements T>>` is a
 /// valid "subtype" of a `Option<Vec<Option<Vec<Option<T>>>>>`.
 ///
