@@ -651,6 +651,24 @@ impl<'a, S> EnumMeta<'a, S> {
         }
     }
 
+    /// Builds a new [`EnumMeta`] information with the specified `name` and
+    /// possible `values`.
+    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
+    //       `explicit_generic_args_with_impl_trait` hits stable:
+    //       https://github.com/rust-lang/rust/issues/83701
+    pub fn new_reworked<T, N>(name: N, values: &[EnumValue]) -> Self
+    where
+        T: resolve::InputValueOwned<S>,
+        Cow<'a, str>: From<N>,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            values: values.to_owned(),
+            try_parse_fn: try_parse_fn_reworked::<T, S>,
+        }
+    }
+
     /// Sets the `description` of this [`EnumMeta`] type.
     ///
     /// Overwrites any previously set description.

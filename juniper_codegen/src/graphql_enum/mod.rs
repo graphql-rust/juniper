@@ -439,8 +439,8 @@ impl ToTokens for Definition {
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        //self.impl_resolve_type().to_tokens(into);
-        //self.impl_resolve_type_name().to_tokens(into);
+        self.impl_resolve_type().to_tokens(into);
+        self.impl_resolve_type_name().to_tokens(into);
         self.impl_resolve_value().to_tokens(into);
         self.impl_resolve_value_async().to_tokens(into);
         self.impl_resolve_to_input_value().to_tokens(into);
@@ -548,6 +548,98 @@ impl Definition {
                     registry.build_enum_type::<#ident#ty_generics>(info, &variants)
                         #description
                         .into_meta()
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::Type`] trait for this
+    /// [GraphQL enum][0].
+    ///
+    /// [`resolve::Type`]: juniper::resolve::Type
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    fn impl_resolve_type(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = self.mix_type_info(generics);
+        let (sv, mut generics) = self.mix_scalar_value(generics);
+        let preds = &mut generics.make_where_clause().predicates;
+        preds.push(parse_quote! { #sv: Clone });
+        preds.push(parse_quote! {
+            ::juniper::behavior::Coerce<Self>:
+                ::juniper::resolve::TypeName<#inf>
+                + ::juniper::resolve::InputValueOwned<#sv>
+        });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let description = self
+            .description
+            .as_ref()
+            .map(|text| quote! { .description(#text) });
+
+        let values_meta = self.values.iter().map(|v| {
+            let v_name = &v.name;
+            let v_description = v
+                .description
+                .as_ref()
+                .map(|text| quote! { .description(#text) });
+            let v_deprecation = v.deprecated.as_ref().map(|depr| {
+                let reason = depr.as_ref().map_or_else(
+                    || quote! { ::std::option::Option::None },
+                    |text| quote! { ::std::option::Option::Some(#text) },
+                );
+                quote! { .deprecated(#reason) }
+            });
+
+            quote! {
+                ::juniper::meta::EnumValue::new(#v_name)
+                    #v_description
+                    #v_deprecation
+            }
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::Type<#inf, #sv, #bh> for #ty
+                #where_clause
+            {
+                fn meta<'__r, '__ti: '__r>(
+                    registry: &mut ::juniper::Registry<'__r, #sv>,
+                    type_info: &'__ti #inf,
+                ) -> ::juniper::meta::MetaType<'__r, #sv>
+                where
+                    #sv: '__r,
+                {
+                    let values = [#( #values_meta ),*];
+
+                    registry.register_enum_with::<
+                        ::juniper::behavior::Coerce<Self>, _, _,
+                    >(&values, type_info, |meta| {
+                        meta#description
+                    })
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::TypeName`] trait for this
+    /// [GraphQL enum][0].
+    ///
+    /// [`resolve::TypeName`]: juniper::resolve::TypeName
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    fn impl_resolve_type_name(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = self.mix_type_info(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl#impl_gens ::juniper::resolve::TypeName<#inf, #bh> for #ty
+                #where_clause
+            {
+                fn type_name(_: &#inf) -> &'static str {
+                    <Self as ::juniper::reflect::BaseType<#bh>>::NAME
                 }
             }
         }
@@ -782,15 +874,15 @@ impl Definition {
     }
 
     /// Returns generated code implementing [`resolve::InputValue`] trait for
-    /// this [GraphQL scalar][0].
+    /// this [GraphQL enum][0].
     ///
     /// [`resolve::InputValue`]: juniper::resolve::InputValue
-    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
     fn impl_resolve_input_value(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
         let (sv, generics) = self.mix_scalar_value(generics);
-        let (lt, mut generics) = self.mix_input_lifetime(generics, sv);
+        let (lt, mut generics) = self.mix_input_lifetime(generics, &sv);
         generics.make_where_clause().predicates.push(parse_quote! {
             #sv: ::juniper::ScalarValue
         });
@@ -801,7 +893,8 @@ impl Definition {
             let v_name = &v.name;
 
             quote! {
-                Some(#v_name) => Ok(Self::#v_ident),
+                ::std::option::Option::Some(#v_name) =>
+                    ::std::result::Result::Ok(Self::#v_ident),
             }
         });
 
@@ -815,9 +908,14 @@ impl Definition {
                 fn try_from_input_value(
                     input: &#lt ::juniper::graphql::InputValue<#sv>,
                 ) -> ::std::result::Result<Self, Self::Error> {
-                    match v.as_enum_value().or_else(|| v.as_string_value()) {
+                    match input
+                        .as_enum_value()
+                        .or_else(|| input.as_string_value())
+                    {
                         #( #variant_arms )*
-                        _ => Err(::std::format!("Unknown enum value: {}", v)),
+                        _ => ::std::result::Result::Err(
+                            ::std::format!("Unknown enum value: {}", input),
+                        ),
                     }
                 }
             }

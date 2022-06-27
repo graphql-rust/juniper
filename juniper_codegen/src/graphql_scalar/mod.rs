@@ -575,7 +575,7 @@ impl Definition {
         let description = self
             .description
             .as_ref()
-            .map(|val| quote! { .description(#val) });
+            .map(|text| quote! { .description(#text) });
 
         let specified_by_url = self.specified_by_url.as_ref().map(|url| {
             let url_lit = url.as_str();

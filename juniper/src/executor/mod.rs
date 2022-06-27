@@ -1456,6 +1456,41 @@ impl<'r, S: 'r> Registry<'r, S> {
         EnumMeta::new::<T>(Cow::Owned(name.to_string()), values)
     }
 
+    /// Builds an [`EnumMeta`] information for the specified [`graphql::Type`],
+    /// allowing to `customize` the created [`ScalarMeta`], and stores it in
+    /// this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_enum_with<'ti, T, TI, F>(
+        &mut self,
+        values: &[EnumValue],
+        type_info: &'ti TI,
+        customize: F,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueOwned<S>,
+        TI: ?Sized,
+        'ti: 'r,
+        F: FnOnce(EnumMeta<'r, S>) -> EnumMeta<'r, S>,
+        S: Clone,
+    {
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                customize(EnumMeta::new_reworked::<T, _>(
+                    T::type_name(type_info),
+                    values,
+                ))
+                .into_meta()
+            })
+            .clone()
+    }
+
     /// Creates an [`InterfaceMeta`] type with the given `fields`.
     pub fn build_interface_type<T>(
         &mut self,
