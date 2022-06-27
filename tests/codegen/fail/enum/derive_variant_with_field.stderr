@@ -1,7 +1,7 @@
 error: GraphQL enum no fields allowed for non-ignored variants
- --> fail/enum/derive_variant_with_field.rs:3:12
+ --> fail/enum/derive_variant_with_field.rs:5:12
   |
-3 |     Variant(i32),
+5 |     Variant(i32),
   |            ^^^^^
   |
   = note: https://spec.graphql.org/June2018/#sec-Enums

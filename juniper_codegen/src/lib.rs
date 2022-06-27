@@ -126,14 +126,14 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     }
 }
 
-/// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][1]
-/// implementation for enums.
+/// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][0]
+/// implementation for Rust enums.
 ///
 /// The `#[graphql]` helper attribute is used for configuring the derived
 /// implementation. Specifying multiple `#[graphql]` attributes on the same
 /// definition is totally okay. They all will be treated as a single attribute.
 ///
-/// ```
+/// ```rust
 /// use juniper::GraphQLEnum;
 ///
 /// #[derive(GraphQLEnum)]
@@ -146,19 +146,18 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 /// # Custom name, description and deprecation
 ///
-/// The name of [GraphQL enum][1] or its variants may be overridden with a
-/// `name` attribute's argument. By default, a type name is used or
-/// `SCREAMING_SNAKE_CASE` variant name.
+/// The name of a [GraphQL enum][0] or its [values][1] may be overridden with
+/// the `name` attribute's argument. By default, a type name is used or a
+/// variant name in `SCREAMING_SNAKE_CASE`.
 ///
-/// The description of [GraphQL enum][1] or its variants may be specified either
-/// with a `description`/`desc` attribute's argument, or with a regular Rust doc
-/// comment.
+/// The description of a [GraphQL enum][0] or its [values][1] may be specified
+/// either with the `description`/`desc` attribute's argument, or with a regular
+/// Rust doc comment.
 ///
-/// A variant of [GraphQL enum][1] may be deprecated by specifying a
-/// `deprecated` attribute's argument, or with regular Rust `#[deprecated]`
-/// attribute.
+/// [GraphQL enum value][1] may be deprecated by specifying the `deprecated`
+/// attribute's argument, or with regular a Rust `#[deprecated]` attribute.
 ///
-/// ```
+/// ```rust
 /// # use juniper::GraphQLEnum;
 /// #
 /// #[derive(GraphQLEnum)]
@@ -171,12 +170,12 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// )]
 /// enum Episode {
 ///     /// Doc comment, also acting as description.
-///      #[deprecated(note = "Don't use it")]
+///     #[deprecated(note = "Don't use it")]
 ///     NewHope,
 ///
 ///     #[graphql(name = "Jedi", desc = "Arguably the best one in the trilogy")]
 ///     #[graphql(deprecated = "Don't use it")]
-///     Jedi,
+///     Jedai,
 ///
 ///     Empire,
 /// }
@@ -184,17 +183,17 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 /// # Renaming policy
 ///
-/// By default, all [GraphQL enum][1] variants are renamed via
-/// `SCREAMING_SNAKE_CASE` policy (so `NewHope` becomes `NEW_HOPE` variant in
-/// GraphQL schema, and so on). This complies with default GraphQL naming
-/// conventions [demonstrated in spec][1].
+/// By default, all [GraphQL enum values][1] are renamed in a
+/// `SCREAMING_SNAKE_CASE` manner (so a `NewHope` Rust enum variant becomes a
+/// `NEW_HOPE` [value][1] in GraphQL schema, and so on). This complies with
+/// default GraphQL naming conventions as [demonstrated in spec][0].
 ///
-/// However, if you need for some reason apply another naming convention, it's
-/// possible to do by using `rename_all` attribute's argument. At the moment it
-/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
-/// `none` (disables any renaming).
+/// However, if you need for some reason another naming convention, it's
+/// possible to do so by using the `rename_all` attribute's argument. At the
+/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
+/// `camelCase`, `none` (disables any renaming).
 ///
-/// ```
+/// ```rust
 /// # use juniper::GraphQLEnum;
 /// #
 /// #[derive(GraphQLEnum)]
@@ -206,13 +205,13 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// # Ignoring struct fields
+/// # Ignoring enum variants
 ///
-/// To omit exposing a struct field in the GraphQL schema, use an `ignore`
-/// attribute's argument directly on that field. Only ignored variants can
-/// contain fields.
+/// To omit exposing a Rust enum variant in a GraphQL schema, use the `ignore`
+/// attribute's argument directly on that variant. Only ignored Rust enum
+/// variants are allowed to contain fields.
 ///
-/// ```
+/// ```rust
 /// # use juniper::GraphQLEnum;
 /// #
 /// #[derive(GraphQLEnum)]
@@ -228,9 +227,10 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// # Custom `ScalarValue`
 ///
 /// By default, `#[derive(GraphQLEnum)]` macro generates code, which is generic
-/// over a [`ScalarValue`] type. This can be changed with `scalar` attribute.
+/// over a [`ScalarValue`] type. This can be changed with the `scalar`
+/// attribute's argument.
 ///
-/// ```
+/// ```rust
 /// # use juniper::{DefaultScalarValue, GraphQLEnum};
 /// #
 /// #[derive(GraphQLEnum)]
@@ -243,7 +243,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [1]: https://spec.graphql.org/October2021/#sec-Enums
+/// [0]: https://spec.graphql.org/October2021#sec-Enums
+/// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {

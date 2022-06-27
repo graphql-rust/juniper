@@ -166,7 +166,7 @@ mod ignored_variant {
                 vec![ExecutionError::new(
                     SourcePosition::new(14, 1, 12),
                     &["droid"],
-                    FieldError::from("Unable to resolve skipped enum variant"),
+                    FieldError::from("Cannot resolve ignored enum variant"),
                 )],
             )),
         );

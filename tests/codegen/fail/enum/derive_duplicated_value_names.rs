@@ -1,8 +1,10 @@
 use juniper::GraphQLEnum;
 
 #[derive(GraphQLEnum)]
-enum __Test {
+enum Test {
     Test,
+    #[graphql(name = "TEST")]
+    Test1,
 }
 
 fn main() {}
