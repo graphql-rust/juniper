@@ -9,7 +9,6 @@ use std::convert::TryInto as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
-    self,
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
@@ -19,6 +18,7 @@ use syn::{
 
 use crate::{
     common::{
+        default,
         parse::{
             attr::{err, OptionExt as _},
             ParseBufferExt as _,
@@ -28,28 +28,27 @@ use crate::{
     util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
 };
 
-/// Available arguments behind `#[graphql]` attribute when generating code for
-/// [GraphQL input object][0] type.
+/// Available arguments behind `#[graphql]` attribute placed on a Rust struct
+/// definition, when generating code for a [GraphQL input object][0].
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
 #[derive(Debug, Default)]
-pub(crate) struct ContainerAttr {
-    /// Explicitly specified name of this [GraphQL input object][0] type.
+struct ContainerAttr {
+    /// Explicitly specified name of this [GraphQL input object][0].
     ///
-    /// If [`None`], then Rust type name is used by default.
+    /// If [`None`], then Rust struct name will be used by default.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) name: Option<SpanContainer<String>>,
+    name: Option<SpanContainer<String>>,
 
-    /// Explicitly specified [description][1] of this [GraphQL input object][0]
-    /// type.
+    /// Explicitly specified [description][2] of this [GraphQL input object][0].
     ///
-    /// If [`None`], then Rust doc comment will be used as [description][1], if
-    /// any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    /// [1]: https://spec.graphql.org/October2021#sec-Descriptions
-    pub(crate) description: Option<SpanContainer<String>>,
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    description: Option<SpanContainer<String>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL input object][0] type with.
@@ -58,7 +57,7 @@ pub(crate) struct ContainerAttr {
     ///
     /// [`Context`]: juniper::Context
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) context: Option<SpanContainer<syn::Type>>,
+    context: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type (or type parameter with its bounds) of
     /// [`ScalarValue`] to use for resolving this [GraphQL input object][0] type
@@ -70,7 +69,7 @@ pub(crate) struct ContainerAttr {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) scalar: Option<SpanContainer<scalar::AttrValue>>,
+    scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified [`RenameRule`] for all fields of this
     /// [GraphQL input object][0].
@@ -79,11 +78,11 @@ pub(crate) struct ContainerAttr {
     /// applied by default.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) rename_fields: Option<SpanContainer<RenameRule>>,
+    rename_fields: Option<SpanContainer<RenameRule>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
-    pub(crate) is_internal: bool,
+    is_internal: bool,
 }
 
 impl Parse for ContainerAttr {
@@ -182,37 +181,47 @@ impl ContainerAttr {
 }
 
 /// Available arguments behind `#[graphql]` attribute when generating code for
-/// [GraphQL input object][0]'s field.
+/// [GraphQL input object][0]'s [field][1].
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+/// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
 #[derive(Debug, Default)]
 struct FieldAttr {
-    /// Explicitly specified name of [GraphQL input object][0] field.
+    /// Explicitly specified name of this [GraphQL input object field][1].
     ///
-    /// If [`None`], then Rust field name is used by default.
+    /// If [`None`], then Rust struct field name will be used by default.
     ///
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     name: Option<SpanContainer<String>>,
 
-    /// [Default value][1] of a [GraphQL input object][0] field that will be
-    /// used in case field value is not provided.
+    /// Explicitly specified [default value][2] of this
+    /// [GraphQL input object field][1] to be used used in case a field value is
+    /// not provided.
     ///
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    /// [1]: https://spec.graphql.org/October2021#DefaultValue
-    default: Option<SpanContainer<Option<syn::Expr>>>,
+    /// If [`None`], the this [field][1] will have no [default value][2].
+    ///
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [2]: https://spec.graphql.org/October2021#DefaultValue
+    default: Option<SpanContainer<default::Value>>,
 
-    /// Explicitly specified [description][1] of [GraphQL input object][0]
-    /// field.
+    /// Explicitly specified [description][2] of this
+    /// [GraphQL input object field][1].
     ///
-    /// If [`None`], then Rust doc comment is used as [description][1], if any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    /// [1]: https://spec.graphql.org/October2021#sec-Descriptions
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     description: Option<SpanContainer<String>>,
 
-    /// Explicitly specified marker for the field being ignored and not
-    /// included into [GraphQL input object][0].
+    /// Explicitly specified marker for the Rust struct field to be ignored and
+    /// not included into the code generated for a [GraphQL input object][0]
+    /// implementation.
     ///
+    /// Ignored Rust struct fields still consider the [`default`] attribute's
+    /// argument.
+    ///
+    /// [`default`]: Self::default
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     ignore: Option<SpanContainer<syn::Ident>>,
 }
@@ -235,16 +244,9 @@ impl Parse for FieldAttr {
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "default" => {
-                    let expr = input
-                        .try_parse::<token::Eq>()?
-                        .map(|_| input.parse::<syn::Expr>())
-                        .transpose()?;
+                    let val = input.parse::<default::Value>()?;
                     out.default
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            expr.as_ref().map(Spanned::span),
-                            expr,
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(val.span()), val))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "desc" | "description" => {
@@ -299,114 +301,84 @@ impl FieldAttr {
     }
 }
 
-/// Representation of a [GraphQL input object][0]'s field for code generation.
+/// Representation of a [GraphQL input object field][1] for code generation.
 ///
-/// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+/// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
 #[derive(Debug)]
-pub(crate) struct FieldDefinition {
-    /// [`Ident`] of this [GraphQL input object][0]'s field.
+struct FieldDefinition {
+    /// [`Ident`] of the Rust struct field behind this
+    /// [GraphQL input object field][1].
     ///
     /// [`Ident`]: syn::Ident
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) ident: syn::Ident,
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    ident: syn::Ident,
 
-    /// Rust type that this [GraphQL object][0]'s field is represented with.
+    /// Rust type that this [GraphQL input object field][1] is represented with.
     ///
     /// It should contain all its generics, if any.
     ///
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) ty: syn::Type,
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    ty: syn::Type,
 
-    /// [Default value][1] of a [GraphQL input object][0] field that will be
-    /// used in case field value is not provided.
+    /// [Default value][2] of this [GraphQL input object field][1] to be used in
+    /// case a [field][1] value is not provided.
     ///
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    /// [1]: https://spec.graphql.org/October2021#DefaultValue
-    pub(crate) default: Option<DefaultValue>,
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [2]: https://spec.graphql.org/October2021#DefaultValue
+    default: Option<default::Value>,
 
-    /// Name of this [GraphQL input object][0]'s field in GraphQL schema.
+    /// Name of this [GraphQL input object field][1] in GraphQL schema.
     ///
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) name: Box<str>,
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    name: Box<str>,
 
-    /// [Description][1] of this [GraphQL input object][0]'s field to put into
+    /// [Description][2] of this [GraphQL input object field][1] to put into
     /// GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/October2021#sec-Input-Objects
-    /// [1]: https://spec.graphql.org/October2021#sec-Descriptions
-    pub(crate) description: Option<Box<str>>,
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    description: Option<Box<str>>,
 
-    /// Marker which indicates that the field is being ignored and not included
-    /// into [GraphQL input object][0].
+    /// Indicator whether the Rust struct field behinds this
+    /// [GraphQL input object field][1] is being ignored and should not be
+    /// included into the generated code.
     ///
+    /// Ignored Rust struct fields still consider the [`default`] attribute's
+    /// argument.
+    ///
+    /// [`default`]: Self::default
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) ignored: bool,
+    ignored: bool,
 }
 
-/// [Default value][1] of a [GraphQL input object][0] field that will be used in
-/// case field value is not provided.
-///
-/// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-/// [1]: https://spec.graphql.org/October2021#DefaultValue
-#[derive(Clone, Debug)]
-pub(crate) enum DefaultValue {
-    /// [`Default`] impl will be used.
-    Default,
-
-    /// Explicit [`Expr`]ession, that will be used for default value.
-    ///
-    /// [`Expr`]: syn::Expr
-    Expr(Box<syn::Expr>),
-}
-
-impl From<Option<syn::Expr>> for DefaultValue {
-    fn from(expr: Option<syn::Expr>) -> Self {
-        match expr {
-            None => Self::Default,
-            Some(expr) => Self::Expr(Box::new(expr)),
-        }
-    }
-}
-
-impl DefaultValue {
-    /// Returns [`DefaultValue::Expr`] of [`None`] in case it's
-    /// [`DefaultValue::Default`].
-    pub(crate) fn into_expr(self) -> Option<syn::Expr> {
-        match self {
-            DefaultValue::Expr(expr) => Some(*expr),
-            DefaultValue::Default => None,
-        }
-    }
-}
-
-/// Definition of [GraphQL input object][0] for code generation.
+/// Representation of [GraphQL input object][0] for code generation.
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
 #[derive(Debug)]
-pub(crate) struct Definition {
-    /// Name of this [GraphQL input object][0] in GraphQL schema.
-    ///
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) name: Box<str>,
-
-    /// [`Ident`] of a Rust type that this [GraphQL input object][0] is
-    /// represented with.
+struct Definition {
+    /// [`Ident`] of the Rust struct behind this [GraphQL input object][0].
     ///
     /// [`Ident`]: syn::Ident
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) ident: syn::Ident,
+    ident: syn::Ident,
 
-    /// Generics of the Rust type that this [GraphQL input object][0] is
-    /// implemented for.
+    /// [`Generics`] of the Rust enum behind this [GraphQL input object][0].
+    ///
+    /// [`Generics`]: syn::Generics
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    generics: syn::Generics,
+
+    /// Name of this [GraphQL input object][0] in GraphQL schema.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) generics: syn::Generics,
+    name: Box<str>,
 
-    /// Description of this [GraphQL input object][0] to put into GraphQL
+    /// [Description][2] of this [GraphQL input object][0] to put into GraphQL
     /// schema.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) description: Option<Box<str>>,
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    description: Option<Box<str>>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL input object][0].
@@ -414,7 +386,7 @@ pub(crate) struct Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) context: syn::Type,
+    context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
     /// implementation with for this [GraphQL input object][0].
@@ -422,13 +394,13 @@ pub(crate) struct Definition {
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    pub(crate) scalar: scalar::Type,
+    scalar: scalar::Type,
 
-    /// Defined [GraphQL object values][1] of this [GraphQL input object][0].
+    /// [Fields][1] of this [GraphQL input object][0].
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    /// [1]: https://spec.graphql.org/October2021#sec-Input-Object-Values
-    pub(crate) fields: Vec<FieldDefinition>,
+    /// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
+    fields: Vec<FieldDefinition>,
 }
 
 impl ToTokens for Definition {
@@ -459,9 +431,12 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let assert_fields_input_values = self.fields.iter().filter_map(|f| {
+            let ty = &f.ty;
+
             (!f.ignored).then(|| {
-                let ty = &f.ty;
-                quote! { <#ty as ::juniper::marker::IsInputType<#scalar>>::mark(); }
+                quote! {
+                    <#ty as ::juniper::marker::IsInputType<#scalar>>::mark();
+                }
             })
         });
 
@@ -499,27 +474,21 @@ impl Definition {
             .map(|desc| quote! { .description(#desc) });
 
         let fields = self.fields.iter().filter_map(|f| {
+            let ty = &f.ty;
+            let name = &f.name;
+
             (!f.ignored).then(|| {
-                let ty = &f.ty;
-                let name = &f.name;
-
                 let arg = if let Some(default) = &f.default {
-                    let default = default
-                        .clone()
-                        .into_expr()
-                        .unwrap_or_else(|| parse_quote! { ::std::default::Default::default() });
-
                     quote! { .arg_with_default::<#ty>(#name, &#default, info) }
                 } else {
                     quote! { .arg::<#ty>(#name, info) }
                 };
-
                 let description = f
                     .description
                     .as_ref()
                     .map(|desc| quote! { .description(#desc) });
 
-                quote! {{ registry#arg#description }}
+                quote! { registry#arg#description }
             })
         });
 
@@ -622,27 +591,27 @@ impl Definition {
             let ident = &f.ident;
 
             let construct = if f.ignored {
-                f.default
-                    .clone()
-                    .and_then(DefaultValue::into_expr)
-                    .unwrap_or_else(|| parse_quote! { ::std::default::Default::default() })
+                f.default.as_ref().map_or_else(
+                    || {
+                        let expr = default::Value::default();
+                        quote! { #expr }
+                    },
+                    |expr| quote! { #expr },
+                )
             } else {
                 let name = &f.name;
 
-                let fallback = match &f.default {
-                    Some(DefaultValue::Expr(expr)) => expr.clone(),
-                    Some(DefaultValue::Default) => {
-                        parse_quote! { ::std::default::Default::default() }
-                    }
-                    None => {
-                        parse_quote! {
+                let fallback = f.default.as_ref().map_or_else(
+                    || {
+                        quote! {
                             ::juniper::FromInputValue::<#scalar>::from_implicit_null()
                                 .map_err(::juniper::IntoFieldError::into_field_error)?
                         }
-                    }
-                };
+                    },
+                    |expr| quote! { #expr },
+                );
 
-                parse_quote! {
+                quote! {
                     match obj.get(#name) {
                         Some(v) => {
                             ::juniper::FromInputValue::<#scalar>::from_input_value(v)
@@ -681,10 +650,10 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing [`InputValue`] trait for this
+    /// Returns generated code implementing [`ToInputValue`] trait for this
     /// [GraphQL input object][0].
     ///
-    /// [`InputValue`]: juniper::FromInputValue
+    /// [`ToInputValue`]: juniper::ToInputValue
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     #[must_use]
     fn impl_to_input_value_tokens(&self) -> TokenStream {
@@ -698,8 +667,12 @@ impl Definition {
         let fields = self.fields.iter().filter_map(|f| {
             let ident = &f.ident;
             let name = &f.name;
-            (!f.ignored)
-                .then(|| quote! { (#name, ::juniper::ToInputValue::to_input_value(&self.#ident)) })
+
+            (!f.ignored).then(|| {
+                quote! {
+                    (#name, ::juniper::ToInputValue::to_input_value(&self.#ident))
+                }
+            })
         });
 
         quote! {
@@ -725,7 +698,7 @@ impl Definition {
     /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
     /// [`BaseType`]: juniper::macros::reflect::BaseType
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
-    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects        
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     #[must_use]
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ident = &self.ident;
@@ -763,7 +736,7 @@ impl Definition {
     }
 
     /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
-    /// similar) implementation of this enum.
+    /// similar) implementation of this struct.
     ///
     /// If `for_async` is `true`, then additional predicates are added to suit
     /// the [`GraphQLAsyncValue`] trait (and similar) requirements.

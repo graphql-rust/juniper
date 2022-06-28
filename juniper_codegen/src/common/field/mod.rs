@@ -1,7 +1,7 @@
 //! Common functions, definitions and extensions for parsing and code generation
 //! of [GraphQL fields][1]
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Language.Fields.
+//! [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
 
 pub(crate) mod arg;
 
@@ -42,8 +42,8 @@ pub(crate) struct Attr {
 
     /// Explicitly specified [description][2] of this [GraphQL field][1].
     ///
-    /// If [`None`], then Rust doc comment is used as the [description][2], if
-    /// any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
@@ -51,7 +51,7 @@ pub(crate) struct Attr {
 
     /// Explicitly specified [deprecation][2] of this [GraphQL field][1].
     ///
-    /// If [`None`], then Rust `#[deprecated]` attribute is used as the
+    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the
     /// [deprecation][2], if any.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields

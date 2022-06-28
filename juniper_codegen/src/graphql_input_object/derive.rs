@@ -15,7 +15,7 @@ use crate::{
 use super::{ContainerAttr, Definition, FieldAttr, FieldDefinition};
 
 /// [`GraphQLScope`] of errors for `#[derive(GraphQLInputObject)]` macro.
-const ERR: GraphQLScope = GraphQLScope::DeriveInputObject;
+const ERR: GraphQLScope = GraphQLScope::InputObjectDerive;
 
 /// Expands `#[derive(GraphQLInputObject)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -94,7 +94,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
 /// Parses a [`FieldDefinition`] from the given struct field definition.
 ///
-/// Returns [`None`] if the parsing fails, or the enum variant is ignored.
+/// Returns [`None`] if the parsing fails.
 fn parse_field(f: &syn::Field, renaming: RenameRule, is_internal: bool) -> Option<FieldDefinition> {
     let field_attr = FieldAttr::from_attrs("graphql", &f.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
@@ -113,7 +113,7 @@ fn parse_field(f: &syn::Field, renaming: RenameRule, is_internal: bool) -> Optio
         ERR.no_double_underscore(f.span());
     }
 
-    let default = field_attr.default.map(|d| d.into_inner().into());
+    let default = field_attr.default.map(SpanContainer::into_inner);
     let description = field_attr
         .description
         .map(|d| d.into_inner().into_boxed_str());

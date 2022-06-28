@@ -115,8 +115,9 @@ use proc_macro_error::{proc_macro_error, ResultExt as _};
 use result::GraphQLScope;
 
 /// `#[derive(GraphQLInputObject)]` macro for deriving a
-/// [GraphQL input object][0] implementation for Rust struct. Each non-ignored
-/// field type must itself be [GraphQL input object][0].
+/// [GraphQL input object][0] implementation for a Rust struct. Each
+/// non-ignored field type must itself be [GraphQL input object][0] or a
+/// [GraphQL scalar][2].
 ///
 /// The `#[graphql]` helper attribute is used for configuring the derived
 /// implementation. Specifying multiple `#[graphql]` attributes on the same
@@ -134,11 +135,11 @@ use result::GraphQLScope;
 ///
 /// # Custom name and description
 ///
-/// The name of a [GraphQL input object][0] or its [values][1] may be overridden
-/// with the `name` attribute's argument. By default, a type name is used or a
-/// variant name in `camelCase`.
+/// The name of a [GraphQL input object][0] or its [fields][1] may be overridden
+/// with the `name` attribute's argument. By default, a type name or a struct
+/// field name is used in a `camelCase`.
 ///
-/// The description of a [GraphQL input object][0] or its [values][1] may be
+/// The description of a [GraphQL input object][0] or its [fields][1] may be
 /// specified either with the `description`/`desc` attribute's argument, or with
 /// a regular Rust doc comment.
 ///
@@ -164,7 +165,7 @@ use result::GraphQLScope;
 ///
 /// # Renaming policy
 ///
-/// By default, all [GraphQL enum values][1] are renamed in a
+/// By default, all [GraphQL input object fields][1] are renamed in a
 /// `camelCase` manner (so a `y_coord` Rust struct field becomes a
 /// `yCoord` [value][1] in GraphQL schema, and so on). This complies with
 /// default GraphQL naming conventions as [demonstrated in spec][0].
@@ -187,9 +188,9 @@ use result::GraphQLScope;
 ///
 /// # Ignoring fields
 ///
-/// To omit exposing a Rust fields in a GraphQL schema, use the `ignore`
+/// To omit exposing a Rust field in a GraphQL schema, use the `ignore`
 /// attribute's argument directly on that field. Ignored fields must implement
-/// [`Default`] or have `#[default = ...]` attribute.
+/// [`Default`] or have the `default = <expression>` attribute's argument.
 ///
 /// ```rust
 /// # use juniper::GraphQLInputObject;
@@ -214,7 +215,8 @@ use result::GraphQLScope;
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-/// [1]: https://spec.graphql.org/October2021#sec-Input-Object-Values
+/// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
