@@ -24,7 +24,7 @@ Juniper has built-in support for:
 * `String` and `&str` as `String`
 * `bool` as `Boolean`
 * `juniper::ID` as `ID`. This type is defined [in the
-  spec](http://facebook.github.io/graphql/#sec-ID) as a type that is serialized
+  spec](https://spec.graphql.org/October2021#sec-ID) as a type that is serialized
   as a string but can be parsed from both a string and an integer.
 
 Note that there is no built-in support for `i64`/`u64`, as the GraphQL spec [doesn't define any built-in scalars for `i64`/`u64` by default](https://spec.graphql.org/October2021#sec-Int). You may wish to leverage a [custom GraphQL scalar](#custom-scalars) in your schema to support them.

@@ -21,7 +21,7 @@ embedded [Graphiql][graphiql] for easy debugging.
 ## Features
 
 Juniper supports the full GraphQL query language according to the
-[specification][graphql_spec], including interfaces, unions, schema
+[specification (October 2021)][graphql_spec], including interfaces, unions, schema
 introspection, and validations.
 It does not, however, support the schema language.
 
@@ -57,7 +57,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
 [iron]: https://github.com/iron/iron
-[graphql_spec]: http://facebook.github.io/graphql
+[graphql_spec]: https://spec.graphql.org/October2021
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
 [hyper_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_hyper/examples

@@ -298,9 +298,9 @@ where
     }
 }
 
-// Right now the only directive supported is `@deprecated`. `@skip` and `@include`
-// are dealt with elsewhere.
-// <https://facebook.github.io/graphql/draft/#sec-Type-System.Directives>
+// Right now the only directive supported is `@deprecated`.
+// `@skip` and `@include` are dealt with elsewhere.
+// https://spec.graphql.org/October2021#sec-Type-System.Directives.Built-in-Directives
 fn generate_directives<'a, T>(status: &DeprecationStatus) -> Vec<ExternalDirective<'a, T>>
 where
     T: Text<'a>,
