@@ -30,7 +30,7 @@ use crate::{
 };
 
 /// Available arguments behind `#[graphql]` attribute placed on a Rust enum
-/// definition, when generating code for a [GraphQL enum][0] type.
+/// definition, when generating code for a [GraphQL enum][0].
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Enums
 #[derive(Debug, Default)]
@@ -44,8 +44,8 @@ struct ContainerAttr {
 
     /// Explicitly specified [description][2] of this [GraphQL enum][0].
     ///
-    /// If [`None`], then Rust doc comment will be used as [description][2], if
-    /// any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
@@ -190,14 +190,15 @@ impl ContainerAttr {
 struct VariantAttr {
     /// Explicitly specified name of this [GraphQL enum value][1].
     ///
-    /// If [`None`], then Rust enum variant's name is used by default.
+    /// If [`None`], then Rust enum variant's name will be used by default.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of this [GraphQL enum value][1].
     ///
-    /// If [`None`], then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
@@ -205,7 +206,7 @@ struct VariantAttr {
 
     /// Explicitly specified [deprecation][2] of this [GraphQL enum value][1].
     ///
-    /// If [`None`], then Rust `#[deprecated]` attribute is used as the
+    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the
     /// [deprecation][2], if any.
     ///
     /// If the inner [`Option`] is [`None`], then no [reason][3] was provided.
@@ -357,8 +358,9 @@ struct Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     ident: syn::Ident,
 
-    /// [`syn::Generics`] of the Rust enum behind this [GraphQL enum][0].
+    /// [`Generics`] of the Rust enum behind this [GraphQL enum][0].
     ///
+    /// [`Generics`]: syn::Generics
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     generics: syn::Generics,
 
