@@ -473,9 +473,9 @@ struct Droid {
 
 
 
-[1]: https://spec.graphql.org/June2018/#sec-Interfaces
+[1]: https://spec.graphql.org/October2021#sec-Interfaces
 [2]: https://doc.rust-lang.org/reference/types/trait-object.html
 [3]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
 [4]: https://docs.rs/juniper/latest/juniper/struct.Executor.html
-[5]: https://spec.graphql.org/June2018/#sec-Objects
+[5]: https://spec.graphql.org/October2021#sec-Objects
 [6]: https://docs.rs/juniper/0.14.2/juniper/trait.Context.html

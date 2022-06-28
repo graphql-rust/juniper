@@ -405,7 +405,7 @@ impl<'a, S> MetaType<'a, S> {
             // "used exclusively by GraphQL’s introspection system"
             {
                 name.starts_with("__") ||
-            // <https://facebook.github.io/graphql/draft/#sec-Scalars>
+            // https://spec.graphql.org/October2021#sec-Scalars
             name == "Boolean" || name == "String" || name == "Int" || name == "Float" || name == "ID" ||
             // Our custom empty markers
             name == "_EmptyMutation" || name == "_EmptySubscription"

@@ -150,14 +150,14 @@ impl<'a, S> Arguments<'a, S> {
 /// This trait is intended to be used in a conjunction with a [`GraphQLType`] trait. See the example
 /// in the documentation of a [`GraphQLType`] trait.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-/// [2]: https://spec.graphql.org/June2018/#sec-Unions
-/// [3]: https://spec.graphql.org/June2018/#sec-Objects
-/// [4]: https://spec.graphql.org/June2018/#sec-Scalars
-/// [5]: https://spec.graphql.org/June2018/#sec-Enums
-/// [6]: https://spec.graphql.org/June2018/#sec-Type-System.List
-/// [7]: https://spec.graphql.org/June2018/#sec-Type-System.Non-Null
-/// [8]: https://spec.graphql.org/June2018/#sec-Input-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+/// [2]: https://spec.graphql.org/October2021#sec-Unions
+/// [3]: https://spec.graphql.org/October2021#sec-Objects
+/// [4]: https://spec.graphql.org/October2021#sec-Scalars
+/// [5]: https://spec.graphql.org/October2021#sec-Enums
+/// [6]: https://spec.graphql.org/October2021#sec-List
+/// [7]: https://spec.graphql.org/October2021#sec-Non-Null
+/// [8]: https://spec.graphql.org/October2021#sec-Input-Objects
 /// [11]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 /// [12]: https://doc.rust-lang.org/reference/types/trait-object.html
 pub trait GraphQLValue<S = DefaultScalarValue>
@@ -196,7 +196,7 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_field(
         &self,
         _info: &Self::TypeInfo,
@@ -217,9 +217,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_into_type(
         &self,
         info: &Self::TypeInfo,
@@ -243,9 +243,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     #[allow(unused_variables)]
     fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
         panic!(
@@ -271,8 +271,8 @@ where
     ///
     /// The default implementation panics, if `selection_set` is [`None`].
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [0]: https://spec.graphql.org/October2021#sec-Errors-and-Non-Nullability
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve(
         &self,
         info: &Self::TypeInfo,
@@ -385,7 +385,7 @@ where
 /// }
 /// ```
 ///
-/// [3]: https://spec.graphql.org/June2018/#sec-Objects
+/// [3]: https://spec.graphql.org/October2021#sec-Objects
 pub trait GraphQLType<S = DefaultScalarValue>: GraphQLValue<S>
 where
     S: ScalarValue,

@@ -130,7 +130,7 @@ impl Character {
 # fn main() {}
 ```
 
-With an external resolver function we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/June2018/#example-f8163).
+With an external resolver function we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/October2021#example-f8163).
 
 ```rust
 # #![allow(dead_code)]
@@ -485,7 +485,7 @@ enum Character {
 
 
 
-[1]: https://spec.graphql.org/June2018/#sec-Unions
+[1]: https://spec.graphql.org/October2021#sec-Unions
 [2]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
-[5]: https://spec.graphql.org/June2018/#sec-Interfaces
+[5]: https://spec.graphql.org/October2021#sec-Interfaces
 [6]: https://docs.rs/juniper/0.14.2/juniper/trait.Context.html

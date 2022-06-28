@@ -1,6 +1,6 @@
 //! Code generation for [GraphQL interface][1].
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+//! [1]: https://spec.graphql.org/October2021#sec-Interfaces
 
 pub mod attr;
 pub mod derive;
@@ -35,7 +35,7 @@ use crate::{
 /// on it and enum alias which generic arguments are filled with
 /// [GraphQL interface][1] implementers.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 fn enum_idents(
     trait_ident: &syn::Ident,
     alias_ident: Option<&syn::Ident>,
@@ -54,14 +54,14 @@ fn enum_idents(
 /// trait or struct definition, when generating code for [GraphQL interface][1]
 /// type.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 #[derive(Debug, Default)]
 struct Attr {
     /// Explicitly specified name of [GraphQL interface][1] type.
     ///
     /// If [`None`], then Rust trait name is used by default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of [GraphQL interface][1] type.
@@ -69,8 +69,8 @@ struct Attr {
     /// If [`None`], then Rust doc comment will be used as the [description][2],
     /// if any.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     description: Option<SpanContainer<String>>,
 
     /// Explicitly specified identifier of the type alias of Rust enum type
@@ -79,14 +79,14 @@ struct Attr {
     ///
     /// If [`None`], then `{trait_name}Value` identifier will be used.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     r#enum: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified Rust types of [GraphQL objects][2] or
     /// [interfaces][1] implementing this [GraphQL interface][1] type.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Objects
     implemented_for: HashSet<SpanContainer<syn::TypePath>>,
 
     /// Explicitly specified [GraphQL interfaces, implemented][1] by this
@@ -102,7 +102,7 @@ struct Attr {
     /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
     ///
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     context: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type (or type parameter with its bounds) of
@@ -116,7 +116,7 @@ struct Attr {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified marker indicating that the Rust trait should be
@@ -131,7 +131,7 @@ struct Attr {
     ///
     /// If [`None`] then the default rule will be [`RenameRule::CamelCase`].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     rename_fields: Option<SpanContainer<RenameRule>>,
 
     /// Indicator whether the generated code is intended to be used only inside
@@ -277,18 +277,18 @@ impl Attr {
 
 /// Definition of [GraphQL interface][1] for code generation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 struct Definition {
     /// [`syn::Generics`] of the trait or struct describing the
     /// [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     generics: syn::Generics,
 
     /// [`syn::Visibility`] of the trait or struct describing the
     /// [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     vis: syn::Visibility,
 
     /// Name of the generic enum describing all [`implementers`]. It's generic
@@ -319,7 +319,7 @@ struct Definition {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
@@ -327,18 +327,18 @@ struct Definition {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     scalar: scalar::Type,
 
     /// Defined [GraphQL fields][2] of this [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     fields: Vec<field::Definition>,
 
     /// Defined [`Implementer`]s of this [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     implemented_for: Vec<syn::TypePath>,
 
     /// [GraphQL interfaces implemented][1] by this [GraphQL interface][0].
@@ -352,7 +352,7 @@ struct Definition {
     /// [GraphQL interface][1]. We generate hacky `const` which doesn't actually
     /// use it, but suppresses this warning.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
 
     /// Intra-doc link to the [`syn::Item`] defining this
@@ -440,13 +440,13 @@ impl Definition {
             "Enum building an opaque value represented by [`{}`]({}) \
              [GraphQL interface][0].\
              \n\n\
-             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+             [0]: https://spec.graphql.org/October2021#sec-Interfaces",
             self.name, self.src_intra_doc_link,
         );
         let enum_alias_doc = format!(
             "Opaque value represented by [`{}`]({}) [GraphQL interface][0].\
              \n\n\
-             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+             [0]: https://spec.graphql.org/October2021#sec-Interfaces",
             self.name, self.src_intra_doc_link,
         );
 
@@ -513,7 +513,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLInterface`]: juniper::GraphQLInterface
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_interface_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -603,7 +603,7 @@ impl Definition {
     /// this [GraphQL interface][1].
     ///
     /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_output_type_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -679,7 +679,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_type_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -753,7 +753,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLValue`]: juniper::GraphQLValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -835,7 +835,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -901,7 +901,7 @@ impl Definition {
     /// [`BaseType`]: juniper::macros::reflect::BaseType
     /// [`Fields`]: juniper::macros::reflect::Fields
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -966,7 +966,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`FieldMeta`]: juniper::macros::reflect::FieldMeta
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     fn impl_field_meta_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let context = &self.context;
@@ -1027,7 +1027,7 @@ impl Definition {
     /// this [GraphQL interface][1].
     ///
     /// [`Field`]: juniper::macros::reflect::Field
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     fn impl_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
@@ -1107,7 +1107,7 @@ impl Definition {
     /// of this [GraphQL interface][1].
     ///
     /// [`AsyncField`]: juniper::macros::reflect::AsyncField
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     fn impl_async_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;

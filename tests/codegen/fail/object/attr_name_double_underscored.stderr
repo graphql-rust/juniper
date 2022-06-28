@@ -4,4 +4,4 @@ error: All types and directives defined within a schema must not have a name whi
 6 | impl __Obj {
   |      ^^^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Schema
+  = note: https://spec.graphql.org/October2021#sec-Schema

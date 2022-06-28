@@ -112,7 +112,7 @@ fn expand_on_trait(
 /// On failure returns [`None`] and internally fills up [`proc_macro_error`]
 /// with the corresponding errors.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 fn parse_variant_from_trait_method(
     method: &mut syn::TraitItemMethod,
     trait_ident: &syn::Ident,
