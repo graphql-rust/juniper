@@ -155,11 +155,11 @@ the <code>graphql_scalar</code> proc macro.</li>
 <li><code>f64</code> as <code>Float</code></li>
 <li><code>String</code> and <code>&amp;str</code> as <code>String</code></li>
 <li><code>bool</code> as <code>Boolean</code></li>
-<li><code>juniper::ID</code> as <code>ID</code>. This type is defined <a href="http://facebook.github.io/graphql/#sec-ID">in the
+<li><code>juniper::ID</code> as <code>ID</code>. This type is defined <a href="https://spec.graphql.org/October2021#sec-ID">in the
 spec</a> as a type that is serialized
 as a string but can be parsed from both a string and an integer.</li>
 </ul>
-<p>Note that there is no built-in support for <code>i64</code>/<code>u64</code>, as the GraphQL spec <a href="https://spec.graphql.org/June2018/#sec-Int">doesn't define any built-in scalars for <code>i64</code>/<code>u64</code> by default</a>. You may wish to leverage a <a href="#custom-scalars">custom GraphQL scalar</a> in your schema to support them.</p>
+<p>Note that there is no built-in support for <code>i64</code>/<code>u64</code>, as the GraphQL spec <a href="https://spec.graphql.org/October2021#sec-Int">doesn't define any built-in scalars for <code>i64</code>/<code>u64</code> by default</a>. You may wish to leverage a <a href="#custom-scalars">custom GraphQL scalar</a> in your schema to support them.</p>
 <p><strong>Third party types</strong>:</p>
 <p>Juniper has built-in support for a few additional types from common third party
 crates. They are enabled via features that are on by default.</p>

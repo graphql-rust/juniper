@@ -187,7 +187,7 @@ type all fields must return. By using the <code>?</code> operator or <code>try!<
 that implements the <code>Display</code> trait - which are most of the error types out
 there - those errors are automatically converted into <code>FieldError</code>.</p>
 <h2 id="error-payloads-null-and-partial-errors"><a class="header" href="#error-payloads-null-and-partial-errors">Error payloads, <code>null</code>, and partial errors</a></h2>
-<p>Juniper's error behavior conforms to the <a href="https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability">GraphQL specification</a>.</p>
+<p>Juniper's error behavior conforms to the <a href="https://spec.graphql.org/October2021#sec-Handling-Field-Errors">GraphQL specification</a>.</p>
 <p>When a field returns an error, the field's result is replaced by <code>null</code>, an
 additional <code>errors</code> object is created at the top level of the response, and the
 execution is resumed. For example, with the previous example and the following
@@ -274,7 +274,7 @@ impl Example {
 <span class="boring">
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
-<p>The specified structured error information is included in the <a href="https://facebook.github.io/graphql/June2018/#sec-Errors"><code>extensions</code></a> key:</p>
+<p>The specified structured error information is included in the <a href="https://spec.graphql.org/October2021#sec-Errors"><code>extensions</code></a> key:</p>
 <pre><code class="language-json">{
   &quot;errors&quot;: [{
     &quot;message&quot;: &quot;Whatever does not exist&quot;,

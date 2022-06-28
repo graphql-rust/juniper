@@ -135,10 +135,10 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="interfaces"><a class="header" href="#interfaces">Interfaces</a></h1>
-<p><a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> map well to interfaces known from common object-oriented languages such as Java or C#, but Rust, unfortunately, has no concept that maps perfectly to them. The nearest analogue of <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> are Rust traits, and the main difference is that in GraphQL an <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface type</a> serves both as an <em>abstraction</em> and a <em>boxed value (downcastable to concrete implementers)</em>, while in Rust, a trait is an <em>abstraction only</em> and <em>to represent such a boxed value a separate type is required</em>, like enum or trait object, because Rust trait doesn't represent a type itself, and so can have no values. This difference imposes some unintuitive and non-obvious corner cases when we try to express <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> in Rust, but on the other hand gives you full control over which type is backing your interface, and how it's resolved.</p>
-<p>For implementing <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interfaces</a> Juniper provides the <code>#[graphql_interface]</code> macro.</p>
+<p><a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> map well to interfaces known from common object-oriented languages such as Java or C#, but Rust, unfortunately, has no concept that maps perfectly to them. The nearest analogue of <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> are Rust traits, and the main difference is that in GraphQL an <a href="https://spec.graphql.org/October2021#sec-Interfaces">interface type</a> serves both as an <em>abstraction</em> and a <em>boxed value (downcastable to concrete implementers)</em>, while in Rust, a trait is an <em>abstraction only</em> and <em>to represent such a boxed value a separate type is required</em>, like enum or trait object, because Rust trait doesn't represent a type itself, and so can have no values. This difference imposes some unintuitive and non-obvious corner cases when we try to express <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> in Rust, but on the other hand gives you full control over which type is backing your interface, and how it's resolved.</p>
+<p>For implementing <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> Juniper provides the <code>#[graphql_interface]</code> macro.</p>
 <h2 id="traits"><a class="header" href="#traits">Traits</a></h2>
-<p>Defining a trait is mandatory for defining a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a>, because this is the <em>obvious</em> way we describe an <em>abstraction</em> in Rust. All <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface</a> fields are defined as computed ones via trait methods.</p>
+<p>Defining a trait is mandatory for defining a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a>, because this is the <em>obvious</em> way we describe an <em>abstraction</em> in Rust. All <a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a> fields are defined as computed ones via trait methods.</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
 </span>use juniper::graphql_interface;
 
@@ -149,9 +149,9 @@ trait Character {
 <span class="boring">
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
-<p>However, to return values of such <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface</a>, we should provide its implementers and the Rust type representing a <em>boxed value of this trait</em>. The last one can be represented in two flavors: enum and <a href="https://doc.rust-lang.org/reference/types/trait-object.html">trait object</a>.</p>
+<p>However, to return values of such <a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a>, we should provide its implementers and the Rust type representing a <em>boxed value of this trait</em>. The last one can be represented in two flavors: enum and <a href="https://doc.rust-lang.org/reference/types/trait-object.html">trait object</a>.</p>
 <h3 id="enum-values-default"><a class="header" href="#enum-values-default">Enum values (default)</a></h3>
-<p>By default, Juniper generates an enum representing the values of the defined <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a>, and names it straightforwardly, <code>{Interface}Value</code>.</p>
+<p>By default, Juniper generates an enum representing the values of the defined <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a>, and names it straightforwardly, <code>{Interface}Value</code>.</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, GraphQLObject};
 
@@ -366,7 +366,7 @@ struct Character {
 # fn main() {}
 </code></pre>
 <h3 id="ignoring-trait-methods"><a class="header" href="#ignoring-trait-methods">Ignoring trait methods</a></h3>
-<p>We may want to omit some trait methods to be assumed as <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> fields and ignore them.</p>
+<p>We may want to omit some trait methods to be assumed as <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> fields and ignore them.</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, GraphQLObject};
 
@@ -387,7 +387,7 @@ struct Human {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h3 id="fields-arguments-and-interface-customization"><a class="header" href="#fields-arguments-and-interface-customization">Fields, arguments and interface customization</a></h3>
-<p>Similarly to <a href="https://spec.graphql.org/June2018/#sec-Objects">GraphQL objects</a> Juniper allows to fully customize <a href="https://spec.graphql.org/June2018/#sec-Interfaces">interface</a> fields and their arguments.</p>
+<p>Similarly to <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a> Juniper allows to fully customize <a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a> fields and their arguments.</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(deprecated)]
 </span><span class="boring">extern crate juniper;
 </span>use juniper::graphql_interface;
@@ -427,7 +427,7 @@ trait Character {
 <span class="boring">
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
-<p>Renaming policies for all <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> fields and arguments are supported as well:</p>
+<p>Renaming policies for all <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> fields and arguments are supported as well:</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(deprecated)]
 </span><span class="boring">extern crate juniper;
 </span>use juniper::graphql_interface;
@@ -441,7 +441,7 @@ trait Character {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h3 id="custom-context"><a class="header" href="#custom-context">Custom context</a></h3>
-<p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
+<p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
 </span><span class="boring">use std::collections::HashMap;
 </span>use juniper::{graphql_interface, GraphQLObject};
@@ -471,7 +471,7 @@ struct Human {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h3 id="using-executor-and-explicit-generic-scalar"><a class="header" href="#using-executor-and-explicit-generic-scalar">Using executor and explicit generic scalar</a></h3>
-<p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
+<p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
 <p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so. </p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _, ScalarValue};
@@ -518,7 +518,7 @@ impl Human {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h2 id="scalarvalue-considerations"><a class="header" href="#scalarvalue-considerations"><code>ScalarValue</code> considerations</a></h2>
-<p>By default, <code>#[graphql_interface]</code> macro generates code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/June2018/#sec-Interfaces">GraphQL interface</a> implementers is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified.</p>
+<p>By default, <code>#[graphql_interface]</code> macro generates code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> implementers is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified.</p>
 <pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, DefaultScalarValue, GraphQLObject};
 
