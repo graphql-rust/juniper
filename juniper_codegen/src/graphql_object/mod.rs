@@ -44,7 +44,8 @@ pub(crate) struct Attr {
 
     /// Explicitly specified [description][2] of this [GraphQL object][1] type.
     ///
-    /// If [`None`], then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Objects
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions

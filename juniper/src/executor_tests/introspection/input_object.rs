@@ -76,9 +76,9 @@ struct FieldDescription {
 
 #[derive(GraphQLInputObject, Debug)]
 struct FieldWithDefaults {
-    #[graphql(default = "123")]
+    #[graphql(default = 123)]
     field_one: i32,
-    #[graphql(default = "456", description = "The second field")]
+    #[graphql(default = 456, description = "The second field")]
     field_two: i32,
 }
 

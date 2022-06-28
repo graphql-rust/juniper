@@ -66,7 +66,8 @@ struct Attr {
 
     /// Explicitly specified [description][2] of [GraphQL interface][1] type.
     ///
-    /// If [`None`], then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
     /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions

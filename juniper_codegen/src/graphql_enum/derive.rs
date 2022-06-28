@@ -1,8 +1,9 @@
 //! Code generation for `#[derive(GraphQLEnum)]` macro.
 
+use std::collections::HashSet;
+
 use proc_macro2::TokenStream;
 use quote::ToTokens as _;
-use std::collections::HashSet;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::{

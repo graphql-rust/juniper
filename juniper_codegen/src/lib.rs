@@ -100,10 +100,9 @@ macro_rules! try_merge_hashset {
     };
 }
 
-mod derive_input_object;
-
 mod common;
 mod graphql_enum;
+mod graphql_input_object;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
@@ -115,15 +114,115 @@ use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
 use result::GraphQLScope;
 
+/// `#[derive(GraphQLInputObject)]` macro for deriving a
+/// [GraphQL input object][0] implementation for a Rust struct. Each
+/// non-ignored field type must itself be [GraphQL input object][0] or a
+/// [GraphQL scalar][2].
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived
+/// implementation. Specifying multiple `#[graphql]` attributes on the same
+/// definition is totally okay. They all will be treated as a single attribute.
+///
+/// ```rust
+/// use juniper::GraphQLInputObject;
+///
+/// #[derive(GraphQLInputObject)]
+/// struct Point2D {
+///     x: f64,
+///     y: f64,
+/// }
+/// ```
+///
+/// # Custom name and description
+///
+/// The name of a [GraphQL input object][0] or its [fields][1] may be overridden
+/// with the `name` attribute's argument. By default, a type name or a struct
+/// field name is used in a `camelCase`.
+///
+/// The description of a [GraphQL input object][0] or its [fields][1] may be
+/// specified either with the `description`/`desc` attribute's argument, or with
+/// a regular Rust doc comment.
+///
+/// ```rust
+/// # use juniper::GraphQLInputObject;
+/// #
+/// #[derive(GraphQLInputObject)]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "Point",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "A point is the simplest two-dimensional primitive.",
+/// )]
+/// struct Point2D {
+///     /// Abscissa value.
+///     x: f64,
+///
+///     #[graphql(name = "y", desc = "Ordinate value")]
+///     y_coord: f64,
+/// }
+/// ```
+///
+/// # Renaming policy
+///
+/// By default, all [GraphQL input object fields][1] are renamed in a
+/// `camelCase` manner (so a `y_coord` Rust struct field becomes a
+/// `yCoord` [value][1] in GraphQL schema, and so on). This complies with
+/// default GraphQL naming conventions as [demonstrated in spec][0].
+///
+/// However, if you need for some reason another naming convention, it's
+/// possible to do so by using the `rename_all` attribute's argument. At the
+/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
+/// `camelCase`, `none` (disables any renaming).
+///
+/// ```rust
+/// # use juniper::GraphQLInputObject;
+/// #
+/// #[derive(GraphQLInputObject)]
+/// #[graphql(rename_all = "none")] // disables renaming
+/// struct Point2D {
+///     x: f64,
+///     y_coord: f64, // will be `y_coord` instead of `yCoord` in GraphQL schema
+/// }
+/// ```
+///
+/// # Ignoring fields
+///
+/// To omit exposing a Rust field in a GraphQL schema, use the `ignore`
+/// attribute's argument directly on that field. Ignored fields must implement
+/// [`Default`] or have the `default = <expression>` attribute's argument.
+///
+/// ```rust
+/// # use juniper::GraphQLInputObject;
+/// #
+/// enum System {
+///     Cartesian,
+/// }
+///
+/// #[derive(GraphQLInputObject)]
+/// struct Point2D {
+///     x: f64,
+///     y: f64,
+///     #[graphql(ignore)]
+///     shift: f64, // `Default::default()` impl is used.
+///     #[graphql(skip, default = System::Cartesian)]
+///     //              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+///     // This attribute is required, as we need to be to construct `Point2D`
+///     // from `{ x: 0.0, y: 0.0 }` GraphQL input.
+///     system: System,
+/// }
+/// ```
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+/// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+/// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(ast, GraphQLScope::DeriveInputObject);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    graphql_input_object::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][0]
