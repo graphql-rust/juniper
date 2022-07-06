@@ -296,24 +296,35 @@ impl<S> InputValue<S> {
     }
 
     /// Resolve all variables to their values.
+    ///
+    /// If variable is not present:
+    /// - Returns [`None`] in case this is a [`InputValue::Variable`];
+    /// - Skips field in case of a [`InputValue::Object`] field value;
+    /// - Replaces with [`InputValue::Null`] in case of a [`InputValue::List`]
+    ///   element.
+    ///
+    /// This is done, because for [`InputValue::Variable`] or
+    /// [`InputValue::Object`] field, default value can be used later, if it's
+    /// provided. While single [`InputValue::List`] element can't have a
+    /// default value.
     #[must_use]
-    pub fn into_const(self, vars: &Variables<S>) -> Self
+    pub fn into_const(self, vars: &Variables<S>) -> Option<Self>
     where
         S: Clone,
     {
         match self {
-            Self::Variable(v) => vars.get(&v).map_or_else(InputValue::null, Clone::clone),
-            Self::List(l) => Self::List(
+            Self::Variable(v) => vars.get(&v).cloned(),
+            Self::List(l) => Some(Self::List(
                 l.into_iter()
-                    .map(|s| s.map(|v| v.into_const(vars)))
+                    .map(|s| s.map(|v| v.into_const(vars).unwrap_or_else(Self::null)))
                     .collect(),
-            ),
-            Self::Object(o) => Self::Object(
+            )),
+            Self::Object(o) => Some(Self::Object(
                 o.into_iter()
-                    .map(|(sk, sv)| (sk, sv.map(|v| v.into_const(vars))))
+                    .filter_map(|(sk, sv)| sv.and_then(|v| v.into_const(vars)).map(|sv| (sk, sv)))
                     .collect(),
-            ),
-            v => v,
+            )),
+            v => Some(v),
         }
     }
 

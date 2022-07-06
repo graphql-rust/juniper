@@ -1227,9 +1227,6 @@ impl<'r, S: 'r> Registry<'r, S> {
     }
 
     /// Creates an [`Argument`] with the provided default `value`.
-    ///
-    /// When called with type `T`, the actual [`Argument`] will be given the
-    /// type `Option<T>`.
     pub fn arg_with_default<T>(
         &mut self,
         name: &str,
@@ -1240,7 +1237,7 @@ impl<'r, S: 'r> Registry<'r, S> {
         T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
         S: ScalarValue,
     {
-        Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
+        Argument::new(name, self.get_type::<T>(info)).default_value(value.to_input_value())
     }
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {

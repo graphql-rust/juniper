@@ -462,6 +462,9 @@ async fn field_with_defaults_introspection() {
                 name
                 type {
                     name
+                    ofType {
+                        name
+                    }
                 }
                 defaultValue
             }
@@ -477,12 +480,12 @@ async fn field_with_defaults_introspection() {
         assert_eq!(fields.len(), 2);
         assert!(fields.contains(&graphql_value!({
             "name": "fieldOne",
-            "type": {"name": "Int"},
+            "type": {"name": null, "ofType": {"name": "Int"}},
             "defaultValue": "123",
         })));
         assert!(fields.contains(&graphql_value!({
             "name": "fieldTwo",
-            "type": {"name": "Int"},
+            "type": {"name": null, "ofType": {"name": "Int"}},
             "defaultValue": "456",
         })));
     })

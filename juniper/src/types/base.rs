@@ -49,7 +49,6 @@ pub enum TypeKind {
     /// ## Input objects
     ///
     /// Represents complex values provided in queries _into_ the system.
-    #[graphql(name = "INPUT_OBJECT")]
     InputObject,
 
     /// ## List types
@@ -63,7 +62,6 @@ pub enum TypeKind {
     ///
     /// In GraphQL, nullable types are the default. By putting a `!` after a\
     /// type, it becomes non-nullable.
-    #[graphql(name = "NON_NULL")]
     NonNull,
 }
 
@@ -89,7 +87,7 @@ impl<'a, S> Arguments<'a, S> {
         if let (Some(args), Some(meta_args)) = (&mut args, meta_args) {
             for arg in meta_args {
                 let arg_name = arg.name.as_str();
-                if args.get(arg_name).map_or(true, InputValue::is_null) {
+                if args.get(arg_name).is_none() {
                     if let Some(val) = arg.default_value.as_ref() {
                         args.insert(arg_name, val.clone());
                     }
@@ -474,8 +472,8 @@ where
                         f.arguments.as_ref().map(|m| {
                             m.item
                                 .iter()
-                                .map(|&(ref k, ref v)| {
-                                    (k.item, v.item.clone().into_const(exec_vars))
+                                .filter_map(|&(ref k, ref v)| {
+                                    v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
                                 })
                                 .collect()
                         }),
@@ -608,7 +606,7 @@ where
                 .arguments
                 .iter()
                 .flat_map(|m| m.item.get("if"))
-                .flat_map(|v| v.item.clone().into_const(vars).convert())
+                .filter_map(|v| v.item.clone().into_const(vars)?.convert().ok())
                 .next()
                 .unwrap();
 

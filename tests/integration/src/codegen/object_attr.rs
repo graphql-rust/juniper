@@ -1045,10 +1045,10 @@ mod default_argument {
     impl Human {
         fn id(
             #[graphql(default)] arg1: i32,
-            #[graphql(default = "second".to_string())] arg2: String,
+            #[graphql(default = "second".to_string())] arg2: Option<String>,
             #[graphql(default = true)] r#arg3: bool,
         ) -> String {
-            format!("{}|{}&{}", arg1, arg2, r#arg3)
+            format!("{}|{:?}&{}", arg1, arg2, r#arg3)
         }
 
         fn info(#[graphql(default = Point { x: 1 })] coord: Point) -> i32 {
@@ -1069,20 +1069,72 @@ mod default_argument {
     async fn resolves_id_field() {
         let schema = schema(QueryRoot);
 
-        for (input, expected) in &[
-            ("{ human { id } }", "0|second&true"),
-            ("{ human { id(arg1: 1) } }", "1|second&true"),
-            (r#"{ human { id(arg2: "") } }"#, "0|&true"),
-            (r#"{ human { id(arg1: 2, arg2: "") } }"#, "2|&true"),
+        for (input, expected, vars) in &[
+            ("{ human { id } }", r#"0|Some("second")&true"#, None),
+            (
+                "{ human { id(arg1: 1) } }",
+                r#"1|Some("second")&true"#,
+                None,
+            ),
+            (
+                r#"{ human { id(arg2: "other") } }"#,
+                r#"0|Some("other")&true"#,
+                None,
+            ),
+            ("{ human { id(arg2: null) } }", r#"0|None&true"#, None),
+            (
+                "query q($arg2: String) { human { id(arg2: $arg2) } }",
+                r#"0|Some("second")&true"#,
+                None,
+            ),
+            (
+                "query q($arg2: String) { human{ id(arg2: $arg2) } }",
+                r#"0|None&true"#,
+                Some(graphql_vars! { "arg2": null }),
+            ),
+            (
+                "query q($arg2: String) { human{ id(arg2: $arg2) } }",
+                r#"0|Some("other")&true"#,
+                Some(graphql_vars! { "arg2": "other" }),
+            ),
+            (
+                r#"query q($arg2: String = "other") { human { id(arg2: $arg2) } }"#,
+                r#"0|Some("other")&true"#,
+                None,
+            ),
+            (
+                r#"query q($arg2: String = "other") { human { id(arg2: $arg2) } }"#,
+                r#"0|None&true"#,
+                Some(graphql_vars! { "arg2": null }),
+            ),
+            (
+                r#"query q($arg2: String = "other") { human { id(arg2: $arg2) } }"#,
+                r#"0|Some("hello")&true"#,
+                Some(graphql_vars! { "arg2": "hello" }),
+            ),
+            (
+                r#"{ human { id(arg1: 2, arg2: "") } }"#,
+                r#"2|Some("")&true"#,
+                None,
+            ),
             (
                 r#"{ human { id(arg1: 1, arg2: "", arg3: false) } }"#,
-                "1|&false",
+                r#"1|Some("")&false"#,
+                None,
             ),
         ] {
             let expected: &str = *expected;
 
+            let empty_vars = &graphql_vars! {};
             assert_eq!(
-                execute(*input, None, &schema, &graphql_vars! {}, &()).await,
+                execute(
+                    *input,
+                    None,
+                    &schema,
+                    vars.as_ref().unwrap_or_else(|| empty_vars),
+                    &(),
+                )
+                .await,
                 Ok((graphql_value!({"human": {"id": expected}}), vec![])),
             );
         }
@@ -1133,7 +1185,7 @@ mod default_argument {
                     "args": [{
                         "name": "arg1",
                         "defaultValue": "0",
-                        "type": {"name": "Int", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "Int"}},
                     }, {
                         "name": "arg2",
                         "defaultValue": r#""second""#,
@@ -1141,13 +1193,13 @@ mod default_argument {
                     }, {
                         "name": "arg3",
                         "defaultValue": "true",
-                        "type": {"name": "Boolean", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "Boolean"}},
                     }],
                 }, {
                     "args": [{
                         "name": "coord",
                         "defaultValue": "{x: 1}",
-                        "type": {"name": "Point", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "Point"}},
                     }],
                 }]}}),
                 vec![],

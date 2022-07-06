@@ -26,6 +26,7 @@ where
         {
             for meta_arg in meta_args {
                 if meta_arg.arg_type.is_non_null()
+                    && meta_arg.default_value.is_none()
                     && field
                         .item
                         .arguments

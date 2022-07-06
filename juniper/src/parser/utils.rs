@@ -89,6 +89,13 @@ impl<T> Spanning<T> {
             end: self.end,
         }
     }
+
+    /// Modifies the contents of the spanned item in case `f` returns [`Some`],
+    /// or returns [`None`] otherwise.
+    pub fn and_then<O, F: Fn(T) -> Option<O>>(self, f: F) -> Option<Spanning<O>> {
+        let (start, end) = (self.start, self.end);
+        f(self.item).map(|item| Spanning { item, start, end })
+    }
 }
 
 impl<T: fmt::Display> fmt::Display for Spanning<T> {

@@ -33,7 +33,7 @@ pub trait GraphQLObject<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<'a, S, T> GraphQLObject<S> for &T
+impl<S, T> GraphQLObject<S> for &T
 where
     T: GraphQLObject<S> + ?Sized,
     S: ScalarValue,
@@ -90,7 +90,7 @@ pub trait GraphQLInterface<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<'a, S, T> GraphQLInterface<S> for &T
+impl<S, T> GraphQLInterface<S> for &T
 where
     T: GraphQLInterface<S> + ?Sized,
     S: ScalarValue,
@@ -147,7 +147,7 @@ pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<'a, S, T> GraphQLUnion<S> for &T
+impl<S, T> GraphQLUnion<S> for &T
 where
     T: GraphQLUnion<S> + ?Sized,
     S: ScalarValue,
@@ -194,7 +194,7 @@ pub trait IsOutputType<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<'a, S, T> IsOutputType<S> for &T
+impl<S, T> IsOutputType<S> for &T
 where
     T: IsOutputType<S> + ?Sized,
     S: ScalarValue,
@@ -271,7 +271,7 @@ where
     }
 }
 
-impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}
+impl<S> IsOutputType<S> for str where S: ScalarValue {}
 
 /// Marker trait for types which can be used as input types.
 ///
@@ -287,7 +287,7 @@ pub trait IsInputType<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<'a, S, T> IsInputType<S> for &T
+impl<S, T> IsInputType<S> for &T
 where
     T: IsInputType<S> + ?Sized,
     S: ScalarValue,
@@ -364,4 +364,4 @@ where
     }
 }
 
-impl<'a, S> IsInputType<S> for str where S: ScalarValue {}
+impl<S> IsInputType<S> for str where S: ScalarValue {}

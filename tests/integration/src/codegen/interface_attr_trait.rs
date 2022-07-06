@@ -1311,21 +1311,21 @@ mod default_argument {
                     "args": [{
                         "name": "first",
                         "defaultValue": r#""""#,
-                        "type": {"name": "String", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "String"}},
                     }, {
                         "name": "second",
                         "defaultValue": r#""second""#,
-                        "type": {"name": "String", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "String"}},
                     }, {
                         "name": "third",
                         "defaultValue": r#""t""#,
-                        "type": {"name": "String", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "String"}},
                     }],
                 }, {
                     "args": [{
                         "name": "coord",
                         "defaultValue": "{x: 1}",
-                        "type": {"name": "Point", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "Point"}},
                     }],
                 }]}}),
                 vec![],

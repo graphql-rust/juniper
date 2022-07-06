@@ -59,7 +59,7 @@ impl ToTokens for Value {
                 ::std::default::Default::default()
             }
             .to_tokens(into),
-            Self::Expr(expr) => expr.to_tokens(into),
+            Self::Expr(expr) => quote! { (#expr).into() }.to_tokens(into),
         }
     }
 }
