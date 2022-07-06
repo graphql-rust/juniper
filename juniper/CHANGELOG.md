@@ -48,6 +48,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Reworked [`chrono` crate] integration GraphQL scalars according to [graphql-scalars.dev] specs: ([#1010])
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
+- Removed lifetime specifier `'a` from `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#528])
 
 ### Added
 

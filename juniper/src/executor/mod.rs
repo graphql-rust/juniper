@@ -814,13 +814,13 @@ impl<S> ExecutionError<S> {
 
 /// Create new `Executor` and start query/mutation execution.
 /// Returns `IsSubscription` error if subscription is passed.
-pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, S>(
+pub fn execute_validated_query<'b, QueryT, MutationT, SubscriptionT, S>(
     document: &'b Document<S>,
     operation: &'b Spanning<Operation<S>>,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,
@@ -914,7 +914,7 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
 where
     QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
@@ -1011,10 +1011,10 @@ where
 }
 
 #[doc(hidden)]
-pub fn get_operation<'b, 'd, 'e, S>(
+pub fn get_operation<'b, 'd, S>(
     document: &'b Document<'d, S>,
     operation_name: Option<&str>,
-) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError<'e>>
+) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError>
 where
     S: ScalarValue,
 {
@@ -1058,7 +1058,7 @@ pub async fn resolve_validated_subscription<
     root_node: &'r RootNode<'r, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'r QueryT::Context,
-) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError<'r>>
+) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError>
 where
     'r: 'exec_ref,
     'd: 'r,

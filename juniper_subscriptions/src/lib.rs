@@ -64,7 +64,7 @@ where
 {
     type Connection = Connection<'a, S>;
 
-    type Error = GraphQLError<'a>;
+    type Error = GraphQLError;
 
     fn subscribe(
         &'a self,

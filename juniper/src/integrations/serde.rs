@@ -42,7 +42,7 @@ impl<T: Serialize> Serialize for ExecutionError<T> {
     }
 }
 
-impl<'a> Serialize for GraphQLError<'a> {
+impl Serialize for GraphQLError {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         #[derive(Serialize)]
         struct Helper {
