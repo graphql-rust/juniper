@@ -37,7 +37,7 @@ mod all_custom_resolvers {
             .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
     }
 
-    fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 
@@ -118,7 +118,7 @@ mod explicit_name {
             .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
     }
 
-    fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 
@@ -437,7 +437,7 @@ mod with_self {
                 .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
         }
 
-        fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
             <i32 as ParseScalarValue<S>>::from_str(value)
         }
     }

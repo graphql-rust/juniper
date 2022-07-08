@@ -198,7 +198,6 @@ where
     T: Serialize + ScalarValue,
     Value<T>: Serialize,
     ExecutionError<T>: Serialize,
-    GraphQLError: Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -350,10 +349,7 @@ where
     Batch(Vec<GraphQLResponse<S>>),
 }
 
-impl<'a, S> GraphQLBatchResponse<S>
-where
-    S: ScalarValue,
-{
+impl<S: ScalarValue> GraphQLBatchResponse<S> {
     /// Returns if all the GraphQLResponse in this operation are ok,
     /// you can use it to determine wheter to send a 200 or 400 HTTP status code.
     pub fn is_ok(&self) -> bool {

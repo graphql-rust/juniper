@@ -58,7 +58,7 @@ pub struct ScalarMeta<'a, S> {
 pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>;
 
 /// Shortcut for a [`ScalarToken`] parsing function.
-pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>;
+pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError>;
 
 /// List type metadata
 #[derive(Debug)]

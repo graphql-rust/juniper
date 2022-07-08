@@ -84,7 +84,7 @@ mod impl_string_scalar {
             .ok_or_else(|| format!("Expected `String`, found: {}", v))
     }
 
-    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         if let ScalarToken::String(value) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
@@ -132,12 +132,12 @@ mod impl_string_scalar {
             }
             Ok(ret.into())
         } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+            Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
 }
 
-fn parse_unicode_codepoint<'a, I>(char_iter: &mut I) -> Result<char, ParseError<'a>>
+fn parse_unicode_codepoint<I>(char_iter: &mut I) -> Result<char, ParseError>
 where
     I: Iterator<Item = char>,
 {
@@ -285,9 +285,9 @@ mod impl_boolean_scalar {
             .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
     }
 
-    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         // `Boolean`s are parsed separately, they shouldn't reach this code path.
-        Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        Err(ParseError::unexpected_token(Token::Scalar(value)))
     }
 }
 
@@ -306,13 +306,13 @@ mod impl_int_scalar {
             .ok_or_else(|| format!("Expected `Int`, found: {}", v))
     }
 
-    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         if let ScalarToken::Int(v) = value {
             v.parse()
-                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map_err(|_| ParseError::unexpected_token(Token::Scalar(value)))
                 .map(|s: i32| s.into())
         } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+            Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
 }
@@ -332,17 +332,17 @@ mod impl_float_scalar {
             .ok_or_else(|| format!("Expected `Float`, found: {}", v))
     }
 
-    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         match value {
             ScalarToken::Int(v) => v
                 .parse()
-                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map_err(|_| ParseError::unexpected_token(Token::Scalar(value)))
                 .map(|s: i32| f64::from(s).into()),
             ScalarToken::Float(v) => v
                 .parse()
-                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map_err(|_| ParseError::unexpected_token(Token::Scalar(value)))
                 .map(|s: f64| s.into()),
-            ScalarToken::String(_) => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
+            ScalarToken::String(_) => Err(ParseError::unexpected_token(Token::Scalar(value))),
         }
     }
 }

@@ -247,7 +247,7 @@ impl Serialize for SourcePosition {
     }
 }
 
-impl<'a> Serialize for Spanning<ParseError<'a>> {
+impl Serialize for Spanning<ParseError> {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         let mut map = ser.serialize_map(Some(2))?;
 

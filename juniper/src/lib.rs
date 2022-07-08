@@ -96,7 +96,7 @@ pub use crate::{
 #[derive(Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum GraphQLError {
-    ParseError(String),
+    ParseError(Spanning<ParseError>),
     ValidationError(Vec<RuleError>),
     NoOperationProvided,
     MultipleOperationsProvided,
@@ -106,25 +106,37 @@ pub enum GraphQLError {
 }
 
 impl fmt::Display for GraphQLError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            GraphQLError::ParseError(error) => write!(f, "{}", error),
-            GraphQLError::ValidationError(errors) => {
-                for error in errors {
-                    writeln!(f, "{}", error)?;
+            Self::ParseError(e) => write!(f, "{}", e),
+            Self::ValidationError(errs) => {
+                for e in errs {
+                    writeln!(f, "{}", e)?;
                 }
                 Ok(())
             }
-            GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
-            GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
-            GraphQLError::UnknownOperationName => write!(f, "Unknown operation name"),
-            GraphQLError::IsSubscription => write!(f, "Operation is a subscription"),
-            GraphQLError::NotSubscription => write!(f, "Operation is not a subscription"),
+            Self::NoOperationProvided => write!(f, "No operation provided"),
+            Self::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
+            Self::UnknownOperationName => write!(f, "Unknown operation name"),
+            Self::IsSubscription => write!(f, "Operation is a subscription"),
+            Self::NotSubscription => write!(f, "Operation is not a subscription"),
         }
     }
 }
 
-impl std::error::Error for GraphQLError {}
+impl std::error::Error for GraphQLError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::ParseError(e) => Some(e),
+            Self::ValidationError(errs) => Some(errs.first()?),
+            Self::NoOperationProvided
+            | Self::MultipleOperationsProvided
+            | Self::UnknownOperationName
+            | Self::IsSubscription
+            | Self::NotSubscription => None,
+        }
+    }
+}
 
 /// Execute a query synchronously in a provided schema
 pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
@@ -278,8 +290,8 @@ where
     )
 }
 
-impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError {
-    fn from(f: Spanning<ParseError<'a>>) -> GraphQLError {
-        GraphQLError::ParseError(format!("{}", f))
+impl From<Spanning<ParseError>> for GraphQLError {
+    fn from(err: Spanning<ParseError>) -> Self {
+        Self::ParseError(err)
     }
 }

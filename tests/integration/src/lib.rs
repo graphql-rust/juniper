@@ -77,7 +77,7 @@ pub(crate) mod util {
     /// [`juniper::resolve_into_stream()`] and transforms it into a regular
     /// [`Value`].
     pub(crate) async fn extract_next<S: ScalarValue>(
-        input: Result<(Value<ValuesStream<S>>, Vec<ExecutionError<S>>), GraphQLError>,
+        input: Result<(Value<ValuesStream<'_, S>>, Vec<ExecutionError<S>>), GraphQLError>,
     ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError> {
         let (stream, errs) = input?;
         if !errs.is_empty() {

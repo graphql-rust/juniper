@@ -63,7 +63,6 @@ where
     S: ScalarValue + Send + Sync + 'a,
 {
     type Connection = Connection<'a, S>;
-
     type Error = GraphQLError;
 
     fn subscribe(
