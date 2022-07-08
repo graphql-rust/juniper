@@ -194,8 +194,8 @@ impl PlaygroundHandler {
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S> Handler
-    for GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
+impl<CtxFactory, Query, Mutation, Subscription, CtxT, S> Handler
+    for GraphQLHandler<'static, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
     S: ScalarValue + Sync + Send + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
@@ -203,7 +203,6 @@ where
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    'a: 'static,
 {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let context = (self.context_factory)(req)?;

@@ -367,23 +367,13 @@ error[E0080]: evaluation of constant value failed
    |
    = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: any use of this value will cause an error
-  --> fail/interface/struct/derive_missing_field.rs:12:5
-   |
-12 |     id: String,
-   |     ^^ referenced constant has errors
-   |
-   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
-   = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error[E0080]: evaluation of constant value failed
   --> fail/interface/struct/derive_missing_field.rs:12:5
    |
 12 |     id: String,
    |     ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/struct/derive_missing_field.rs:12:5
@@ -413,6 +403,32 @@ error[E0080]: evaluation of constant value failed
    |
    = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
+error[E0080]: evaluation of constant value failed
+  --> fail/interface/struct/derive_missing_field.rs:12:5
+   |
+12 |     id: String,
+   |     ^^ referenced constant has errors
+   |
+   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: any use of this value will cause an error
+  --> fail/interface/struct/derive_missing_field.rs:12:5
+   |
+12 |     id: String,
+   |     ^^ referenced constant has errors
+   |
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
+   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation of constant value failed
+  --> fail/interface/struct/derive_missing_field.rs:12:5
+   |
+12 |     id: String,
+   |     ^^ referenced constant has errors
+   |
+   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: any use of this value will cause an error
   --> fail/interface/struct/derive_missing_field.rs:12:5
    |
@@ -438,22 +454,6 @@ error[E0080]: evaluation of constant value failed
    |     ^^ referenced constant has errors
    |
    = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/struct/derive_missing_field.rs:12:5
-   |
-12 |     id: String,
-   |     ^^ referenced constant has errors
-   |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/struct/derive_missing_field.rs:12:5
-   |
-12 |     id: String,
-   |     ^^ referenced constant has errors
-   |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/struct/derive_missing_field.rs:12:5
@@ -859,23 +859,13 @@ error[E0080]: evaluation of constant value failed
    |
    = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: any use of this value will cause an error
-  --> fail/interface/struct/derive_missing_field.rs:12:5
-   |
-12 |     id: String,
-   |     ^^ referenced constant has errors
-   |
-   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
-   = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error[E0080]: evaluation of constant value failed
   --> fail/interface/struct/derive_missing_field.rs:12:5
    |
 12 |     id: String,
    |     ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/struct/derive_missing_field.rs:12:5
@@ -905,6 +895,32 @@ error[E0080]: evaluation of constant value failed
    |
    = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
+error[E0080]: evaluation of constant value failed
+  --> fail/interface/struct/derive_missing_field.rs:12:5
+   |
+12 |     id: String,
+   |     ^^ referenced constant has errors
+   |
+   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: any use of this value will cause an error
+  --> fail/interface/struct/derive_missing_field.rs:12:5
+   |
+12 |     id: String,
+   |     ^^ referenced constant has errors
+   |
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
+   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation of constant value failed
+  --> fail/interface/struct/derive_missing_field.rs:12:5
+   |
+12 |     id: String,
+   |     ^^ referenced constant has errors
+   |
+   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: any use of this value will cause an error
   --> fail/interface/struct/derive_missing_field.rs:12:5
    |
@@ -930,22 +946,6 @@ error[E0080]: evaluation of constant value failed
    |     ^^ referenced constant has errors
    |
    = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/struct/derive_missing_field.rs:12:5
-   |
-12 |     id: String,
-   |     ^^ referenced constant has errors
-   |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/struct/derive_missing_field.rs:12:5
-   |
-12 |     id: String,
-   |     ^^ referenced constant has errors
-   |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/struct/derive_missing_field.rs:12:5
