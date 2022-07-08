@@ -607,21 +607,21 @@ mod default_argument {
                     "args": [{
                         "name": "arg1",
                         "defaultValue": "0",
-                        "type": {"name": "Int", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "Int"}},
                     }, {
                         "name": "arg2",
                         "defaultValue": r#""second""#,
-                        "type": {"name": "String", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "String"}},
                     }, {
                         "name": "arg3",
                         "defaultValue": "true",
-                        "type": {"name": "Boolean", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "Boolean"}},
                     }],
                 }, {
                     "args": [{
                         "name": "coord",
                         "defaultValue": "{x: 1}",
-                        "type": {"name": "Point", "ofType": null},
+                        "type": {"name": null, "ofType": {"name": "Point"}},
                     }],
                 }]}}),
                 vec![],

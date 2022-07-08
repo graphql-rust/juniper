@@ -444,9 +444,13 @@ async fn object_introspection() {
             "name": "second",
             "description": "The second number",
             "type": {
-                "name": "Int",
-                "kind": "SCALAR",
-                "ofType": null,
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                    "name": "Int",
+                    "kind": "SCALAR",
+                    "ofType": null,
+                },
             },
             "defaultValue": "123",
         }],

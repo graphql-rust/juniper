@@ -48,7 +48,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Reworked [`chrono` crate] integration GraphQL scalars according to [graphql-scalars.dev] specs: ([#1010])
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
-- Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#528])
+- Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
 
 ### Added
 
@@ -72,8 +72,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Unsupported expressions in `graphql_value!` macro. ([#996], [#503])
 - Incorrect GraphQL list coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004])
 - All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
+- Incorrect input value coercion with defaults. ([#1080], [#1073])
 
 [#503]: /../../issues/503
+[#528]: /../../issues/528
 [#750]: /../../issues/750
 [#798]: /../../issues/798
 [#918]: /../../issues/918
@@ -101,6 +103,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1054]: /../../pull/1054
 [#1057]: /../../pull/1057
 [#1060]: /../../pull/1060
+[#1073]: /../../issues/1073
+[#1080]: /../../pull/1080
+[#1081]: /../../pull/1081
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 
 

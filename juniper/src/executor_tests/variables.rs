@@ -75,6 +75,12 @@ impl TestType {
         format!("{:?}", input)
     }
 
+    fn nullable_field_with_default_argument_value(
+        #[graphql(default = "Hello World".to_owned())] input: Option<String>,
+    ) -> String {
+        format!("{:?}", input)
+    }
+
     fn field_with_nested_object_input(input: Option<TestNestedInputObject>) -> String {
         format!("{:?}", input)
     }
@@ -791,13 +797,14 @@ async fn default_argument_when_not_provided() {
 }
 
 #[tokio::test]
-async fn default_argument_when_nullable_variable_not_provided() {
-    run_query(
-        r#"query q($input: String) { fieldWithDefaultArgumentValue(input: $input) }"#,
+async fn provided_variable_overwrites_default_value() {
+    run_variable_query(
+        r#"query q($input: String!) { fieldWithDefaultArgumentValue(input: $input) }"#,
+        graphql_vars! {"input": "Overwritten"},
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&graphql_value!(r#""Hello World""#)),
+                Some(&graphql_value!(r#""Overwritten""#)),
             );
         },
     )
@@ -805,14 +812,28 @@ async fn default_argument_when_nullable_variable_not_provided() {
 }
 
 #[tokio::test]
-async fn default_argument_when_nullable_variable_set_to_null() {
+async fn default_argument_when_nullable_variable_not_provided() {
+    run_query(
+        r#"query q($input: String) { nullableFieldWithDefaultArgumentValue(input: $input) }"#,
+        |result| {
+            assert_eq!(
+                result.get_field_value("nullableFieldWithDefaultArgumentValue"),
+                Some(&graphql_value!(r#"Some("Hello World")"#)),
+            );
+        },
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn null_when_nullable_variable_of_argument_with_default_value_set_to_null() {
     run_variable_query(
-        r#"query q($input: String) { fieldWithDefaultArgumentValue(input: $input) }"#,
+        r#"query q($input: String) { nullableFieldWithDefaultArgumentValue(input: $input) }"#,
         graphql_vars! {"input": null},
         |result| {
             assert_eq!(
-                result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&graphql_value!(r#""Hello World""#)),
+                result.get_field_value("nullableFieldWithDefaultArgumentValue"),
+                Some(&graphql_value!(r#"None"#)),
             );
         },
     )
