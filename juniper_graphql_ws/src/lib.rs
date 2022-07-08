@@ -626,7 +626,7 @@ mod test {
     use juniper::{
         futures::sink::SinkExt,
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
-        parser::{ParseError, Spanning, Token},
+        parser::{ParseError, Spanning},
         DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode,
     };
 
