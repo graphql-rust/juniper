@@ -1342,7 +1342,7 @@ enum StarWarsEpisode {
 <span class="boring">fn main() {}
 </span></code></pre></pre>
 <h2 id="supported-macro-attributes-derive"><a class="header" href="#supported-macro-attributes-derive">Supported Macro Attributes (Derive)</a></h2>
-<table><thead><tr><th>Name of Attribute</th><th style="text-align: center">Container Support</th><th style="text-align: center">Field Support</th></tr></thead><tbody>
+<div class="table-wrapper"><table><thead><tr><th>Name of Attribute</th><th style="text-align: center">Container Support</th><th style="text-align: center">Field Support</th></tr></thead><tbody>
 <tr><td>context</td><td style="text-align: center">✔</td><td style="text-align: center">?</td></tr>
 <tr><td>deprecated</td><td style="text-align: center">✔</td><td style="text-align: center">✔</td></tr>
 <tr><td>description</td><td style="text-align: center">✔</td><td style="text-align: center">✔</td></tr>
@@ -1353,7 +1353,7 @@ enum StarWarsEpisode {
 <tr><td>skip</td><td style="text-align: center">?</td><td style="text-align: center">✘</td></tr>
 <tr><td>✔: supported</td><td style="text-align: center">✘: not supported</td><td style="text-align: center">?: not available</td></tr>
 </tbody></table>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="interfaces"><a class="header" href="#interfaces">Interfaces</a></h1>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="interfaces"><a class="header" href="#interfaces">Interfaces</a></h1>
 <p><a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> map well to interfaces known from common object-oriented languages such as Java or C#, but Rust, unfortunately, has no concept that maps perfectly to them. The nearest analogue of <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> are Rust traits, and the main difference is that in GraphQL an <a href="https://spec.graphql.org/October2021#sec-Interfaces">interface type</a> serves both as an <em>abstraction</em> and a <em>boxed value (downcastable to concrete implementers)</em>, while in Rust, a trait is an <em>abstraction only</em> and <em>to represent such a boxed value a separate type is required</em>, like enum or trait object, because Rust trait doesn't represent a type itself, and so can have no values. This difference imposes some unintuitive and non-obvious corner cases when we try to express <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> in Rust, but on the other hand gives you full control over which type is backing your interface, and how it's resolved.</p>
 <p>For implementing <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a> Juniper provides the <code>#[graphql_interface]</code> macro.</p>
 <h2 id="traits"><a class="header" href="#traits">Traits</a></h2>
