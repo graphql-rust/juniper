@@ -1994,10 +1994,7 @@ where
         .ok_or_else(|| format!(&quot;Expected `String` or `Int`, found: {}&quot;, v))
 }
 
-fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;'_, S&gt; 
-where
-    S: ScalarValue
-{
+fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt; {
     &lt;String as ParseScalarValue&lt;S&gt;&gt;::from_str(value)
         .or_else(|_| &lt;i32 as ParseScalarValue&lt;S&gt;&gt;::from_str(value))
 }
@@ -2043,7 +2040,7 @@ impl StringOrInt {
             .ok_or_else(|| format!(&quot;Expected `String` or `Int`, found: {}&quot;, v))
     }
   
-    fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;'_, S&gt;
+    fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt;
     where
         S: ScalarValue,
     {
@@ -2090,7 +2087,7 @@ mod string_or_int {
             .ok_or_else(|| format!(&quot;Expected `String` or `Int`, found: {}&quot;, v))
     }
   
-    pub(super) fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;'_, S&gt;
+    pub(super) fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt;
     where
         S: ScalarValue,
     {
