@@ -338,7 +338,7 @@ impl<'a> Lexer<'a> {
 
         let mut end_idx = loop {
             if let Some((idx, ch)) = self.peek_char() {
-                if ch.is_digit(10) || (ch == '-' && last_idx == start_idx) {
+                if ch.is_ascii_digit() || (ch == '-' && last_idx == start_idx) {
                     if ch == '0' && last_char == '0' && last_idx == start_idx {
                         return Err(Spanning::zero_width(
                             &self.position,
@@ -367,7 +367,7 @@ impl<'a> Lexer<'a> {
             self.next_char();
             end_idx = loop {
                 if let Some((idx, ch)) = self.peek_char() {
-                    if ch.is_digit(10) {
+                    if ch.is_ascii_digit() {
                         self.next_char();
                     } else if last_idx == start_idx {
                         return Err(Spanning::zero_width(
@@ -396,7 +396,9 @@ impl<'a> Lexer<'a> {
 
                 end_idx = loop {
                     if let Some((idx, ch)) = self.peek_char() {
-                        if ch.is_digit(10) || (last_idx == start_idx && (ch == '-' || ch == '+')) {
+                        if ch.is_ascii_digit()
+                            || (last_idx == start_idx && (ch == '-' || ch == '+'))
+                        {
                             self.next_char();
                         } else if last_idx == start_idx {
                             // 1e is not a valid floating point number
