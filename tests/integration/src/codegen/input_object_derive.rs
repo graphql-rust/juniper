@@ -151,32 +151,32 @@ mod default_value {
 
     #[tokio::test]
     async fn resolves() {
-        const DOC: &str = r#"query q($x4: Float!) {
-            x(point: { y: 20 })
-            x2: x(point: { x: 20 })
-            x3: x(point: {})
-            x4: x(point: { x: $x4 })
+        const DOC: &str = r#"query q($ve_num: Float!) {
+            literal_implicit_other_number: x(point: { y: 20 })
+            literal_explicit_number: x(point: { x: 20 })
+            literal_implicit_all: x(point: {})
+            variable_explicit_number: x(point: { x: $ve_num })
         }"#;
 
         let schema = schema(QueryRoot);
 
         assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {"x4": 40}, &()).await,
+            execute(DOC, None, &schema, &graphql_vars! {"ve_num": 40}, &()).await,
             Ok((
                 graphql_value!({
-                    "x": 10.0,
-                    "x2": 20.0,
-                    "x3": 10.0,
-                    "x4": 40.0,
+                    "literal_implicit_other_number": 10.0,
+                    "literal_explicit_number": 20.0,
+                    "literal_implicit_all": 10.0,
+                    "variable_explicit_number": 40.0,
                 }),
-                vec![]
+                vec![],
             )),
         );
     }
 
     #[tokio::test]
-    async fn err_on_null() {
-        const DOC: &str = r#"{ x(point: { y: null }) }"#;
+    async fn errs_on_explicit_null_literal() {
+        const DOC: &str = r#"{ x(point: { x: 20, y: null }) }"#;
 
         let schema = schema(QueryRoot);
 
@@ -190,7 +190,7 @@ mod default_value {
     }
 
     #[tokio::test]
-    async fn err_on_missing_var() {
+    async fn errs_on_missing_variable() {
         const DOC: &str = r#"query q($x: Float!){ x(point: { x: $x }) }"#;
 
         let schema = schema(QueryRoot);
@@ -242,20 +242,17 @@ mod default_value {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": "10",
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": "10",
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": "10",
+                }, {
+                    "name": "y",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": "10",
+                }]}}),
                 vec![],
             )),
         );
@@ -285,24 +282,24 @@ mod default_nullable_value {
     #[tokio::test]
     async fn resolves() {
         const DOC: &str = r#"query q(
-            $x6: Float, 
-            $x7: Float, 
-            $x8: Float,
-            $x9: Float = 40,
-            $x10: Float = 50,
-            $x11: Float = 60,
+            $ve_num: Float,
+            $ve_null: Float,
+            $vi: Float,
+            $vde_num: Float = 40,
+            $vde_null: Float = 50,
+            $vdi: Float = 60,
         ) {
-            x(point: { y: 20 })
-            x2: x(point: { x: 20 })
-            x3: x(point: {})
-            x4: x(point: { x: null })
-            x5: x(point: { y: null })
-            x6: x(point: { x: $x6 })
-            x7: x(point: { x: $x7 })
-            x8: x(point: { x: $x8 })
-            x9: x(point: { x: $x9 })
-            x10: x(point: { x: $x10 })
-            x11: x(point: { x: $x11 })
+            literal_implicit_other_number: x(point: { y: 20 })
+            literal_explicit_number: x(point: { x: 20 })
+            literal_implicit_all: x(point: {})
+            literal_explicit_null: x(point: { x: null })
+            literal_implicit_other_null: x(point: { y: null })
+            variable_explicit_number: x(point: { x: $ve_num })
+            variable_explicit_null: x(point: { x: $ve_null })
+            variable_implicit: x(point: { x: $vi })
+            variable_default_explicit_number: x(point: { x: $vde_num })
+            variable_default_explicit_null: x(point: { x: $vde_null })
+            variable_default_implicit: x(point: { x: $vdi })
         }"#;
 
         let schema = schema(QueryRoot);
@@ -313,27 +310,27 @@ mod default_nullable_value {
                 None,
                 &schema,
                 &graphql_vars! {
-                    "x6": 30.0,
-                    "x7": null,
-                    "x9": 100,
-                    "x10": null,
+                    "ve_num": 30.0,
+                    "ve_null": null,
+                    "vde_num": 100,
+                    "vde_null": null,
                 },
                 &(),
             )
             .await,
             Ok((
                 graphql_value!({
-                    "x": 10.0,
-                    "x2": 20.0,
-                    "x3": 10.0,
-                    "x4": null,
-                    "x5": 10.0,
-                    "x6": 30.0,
-                    "x7": null,
-                    "x8": 10.0,
-                    "x9": 100.0,
-                    "x10": null,
-                    "x11": 60.0,
+                    "literal_implicit_other_number": 10.0,
+                    "literal_explicit_number": 20.0,
+                    "literal_implicit_all": 10.0,
+                    "literal_explicit_null": null,
+                    "literal_implicit_other_null": 10.0,
+                    "variable_explicit_number": 30.0,
+                    "variable_explicit_null": null,
+                    "variable_implicit": 10.0,
+                    "variable_default_explicit_number": 100.0,
+                    "variable_default_explicit_null": null,
+                    "variable_default_implicit": 60.0,
                 }),
                 vec![],
             )),

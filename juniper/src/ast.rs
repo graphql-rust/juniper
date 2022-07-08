@@ -295,33 +295,33 @@ impl<S> InputValue<S> {
         Self::Object(o)
     }
 
-    /// Resolve all variables to their values.
+    /// Resolves all variables of this [`InputValue`] to their actual `values`.
     ///
-    /// If variable is not present:
-    /// - Returns [`None`] in case this is a [`InputValue::Variable`];
-    /// - Skips field in case of a [`InputValue::Object`] field value;
-    /// - Replaces with [`InputValue::Null`] in case of a [`InputValue::List`]
-    ///   element.
+    /// If a variable is not present in the `values`:
+    /// - Returns [`None`] in case this is an [`InputValue::Variable`].
+    /// - Skips field in case of an [`InputValue::Object`] field.
+    /// - Replaces with an [`InputValue::Null`] in case of an
+    ///   [`InputValue::List`] element.
     ///
-    /// This is done, because for [`InputValue::Variable`] or
-    /// [`InputValue::Object`] field, default value can be used later, if it's
-    /// provided. While single [`InputValue::List`] element can't have a
-    /// default value.
+    /// This is done, because for an [`InputValue::Variable`] (or an
+    /// [`InputValue::Object`] field) a default value can be used later, if it's
+    /// provided. While on contrary, a single [`InputValue::List`] element
+    /// cannot have a default value.
     #[must_use]
-    pub fn into_const(self, vars: &Variables<S>) -> Option<Self>
+    pub fn into_const(self, values: &Variables<S>) -> Option<Self>
     where
         S: Clone,
     {
         match self {
-            Self::Variable(v) => vars.get(&v).cloned(),
+            Self::Variable(v) => values.get(&v).cloned(),
             Self::List(l) => Some(Self::List(
                 l.into_iter()
-                    .map(|s| s.map(|v| v.into_const(vars).unwrap_or_else(Self::null)))
+                    .map(|s| s.map(|v| v.into_const(values).unwrap_or_else(Self::null)))
                     .collect(),
             )),
             Self::Object(o) => Some(Self::Object(
                 o.into_iter()
-                    .filter_map(|(sk, sv)| sv.and_then(|v| v.into_const(vars)).map(|sv| (sk, sv)))
+                    .filter_map(|(sk, sv)| sv.and_then(|v| v.into_const(values)).map(|sv| (sk, sv)))
                     .collect(),
             )),
             v => Some(v),

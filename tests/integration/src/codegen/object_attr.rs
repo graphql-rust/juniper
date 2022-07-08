@@ -1070,71 +1070,71 @@ mod default_argument {
         let schema = schema(QueryRoot);
 
         for (input, expected, vars) in &[
-            ("{ human { id } }", r#"0|Some("second")&true"#, None),
+            (
+                "{ human { id } }",
+                r#"0|Some("second")&true"#,
+                graphql_vars! {},
+            ),
             (
                 "{ human { id(arg1: 1) } }",
                 r#"1|Some("second")&true"#,
-                None,
+                graphql_vars! {},
             ),
             (
                 r#"{ human { id(arg2: "other") } }"#,
                 r#"0|Some("other")&true"#,
-                None,
+                graphql_vars! {},
             ),
-            ("{ human { id(arg2: null) } }", r#"0|None&true"#, None),
+            (
+                "{ human { id(arg2: null) } }",
+                r#"0|None&true"#,
+                graphql_vars! {},
+            ),
             (
                 "query q($arg2: String) { human { id(arg2: $arg2) } }",
                 r#"0|Some("second")&true"#,
-                None,
+                graphql_vars! {},
             ),
             (
                 "query q($arg2: String) { human{ id(arg2: $arg2) } }",
                 r#"0|None&true"#,
-                Some(graphql_vars! { "arg2": null }),
+                graphql_vars! { "arg2": null },
             ),
             (
                 "query q($arg2: String) { human{ id(arg2: $arg2) } }",
                 r#"0|Some("other")&true"#,
-                Some(graphql_vars! { "arg2": "other" }),
+                graphql_vars! { "arg2": "other" },
             ),
             (
                 r#"query q($arg2: String = "other") { human { id(arg2: $arg2) } }"#,
                 r#"0|Some("other")&true"#,
-                None,
+                graphql_vars! {},
             ),
             (
                 r#"query q($arg2: String = "other") { human { id(arg2: $arg2) } }"#,
                 r#"0|None&true"#,
-                Some(graphql_vars! { "arg2": null }),
+                graphql_vars! { "arg2": null },
             ),
             (
                 r#"query q($arg2: String = "other") { human { id(arg2: $arg2) } }"#,
                 r#"0|Some("hello")&true"#,
-                Some(graphql_vars! { "arg2": "hello" }),
+                graphql_vars! { "arg2": "hello" },
             ),
             (
                 r#"{ human { id(arg1: 2, arg2: "") } }"#,
                 r#"2|Some("")&true"#,
-                None,
+                graphql_vars! {},
             ),
             (
                 r#"{ human { id(arg1: 1, arg2: "", arg3: false) } }"#,
                 r#"1|Some("")&false"#,
-                None,
+                graphql_vars! {},
             ),
         ] {
             let expected: &str = *expected;
 
-            let empty_vars = &graphql_vars! {};
             assert_eq!(
-                execute(
-                    *input,
-                    None,
-                    &schema,
-                    vars.as_ref().unwrap_or_else(|| empty_vars),
-                    &(),
-                )
-                .await,
+                execute(*input, None, &schema, &vars, &(),).await,
                 Ok((graphql_value!({"human": {"id": expected}}), vec![])),
             );
         }
