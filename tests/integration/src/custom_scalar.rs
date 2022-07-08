@@ -107,13 +107,13 @@ mod long {
             .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {}", v))
     }
 
-    pub(super) fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<'_, MyScalarValue> {
+    pub(super) fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<MyScalarValue> {
         if let ScalarToken::Int(v) = value {
             v.parse()
-                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map_err(|_| ParseError::unexpected_token(Token::Scalar(value)))
                 .map(|s: i64| s.into())
         } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+            Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
 }

@@ -32,7 +32,7 @@ pub struct DataPayload<S> {
 // _execution_params).
 pub struct ErrorPayload {
     _execution_params: Option<Box<dyn Any + Send>>,
-    error: GraphQLError<'static>,
+    error: GraphQLError,
     _marker: PhantomPinned,
 }
 
@@ -41,7 +41,7 @@ impl ErrorPayload {
     /// execution_params and that execution_params has not been modified or moved.
     pub(crate) unsafe fn new_unchecked(
         execution_params: Box<dyn Any + Send>,
-        error: GraphQLError<'_>,
+        error: GraphQLError,
     ) -> Self {
         Self {
             _execution_params: Some(execution_params),
@@ -51,7 +51,7 @@ impl ErrorPayload {
     }
 
     /// Returns the contained GraphQLError.
-    pub fn graphql_error<'a>(&'a self) -> &GraphQLError<'a> {
+    pub fn graphql_error(&self) -> &GraphQLError {
         &self.error
     }
 }
@@ -77,8 +77,8 @@ impl Serialize for ErrorPayload {
     }
 }
 
-impl From<GraphQLError<'static>> for ErrorPayload {
-    fn from(error: GraphQLError<'static>) -> Self {
+impl From<GraphQLError> for ErrorPayload {
+    fn from(error: GraphQLError) -> Self {
         Self {
             _execution_params: None,
             error,

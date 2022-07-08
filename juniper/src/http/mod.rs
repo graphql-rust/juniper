@@ -86,11 +86,11 @@ where
     ///
     /// This is a simple wrapper around the `execute_sync` function exposed at the
     /// top level of this crate.
-    pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    pub fn execute_sync<QueryT, MutationT, SubscriptionT>(
+        &self,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &QueryT::Context,
-    ) -> GraphQLResponse<'a, S>
+    ) -> GraphQLResponse<S>
     where
         S: ScalarValue,
         QueryT: GraphQLType<S>,
@@ -114,7 +114,7 @@ where
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a QueryT::Context,
-    ) -> GraphQLResponse<'a, S>
+    ) -> GraphQLResponse<S>
     where
         QueryT: GraphQLTypeAsync<S>,
         QueryT::TypeInfo: Sync,
@@ -140,7 +140,7 @@ pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, QueryT, MutationT, Subscri
     req: &'req GraphQLRequest<S>,
     root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     context: &'ctx QueryT::Context,
-) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError>
 where
     'req: 'a,
     'rn: 'a,
@@ -166,16 +166,16 @@ where
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
 #[derive(Debug)]
-pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+pub struct GraphQLResponse<S = DefaultScalarValue>(
+    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>,
 );
 
-impl<'a, S> GraphQLResponse<'a, S>
+impl<S> GraphQLResponse<S>
 where
     S: ScalarValue,
 {
     /// Constructs new `GraphQLResponse` using the given result
-    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
+    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>) -> Self {
         Self(r)
     }
 
@@ -193,12 +193,11 @@ where
     }
 }
 
-impl<'a, T> Serialize for GraphQLResponse<'a, T>
+impl<T> Serialize for GraphQLResponse<T>
 where
     T: Serialize + ScalarValue,
     Value<T>: Serialize,
     ExecutionError<T>: Serialize,
-    GraphQLError<'a>: Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -272,7 +271,7 @@ where
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &QueryT::Context,
-    ) -> GraphQLBatchResponse<'a, S>
+    ) -> GraphQLBatchResponse<S>
     where
         QueryT: GraphQLType<S>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
@@ -298,7 +297,7 @@ where
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a QueryT::Context,
-    ) -> GraphQLBatchResponse<'a, S>
+    ) -> GraphQLBatchResponse<S>
     where
         QueryT: GraphQLTypeAsync<S>,
         QueryT::TypeInfo: Sync,
@@ -340,20 +339,17 @@ where
 /// wheter to send a 200 or 400 HTTP status code.
 #[derive(Serialize)]
 #[serde(untagged)]
-pub enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
+pub enum GraphQLBatchResponse<S = DefaultScalarValue>
 where
     S: ScalarValue,
 {
     /// Result of a single operation in a GraphQL request.
-    Single(GraphQLResponse<'a, S>),
+    Single(GraphQLResponse<S>),
     /// Result of a batch operation in a GraphQL request.
-    Batch(Vec<GraphQLResponse<'a, S>>),
+    Batch(Vec<GraphQLResponse<S>>),
 }
 
-impl<'a, S> GraphQLBatchResponse<'a, S>
-where
-    S: ScalarValue,
-{
+impl<S: ScalarValue> GraphQLBatchResponse<S> {
     /// Returns if all the GraphQLResponse in this operation are ok,
     /// you can use it to determine wheter to send a 200 or 400 HTTP status code.
     pub fn is_ok(&self) -> bool {

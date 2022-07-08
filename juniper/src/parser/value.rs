@@ -9,12 +9,12 @@ use crate::{
     value::ScalarValue,
 };
 
-pub fn parse_value_literal<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+pub fn parse_value_literal<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     tpe: Option<&MetaType<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
@@ -113,16 +113,16 @@ where
             },
             _,
         ) => Ok(parser.next_token()?.map(|_| InputValue::enum_value(name))),
-        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next_token()?.map(ParseError::unexpected_token)),
     }
 }
 
-fn parse_list_literal<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+fn parse_list_literal<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     tpe: Option<&MetaType<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
@@ -135,12 +135,12 @@ where
         .map(InputValue::parsed_list))
 }
 
-fn parse_object_literal<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+fn parse_object_literal<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     object_tpe: Option<&InputObjectMeta<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
@@ -153,12 +153,12 @@ where
         .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
-fn parse_object_field<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+fn parse_object_field<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     object_meta: Option<&InputObjectMeta<'b, S>>,
-) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue<S>>)>
+) -> ParseResult<(Spanning<String>, Spanning<InputValue<S>>)>
 where
     S: ScalarValue,
 {
@@ -179,7 +179,7 @@ where
     ))
 }
 
-fn parse_variable_literal<'a, S>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue<S>>
+fn parse_variable_literal<S>(parser: &mut Parser<'_>) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
@@ -199,12 +199,12 @@ where
     ))
 }
 
-fn parse_scalar_literal_by_infered_type<'a, 'b, S>(
-    token: ScalarToken<'a>,
+fn parse_scalar_literal_by_infered_type<'b, S>(
+    token: ScalarToken<'_>,
     start: &SourcePosition,
     end: &SourcePosition,
     schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
