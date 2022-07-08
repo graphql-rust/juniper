@@ -497,7 +497,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
 /// }
 ///
-/// fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+/// fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
 ///     <String as ParseScalarValue<S>>::from_str(value)
 ///         .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 /// }
@@ -540,7 +540,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
 ///     }
 ///
-///     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+///     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
 ///         <String as ParseScalarValue<S>>::from_str(t)
 ///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(t))
 ///     }
@@ -581,7 +581,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
 ///     }
 ///
-///     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+///     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
 ///     where
 ///         S: ScalarValue
 ///     {

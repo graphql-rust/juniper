@@ -358,10 +358,7 @@ enum SubscriptionStartState<S: Schema> {
         id: String,
         future: BoxFuture<
             'static,
-            Result<
-                juniper_subscriptions::Connection<'static, S::ScalarValue>,
-                GraphQLError<'static>,
-            >,
+            Result<juniper_subscriptions::Connection<'static, S::ScalarValue>, GraphQLError>,
         >,
     },
     /// Streaming is the state after we've successfully obtained the event stream for the
@@ -629,7 +626,7 @@ mod test {
     use juniper::{
         futures::sink::SinkExt,
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
-        parser::{ParseError, Spanning, Token},
+        parser::{ParseError, Spanning},
         DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode,
     };
 
@@ -929,9 +926,9 @@ mod test {
                 assert_eq!(id, "foo");
                 match payload.graphql_error() {
                     GraphQLError::ParseError(Spanning {
-                        item: ParseError::UnexpectedToken(Token::Name("asd")),
+                        item: ParseError::UnexpectedToken(token),
                         ..
-                    }) => {}
+                    }) => assert_eq!(token, "asd"),
                     p @ _ => panic!("expected graphql parse error, got: {:?}", p),
                 }
             }

@@ -544,7 +544,7 @@ impl Definition {
             {
                 fn from_str(
                     token: ::juniper::parser::ScalarToken<'_>,
-                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
+                ) -> ::juniper::ParseScalarResult<#scalar> {
                     #from_str
                 }
             }

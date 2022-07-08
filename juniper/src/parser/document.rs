@@ -22,7 +22,7 @@ use crate::{
 pub fn parse_document_source<'a, 'b, S>(
     s: &'a str,
     schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, OwnedDocument<'a, S>>
+) -> UnlocatedParseResult<OwnedDocument<'a, S>>
 where
     S: ScalarValue,
 {
@@ -34,7 +34,7 @@ where
 fn parse_document<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, OwnedDocument<'a, S>>
+) -> UnlocatedParseResult<OwnedDocument<'a, S>>
 where
     S: ScalarValue,
 {
@@ -52,7 +52,7 @@ where
 fn parse_definition<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> UnlocatedParseResult<'a, Definition<'a, S>>
+) -> UnlocatedParseResult<Definition<'a, S>>
 where
     S: ScalarValue,
 {
@@ -66,14 +66,14 @@ where
         Token::Name("fragment") => Ok(Definition::Fragment(parse_fragment_definition(
             parser, schema,
         )?)),
-        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next_token()?.map(ParseError::unexpected_token)),
     }
 }
 
 fn parse_operation_definition<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, Operation<'a, S>>
+) -> ParseResult<Operation<'a, S>>
 where
     S: ScalarValue,
 {
@@ -129,7 +129,7 @@ where
 fn parse_fragment_definition<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, Fragment<'a, S>>
+) -> ParseResult<Fragment<'a, S>>
 where
     S: ScalarValue,
 {
@@ -139,7 +139,7 @@ where
     let name = match parser.expect_name() {
         Ok(n) => {
             if n.item == "on" {
-                return Err(n.map(|_| ParseError::UnexpectedToken(Token::Name("on"))));
+                return Err(n.map(|_| ParseError::UnexpectedToken("on".into())));
             } else {
                 n
             }
@@ -174,7 +174,7 @@ fn parse_optional_selection_set<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
     fields: Option<&[&MetaField<'b, S>]>,
-) -> OptionParseResult<'a, Vec<Selection<'a, S>>>
+) -> OptionParseResult<Vec<Selection<'a, S>>>
 where
     S: ScalarValue,
 {
@@ -189,7 +189,7 @@ fn parse_selection_set<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
     fields: Option<&[&MetaField<'b, S>]>,
-) -> ParseResult<'a, Vec<Selection<'a, S>>>
+) -> ParseResult<Vec<Selection<'a, S>>>
 where
     S: ScalarValue,
 {
@@ -204,7 +204,7 @@ fn parse_selection<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
     fields: Option<&[&MetaField<'b, S>]>,
-) -> UnlocatedParseResult<'a, Selection<'a, S>>
+) -> UnlocatedParseResult<Selection<'a, S>>
 where
     S: ScalarValue,
 {
@@ -218,7 +218,7 @@ fn parse_fragment<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
     fields: Option<&[&MetaField<'b, S>]>,
-) -> UnlocatedParseResult<'a, Selection<'a, S>>
+) -> UnlocatedParseResult<Selection<'a, S>>
 where
     S: ScalarValue,
 {
@@ -292,7 +292,7 @@ where
                 },
             )))
         }
-        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next_token()?.map(ParseError::unexpected_token)),
     }
 }
 
@@ -300,7 +300,7 @@ fn parse_field<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
     fields: Option<&[&MetaField<'b, S>]>,
-) -> ParseResult<'a, Field<'a, S>>
+) -> ParseResult<Field<'a, S>>
 where
     S: ScalarValue,
 {
@@ -351,7 +351,7 @@ fn parse_arguments<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
     arguments: Option<&[Argument<'b, S>]>,
-) -> OptionParseResult<'a, Arguments<'a, S>>
+) -> OptionParseResult<Arguments<'a, S>>
 where
     S: ScalarValue,
 {
@@ -376,7 +376,7 @@ fn parse_argument<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
     arguments: Option<&[Argument<'b, S>]>,
-) -> ParseResult<'a, (Spanning<&'a str>, Spanning<InputValue<S>>)>
+) -> ParseResult<(Spanning<&'a str>, Spanning<InputValue<S>>)>
 where
     S: ScalarValue,
 {
@@ -395,21 +395,21 @@ where
     ))
 }
 
-fn parse_operation_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, OperationType> {
+fn parse_operation_type(parser: &mut Parser<'_>) -> ParseResult<OperationType> {
     match parser.peek().item {
         Token::Name("query") => Ok(parser.next_token()?.map(|_| OperationType::Query)),
         Token::Name("mutation") => Ok(parser.next_token()?.map(|_| OperationType::Mutation)),
         Token::Name("subscription") => {
             Ok(parser.next_token()?.map(|_| OperationType::Subscription))
         }
-        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next_token()?.map(ParseError::unexpected_token)),
     }
 }
 
 fn parse_variable_definitions<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> OptionParseResult<'a, VariableDefinitions<'a, S>>
+) -> OptionParseResult<VariableDefinitions<'a, S>>
 where
     S: ScalarValue,
 {
@@ -433,7 +433,7 @@ where
 fn parse_variable_definition<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, (Spanning<&'a str>, VariableDefinition<'a, S>)>
+) -> ParseResult<(Spanning<&'a str>, VariableDefinition<'a, S>)>
 where
     S: ScalarValue,
 {
@@ -473,7 +473,7 @@ where
 fn parse_directives<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> OptionParseResult<'a, Vec<Spanning<Directive<'a, S>>>>
+) -> OptionParseResult<Vec<Spanning<Directive<'a, S>>>>
 where
     S: ScalarValue,
 {
@@ -492,7 +492,7 @@ where
 fn parse_directive<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, Directive<'a, S>>
+) -> ParseResult<Directive<'a, S>>
 where
     S: ScalarValue,
 {
@@ -516,7 +516,7 @@ where
     ))
 }
 
-pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Type<'a>> {
+pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<'a>> {
     let parsed_type = if let Some(Spanning {
         start: start_pos, ..
     }) = parser.skip(&Token::BracketOpen)?
@@ -541,10 +541,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Type<'a>> {
     })
 }
 
-fn wrap_non_null<'a>(
-    parser: &mut Parser<'a>,
-    inner: Spanning<Type<'a>>,
-) -> ParseResult<'a, Type<'a>> {
+fn wrap_non_null<'a>(parser: &mut Parser<'a>, inner: Spanning<Type<'a>>) -> ParseResult<Type<'a>> {
     let Spanning { end: end_pos, .. } = parser.expect(&Token::ExclamationMark)?;
 
     let wrapped = match inner.item {
