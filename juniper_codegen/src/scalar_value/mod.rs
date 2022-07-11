@@ -12,14 +12,14 @@ use syn::{
     visit::Visit,
 };
 
-use crate::{
-    common::parse::{attr::err, ParseBufferExt as _},
-    util::{filter_attrs, span_container::SpanContainer},
-    GraphQLScope,
+use crate::common::{
+    diagnostic, filter_attrs,
+    parse::{attr::err, ParseBufferExt as _},
+    SpanContainer,
 };
 
-/// [`GraphQLScope`] of errors for `#[derive(ScalarValue)]` macro.
-const ERR: GraphQLScope = GraphQLScope::ScalarValueDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(ScalarValue)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::ScalarValueDerive;
 
 /// Expands `#[derive(ScalarValue)]` macro into generated code.
 pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {

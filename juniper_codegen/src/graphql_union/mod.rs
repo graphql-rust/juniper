@@ -17,16 +17,13 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        gen,
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    filter_attrs, gen,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
+    scalar, Description, SpanContainer,
 };
 
 /// Helper alias for the type of [`Attr::external_resolvers`] field.
@@ -52,7 +49,7 @@ struct Attr {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Unions
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL union][1] type with.
@@ -112,13 +109,9 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -182,7 +175,7 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if meta.description.is_none() {
-            meta.description = get_doc_comment(attrs);
+            meta.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(meta)
@@ -284,7 +277,7 @@ struct Definition {
     /// Description of this [GraphQL union][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Unions
-    description: Option<String>,
+    description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL union][1].
@@ -471,10 +464,7 @@ impl Definition {
         let (impl_generics, ty_full, where_clause) = self.impl_generics(false);
 
         let name = &self.name;
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         let variant_tys = self.variants.iter().map(|var| &var.ty);
 

@@ -6,16 +6,12 @@ use proc_macro2::TokenStream;
 use quote::ToTokens as _;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-use crate::{
-    common::scalar,
-    result::GraphQLScope,
-    util::{span_container::SpanContainer, RenameRule},
-};
+use crate::common::{diagnostic, rename, scalar, SpanContainer};
 
 use super::{ContainerAttr, Definition, FieldAttr, FieldDefinition};
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLInputObject)]` macro.
-const ERR: GraphQLScope = GraphQLScope::InputObjectDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLInputObject)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::InputObjectDerive;
 
 /// Expands `#[derive(GraphQLInputObject)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -31,7 +27,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let renaming = attr
         .rename_fields
         .map(SpanContainer::into_inner)
-        .unwrap_or(RenameRule::CamelCase);
+        .unwrap_or(rename::Policy::CamelCase);
 
     let is_internal = attr.is_internal;
     let fields = data
@@ -73,8 +69,6 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .context
         .map_or_else(|| parse_quote! { () }, SpanContainer::into_inner);
 
-    let description = attr.description.map(|d| d.into_inner().into_boxed_str());
-
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     proc_macro_error::abort_if_dirty();
@@ -83,7 +77,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         ident: ast.ident,
         generics: ast.generics,
         name,
-        description,
+        description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
         fields,
@@ -95,7 +89,11 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 /// Parses a [`FieldDefinition`] from the given struct field definition.
 ///
 /// Returns [`None`] if the parsing fails.
-fn parse_field(f: &syn::Field, renaming: RenameRule, is_internal: bool) -> Option<FieldDefinition> {
+fn parse_field(
+    f: &syn::Field,
+    renaming: rename::Policy,
+    is_internal: bool,
+) -> Option<FieldDefinition> {
     let field_attr = FieldAttr::from_attrs("graphql", &f.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
@@ -113,17 +111,12 @@ fn parse_field(f: &syn::Field, renaming: RenameRule, is_internal: bool) -> Optio
         ERR.no_double_underscore(f.span());
     }
 
-    let default = field_attr.default.map(SpanContainer::into_inner);
-    let description = field_attr
-        .description
-        .map(|d| d.into_inner().into_boxed_str());
-
     Some(FieldDefinition {
         ident: ident.clone(),
         ty: f.ty.clone(),
-        default,
+        default: field_attr.default.map(SpanContainer::into_inner),
         name,
-        description,
+        description: field_attr.description.map(SpanContainer::into_inner),
         ignored: field_attr.ignore.is_some(),
     })
 }

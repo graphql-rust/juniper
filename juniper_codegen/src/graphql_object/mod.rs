@@ -10,24 +10,21 @@ use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::Phan
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
     token,
 };
 
-use crate::{
-    common::{
-        field, gen,
-        parse::{
-            attr::{err, OptionExt as _},
-            GenericsExt as _, ParseBufferExt as _, TypeExt,
-        },
-        scalar,
+use crate::common::{
+    field, filter_attrs, gen,
+    parse::{
+        attr::{err, OptionExt as _},
+        GenericsExt as _, ParseBufferExt as _, TypeExt,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
+    rename, scalar, Description, SpanContainer,
 };
-use syn::ext::IdentExt;
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
 /// when generating code for [GraphQL object][1] type.
@@ -49,7 +46,7 @@ pub(crate) struct Attr {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Objects
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    pub(crate) description: Option<SpanContainer<String>>,
+    pub(crate) description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL object][1] type with.
@@ -81,13 +78,14 @@ pub(crate) struct Attr {
     /// [2]: https://spec.graphql.org/October2021#sec-Interfaces
     pub(crate) interfaces: HashSet<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified [`RenameRule`] for all fields of this
+    /// Explicitly specified [`rename::Policy`] for all fields of this
     /// [GraphQL object][1] type.
     ///
-    /// If [`None`] then the default rule will be [`RenameRule::CamelCase`].
+    /// If [`None`], then the [`rename::Policy::CamelCase`] will be applied by
+    /// default.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Objects
-    pub(crate) rename_fields: Option<SpanContainer<RenameRule>>,
+    pub(crate) rename_fields: Option<SpanContainer<rename::Policy>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -113,13 +111,9 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -195,7 +189,7 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -228,7 +222,7 @@ pub(crate) struct Definition<Operation: ?Sized> {
     /// Description of this [GraphQL object][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Objects
-    pub(crate) description: Option<String>,
+    pub(crate) description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL object][1].
@@ -437,10 +431,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         let ty = &self.ty;
 
         let name = &self.name;
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         let extract_stream_type = TypeId::of::<Operation>() != TypeId::of::<Query>();
         let fields_meta = self

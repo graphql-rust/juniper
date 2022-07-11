@@ -6,19 +6,15 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
-use crate::{
-    common::{parse, scalar},
-    result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer},
-};
+use crate::common::{diagnostic, parse, path_eq_single, scalar, SpanContainer};
 
 use super::{
     all_variants_different, emerge_union_variants_from_attr, Attr, Definition, VariantAttr,
     VariantDefinition,
 };
 
-/// [`GraphQLScope`] of errors for `#[graphql_union]` macro.
-const ERR: GraphQLScope = GraphQLScope::UnionAttr;
+/// [`diagnostic::Scope`] of errors for `#[graphql_union]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::UnionAttr;
 
 /// Expands `#[graphql_union]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {

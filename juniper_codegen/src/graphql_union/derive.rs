@@ -5,19 +5,15 @@ use proc_macro_error::ResultExt as _;
 use quote::{quote, ToTokens};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
-use crate::{
-    common::{parse::TypeExt as _, scalar},
-    result::GraphQLScope,
-    util::span_container::SpanContainer,
-};
+use crate::common::{diagnostic, parse::TypeExt as _, scalar, SpanContainer};
 
 use super::{
     all_variants_different, emerge_union_variants_from_attr, Attr, Definition, VariantAttr,
     VariantDefinition,
 };
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLUnion)]` macro.
-const ERR: GraphQLScope = GraphQLScope::UnionDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLUnion)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::UnionDerive;
 
 /// Expands `#[derive(GraphQLUnion)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {

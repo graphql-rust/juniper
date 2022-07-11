@@ -4,12 +4,12 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{parse_quote, spanned::Spanned};
 
-use crate::{common::scalar, result::GraphQLScope};
+use crate::common::{diagnostic, scalar, SpanContainer};
 
 use super::{Attr, Definition, Field, Methods, ParseToken, TypeOrIdent};
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLScalar)]` macro.
-const ERR: GraphQLScope = GraphQLScope::ScalarDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLScalar)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::ScalarDerive;
 
 /// Expands `#[derive(GraphQLScalar)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -27,11 +27,10 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         methods,
         name: attr
             .name
-            .as_deref()
-            .cloned()
+            .map(SpanContainer::into_inner)
             .unwrap_or_else(|| ast.ident.to_string()),
-        description: attr.description.as_deref().cloned(),
-        specified_by_url: attr.specified_by_url.as_deref().cloned(),
+        description: attr.description.map(SpanContainer::into_inner),
+        specified_by_url: attr.specified_by_url.map(SpanContainer::into_inner),
         scalar,
     }
     .to_token_stream())

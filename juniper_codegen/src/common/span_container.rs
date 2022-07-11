@@ -6,8 +6,8 @@ use std::{
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
 
-#[derive(Clone, Debug)]
-pub struct SpanContainer<T> {
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct SpanContainer<T> {
     expr: Option<Span>,
     ident: Span,
     val: T,
@@ -20,15 +20,15 @@ impl<T: ToTokens> ToTokens for SpanContainer<T> {
 }
 
 impl<T> SpanContainer<T> {
-    pub fn new(ident: Span, expr: Option<Span>, val: T) -> Self {
+    pub(crate) fn new(ident: Span, expr: Option<Span>, val: T) -> Self {
         Self { expr, ident, val }
     }
 
-    pub fn span_ident(&self) -> Span {
+    pub(crate) fn span_ident(&self) -> Span {
         self.ident
     }
 
-    pub fn span_joined(&self) -> Span {
+    pub(crate) fn span_joined(&self) -> Span {
         if let Some(s) = self.expr {
             // TODO: Use `Span::join` once stabilized and available on stable:
             //       https://github.com/rust-lang/rust/issues/54725
@@ -41,16 +41,8 @@ impl<T> SpanContainer<T> {
         }
     }
 
-    pub fn into_inner(self) -> T {
+    pub(crate) fn into_inner(self) -> T {
         self.val
-    }
-
-    pub fn map<U, F: Fn(T) -> U>(self, f: F) -> SpanContainer<U> {
-        SpanContainer {
-            expr: self.expr,
-            ident: self.ident,
-            val: f(self.val),
-        }
     }
 }
 

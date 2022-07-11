@@ -14,15 +14,13 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    deprecation, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
+    scalar, Description, SpanContainer,
 };
 
 pub(crate) use self::arg::OnMethod as MethodArgument;
@@ -47,7 +45,7 @@ pub(crate) struct Attr {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    pub(crate) description: Option<SpanContainer<syn::LitStr>>,
+    pub(crate) description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified [deprecation][2] of this [GraphQL field][1].
     ///
@@ -56,7 +54,7 @@ pub(crate) struct Attr {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
-    pub(crate) deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
+    pub(crate) deprecated: Option<SpanContainer<deprecation::Directive>>,
 
     /// Explicitly specified marker indicating that this method (or struct
     /// field) should be omitted by code generation and not considered as the
@@ -81,22 +79,18 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
                         .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "deprecated" => {
-                    let mut reason = None;
-                    if input.is_next::<token::Eq>() {
-                        input.parse::<token::Eq>()?;
-                        reason = Some(input.parse::<syn::LitStr>()?);
-                    }
+                    let directive = input.parse::<deprecation::Directive>()?;
                     out.deprecated
                         .replace(SpanContainer::new(
                             ident.span(),
-                            reason.as_ref().map(|r| r.span()),
-                            reason,
+                            directive.reason.as_ref().map(|r| r.span()),
+                            directive,
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -145,17 +139,11 @@ impl Attr {
         }
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs).map(|sc| {
-                let span = sc.span_ident();
-                sc.map(|desc| syn::LitStr::new(&desc, span))
-            });
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         if attr.deprecated.is_none() {
-            attr.deprecated = get_deprecated(attrs).map(|sc| {
-                let span = sc.span_ident();
-                sc.map(|depr| depr.reason.map(|rsn| syn::LitStr::new(&rsn, span)))
-            });
+            attr.deprecated = deprecation::Directive::parse_from_deprecated_attr(attrs)?;
         }
 
         Ok(attr)
@@ -182,16 +170,13 @@ pub(crate) struct Definition {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    pub(crate) description: Option<String>,
+    pub(crate) description: Option<Description>,
 
     /// [Deprecation][2] of this [GraphQL field][1] to put into GraphQL schema.
     ///
-    /// If inner [`Option`] is [`None`], then deprecation has no message
-    /// attached.
-    ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
-    pub(crate) deprecated: Option<Option<String>>,
+    pub(crate) deprecated: Option<deprecation::Directive>,
 
     /// Ident of the Rust method (or struct field) representing this
     /// [GraphQL field][1].
@@ -305,18 +290,8 @@ impl Definition {
             };
         }
 
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
-
-        let deprecated = self.deprecated.as_ref().map(|reason| {
-            let reason = reason
-                .as_ref()
-                .map(|rsn| quote! { Some(#rsn) })
-                .unwrap_or_else(|| quote! { None });
-            quote! { .deprecated(#reason) }
-        });
+        let description = &self.description;
+        let deprecated = &self.deprecated;
 
         let args = self
             .arguments

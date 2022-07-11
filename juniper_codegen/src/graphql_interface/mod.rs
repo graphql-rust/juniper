@@ -19,16 +19,13 @@ use syn::{
     visit::Visit,
 };
 
-use crate::{
-    common::{
-        field, gen,
-        parse::{
-            attr::{err, OptionExt as _},
-            GenericsExt as _, ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    field, filter_attrs, gen,
+    parse::{
+        attr::{err, OptionExt as _},
+        GenericsExt as _, ParseBufferExt as _,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
+    rename, scalar, Description, SpanContainer,
 };
 
 /// Returns [`syn::Ident`]s for a generic enum deriving [`Clone`] and [`Copy`]
@@ -71,7 +68,7 @@ struct Attr {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified identifier of the type alias of Rust enum type
     /// behind the trait or struct, being an actual implementation of a
@@ -126,13 +123,14 @@ struct Attr {
     /// it contains async methods.
     asyncness: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified [`RenameRule`] for all fields of this
+    /// Explicitly specified [`rename::Policy`] for all fields of this
     /// [GraphQL interface][1] type.
     ///
-    /// If [`None`] then the default rule will be [`RenameRule::CamelCase`].
+    /// If [`None`], then the [`rename::Policy::CamelCase`] will be applied by
+    /// default.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
-    rename_fields: Option<SpanContainer<RenameRule>>,
+    rename_fields: Option<SpanContainer<rename::Policy>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -158,13 +156,9 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -268,7 +262,7 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -312,7 +306,7 @@ struct Definition {
     /// Description of this [GraphQL interface][0] to put into GraphQL schema.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL interface][1].
@@ -690,10 +684,7 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let name = &self.name;
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         // Sorting is required to preserve/guarantee the order of implementers registered in schema.
         let mut implemented_for = self.implemented_for.clone();

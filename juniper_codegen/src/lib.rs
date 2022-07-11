@@ -1,9 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![recursion_limit = "1024"]
 
-mod result;
-mod util;
-
 // NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust
 //         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,
 //         and so we cannot move the definition into a sub-module and use the `#[macro_export]`
@@ -16,8 +13,8 @@ mod util;
 /// By default, [`SpanContainer::span_ident`] is used.
 ///
 /// [`Span`]: proc_macro2::Span
-/// [`SpanContainer`]: crate::util::span_container::SpanContainer
-/// [`SpanContainer::span_ident`]: crate::util::span_container::SpanContainer::span_ident
+/// [`SpanContainer`]: crate::common::SpanContainer
+/// [`SpanContainer::span_ident`]: crate::common::SpanContainer::span_ident
 macro_rules! try_merge_opt {
     ($field:ident: $self:ident, $another:ident => $span:ident) => {{
         if let Some(v) = $self.$field {
@@ -47,8 +44,8 @@ macro_rules! try_merge_opt {
 ///
 /// [`HashMap`]: std::collections::HashMap
 /// [`Span`]: proc_macro2::Span
-/// [`SpanContainer`]: crate::util::span_container::SpanContainer
-/// [`SpanContainer::span_ident`]: crate::util::span_container::SpanContainer::span_ident
+/// [`SpanContainer`]: crate::common::SpanContainer
+/// [`SpanContainer::span_ident`]: crate::common::SpanContainer::span_ident
 macro_rules! try_merge_hashmap {
     ($field:ident: $self:ident, $another:ident => $span:ident) => {{
         if !$self.$field.is_empty() {
@@ -80,8 +77,8 @@ macro_rules! try_merge_hashmap {
 ///
 /// [`HashSet`]: std::collections::HashSet
 /// [`Span`]: proc_macro2::Span
-/// [`SpanContainer`]: crate::util::span_container::SpanContainer
-/// [`SpanContainer::span_ident`]: crate::util::span_container::SpanContainer::span_ident
+/// [`SpanContainer`]: crate::common::SpanContainer
+/// [`SpanContainer::span_ident`]: crate::common::SpanContainer::span_ident
 macro_rules! try_merge_hashset {
     ($field:ident: $self:ident, $another:ident => $span:ident) => {{
         if !$self.$field.is_empty() {
@@ -112,7 +109,6 @@ mod scalar_value;
 
 use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
-use result::GraphQLScope;
 
 /// `#[derive(GraphQLInputObject)]` macro for deriving a
 /// [GraphQL input object][0] implementation for a Rust struct. Each
@@ -257,6 +253,8 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// attribute's argument, or with regular a Rust `#[deprecated]` attribute.
 ///
 /// ```rust
+/// # #![allow(deprecated)]
+/// #
 /// # use juniper::GraphQLEnum;
 /// #
 /// #[derive(GraphQLEnum)]

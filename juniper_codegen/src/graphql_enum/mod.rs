@@ -16,17 +16,13 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    deprecation, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{
-        filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer, RenameRule,
-    },
+    rename, scalar, Description, SpanContainer,
 };
 
 /// Available arguments behind `#[graphql]` attribute placed on a Rust enum
@@ -49,7 +45,7 @@ struct ContainerAttr {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL enum][0] type with.
@@ -71,15 +67,15 @@ struct ContainerAttr {
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
-    /// Explicitly specified [`RenameRule`] for all [values][1] of this
+    /// Explicitly specified [`rename::Policy`] for all [values][1] of this
     /// [GraphQL enum][0].
     ///
-    /// If [`None`], then the [`RenameRule::ScreamingSnakeCase`] rule will be
+    /// If [`None`], then the [`rename::Policy::ScreamingSnakeCase`] will be
     /// applied by default.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     /// [1]: https://spec.graphql.org/October2021#EnumValuesDefinition
-    rename_values: Option<SpanContainer<RenameRule>>,
+    rename_values: Option<SpanContainer<rename::Policy>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -105,13 +101,9 @@ impl Parse for ContainerAttr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -174,7 +166,7 @@ impl ContainerAttr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -202,19 +194,17 @@ struct VariantAttr {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified [deprecation][2] of this [GraphQL enum value][1].
     ///
     /// If [`None`], then Rust `#[deprecated]` attribute will be used as the
     /// [deprecation][2], if any.
     ///
-    /// If the inner [`Option`] is [`None`], then no [reason][3] was provided.
-    ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec--deprecated
     /// [3]: https://spec.graphql.org/October2021#sel-GAHnBZDACEDDGAA_6L
-    deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
+    deprecated: Option<SpanContainer<deprecation::Directive>>,
 
     /// Explicitly specified marker for the Rust enum variant to be ignored and
     /// not included into the code generated for a [GraphQL enum][0]
@@ -243,26 +233,18 @@ impl Parse for VariantAttr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "deprecated" => {
-                    let mut reason = None;
-                    if input.is_next::<token::Eq>() {
-                        input.parse::<token::Eq>()?;
-                        reason = Some(input.parse::<syn::LitStr>()?);
-                    }
+                    let directive = input.parse::<deprecation::Directive>()?;
                     out.deprecated
                         .replace(SpanContainer::new(
                             ident.span(),
-                            reason.as_ref().map(|r| r.span()),
-                            reason,
+                            directive.reason.as_ref().map(|r| r.span()),
+                            directive,
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -300,14 +282,11 @@ impl VariantAttr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         if attr.deprecated.is_none() {
-            attr.deprecated = get_deprecated(attrs).map(|sc| {
-                let span = sc.span_ident();
-                sc.map(|depr| depr.reason.map(|rsn| syn::LitStr::new(&rsn, span)))
-            });
+            attr.deprecated = deprecation::Directive::parse_from_deprecated_attr(attrs)?;
         }
 
         Ok(attr)
@@ -335,18 +314,14 @@ struct ValueDefinition {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// [Deprecation][2] of this [GraphQL enum value][1] to put into GraphQL
     /// schema.
     ///
-    /// If the inner [`Option`] is [`None`], then [deprecation][2] has no
-    /// [reason][3] attached.
-    ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec--deprecated
-    /// [3]: https://spec.graphql.org/October2021#sel-GAHnBZDACEDDGAA_6L
-    deprecated: Option<Option<Box<str>>>,
+    deprecated: Option<deprecation::Directive>,
 }
 
 /// Representation of a [GraphQL enum][0] for code generation.
@@ -373,7 +348,7 @@ struct Definition {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL enum][0].
@@ -457,37 +432,17 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let name = &self.name;
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         let variants_meta = self.values.iter().map(|v| {
-            let name = &v.name;
-            let description = v.description.as_ref().map_or_else(
-                || quote! { None },
-                |desc| quote! { Some(String::from(#desc)) },
-            );
-            let deprecation_status = match &v.deprecated {
-                None => quote! { ::juniper::meta::DeprecationStatus::Current },
-                Some(None) => quote! {
-                    ::juniper::meta::DeprecationStatus::Deprecated(None)
-                },
-                Some(Some(reason)) => {
-                    quote! {
-                        ::juniper::meta::DeprecationStatus::Deprecated(
-                            Some(String::from(#reason))
-                        )
-                    }
-                }
-            };
+            let v_name = &v.name;
+            let v_description = &v.description;
+            let v_deprecation = &v.deprecated;
 
             quote! {
-                ::juniper::meta::EnumValue {
-                    name: String::from(#name),
-                    description: #description,
-                    deprecation_status: #deprecation_status,
-                }
+                ::juniper::meta::EnumValue::new(#v_name)
+                    #v_description
+                    #v_deprecation
             }
         });
 

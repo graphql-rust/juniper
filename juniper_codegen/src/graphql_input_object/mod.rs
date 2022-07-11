@@ -16,16 +16,13 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        default,
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    default, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
+    rename, scalar, Description, SpanContainer,
 };
 
 /// Available arguments behind `#[graphql]` attribute placed on a Rust struct
@@ -48,7 +45,7 @@ struct ContainerAttr {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL input object][0] type with.
@@ -71,14 +68,14 @@ struct ContainerAttr {
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
-    /// Explicitly specified [`RenameRule`] for all fields of this
+    /// Explicitly specified [`rename::Policy`] for all fields of this
     /// [GraphQL input object][0].
     ///
-    /// If [`None`], then the [`RenameRule::CamelCase`] rule will be
-    /// applied by default.
+    /// If [`None`], then the [`rename::Policy::CamelCase`] will be applied by
+    /// default.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-    rename_fields: Option<SpanContainer<RenameRule>>,
+    rename_fields: Option<SpanContainer<rename::Policy>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -104,13 +101,9 @@ impl Parse for ContainerAttr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -173,7 +166,7 @@ impl ContainerAttr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -212,7 +205,7 @@ struct FieldAttr {
     ///
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified marker for the Rust struct field to be ignored and
     /// not included into the code generated for a [GraphQL input object][0]
@@ -251,13 +244,9 @@ impl Parse for FieldAttr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ignore" | "skip" => out
@@ -294,7 +283,7 @@ impl FieldAttr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -337,7 +326,7 @@ struct FieldDefinition {
     ///
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// Indicator whether the Rust struct field behinds this
     /// [GraphQL input object field][1] is being ignored and should not be
@@ -378,7 +367,7 @@ struct Definition {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL input object][0].
@@ -468,10 +457,7 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         let fields = self.fields.iter().filter_map(|f| {
             let ty = &f.ty;
@@ -483,10 +469,7 @@ impl Definition {
                 } else {
                     quote! { .arg::<#ty>(#name, info) }
                 };
-                let description = f
-                    .description
-                    .as_ref()
-                    .map(|desc| quote! { .description(#desc) });
+                let description = &f.description;
 
                 quote! { registry#arg#description }
             })

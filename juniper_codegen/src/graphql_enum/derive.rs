@@ -6,16 +6,12 @@ use proc_macro2::TokenStream;
 use quote::ToTokens as _;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-use crate::{
-    common::scalar,
-    result::GraphQLScope,
-    util::{span_container::SpanContainer, RenameRule},
-};
+use crate::common::{diagnostic, rename, scalar, SpanContainer};
 
 use super::{ContainerAttr, Definition, ValueDefinition, VariantAttr};
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLEnum)]` macro.
-const ERR: GraphQLScope = GraphQLScope::EnumDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLEnum)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::EnumDerive;
 
 /// Expands `#[derive(GraphQLEnum)]` macro into generated code.
 pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -32,7 +28,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let renaming = attr
         .rename_values
         .map(SpanContainer::into_inner)
-        .unwrap_or(RenameRule::ScreamingSnakeCase);
+        .unwrap_or(rename::Policy::ScreamingSnakeCase);
     let values = data
         .variants
         .iter()
@@ -80,8 +76,6 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .context
         .map_or_else(|| parse_quote! { () }, SpanContainer::into_inner);
 
-    let description = attr.description.map(|d| d.into_inner().into_boxed_str());
-
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     proc_macro_error::abort_if_dirty();
@@ -90,7 +84,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         ident: ast.ident,
         generics: ast.generics,
         name,
-        description,
+        description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
         values,
@@ -103,7 +97,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 /// Parses a [`ValueDefinition`] from the given Rust enum variant definition.
 ///
 /// Returns [`None`] if the parsing fails, or the enum variant is ignored.
-fn parse_value(v: &syn::Variant, renaming: RenameRule) -> Option<ValueDefinition> {
+fn parse_value(v: &syn::Variant, renaming: rename::Policy) -> Option<ValueDefinition> {
     let attr = VariantAttr::from_attrs("graphql", &v.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
@@ -124,19 +118,11 @@ fn parse_value(v: &syn::Variant, renaming: RenameRule) -> Option<ValueDefinition
         )
         .into_boxed_str();
 
-    let description = attr.description.map(|d| d.into_inner().into_boxed_str());
-
-    let deprecated = attr.deprecated.map(|desc| {
-        desc.into_inner()
-            .as_ref()
-            .map(|lit| lit.value().into_boxed_str())
-    });
-
     Some(ValueDefinition {
         ident: v.ident.clone(),
         name,
-        description,
-        deprecated,
+        description: attr.description.map(SpanContainer::into_inner),
+        deprecated: attr.deprecated.map(SpanContainer::into_inner),
     })
 }
 

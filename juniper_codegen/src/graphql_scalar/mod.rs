@@ -14,15 +14,13 @@ use syn::{
 };
 use url::Url;
 
-use crate::{
-    common::{
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
+    scalar, Description, SpanContainer,
 };
 
 pub mod attr;
@@ -42,7 +40,7 @@ struct Attr {
     /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Spec [`Url`] of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
@@ -112,13 +110,9 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "specified_by_url" => {
@@ -255,7 +249,7 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -304,7 +298,7 @@ struct Definition {
     /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    description: Option<String>,
+    description: Option<Description>,
 
     /// Spec [`Url`] of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
@@ -365,12 +359,9 @@ impl Definition {
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
-        let name = &self.name;
 
-        let description = self
-            .description
-            .as_ref()
-            .map(|val| quote! { .description(#val) });
+        let name = &self.name;
+        let description = &self.description;
         let specified_by_url = self.specified_by_url.as_ref().map(|url| {
             let url_lit = url.as_str();
             quote! { .specified_by_url(#url_lit) }

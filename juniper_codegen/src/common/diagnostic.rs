@@ -1,14 +1,12 @@
-//!
-
 use std::fmt;
 
 use proc_macro2::Span;
 use proc_macro_error::{Diagnostic, Level};
 
 /// URL of the GraphQL specification (October 2021 Edition).
-pub const SPEC_URL: &str = "https://spec.graphql.org/October2021";
+pub(crate) const SPEC_URL: &str = "https://spec.graphql.org/October2021";
 
-pub enum GraphQLScope {
+pub(crate) enum Scope {
     EnumDerive,
     InputObjectDerive,
     InterfaceAttr,
@@ -22,8 +20,8 @@ pub enum GraphQLScope {
     UnionDerive,
 }
 
-impl GraphQLScope {
-    pub fn spec_section(&self) -> &str {
+impl Scope {
+    pub(crate) fn spec_section(&self) -> &str {
         match self {
             Self::EnumDerive => "#sec-Enums",
             Self::InputObjectDerive => "#sec-Input-Objects",
@@ -36,7 +34,7 @@ impl GraphQLScope {
     }
 }
 
-impl fmt::Display for GraphQLScope {
+impl fmt::Display for Scope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
             Self::EnumDerive => "enum",
@@ -51,30 +49,30 @@ impl fmt::Display for GraphQLScope {
     }
 }
 
-impl GraphQLScope {
+impl Scope {
     fn spec_link(&self) -> String {
         format!("{}{}", SPEC_URL, self.spec_section())
     }
 
-    pub fn custom<S: AsRef<str>>(&self, span: Span, msg: S) -> Diagnostic {
+    pub(crate) fn custom<S: AsRef<str>>(&self, span: Span, msg: S) -> Diagnostic {
         Diagnostic::spanned(span, Level::Error, format!("{} {}", self, msg.as_ref()))
             .note(self.spec_link())
     }
 
-    pub fn error(&self, err: syn::Error) -> Diagnostic {
+    pub(crate) fn error(&self, err: syn::Error) -> Diagnostic {
         Diagnostic::spanned(err.span(), Level::Error, format!("{} {}", self, err))
             .note(self.spec_link())
     }
 
-    pub fn emit_custom<S: AsRef<str>>(&self, span: Span, msg: S) {
+    pub(crate) fn emit_custom<S: AsRef<str>>(&self, span: Span, msg: S) {
         self.custom(span, msg).emit()
     }
 
-    pub fn custom_error<S: AsRef<str>>(&self, span: Span, msg: S) -> syn::Error {
+    pub(crate) fn custom_error<S: AsRef<str>>(&self, span: Span, msg: S) -> syn::Error {
         syn::Error::new(span, format!("{} {}", self, msg.as_ref()))
     }
 
-    pub fn no_double_underscore(&self, field: Span) {
+    pub(crate) fn no_double_underscore(&self, field: Span) {
         Diagnostic::spanned(
             field,
             Level::Error,

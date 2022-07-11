@@ -14,16 +14,13 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _, TypeExt as _,
-        },
-        scalar,
+use crate::common::{
+    default, diagnostic, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _, TypeExt as _,
     },
-    result::GraphQLScope,
-    util::{filter_attrs, path_eq_single, span_container::SpanContainer, RenameRule},
+    path_eq_single, rename, scalar, Description, SpanContainer,
 };
 
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a
@@ -44,19 +41,16 @@ pub(crate) struct Attr {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    pub(crate) description: Option<SpanContainer<syn::LitStr>>,
+    pub(crate) description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified [default value][2] of this [GraphQL argument][1].
-    ///
-    /// If the exact default expression is not specified, then the [`Default`]
-    /// value is used.
     ///
     /// If [`None`], then this [GraphQL argument][1] is considered as
     /// [required][2].
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [2]: https://spec.graphql.org/October2021#sec-Required-Arguments
-    pub(crate) default: Option<SpanContainer<Option<syn::Expr>>>,
+    pub(crate) default: Option<SpanContainer<default::Value>>,
 
     /// Explicitly specified marker indicating that this method argument doesn't
     /// represent a [GraphQL argument][1], but is a [`Context`] being injected
@@ -98,27 +92,15 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
                         .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "default" => {
-                    let mut expr = None;
-                    if input.is_next::<token::Eq>() {
-                        input.parse::<token::Eq>()?;
-                        expr = Some(input.parse::<syn::Expr>()?);
-                    } else if input.is_next::<token::Paren>() {
-                        let inner;
-                        let _ = syn::parenthesized!(inner in input);
-                        expr = Some(inner.parse::<syn::Expr>()?);
-                    }
+                    let val = input.parse::<default::Value>()?;
                     out.default
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            expr.as_ref().map(|e| e.span()),
-                            expr,
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(val.span()), val))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -241,18 +223,15 @@ pub(crate) struct OnField {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    pub(crate) description: Option<String>,
+    pub(crate) description: Option<Description>,
 
     /// Default value of this [GraphQL field argument][1] in GraphQL schema.
     ///
-    /// If outer [`Option`] is [`None`], then this [argument][1] is a
-    /// [required][2] one.
-    ///
-    /// If inner [`Option`] is [`None`], then the [`Default`] value is used.
+    /// If [`None`], then this [argument][1] is a [required][2] one.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [2]: https://spec.graphql.org/October2021#sec-Required-Arguments
-    pub(crate) default: Option<Option<syn::Expr>>,
+    pub(crate) default: Option<default::Value>,
 }
 
 /// Possible kinds of Rust method arguments for code generation.
@@ -323,16 +302,9 @@ impl OnMethod {
 
         let (name, ty) = (&arg.name, &arg.ty);
 
-        let description = arg
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &arg.description;
 
         let method = if let Some(val) = &arg.default {
-            let val = val
-                .as_ref()
-                .map(|v| quote! { (#v).into() })
-                .unwrap_or_else(|| quote! { <#ty as Default>::default() });
             quote_spanned! { val.span() =>
                 .arg_with_default::<#ty>(#name, &#val, info)
             }
@@ -395,8 +367,8 @@ impl OnMethod {
     /// given `scope`.
     pub(crate) fn parse(
         argument: &mut syn::PatType,
-        renaming: &RenameRule,
-        scope: &GraphQLScope,
+        renaming: &rename::Policy,
+        scope: &diagnostic::Scope,
     ) -> Option<Self> {
         let orig_attrs = argument.attrs.clone();
 
@@ -462,8 +434,8 @@ impl OnMethod {
         Some(Self::Regular(Box::new(OnField {
             name,
             ty: argument.ty.as_ref().clone(),
-            description: attr.description.as_ref().map(|d| d.as_ref().value()),
-            default: attr.default.as_ref().map(|v| v.as_ref().clone()),
+            description: attr.description.map(SpanContainer::into_inner),
+            default: attr.default.map(SpanContainer::into_inner),
         })))
     }
 }
