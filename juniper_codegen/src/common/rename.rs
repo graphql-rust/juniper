@@ -1,7 +1,7 @@
 //! Common functions, definitions and extensions for parsing and code generation
 //! of `#[graphql(rename_all = ...)]` attribute.
 
-use std::{convert::TryFrom, str::FromStr};
+use std::str::FromStr;
 
 use syn::parse::{Parse, ParseStream};
 
@@ -25,7 +25,7 @@ impl Policy {
     /// Applies this [`Policy`] to the given `name`.
     pub(crate) fn apply(&self, name: &str) -> String {
         match self {
-            Self::None => name.to_owned(),
+            Self::None => name.into(),
             Self::CamelCase => to_camel_case(name),
             Self::ScreamingSnakeCase => to_upper_snake_case(name),
         }

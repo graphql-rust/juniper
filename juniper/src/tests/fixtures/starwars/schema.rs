@@ -93,12 +93,12 @@ impl Human {
         home_planet: Option<&str>,
     ) -> Self {
         Self {
-            id: id.to_owned(),
-            name: name.to_owned(),
-            friend_ids: friend_ids.iter().copied().map(ToOwned::to_owned).collect(),
+            id: id.into(),
+            name: name.into(),
+            friend_ids: friend_ids.iter().copied().map(Into::into).collect(),
             appears_in: appears_in.to_vec(),
-            secret_backstory: secret_backstory.map(ToOwned::to_owned),
-            home_planet: home_planet.map(|p| p.to_owned()),
+            secret_backstory: secret_backstory.map(Into::into),
+            home_planet: home_planet.map(Into::into),
         }
     }
 }
@@ -153,12 +153,12 @@ impl Droid {
         primary_function: Option<&str>,
     ) -> Self {
         Self {
-            id: id.to_owned(),
-            name: name.to_owned(),
-            friend_ids: friend_ids.iter().copied().map(ToOwned::to_owned).collect(),
+            id: id.into(),
+            name: name.into(),
+            friend_ids: friend_ids.iter().copied().map(Into::into).collect(),
             appears_in: appears_in.to_vec(),
-            secret_backstory: secret_backstory.map(ToOwned::to_owned),
-            primary_function: primary_function.map(ToOwned::to_owned),
+            secret_backstory: secret_backstory.map(Into::into),
+            primary_function: primary_function.map(Into::into),
         }
     }
 }
@@ -192,7 +192,7 @@ impl Droid {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 pub struct Database {
     humans: HashMap<String, Human>,
     droids: HashMap<String, Droid>,
@@ -206,7 +206,7 @@ impl Database {
         let mut droids = HashMap::new();
 
         humans.insert(
-            "1000".to_owned(),
+            "1000".into(),
             Human::new(
                 "1000",
                 "Luke Skywalker",
@@ -218,7 +218,7 @@ impl Database {
         );
 
         humans.insert(
-            "1001".to_owned(),
+            "1001".into(),
             Human::new(
                 "1001",
                 "Darth Vader",
@@ -230,7 +230,7 @@ impl Database {
         );
 
         humans.insert(
-            "1002".to_owned(),
+            "1002".into(),
             Human::new(
                 "1002",
                 "Han Solo",
@@ -242,7 +242,7 @@ impl Database {
         );
 
         humans.insert(
-            "1003".to_owned(),
+            "1003".into(),
             Human::new(
                 "1003",
                 "Leia Organa",
@@ -254,7 +254,7 @@ impl Database {
         );
 
         humans.insert(
-            "1004".to_owned(),
+            "1004".into(),
             Human::new(
                 "1004",
                 "Wilhuff Tarkin",
@@ -266,7 +266,7 @@ impl Database {
         );
 
         droids.insert(
-            "2000".to_owned(),
+            "2000".into(),
             Droid::new(
                 "2000",
                 "C-3PO",
@@ -278,7 +278,7 @@ impl Database {
         );
 
         droids.insert(
-            "2001".to_owned(),
+            "2001".into(),
             Droid::new(
                 "2001",
                 "R2-D2",

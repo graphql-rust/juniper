@@ -97,12 +97,12 @@ mod trivial_enum {
         fn character(&self) -> Character {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             }
         }
@@ -217,12 +217,12 @@ mod generic_enum {
         fn character(&self) -> Character<u8, ()> {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             }
         }
@@ -317,7 +317,7 @@ mod generic_lifetime_enum {
             match self {
                 Self::Human => Character::A(LifetimeHuman { id: "human-32" }),
                 Self::Droid => Character::B(GenericDroid {
-                    id: "droid-99".to_string(),
+                    id: "droid-99".into(),
                     _t: PhantomData,
                 }),
             }
@@ -394,8 +394,8 @@ mod description_from_doc_comments {
     impl QueryRoot {
         fn character(&self) -> Character {
             Character::A(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             })
         }
     }
@@ -458,8 +458,8 @@ mod explicit_name_and_description {
     impl QueryRoot {
         fn character(&self) -> Character {
             Character::A(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             })
         }
     }
@@ -542,12 +542,12 @@ mod explicit_scalar {
         fn character(&self) -> Character {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             }
         }
@@ -615,12 +615,12 @@ mod custom_scalar {
         fn character(&self) -> Character {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             }
         }
@@ -688,12 +688,12 @@ mod explicit_generic_scalar {
         fn character<__S: ScalarValue>(&self) -> Character<__S> {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             }
         }
@@ -759,12 +759,12 @@ mod bounded_generic_scalar {
         fn character(&self) -> Character {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             }
         }
@@ -827,12 +827,12 @@ mod custom_context {
         fn character(&self, ctx: &CustomContext) -> Character {
             match ctx {
                 CustomContext::Human => Character::A(HumanCustomContext {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 CustomContext::Droid => Character::B(DroidCustomContext {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
                 _ => unimplemented!(),
             }
@@ -896,12 +896,12 @@ mod different_context {
         fn character(&self, ctx: &CustomContext) -> Character {
             match ctx {
                 CustomContext::Human => Character::A(HumanCustomContext {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 CustomContext::Droid => Character::B(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
                 _ => unimplemented!(),
             }
@@ -966,8 +966,8 @@ mod ignored_enum_variants {
     impl QueryRoot {
         fn character(&self) -> Character {
             Character::A(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             })
         }
     }
@@ -1053,8 +1053,8 @@ mod external_resolver_enum {
         fn character(&self) -> Character {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B,
             }
@@ -1093,8 +1093,8 @@ mod external_resolver_enum {
         let schema = schema(QueryRoot::Droid);
         let db = Database {
             droid: Some(Droid {
-                id: "droid-99".to_string(),
-                primary_function: "run".to_string(),
+                id: "droid-99".into(),
+                primary_function: "run".into(),
             }),
         };
 
@@ -1144,12 +1144,12 @@ mod external_resolver_enum_variant {
         fn character(&self) -> Character {
             match self {
                 Self::Human => Character::A(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Character::B(Droid {
-                    id: "?????".to_string(),
-                    primary_function: "???".to_string(),
+                    id: "?????".into(),
+                    primary_function: "???".into(),
                 }),
             }
         }
@@ -1187,8 +1187,8 @@ mod external_resolver_enum_variant {
         let schema = schema(QueryRoot::Droid);
         let db = Database {
             droid: Some(Droid {
-                id: "droid-99".to_string(),
-                primary_function: "run".to_string(),
+                id: "droid-99".into(),
+                primary_function: "run".into(),
             }),
         };
 
@@ -1250,15 +1250,15 @@ mod full_featured_enum {
         fn character(&self, ctx: &CustomContext) -> Character<()> {
             match ctx {
                 CustomContext::Human => Character::A(HumanCustomContext {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 CustomContext::Droid => Character::B(DroidCustomContext {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
                 CustomContext::Ewok => Character::C(EwokCustomContext {
-                    id: "ewok-1".to_string(),
+                    id: "ewok-1".into(),
                     funny: true,
                 }),
             }
@@ -1409,7 +1409,7 @@ mod trivial_struct {
                     Self::Human => "human-32",
                     Self::Droid => "droid-99",
                 }
-                .to_string(),
+                .into(),
             }
         }
     }
@@ -1432,8 +1432,8 @@ mod trivial_struct {
         let schema = schema(QueryRoot::Human);
         let db = Database {
             human: Some(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }),
             droid: None,
         };
@@ -1453,8 +1453,8 @@ mod trivial_struct {
         let db = Database {
             human: None,
             droid: Some(Droid {
-                id: "droid-99".to_string(),
-                primary_function: "run".to_string(),
+                id: "droid-99".into(),
+                primary_function: "run".into(),
             }),
         };
 
@@ -1478,8 +1478,8 @@ mod trivial_struct {
         let schema = schema(QueryRoot::Human);
         let db = Database {
             human: Some(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }),
             droid: None,
         };
@@ -1501,8 +1501,8 @@ mod trivial_struct {
         let schema = schema(QueryRoot::Human);
         let db = Database {
             human: Some(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }),
             droid: None,
         };
@@ -1524,8 +1524,8 @@ mod trivial_struct {
         let schema = schema(QueryRoot::Human);
         let db = Database {
             human: Some(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }),
             droid: None,
         };
@@ -1570,7 +1570,7 @@ mod generic_struct {
     impl QueryRoot {
         fn character(&self) -> Character<u8, ()> {
             Character {
-                id: "human-32".to_string(),
+                id: "human-32".into(),
                 _s: PhantomData,
             }
         }
@@ -1590,8 +1590,8 @@ mod generic_struct {
         let schema = schema(QueryRoot);
         let db = Database {
             human: Some(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }),
         };
 
@@ -1678,7 +1678,7 @@ mod full_featured_struct {
                     Self::Human => "human-32",
                     Self::Droid => "droid-99",
                 }
-                .to_string(),
+                .into(),
                 _s: PhantomData,
             }
         }
@@ -1702,8 +1702,8 @@ mod full_featured_struct {
         let schema = schema(QueryRoot::Human);
         let db = Database {
             human: Some(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }),
             droid: None,
         };
@@ -1723,8 +1723,8 @@ mod full_featured_struct {
         let db = Database {
             human: None,
             droid: Some(Droid {
-                id: "droid-99".to_string(),
-                primary_function: "run".to_string(),
+                id: "droid-99".into(),
+                primary_function: "run".into(),
             }),
         };
 
@@ -1804,12 +1804,12 @@ mod issue_845 {
         fn character(&self) -> Character {
             match self {
                 Self::Human => Character::A(Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 })),
                 Self::Droid => Character::B(Arc::new(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 })),
             }
         }

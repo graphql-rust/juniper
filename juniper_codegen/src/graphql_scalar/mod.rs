@@ -119,7 +119,7 @@ impl Parse for Attr {
                     input.parse::<token::Eq>()?;
                     let lit = input.parse::<syn::LitStr>()?;
                     let url = lit.value().parse::<Url>().map_err(|err| {
-                        syn::Error::new(lit.span(), format!("Invalid URL: {}", err))
+                        syn::Error::new(lit.span(), format!("Invalid URL: {err}"))
                     })?;
                     out.specified_by_url
                         .replace(SpanContainer::new(ident.span(), Some(lit.span()), url))
@@ -343,11 +343,11 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::marker::IsInputType<#scalar> for #ty
+            impl #impl_gens ::juniper::marker::IsInputType<#scalar> for #ty
                 #where_clause { }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::marker::IsOutputType<#scalar> for #ty
+            impl #impl_gens ::juniper::marker::IsOutputType<#scalar> for #ty
                 #where_clause { }
         }
     }
@@ -372,7 +372,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::GraphQLType<#scalar> for #ty
+            impl #impl_gens ::juniper::GraphQLType<#scalar> for #ty
                 #where_clause
             {
                 fn name(_: &Self::TypeInfo) -> Option<&'static str> {
@@ -410,7 +410,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::GraphQLValue<#scalar> for #ty
+            impl #impl_gens ::juniper::GraphQLValue<#scalar> for #ty
                 #where_clause
             {
                 type Context = ();
@@ -445,7 +445,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty
+            impl #impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty
                 #where_clause
             {
                 fn resolve_async<'b>(
@@ -477,7 +477,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::ToInputValue<#scalar> for #ty
+            impl #impl_gens ::juniper::ToInputValue<#scalar> for #ty
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
@@ -502,7 +502,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::FromInputValue<#scalar> for #ty
+            impl #impl_gens ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
                 type Error = ::juniper::executor::FieldError<#scalar>;
@@ -530,7 +530,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::ParseScalarValue<#scalar> for #ty
+            impl #impl_gens ::juniper::ParseScalarValue<#scalar> for #ty
                 #where_clause
             {
                 fn from_str(
@@ -558,14 +558,14 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
+            impl #impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
                 #where_clause
             {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
+            impl #impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types =
@@ -573,7 +573,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
+            impl #impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
@@ -597,7 +597,7 @@ impl Definition {
             TypeOrIdent::Type(ty) => ty.into_token_stream(),
             TypeOrIdent::Ident(ident) => {
                 let (_, ty_gen, _) = self.generics.split_for_impl();
-                quote! { #ident#ty_gen }
+                quote! { #ident #ty_gen }
             }
         };
 
@@ -635,7 +635,7 @@ impl Definition {
                     }
                     TypeOrIdent::Ident(ident) => {
                         let (_, ty_gens, _) = generics.split_for_impl();
-                        quote! { #ident#ty_gens }
+                        quote! { #ident #ty_gens }
                     }
                 };
 

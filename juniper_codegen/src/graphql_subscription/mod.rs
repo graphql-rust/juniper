@@ -44,7 +44,7 @@ impl Definition<Subscription> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
@@ -70,7 +70,7 @@ impl Definition<Subscription> {
                     _: &Self::Context,
                     _: &Self::TypeInfo,
                 ) -> String {
-                    #name.to_string()
+                    #name.into()
                 }
             }
         }
@@ -109,7 +109,7 @@ impl Definition<Subscription> {
         quote! {
             #[allow(deprecated)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLSubscriptionValue<#scalar> for #ty #where_clause
             {
                 fn resolve_field_into_stream<
                     's, 'i, 'fi, 'args, 'e, 'ref_e, 'res, 'f,

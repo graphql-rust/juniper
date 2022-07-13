@@ -78,11 +78,11 @@ mod test {
 
         assert_eq!(
             ClientMessage::Start {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: StartPayload {
-                    query: "query MyQuery { __typename }".to_string(),
+                    query: "query MyQuery { __typename }".into(),
                     variables: graphql_vars! {"foo": "bar"},
-                    operation_name: Some("MyQuery".to_string()),
+                    operation_name: Some("MyQuery".into()),
                 },
             },
             serde_json::from_str(
@@ -99,9 +99,9 @@ mod test {
 
         assert_eq!(
             ClientMessage::Start {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: StartPayload {
-                    query: "query MyQuery { __typename }".to_string(),
+                    query: "query MyQuery { __typename }".into(),
                     variables: graphql_vars! {},
                     operation_name: None,
                 },
@@ -115,9 +115,7 @@ mod test {
         );
 
         assert_eq!(
-            ClientMessage::Stop {
-                id: "foo".to_string()
-            },
+            ClientMessage::Stop { id: "foo".into() },
             serde_json::from_str(r##"{"type": "stop", "id": "foo"}"##).unwrap(),
         );
 

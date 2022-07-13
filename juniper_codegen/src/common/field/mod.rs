@@ -227,7 +227,7 @@ impl Definition {
         ty_name: &str,
     ) -> TokenStream {
         quote! {
-            return Err(::juniper::FieldError::from(format!(
+            return Err(::juniper::FieldError::from(::std::format!(
                 "Field `{}` not found on type `{}`",
                 field,
                 <Self as ::juniper::GraphQLType<#scalar>>::name(info)
@@ -350,7 +350,7 @@ impl Definition {
                     let stream = ::juniper::futures::StreamExt::then(res, move |res| {
                         let executor = executor.clone();
                         let res2: ::juniper::FieldResult<_, #scalar> =
-                            ::juniper::IntoResolvable::into(res, executor.context());
+                            ::juniper::IntoResolvable::into_resolvable(res, executor.context());
                         async move {
                             let ex = executor.as_executor();
                             match res2 {

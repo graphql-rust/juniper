@@ -224,10 +224,10 @@ impl<'a> Type<'a> {
 impl<'a> fmt::Display for Type<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Named(n) => write!(f, "{}", n),
-            Self::NonNullNamed(n) => write!(f, "{}!", n),
-            Self::List(t, _) => write!(f, "[{}]", t),
-            Self::NonNullList(t, _) => write!(f, "[{}]!", t),
+            Self::Named(n) => write!(f, "{n}"),
+            Self::NonNullNamed(n) => write!(f, "{n}!"),
+            Self::List(t, _) => write!(f, "[{t}]"),
+            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
         }
     }
 }
@@ -248,12 +248,12 @@ impl<S> InputValue<S> {
 
     /// Construct an enum value.
     pub fn enum_value<T: AsRef<str>>(s: T) -> Self {
-        Self::Enum(s.as_ref().to_owned())
+        Self::Enum(s.as_ref().into())
     }
 
     /// Construct a variable value.
     pub fn variable<T: AsRef<str>>(v: T) -> Self {
-        Self::Variable(v.as_ref().to_owned())
+        Self::Variable(v.as_ref().into())
     }
 
     /// Construct a [`Spanning::unlocated`] list.
@@ -282,7 +282,7 @@ impl<S> InputValue<S> {
             o.into_iter()
                 .map(|(k, v)| {
                     (
-                        Spanning::unlocated(k.as_ref().to_owned()),
+                        Spanning::unlocated(k.as_ref().into()),
                         Spanning::unlocated(v),
                     )
                 })
@@ -467,13 +467,13 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
             Self::Null => write!(f, "null"),
             Self::Scalar(s) => {
                 if let Some(s) = s.as_str() {
-                    write!(f, "\"{}\"", s)
+                    write!(f, "\"{s}\"")
                 } else {
-                    write!(f, "{}", s)
+                    write!(f, "{s}")
                 }
             }
-            Self::Enum(v) => write!(f, "{}", v),
-            Self::Variable(v) => write!(f, "${}", v),
+            Self::Enum(v) => write!(f, "{v}"),
+            Self::Variable(v) => write!(f, "${v}"),
             Self::List(v) => {
                 write!(f, "[")?;
                 for (i, spanning) in v.iter().enumerate() {
@@ -588,30 +588,30 @@ mod tests {
     #[test]
     fn test_input_value_fmt() {
         let value: InputValue = graphql_input_value!(null);
-        assert_eq!(format!("{}", value), "null");
+        assert_eq!(value.to_string(), "null");
 
         let value: InputValue = graphql_input_value!(123);
-        assert_eq!(format!("{}", value), "123");
+        assert_eq!(value.to_string(), "123");
 
         let value: InputValue = graphql_input_value!(12.3);
-        assert_eq!(format!("{}", value), "12.3");
+        assert_eq!(value.to_string(), "12.3");
 
         let value: InputValue = graphql_input_value!("FOO");
-        assert_eq!(format!("{}", value), "\"FOO\"");
+        assert_eq!(value.to_string(), "\"FOO\"");
 
         let value: InputValue = graphql_input_value!(true);
-        assert_eq!(format!("{}", value), "true");
+        assert_eq!(value.to_string(), "true");
 
         let value: InputValue = graphql_input_value!(BAR);
-        assert_eq!(format!("{}", value), "BAR");
+        assert_eq!(value.to_string(), "BAR");
 
         let value: InputValue = graphql_input_value!(@baz);
-        assert_eq!(format!("{}", value), "$baz");
+        assert_eq!(value.to_string(), "$baz");
 
         let value: InputValue = graphql_input_value!([1, 2]);
-        assert_eq!(format!("{}", value), "[1, 2]");
+        assert_eq!(value.to_string(), "[1, 2]");
 
         let value: InputValue = graphql_input_value!({"foo": 1,"bar": 2});
-        assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
+        assert_eq!(value.to_string(), "{foo: 1, bar: 2}");
     }
 }

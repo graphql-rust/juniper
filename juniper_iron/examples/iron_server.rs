@@ -33,7 +33,7 @@ fn main() {
     chain.link_before(logger_before);
     chain.link_after(logger_after);
 
-    let host = env::var("LISTEN").unwrap_or_else(|_| "0.0.0.0:8080".to_owned());
-    println!("GraphQL server started on {}", host);
+    let host = env::var("LISTEN").unwrap_or_else(|_| "0.0.0.0:8080".into());
+    println!("GraphQL server started on {host}");
     Iron::new(chain).http(host.as_str()).unwrap();
 }

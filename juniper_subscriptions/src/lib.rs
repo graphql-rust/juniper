@@ -3,7 +3,6 @@
 #![deny(warnings)]
 
 use std::{
-    iter::FromIterator,
     pin::Pin,
     task::{self, Poll},
 };

@@ -336,7 +336,7 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
         let ty = &self.ty;
 
-        let mut ty_full = quote! { #ty#ty_generics };
+        let mut ty_full = quote! { #ty #ty_generics };
         if self.is_trait_object {
             ty_full = quote! { dyn #ty_full + '__obj + Send + Sync };
         }
@@ -368,14 +368,14 @@ impl Definition {
                 let mut generics = self.generics.clone();
                 for lt in generics.lifetimes_mut() {
                     let ident = lt.lifetime.ident.unraw();
-                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                    lt.lifetime.ident = format_ident!("__fa__{ident}");
                 }
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
                 let ty = &self.ty;
                 let (_, ty_generics, _) = generics.split_for_impl();
 
-                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+                quote! { for<#( #lifetimes ),*> #ty #ty_generics }
             } else {
                 quote! { Self }
             };
@@ -418,7 +418,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLUnion<#scalar> for #ty_full #where_clause
+            impl #impl_generics ::juniper::marker::GraphQLUnion<#scalar> for #ty_full #where_clause
             {
                 fn mark() {
                     #all_variants_unique
@@ -443,7 +443,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty_full #where_clause
+            impl #impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty_full #where_clause
             {
                 fn mark() {
                     #( <#variant_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
@@ -470,7 +470,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty_full #where_clause
+            impl #impl_generics ::juniper::GraphQLType<#scalar> for #ty_full #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
@@ -519,7 +519,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty_full #where_clause
+            impl #impl_generics ::juniper::GraphQLValue<#scalar> for #ty_full #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
@@ -534,7 +534,7 @@ impl Definition {
                     info: &Self::TypeInfo,
                 ) -> String {
                     #( #match_variant_names )*
-                    panic!(
+                    ::std::panic!(
                         "GraphQL union `{}` cannot be resolved into any of its \
                          variants in its current state",
                         #name,
@@ -550,7 +550,7 @@ impl Definition {
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     let context = executor.context();
                     #( #variant_resolvers )*
-                    return Err(::juniper::FieldError::from(format!(
+                    return Err(::juniper::FieldError::from(::std::format!(
                         "Concrete type `{}` is not handled by instance \
                          resolvers on GraphQL union `{}`",
                         type_name, #name,
@@ -581,7 +581,7 @@ impl Definition {
         quote! {
             #[allow(non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty_full #where_clause
+            impl #impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty_full #where_clause
             {
                 fn resolve_into_type_async<'b>(
                     &'b self,
@@ -592,7 +592,7 @@ impl Definition {
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     let context = executor.context();
                     #( #variant_async_resolvers )*
-                    return ::juniper::macros::helper::err_fut(format!(
+                    return ::juniper::macros::helper::err_fut(::std::format!(
                         "Concrete type `{}` is not handled by instance \
                          resolvers on GraphQL union `{}`",
                         type_name, #name,
@@ -618,7 +618,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ty
                 #where_clause
             {
@@ -626,7 +626,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ty
                 #where_clause
             {
@@ -637,7 +637,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ty
                 #where_clause
             {

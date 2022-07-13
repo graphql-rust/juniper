@@ -64,15 +64,10 @@ async fn query_document_can_be_pre_parsed() {
     let errors = validate_input_values(&graphql_vars! {}, operation, &root_node.schema);
     assert!(errors.is_empty());
 
-    let (_, errors) = execute_validated_query_async(
-        &document,
-        operation,
-        root_node,
-        &graphql_vars! {},
-        &Context {},
-    )
-    .await
-    .unwrap();
+    let (_, errors) =
+        execute_validated_query_async(&document, operation, root_node, &graphql_vars! {}, &Context)
+            .await
+            .unwrap();
 
     assert!(errors.len() == 0);
 }
@@ -92,7 +87,7 @@ async fn subscription_document_can_be_pre_parsed() {
         &operation,
         &root_node,
         &graphql_vars! {},
-        &Context {},
+        &Context,
     )
     .map_ok(|(stream, errors)| juniper_subscriptions::Connection::from_stream(stream, errors))
     .await

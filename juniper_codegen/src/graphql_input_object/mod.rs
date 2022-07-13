@@ -4,8 +4,6 @@
 
 pub(crate) mod derive;
 
-use std::convert::TryInto as _;
-
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
@@ -431,8 +429,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsInputType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::marker::IsInputType<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 fn mark() {
@@ -471,14 +469,14 @@ impl Definition {
                 };
                 let description = &f.description;
 
-                quote! { registry#arg#description }
+                quote! { registry #arg #description }
             })
         });
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::GraphQLType<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 fn name(_: &Self::TypeInfo) -> Option<&'static str> {
@@ -494,7 +492,7 @@ impl Definition {
                 {
                     let fields = [#( #fields ),*];
                     registry
-                        .build_input_object_type::<#ident#ty_generics>(info, &fields)
+                        .build_input_object_type::<#ident #ty_generics>(info, &fields)
                         #description
                         .into_meta()
                 }
@@ -519,8 +517,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::GraphQLValue<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 type Context = #context;
@@ -550,8 +548,8 @@ impl Definition {
         quote! {
             #[allow(non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::GraphQLValueAsync<#scalar>
+                for #ident #ty_generics
                 #where_clause {}
         }
     }
@@ -610,8 +608,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::FromInputValue<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::FromInputValue<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 type Error = ::juniper::FieldError<#scalar>;
@@ -660,8 +658,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::ToInputValue<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::ToInputValue<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
@@ -694,23 +692,23 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
-            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types =
                     &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
-            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
@@ -751,14 +749,14 @@ impl Definition {
                 let mut generics = self.generics.clone();
                 for lt in generics.lifetimes_mut() {
                     let ident = lt.lifetime.ident.unraw();
-                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                    lt.lifetime.ident = format_ident!("__fa__{ident}");
                 }
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
                 let ident = &self.ident;
                 let (_, ty_generics, _) = generics.split_for_impl();
 
-                quote! { for<#( #lifetimes ),*> #ident#ty_generics }
+                quote! { for<#( #lifetimes ),*> #ident #ty_generics }
             } else {
                 quote! { Self }
             };

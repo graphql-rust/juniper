@@ -42,12 +42,12 @@ mod interface {
             Schema {
                 pets: vec![
                     Dog {
-                        name: "Odie".to_owned(),
+                        name: "Odie".into(),
                         woofs: true,
                     }
                     .into(),
                     Cat {
-                        name: "Garfield".to_owned(),
+                        name: "Garfield".into(),
                         meows: false,
                     }
                     .into(),
@@ -77,7 +77,7 @@ mod interface {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -170,11 +170,11 @@ mod union {
             Schema {
                 pets: vec![
                     Box::new(Dog {
-                        name: "Odie".to_owned(),
+                        name: "Odie".into(),
                         woofs: true,
                     }),
                     Box::new(Cat {
-                        name: "Garfield".to_owned(),
+                        name: "Garfield".into(),
                         meows: false,
                     }),
                 ],
@@ -205,7 +205,7 @@ mod union {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,

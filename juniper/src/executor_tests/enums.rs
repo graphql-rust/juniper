@@ -22,7 +22,7 @@ struct TestType;
 #[crate::graphql_object]
 impl TestType {
     fn to_string(color: Color) -> String {
-        format!("Color::{:?}", color)
+        format!("Color::{color:?}")
     }
 
     fn a_color() -> Color {
@@ -46,7 +46,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let obj = result.as_object_value().expect("Result is not an object");
 

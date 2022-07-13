@@ -113,12 +113,12 @@ mod trivial {
         fn character(&self) -> Box<DynCharacter<'_>> {
             let ch: Box<DynCharacter<'_>> = match self {
                 Self::Human => Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Box::new(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             };
             ch
@@ -250,12 +250,12 @@ mod generic {
         fn character(&self) -> Box<DynCharacter<'_, u8, ()>> {
             let ch: Box<DynCharacter<'_, u8, ()>> = match self {
                 Self::Human => Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Box::new(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             };
             ch
@@ -343,8 +343,8 @@ mod description_from_doc_comment {
     impl QueryRoot {
         fn character(&self) -> Box<DynCharacter<'_>> {
             Box::new(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             })
         }
     }
@@ -416,8 +416,8 @@ mod explicit_name_and_description {
     impl QueryRoot {
         fn character(&self) -> Box<DynCharacter<'_>> {
             Box::new(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             })
         }
     }
@@ -517,12 +517,12 @@ mod explicit_scalar {
         fn character(&self) -> Box<DynCharacter<'_>> {
             let ch: Box<DynCharacter<'_>> = match self {
                 Self::Human => Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Box::new(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             };
             ch
@@ -608,12 +608,12 @@ mod custom_scalar {
         fn character(&self) -> Box<DynCharacter<'_>> {
             let ch: Box<DynCharacter<'_>> = match self {
                 Self::Human => Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Box::new(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             };
             ch
@@ -697,12 +697,12 @@ mod explicit_generic_scalar {
         fn character<__S: ScalarValue>(&self) -> Box<DynCharacter<'_, __S>> {
             let ch: Box<DynCharacter<'_, _>> = match self {
                 Self::Human => Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Box::new(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             };
             ch
@@ -786,12 +786,12 @@ mod bounded_generic_scalar {
         fn character(&self) -> Box<DynCharacter<'_>> {
             let ch: Box<DynCharacter<'_>> = match self {
                 Self::Human => Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Box::new(Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
             };
             ch
@@ -872,12 +872,12 @@ mod explicit_custom_context {
         fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_>> {
             let ch: Box<DynCharacter<'_>> = match ctx {
                 CustomContext::Human => Box::new(HumanCustomContext {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 CustomContext::Droid => Box::new(DroidCustomContext {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
                 _ => unimplemented!(),
             };
@@ -959,12 +959,12 @@ mod inferred_custom_context {
         fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_>> {
             let ch: Box<DynCharacter<'_>> = match ctx {
                 CustomContext::Human => Box::new(HumanCustomContext {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 CustomContext::Droid => Box::new(DroidCustomContext {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
                 _ => unimplemented!(),
             };
@@ -1042,8 +1042,8 @@ mod ignored_method {
     impl QueryRoot {
         fn character(&self) -> Box<DynCharacter<'_>> {
             Box::new(Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             })
         }
     }
@@ -1134,12 +1134,12 @@ mod external_resolver {
         fn character(&self) -> Box<DynCharacter<'_>> {
             let ch: Box<DynCharacter<'_>> = match self {
                 Self::Human => Box::new(Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 Self::Droid => Box::new(Droid {
-                    id: "?????".to_string(),
-                    primary_function: "???".to_string(),
+                    id: "?????".into(),
+                    primary_function: "???".into(),
                 }),
             };
             ch
@@ -1178,8 +1178,8 @@ mod external_resolver {
         let schema = schema(QueryRoot::Droid);
         let db = Database {
             droid: Some(Droid {
-                id: "droid-99".to_string(),
-                primary_function: "run".to_string(),
+                id: "droid-99".into(),
+                primary_function: "run".into(),
             }),
         };
 
@@ -1250,15 +1250,15 @@ mod full_featured {
         fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_, ()>> {
             let ch: Box<DynCharacter<'_, ()>> = match ctx {
                 CustomContext::Human => Box::new(HumanCustomContext {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }),
                 CustomContext::Droid => Box::new(DroidCustomContext {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }),
                 CustomContext::Ewok => Box::new(EwokCustomContext {
-                    id: "ewok-1".to_string(),
+                    id: "ewok-1".into(),
                     funny: true,
                 }),
             };

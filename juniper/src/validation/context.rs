@@ -30,9 +30,9 @@ pub struct ValidatorContext<'a, S: Debug + 'a> {
 
 impl RuleError {
     #[doc(hidden)]
-    pub fn new(message: &str, locations: &[SourcePosition]) -> RuleError {
-        RuleError {
-            message: message.to_owned(),
+    pub fn new(message: &str, locations: &[SourcePosition]) -> Self {
+        Self {
+            message: message.into(),
             locations: locations.to_vec(),
         }
     }
@@ -53,14 +53,15 @@ impl RuleError {
 
 impl fmt::Display for RuleError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // this is fine since all `RuleError`s should have at least one source position
+        // This is fine since all `RuleError`s should have at least one source
+        // position.
         let locations = self
             .locations
             .iter()
-            .map(|location| format!("{}", location))
+            .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join(", ");
-        write!(f, "{}. At {}", self.message, locations)
+        write!(f, "{}. At {locations}", self.message)
     }
 }
 

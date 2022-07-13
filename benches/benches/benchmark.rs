@@ -38,7 +38,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
                 b.iter(|| {
                     j::execute_sync(
                         SYNC_QUERY,
-                        vec![("ids".to_string(), ids.clone())].into_iter().collect(),
+                        vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
                     )
                 })
             },
@@ -58,7 +58,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
             b.iter(|| {
                 let f = j::execute(
                     ASYNC_QUERY,
-                    vec![("ids".to_string(), ids.clone())].into_iter().collect(),
+                    vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
                 );
                 rt.block_on(f)
             })
@@ -77,7 +77,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
             b.iter(|| {
                 let f = j::execute(
                     ASYNC_QUERY,
-                    vec![("ids".to_string(), ids.clone())].into_iter().collect(),
+                    vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
                 );
                 rt.block_on(f)
             })

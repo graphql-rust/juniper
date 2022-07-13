@@ -239,7 +239,7 @@ impl<'a> Lexer<'a> {
                 c if escaped => {
                     return Err(Spanning::zero_width(
                         &old_pos,
-                        LexerError::UnknownEscapeSequence(format!("\\{}", c)),
+                        LexerError::UnknownEscapeSequence(format!("\\{c}")),
                     ));
                 }
                 '\\' => escaped = true,
@@ -305,14 +305,14 @@ impl<'a> Lexer<'a> {
         if len != 4 {
             return Err(Spanning::zero_width(
                 start_pos,
-                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+                LexerError::UnknownEscapeSequence(format!("\\u{escape}")),
             ));
         }
 
         let code_point = u32::from_str_radix(escape, 16).map_err(|_| {
             Spanning::zero_width(
                 start_pos,
-                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+                LexerError::UnknownEscapeSequence(format!("\\u{escape}")),
             )
         })?;
 
@@ -485,9 +485,9 @@ impl<'a> Iterator for Lexer<'a> {
 impl<'a> fmt::Display for Token<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Token::Name(name) => write!(f, "{}", name),
+            Token::Name(name) => write!(f, "{name}"),
             Token::Scalar(ScalarToken::Int(s)) | Token::Scalar(ScalarToken::Float(s)) => {
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             Token::Scalar(ScalarToken::String(s)) => {
                 write!(f, "\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
@@ -529,15 +529,15 @@ fn is_number_start(c: char) -> bool {
 impl fmt::Display for LexerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            LexerError::UnknownCharacter(c) => write!(f, "Unknown character \"{}\"", c),
+            LexerError::UnknownCharacter(c) => write!(f, "Unknown character \"{c}\""),
             LexerError::UnterminatedString => write!(f, "Unterminated string literal"),
             LexerError::UnknownCharacterInString(c) => {
-                write!(f, "Unknown character \"{}\" in string literal", c)
+                write!(f, "Unknown character \"{c}\" in string literal")
             }
             LexerError::UnknownEscapeSequence(ref s) => {
-                write!(f, "Unknown escape sequence \"{}\" in string", s)
+                write!(f, "Unknown escape sequence \"{s}\" in string")
             }
-            LexerError::UnexpectedCharacter(c) => write!(f, "Unexpected character \"{}\"", c),
+            LexerError::UnexpectedCharacter(c) => write!(f, "Unexpected character \"{c}\""),
             LexerError::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
             LexerError::InvalidNumber => write!(f, "Invalid number literal"),
         }

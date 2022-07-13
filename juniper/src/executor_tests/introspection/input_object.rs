@@ -117,7 +117,7 @@ where
     F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let schema = RootNode::new(
-        Root {},
+        Root,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
     );
@@ -128,7 +128,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -312,7 +312,7 @@ fn derive_derived() {
         format!(
             "{:?}",
             Derive {
-                field_one: "test".to_owned(),
+                field_one: "test".into(),
             },
         ),
         "Derive { field_one: \"test\" }"

@@ -1,5 +1,6 @@
 use crate::{
-    graphql_object, graphql_value, EmptyMutation, EmptySubscription, GraphQLEnum, RootNode, Value,
+    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription, GraphQLEnum,
+    RootNode, Value,
 };
 
 #[derive(GraphQLEnum)]
@@ -30,7 +31,7 @@ impl User {
         (0..10)
             .map(|index| User {
                 id: index,
-                name: format!("user{}", index),
+                name: format!("user{index}"),
                 kind: UserKind::User,
             })
             .collect()
@@ -55,7 +56,7 @@ impl Query {
     }
 
     async fn field_async_plain() -> String {
-        "field_async_plain".to_string()
+        "field_async_plain".into()
     }
 
     fn user(id: String) -> User {
@@ -86,8 +87,7 @@ async fn async_simple() {
         }
     "#;
 
-    let vars = Default::default();
-    let (res, errs) = crate::execute(doc, None, &schema, &vars, &())
+    let (res, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
 

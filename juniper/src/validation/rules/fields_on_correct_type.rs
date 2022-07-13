@@ -69,7 +69,7 @@ where
 }
 
 fn error_message(field: &str, type_name: &str) -> String {
-    format!(r#"Unknown field "{}" on type "{}""#, field, type_name)
+    format!(r#"Unknown field "{field}" on type "{type_name}""#)
 }
 
 #[cfg(test)]

@@ -167,8 +167,7 @@ where
     /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
     /// format.
     pub fn as_schema_language(&self) -> String {
-        let doc = self.as_parser_document();
-        format!("{}", doc)
+        self.as_parser_document().to_string()
     }
 
     #[cfg(feature = "graphql-parser")]
@@ -210,17 +209,14 @@ impl<'a, S> SchemaType<'a, S> {
 
         registry.get_type::<SchemaType<S>>(&());
 
-        directives.insert("skip".to_owned(), DirectiveType::new_skip(&mut registry));
+        directives.insert("skip".into(), DirectiveType::new_skip(&mut registry));
+        directives.insert("include".into(), DirectiveType::new_include(&mut registry));
         directives.insert(
-            "include".to_owned(),
-            DirectiveType::new_include(&mut registry),
-        );
-        directives.insert(
-            "deprecated".to_owned(),
+            "deprecated".into(),
             DirectiveType::new_deprecated(&mut registry),
         );
         directives.insert(
-            "specifiedBy".to_owned(),
+            "specifiedBy".into(),
             DirectiveType::new_specified_by(&mut registry),
         );
 
@@ -243,7 +239,7 @@ impl<'a, S> SchemaType<'a, S> {
 
         for meta_type in registry.types.values() {
             if let MetaType::Placeholder(PlaceholderMeta { ref of_type }) = *meta_type {
-                panic!("Type {:?} is still a placeholder type", of_type);
+                panic!("Type {of_type:?} is still a placeholder type");
             }
         }
         SchemaType {
@@ -508,9 +504,9 @@ where
         locations: &[DirectiveLocation],
         arguments: &[Argument<'a, S>],
         is_repeatable: bool,
-    ) -> DirectiveType<'a, S> {
-        DirectiveType {
-            name: name.to_owned(),
+    ) -> Self {
+        Self {
+            name: name.into(),
             description: None,
             locations: locations.to_vec(),
             arguments: arguments.to_vec(),
@@ -578,7 +574,7 @@ where
     }
 
     pub fn description(mut self, description: &str) -> DirectiveType<'a, S> {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 }
@@ -605,8 +601,8 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Concrete(t) => f.write_str(t.name().unwrap()),
-            Self::List(i, _) => write!(f, "[{}]", i),
-            Self::NonNull(i) => write!(f, "{}!", i),
+            Self::List(i, _) => write!(f, "[{i}]"),
+            Self::NonNull(i) => write!(f, "{i}!"),
         }
     }
 }
@@ -644,10 +640,7 @@ mod test {
             "#,
             )
             .unwrap();
-            assert_eq!(
-                format!("{}", ast),
-                format!("{}", schema.as_parser_document()),
-            );
+            assert_eq!(ast.to_string(), schema.as_parser_document().to_string());
         }
     }
 
@@ -691,10 +684,10 @@ mod test {
                 }
                 /// This is whatever's description.
                 fn whatever() -> String {
-                    "foo".to_string()
+                    "foo".into()
                 }
                 fn arr(stuff: Vec<Coordinate>) -> Option<&'static str> {
-                    (!stuff.is_empty()).then(|| "stuff")
+                    (!stuff.is_empty()).then_some("stuff")
                 }
                 fn fruit() -> Fruit {
                     Fruit::Apple
@@ -754,7 +747,7 @@ mod test {
             "#,
             )
             .unwrap();
-            assert_eq!(format!("{}", ast), schema.as_schema_language());
+            assert_eq!(ast.to_string(), schema.as_schema_language());
         }
     }
 }

@@ -143,7 +143,7 @@ mod test {
         assert_eq!(
             serde_json::to_string(&ServerMessage::ConnectionError {
                 payload: ConnectionErrorPayload {
-                    message: "foo".to_string(),
+                    message: "foo".into(),
                 },
             })
             .unwrap(),
@@ -157,7 +157,7 @@ mod test {
 
         assert_eq!(
             serde_json::to_string(&ServerMessage::Data {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: DataPayload {
                     data: graphql_value!(null),
                     errors: vec![],
@@ -169,7 +169,7 @@ mod test {
 
         assert_eq!(
             serde_json::to_string(&ServerMessage::Error {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: GraphQLError::UnknownOperationName.into(),
             })
             .unwrap(),
@@ -177,10 +177,7 @@ mod test {
         );
 
         assert_eq!(
-            serde_json::to_string(&ServerMessage::Complete {
-                id: "foo".to_string(),
-            })
-            .unwrap(),
+            serde_json::to_string(&ServerMessage::Complete { id: "foo".into() }).unwrap(),
             r##"{"type":"complete","id":"foo"}"##,
         );
 

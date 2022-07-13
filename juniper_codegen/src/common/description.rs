@@ -150,7 +150,7 @@ mod concatenate_test {
     /// Forms a [`Vec`] of [`String`]s out of the provided [`str`]s
     /// [`Iterator`].
     fn to_strings<'i>(source: impl IntoIterator<Item = &'i str>) -> Vec<String> {
-        source.into_iter().map(ToOwned::to_owned).collect()
+        source.into_iter().map(Into::into).collect()
     }
 
     #[test]

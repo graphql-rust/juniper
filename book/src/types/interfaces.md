@@ -227,7 +227,7 @@ impl ObjA {
 //     ^^ the evaluated program panicked at 
 //        'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` 
 //         isn't present on the interface and so has to be nullable.'        
-        is_present.then(|| self.id.as_str()).unwrap_or("missing")
+        is_present.then_some(&self.id).unwrap_or("missing")
     }
 }
 

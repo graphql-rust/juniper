@@ -130,7 +130,7 @@ impl Mutation {
 type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
 #
 # fn main() {
-#   let _ = Schema::new(Query, Mutation{}, EmptySubscription::new());
+#   let _ = Schema::new(Query, Mutation, EmptySubscription::new());
 # }
 ```
 

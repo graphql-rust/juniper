@@ -4,11 +4,7 @@
 pub(crate) mod attr;
 pub(crate) mod downcaster;
 
-use std::{
-    any::TypeId,
-    iter::{self, FromIterator as _},
-    mem,
-};
+use std::{any::TypeId, iter, mem};
 
 use proc_macro2::Span;
 use quote::quote;

@@ -84,7 +84,7 @@ fn parse_get_req<S: ScalarValue>(
         .map(|q| gql_request_from_get(q).map(GraphQLBatchRequest::Single))
         .unwrap_or_else(|| {
             Err(GraphQLRequestError::Invalid(
-                "'query' parameter is missing".to_string(),
+                "'query' parameter is missing".into(),
             ))
         })
 }
@@ -144,7 +144,7 @@ pub async fn playground(
 }
 
 fn render_error(err: GraphQLRequestError) -> Response<Body> {
-    let message = format!("{}", err);
+    let message = err.to_string();
     let mut resp = new_response(StatusCode::BAD_REQUEST);
     *resp.body_mut() = Body::from(message);
     resp
@@ -249,15 +249,14 @@ where
     match query {
         Some(query) => Ok(JuniperGraphQLRequest::new(query, operation_name, variables)),
         None => Err(GraphQLRequestError::Invalid(
-            "'query' parameter is missing".to_string(),
+            "'query' parameter is missing".into(),
         )),
     }
 }
 
 fn invalid_err(parameter_name: &str) -> GraphQLRequestError {
     GraphQLRequestError::Invalid(format!(
-        "'{}' parameter is specified multiple times",
-        parameter_name
+        "`{parameter_name}` parameter is specified multiple times",
     ))
 }
 
@@ -330,31 +329,31 @@ mod tests {
 
     impl http_tests::HttpIntegration for TestHyperIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
-            make_test_response(reqwest::blocking::get(&url).expect(&format!("failed GET {}", url)))
+            let url = format!("http://127.0.0.1:{}/graphql{url}", self.port);
+            make_test_response(reqwest::blocking::get(&url).expect(&format!("failed GET {url}")))
         }
 
         fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
+            let url = format!("http://127.0.0.1:{}/graphql{url}", self.port);
             let client = reqwest::blocking::Client::new();
             let res = client
                 .post(&url)
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
-                .body(body.to_string())
+                .body(body.to_owned())
                 .send()
-                .expect(&format!("failed POST {}", url));
+                .expect(&format!("failed POST {url}"));
             make_test_response(res)
         }
 
         fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
+            let url = format!("http://127.0.0.1:{}/graphql{url}", self.port);
             let client = reqwest::blocking::Client::new();
             let res = client
                 .post(&url)
                 .header(reqwest::header::CONTENT_TYPE, "application/graphql")
-                .body(body.to_string())
+                .body(body.to_owned())
                 .send()
-                .expect(&format!("failed POST {}", url));
+                .expect(&format!("failed POST {url}"));
             make_test_response(res)
         }
     }
@@ -362,11 +361,9 @@ mod tests {
     fn make_test_response(response: ReqwestResponse) -> http_tests::TestResponse {
         let status_code = response.status().as_u16() as i32;
         let content_type_header = response.headers().get(reqwest::header::CONTENT_TYPE);
-        let content_type = if let Some(ct) = content_type_header {
-            format!("{}", ct.to_str().unwrap())
-        } else {
-            String::default()
-        };
+        let content_type = content_type_header
+            .map(|ct| ct.to_str().unwrap().into())
+            .unwrap_or_default();
         let body = response.text().unwrap();
 
         http_tests::TestResponse {
@@ -439,7 +436,7 @@ mod tests {
         });
 
         if let Err(e) = server.await {
-            eprintln!("server error: {}", e);
+            eprintln!("server error: {e}");
         }
     }
 

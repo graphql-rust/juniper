@@ -37,7 +37,7 @@ impl ID {
             .map(str::to_owned)
             .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
             .map(Self)
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
 }
 
@@ -81,7 +81,7 @@ mod impl_string_scalar {
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<String, String> {
         v.as_string_value()
             .map(str::to_owned)
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -120,7 +120,7 @@ mod impl_string_scalar {
                         }
                         Some(s) => {
                             return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
-                                format!("\\{}", s),
+                                format!("\\{s}"),
                             )))
                         }
                         None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
@@ -149,19 +149,16 @@ where
         .and_then(|c1| {
             char_iter
                 .next()
-                .map(|c2| format!("{}{}", c1, c2))
+                .map(|c2| format!("{c1}{c2}"))
                 .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{}", c1)))
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{c1}")))
                 })
         })
         .and_then(|mut s| {
             char_iter
                 .next()
                 .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-                        "\\u{}",
-                        s.clone()
-                    )))
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{s}")))
                 })
                 .map(|c2| {
                     s.push(c2);
@@ -172,10 +169,7 @@ where
             char_iter
                 .next()
                 .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-                        "\\u{}",
-                        s.clone()
-                    )))
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{s}")))
                 })
                 .map(|c2| {
                     s.push(c2);
@@ -184,14 +178,12 @@ where
         })?;
     let code_point = u32::from_str_radix(&escaped_code_point, 16).map_err(|_| {
         ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-            "\\u{}",
-            escaped_code_point
+            "\\u{escaped_code_point}",
         )))
     })?;
     char::from_u32(code_point).ok_or_else(|| {
         ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-            "\\u{}",
-            escaped_code_point
+            "\\u{escaped_code_point}",
         )))
     })
 }
@@ -282,7 +274,7 @@ mod impl_boolean_scalar {
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Boolean, String> {
         v.as_scalar_value()
             .and_then(ScalarValue::as_bool)
-            .ok_or_else(|| format!("Expected `Boolean`, found: {}", v))
+            .ok_or_else(|| format!("Expected `Boolean`, found: {v}"))
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -303,7 +295,7 @@ mod impl_int_scalar {
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Int, String> {
         v.as_int_value()
-            .ok_or_else(|| format!("Expected `Int`, found: {}", v))
+            .ok_or_else(|| format!("Expected `Int`, found: {v}"))
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -329,7 +321,7 @@ mod impl_float_scalar {
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Float, String> {
         v.as_float_value()
-            .ok_or_else(|| format!("Expected `Float`, found: {}", v))
+            .ok_or_else(|| format!("Expected `Float`, found: {v}"))
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -401,8 +393,9 @@ where
 {
 }
 
+// Implemented manually to omit redundant `T: Default` trait bound, imposed by
+// `#[derive(Default)]`.
 impl<T> Default for EmptyMutation<T> {
-    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -461,8 +454,9 @@ where
 {
 }
 
+// Implemented manually to omit redundant `T: Default` trait bound, imposed by
+// `#[derive(Default)]`.
 impl<T> Default for EmptySubscription<T> {
-    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -499,8 +493,8 @@ mod tests {
 
     #[test]
     fn test_id_display() {
-        let id = ID(String::from("foo"));
-        assert_eq!(format!("{}", id), "foo");
+        let id = ID("foo".into());
+        assert_eq!(id.to_string(), "foo");
     }
 
     #[test]
@@ -508,7 +502,7 @@ mod tests {
         fn parse_string(s: &str, expected: &str) {
             let s =
                 <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
-            assert!(s.is_ok(), "A parsing error occurred: {:?}", s);
+            assert!(s.is_ok(), "A parsing error occurred: {s:?}");
             let s: Option<String> = s.unwrap().into();
             assert!(s.is_some(), "No string returned");
             assert_eq!(s.unwrap(), expected);
@@ -527,7 +521,7 @@ mod tests {
 
     #[test]
     fn parse_f64_from_int() {
-        for (v, expected) in &[
+        for (v, expected) in [
             ("0", 0),
             ("128", 128),
             ("1601942400", 1601942400),
@@ -538,14 +532,14 @@ mod tests {
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
             let n: Option<f64> = n.unwrap().into();
-            assert!(n.is_some(), "No f64 returned");
-            assert_eq!(n.unwrap(), f64::from(*expected));
+            assert!(n.is_some(), "No `f64` returned");
+            assert_eq!(n.unwrap(), f64::from(expected));
         }
     }
 
     #[test]
     fn parse_f64_from_float() {
-        for (v, expected) in &[
+        for (v, expected) in [
             ("0.", 0.),
             ("1.2", 1.2),
             ("1601942400.", 1601942400.),
@@ -556,8 +550,8 @@ mod tests {
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
             let n: Option<f64> = n.unwrap().into();
-            assert!(n.is_some(), "No f64 returned");
-            assert_eq!(n.unwrap(), *expected);
+            assert!(n.is_some(), "No `f64` returned");
+            assert_eq!(n.unwrap(), expected);
         }
     }
 

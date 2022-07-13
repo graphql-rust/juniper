@@ -5,7 +5,7 @@
 pub mod attr;
 pub mod derive;
 
-use std::{collections::HashSet, convert::TryInto as _};
+use std::collections::HashSet;
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, quote_spanned, ToTokens};
@@ -39,10 +39,10 @@ fn enum_idents(
 ) -> (syn::Ident, syn::Ident) {
     let enum_alias_ident = alias_ident
         .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
+        .unwrap_or_else(|| format_ident!("{trait_ident}Value"));
     let enum_ident = alias_ident.map_or_else(
-        || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.to_string()),
+        || format_ident!("{trait_ident}ValueEnum"),
+        |c| format_ident!("{c}Enum"),
     );
     (enum_ident, enum_alias_ident)
 }
@@ -382,7 +382,7 @@ impl Definition {
         let alias_ident = &self.enum_alias_ident;
 
         let variant_gens_pars = (0..self.implemented_for.len()).map::<syn::GenericParam, _>(|id| {
-            let par = format_ident!("__I{}", id);
+            let par = format_ident!("__I{id}");
             parse_quote! { #par }
         });
         let variants_idents = self
@@ -474,8 +474,8 @@ impl Definition {
             .map(|(ty, ident)| {
                 quote! {
                     #[automatically_derived]
-                    impl#interface_impl_gens ::std::convert::From<#ty>
-                        for #alias_ident#interface_ty_gens
+                    impl #interface_impl_gens ::std::convert::From<#ty>
+                        for #alias_ident #interface_ty_gens
                         #interface_where_clause
                     {
                         fn from(v: #ty) -> Self {
@@ -489,14 +489,14 @@ impl Definition {
             #[automatically_derived]
             #[derive(Clone, Copy, Debug)]
             #[doc = #enum_doc]
-            #vis enum #enum_ident#enum_gens {
+            #vis enum #enum_ident #enum_gens {
                 #( #[doc(hidden)] #variants_idents(#variant_gens_pars), )*
                 #( #[doc(hidden)] #phantom_variant, )*
             }
 
             #[automatically_derived]
             #[doc = #enum_alias_doc]
-            #vis type #alias_ident#enum_alias_gens =
+            #vis type #alias_ident #enum_alias_gens =
                 #enum_ident<#( #enum_to_alias_gens ),*>;
 
             #( #from_impls )*
@@ -523,7 +523,7 @@ impl Definition {
 
             quote! {{
                 const SUPPRESS_DEAD_CODE: () = {
-                    let none = Option::<#ident#const_gens>::None;
+                    let none = Option::<#ident #const_gens>::None;
                     match none {
                         Some(unreachable) => {
                             #( let _ = unreachable.#fields; )*
@@ -580,8 +580,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::marker::GraphQLInterface<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 fn mark() {
@@ -637,7 +637,7 @@ impl Definition {
             quote_spanned! { const_impl_for.span() =>
                 ::juniper::assert_transitive_impls!(
                     #const_scalar,
-                    #ty#ty_const_generics,
+                    #ty #ty_const_generics,
                     #const_impl_for,
                     #( #const_implements ),*
                 );
@@ -646,8 +646,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::marker::IsOutputType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 fn mark() {
@@ -655,12 +655,12 @@ impl Definition {
                     #( #is_output )*
                     ::juniper::assert_interfaces_impls!(
                         #const_scalar,
-                        #ty#ty_const_generics,
+                        #ty #ty_const_generics,
                         #( #const_impl_for ),*
                     );
                     ::juniper::assert_implemented_for!(
                         #const_scalar,
-                        #ty#ty_const_generics,
+                        #ty #ty_const_generics,
                         #( #const_implements ),*
                     );
                     #( #transitive_checks )*
@@ -711,8 +711,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::GraphQLType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
@@ -731,7 +731,7 @@ impl Definition {
                     let fields = [
                         #( #fields_meta, )*
                     ];
-                    registry.build_interface_type::<#ty#ty_generics>(info, &fields)
+                    registry.build_interface_type::<#ty #ty_generics>(info, &fields)
                         #description
                         #impl_interfaces
                         .into_meta()
@@ -778,7 +778,7 @@ impl Definition {
         quote! {
             #[allow(deprecated)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty#ty_generics
+            impl #impl_generics ::juniper::GraphQLValue<#scalar> for #ty #ty_generics
                 #where_clause
             {
                 type Context = #context;
@@ -856,7 +856,7 @@ impl Definition {
         quote! {
             #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty#ty_generics
+            impl #impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #ty_generics
                 #where_clause
             {
                 fn resolve_field_async<'b>(
@@ -908,16 +908,16 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types = &[
@@ -927,8 +927,8 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::Implements<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types =
@@ -936,16 +936,16 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Fields<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::Fields<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
@@ -987,10 +987,10 @@ impl Definition {
                 quote! {
                     #[allow(non_snake_case)]
                     #[automatically_derived]
-                    impl#impl_generics ::juniper::macros::reflect::FieldMeta<
+                    impl #impl_generics ::juniper::macros::reflect::FieldMeta<
                         #scalar,
                         { ::juniper::macros::reflect::fnv1a128(#field_name) }
-                    > for #ty#ty_generics #where_clause {
+                    > for #ty #ty_generics #where_clause {
                         type Context = #context;
                         type TypeInfo = ();
                         const TYPE: ::juniper::macros::reflect::Type =
@@ -1061,10 +1061,10 @@ impl Definition {
                 quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
                     #[automatically_derived]
-                    impl#impl_generics ::juniper::macros::reflect::Field<
+                    impl #impl_generics ::juniper::macros::reflect::Field<
                         #scalar,
                         { ::juniper::macros::reflect::fnv1a128(#field_name) }
-                    > for #ty#ty_generics #where_clause {
+                    > for #ty #ty_generics #where_clause {
                         fn call(
                             &self,
                             info: &Self::TypeInfo,
@@ -1074,7 +1074,7 @@ impl Definition {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
-                                        #ty#const_ty_generics,
+                                        #ty #const_ty_generics,
                                         #const_implemented_for,
                                         #const_scalar,
                                         #field_name,
@@ -1141,10 +1141,10 @@ impl Definition {
                 quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
                     #[automatically_derived]
-                    impl#impl_generics ::juniper::macros::reflect::AsyncField<
+                    impl #impl_generics ::juniper::macros::reflect::AsyncField<
                         #scalar,
                         { ::juniper::macros::reflect::fnv1a128(#field_name) }
-                    > for #ty#ty_generics #where_clause {
+                    > for #ty #ty_generics #where_clause {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
@@ -1154,7 +1154,7 @@ impl Definition {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
-                                        #ty#const_ty_generics,
+                                        #ty #const_ty_generics,
                                         #const_implemented_for,
                                         #const_scalar,
                                         #field_name,
@@ -1346,14 +1346,14 @@ impl Definition {
                 let mut generics = self.generics.clone();
                 for lt in generics.lifetimes_mut() {
                     let ident = lt.lifetime.ident.unraw();
-                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                    lt.lifetime.ident = format_ident!("__fa__{ident}");
                 }
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
                 let ty = &self.enum_alias_ident;
                 let (_, ty_generics, _) = generics.split_for_impl();
 
-                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+                quote! { for<#( #lifetimes ),*> #ty #ty_generics }
             } else {
                 quote! { Self }
             };

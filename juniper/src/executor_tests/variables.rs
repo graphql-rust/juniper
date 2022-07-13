@@ -23,7 +23,7 @@ impl TestComplexScalar {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
             .map(|_| Self)
-            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {}"#, v))
+            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {v}"#))
     }
 }
 
@@ -58,47 +58,47 @@ struct TestType;
 #[graphql_object]
 impl TestType {
     fn field_with_object_input(input: Option<TestInputObject>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn field_with_nullable_string_input(input: Option<String>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn field_with_non_nullable_string_input(input: String) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn field_with_default_argument_value(
         #[graphql(default = "Hello World")] input: String,
     ) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn nullable_field_with_default_argument_value(
         #[graphql(default = "Hello World".to_owned())] input: Option<String>,
     ) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn field_with_nested_object_input(input: Option<TestNestedInputObject>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn list(input: Option<Vec<Option<String>>>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn nn_list(input: Vec<Option<String>>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn list_nn(input: Option<Vec<String>>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn nn_list_nn(input: Vec<String>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn example_input(arg: ExampleInputObject) -> String {
@@ -110,11 +110,11 @@ impl TestType {
     }
 
     fn integer_input(value: i32) -> String {
-        format!("value: {}", value)
+        format!("value: {value}")
     }
 
     fn float_input(value: f64) -> String {
-        format!("value: {}", value)
+        format!("value: {value}")
     }
 }
 
@@ -134,7 +134,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {result:?}");
 
     let obj = result.as_object_value().expect("Result is not an object");
 

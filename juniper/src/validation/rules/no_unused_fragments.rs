@@ -104,7 +104,7 @@ where
 }
 
 fn error_message(frag_name: &str) -> String {
-    format!(r#"Fragment "{}" is never used"#, frag_name)
+    format!(r#"Fragment "{frag_name}" is never used"#)
 }
 
 #[cfg(test)]

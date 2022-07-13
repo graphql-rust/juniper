@@ -13,8 +13,8 @@ impl Query {
     fn artoo() -> Character {
         Character::Droid(Droid {
             id: 1,
-            name: "R2-D2".to_owned(),
-            sensor_color: "red".to_owned(),
+            name: "R2-D2".into(),
+            sensor_color: "red".into(),
         })
     }
 }

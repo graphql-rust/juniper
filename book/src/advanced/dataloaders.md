@@ -68,7 +68,7 @@ use std::env;
 
 pub fn get_db_conn() -> Connection {
     let pg_connection_string = env::var("DATABASE_URI").expect("need a db uri");
-    println!("Connecting to {}", pg_connection_string);
+    println!("Connecting to {pg_connection_string}");
     let conn = Connection::connect(&pg_connection_string[..], TlsMode::None).unwrap();
     println!("Connection is fine");
     conn
@@ -101,7 +101,7 @@ impl BatchFn<i32, Cult> for CultBatcher {
 
     // A hashmap is used, as we need to return an array which maps each original key to a Cult.
     async fn load(&self, keys: &[i32]) -> HashMap<i32, Cult> {
-        println!("load cult batch {:?}", keys);
+        println!("load cult batch {keys:?}");
         let mut cult_hashmap = HashMap::new();
         get_cult_by_ids(&mut cult_hashmap, keys.to_vec());
         cult_hashmap

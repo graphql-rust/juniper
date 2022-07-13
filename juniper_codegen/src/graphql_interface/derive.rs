@@ -105,7 +105,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
             .map(SpanContainer::into_inner)
             .collect(),
         suppress_dead_code: Some((ast.ident.clone(), data.fields.clone())),
-        src_intra_doc_link: format!("struct@{}", struct_ident).into_boxed_str(),
+        src_intra_doc_link: format!("struct@{struct_ident}").into_boxed_str(),
     }
     .into_token_stream())
 }

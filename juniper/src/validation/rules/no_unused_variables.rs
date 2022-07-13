@@ -142,12 +142,9 @@ where
 
 fn error_message(var_name: &str, op_name: Option<&str>) -> String {
     if let Some(op_name) = op_name {
-        format!(
-            r#"Variable "${}" is not used by operation "{}""#,
-            var_name, op_name
-        )
+        format!(r#"Variable "${var_name}" is not used by operation "{op_name}""#)
     } else {
-        format!(r#"Variable "${}" is not used"#, var_name)
+        format!(r#"Variable "${var_name}" is not used"#)
     }
 }
 

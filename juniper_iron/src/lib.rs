@@ -175,8 +175,8 @@ impl GraphiQLHandler {
     /// relative, so a common value could be `"/graphql"`.
     pub fn new(graphql_url: &str, subscription_url: Option<&str>) -> GraphiQLHandler {
         GraphiQLHandler {
-            graphql_url: graphql_url.to_owned(),
-            subscription_url: subscription_url.map(|s| s.to_owned()),
+            graphql_url: graphql_url.into(),
+            subscription_url: subscription_url.map(Into::into),
         }
     }
 }
@@ -188,8 +188,8 @@ impl PlaygroundHandler {
     /// relative, so a common value could be `"/graphql"`.
     pub fn new(graphql_url: &str, subscription_url: Option<&str>) -> PlaygroundHandler {
         PlaygroundHandler {
-            graphql_url: graphql_url.to_owned(),
-            subscription_url: subscription_url.map(|s| s.to_owned()),
+            graphql_url: graphql_url.into(),
+            subscription_url: subscription_url.map(Into::into),
         }
     }
 }
@@ -283,7 +283,7 @@ impl Error for GraphQLIronError {
 
 impl From<GraphQLIronError> for IronError {
     fn from(err: GraphQLIronError) -> IronError {
-        let message = format!("{}", err);
+        let message = err.to_string();
         IronError::new(err, (status::BadRequest, message))
     }
 }
@@ -313,17 +313,16 @@ mod tests {
     // This is ugly but it works. `iron_test` just dumps the path/url in headers
     // and newer `hyper` doesn't allow unescaped "{" or "}".
     fn fixup_url(url: &str) -> String {
-        let url = Url::parse(&format!("http://localhost:3000{}", url)).expect("url to parse");
+        let url = Url::parse(&format!("http://localhost:3000{url}")).expect("url to parse");
         let path: String = url
             .path()
             .iter()
-            .map(|x| (*x).to_string())
+            .map(|x| x.to_string())
             .collect::<Vec<_>>()
             .join("/");
         format!(
-            "http://localhost:3000{}?{}",
-            path,
-            utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
+            "http://localhost:3000{path}?{}",
+            utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET),
         )
     }
 
@@ -374,7 +373,7 @@ mod tests {
         http_tests::TestResponse {
             status_code: 400,
             body: None,
-            content_type: "application/json".to_string(),
+            content_type: "application/json".into(),
         }
     }
 

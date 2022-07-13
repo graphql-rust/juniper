@@ -6,6 +6,7 @@
 
 // Required for using `juniper_codegen` macros inside this crate to resolve
 // absolute `::juniper` path correctly, without errors.
+extern crate core;
 extern crate self as juniper;
 
 use std::fmt;
@@ -108,10 +109,10 @@ pub enum GraphQLError {
 impl fmt::Display for GraphQLError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ParseError(e) => write!(f, "{}", e),
+            Self::ParseError(e) => write!(f, "{e}"),
             Self::ValidationError(errs) => {
                 for e in errs {
-                    writeln!(f, "{}", e)?;
+                    writeln!(f, "{e}")?;
                 }
                 Ok(())
             }

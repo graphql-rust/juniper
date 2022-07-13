@@ -188,7 +188,7 @@ fn parse_field(
                 }
                 syn::FnArg::Typed(arg) => {
                     if let syn::Pat::Ident(a) = &*arg.pat {
-                        if a.ident.to_string().as_str() == "self" {
+                        if a.ident == "self" {
                             return err_invalid_method_receiver(arg);
                         }
                     }

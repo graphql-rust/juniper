@@ -226,7 +226,7 @@ where
                     panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
-                        meta_type.name()
+                        meta_type.name(),
                     )
                 });
 

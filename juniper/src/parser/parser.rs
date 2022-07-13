@@ -25,7 +25,7 @@ pub enum ParseError {
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::UnexpectedToken(token) => write!(f, "Unexpected \"{}\"", token),
+            Self::UnexpectedToken(token) => write!(f, "Unexpected \"{token}\""),
             Self::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
             Self::LexerError(e) => e.fmt(f),
             Self::ExpectedScalarError(e) => e.fmt(f),
@@ -53,7 +53,7 @@ impl ParseError {
         let mut s = String::new();
         // PANIC: Unwrapping is OK here, as it may panic only on allocation
         //        error.
-        write!(s, "{}", token).unwrap();
+        write!(s, "{token}").unwrap();
 
         Self::UnexpectedToken(s)
     }

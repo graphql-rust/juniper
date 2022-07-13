@@ -49,7 +49,7 @@ pub(crate) mod err {
     pub(crate) fn unknown_arg<S: AsSpan>(span: S, name: &str) -> syn::Error {
         syn::Error::new(
             span.as_span(),
-            format!("unknown `{}` attribute argument", name),
+            format!("unknown `{name}` attribute argument"),
         )
     }
 

@@ -69,7 +69,7 @@ async fn test_execution() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     assert_eq!(
         result,
@@ -114,7 +114,7 @@ async fn enum_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -223,7 +223,7 @@ async fn interface_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -355,7 +355,7 @@ async fn object_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -406,7 +406,7 @@ async fn object_introspection() {
 
     assert_eq!(fields.len(), 2);
 
-    println!("Fields: {:#?}", fields);
+    println!("Fields: {fields:#?}");
 
     assert!(fields.contains(&graphql_value!({
         "name": "sampleEnum",
@@ -497,7 +497,7 @@ async fn scalar_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()

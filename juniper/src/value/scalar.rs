@@ -34,7 +34,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// integers.
 ///
 /// ```rust
-/// # use std::{fmt, convert::TryInto as _};
+/// # use std::fmt;
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
 /// # use juniper::ScalarValue;

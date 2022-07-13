@@ -34,10 +34,10 @@ mod tz {
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<TimeZone, String> {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 s.parse::<TimeZone>()
-                    .map_err(|e| format!("Failed to parse `TimeZone`: {}", e))
+                    .map_err(|e| format!("Failed to parse `TimeZone`: {e}"))
             })
     }
 }

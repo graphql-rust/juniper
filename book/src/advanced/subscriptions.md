@@ -98,7 +98,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # 
 # impl Database {
 #     fn new() -> Self {
-#         Self {}
+#         Self
 #     }
 # }
 # 
@@ -126,7 +126,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 
 fn schema() -> Schema {
-    Schema::new(Query {}, EmptyMutation::new(), Subscription {})
+    Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
 async fn run_subscription() {

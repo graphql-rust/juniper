@@ -53,12 +53,12 @@ mod trivial {
     #[graphql_subscription]
     impl Human {
         async fn id() -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready("human-32".to_owned())))
+            Box::pin(stream::once(future::ready("human-32".into())))
         }
 
         // TODO: Make work for `Stream<'_, String>`.
         async fn home_planet(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready("earth".to_owned())))
+            Box::pin(stream::once(future::ready("earth".into())))
         }
     }
 
@@ -227,7 +227,7 @@ mod ignored_method {
     #[graphql_subscription]
     impl Human {
         async fn id() -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready("human-32".to_owned())))
+            Box::pin(stream::once(future::ready("human-32".into())))
         }
 
         #[allow(dead_code)]
@@ -291,7 +291,7 @@ mod fallible_method {
     #[graphql_subscription]
     impl Human {
         async fn id(&self) -> Result<Stream<'static, String>, CustomError> {
-            Ok(Box::pin(stream::once(future::ready("human-32".to_owned()))))
+            Ok(Box::pin(stream::once(future::ready("human-32".into()))))
         }
 
         async fn home_planet<__S>() -> FieldResult<Stream<'static, &'static str>, __S> {
@@ -387,10 +387,7 @@ mod argument {
             r#raw_arg: String,
             r#async: Option<i32>,
         ) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(format!(
-                "{},{:?}",
-                r#raw_arg, r#async
-            ))))
+            Box::pin(stream::once(future::ready(format!("{raw_arg},{async:?}"))))
         }
     }
 
@@ -524,10 +521,7 @@ mod default_argument {
             #[graphql(default = "second".to_string())] arg2: String,
             #[graphql(default = true)] r#arg3: bool,
         ) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(format!(
-                "{}|{}&{}",
-                arg1, arg2, r#arg3
-            ))))
+            Box::pin(stream::once(future::ready(format!("{arg1}|{arg2}&{arg3}"))))
         }
 
         async fn info(#[graphql(default = Point { x: 1 })] coord: Point) -> Stream<'static, i32> {
@@ -539,7 +533,7 @@ mod default_argument {
     async fn resolves_id_field() {
         let schema = schema(Query, Human);
 
-        for (input, expected) in &[
+        for (input, expected) in [
             ("subscription { id }", "0|second&true"),
             ("subscription { id(arg1: 1) }", "1|second&true"),
             (r#"subscription { id(arg2: "") }"#, "0|&true"),
@@ -549,10 +543,8 @@ mod default_argument {
                 "1|&false",
             ),
         ] {
-            let expected: &str = *expected;
-
             assert_eq!(
-                resolve_into_stream(*input, None, &schema, &graphql_vars! {}, &())
+                resolve_into_stream(input, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((graphql_value!({ "id": expected }), vec![])),
@@ -564,14 +556,12 @@ mod default_argument {
     async fn resolves_info_field() {
         let schema = schema(Query, Human);
 
-        for (input, expected) in &[
+        for (input, expected) in [
             ("subscription { info }", 1),
             ("subscription { info(coord: { x: 2 }) }", 2),
         ] {
-            let expected: i32 = *expected;
-
             assert_eq!(
-                resolve_into_stream(*input, None, &schema, &graphql_vars! {}, &())
+                resolve_into_stream(input, None, &schema, &graphql_vars! {}, &())
                     .then(|s| extract_next(s))
                     .await,
                 Ok((graphql_value!({ "info": expected }), vec![])),
@@ -648,7 +638,7 @@ mod generic {
     #[graphql_subscription(name = "HumanString")]
     impl<B: ?Sized + Sync> Human<String, B> {
         async fn id(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.id.to_owned())))
+            Box::pin(stream::once(future::ready(self.id.clone())))
         }
     }
 
@@ -735,7 +725,7 @@ mod generic_lifetime {
 
         // TODO: Make it work with `Stream<'_, &str>`.
         async fn planet(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.home_planet.to_owned())))
+            Box::pin(stream::once(future::ready(self.home_planet.into())))
         }
     }
 
@@ -743,12 +733,12 @@ mod generic_lifetime {
     impl<'id, 'p> Human<'p, &'id str> {
         // TODO: Make it work with `Stream<'_, &str>`.
         async fn id(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.id.to_owned())))
+            Box::pin(stream::once(future::ready(self.id.into())))
         }
 
         // TODO: Make it work with `Stream<'_, &str>`.
         async fn planet(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.home_planet.to_owned())))
+            Box::pin(stream::once(future::ready(self.home_planet.into())))
         }
     }
 
@@ -1702,7 +1692,7 @@ mod executor {
             S: ScalarValue,
         {
             Box::pin(stream::once(future::ready(
-                executor.look_ahead().field_name().to_owned(),
+                executor.look_ahead().field_name().into(),
             )))
         }
 

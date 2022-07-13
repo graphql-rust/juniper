@@ -15,9 +15,10 @@ use crate::common::parse::ParseBufferExt as _;
 /// Representation of a [GraphQL default value][0] for code generation.
 ///
 /// [0]: https://spec.graphql.org/October2021#DefaultValue
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) enum Value {
     /// [`Default`] implementation should be used.
+    #[default]
     Default,
 
     /// Explicit [`Expr`]ession to be used as the [default value][0].
@@ -25,12 +26,6 @@ pub(crate) enum Value {
     /// [`Expr`]: syn::Expr
     /// [0]: https://spec.graphql.org/October2021#DefaultValue
     Expr(Box<syn::Expr>),
-}
-
-impl Default for Value {
-    fn default() -> Self {
-        Self::Default
-    }
 }
 
 impl From<Option<syn::Expr>> for Value {

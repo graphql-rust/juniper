@@ -45,22 +45,22 @@ impl fmt::Display for Scope {
             Self::ScalarValueDerive => "built-in scalars",
             Self::UnionAttr | Self::UnionDerive => "union",
         };
-        write!(f, "GraphQL {}", name)
+        write!(f, "GraphQL {name}")
     }
 }
 
 impl Scope {
     fn spec_link(&self) -> String {
-        format!("{}{}", SPEC_URL, self.spec_section())
+        format!("{SPEC_URL}{}", self.spec_section())
     }
 
     pub(crate) fn custom<S: AsRef<str>>(&self, span: Span, msg: S) -> Diagnostic {
-        Diagnostic::spanned(span, Level::Error, format!("{} {}", self, msg.as_ref()))
+        Diagnostic::spanned(span, Level::Error, format!("{self} {}", msg.as_ref()))
             .note(self.spec_link())
     }
 
     pub(crate) fn error(&self, err: syn::Error) -> Diagnostic {
-        Diagnostic::spanned(err.span(), Level::Error, format!("{} {}", self, err))
+        Diagnostic::spanned(err.span(), Level::Error, format!("{self} {err}"))
             .note(self.spec_link())
     }
 
@@ -69,7 +69,7 @@ impl Scope {
     }
 
     pub(crate) fn custom_error<S: AsRef<str>>(&self, span: Span, msg: S) -> syn::Error {
-        syn::Error::new(span, format!("{} {}", self, msg.as_ref()))
+        syn::Error::new(span, format!("{self} {}", msg.as_ref()))
     }
 
     pub(crate) fn no_double_underscore(&self, field: Span) {
@@ -81,7 +81,7 @@ impl Scope {
              system."
                 .into(),
         )
-        .note(format!("{}#sec-Schema", SPEC_URL))
+        .note(format!("{SPEC_URL}#sec-Schema"))
         .emit();
     }
 }

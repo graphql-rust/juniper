@@ -242,15 +242,15 @@ impl Mutation {
 
         if !(10 <= name.len() && name.len() <= 100) {
             errors.push(ValidationError {
-                field: "name".to_string(),
-                message: "between 10 and 100".to_string()
+                field: "name".into(),
+                message: "between 10 and 100".into(),
             });
         }
 
         if !(1 <= quantity && quantity <= 10) {
             errors.push(ValidationError {
-                field: "quantity".to_string(),
-                message: "between 1 and 10".to_string()
+                field: "quantity".into(),
+                message: "between 1 and 10".into(),
             });
         }
 
@@ -338,11 +338,11 @@ impl Mutation {
         };
 
         if !(10 <= name.len() && name.len() <= 100) {
-            error.name = Some("between 10 and 100".to_string());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 <= quantity && quantity <= 10) {
-            error.quantity = Some("between 1 and 10".to_string());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() && error.quantity.is_none() {
@@ -436,11 +436,11 @@ impl Mutation {
         };
 
         if !(10 <= name.len() && name.len() <= 100) {
-            error.name = Some("between 10 and 100".to_string());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 <= quantity && quantity <= 10) {
-            error.quantity = Some("between 1 and 10".to_string());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() && error.quantity.is_none() {

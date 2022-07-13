@@ -5,7 +5,7 @@
 pub mod attr;
 pub mod derive;
 
-use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::PhantomData};
+use std::{any::TypeId, collections::HashSet, marker::PhantomData};
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
@@ -299,7 +299,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                 let mut ty = self.ty.clone();
                 ty.lifetimes_iter_mut(&mut |lt| {
                     let ident = lt.ident.unraw();
-                    lt.ident = format_ident!("__fa__{}", ident);
+                    lt.ident = format_ident!("__fa__{ident}");
                     lifetimes.push(lt.clone());
                 });
 
@@ -346,7 +346,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
             {
                 fn mark() {
                     #( #fields_marks )*
@@ -375,7 +375,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ty
                 #where_clause
             {
@@ -383,7 +383,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ty
                 #where_clause
             {
@@ -392,7 +392,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::Implements<#scalar>
                 for #ty
                 #where_clause
             {
@@ -401,7 +401,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ty
                 #where_clause
             {
@@ -409,7 +409,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Fields<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::Fields<#scalar>
                 for #ty
                 #where_clause
             {
@@ -437,7 +437,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         let fields_meta = self
             .fields
             .iter()
-            .map(|f| f.method_meta_tokens(extract_stream_type.then(|| scalar)));
+            .map(|f| f.method_meta_tokens(extract_stream_type.then_some(scalar)));
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
         let mut interface_tys: Vec<_> = self.interfaces.iter().collect();
@@ -455,7 +455,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
@@ -536,7 +536,7 @@ impl Definition<Query> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty #where_clause
             {
                 fn mark() {
                     #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
@@ -778,7 +778,7 @@ impl Definition<Query> {
         quote! {
             #[allow(deprecated)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
@@ -805,7 +805,7 @@ impl Definition<Query> {
                     _: &Self::Context,
                     _: &Self::TypeInfo,
                 ) -> String {
-                    #name.to_string()
+                    #name.into()
                 }
             }
         }
@@ -842,7 +842,7 @@ impl Definition<Query> {
         quote! {
             #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
             {
                 fn resolve_field_async<'b>(
                     &'b self,

@@ -34,7 +34,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
     let struct_ident = ast.ident;
 
     let (_, struct_generics, _) = ast.generics.split_for_impl();
-    let ty = parse_quote! { #struct_ident#struct_generics };
+    let ty = parse_quote! { #struct_ident #struct_generics };
 
     let name = attr
         .name

@@ -376,7 +376,7 @@ mod fallible_method {
     impl QueryRoot {
         fn human() -> Human {
             Human {
-                id: "human-32".to_string(),
+                id: "human-32".into(),
             }
         }
     }
@@ -885,22 +885,20 @@ mod nested_generic_lifetime_async {
 
     #[tokio::test]
     async fn uses_type_name_without_type_params() {
-        for object in &["Human", "Droid"] {
+        for object in ["Human", "Droid"] {
             let doc = format!(
                 r#"{{
-                    __type(name: "{}") {{
+                    __type(name: "{object}") {{
                         name
                     }}
                 }}"#,
-                object,
             );
 
             let schema = schema(QueryRoot("mars".into()));
 
-            let expected_name: &str = *object;
             assert_eq!(
                 execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((graphql_value!({"__type": {"name": expected_name}}), vec![])),
+                Ok((graphql_value!({"__type": {"name": object}}), vec![])),
             );
         }
     }
@@ -918,7 +916,7 @@ mod argument {
         }
 
         async fn home_planet(&self, r#raw_arg: String, r#async: Option<i32>) -> String {
-            format!("{},{:?}", r#raw_arg, r#async)
+            format!("{raw_arg},{async:?}")
         }
     }
 
@@ -1048,7 +1046,7 @@ mod default_argument {
             #[graphql(default = "second".to_string())] arg2: Option<String>,
             #[graphql(default = true)] r#arg3: bool,
         ) -> String {
-            format!("{}|{:?}&{}", arg1, arg2, r#arg3)
+            format!("{arg1}|{arg2:?}&{arg3}")
         }
 
         fn info(#[graphql(default = Point { x: 1 })] coord: Point) -> i32 {
@@ -1069,7 +1067,7 @@ mod default_argument {
     async fn resolves_id_field() {
         let schema = schema(QueryRoot);
 
-        for (input, expected, vars) in &[
+        for (input, expected, vars) in [
             (
                 "{ human { id } }",
                 r#"0|Some("second")&true"#,
@@ -1131,10 +1129,8 @@ mod default_argument {
                 graphql_vars! {},
             ),
         ] {
-            let expected: &str = *expected;
-
             assert_eq!(
-                execute(*input, None, &schema, &vars, &(),).await,
+                execute(input, None, &schema, &vars, &(),).await,
                 Ok((graphql_value!({"human": {"id": expected}}), vec![])),
             );
         }
@@ -1144,14 +1140,12 @@ mod default_argument {
     async fn resolves_info_field() {
         let schema = schema(QueryRoot);
 
-        for (input, expected) in &[
+        for (input, expected) in [
             ("{ human { info } }", 1),
             ("{ human { info(coord: { x: 2 }) } }", 2),
         ] {
-            let expected: i32 = *expected;
-
             assert_eq!(
-                execute(*input, None, &schema, &graphql_vars! {}, &()).await,
+                execute(input, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"human": {"info": expected}}), vec![])),
             );
         }

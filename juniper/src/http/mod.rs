@@ -60,11 +60,8 @@ where
         self.variables
             .as_ref()
             .and_then(|iv| {
-                iv.to_object_value().map(|o| {
-                    o.into_iter()
-                        .map(|(k, v)| (k.to_owned(), v.clone()))
-                        .collect()
-                })
+                iv.to_object_value()
+                    .map(|o| o.into_iter().map(|(k, v)| (k.into(), v.clone())).collect())
             })
             .unwrap_or_default()
     }
@@ -635,20 +632,20 @@ pub mod tests {
                     "type":"connection_init",
                     "payload":{}
                 }"#
-                .to_owned(),
+                .into(),
             ),
             WsIntegrationMessage::Expect(
                 r#"{
                     "type":"connection_ack"
                 }"#
-                .to_owned(),
+                .into(),
                 WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
             ),
             WsIntegrationMessage::Expect(
                 r#"{
                     "type":"ka"
                 }"#
-                .to_owned(),
+                .into(),
                 WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
             ),
             WsIntegrationMessage::Send(
@@ -662,7 +659,7 @@ pub mod tests {
                         "query":"subscription { asyncHuman { id, name, homePlanet } }"
                     }
                 }"#
-                .to_owned(),
+                .into(),
             ),
             WsIntegrationMessage::Expect(
                 r#"{
@@ -678,7 +675,7 @@ pub mod tests {
                         }
                     }
                 }"#
-                .to_owned(),
+                .into(),
                 WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
             ),
         ];
@@ -688,7 +685,7 @@ pub mod tests {
 
     async fn test_ws_invalid_json<T: WsIntegration>(integration: &T) {
         let messages = vec![
-            WsIntegrationMessage::Send("invalid json".to_owned()),
+            WsIntegrationMessage::Send("invalid json".into()),
             WsIntegrationMessage::Expect(
                 r#"{
                     "type":"connection_error",
@@ -696,7 +693,7 @@ pub mod tests {
                         "message":"serde error: expected value at line 1 column 1"
                     }
                 }"#
-                .to_owned(),
+                .into(),
                 WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
             ),
         ];
@@ -711,20 +708,20 @@ pub mod tests {
                     "type":"connection_init",
                     "payload":{}
                 }"#
-                .to_owned(),
+                .into(),
             ),
             WsIntegrationMessage::Expect(
                 r#"{
                     "type":"connection_ack"
                 }"#
-                .to_owned(),
+                .into(),
                 WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT
             ),
             WsIntegrationMessage::Expect(
                 r#"{
                     "type":"ka"
                 }"#
-                .to_owned(),
+                .into(),
                 WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT
             ),
             WsIntegrationMessage::Send(
@@ -738,7 +735,7 @@ pub mod tests {
                         "query":"subscription { asyncHuman }"
                     }
                 }"#
-                .to_owned(),
+                .into(),
             ),
             WsIntegrationMessage::Expect(
                 r#"{
@@ -752,7 +749,7 @@ pub mod tests {
                         }]
                     }]
                 }"#
-                .to_owned(),
+                .into(),
                 WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT
             )
         ];

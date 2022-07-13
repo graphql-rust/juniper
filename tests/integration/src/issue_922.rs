@@ -14,11 +14,11 @@ impl Query {
         vec![
             Into::into(Human {
                 id: 0,
-                name: "human-32".to_owned(),
+                name: "human-32".into(),
             }),
             Into::into(Droid {
                 id: 1,
-                name: "R2-D2".to_owned(),
+                name: "R2-D2".into(),
             }),
         ]
     }

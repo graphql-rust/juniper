@@ -173,10 +173,9 @@ fn parse_variant_from_trait_method(
             ERR.custom(
                 method_span,
                 format!(
-                    "trait method `{}` conflicts with the external resolver \
-                     function `{}` declared on the trait to resolve the \
-                     variant type `{}`",
-                    method_ident,
+                    "trait method `{method_ident}` conflicts with the external \
+                     resolver function `{}` declared on the trait to resolve \
+                     the variant type `{}`",
                     other.to_token_stream(),
                     ty.to_token_stream(),
                 ),

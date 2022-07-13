@@ -62,9 +62,9 @@ mod date {
         S: ScalarValue,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                Date::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `Date`: {}", e))
+                Date::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `Date`: {e}"))
             })
     }
 }
@@ -127,7 +127,7 @@ mod local_time {
         S: ScalarValue,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
@@ -135,7 +135,7 @@ mod local_time {
                 LocalTime::parse_from_str(s, FORMAT_NO_MILLIS)
                     .or_else(|_| LocalTime::parse_from_str(s, FORMAT_NO_SECS))
                     .or_else(|_| LocalTime::parse_from_str(s, FORMAT))
-                    .map_err(|e| format!("Invalid `LocalTime`: {}", e))
+                    .map_err(|e| format!("Invalid `LocalTime`: {e}"))
             })
     }
 }
@@ -166,10 +166,10 @@ mod local_date_time {
         S: ScalarValue,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 LocalDateTime::parse_from_str(s, FORMAT)
-                    .map_err(|e| format!("Invalid `LocalDateTime`: {}", e))
+                    .map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
             })
     }
 }
@@ -219,10 +219,10 @@ mod date_time {
         Tz: TimeZone + FromFixedOffset,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 DateTime::<FixedOffset>::parse_from_rfc3339(s)
-                    .map_err(|e| format!("Invalid `DateTime`: {}", e))
+                    .map_err(|e| format!("Invalid `DateTime`: {e}"))
                     .map(FromFixedOffset::from_fixed_offset)
             })
     }
@@ -345,11 +345,10 @@ mod date_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -372,7 +371,7 @@ mod date_test {
             let input: InputValue = input;
             let parsed = Date::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -394,7 +393,7 @@ mod date_test {
         ] {
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }
@@ -420,11 +419,10 @@ mod local_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -451,7 +449,7 @@ mod local_time_test {
             let input: InputValue = input;
             let parsed = LocalTime::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -477,7 +475,7 @@ mod local_time_test {
         ] {
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }
@@ -513,11 +511,10 @@ mod local_date_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -546,7 +543,7 @@ mod local_date_time_test {
             let input: InputValue = input;
             let parsed = LocalDateTime::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -570,7 +567,7 @@ mod local_date_time_test {
         ] {
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }
@@ -635,11 +632,10 @@ mod date_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -673,7 +669,7 @@ mod date_time_test {
             let input: InputValue = input;
             let parsed = DateTime::<FixedOffset>::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -703,7 +699,7 @@ mod date_time_test {
         ] {
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }

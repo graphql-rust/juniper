@@ -132,7 +132,7 @@ fn expand_on_trait(
             .map(SpanContainer::into_inner)
             .collect(),
         suppress_dead_code: None,
-        src_intra_doc_link: format!("trait@{}", trait_ident).into_boxed_str(),
+        src_intra_doc_link: format!("trait@{trait_ident}").into_boxed_str(),
     };
 
     Ok(quote! {
@@ -313,7 +313,7 @@ fn expand_on_derive_input(
             .map(SpanContainer::into_inner)
             .collect(),
         suppress_dead_code: None,
-        src_intra_doc_link: format!("struct@{}", struct_ident).into_boxed_str(),
+        src_intra_doc_link: format!("struct@{struct_ident}").into_boxed_str(),
     };
 
     Ok(quote! {

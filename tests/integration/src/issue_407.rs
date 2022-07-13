@@ -31,12 +31,12 @@ struct Droid {
 impl Query {
     fn characters() -> Vec<CharacterValue> {
         let human = Human {
-            id: "1".to_string(),
-            name: "Han Solo".to_string(),
+            id: "1".into(),
+            name: "Han Solo".into(),
         };
         let droid = Droid {
-            id: "2".to_string(),
-            serial_number: "234532545235".to_string(),
+            id: "2".into(),
+            serial_number: "234532545235".into(),
         };
         vec![Into::into(human), Into::into(droid)]
     }

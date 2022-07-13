@@ -195,10 +195,7 @@ impl Attr {
     fn err_disallowed<S: Spanned>(span: &S, arg: &str) -> syn::Error {
         syn::Error::new(
             span.span(),
-            format!(
-                "attribute argument `#[graphql({} = ...)]` is not allowed here",
-                arg,
-            ),
+            format!("attribute argument `#[graphql({arg} = ...)]` is not allowed here",),
         )
     }
 }
@@ -312,7 +309,7 @@ impl OnMethod {
             quote! { .arg::<#ty>(#name, info) }
         };
 
-        Some(quote! { .argument(registry#method#description) })
+        Some(quote! { .argument(registry #method #description) })
     }
 
     /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
@@ -329,7 +326,7 @@ impl OnMethod {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
-                let err_text = format!("Missing argument `{}`: {{}}", &name);
+                let err_text = format!("Missing argument `{name}`: {{}}");
 
                 let arg = quote! {
                     args.get::<#ty>(#name).and_then(|opt| opt.map_or_else(|| {

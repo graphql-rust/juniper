@@ -116,13 +116,13 @@ mod trivial {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -187,13 +187,12 @@ mod trivial {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -246,17 +245,16 @@ mod trivial {
     async fn registers_itself_in_implementers() {
         let schema = schema(QueryRoot::Human);
 
-        for object in &["Human", "Droid"] {
+        for object in ["Human", "Droid"] {
             let doc = format!(
                 r#"{{
-                   __type(name: "{}") {{
+                   __type(name: "{object}") {{
                        interfaces {{
                            kind
                            name
                        }}
                    }}
                 }}"#,
-                object,
             );
 
             assert_eq!(
@@ -346,13 +344,13 @@ mod explicit_alias {
         fn character(&self) -> CharacterEnum {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -417,13 +415,12 @@ mod explicit_alias {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -522,13 +519,13 @@ mod trivial_async {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -593,13 +590,12 @@ mod trivial_async {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -652,17 +648,16 @@ mod trivial_async {
     async fn registers_itself_in_implementers() {
         let schema = schema(QueryRoot::Human);
 
-        for object in &["Human", "Droid"] {
+        for object in ["Human", "Droid"] {
             let doc = format!(
                 r#"{{
-                   __type(name: "{}") {{
+                   __type(name: "{object}") {{
                        interfaces {{
                            kind
                            name
                        }}
                    }}
                 }}"#,
-                object,
             );
 
             assert_eq!(
@@ -760,13 +755,13 @@ mod fallible_field {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -831,13 +826,12 @@ mod fallible_field {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -927,13 +921,13 @@ mod generic {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -995,13 +989,12 @@ mod generic {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -1074,8 +1067,8 @@ mod argument {
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }
             .into()
         }
@@ -1085,7 +1078,7 @@ mod argument {
     async fn resolves_id_field() {
         let schema = schema(QueryRoot);
 
-        for (input, expected) in &[
+        for (input, expected) in [
             (
                 "{ character { idWide(isNumber: true), idWide2(isNumber: true) } }",
                 "human-32",
@@ -1095,10 +1088,8 @@ mod argument {
                 "none",
             ),
         ] {
-            let expected: &str = *expected;
-
             assert_eq!(
-                execute(*input, None, &schema, &graphql_vars! {}, &()).await,
+                execute(input, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
                     graphql_value!({"character": {
                         "idWide": expected,
@@ -1211,7 +1202,7 @@ mod default_argument {
         fn id(
             &self,
             #[graphql(default)] first: String,
-            #[graphql(default = "second".to_string())] second: String,
+            #[graphql(default = "second")] second: String,
             #[graphql(default = "t")] third: String,
         ) -> String;
 
@@ -1227,7 +1218,7 @@ mod default_argument {
         }
 
         async fn id(&self, first: String, second: String, third: String) -> String {
-            format!("{}|{}&{}", first, second, third)
+            format!("{first}|{second}&{third}")
         }
     }
 
@@ -1244,7 +1235,7 @@ mod default_argument {
     async fn resolves_id_field() {
         let schema = schema(QueryRoot);
 
-        for (input, expected) in &[
+        for (input, expected) in [
             ("{ character { id } }", "|second&t"),
             (r#"{ character { id(first: "first") } }"#, "first|second&t"),
             (r#"{ character { id(second: "") } }"#, "|&t"),
@@ -1257,10 +1248,8 @@ mod default_argument {
                 "first|&",
             ),
         ] {
-            let expected: &str = *expected;
-
             assert_eq!(
-                execute(*input, None, &schema, &graphql_vars! {}, &()).await,
+                execute(input, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected}}), vec![])),
             );
         }
@@ -1270,14 +1259,12 @@ mod default_argument {
     async fn resolves_info_field() {
         let schema = schema(QueryRoot);
 
-        for (input, expected) in &[
+        for (input, expected) in [
             ("{ character { info } }", 1),
             ("{ character { info(coord: {x: 2}) } }", 2),
         ] {
-            let expected: i32 = *expected;
-
             assert_eq!(
-                execute(*input, None, &schema, &graphql_vars! {}, &()).await,
+                execute(input, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"info": expected}}), vec![])),
             );
         }
@@ -1358,8 +1345,8 @@ mod description_from_doc_comment {
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }
             .into()
         }
@@ -1425,7 +1412,7 @@ mod deprecation_from_attr {
         }
 
         fn b() -> String {
-            "b".to_owned()
+            "b".into()
         }
     }
 
@@ -1435,8 +1422,8 @@ mod deprecation_from_attr {
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }
             .into()
         }
@@ -1562,7 +1549,7 @@ mod explicit_name_description_and_deprecation {
         }
 
         fn a() -> String {
-            "a".to_owned()
+            "a".into()
         }
 
         fn b() -> &'static str {
@@ -1576,8 +1563,8 @@ mod explicit_name_description_and_deprecation {
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }
             .into()
         }
@@ -1854,13 +1841,13 @@ mod explicit_scalar {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -1925,13 +1912,12 @@ mod explicit_scalar {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -1984,13 +1970,13 @@ mod custom_scalar {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -2055,13 +2041,12 @@ mod custom_scalar {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema_with_scalar::<MyScalarValue, _, _>(*root);
+            let schema = schema_with_scalar::<MyScalarValue, _, _>(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -2112,13 +2097,13 @@ mod explicit_generic_scalar {
         fn character<S: ScalarValue>(&self) -> CharacterValue<S> {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -2183,13 +2168,12 @@ mod explicit_generic_scalar {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -2240,13 +2224,13 @@ mod bounded_generic_scalar {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -2311,13 +2295,12 @@ mod bounded_generic_scalar {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -2401,13 +2384,13 @@ mod explicit_custom_context {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -2474,15 +2457,12 @@ mod explicit_custom_context {
             }
         }"#;
 
-        for (root, expected_id, expected_info, expexted_more) in &[
+        for (root, expected_id, expected_info, expexted_more) in [
             (QueryRoot::Human, "human-32", "earth", "human"),
             (QueryRoot::Droid, "droid-99", "run", "droid"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
-            let expected_info: &str = *expected_info;
-            let expexted_more: &str = *expexted_more;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &CustomContext).await,
                 Ok((
@@ -2561,11 +2541,11 @@ mod inferred_custom_context_from_field {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    home_planet: "earth".to_string(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    primary_function: "run".to_string(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -2633,15 +2613,13 @@ mod inferred_custom_context_from_field {
             }
         }"#;
 
-        for (root, expected_id, expected_info) in &[
+        for (root, expected_id, expected_info) in [
             (QueryRoot::Human, "human-ctx", "earth"),
             (QueryRoot::Droid, "droid-ctx", "run"),
         ] {
-            let schema = schema(*root);
-            let ctx = CustomContext(expected_id.to_string());
+            let schema = schema(root);
+            let ctx = CustomContext(expected_id.into());
 
-            let expected_id: &str = *expected_id;
-            let expected_info: &str = *expected_info;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &ctx).await,
                 Ok((
@@ -2725,11 +2703,11 @@ mod executor {
         fn character(&self) -> CharacterValue<DefaultScalarValue> {
             match self {
                 Self::Human => Human {
-                    home_planet: "earth".to_string(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    primary_function: "run".to_string(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -2795,10 +2773,9 @@ mod executor {
             }
         }"#;
 
-        for (root, expected_info) in &[(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
-            let schema = schema(*root);
+        for (root, expected_info) in [(QueryRoot::Human, "earth"), (QueryRoot::Droid, "run")] {
+            let schema = schema(root);
 
-            let expected_info: &str = *expected_info;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
@@ -2869,8 +2846,8 @@ mod ignored_method {
     impl QueryRoot {
         fn character(&self) -> CharacterValue {
             Human {
-                id: "human-32".to_string(),
-                home_planet: "earth".to_string(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }
             .into()
         }
@@ -2981,13 +2958,13 @@ mod field_return_subtyping {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -3052,13 +3029,12 @@ mod field_return_subtyping {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "droid-99"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -3136,14 +3112,14 @@ mod field_return_union_subtyping {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                     key_feature: Knowledge { value: 10 },
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                     strength: 42,
                 }
                 .into(),
@@ -3225,14 +3201,12 @@ mod field_return_union_subtyping {
             }
         }"#;
 
-        for (root, expected_id, expected_val) in &[
+        for (root, expected_id, expected_val) in [
             (QueryRoot::Human, "human-32", 10),
             (QueryRoot::Droid, "droid-99", 42),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
-            let expected_val = *expected_val;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((
@@ -3272,7 +3246,7 @@ mod nullable_argument_subtyping {
         fn id(&self, is_present: Option<bool>) -> &str {
             is_present
                 .unwrap_or_default()
-                .then(|| self.id.as_str())
+                .then_some(&*self.id)
                 .unwrap_or("missing")
         }
 
@@ -3292,13 +3266,13 @@ mod nullable_argument_subtyping {
         fn character(&self) -> CharacterValue {
             match self {
                 Self::Human => Human {
-                    id: "human-32".to_string(),
-                    home_planet: "earth".to_string(),
+                    id: "human-32".into(),
+                    home_planet: "earth".into(),
                 }
                 .into(),
                 Self::Droid => Droid {
-                    id: "droid-99".to_string(),
-                    primary_function: "run".to_string(),
+                    id: "droid-99".into(),
+                    primary_function: "run".into(),
                 }
                 .into(),
             }
@@ -3363,13 +3337,12 @@ mod nullable_argument_subtyping {
             }
         }"#;
 
-        for (root, expected_id) in &[
+        for (root, expected_id) in [
             (QueryRoot::Human, "human-32"),
             (QueryRoot::Droid, "missing"),
         ] {
-            let schema = schema(*root);
+            let schema = schema(root);
 
-            let expected_id: &str = *expected_id;
             assert_eq!(
                 execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
                 Ok((graphql_value!({"character": {"id": expected_id}}), vec![])),
@@ -3405,16 +3378,16 @@ mod simple_subtyping {
     impl QueryRoot {
         fn node() -> NodeValue {
             Endpoint {
-                id: ID::from("1".to_owned()),
-                url: "2".to_owned(),
+                id: ID::new("1"),
+                url: "2".into(),
             }
             .into()
         }
 
         fn resource() -> ResourceValue {
             Endpoint {
-                id: ID::from("3".to_owned()),
-                url: "4".to_owned(),
+                id: ID::new("3"),
+                url: "4".into(),
             }
             .into()
         }
@@ -3425,11 +3398,10 @@ mod simple_subtyping {
         for name in ["Node", "Resource"] {
             let doc = format!(
                 r#"{{
-                    __type(name: "{}") {{
+                    __type(name: "{name}") {{
                         kind
                     }}
                 }}"#,
-                name,
             );
 
             let schema = schema(QueryRoot);
@@ -3560,14 +3532,13 @@ mod simple_subtyping {
         for name in ["Node", "Resource"] {
             let doc = format!(
                 r#"{{
-                    __type(name: "{}") {{
+                    __type(name: "{name}") {{
                         possibleTypes {{
                             kind
                             name
                         }}
                     }}
                 }}"#,
-                name,
             );
 
             let schema = schema(QueryRoot);
@@ -3604,14 +3575,13 @@ mod simple_subtyping {
         ] {
             let doc = format!(
                 r#"{{
-                   __type(name: "{}") {{
+                   __type(name: "{name}") {{
                        interfaces {{
                            kind
                            name
                        }}
                    }}
                 }}"#,
-                name,
             );
 
             assert_eq!(
@@ -3690,8 +3660,8 @@ mod branching_subtyping {
                 Self::Luke => HumanConnection {
                     nodes: vec![Luke {
                         id: ID::new("1"),
-                        home_planet: "earth".to_owned(),
-                        father: "SPOILER".to_owned(),
+                        home_planet: "earth".into(),
+                        father: "SPOILER".into(),
                     }
                     .into()],
                 }
@@ -3699,7 +3669,7 @@ mod branching_subtyping {
                 Self::R2D2 => DroidConnection {
                     nodes: vec![R2D2 {
                         id: ID::new("2"),
-                        primary_function: "roll".to_owned(),
+                        primary_function: "roll".into(),
                         charge: 146.0,
                     }
                     .into()],
@@ -3714,11 +3684,10 @@ mod branching_subtyping {
         for name in ["Node", "Connection", "Human", "Droid"] {
             let doc = format!(
                 r#"{{
-                    __type(name: "{}") {{
+                    __type(name: "{name}") {{
                         kind
                     }}
                 }}"#,
-                name,
             );
 
             let schema = schema(QueryRoot::Luke);

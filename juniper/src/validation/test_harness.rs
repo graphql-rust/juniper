@@ -920,7 +920,7 @@ where
     ));
 
     let doc =
-        parse_document_source(q, &root.schema).expect(&format!("Parse error on input {:#?}", q));
+        parse_document_source(q, &root.schema).expect(&format!("Parse error on input {q:#?}"));
     let mut ctx = ValidatorContext::new(unsafe { mem::transmute(&root.schema) }, &doc);
 
     visit_fn(&mut ctx, unsafe { mem::transmute(doc.as_slice()) });

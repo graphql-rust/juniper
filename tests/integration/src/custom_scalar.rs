@@ -1,4 +1,4 @@
-use std::{convert::TryInto as _, fmt, pin::Pin};
+use std::{fmt, pin::Pin};
 
 use futures::{stream, Stream};
 use juniper::{
@@ -104,7 +104,7 @@ mod long {
     pub(super) fn from_input(v: &InputValue<MyScalarValue>) -> Result<Long, String> {
         v.as_scalar_value::<i64>()
             .copied()
-            .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {}", v))
+            .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {v}"))
     }
 
     pub(super) fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<MyScalarValue> {
@@ -153,7 +153,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {result:?}");
 
     let obj = result.as_object_value().expect("Result is not an object");
 

@@ -145,14 +145,13 @@ impl UserId {
         S: ScalarValue
     {
         input.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", input))
+            .ok_or_else(|| format!("Expected `String`, found: {input}"))
             .and_then(|str| {
                 str.strip_prefix("id: ")
                     .ok_or_else(|| {
                         format!(
                             "Expected `UserId` to begin with `id: `, \
-                             found: {}",
-                            input,
+                             found: {input}",
                         )
                     })
             })
@@ -190,7 +189,7 @@ where
     S: ScalarValue
 {
     match v {
-        StringOrInt::String(str) => Value::scalar(str.to_owned()),
+        StringOrInt::String(s) => Value::scalar(s.to_owned()),
         StringOrInt::Int(i) => Value::scalar(*i),
     }
 }
@@ -200,9 +199,9 @@ where
     S: ScalarValue
 {
     v.as_string_value()
-        .map(|s| StringOrInt::String(s.to_owned()))
+        .map(|s| StringOrInt::String(s.into()))
         .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
-        .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 }
 
 fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -240,7 +239,7 @@ enum StringOrInt {
 impl StringOrInt {
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         match self {
-            Self::String(str) => Value::scalar(str.to_owned()),
+            Self::String(s) => Value::scalar(s.to_owned()),
             Self::Int(i) => Value::scalar(*i),
         }
     }
@@ -250,9 +249,9 @@ impl StringOrInt {
         S: ScalarValue,
     {
         v.as_string_value()
-            .map(|s| Self::String(s.to_owned()))
+            .map(|s| Self::String(s.into()))
             .or_else(|| v.as_int_value().map(Self::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
   
     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
@@ -290,7 +289,7 @@ mod string_or_int {
         S: ScalarValue,
     {
         match v {
-            StringOrInt::String(str) => Value::scalar(str.to_owned()),
+            StringOrInt::String(s) => Value::scalar(s.to_owned()),
             StringOrInt::Int(i) => Value::scalar(*i),
         }
     }
@@ -300,9 +299,9 @@ mod string_or_int {
         S: ScalarValue,
     {
         v.as_string_value()
-            .map(|s| StringOrInt::String(s.to_owned()))
+            .map(|s| StringOrInt::String(s.into()))
             .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
   
     pub(super) fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
@@ -335,7 +334,7 @@ impl StringOrInt {
         S: ScalarValue,
     {
         match self {
-            Self::String(str) => Value::scalar(str.to_owned()),
+            Self::String(s) => Value::scalar(s.to_owned()),
             Self::Int(i) => Value::scalar(*i),
         }
     }
@@ -345,9 +344,9 @@ impl StringOrInt {
         S: ScalarValue,
     {
         v.as_string_value()
-            .map(|s| Self::String(s.to_owned()))
+            .map(|s| Self::String(s.into()))
             .or_else(|| v.as_int_value().map(Self::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
 }
 #
@@ -400,8 +399,8 @@ mod date_scalar {
 
     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
       v.as_string_value()
-          .ok_or_else(|| format!("Expected `String`, found: {}", v))
-          .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
+          .ok_or_else(|| format!("Expected `String`, found: {v}"))
+          .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
     }
 }
 #

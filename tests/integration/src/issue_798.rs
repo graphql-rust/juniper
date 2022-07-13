@@ -42,12 +42,12 @@ impl Query {
     fn field(&self) -> FieldResult {
         match self {
             Self::Human => FieldResult::Human(Human {
-                id: "human-32".to_owned(),
-                home_planet: "earth".to_owned(),
+                id: "human-32".into(),
+                home_planet: "earth".into(),
             }),
             Self::Droid => FieldResult::Droid(Droid {
-                id: "droid-99".to_owned(),
-                primary_function: "run".to_owned(),
+                id: "droid-99".into(),
+                primary_function: "run".into(),
             }),
         }
     }

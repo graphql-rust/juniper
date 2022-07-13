@@ -406,22 +406,20 @@ mod nested_generic_lifetime_async {
 
     #[tokio::test]
     async fn uses_type_name_without_type_params() {
-        for object in &["Human", "Droid"] {
+        for object in ["Human", "Droid"] {
             let doc = format!(
                 r#"{{
-                    __type(name: "{}") {{
+                    __type(name: "{object}") {{
                         name
                     }}
                 }}"#,
-                object,
             );
 
             let schema = schema(QueryRoot("mars".into()));
 
-            let expected_name: &str = *object;
             assert_eq!(
                 execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((graphql_value!({"__type": {"name": expected_name}}), vec![])),
+                Ok((graphql_value!({"__type": {"name": object}}), vec![])),
             );
         }
     }

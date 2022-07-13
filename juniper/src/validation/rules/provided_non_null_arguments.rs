@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     ast::{Directive, Field},
     parser::Spanning,
@@ -35,11 +37,7 @@ where
                         .is_none()
                 {
                     ctx.report_error(
-                        &field_error_message(
-                            field_name,
-                            &meta_arg.name,
-                            &format!("{}", meta_arg.arg_type),
-                        ),
+                        &field_error_message(field_name, &meta_arg.name, &meta_arg.arg_type),
                         &[field.start],
                     );
                 }
@@ -72,7 +70,7 @@ where
                         &directive_error_message(
                             directive_name,
                             &meta_arg.name,
-                            &format!("{}", meta_arg.arg_type),
+                            &meta_arg.arg_type,
                         ),
                         &[directive.start],
                     );
@@ -82,17 +80,23 @@ where
     }
 }
 
-fn field_error_message(field_name: &str, arg_name: &str, type_name: &str) -> String {
+fn field_error_message(
+    field_name: impl fmt::Display,
+    arg_name: impl fmt::Display,
+    type_name: impl fmt::Display,
+) -> String {
     format!(
-        r#"Field "{}" argument "{}" of type "{}" is required but not provided"#,
-        field_name, arg_name, type_name
+        r#"Field "{field_name}" argument "{arg_name}" of type "{type_name}" is required but not provided"#,
     )
 }
 
-fn directive_error_message(directive_name: &str, arg_name: &str, type_name: &str) -> String {
+fn directive_error_message(
+    directive_name: impl fmt::Display,
+    arg_name: impl fmt::Display,
+    type_name: impl fmt::Display,
+) -> String {
     format!(
-        r#"Directive "@{}" argument "{}" of type "{}" is required but not provided"#,
-        directive_name, arg_name, type_name
+        r#"Directive "@{directive_name}" argument "{arg_name}" of type "{type_name}" is required but not provided"#,
     )
 }
 

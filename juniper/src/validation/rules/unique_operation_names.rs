@@ -40,7 +40,7 @@ where
 }
 
 fn error_message(op_name: &str) -> String {
-    format!("There can only be one operation named {}", op_name)
+    format!("There can only be one operation named {op_name}")
 }
 
 #[cfg(test)]

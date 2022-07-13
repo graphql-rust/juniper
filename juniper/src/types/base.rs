@@ -377,7 +377,7 @@ where
 ///             // schema in `meta()` above, or a validation failed because of a this library bug.
 ///             //
 ///             // In either of those two cases, the only reasonable way out is to panic the thread.
-///             _ => panic!("Field {} not found on type User", field_name),
+///             _ => panic!("Field {field_name} not found on type User"),
 ///         }
 ///     }
 /// }
@@ -452,7 +452,7 @@ where
                     panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
-                        meta_type.name()
+                        meta_type.name(),
                     )
                 });
 

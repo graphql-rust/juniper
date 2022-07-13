@@ -126,7 +126,7 @@ impl<'a> CycleDetector<'a> {
 }
 
 fn error_message(frag_name: &str) -> String {
-    format!(r#"Cannot spread fragment "{}""#, frag_name)
+    format!(r#"Cannot spread fragment "{frag_name}""#)
 }
 
 #[cfg(test)]

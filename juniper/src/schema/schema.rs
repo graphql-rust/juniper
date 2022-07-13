@@ -288,16 +288,16 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                     .iter()
                     .filter_map(|&ct| {
                         if let MetaType::Object(ObjectMeta {
-                            ref name,
-                            ref interface_names,
+                            name,
+                            interface_names,
                             ..
-                        }) = *ct
+                        }) = ct
                         {
-                            if interface_names.contains(&iface_name.to_string()) {
-                                context.type_by_name(name)
-                            } else {
-                                None
-                            }
+                            interface_names
+                                .iter()
+                                .any(|name| name == iface_name)
+                                .then(|| context.type_by_name(name))
+                                .flatten()
                         } else {
                             None
                         }

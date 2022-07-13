@@ -91,17 +91,11 @@ where
 }
 
 fn field_error_message(arg_name: &str, field_name: &str, type_name: &str) -> String {
-    format!(
-        r#"Unknown argument "{}" on field "{}" of type "{}""#,
-        arg_name, field_name, type_name
-    )
+    format!(r#"Unknown argument "{arg_name}" on field "{field_name}" of type "{type_name}""#)
 }
 
 fn directive_error_message(arg_name: &str, directive_name: &str) -> String {
-    format!(
-        r#"Unknown argument "{}" on directive "{}""#,
-        arg_name, directive_name
-    )
+    format!(r#"Unknown argument "{arg_name}" on directive "{directive_name}""#)
 }
 
 #[cfg(test)]

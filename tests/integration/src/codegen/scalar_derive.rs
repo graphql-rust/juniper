@@ -27,7 +27,7 @@ mod trivial {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
 
         fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -235,7 +235,7 @@ mod all_custom_resolvers {
     fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
         v.as_int_value()
             .map(Counter)
-            .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+            .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -311,7 +311,7 @@ mod explicit_name {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -388,7 +388,7 @@ mod delegated_parse_token {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
     }
 
@@ -459,7 +459,7 @@ mod multiple_delegated_parse_token {
     impl StringOrInt {
         fn to_output<S: ScalarValue>(&self) -> Value<S> {
             match self {
-                Self::String(str) => Value::scalar(str.to_owned()),
+                Self::String(s) => Value::scalar(s.to_owned()),
                 Self::Int(i) => Value::scalar(*i),
             }
         }
@@ -468,7 +468,7 @@ mod multiple_delegated_parse_token {
             v.as_string_value()
                 .map(|s| Self::String(s.to_owned()))
                 .or_else(|| v.as_int_value().map(Self::Int))
-                .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+                .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
         }
     }
 
@@ -535,11 +535,11 @@ mod where_attribute {
         Tz::Offset: fmt::Display,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 DateTime::parse_from_rfc3339(s)
                     .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
-                    .map_err(|e| format!("Failed to parse `CustomDateTime`: {}", e))
+                    .map_err(|e| format!("Failed to parse `CustomDateTime`: {e}"))
             })
     }
 
@@ -602,7 +602,7 @@ mod with_self {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -695,11 +695,11 @@ mod with_module {
             Tz::Offset: fmt::Display,
         {
             v.as_string_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .ok_or_else(|| format!("Expected `String`, found: {v}"))
                 .and_then(|s| {
                     DateTime::parse_from_rfc3339(s)
                         .map(|dt| CustomDateTime(dt.with_timezone(&Tz::from(Utc))))
-                        .map_err(|e| format!("Failed to parse `CustomDateTime`: {}", e))
+                        .map_err(|e| format!("Failed to parse `CustomDateTime`: {e}"))
                 })
         }
     }
@@ -764,7 +764,7 @@ mod description_from_doc_comment {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
     }
 
@@ -841,7 +841,7 @@ mod description_from_attribute {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
     }
 
@@ -918,7 +918,7 @@ mod custom_scalar {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
     }
 
@@ -995,7 +995,7 @@ mod generic_scalar {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {}", v))
+                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
         }
     }
 
@@ -1071,7 +1071,7 @@ mod bounded_generic_scalar {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .ok_or_else(|| format!("Expected `String`, found: {v}"))
         }
     }
 

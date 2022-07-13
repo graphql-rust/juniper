@@ -32,8 +32,6 @@ use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 type BigDecimal = bigdecimal::BigDecimal;
 
 mod bigdecimal_scalar {
-    use std::convert::TryFrom as _;
-
     use super::*;
 
     pub(super) fn to_output<S: ScalarValue>(v: &BigDecimal) -> Value<S> {
@@ -45,13 +43,13 @@ mod bigdecimal_scalar {
             Ok(BigDecimal::from(i))
         } else if let Some(f) = v.as_float_value() {
             BigDecimal::try_from(f)
-                .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {}", e))
+                .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}"))
         } else {
             v.as_string_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .ok_or_else(|| format!("Expected `String`, found: {v}"))
                 .and_then(|s| {
                     BigDecimal::from_str(s)
-                        .map_err(|e| format!("Failed to parse `BigDecimal` from `String`: {}", e))
+                        .map_err(|e| format!("Failed to parse `BigDecimal` from `String`: {e}"))
                 })
         }
     }
@@ -88,11 +86,10 @@ mod test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{:?}`: {:?}",
-                input,
+                "failed to parse `{input:?}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {:?}", input);
+            assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
         }
     }
 
@@ -110,7 +107,7 @@ mod test {
             let input: InputValue = input;
             let parsed = BigDecimal::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -126,7 +123,7 @@ mod test {
         ] {
             let actual: InputValue = BigDecimal::from_str(raw).unwrap().to_input_value();
 
-            assert_eq!(actual, graphql_input_value!((raw)), "on value: {}", raw);
+            assert_eq!(actual, graphql_input_value!((raw)), "on value: {raw}");
         }
     }
 }

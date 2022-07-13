@@ -99,6 +99,6 @@ async fn run_type_info_query(doc: &str) -> Value {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
     result
 }

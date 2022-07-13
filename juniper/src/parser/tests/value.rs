@@ -65,11 +65,11 @@ where
     S: ScalarValue,
 {
     let mut lexer = Lexer::new(s);
-    let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {:#?}", s));
+    let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {s:#?}"));
     let schema = SchemaType::new::<Query, EmptyMutation<()>, EmptySubscription<()>>(&(), &(), &());
 
     parse_value_literal(&mut parser, false, &schema, Some(meta))
-        .expect(&format!("Parse error on input {:#?}", s))
+        .expect(&format!("Parse error on input {s:#?}"))
 }
 
 #[test]

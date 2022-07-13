@@ -1,6 +1,6 @@
 //! Code generation for `#[derive(ScalarValue)]` macro.
 
-use std::{collections::HashMap, convert::TryFrom};
+use std::collections::HashMap;
 
 use proc_macro2::{Literal, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt as _};
@@ -55,11 +55,11 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         (Method::AsBool, "as_bool"),
     ]
     .iter()
-    .filter_map(|(method, err)| (!methods.contains_key(method)).then(|| err))
+    .filter_map(|(method, err)| (!methods.contains_key(method)).then_some(err))
     .fold(None, |acc, &method| {
         Some(
-            acc.map(|acc| format!("{}, {}", acc, method))
-                .unwrap_or_else(|| method.to_owned()),
+            acc.map(|acc| format!("{acc}, {method}"))
+                .unwrap_or_else(|| method.into()),
         )
     })
     .filter(|_| !attr.allow_missing_attrs);
@@ -67,10 +67,9 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         return Err(ERR.custom_error(
             span,
             format!(
-                "missing `#[value({})]` attributes. In case you are sure \
-                 that it's ok, use `#[value(allow_missing_attributes)]` to \
-                 suppress this error.",
-                missing_methods,
+                "missing `#[value({missing_methods})]` attributes. In case you \
+                 are sure that it's ok, use `#[value(allow_missing_attributes)]` \
+                 to suppress this error.",
             ),
         ));
     }
@@ -298,10 +297,10 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::ScalarValue for #ident#ty_gens
+            impl #impl_gens ::juniper::ScalarValue for #ident #ty_gens
                 #where_clause
             {
-                #(#methods)*
+                #( #methods )*
             }
         }
     }
@@ -333,20 +332,20 @@ impl Definition {
 
                 quote! {
                     #[automatically_derived]
-                    impl#impl_gen ::std::convert::From<#var_ty> for #ty_ident#ty_gen
+                    impl #impl_gen ::std::convert::From<#var_ty> for #ty_ident #ty_gen
                         #where_clause
                     {
                         fn from(v: #var_ty) -> Self {
-                            Self::#var_ident#var_field
+                            Self::#var_ident #var_field
                         }
                     }
 
                     #[automatically_derived]
-                    impl#impl_gen ::std::convert::From<#ty_ident#ty_gen> for Option<#var_ty>
+                    impl #impl_gen ::std::convert::From<#ty_ident #ty_gen> for Option<#var_ty>
                         #where_clause
                     {
-                        fn from(ty: #ty_ident#ty_gen) -> Self {
-                            if let #ty_ident::#var_ident#var_field = ty {
+                        fn from(ty: #ty_ident #ty_gen) -> Self {
+                            if let #ty_ident::#var_ident #var_field = ty {
                                 Some(v)
                             } else {
                                 None
@@ -355,12 +354,12 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl#lf_impl_gen ::std::convert::From<&'___a #ty_ident#ty_gen> for
+                    impl #lf_impl_gen ::std::convert::From<&'___a #ty_ident #ty_gen> for
                         Option<&'___a #var_ty>
                         #where_clause
                     {
-                        fn from(ty: &'___a #ty_ident#ty_gen) -> Self {
-                            if let #ty_ident::#var_ident#var_field = ty {
+                        fn from(ty: &'___a #ty_ident #ty_gen) -> Self {
+                            if let #ty_ident::#var_ident #var_field = ty {
                                 Some(v)
                             } else {
                                 None
@@ -404,17 +403,17 @@ impl Definition {
                 .as_ref()
                 .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
 
-            quote! { Self::#var_ident#var_field => ::std::fmt::Display::fmt(v, f), }
+            quote! { Self::#var_ident #var_field => ::std::fmt::Display::fmt(v, f), }
         });
 
         quote! {
             #[automatically_derived]
-            impl#impl_gen ::std::fmt::Display for #ident#ty_gen
+            impl #impl_gen ::std::fmt::Display for #ident #ty_gen
                 #where_clause
             {
                 fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                     match self {
-                        #(#arms)*
+                        #( #arms )*
                     }
                 }
             }
@@ -440,7 +439,7 @@ impl Variant {
     fn match_arm(&self) -> TokenStream {
         let (ident, field) = (&self.ident, &self.field.match_arg());
         quote! {
-            Self::#ident#field
+            Self::#ident #field
         }
     }
 }
