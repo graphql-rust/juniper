@@ -141,7 +141,7 @@ is a struct.</p>
 struct you want to expose, the easiest way is to use the custom derive
 attribute. The other way is described in the <a href="complex_fields.html">Complex fields</a>
 chapter.</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 struct Person {
@@ -160,7 +160,7 @@ fact that GraphQL is self-documenting and add descriptions to the type and
 fields. Juniper will automatically use associated doc comments as GraphQL
 descriptions:</p>
 <p>!FILENAME GraphQL descriptions via Rust doc comments</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 /// Information about a person
@@ -176,7 +176,7 @@ struct Person {
 <p>Objects and fields without doc comments can instead set a <code>description</code>
 via the <code>graphql</code> attribute. The following example is equivalent to the above:</p>
 <p>!FILENAME GraphQL descriptions via attribute</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 #[graphql(description = &quot;Information about a person&quot;)]
@@ -192,7 +192,7 @@ struct Person {
 <p>Descriptions set via the <code>graphql</code> attribute take precedence over Rust
 doc comments. This enables internal Rust documentation and external GraphQL
 documentation to differ:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 #[graphql(description = &quot;This description shows up in GraphQL&quot;)]
@@ -222,7 +222,7 @@ or</li>
 </li>
 </ul>
 <p>Let's see what that means for building relationships between objects:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 struct Person {
@@ -244,7 +244,7 @@ objects.</p>
 <h2 id="renaming-fields"><a class="header" href="#renaming-fields">Renaming fields</a></h2>
 <p>By default, struct fields are converted from Rust's standard <code>snake_case</code> naming
 convention into GraphQL's <code>camelCase</code> convention:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 struct Person {
@@ -256,7 +256,7 @@ struct Person {
 </span></code></pre></pre>
 <p>You can override the name by using the <code>graphql</code> attribute on individual struct
 fields:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 struct Person {
@@ -269,7 +269,7 @@ struct Person {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <p>Or provide a different renaming policy on a struct for all its fields:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 #[graphql(rename_all = &quot;none&quot;)] // disables any renaming
@@ -284,7 +284,7 @@ struct Person {
 <h2 id="deprecating-fields"><a class="header" href="#deprecating-fields">Deprecating fields</a></h2>
 <p>To deprecate a field, you specify a deprecation reason using the <code>graphql</code>
 attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 struct Person {
@@ -301,7 +301,7 @@ combined. Some restrictions from the GraphQL spec still applies though; you can
 only deprecate object fields and enum values.</p>
 <h2 id="ignoring-fields"><a class="header" href="#ignoring-fields">Ignoring fields</a></h2>
 <p>By default, all fields in a <code>GraphQLObject</code> are included in the generated GraphQL type. To prevent including a specific field, annotate the field with <code>#[graphql(ignore)]</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
 struct Person {

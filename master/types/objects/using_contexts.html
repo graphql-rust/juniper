@@ -143,7 +143,7 @@ documentation for either the <a href="../../servers/iron.html">Iron</a> or <a hr
 integration.</p>
 <p>In this chapter, we'll show you how to define a context type and use it in field
 resolvers. Let's say that we have a simple user database in a <code>HashMap</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(dead_code)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">
 </span>struct Database {
@@ -164,7 +164,7 @@ In order to write such a field though, the database must be queried.</p>
 the user object. </p>
 <p>To gain access to the context, we need to specify an argument with the same 
 type as the specified <code>Context</code> for the type:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
@@ -214,7 +214,7 @@ using e.g. <code>RwLock</code> or <code>RefCell</code>.</p>
 <h2 id="dealing-with-mutable-references"><a class="header" href="#dealing-with-mutable-references">Dealing with mutable references</a></h2>
 <p>Context cannot be specified by a mutable reference, because concurrent fields resolving may be performed. If you have something in your context that requires access by mutable reference, then you need to leverage the <a href="https://doc.rust-lang.org/book/ch15-05-interior-mutability.html">interior mutability</a> for that.</p>
 <p>For example, when using async runtime with <a href="https://en.wikipedia.org/wiki/Work_stealing">work stealing</a> (like <code>tokio</code>), which obviously requires thread safety in addition, you will need to use a corresponding async version of <code>RwLock</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">use juniper::graphql_object;
 </span>use tokio::sync::RwLock;

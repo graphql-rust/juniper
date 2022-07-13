@@ -174,7 +174,7 @@ struct Root;
 #[juniper::graphql_object]
 impl Root {
     fn foo() -&gt; String {
-        &quot;Bar&quot;.to_owned()
+        &quot;Bar&quot;.into()
     }
 }
 

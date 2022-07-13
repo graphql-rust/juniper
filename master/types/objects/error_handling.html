@@ -150,7 +150,7 @@ it will bubble up to the surrounding framework and hopefully be dealt with
 there.</p>
 <p>For recoverable errors, Juniper works well with the built-in <code>Result</code> type, you
 can use the <code>?</code> operator and things will generally just work as you expect them to:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use std::{
     str,
     path::PathBuf,
@@ -238,7 +238,7 @@ following would be returned:</p>
 <h3 id="structured-errors"><a class="header" href="#structured-errors">Structured errors</a></h3>
 <p>Sometimes it is desirable to return additional structured error information
 to clients. This can be accomplished by implementing <a href="https://docs.rs/juniper/latest/juniper/trait.IntoFieldError.html"><code>IntoFieldError</code></a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#[macro_use] extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#[macro_use] extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, FieldError, IntoFieldError, ScalarValue};
 </span><span class="boring">
 </span>enum CustomError {
@@ -303,7 +303,7 @@ types. Strings are used to identify the problematic field name. Errors
 for a particular field are also returned as a string. In this example
 the string contains a server-side localized error message. However, it is also
 possible to return a unique string identifier and have the client present a localized string to the user.</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)]
@@ -338,15 +338,15 @@ impl Mutation {
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
             errors.push(ValidationError {
-                field: &quot;name&quot;.to_string(),
-                message: &quot;between 10 and 100&quot;.to_string()
+                field: &quot;name&quot;.into(),
+                message: &quot;between 10 and 100&quot;.into(),
             });
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
             errors.push(ValidationError {
-                field: &quot;quantity&quot;.to_string(),
-                message: &quot;between 1 and 10&quot;.to_string()
+                field: &quot;quantity&quot;.into(),
+                message: &quot;between 1 and 10&quot;.into(),
             });
         }
 
@@ -392,7 +392,7 @@ GraphQL's type system to describe the errors more precisely.</p>
 field is set if the validation for that particular field fails. You will likely want some kind of code generation to reduce repetition as the number of types required is significantly larger than
 before. Each resolver function has a custom <code>ValidationResult</code> which
 contains only fields provided by the function.</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)]
@@ -424,11 +424,11 @@ impl Mutation {
         };
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
-            error.name = Some(&quot;between 10 and 100&quot;.to_string());
+            error.name = Some(&quot;between 10 and 100&quot;.into());
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
-            error.quantity = Some(&quot;between 1 and 10&quot;.to_string());
+            error.quantity = Some(&quot;between 1 and 10&quot;.into());
         }
 
         if error.name.is_none() &amp;&amp; error.quantity.is_none() {
@@ -464,7 +464,7 @@ errors when they occur.</p>
 <p>In the following example, a theoretical database could fail
 and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">
 </span>use juniper::{graphql_object, graphql_value, FieldError, GraphQLObject, GraphQLUnion, ScalarValue};
 
@@ -514,11 +514,11 @@ impl Mutation {
         };
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
-            error.name = Some(&quot;between 10 and 100&quot;.to_string());
+            error.name = Some(&quot;between 10 and 100&quot;.into());
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
-            error.quantity = Some(&quot;between 1 and 10&quot;.to_string());
+            error.quantity = Some(&quot;between 1 and 10&quot;.into());
         }
 
         if error.name.is_none() &amp;&amp; error.quantity.is_none() {

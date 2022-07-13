@@ -138,7 +138,7 @@
 <p>Input objects are complex data structures that can be used as arguments to
 GraphQL fields. In Juniper, you can define input objects using a custom derive
 attribute, similar to simple objects and enums:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLInputObject)]
 struct Coordinate {
@@ -163,7 +163,7 @@ impl Root {
 <h2 id="documentation-and-renaming"><a class="header" href="#documentation-and-renaming">Documentation and renaming</a></h2>
 <p>Just like the <a href="objects/defining_objects.html">other</a> <a href="enums.html">derives</a>, you can rename
 and add documentation to both the type and the fields:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLInputObject)]
 #[graphql(name=&quot;Coordinate&quot;, description=&quot;A position on the globe&quot;)]

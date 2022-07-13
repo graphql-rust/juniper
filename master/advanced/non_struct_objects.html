@@ -141,7 +141,7 @@ at enums, but traits will work too - they don't <em>have</em> to be mapped into 
 interfaces.</p>
 <p>Using <code>Result</code>-like enums can be a useful way of reporting e.g. validation
 errors from a mutation:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, GraphQLObject};
 </span><span class="boring">#[derive(juniper::GraphQLObject)] struct User { name: String }
 </span><span class="boring">

@@ -144,7 +144,7 @@ you have to do so either in a separate &quot;normal&quot; <code>impl</code> bloc
 <code>#[graphql(ignore)]</code> attribute to be omitted by the macro. Continuing with the
 example from the last chapter, this is how you would define <code>Person</code> using the
 macro:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(dead_code)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
@@ -179,7 +179,7 @@ impl Person {
 </span></code></pre></pre>
 <p>While this is a bit more verbose, it lets you write any kind of function in the
 field resolver. With this syntax, fields can also take arguments:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, GraphQLObject};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)]
@@ -209,7 +209,7 @@ chapter: <a href="using_contexts.html">Using contexts</a>.</p>
 <p>Like with the derive attribute, field names will be converted from <code>snake_case</code>
 to <code>camelCase</code>. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
 </span>struct Person;
@@ -255,7 +255,7 @@ impl Person {
 </span><span class="boring">fn main() { }
 </span></code></pre></pre>
 <p>Or provide a different renaming policy on a <code>impl</code> block for all its fields:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span>struct Person;
 
@@ -272,10 +272,10 @@ impl Person {
 <h2 id="customizing-arguments"><a class="header" href="#customizing-arguments">Customizing arguments</a></h2>
 <p>Method field arguments can also be customized.</p>
 <p>They can have custom descriptions and default values.</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
-</span>struct Person {}
+</span>struct Person;
 
 #[graphql_object]
 impl Person {
@@ -295,14 +295,14 @@ impl Person {
         #[graphql(default)]
         arg2: i32,
     ) -&gt; String {
-        format!(&quot;{} {}&quot;, arg1, arg2)
+        format!(&quot;{arg1} {arg2}&quot;)
     }
 }
 <span class="boring">
 </span><span class="boring">fn main() { }
 </span></code></pre></pre>
 <p>Provide a different renaming policy on a <code>impl</code> block also implies for arguments:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span>struct Person;
 

@@ -152,7 +152,7 @@
 perform a &quot;patch&quot; operation on themselves. Let's say your users can optionally
 have favorite and least favorite numbers, and the input for that might look
 like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2018">/// Updates user attributes. Fields that are `None` are left as-is.
+<pre><pre class="playground"><code class="language-rust edition2021">/// Updates user attributes. Fields that are `None` are left as-is.
 pub struct UserPatch {
     /// If `Some`, updates the user's favorite number.
     pub favorite_number: Option&lt;Option&lt;i32&gt;&gt;,
@@ -177,7 +177,7 @@ pub struct UserPatch {
 </code></pre>
 <p>The last two cases rely on being able to distinguish between explicit and implicit null.</p>
 <p>In Juniper, this can be done using the <code>Nullable</code> type:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{FieldResult, Nullable};
 
 #[derive(juniper::GraphQLInputObject)]

@@ -157,7 +157,7 @@ produced by issuing a specially crafted introspection query.</p>
 <p>Juniper provides a convenience function to introspect the entire schema. The
 result can then be converted to JSON for use with tools and libraries such as
 <a href="https://github.com/graphql-rust/graphql-client">graphql-client</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate serde_json;
 </span>use juniper::{
@@ -193,7 +193,7 @@ type Schema = juniper::RootNode&lt;
 
 fn main() {
     // Create a context object.
-    let ctx = Context{};
+    let ctx = Context;
 
     // Run the built-in introspection query.
     let (res, _errors) = juniper::introspect(

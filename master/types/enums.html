@@ -138,7 +138,7 @@
 <p>Enums in GraphQL are string constants grouped together to represent a set of
 possible values. Simple Rust enums can be converted to GraphQL enums by using a
 custom derive attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLEnum)]
 enum Episode {
     NewHope,
@@ -152,7 +152,7 @@ enum Episode {
 values for these variants are <code>NEWHOPE</code>, <code>EMPIRE</code>, and <code>JEDI</code>, respectively. If
 you want to override this, you can use the <code>graphql</code> attribute, similar to how
 it works when <a href="objects/defining_objects.html">defining objects</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLEnum)]
 enum Episode {
     #[graphql(name=&quot;NEW_HOPE&quot;)]
@@ -166,7 +166,7 @@ enum Episode {
 <h2 id="documentation-and-deprecation"><a class="header" href="#documentation-and-deprecation">Documentation and deprecation</a></h2>
 <p>Just like when defining objects, the type itself can be renamed and documented,
 while individual enum variants can be renamed, documented, and deprecated:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLEnum)]
 #[graphql(name=&quot;Episode&quot;, description=&quot;An episode of Star Wars&quot;)]
 enum StarWarsEpisode {

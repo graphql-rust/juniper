@@ -149,7 +149,7 @@ object somewhere but never reference it, it will not be exposed in a schema.</p>
 <h2 id="the-query-root"><a class="header" href="#the-query-root">The query root</a></h2>
 <p>The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the <code>graphql_object</code> proc macro:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, FieldResult, GraphQLObject};
 </span><span class="boring">#[derive(GraphQLObject)] struct User { name: String }
@@ -168,7 +168,7 @@ impl Root {
 <h2 id="mutations"><a class="header" href="#mutations">Mutations</a></h2>
 <p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field
 that performs some mutating side-effect such as updating a database.</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, FieldResult, GraphQLObject};
 </span><span class="boring">#[derive(GraphQLObject)] struct User { name: String }
@@ -186,7 +186,7 @@ impl Mutations {
 </span></code></pre></pre>
 <h1 id="converting-a-rust-schema-to-the-graphql-schema-language"><a class="header" href="#converting-a-rust-schema-to-the-graphql-schema-language">Converting a Rust schema to the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a></a></h1>
 <p>Many tools in the GraphQL ecosystem require the schema to be defined in the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a>. You can generate a <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a> representation of your schema defined in Rust using the <code>schema-language</code> feature (on by default):</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{
     graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode,
 };

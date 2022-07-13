@@ -150,7 +150,7 @@ naturally map to GraphQL features, such as <code>Option&lt;T&gt;</code>, <code>V
 types to a GraphQL schema. The most important one is the
 <a href="https://docs.rs/juniper/latest/juniper/macro.graphql_object.html">graphql_object</a> procedural macro that is used for declaring an object with
 resolvers, which you will use for the <code>Query</code> and <code>Mutation</code> roots.</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::fmt::Display;
 </span>use juniper::{
@@ -256,7 +256,7 @@ impl Mutation {
 type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&lt;Context&gt;&gt;;
 <span class="boring">
 </span><span class="boring">fn main() {
-</span><span class="boring">  let _ = Schema::new(Query, Mutation{}, EmptySubscription::new());
+</span><span class="boring">  let _ = Schema::new(Query, Mutation, EmptySubscription::new());
 </span><span class="boring">}
 </span></code></pre></pre>
 <p>We now have a very simple but functional schema for a GraphQL server!</p>
@@ -264,7 +264,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&l
 <p>Juniper is a library that can be used in many contexts--it does not require a server and it does not have a dependency on a particular transport or serialization format. You can invoke the executor directly to get a result for a query:</p>
 <h2 id="executor"><a class="header" href="#executor">Executor</a></h2>
 <p>You can invoke <code>juniper::execute</code> directly to run a GraphQL query:</p>
-<pre><pre class="playground"><code class="language-rust edition2018"><span class="boring">// Only needed due to 2018 edition because the macro is not accessible.
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">// Only needed due to 2018 edition because the macro is not accessible.
 </span><span class="boring">#[macro_use] extern crate juniper;
 </span>use juniper::{
     graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
