@@ -29,6 +29,16 @@ use juniper::{
     GraphQLError, RuleError, ScalarValue, Variables,
 };
 
+/// Errors
+#[derive(Debug)]
+pub enum WebsocketError {
+    /// The connection was already closed
+    ConnectionAlreadyClosed,
+
+    /// The connection is not ready yet to accept messages
+    ConnectionNotReady
+}
+
 struct ExecutionParams<S: Schema> {
     start_payload: StartPayload<S::ScalarValue>,
     config: Arc<ConnectionConfig<S::Context>>,
@@ -520,7 +530,7 @@ where
     S: Schema,
     I: Init<S::ScalarValue, S::Context> + Send,
 {
-    type Error = Infallible;
+    type Error = WebsocketError;
 
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), Self::Error>> {
         match &mut self.sink_state {
@@ -535,7 +545,7 @@ where
                     Poll::Pending => Poll::Pending,
                 }
             }
-            ConnectionSinkState::Closed => panic!("poll_ready called after close"),
+            ConnectionSinkState::Closed => Poll::Ready(Err(WebsocketError::ConnectionAlreadyClosed)),
         }
     }
 
@@ -562,7 +572,7 @@ where
                     }
                 }
             }
-            _ => panic!("start_send called when not ready"),
+            _ => return Err(WebsocketError::ConnectionNotReady),
         };
         Ok(())
     }

@@ -345,7 +345,8 @@ fn playground_response(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use std::{convert::Infallible, fmt, sync::Arc};
+    use std::{fmt, sync::Arc};
+    use futures::TryStreamExt;
 
     use juniper::{
         futures::{
@@ -355,7 +356,7 @@ pub mod subscriptions {
         },
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
-    use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
+    use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, WebsocketError};
 
     struct Message(warp::ws::Message);
 
@@ -376,14 +377,14 @@ pub mod subscriptions {
         /// Errors that can happen while serializing outgoing messages. Note that errors that occur
         /// while deserializing incoming messages are handled internally by the protocol.
         Serde(serde_json::Error),
+
+        /// Errors that can happen while communication with Juniper
+        Juniper(juniper_graphql_ws::WebsocketError)
     }
 
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            match self {
-                Self::Warp(e) => write!(f, "warp error: {e}"),
-                Self::Serde(e) => write!(f, "serde error: {e}"),
-            }
+            write!(f, "{:?}", self)
         }
     }
 
@@ -395,9 +396,9 @@ pub mod subscriptions {
         }
     }
 
-    impl From<Infallible> for Error {
-        fn from(_err: Infallible) -> Self {
-            unreachable!()
+    impl From<WebsocketError> for Error {
+        fn from(err: WebsocketError) -> Self {
+            Self::Juniper(err)
         }
     }
 
@@ -427,7 +428,9 @@ pub mod subscriptions {
         let (ws_tx, ws_rx) = websocket.split();
         let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split();
 
-        let ws_rx = ws_rx.map(|r| r.map(Message));
+        let ws_rx = ws_rx
+            .map(|r| r.map(Message))
+            .map_err(Error::Warp);
         let s_rx = s_rx.map(|msg| {
             serde_json::to_string(&msg)
                 .map(warp::ws::Message::text)
