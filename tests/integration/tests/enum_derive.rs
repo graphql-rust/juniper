@@ -1,11 +1,12 @@
 //! Tests for `#[derive(GraphQLEnum)]` macro.
+pub mod common;
 
 use juniper::{
     execute, graphql_object, graphql_value, graphql_vars, parser::SourcePosition,
     DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, ScalarValue,
 };
 
-use crate::util::{schema, schema_with_scalar};
+use common::util::{schema, schema_with_scalar};
 
 mod trivial {
     use super::*;
@@ -785,9 +786,8 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
-
     use super::*;
+    use common::MyScalarValue;
 
     #[derive(GraphQLEnum)]
     #[graphql(scalar = MyScalarValue)]

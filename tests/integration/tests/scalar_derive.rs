@@ -1,4 +1,5 @@
 //! Tests for `#[derive(GraphQLScalar)]` macro.
+pub mod common;
 
 use std::fmt;
 
@@ -8,9 +9,9 @@ use juniper::{
     ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
-use crate::{
-    custom_scalar::MyScalarValue,
+use common::{
     util::{schema, schema_with_scalar},
+    MyScalarValue,
 };
 
 mod trivial {

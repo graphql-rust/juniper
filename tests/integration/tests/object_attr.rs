@@ -1,5 +1,5 @@
 //! Tests for `#[graphql_object]` macro.
-
+pub mod common;
 use juniper::{
     execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, EmptyMutation,
     EmptySubscription, Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject,
@@ -1667,7 +1667,7 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
+    use common::MyScalarValue;
 
     use super::*;
 

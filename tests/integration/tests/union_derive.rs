@@ -1,4 +1,5 @@
 //! Tests for `#[derive(GraphQLUnion)]` macro.
+pub mod common;
 
 use std::marker::PhantomData;
 
@@ -594,9 +595,9 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
 
     use super::*;
+    use common::MyScalarValue;
 
     #[derive(GraphQLUnion)]
     #[graphql(scalar = MyScalarValue)]

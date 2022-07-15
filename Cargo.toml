@@ -16,5 +16,5 @@ members = [
     "juniper_warp",
     "juniper_actix",
     "tests/codegen",
-    "tests/integration",
+    "tests/integration"
 ]

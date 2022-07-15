@@ -1,4 +1,5 @@
 //! Tests for `#[graphql_union]` macro.
+pub mod common;
 
 use juniper::{
     execute, graphql_object, graphql_union, graphql_value, graphql_vars, DefaultScalarValue,
@@ -570,9 +571,8 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
-
     use super::*;
+    use common::MyScalarValue;
 
     #[graphql_union(scalar = MyScalarValue)]
     trait Character {

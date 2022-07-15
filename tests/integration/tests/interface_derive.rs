@@ -1,18 +1,18 @@
-//! Tests for `#[graphql_interface]` macro placed on a struct.
-
+//! Tests for `#[derive(GraphQLInterface)]` macro.
+pub mod common;
 use std::marker::PhantomData;
 
 use juniper::{
-    execute, graphql_interface, graphql_object, graphql_value, graphql_vars, DefaultScalarValue,
-    FieldError, FieldResult, GraphQLObject, GraphQLUnion, IntoFieldError, ScalarValue, ID,
+    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, FieldError,
+    FieldResult, GraphQLInterface, GraphQLObject, GraphQLUnion, IntoFieldError, ScalarValue, ID,
 };
 
-use crate::util::{schema, schema_with_scalar};
+use common::util::{schema, schema_with_scalar};
 
 mod no_implers {
     use super::*;
 
-    #[graphql_interface]
+    #[derive(GraphQLInterface)]
     struct Character {
         id: String,
     }
@@ -78,7 +78,8 @@ mod no_implers {
 mod trivial {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
     struct Character {
         id: String,
     }
@@ -306,7 +307,8 @@ mod trivial {
 mod explicit_alias {
     use super::*;
 
-    #[graphql_interface(enum = CharacterEnum, for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(enum = CharacterEnum, for = [Human, Droid])]
     struct Character {
         id: String,
     }
@@ -481,7 +483,8 @@ mod explicit_alias {
 mod trivial_async {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
     struct Character {
         id: String,
     }
@@ -549,7 +552,10 @@ mod trivial_async {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                graphql_value!({"character": {
+                    "humanId": "human-32",
+                    "homePlanet": "earth",
+                }}),
                 vec![],
             )),
         );
@@ -714,7 +720,8 @@ mod fallible_field {
         }
     }
 
-    #[graphql_interface(for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
     struct Character {
         id: Result<String, CustomError>,
     }
@@ -880,7 +887,8 @@ mod fallible_field {
 mod generic {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
     struct Character<A = (), B: ?Sized = ()> {
         id: String,
 
@@ -1027,7 +1035,8 @@ mod description_from_doc_comment {
     use super::*;
 
     /// Rust docs.
-    #[graphql_interface(for = Human)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = Human)]
     struct Character {
         /// Rust `id` docs.
         /// Long.
@@ -1083,7 +1092,8 @@ mod description_from_doc_comment {
 mod deprecation_from_attr {
     use super::*;
 
-    #[graphql_interface(for = Human)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = Human)]
     struct Character {
         id: String,
 
@@ -1221,7 +1231,8 @@ mod explicit_name_description_and_deprecation {
     use super::*;
 
     /// Rust docs.
-    #[graphql_interface(name = "MyChar", desc = "My character.", for = Human)]
+    #[derive(GraphQLInterface)]
+    #[graphql(name = "MyChar", desc = "My character.", for = Human)]
     struct Character {
         /// Rust `id` docs.
         #[graphql(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
@@ -1411,7 +1422,8 @@ mod explicit_name_description_and_deprecation {
 mod renamed_all_fields_and_args {
     use super::*;
 
-    #[graphql_interface(rename_all = "none", for = Human)]
+    #[derive(GraphQLInterface)]
+    #[graphql(rename_all = "none", for = Human)]
     struct Character {
         id: String,
     }
@@ -1485,8 +1497,9 @@ mod renamed_all_fields_and_args {
 mod explicit_scalar {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid])]
-    #[graphql_interface(scalar = DefaultScalarValue)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
+    #[graphql(scalar = DefaultScalarValue)]
     struct Character {
         id: String,
     }
@@ -1611,11 +1624,12 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
+    use common::MyScalarValue;
 
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid], scalar = MyScalarValue)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid], scalar = MyScalarValue)]
     struct Character {
         id: String,
     }
@@ -1742,7 +1756,8 @@ mod custom_scalar {
 mod explicit_generic_scalar {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid], scalar = S)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid], scalar = S)]
     struct Character<S: ScalarValue = DefaultScalarValue> {
         id: FieldResult<String, S>,
     }
@@ -1869,7 +1884,8 @@ mod explicit_generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid], scalar = S: ScalarValue + Clone)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid], scalar = S: ScalarValue + Clone)]
     struct Character {
         id: String,
     }
@@ -1996,7 +2012,8 @@ mod bounded_generic_scalar {
 mod ignored_method {
     use super::*;
 
-    #[graphql_interface(for = Human)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = Human)]
     struct Character {
         id: String,
 
@@ -2093,7 +2110,8 @@ mod ignored_method {
 mod field_return_subtyping {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
     struct Character {
         id: Option<String>,
     }
@@ -2237,7 +2255,8 @@ mod field_return_union_subtyping {
         Knowledge(Knowledge),
     }
 
-    #[graphql_interface(for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
     struct Character {
         id: Option<String>,
         key_feature: KeyFeature,
@@ -2397,7 +2416,8 @@ mod field_return_union_subtyping {
 mod nullable_argument_subtyping {
     use super::*;
 
-    #[graphql_interface(for = [Human, Droid])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [Human, Droid])]
     struct Character {
         id: Option<String>,
     }
@@ -2527,12 +2547,14 @@ mod nullable_argument_subtyping {
 mod simple_subtyping {
     use super::*;
 
-    #[graphql_interface(for = [ResourceValue, Endpoint])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [ResourceValue, Endpoint])]
     struct Node {
         id: Option<ID>,
     }
 
-    #[graphql_interface(impl = NodeValue, for = Endpoint)]
+    #[derive(GraphQLInterface)]
+    #[graphql(impl = NodeValue, for = Endpoint)]
     struct Resource {
         id: ID,
         url: Option<String>,
@@ -2771,17 +2793,20 @@ mod simple_subtyping {
 mod branching_subtyping {
     use super::*;
 
-    #[graphql_interface(for = [HumanValue, DroidValue, Luke, R2D2])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [HumanValue, DroidValue, Luke, R2D2])]
     struct Node {
         id: ID,
     }
 
-    #[graphql_interface(for = [HumanConnection, DroidConnection])]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = [HumanConnection, DroidConnection])]
     struct Connection {
         nodes: Vec<NodeValue>,
     }
 
-    #[graphql_interface(impl = NodeValue, for = Luke)]
+    #[derive(GraphQLInterface)]
+    #[graphql(impl = NodeValue, for = Luke)]
     struct Human {
         id: ID,
         home_planet: String,
@@ -2793,7 +2818,8 @@ mod branching_subtyping {
         nodes: Vec<HumanValue>,
     }
 
-    #[graphql_interface(impl = NodeValue, for = R2D2)]
+    #[derive(GraphQLInterface)]
+    #[graphql(impl = NodeValue, for = R2D2)]
     struct Droid {
         id: ID,
         primary_function: String,
@@ -3060,7 +3086,8 @@ mod preserves_visibility {
     pub(crate) mod inner {
         use super::*;
 
-        #[graphql_interface(for = Human)]
+        #[derive(GraphQLInterface)]
+        #[graphql(for = Human)]
         pub(crate) struct Character {
             id: String,
         }
@@ -3079,7 +3106,8 @@ mod has_no_missing_docs {
 
     use super::*;
 
-    #[graphql_interface(for = Human)]
+    #[derive(GraphQLInterface)]
+    #[graphql(for = Human)]
     pub struct Character {
         pub id: String,
     }
