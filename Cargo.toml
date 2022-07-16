@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "benches",
-    "book/tests",
     "examples/basic_subscriptions",
     "examples/warp_async",
     "examples/warp_subscriptions",
