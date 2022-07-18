@@ -29,6 +29,7 @@ jobs:
       - release-check
       - rustfmt
       - test
+      - test-book
       - wasm
     runs-on: ubuntu-latest
     steps:
@@ -60,7 +61,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: stable
           components: rustfmt
 
       - run: make cargo.fmt check=yes
@@ -171,7 +172,6 @@ jobs:
           - juniper_graphql_ws
           - juniper_integration_tests
           - juniper_codegen_tests
-          - juniper_book_tests
           - juniper_actix
           - juniper_hyper
           - juniper_iron
@@ -194,13 +194,6 @@ jobs:
             os: macOS
           - crate: juniper_codegen_tests
             os: windows
-          - crate: juniper_book_tests
-            toolchain: beta
-          - crate: juniper_book_tests
-            toolchain: nightly
-          # TODO: LLVM ERROR: out of memory
-          - crate: juniper_integration_tests
-            os: windows
 
     runs-on: ${{ matrix.os }}-latest
     steps:
@@ -212,6 +205,30 @@ jobs:
           override: true
 
       - run: make test.cargo crate=${{ matrix.crate }}
+
+  test-book:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu
+          - macOS
+          - windows
+        toolchain:
+          - stable
+          - beta
+          - nightly
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      -   uses: actions/checkout@v3
+      -   uses: actions-rs/toolchain@v1
+          with:
+            profile: minimal
+            toolchain: ${{ matrix.toolchain }}
+            override: true
+
+      -   run: make test.book
 
   wasm:
     strategy:
@@ -281,6 +298,7 @@ jobs:
       - package
       - rustfmt
       - test
+      - test-book
       - wasm
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
