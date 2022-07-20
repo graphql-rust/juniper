@@ -1,12 +1,14 @@
 //! Tests for `#[graphql_interface]` macro placed on a trait.
 
+pub mod common;
+
 use juniper::{
     execute, graphql_interface, graphql_object, graphql_value, graphql_vars, DefaultScalarValue,
     Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject, GraphQLUnion,
     IntoFieldError, ScalarValue, ID,
 };
 
-use crate::util::{schema, schema_with_scalar};
+use self::common::util::{schema, schema_with_scalar};
 
 mod no_implers {
     use super::*;
@@ -1927,7 +1929,7 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
+    use crate::common::MyScalarValue;
 
     use super::*;
 

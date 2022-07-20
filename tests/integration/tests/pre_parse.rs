@@ -1,3 +1,5 @@
+use std::pin::Pin;
+
 use futures::{Stream, StreamExt, TryFutureExt};
 use juniper::{
     executor::{execute_validated_query_async, get_operation, resolve_validated_subscription},
@@ -6,7 +8,6 @@ use juniper::{
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
     EmptyMutation, FieldError, OperationType, RootNode,
 };
-use std::pin::Pin;
 
 pub struct Context;
 

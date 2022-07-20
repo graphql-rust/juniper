@@ -1,15 +1,17 @@
 use std::sync::Arc;
 
+use juniper::{graphql_object, GraphQLInputObject};
+
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
     fn ping() -> Arc<bool> {
         Arc::new(false)
     }
 }
 
-#[derive(juniper::GraphQLInputObject)]
+#[derive(GraphQLInputObject)]
 struct Ping {
     expect_result: Arc<bool>,
 }

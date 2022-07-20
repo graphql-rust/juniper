@@ -114,6 +114,7 @@ All the methods used from newtype's field can be replaced with attributes:
 ### `#[graphql(to_output_with = <fn>)]` attribute
 
 ```rust
+# extern crate juniper;
 # use juniper::{GraphQLScalar, ScalarValue, Value};
 #
 #[derive(GraphQLScalar)]
@@ -131,6 +132,7 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 ### `#[graphql(from_input_with = <fn>)]` attribute
 
 ```rust
+# extern crate juniper;
 # use juniper::{GraphQLScalar, InputValue, ScalarValue};
 #
 #[derive(GraphQLScalar)]
@@ -165,6 +167,7 @@ impl UserId {
 ### `#[graphql(parse_token_with = <fn>]` or `#[graphql(parse_token(<types>)]` attributes
 
 ```rust
+# extern crate juniper;
 # use juniper::{
 #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 #     ScalarValue, ScalarToken, Value
@@ -224,6 +227,7 @@ Path can be simply `with = Self` (default path where macro expects resolvers to 
 in case there is an impl block with custom resolvers:
 
 ```rust
+# extern crate juniper;
 # use juniper::{
 #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
 #     ScalarValue, ScalarToken, Value
@@ -269,6 +273,7 @@ impl StringOrInt {
 Or it can be path to a module, where custom resolvers are located.
 
 ```rust
+# extern crate juniper;
 # use juniper::{
 #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 #     ScalarValue, ScalarToken, Value
@@ -319,6 +324,7 @@ mod string_or_int {
 Also, you can partially override `#[graphql(with)]` attribute with other custom scalars.
 
 ```rust
+# extern crate juniper;
 # use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
 #
 #[derive(GraphQLScalar)]

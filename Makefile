@@ -87,10 +87,14 @@ cargo.test: test.cargo
 # Run Rust tests of Book.
 #
 # Usage:
-#	make test.book
+#	make test.book [clean=(no|yes)]
 
 test.book:
-	@make test.cargo crate=juniper_book_tests
+ifeq ($(clean),yes)
+	cargo clean
+endif
+	cargo build
+	mdbook test book -L target/debug/deps
 
 
 # Run Rust tests of project crates.

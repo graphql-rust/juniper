@@ -4,16 +4,14 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
-[dependencies]
+[dev-dependencies]
+async-trait = "0.1.39"
 chrono = "0.4"
 derive_more = "0.99"
+fnv = "1.0"
 futures = "0.3"
 juniper = { path = "../../juniper" }
 juniper_subscriptions = { path = "../../juniper_subscriptions" }
-
-[dev-dependencies]
-async-trait = "0.1.39"
-fnv = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["rt", "macros", "time"] }

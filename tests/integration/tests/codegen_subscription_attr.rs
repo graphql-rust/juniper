@@ -1,5 +1,7 @@
 //! Tests for `#[graphql_subscription]` macro.
 
+pub mod common;
+
 use std::pin::Pin;
 
 use futures::{future, stream, FutureExt as _};
@@ -9,7 +11,7 @@ use juniper::{
     GraphQLInputObject, GraphQLType, IntoFieldError, RootNode, ScalarValue,
 };
 
-use crate::util::extract_next;
+use self::common::util::extract_next;
 
 struct Query;
 
@@ -1351,7 +1353,7 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
+    use crate::common::MyScalarValue;
 
     use super::*;
 

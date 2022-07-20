@@ -1,34 +1,13 @@
 //! Tests for `#[derive(GraphQLObject)]` macro.
 
+pub mod common;
+
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, GraphQLObject, GraphQLType, RootNode, ScalarValue,
+    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, GraphQLObject,
+    ScalarValue,
 };
 
-fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
-where
-    Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
-{
-    RootNode::new(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
-}
-
-fn schema_with_scalar<'q, S, C, Q>(
-    query_root: Q,
-) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
-where
-    Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-    S: ScalarValue + 'q,
-{
-    RootNode::new_with_scalar_value(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
-}
+use self::common::util::{schema, schema_with_scalar};
 
 mod trivial {
     use super::*;
@@ -851,7 +830,7 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
+    use crate::common::MyScalarValue;
 
     use super::*;
 

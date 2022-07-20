@@ -1,11 +1,15 @@
 //! Tests for `#[derive(GraphQLUnion)]` macro.
 
+pub mod common;
+
 use std::marker::PhantomData;
 
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, EmptyMutation,
-    EmptySubscription, GraphQLObject, GraphQLType, GraphQLUnion, RootNode, ScalarValue,
+    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, GraphQLObject,
+    GraphQLUnion, ScalarValue,
 };
+
+use self::common::util::{schema, schema_with_scalar};
 
 #[derive(GraphQLObject)]
 struct Human {
@@ -51,31 +55,6 @@ pub struct DroidCustomContext {
 struct EwokCustomContext {
     id: String,
     funny: bool,
-}
-
-fn schema<'q, C, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
-where
-    Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
-{
-    RootNode::new(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
-}
-
-fn schema_with_scalar<'q, S, C, Q>(
-    query_root: Q,
-) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
-where
-    Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-    S: ScalarValue + 'q,
-{
-    RootNode::new_with_scalar_value(
-        query_root,
-        EmptyMutation::<C>::new(),
-        EmptySubscription::<C>::new(),
-    )
 }
 
 mod trivial_enum {
@@ -594,7 +573,7 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use crate::custom_scalar::MyScalarValue;
+    use crate::common::MyScalarValue;
 
     use super::*;
 

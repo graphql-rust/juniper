@@ -1,11 +1,13 @@
 //! Tests for `#[derive(GraphQLInputObject)]` macro.
 
+pub mod common;
+
 use juniper::{
     execute, graphql_object, graphql_value, graphql_vars, parser::SourcePosition, GraphQLError,
     GraphQLInputObject, RuleError,
 };
 
-use crate::util::schema;
+use self::common::util::schema;
 
 mod trivial {
     use super::*;
