@@ -82,7 +82,6 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # extern crate juniper;
 # extern crate juniper_subscriptions;
 # extern crate serde_json;
-# extern crate tokio;
 # use juniper::{
 #     http::GraphQLRequest,
 #     graphql_object, graphql_subscription, 
