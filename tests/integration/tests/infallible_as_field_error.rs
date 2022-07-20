@@ -1,8 +1,12 @@
+use std::convert::Infallible;
+
+use juniper::graphql_object;
+
 struct Query;
 
-#[juniper::graphql_object]
+#[graphql_object]
 impl Query {
-    fn ping() -> Result<bool, std::convert::Infallible> {
+    fn ping() -> Result<bool, Infallible> {
         Ok(false)
     }
 }

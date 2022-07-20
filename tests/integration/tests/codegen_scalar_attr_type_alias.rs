@@ -1,5 +1,7 @@
 //! Tests for `#[graphql_scalar]` macro placed on a type alias.
+
 pub mod common;
+
 use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
@@ -8,7 +10,7 @@ use juniper::{
     ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
-use common::{
+use self::common::{
     util::{schema, schema_with_scalar},
     MyScalarValue,
 };

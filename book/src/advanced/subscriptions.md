@@ -25,11 +25,11 @@ This example shows a subscription operation that returns two events, the strings
 sequentially: 
 
 ```rust
-# extern crate juniper;
 # extern crate futures;
-# use juniper::{graphql_object, graphql_subscription, FieldError};
-# use futures::Stream;
+# extern crate juniper;
 # use std::pin::Pin;
+# use futures::Stream;
+# use juniper::{graphql_object, graphql_subscription, FieldError};
 #
 # #[derive(Clone)]
 # pub struct Database;

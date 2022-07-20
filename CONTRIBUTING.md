@@ -17,7 +17,7 @@ Before submitting a PR, you should follow these steps to prevent redundant churn
 
 Consistent formatting is enforced on the CI.
 
-Before you submit your PR, you should run `cargo +nightly fmt` in the root directory.
+Before you submit your PR, you should run `cargo +nightly fmt --all` in the root directory (or use the `make fmt` shortcut).
 
 Formatting should be run on the **nightly** compiler.
 
@@ -25,8 +25,8 @@ Formatting should be run on the **nightly** compiler.
 
 To run all available tests, including verifying the code examples in the book:
 
-1. Run `cargo test` in the root directory
-2. Run `make test.book` in the root directory 
+1. Run `cargo test` in the root directory.
+2. Run `make test.book` in the root directory.
 
 ### Update the CHANGELOG
 

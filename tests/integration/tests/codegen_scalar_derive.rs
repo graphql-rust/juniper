@@ -1,16 +1,16 @@
-//! Tests for `#[graphql_scalar]` macro placed on [`DeriveInput`].
-//!
-//! [`DeriveInput`]: syn::DeriveInput
+//! Tests for `#[derive(GraphQLScalar)]` macro.
+
 pub mod common;
+
 use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, InputValue,
+    execute, graphql_object, graphql_value, graphql_vars, GraphQLScalar, InputValue,
     ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
-use common::{
+use self::common::{
     util::{schema, schema_with_scalar},
     MyScalarValue,
 };
@@ -18,7 +18,7 @@ use common::{
 mod trivial {
     use super::*;
 
-    #[graphql_scalar]
+    #[derive(GraphQLScalar)]
     struct Counter(i32);
 
     impl Counter {
@@ -94,7 +94,8 @@ mod trivial {
 mod transparent {
     use super::*;
 
-    #[graphql_scalar(transparent)]
+    #[derive(GraphQLScalar)]
+    #[graphql(transparent)]
     struct Counter(i32);
 
     struct QueryRoot;
@@ -154,10 +155,8 @@ mod transparent {
 mod transparent_with_resolver {
     use super::*;
 
-    #[graphql_scalar(
-        transparent,
-        to_output_with = Self::to_output,
-    )]
+    #[derive(GraphQLScalar)]
+    #[graphql(transparent, to_output_with = Self::to_output)]
     struct Counter(i32);
 
     impl Counter {
@@ -223,11 +222,12 @@ mod transparent_with_resolver {
 mod all_custom_resolvers {
     use super::*;
 
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
     )]
-    #[graphql_scalar(parse_token_with = parse_token)]
+    #[graphql(parse_token_with = parse_token)]
     struct Counter(i32);
 
     fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
@@ -301,7 +301,8 @@ mod all_custom_resolvers {
 mod explicit_name {
     use super::*;
 
-    #[graphql_scalar(name = "Counter")]
+    #[derive(GraphQLScalar)]
+    #[graphql(name = "Counter")]
     struct CustomCounter(i32);
 
     impl CustomCounter {
@@ -377,7 +378,8 @@ mod explicit_name {
 mod delegated_parse_token {
     use super::*;
 
-    #[graphql_scalar(parse_token(i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -449,7 +451,8 @@ mod delegated_parse_token {
 mod multiple_delegated_parse_token {
     use super::*;
 
-    #[graphql_scalar(parse_token(String, i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(parse_token(String, i32))]
     enum StringOrInt {
         String(String),
         Int(i32),
@@ -508,7 +511,8 @@ mod multiple_delegated_parse_token {
 mod where_attribute {
     use super::*;
 
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
         parse_token(String),
@@ -588,7 +592,8 @@ mod where_attribute {
 mod with_self {
     use super::*;
 
-    #[graphql_scalar(with = Self)]
+    #[derive(GraphQLScalar)]
+    #[graphql(with = Self)]
     struct Counter(i32);
 
     impl Counter {
@@ -664,7 +669,8 @@ mod with_self {
 mod with_module {
     use super::*;
 
-    #[graphql_scalar(
+    #[derive(GraphQLScalar)]
+    #[graphql(
         with = custom_date_time,
         parse_token(String),
         where(Tz: From<Utc>, Tz::Offset: fmt::Display),
@@ -748,7 +754,8 @@ mod description_from_doc_comment {
     use super::*;
 
     /// Description
-    #[graphql_scalar(parse_token(i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -824,7 +831,8 @@ mod description_from_attribute {
     use super::*;
 
     /// Doc comment
-    #[graphql_scalar(description = "Description from attribute", parse_token(i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(description = "Description from attribute", parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -900,7 +908,8 @@ mod custom_scalar {
     use super::*;
 
     /// Description
-    #[graphql_scalar(scalar = MyScalarValue, parse_token(i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(scalar = MyScalarValue, parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -976,7 +985,8 @@ mod generic_scalar {
     use super::*;
 
     /// Description
-    #[graphql_scalar(scalar = S: ScalarValue, parse_token(i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(scalar = S: ScalarValue, parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -1042,7 +1052,7 @@ mod generic_scalar {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"description": "Description"}}),
-                vec![]
+                vec![],
             )),
         );
     }
@@ -1051,7 +1061,8 @@ mod generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    #[graphql_scalar(scalar = S: ScalarValue + Clone, parse_token(i32))]
+    #[derive(GraphQLScalar)]
+    #[graphql(scalar = S: ScalarValue + Clone, parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -1062,7 +1073,7 @@ mod bounded_generic_scalar {
         fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
             v.as_int_value()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `String`, found: {v}"))
         }
     }
 

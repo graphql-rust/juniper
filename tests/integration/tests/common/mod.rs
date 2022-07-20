@@ -1,8 +1,8 @@
-use juniper::ScalarValue;
-use serde::{de, Deserialize, Deserializer, Serialize};
 use std::fmt;
 
-#[cfg(test)]
+use juniper::ScalarValue;
+use serde::{de, Deserialize, Deserializer, Serialize};
+
 /// Common utilities used across tests.
 pub mod util {
     use futures::StreamExt as _;

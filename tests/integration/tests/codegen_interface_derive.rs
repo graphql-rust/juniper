@@ -1,5 +1,7 @@
 //! Tests for `#[derive(GraphQLInterface)]` macro.
+
 pub mod common;
+
 use std::marker::PhantomData;
 
 use juniper::{
@@ -7,7 +9,7 @@ use juniper::{
     FieldResult, GraphQLInterface, GraphQLObject, GraphQLUnion, IntoFieldError, ScalarValue, ID,
 };
 
-use common::util::{schema, schema_with_scalar};
+use self::common::util::{schema, schema_with_scalar};
 
 mod no_implers {
     use super::*;
@@ -1624,7 +1626,7 @@ mod explicit_scalar {
 }
 
 mod custom_scalar {
-    use common::MyScalarValue;
+    use crate::common::MyScalarValue;
 
     use super::*;
 

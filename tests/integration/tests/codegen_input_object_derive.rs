@@ -1,4 +1,5 @@
 //! Tests for `#[derive(GraphQLInputObject)]` macro.
+
 pub mod common;
 
 use juniper::{
@@ -6,7 +7,7 @@ use juniper::{
     GraphQLInputObject, RuleError,
 };
 
-use common::util::schema;
+use self::common::util::schema;
 
 mod trivial {
     use super::*;

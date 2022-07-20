@@ -42,7 +42,7 @@ release: cargo.release
 #	make cargo.fmt [check=(no|yes)]
 
 cargo.fmt:
-	cargo fmt --all $(if $(call eq,$(check),yes),-- --check,)
+	cargo +nightly fmt --all $(if $(call eq,$(check),yes),-- --check,)
 
 
 # Lint Rust sources with Clippy.
@@ -87,10 +87,14 @@ cargo.test: test.cargo
 # Run Rust tests of Book.
 #
 # Usage:
-#	make test.book
+#	make test.book [clean=(no|yes)]
 
 test.book:
-	cargo clean; cargo build; mdbook test book -L target/debug/deps
+ifeq ($(clean),yes)
+	cargo clean
+endif
+	cargo build
+	mdbook test book -L target/debug/deps
 
 
 # Run Rust tests of project crates.

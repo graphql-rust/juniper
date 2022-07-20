@@ -2,7 +2,6 @@ pub mod common;
 
 use std::pin::Pin;
 
-use common::MyScalarValue;
 use futures::{stream, Stream};
 use juniper::{
     execute, graphql_input_value, graphql_object, graphql_scalar, graphql_subscription,
@@ -10,6 +9,8 @@ use juniper::{
     parser::{ParseError, ScalarToken, Token},
     EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, Value, Variables,
 };
+
+use self::common::MyScalarValue;
 
 #[graphql_scalar(with = long, scalar = MyScalarValue)]
 type Long = i64;

@@ -48,4 +48,7 @@ The output will be in the `_rendered/` directory.
 To run the tests validating all code examples in the book, run:
 ```bash
 mdbook test -L ../target/debug/deps
+
+# or via shortcut from project root dir:
+make test.book
 ```
