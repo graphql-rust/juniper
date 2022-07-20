@@ -225,7 +225,8 @@ pub struct UserId(i32);
 </span></code></pre></pre>
 <p>All the methods used from newtype's field can be replaced with attributes:</p>
 <h3 id="graphqlto_output_with--fn-attribute"><a class="header" href="#graphqlto_output_with--fn-attribute"><code>#[graphql(to_output_with = &lt;fn&gt;)]</code> attribute</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{GraphQLScalar, ScalarValue, Value};
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, ScalarValue, Value};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(to_output_with = to_output, transparent)]
@@ -239,7 +240,8 @@ fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; Value&lt;S&gt; {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h3 id="graphqlfrom_input_with--fn-attribute"><a class="header" href="#graphqlfrom_input_with--fn-attribute"><code>#[graphql(from_input_with = &lt;fn&gt;)]</code> attribute</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(from_input_with = Self::from_input, transparent)]
@@ -270,7 +272,8 @@ impl UserId {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h3 id="graphqlparse_token_with--fn-or-graphqlparse_tokentypes-attributes"><a class="header" href="#graphqlparse_token_with--fn-or-graphqlparse_tokentypes-attributes"><code>#[graphql(parse_token_with = &lt;fn&gt;]</code> or <code>#[graphql(parse_token(&lt;types&gt;)]</code> attributes</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 </span><span class="boring">    ScalarValue, ScalarToken, Value
 </span><span class="boring">};
@@ -325,7 +328,8 @@ is no need to follow <code>newtype</code> pattern.</p>
 <code>from_input</code>, <code>parse_token</code> functions.</p>
 <p>Path can be simply <code>with = Self</code> (default path where macro expects resolvers to be), 
 in case there is an impl block with custom resolvers:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
 </span><span class="boring">    ScalarValue, ScalarToken, Value
 </span><span class="boring">};
@@ -367,7 +371,8 @@ impl StringOrInt {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <p>Or it can be path to a module, where custom resolvers are located.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 </span><span class="boring">    ScalarValue, ScalarToken, Value
 </span><span class="boring">};
@@ -414,7 +419,8 @@ mod string_or_int {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <p>Also, you can partially override <code>#[graphql(with)]</code> attribute with other custom scalars.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(parse_token(String, i32))]

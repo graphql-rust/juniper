@@ -833,6 +833,7 @@ using e.g. <code>RwLock</code> or <code>RefCell</code>.</p>
 <p>Context cannot be specified by a mutable reference, because concurrent fields resolving may be performed. If you have something in your context that requires access by mutable reference, then you need to leverage the <a href="https://doc.rust-lang.org/book/ch15-05-interior-mutability.html">interior mutability</a> for that.</p>
 <p>For example, when using async runtime with <a href="https://en.wikipedia.org/wiki/Work_stealing">work stealing</a> (like <code>tokio</code>), which obviously requires thread safety in addition, you will need to use a corresponding async version of <code>RwLock</code>:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">extern crate tokio;
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">use juniper::graphql_object;
 </span>use tokio::sync::RwLock;
@@ -1909,7 +1910,8 @@ pub struct UserId(i32);
 </span></code></pre></pre>
 <p>All the methods used from newtype's field can be replaced with attributes:</p>
 <h3 id="graphqlto_output_with--fn-attribute"><a class="header" href="#graphqlto_output_with--fn-attribute"><code>#[graphql(to_output_with = &lt;fn&gt;)]</code> attribute</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{GraphQLScalar, ScalarValue, Value};
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, ScalarValue, Value};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(to_output_with = to_output, transparent)]
@@ -1923,7 +1925,8 @@ fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; Value&lt;S&gt; {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h3 id="graphqlfrom_input_with--fn-attribute"><a class="header" href="#graphqlfrom_input_with--fn-attribute"><code>#[graphql(from_input_with = &lt;fn&gt;)]</code> attribute</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(from_input_with = Self::from_input, transparent)]
@@ -1954,7 +1957,8 @@ impl UserId {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <h3 id="graphqlparse_token_with--fn-or-graphqlparse_tokentypes-attributes"><a class="header" href="#graphqlparse_token_with--fn-or-graphqlparse_tokentypes-attributes"><code>#[graphql(parse_token_with = &lt;fn&gt;]</code> or <code>#[graphql(parse_token(&lt;types&gt;)]</code> attributes</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 </span><span class="boring">    ScalarValue, ScalarToken, Value
 </span><span class="boring">};
@@ -2009,7 +2013,8 @@ is no need to follow <code>newtype</code> pattern.</p>
 <code>from_input</code>, <code>parse_token</code> functions.</p>
 <p>Path can be simply <code>with = Self</code> (default path where macro expects resolvers to be), 
 in case there is an impl block with custom resolvers:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
 </span><span class="boring">    ScalarValue, ScalarToken, Value
 </span><span class="boring">};
@@ -2051,7 +2056,8 @@ impl StringOrInt {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <p>Or it can be path to a module, where custom resolvers are located.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, 
 </span><span class="boring">    ScalarValue, ScalarToken, Value
 </span><span class="boring">};
@@ -2098,7 +2104,8 @@ mod string_or_int {
 </span><span class="boring">fn main() {}
 </span></code></pre></pre>
 <p>Also, you can partially override <code>#[graphql(with)]</code> attribute with other custom scalars.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(parse_token(String, i32))]
@@ -3402,9 +3409,11 @@ juniper_subscriptions = &quot;0.17.0&quot;
 operations in your <a href="advanced/../schema/schemas_and_mutations.html">Schema</a>. For subscriptions all fields/operations should be async and should return a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
 <p>This example shows a subscription operation that returns two events, the strings <code>Hello</code> and <code>World!</code>
 sequentially: </p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{graphql_object, graphql_subscription, FieldError};
-</span><span class="boring">use futures::Stream;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate futures;
+</span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::pin::Pin;
+</span><span class="boring">use futures::Stream;
+</span><span class="boring">use juniper::{graphql_object, graphql_subscription, FieldError};
 </span><span class="boring">
 </span><span class="boring">#[derive(Clone)]
 </span><span class="boring">pub struct Database;
@@ -3448,7 +3457,6 @@ where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.ht
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate juniper_subscriptions;
 </span><span class="boring">extern crate serde_json;
-</span><span class="boring">extern crate tokio;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    http::GraphQLRequest,
 </span><span class="boring">    graphql_object, graphql_subscription, 

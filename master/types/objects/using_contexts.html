@@ -215,6 +215,7 @@ using e.g. <code>RwLock</code> or <code>RefCell</code>.</p>
 <p>Context cannot be specified by a mutable reference, because concurrent fields resolving may be performed. If you have something in your context that requires access by mutable reference, then you need to leverage the <a href="https://doc.rust-lang.org/book/ch15-05-interior-mutability.html">interior mutability</a> for that.</p>
 <p>For example, when using async runtime with <a href="https://en.wikipedia.org/wiki/Work_stealing">work stealing</a> (like <code>tokio</code>), which obviously requires thread safety in addition, you will need to use a corresponding async version of <code>RwLock</code>:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">extern crate tokio;
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">use juniper::graphql_object;
 </span>use tokio::sync::RwLock;

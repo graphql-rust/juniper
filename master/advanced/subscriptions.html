@@ -153,9 +153,11 @@ juniper_subscriptions = &quot;0.17.0&quot;
 operations in your <a href="../schema/schemas_and_mutations.html">Schema</a>. For subscriptions all fields/operations should be async and should return a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
 <p>This example shows a subscription operation that returns two events, the strings <code>Hello</code> and <code>World!</code>
 sequentially: </p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">use juniper::{graphql_object, graphql_subscription, FieldError};
-</span><span class="boring">use futures::Stream;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate futures;
+</span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::pin::Pin;
+</span><span class="boring">use futures::Stream;
+</span><span class="boring">use juniper::{graphql_object, graphql_subscription, FieldError};
 </span><span class="boring">
 </span><span class="boring">#[derive(Clone)]
 </span><span class="boring">pub struct Database;
@@ -199,7 +201,6 @@ where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.ht
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate juniper_subscriptions;
 </span><span class="boring">extern crate serde_json;
-</span><span class="boring">extern crate tokio;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    http::GraphQLRequest,
 </span><span class="boring">    graphql_object, graphql_subscription, 
