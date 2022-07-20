@@ -95,7 +95,7 @@ using e.g. `RwLock` or `RefCell`.
 Context cannot be specified by a mutable reference, because concurrent fields resolving may be performed. If you have something in your context that requires access by mutable reference, then you need to leverage the [interior mutability][1] for that.
 
 For example, when using async runtime with [work stealing][2] (like `tokio`), which obviously requires thread safety in addition, you will need to use a corresponding async version of `RwLock`:
-```rust
+```rust,ignore
 # extern crate juniper;
 # extern crate tokio;
 # use std::collections::HashMap;
