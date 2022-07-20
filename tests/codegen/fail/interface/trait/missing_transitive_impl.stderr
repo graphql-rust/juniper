@@ -4,4 +4,4 @@ error[E0080]: evaluation of constant value failed
 8 | #[graphql_interface(impl = Node1Value, for = Node3Value)]
   |                                              ^^^^^^^^^^ the evaluated program panicked at 'Failed to implement interface `Node2` on `Node3`: missing `impl = ` for transitive interface `Node1` on `Node3`.', $DIR/fail/interface/trait/missing_transitive_impl.rs:8:46
   |
-  = note: this error originates in the macro `$crate::panic::panic_2021` (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_transitive_impls` (in Nightly builds, run with -Z macro-backtrace for more info)

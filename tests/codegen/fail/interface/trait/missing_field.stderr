@@ -4,7 +4,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id` isn't implemented on `ObjA`.', $DIR/fail/interface/trait/missing_field.rs:11:8
    |
-   = note: this error originates in the macro `$crate::panic::panic_2021` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -12,7 +12,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -20,7 +20,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -28,7 +28,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -36,7 +36,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -51,7 +51,7 @@ error: any use of this value will cause an error
    = note: `#[deny(const_err)]` on by default
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -61,7 +61,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -71,7 +71,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -81,7 +81,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -89,7 +89,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -97,7 +97,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -107,7 +107,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -117,7 +117,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -125,7 +125,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -133,7 +133,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -143,7 +143,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -153,7 +153,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -161,7 +161,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -171,7 +171,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -179,7 +179,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -187,7 +187,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -197,7 +197,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -205,7 +205,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -215,7 +215,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -223,7 +223,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -231,7 +231,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -241,7 +241,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -251,7 +251,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -259,7 +259,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -269,7 +269,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -277,7 +277,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -285,7 +285,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -295,7 +295,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -303,7 +303,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -313,7 +313,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -321,7 +321,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -329,7 +329,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -337,7 +337,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id` isn't implemented on `ObjA`.', $DIR/fail/interface/trait/missing_field.rs:11:8
    |
-   = note: this error originates in the macro `$crate::panic::panic_2021` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -347,7 +347,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_subtype` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -357,7 +357,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -365,7 +365,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -373,7 +373,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -383,7 +383,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_subtype` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -393,7 +393,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -401,7 +401,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -409,7 +409,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -419,7 +419,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -427,7 +427,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -437,7 +437,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -445,7 +445,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -453,7 +453,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -463,7 +463,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_subtype` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -473,7 +473,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -481,7 +481,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -489,7 +489,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -497,7 +497,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id` isn't implemented on `ObjA`.', $DIR/fail/interface/trait/missing_field.rs:11:8
    |
-   = note: this error originates in the macro `$crate::panic::panic_2021` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -505,7 +505,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -513,7 +513,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -521,7 +521,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: erroneous constant used
   --> fail/interface/trait/missing_field.rs:11:8
@@ -529,7 +529,7 @@ error[E0080]: erroneous constant used
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -543,7 +543,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -553,7 +553,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -563,7 +563,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -573,7 +573,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -581,7 +581,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -589,7 +589,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -599,7 +599,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -609,7 +609,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -617,7 +617,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -625,7 +625,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -635,7 +635,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -645,7 +645,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -653,7 +653,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -663,7 +663,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -671,7 +671,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -679,7 +679,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -689,7 +689,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -697,7 +697,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -707,7 +707,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -715,7 +715,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -723,7 +723,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -733,7 +733,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -743,7 +743,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -751,7 +751,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -761,7 +761,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -769,7 +769,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -777,7 +777,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -787,7 +787,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -795,7 +795,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -805,7 +805,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_field_args` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -813,7 +813,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -821,7 +821,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -829,7 +829,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id` isn't implemented on `ObjA`.', $DIR/fail/interface/trait/missing_field.rs:11:8
    |
-   = note: this error originates in the macro `$crate::panic::panic_2021` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -839,7 +839,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_subtype` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -849,7 +849,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -857,7 +857,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -865,7 +865,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -875,7 +875,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_subtype` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -885,7 +885,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -893,7 +893,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -901,7 +901,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -911,7 +911,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -919,7 +919,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -929,7 +929,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -937,7 +937,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -945,7 +945,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::const_concat` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -955,7 +955,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::assert_subtype` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: any use of this value will cause an error
   --> fail/interface/trait/missing_field.rs:11:8
@@ -965,7 +965,7 @@ error: any use of this value will cause an error
    |
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
    = note: for more information, see issue #71800 <https://github.com/rust-lang/rust/issues/71800>
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -973,7 +973,7 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation of constant value failed
   --> fail/interface/trait/missing_field.rs:11:8
@@ -981,4 +981,4 @@ error[E0080]: evaluation of constant value failed
 11 |     fn id(&self) -> &str;
    |        ^^ referenced constant has errors
    |
-   = note: this error originates in the macro `$crate::format_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
