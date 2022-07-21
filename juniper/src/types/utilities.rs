@@ -25,6 +25,7 @@ where
             }
         }
         TypeType::List(ref inner, expected_size) => match *arg_value {
+            InputValue::Null | InputValue::Variable(_) => true,
             InputValue::List(ref items) => {
                 if let Some(expected) = expected_size {
                     if items.len() != expected {

@@ -73,6 +73,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Incorrect GraphQL list coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004])
 - All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
 - Incorrect input value coercion with defaults. ([#1080], [#1073])
+- Incorrect error when explicit `null` provided for `null`able list input parameter. ([#1086], [#1085])
 
 [#503]: /../../issues/503
 [#528]: /../../issues/528
@@ -106,6 +107,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1073]: /../../issues/1073
 [#1080]: /../../pull/1080
 [#1081]: /../../pull/1081
+[#1085]: /../../issues/1085
+[#1086]: /../../pull/1086
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 
 
