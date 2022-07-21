@@ -13,10 +13,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### BC Breaks
 
 - [October 2021] GraphQL spec: ([#1000])
-  - Forbade [`__typename` field on `subscription` operations](https://spec.graphql.org/October2021#note-bc213). ([#1001])
-  - Supported `isRepeatable` field on directives. ([#1003])
-  - Supported `__Schema.description`, `__Type.specifiedByURL` and `__Directive.isRepeatable` fields in introspection. ([#1003])
-  - Supported directives on variables definitions. ([#1005])
+    - Forbade [`__typename` field on `subscription` operations](https://spec.graphql.org/October2021#note-bc213). ([#1001])
+    - Supported `isRepeatable` field on directives. ([#1003])
+    - Supported `__Schema.description`, `__Type.specifiedByURL` and `__Directive.isRepeatable` fields in introspection. ([#1003])
+    - Supported directives on variables definitions. ([#1005])
 - Replaced `Visitor` associated type with `DeserializeOwned` requirement in `ScalarValue` trait. ([#985])
 - `#[graphql_object]` and `#[graphql_subscription]` expansions now preserve defined `impl` blocks "as is" and reuse defined methods in opaque way. ([#971])
 - Renamed `rename = "<policy>"` attribute argument to `rename_all = "<policy>"` (following `serde` style). ([#971])
@@ -24,30 +24,30 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Upgraded [`uuid` crate] integration to [1.0 version](https://github.com/uuid-rs/uuid/releases/tag/1.0.0). ([#1057])
 - Made `FromInputValue` trait methods fallible to allow post-validation. ([#987])
 - Redesigned `#[graphql_interface]` macro: ([#1009])
-  - Removed support for `dyn` attribute argument (interface values as trait objects).
-  - Removed support for `downcast` attribute argument (custom resolution into implementer types).
-  - Removed support for `async` trait methods (not required anymore).
-  - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now).
-  - Forbade default implementations of non-ignored trait methods.
-  - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
-  - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
-  - Supported interfaces implementing other interfaces. ([#1028])
-- Split `#[derive(GraphQLScalarValue)]` macro into:
-  - `#[derive(GraphQLScalar)]` for implementing GraphQL scalar: ([#1017])
-    - Supported generic `ScalarValue`.
-    - Supported structs with single named field.
-    - Supported overriding resolvers with external functions, methods or modules.
-    - Supported `specified_by_url` attribute argument. ([#1003], [#1000])
-  - `#[derive(ScalarValue)]` for implementing `ScalarValue` trait: ([#1025])
-    - Removed `Serialize` implementation (now should be provided explicitly). ([#985])
+    - Removed support for `dyn` attribute argument (interface values as trait objects).
+    - Removed support for `downcast` attribute argument (custom resolution into implementer types).
+    - Removed support for `async` trait methods (not required anymore).
+    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now).
+    - Forbade default implementations of non-ignored trait methods.
+    - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
+    - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
+    - Supported interfaces implementing other interfaces. ([#1028])
+- Split `#[derive(GraphQLScalarValue)]` macro into: 
+    - `#[derive(GraphQLScalar)]` for implementing GraphQL scalar: ([#1017]) 
+        - Supported generic `ScalarValue`.
+        - Supported structs with single named field.
+        - Supported overriding resolvers with external functions, methods or modules.
+        - Supported `specified_by_url` attribute argument. ([#1003], [#1000])
+    - `#[derive(ScalarValue)]` for implementing `ScalarValue` trait: ([#1025])
+        - Removed `Serialize` implementation (now should be provided explicitly). ([#985])
 - Redesigned `#[graphql_scalar]` macro: ([#1014])
-  - Changed `from_input_value()` return type from `Option` to `Result`. ([#987])
-  - Mirrored new `#[derive(GraphQLScalar)]` macro.
-  - Supported usage on type aliases in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rules].
+    - Changed `from_input_value()` return type from `Option` to `Result`. ([#987]) 
+    - Mirrored new `#[derive(GraphQLScalar)]` macro.
+    - Supported usage on type aliases in case `#[derive(GraphQLScalar)]` isn't applicable because of [orphan rules].
 - Renamed `ScalarValue::as_boolean` method to `ScalarValue::as_bool`. ([#1025])
 - Reworked [`chrono` crate] integration GraphQL scalars according to [graphql-scalars.dev] specs: ([#1010])
-  - Disabled `chrono` [Cargo feature] by default.
-  - Removed `scalar-naivetime` [Cargo feature].
+    - Disabled `chrono` [Cargo feature] by default.
+    - Removed `scalar-naivetime` [Cargo feature].
 - Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
 
 ### Added
@@ -73,7 +73,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Incorrect GraphQL list coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004])
 - All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
 - Incorrect input value coercion with defaults. ([#1080], [#1073])
-- Error when explicit null provided for nullable list input parameter. ([#1085])
+- Incorrect error when explicit `null` provided for `null`able list input parameter. ([#1086], [#1085])
 
 [#503]: /../../issues/503
 [#528]: /../../issues/528
@@ -107,6 +107,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1073]: /../../issues/1073
 [#1080]: /../../pull/1080
 [#1081]: /../../pull/1081
+[#1085]: /../../issues/1085
+[#1086]: /../../pull/1086
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 
 
