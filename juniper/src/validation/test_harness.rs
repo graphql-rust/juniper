@@ -667,6 +667,9 @@ where
                 .field::<Option<String>>("stringListArgField", i)
                 .argument(registry.arg::<Option<Vec<Option<String>>>>("stringListArg", i)),
             registry
+                .field::<Option<String>>("nonNullStringListArgField", i)
+                .argument(registry.arg::<Vec<String>>("nonNullStringListArg", i)),
+            registry
                 .field::<Option<String>>("complexArgField", i)
                 .argument(registry.arg::<Option<ComplexInput>>("complexArg", i)),
             registry

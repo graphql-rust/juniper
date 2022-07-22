@@ -25,6 +25,7 @@ where
             }
         }
         TypeType::List(ref inner) => match *arg_value {
+            InputValue::Null | InputValue::Variable(_) => true,
             InputValue::List(ref items) => items
                 .iter()
                 .all(|i| is_valid_literal_value(schema, inner, &i.item)),
