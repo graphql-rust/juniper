@@ -416,7 +416,7 @@ pub mod subscriptions {
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Self::Serde(e) => write!(f, "serde error: {e}"),
+                Self::Serde(e) => write!(f, "{e}"),
                 Self::UnexpectedClientMessage => {
                     write!(f, "unexpected message received from client")
                 }

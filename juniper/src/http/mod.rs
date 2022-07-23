@@ -724,7 +724,7 @@ pub mod tests {
                 r#"{
                     "type":"connection_error",
                     "payload":{
-                        "message":"serde error: expected value at line 1 column 1"
+                        "message":"expected value at line 1 column 1"
                     }
                 }"#
                 .into(),
