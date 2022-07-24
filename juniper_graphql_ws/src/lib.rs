@@ -36,7 +36,7 @@ pub enum WebsocketError {
     ConnectionAlreadyClosed,
 
     /// The connection is not ready yet to accept messages
-    ConnectionNotReady
+    ConnectionNotReady,
 }
 
 struct ExecutionParams<S: Schema> {
@@ -545,7 +545,9 @@ where
                     Poll::Pending => Poll::Pending,
                 }
             }
-            ConnectionSinkState::Closed => Poll::Ready(Err(WebsocketError::ConnectionAlreadyClosed)),
+            ConnectionSinkState::Closed => {
+                Poll::Ready(Err(WebsocketError::ConnectionAlreadyClosed))
+            }
         }
     }
 

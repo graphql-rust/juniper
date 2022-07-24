@@ -514,10 +514,13 @@ pub mod tests {
     }
 
     fn test_post_with_variables<T: HttpIntegration>(integration: &T) {
-        let response = integration.post_json("/", r#"{
+        let response = integration.post_json(
+            "/",
+            r#"{
             "query": "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }",
             "variables": { "id": "1000" }
-        }"#);
+        }"#,
+        );
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");
@@ -540,7 +543,7 @@ pub mod tests {
                         }
                     }"#
             )
-                .expect("Invalid JSON constant in test")
+            .expect("Invalid JSON constant in test")
         );
     }
 
