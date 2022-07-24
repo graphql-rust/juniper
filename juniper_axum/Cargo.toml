@@ -1,0 +1,32 @@
+[package]
+name = "juniper_axum"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.62"
+description = "`juniper` GraphQL integration with `axum`."
+license = "BSD-2-Clause"
+authors = ["Benno Tielen <Benno@tielen.nl>"]
+documentation = "https://docs.rs/juniper_axum"
+homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_axum"
+repository = "https://github.com/graphql-rust/juniper"
+readme = "README.md"
+categories = ["asynchronous", "web-programming", "web-programming::http-server"]
+keywords = ["graphql", "juniper", "axum", "websocket"]
+exclude = ["/release.toml"]
+
+[dependencies]
+axum = { version = "0.5.11", features = ["ws"]}
+juniper = { path = "../juniper" }
+serde = "1.0"
+serde_json = "1.0"
+juniper_graphql_ws = { path="../juniper_graphql_ws" }
+futures = "0.3"
+
+[dev-dependencies]
+tokio = { version = "1.20", features = ["full"] }
+tokio-tungstenite = "0.17.2"
+tokio-stream = "0.1.9"
+tower = "0.4.13"
+hyper = "0.14.20"
+juniper = { path = "../juniper", features = ["expose-test-schema"]}
+anyhow = "1.0"
