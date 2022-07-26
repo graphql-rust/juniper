@@ -27,7 +27,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Removed support for `dyn` attribute argument (interface values as trait objects).
     - Removed support for `downcast` attribute argument (custom resolution into implementer types).
     - Removed support for `async` trait methods (not required anymore).
-    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now).
+    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now). ([#113])
     - Forbade default implementations of non-ignored trait methods.
     - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
     - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
@@ -75,6 +75,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Incorrect input value coercion with defaults. ([#1080], [#1073])
 - Incorrect error when explicit `null` provided for `null`able list input parameter. ([#1086], [#1085])
 
+[#113]: /../../issues/113
 [#503]: /../../issues/503
 [#528]: /../../issues/528
 [#750]: /../../issues/750
