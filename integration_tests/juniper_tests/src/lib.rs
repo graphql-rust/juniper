@@ -7,6 +7,8 @@ mod codegen;
 #[cfg(test)]
 mod custom_scalar;
 #[cfg(test)]
+mod cve_2022_31173;
+#[cfg(test)]
 mod explicit_null;
 #[cfg(test)]
 mod infallible_as_field_error;

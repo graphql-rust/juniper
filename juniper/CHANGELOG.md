@@ -1,5 +1,6 @@
 # master
 
+- Fix [CVE-2022-31173](https://github.com/graphql-rust/juniper/security/advisories/GHSA-4rx6-g5vg-5f3j).
 - Fix incorrect error when explicit `null` provided for `null`able list input parameter. ([#1086](https://github.com/graphql-rust/juniper/pull/1086))
 
 # [[0.15.9] 2022-02-02](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.9)

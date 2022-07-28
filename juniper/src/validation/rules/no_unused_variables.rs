@@ -12,13 +12,6 @@ pub enum Scope<'a> {
     Fragment(&'a str),
 }
 
-pub struct NoUnusedVariables<'a> {
-    defined_variables: HashMap<Option<&'a str>, HashSet<&'a Spanning<&'a str>>>,
-    used_variables: HashMap<Scope<'a>, Vec<&'a str>>,
-    current_scope: Option<Scope<'a>>,
-    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
-}
-
 pub fn factory<'a>() -> NoUnusedVariables<'a> {
     NoUnusedVariables {
         defined_variables: HashMap::new(),
@@ -28,16 +21,49 @@ pub fn factory<'a>() -> NoUnusedVariables<'a> {
     }
 }
 
+pub struct NoUnusedVariables<'a> {
+    defined_variables: HashMap<Option<&'a str>, HashSet<&'a Spanning<&'a str>>>,
+    used_variables: HashMap<Scope<'a>, Vec<&'a str>>,
+    current_scope: Option<Scope<'a>>,
+    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
+}
+
 impl<'a> NoUnusedVariables<'a> {
     fn find_used_vars(
-        &self,
+        &'a self,
         from: &Scope<'a>,
         defined: &HashSet<&'a str>,
         used: &mut HashSet<&'a str>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
+        let mut to_visit = Vec::new();
+        if let Some(spreads) = self.find_used_vars_inner(from, defined, used, visited) {
+            to_visit.push(spreads);
+        }
+        while let Some(spreads) = to_visit.pop() {
+            for spread in spreads {
+                if let Some(spreads) =
+                    self.find_used_vars_inner(&Scope::Fragment(spread), defined, used, visited)
+                {
+                    to_visit.push(spreads);
+                }
+            }
+        }
+    }
+
+    /// This function should be called only inside [`Self::find_used_vars()`],
+    /// as it's a recursive function using heap instead of a stack. So, instead
+    /// of the recursive call, we return a [`Vec`] that is visited inside
+    /// [`Self::find_used_vars()`].
+    fn find_used_vars_inner(
+        &'a self,
+        from: &Scope<'a>,
+        defined: &HashSet<&'a str>,
+        used: &mut HashSet<&'a str>,
+        visited: &mut HashSet<Scope<'a>>,
+    ) -> Option<&'a Vec<&'a str>> {
         if visited.contains(from) {
-            return;
+            return None;
         }
 
         visited.insert(from.clone());
@@ -50,11 +76,7 @@ impl<'a> NoUnusedVariables<'a> {
             }
         }
 
-        if let Some(spreads) = self.spreads.get(from) {
-            for spread in spreads {
-                self.find_used_vars(&Scope::Fragment(spread), defined, used, visited);
-            }
-        }
+        self.spreads.get(from)
     }
 }
 
