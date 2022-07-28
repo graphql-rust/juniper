@@ -7,7 +7,7 @@ use crate::{
     value::ScalarValue,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
     Operation(Option<&'a str>),
     Fragment(&'a str),
@@ -28,15 +28,13 @@ pub struct NoUnusedFragments<'a> {
 }
 
 impl<'a> NoUnusedFragments<'a> {
-    fn find_reachable_fragments(&'a self, from: &Scope<'a>, result: &mut HashSet<&'a str>) {
+    fn find_reachable_fragments(&'a self, from: Scope<'a>, result: &mut HashSet<&'a str>) {
         let mut to_visit = Vec::new();
-        if let Scope::Fragment(name) = *from {
-            to_visit.push(name);
-        }
+        to_visit.push(from);
 
         while let Some(from) = to_visit.pop() {
             if let Some(next) = self.find_reachable_fragments_inner(from, result) {
-                to_visit.extend(next);
+                to_visit.extend(next.iter().map(|s| Scope::Fragment(s)));
             }
         }
     }
@@ -47,16 +45,18 @@ impl<'a> NoUnusedFragments<'a> {
     /// [`Vec`] that is visited inside [`Self::find_reachable_fragments()`].
     fn find_reachable_fragments_inner(
         &'a self,
-        from: &'a str,
+        from: Scope<'a>,
         result: &mut HashSet<&'a str>,
     ) -> Option<&'a Vec<&'a str>> {
-        if result.contains(from) {
-            return None;
-        } else {
-            result.insert(from);
+        if let Scope::Fragment(name) = from {
+            if result.contains(name) {
+                return None;
+            } else {
+                result.insert(name);
+            }
         }
 
-        self.spreads.get(&Scope::Fragment(from))
+        self.spreads.get(&from)
     }
 }
 
@@ -74,7 +74,7 @@ where
             }) = *def
             {
                 let op_name = name.as_ref().map(|s| s.item);
-                self.find_reachable_fragments(&Scope::Operation(op_name), &mut reachable);
+                self.find_reachable_fragments(Scope::Operation(op_name), &mut reachable);
             }
         }
 
