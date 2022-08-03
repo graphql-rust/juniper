@@ -4,6 +4,7 @@ use std::{collections::HashMap, pin::Pin};
 
 use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLEnum};
 
+#[derive(Clone, Copy, Debug)]
 pub struct Query;
 
 #[graphql_object(context = Database)]
@@ -33,6 +34,7 @@ impl Query {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct Subscription;
 
 type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;

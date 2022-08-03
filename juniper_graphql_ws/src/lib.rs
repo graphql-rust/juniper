@@ -18,6 +18,7 @@ use std::{
     sync::Arc, time::Duration,
 };
 
+use derive_more::Display;
 use juniper::{
     futures::{
         channel::oneshot,
@@ -30,12 +31,14 @@ use juniper::{
 };
 
 /// Errors
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Display)]
 pub enum WebsocketError {
-    /// The connection was already closed
+    /// The connection was already closed.
+    #[display(fmt = "Websocket connection was already closed.")]
     ConnectionAlreadyClosed,
 
-    /// The connection is not ready yet to accept messages
+    /// The connection is not ready to accept messages yet.
+    #[display(fmt = "The Websocket connection is not ready to accept messages yet.")]
     ConnectionNotReady,
 }
 

@@ -7,14 +7,16 @@ use axum::{
 use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 use juniper_axum::{extract::JuniperRequest, playground, response::JuniperResponse};
 use serde_json::{json, Value};
-use std::sync::Arc;
 use tower::util::ServiceExt;
 
 const GRAPHQL_ENDPOINT: &str = "/graphql";
 
-pub struct Context();
+#[derive(Clone, Copy, Debug)]
+pub struct Context;
 
 impl juniper::Context for Context {}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Query;
 
 #[graphql_object(context = Context)]
@@ -27,16 +29,16 @@ impl Query {
 type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 
 fn app() -> Router {
-    let schema = Arc::from(Schema::new(
+    let schema = Schema::new(
         Query,
         EmptyMutation::<Context>::new(),
         EmptySubscription::<Context>::new(),
-    ));
+    );
 
-    let context = Arc::new(Context());
+    let context = Context;
 
     Router::new()
-        .route("/", get(|| playground(GRAPHQL_ENDPOINT, None)))
+        .route("/", get(playground(GRAPHQL_ENDPOINT, None)))
         .route(GRAPHQL_ENDPOINT, post(graphql))
         .layer(Extension(schema))
         .layer(Extension(context))
@@ -44,8 +46,8 @@ fn app() -> Router {
 
 async fn graphql(
     JuniperRequest(request): JuniperRequest,
-    Extension(schema): Extension<Arc<Schema>>,
-    Extension(context): Extension<Arc<Context>>,
+    Extension(schema): Extension<Schema>,
+    Extension(context): Extension<Context>,
 ) -> JuniperResponse {
     JuniperResponse(request.execute(&schema, &context).await)
 }

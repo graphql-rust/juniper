@@ -1,11 +1,11 @@
+use std::net::SocketAddr;
+
 use axum::{
     extract::WebSocketUpgrade,
     response::Response,
     routing::{get, post},
     Extension, Router,
 };
-use std::{net::SocketAddr, sync::Arc};
-
 use juniper::{
     tests::fixtures::starwars::schema::{Database, Query, Subscription},
     EmptyMutation, RootNode,
@@ -19,12 +19,12 @@ type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 
 #[tokio::main]
 async fn main() {
-    let schema = Arc::new(Schema::new(Query, EmptyMutation::new(), Subscription));
+    let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
 
     let context = Database::new();
 
     let app = Router::new()
-        .route("/", get(|| playground("/graphql", Some("/subscriptions"))))
+        .route("/", get(playground("/graphql", "/subscriptions")))
         .route("/graphql", post(graphql))
         .route("/subscriptions", get(juniper_subscriptions))
         .layer(Extension(schema))
@@ -39,7 +39,7 @@ async fn main() {
 }
 
 pub async fn juniper_subscriptions(
-    Extension(schema): Extension<Arc<Schema>>,
+    Extension(schema): Extension<Schema>,
     Extension(context): Extension<Database>,
     ws: WebSocketUpgrade,
 ) -> Response {
@@ -52,7 +52,7 @@ pub async fn juniper_subscriptions(
 
 async fn graphql(
     JuniperRequest(request): JuniperRequest,
-    Extension(schema): Extension<Arc<Schema>>,
+    Extension(schema): Extension<Schema>,
     Extension(context): Extension<Database>,
 ) -> JuniperResponse {
     JuniperResponse(request.execute(&schema, &context).await)

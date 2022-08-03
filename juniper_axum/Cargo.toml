@@ -15,11 +15,11 @@ keywords = ["graphql", "juniper", "axum", "websocket"]
 exclude = ["/release.toml"]
 
 [dependencies]
-axum = { version = "0.5.11", features = ["ws"]}
+axum = { version = "0.5.11", features = ["ws"] }
 juniper = { path = "../juniper" }
 serde = "1.0"
 serde_json = "1.0"
-juniper_graphql_ws = { path="../juniper_graphql_ws" }
+juniper_graphql_ws = { path = "../juniper_graphql_ws" }
 futures = "0.3"
 
 [dev-dependencies]
@@ -28,5 +28,5 @@ tokio-tungstenite = "0.17.2"
 tokio-stream = "0.1.9"
 tower = "0.4.13"
 hyper = "0.14.20"
-juniper = { path = "../juniper", features = ["expose-test-schema"]}
+juniper = { path = "../juniper", features = ["expose-test-schema"] }
 anyhow = "1.0"

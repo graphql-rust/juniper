@@ -1,8 +1,14 @@
-use axum::response::Html;
+#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![deny(missing_docs)]
+#![deny(warnings)]
 
 pub mod extract;
 pub mod response;
 pub mod subscriptions;
+
+use axum::response::Html;
+use futures::future;
 
 /// Add a GraphQL Playground
 ///
@@ -21,14 +27,16 @@ pub mod subscriptions;
 /// use axum::body::Body;
 /// use juniper_axum::playground;
 ///
-/// let app: Router<Body> = Router::new().route("/", get(|| playground("/graphql", Some("/subscriptions"))));
+/// let app: Router<Body> = Router::new().route("/", get(playground("/graphql", "/subscriptions")));
 /// ```
-pub async fn playground(
+pub fn playground<'a>(
     graphql_endpoint_url: &str,
-    subscriptions_endpoint_url: Option<&str>,
-) -> Html<String> {
-    Html(juniper::http::playground::playground_source(
+    subscriptions_endpoint_url: impl Into<Option<&'a str>>,
+) -> impl FnOnce() -> future::Ready<Html<String>> + Clone + Send {
+    let html = Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
-        subscriptions_endpoint_url,
-    ))
+        subscriptions_endpoint_url.into(),
+    ));
+
+    || future::ready(html)
 }

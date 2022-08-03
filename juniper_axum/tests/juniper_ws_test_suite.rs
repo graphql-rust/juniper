@@ -1,3 +1,8 @@
+use std::{
+    net::{SocketAddr, TcpListener},
+    time::Duration,
+};
+
 use anyhow::anyhow;
 use axum::{extract::WebSocketUpgrade, response::Response, routing::get, Extension, Router};
 use futures::{SinkExt, StreamExt};
@@ -8,11 +13,6 @@ use juniper::{
 };
 use juniper_axum::subscriptions::handle_graphql_socket;
 use serde_json::Value;
-use std::{
-    net::{SocketAddr, TcpListener},
-    sync::Arc,
-    time::Duration,
-};
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
@@ -30,7 +30,7 @@ fn test_app() -> AxumApp {
 
     let router = Router::new()
         .route("/subscriptions", get(juniper_subscriptions))
-        .layer(Extension(Arc::from(schema)))
+        .layer(Extension(schema))
         .layer(Extension(context));
 
     AxumApp(router)
@@ -38,7 +38,7 @@ fn test_app() -> AxumApp {
 
 /// Axum handler for websockets
 pub async fn juniper_subscriptions(
-    Extension(schema): Extension<Arc<Schema>>,
+    Extension(schema): Extension<Schema>,
     Extension(context): Extension<Database>,
     ws: WebSocketUpgrade,
 ) -> Response {

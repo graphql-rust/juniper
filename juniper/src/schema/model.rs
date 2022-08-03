@@ -20,7 +20,7 @@ use crate::schema::translate::{graphql_parser::GraphQLParserTranslator, SchemaTr
 ///
 /// This brings the mutation, subscription and query types together,
 /// and provides the predefined metadata fields.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RootNode<
     'a,
     QueryT: GraphQLType<S>,
@@ -47,7 +47,7 @@ pub struct RootNode<
 }
 
 /// Metadata for a schema
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SchemaType<'a, S> {
     pub(crate) description: Option<Cow<'a, str>>,
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
@@ -66,7 +66,7 @@ pub enum TypeType<'a, S: 'a> {
     List(Box<TypeType<'a, S>>, Option<usize>),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DirectiveType<'a, S> {
     pub name: String,
     pub description: Option<String>,

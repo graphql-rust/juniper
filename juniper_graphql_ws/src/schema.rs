@@ -129,3 +129,29 @@ where
         self
     }
 }
+
+impl<QueryT, MutationT, SubscriptionT, CtxT, S> Schema
+    for RootNode<'static, QueryT, MutationT, SubscriptionT, S>
+where
+    QueryT: Clone + GraphQLTypeAsync<S, Context = CtxT> + Send + Unpin + 'static,
+    QueryT::TypeInfo: Clone + Send + Sync + Unpin,
+    MutationT: Clone + GraphQLTypeAsync<S, Context = CtxT> + Send + Unpin + 'static,
+    MutationT::TypeInfo: Clone + Send + Sync + Unpin,
+    SubscriptionT: Clone + GraphQLSubscriptionType<S, Context = CtxT> + Send + Unpin + 'static,
+    SubscriptionT::TypeInfo: Clone + Send + Sync + Unpin,
+    CtxT: Unpin + Send + Sync,
+    S: ScalarValue + Send + Sync + Unpin + 'static,
+{
+    type Context = CtxT;
+    type ScalarValue = S;
+    type QueryTypeInfo = QueryT::TypeInfo;
+    type Query = QueryT;
+    type MutationTypeInfo = MutationT::TypeInfo;
+    type Mutation = MutationT;
+    type SubscriptionTypeInfo = SubscriptionT::TypeInfo;
+    type Subscription = SubscriptionT;
+
+    fn root_node(&self) -> &RootNode<'static, QueryT, MutationT, SubscriptionT, S> {
+        self
+    }
+}

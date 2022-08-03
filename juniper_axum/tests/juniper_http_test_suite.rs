@@ -1,3 +1,5 @@
+use std::str::from_utf8;
+
 use axum::{
     http::Request,
     response::Response,
@@ -11,7 +13,6 @@ use juniper::{
     EmptyMutation, EmptySubscription, RootNode,
 };
 use juniper_axum::{extract::JuniperRequest, response::JuniperResponse};
-use std::{str::from_utf8, sync::Arc};
 
 /// The app we want to test
 struct AxumApp(Router);
@@ -31,16 +32,16 @@ fn test_app() -> AxumApp {
     let router = Router::new()
         .route("/", get(graphql))
         .route("/", post(graphql))
-        .layer(Extension(Arc::from(schema)))
-        .layer(Extension(Arc::from(context)));
+        .layer(Extension(schema))
+        .layer(Extension(context));
 
     AxumApp(router)
 }
 
 async fn graphql(
     JuniperRequest(request): JuniperRequest,
-    Extension(schema): Extension<Arc<Schema>>,
-    Extension(context): Extension<Arc<Database>>,
+    Extension(schema): Extension<Schema>,
+    Extension(context): Extension<Database>,
 ) -> JuniperResponse {
     JuniperResponse(request.execute(&schema, &context).await)
 }

@@ -15,6 +15,7 @@ keywords = ["apollo", "graphql", "graphql-ws", "subscription", "websocket"]
 exclude = ["/release.toml"]
 
 [dependencies]
+derive_more = { version = "0.99.17", default-features = false, features = ["display"] }
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 juniper_subscriptions = { version = "0.17.0-dev", path = "../juniper_subscriptions" }
 serde = { version = "1.0.8", features = ["derive"], default-features = false }

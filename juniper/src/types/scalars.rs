@@ -346,6 +346,14 @@ mod impl_float_scalar {
 #[derive(Debug)]
 pub struct EmptyMutation<T: ?Sized = ()>(PhantomData<JoinHandle<Box<T>>>);
 
+impl<T> Clone for EmptyMutation<T> {
+    fn clone(&self) -> Self {
+        Self(PhantomData)
+    }
+}
+
+impl<T> Copy for EmptyMutation<T> {}
+
 // `EmptyMutation` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
 crate::sa::assert_impl_all!(EmptyMutation<Rc<String>>: Send, Sync);
 
@@ -405,7 +413,16 @@ impl<T> Default for EmptyMutation<T> {
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
+#[derive(Debug)]
 pub struct EmptySubscription<T: ?Sized = ()>(PhantomData<JoinHandle<Box<T>>>);
+
+impl<T> Clone for EmptySubscription<T> {
+    fn clone(&self) -> Self {
+        Self(PhantomData)
+    }
+}
+
+impl<T> Copy for EmptySubscription<T> {}
 
 // `EmptySubscription` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
 crate::sa::assert_impl_all!(EmptySubscription<Rc<String>>: Send, Sync);

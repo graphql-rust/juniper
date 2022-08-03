@@ -345,9 +345,9 @@ fn playground_response(
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use futures::TryStreamExt;
     use std::{fmt, sync::Arc};
 
+    use futures::TryStreamExt as _;
     use juniper::{
         futures::{
             future::{self, Either},
@@ -379,7 +379,7 @@ pub mod subscriptions {
         Serde(serde_json::Error),
 
         /// Errors that can happen while communication with Juniper
-        Juniper(juniper_graphql_ws::WebsocketError),
+        Juniper(WebsocketError),
     }
 
     impl fmt::Display for Error {

@@ -1,3 +1,5 @@
+//! Types and traits for extracting data from requests.
+
 use axum::{
     async_trait,
     body::Body,
@@ -53,22 +55,27 @@ impl JsonRequestBody {
 /// # Example
 ///
 /// ```rust
-/// use axum::{
-///  Json,
-///  routing::post,
-///  Router,
-///  Extension
-/// };
 /// use std::sync::Arc;
-/// use axum::body::Body;
-/// use juniper::{RootNode, EmptySubscription, EmptyMutation, graphql_object};
-/// use juniper::http::GraphQLBatchResponse;
-/// use juniper_axum::extract::JuniperRequest;
-/// use juniper_axum::response::JuniperResponse;
 ///
-/// pub struct Context();
+/// use axum::{
+///     body::Body,
+///     Json,
+///     routing::post,
+///     Router,
+///     Extension,
+/// };
+/// use juniper::{
+///     http::GraphQLBatchResponse,
+///     RootNode, EmptySubscription, EmptyMutation, graphql_object,
+/// };
+/// use juniper_axum::{extract::JuniperRequest, response::JuniperResponse};
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Context;
 ///
 /// impl juniper::Context for Context {}
+///
+/// #[derive(Clone, Copy, Debug)]
 /// pub struct Query;
 ///
 /// #[graphql_object(context = Context)]
@@ -80,13 +87,13 @@ impl JsonRequestBody {
 ///
 /// type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 ///
-/// let schema = Arc::from(Schema::new(
+/// let schema = Schema::new(
 ///    Query,
 ///    EmptyMutation::<Context>::new(),
 ///    EmptySubscription::<Context>::new()
-/// ));
+/// );
 ///
-/// let context = Arc::new(Context());
+/// let context = Context;
 ///
 /// let app: Router<Body> = Router::new()
 ///     .route("/graphql", post(graphql))
@@ -95,8 +102,8 @@ impl JsonRequestBody {
 ///
 /// async fn graphql(
 ///     JuniperRequest(request): JuniperRequest,
-///     Extension(schema): Extension<Arc<Schema>>,
-///     Extension(context): Extension<Arc<Context>>
+///     Extension(schema): Extension<Schema>,
+///     Extension(context): Extension<Context>
 /// ) -> JuniperResponse {
 ///     JuniperResponse(request.execute(&schema, &context).await)
 /// }
@@ -267,9 +274,10 @@ impl FromRequest<Body> for JuniperRequest {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::http::Request;
     use juniper::http::GraphQLRequest;
+
+    use super::*;
 
     #[test]
     fn convert_simple_request_body_to_juniper_request() {
