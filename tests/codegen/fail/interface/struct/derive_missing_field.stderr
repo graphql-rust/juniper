@@ -45,8 +45,8 @@ error: any use of this value will cause an error
    |     ^^
    |     |
    |     referenced constant has errors
-   |     inside `<CharacterValueEnum<ObjA> as juniper::macros::reflect::Field<__S, id>>::call::_::check` at $WORKSPACE/juniper/src/macros/reflect.rs:751:36
-   |     inside `<CharacterValueEnum<ObjA> as juniper::macros::reflect::Field<__S, id>>::call::_::RES` at $WORKSPACE/juniper/src/macros/reflect.rs:814:59
+   |     inside `<CharacterValueEnum<ObjA> as reflect::Field<__S, id>>::call::_::check` at $WORKSPACE/juniper/src/macros/reflect.rs:751:36
+   |     inside `<CharacterValueEnum<ObjA> as reflect::Field<__S, id>>::call::_::RES` at $WORKSPACE/juniper/src/macros/reflect.rs:814:59
    |
    = note: `#[deny(const_err)]` on by default
    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!

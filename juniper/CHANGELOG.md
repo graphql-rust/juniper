@@ -27,7 +27,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Removed support for `dyn` attribute argument (interface values as trait objects).
     - Removed support for `downcast` attribute argument (custom resolution into implementer types).
     - Removed support for `async` trait methods (not required anymore).
-    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now).
+    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now). ([#113])
     - Forbade default implementations of non-ignored trait methods.
     - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
     - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
@@ -74,7 +74,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
 - Incorrect input value coercion with defaults. ([#1080], [#1073])
 - Incorrect error when explicit `null` provided for `null`able list input parameter. ([#1086], [#1085])
+- Stack overflow on nested GraphQL fragments. ([CVE-2022-31173])
 
+[#113]: /../../issues/113
 [#503]: /../../issues/503
 [#528]: /../../issues/528
 [#750]: /../../issues/750
@@ -110,6 +112,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1085]: /../../issues/1085
 [#1086]: /../../pull/1086
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
+[CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
 
 
