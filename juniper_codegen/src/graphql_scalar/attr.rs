@@ -4,14 +4,12 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{parse_quote, spanned::Spanned};
 
-use crate::{
-    common::{parse, scalar},
-    GraphQLScope,
-};
+use crate::common::{diagnostic, parse, scalar, SpanContainer};
 
 use super::{derive::parse_derived_methods, Attr, Definition, Methods, ParseToken};
 
-const ERR: GraphQLScope = GraphQLScope::ScalarAttr;
+/// [`diagnostic::Scope`] of errors for `#[graphql_scalar]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::ScalarAttr;
 
 /// Expands `#[graphql_scalar]` macro into generated code.
 pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
@@ -57,11 +55,10 @@ fn expand_on_type_alias(
         methods,
         name: attr
             .name
-            .as_deref()
-            .cloned()
+            .map(SpanContainer::into_inner)
             .unwrap_or_else(|| ast.ident.to_string()),
-        description: attr.description.as_deref().cloned(),
-        specified_by_url: attr.specified_by_url.as_deref().cloned(),
+        description: attr.description.map(SpanContainer::into_inner),
+        specified_by_url: attr.specified_by_url.map(SpanContainer::into_inner),
         scalar,
         scalar_value: attr.scalar.as_deref().into(),
         behavior: attr.behavior.into(),
@@ -92,11 +89,10 @@ fn expand_on_derive_input(
         methods,
         name: attr
             .name
-            .as_deref()
-            .cloned()
+            .map(SpanContainer::into_inner)
             .unwrap_or_else(|| ast.ident.to_string()),
-        description: attr.description.as_deref().cloned(),
-        specified_by_url: attr.specified_by_url.as_deref().cloned(),
+        description: attr.description.map(SpanContainer::into_inner),
+        specified_by_url: attr.specified_by_url.map(SpanContainer::into_inner),
         scalar,
         scalar_value: attr.scalar.as_deref().into(),
         behavior: attr.behavior.into(),

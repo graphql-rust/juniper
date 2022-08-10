@@ -7,4 +7,4 @@ error: GraphQL interface trait method can't have default implementation
 7 | |     }
   | |_____^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Interfaces
+  = note: https://spec.graphql.org/October2021#sec-Interfaces

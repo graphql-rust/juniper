@@ -6,20 +6,16 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-use crate::{
-    common::{
-        field,
-        parse::{self, TypeExt as _},
-        scalar,
-    },
-    result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, RenameRule},
+use crate::common::{
+    diagnostic, field,
+    parse::{self, TypeExt as _},
+    path_eq_single, rename, scalar, SpanContainer,
 };
 
 use super::{Attr, Definition, Query};
 
-/// [`GraphQLScope`] of errors for `#[graphql_object]` macro.
-const ERR: GraphQLScope = GraphQLScope::ObjectAttr;
+/// [`diagnostic::Scope`] of errors for `#[graphql_object]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::ObjectAttr;
 
 /// Expands `#[graphql_object]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
@@ -73,7 +69,7 @@ where
         .rename_fields
         .as_deref()
         .copied()
-        .unwrap_or(RenameRule::CamelCase);
+        .unwrap_or(rename::Policy::CamelCase);
 
     let async_only = TypeId::of::<Operation>() != TypeId::of::<Query>();
     let fields: Vec<_> = ast
@@ -144,7 +140,7 @@ where
 fn parse_field(
     method: &mut syn::ImplItemMethod,
     async_only: bool,
-    renaming: &RenameRule,
+    renaming: &rename::Policy,
 ) -> Option<field::Definition> {
     let method_attrs = method.attrs.clone();
 
@@ -193,7 +189,7 @@ fn parse_field(
                 }
                 syn::FnArg::Typed(arg) => {
                     if let syn::Pat::Ident(a) = &*arg.pat {
-                        if a.ident.to_string().as_str() == "self" {
+                        if a.ident == "self" {
                             return err_invalid_method_receiver(arg);
                         }
                     }
@@ -217,17 +213,11 @@ fn parse_field(
     };
     ty.lifetimes_anonymized();
 
-    let description = attr.description.as_ref().map(|d| d.as_ref().value());
-    let deprecated = attr
-        .deprecated
-        .as_deref()
-        .map(|d| d.as_ref().map(syn::LitStr::value));
-
     Some(field::Definition {
         name,
         ty,
-        description,
-        deprecated,
+        description: attr.description.map(SpanContainer::into_inner),
+        deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: method_ident.clone(),
         behavior: attr.behavior.into(),
         arguments: Some(arguments),

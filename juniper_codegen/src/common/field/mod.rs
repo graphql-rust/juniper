@@ -1,7 +1,7 @@
 //! Common functions, definitions and extensions for parsing and code generation
 //! of [GraphQL fields][1]
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Language.Fields.
+//! [1]: https://spec.graphql.org/October2021#sec-Language.Fields
 
 pub(crate) mod arg;
 
@@ -14,16 +14,13 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        behavior,
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    behavior, deprecation, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer},
+    scalar, Description, SpanContainer,
 };
 
 pub(crate) use self::arg::OnMethod as MethodArgument;
@@ -31,36 +28,36 @@ pub(crate) use self::arg::OnMethod as MethodArgument;
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a
 /// [GraphQL field][1] definition.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
 #[derive(Debug, Default)]
 pub(crate) struct Attr {
     /// Explicitly specified name of this [GraphQL field][1].
     ///
     /// If [`None`], then `camelCased` Rust method name is used by default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) name: Option<SpanContainer<syn::LitStr>>,
 
     /// Explicitly specified [description][2] of this [GraphQL field][1].
     ///
-    /// If [`None`], then Rust doc comment is used as the [description][2], if
-    /// any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    pub(crate) description: Option<SpanContainer<syn::LitStr>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    pub(crate) description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified [deprecation][2] of this [GraphQL field][1].
     ///
-    /// If [`None`], then Rust `#[deprecated]` attribute is used as the
+    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the
     /// [deprecation][2], if any.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    /// [2]: https://spec.graphql.org/June2018/#sec-Deprecation
-    pub(crate) deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
+    pub(crate) deprecated: Option<SpanContainer<deprecation::Directive>>,
 
     /// Explicitly specified type of the custom [`Behavior`] this
-    /// [GraphQL field][0] implementation is parametrized with, to [coerce] in
+    /// [GraphQL field][1] implementation is parametrized with, to [coerce] in
     /// the generated code from.
     ///
     /// If [`None`], then [`behavior::Standard`] will be used for the generated
@@ -68,7 +65,7 @@ pub(crate) struct Attr {
     ///
     /// [`Behavior`]: juniper::behavior
     /// [`behavior::Standard`]: juniper::behavior::Standard
-    /// [0]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     /// [coerce]: juniper::behavior::Coerce
     pub(crate) behavior: Option<SpanContainer<behavior::Type>>,
 
@@ -76,7 +73,7 @@ pub(crate) struct Attr {
     /// field) should be omitted by code generation and not considered as the
     /// [GraphQL field][1] definition.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) ignore: Option<SpanContainer<syn::Ident>>,
 }
 
@@ -95,22 +92,18 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
                         .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "deprecated" => {
-                    let mut reason = None;
-                    if input.is_next::<token::Eq>() {
-                        input.parse::<token::Eq>()?;
-                        reason = Some(input.parse::<syn::LitStr>()?);
-                    }
+                    let directive = input.parse::<deprecation::Directive>()?;
                     out.deprecated
                         .replace(SpanContainer::new(
                             ident.span(),
-                            reason.as_ref().map(|r| r.span()),
-                            reason,
+                            directive.reason.as_ref().map(|r| r.span()),
+                            directive,
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -151,7 +144,7 @@ impl Attr {
     /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
     /// placed on a [GraphQL field][1] definition.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut attr = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -167,17 +160,11 @@ impl Attr {
         }
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs).map(|sc| {
-                let span = sc.span_ident();
-                sc.map(|desc| syn::LitStr::new(&desc, span))
-            });
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         if attr.deprecated.is_none() {
-            attr.deprecated = get_deprecated(attrs).map(|sc| {
-                let span = sc.span_ident();
-                sc.map(|depr| depr.reason.map(|rsn| syn::LitStr::new(&rsn, span)))
-            });
+            attr.deprecated = deprecation::Directive::parse_from_deprecated_attr(attrs)?;
         }
 
         Ok(attr)
@@ -186,46 +173,43 @@ impl Attr {
 
 /// Representation of a [GraphQL field][1] for code generation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
 #[derive(Debug)]
 pub(crate) struct Definition {
     /// Rust type that this [GraphQL field][1] is represented by (method return
     /// type or struct field type).
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) ty: syn::Type,
 
     /// Name of this [GraphQL field][1] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) name: String,
 
     /// [Description][2] of this [GraphQL field][1] to put into GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    pub(crate) description: Option<String>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    pub(crate) description: Option<Description>,
 
     /// [Deprecation][2] of this [GraphQL field][1] to put into GraphQL schema.
     ///
-    /// If inner [`Option`] is [`None`], then deprecation has no message
-    /// attached.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    /// [2]: https://spec.graphql.org/June2018/#sec-Deprecation
-    pub(crate) deprecated: Option<Option<String>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
+    pub(crate) deprecated: Option<deprecation::Directive>,
 
     /// Ident of the Rust method (or struct field) representing this
     /// [GraphQL field][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) ident: syn::Ident,
 
-    /// [`Behavior`] parametrization of this [GraphQL field][0] implementation
+    /// [`Behavior`] parametrization of this [GraphQL field][1] implementation
     /// to [coerce] from in the generated code.
     ///
     /// [`Behavior`]: juniper::behavior
-    /// [0]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     /// [coerce]: juniper::behavior::Coerce
     pub(crate) behavior: behavior::Type,
 
@@ -235,19 +219,19 @@ pub(crate) struct Definition {
     /// If [`None`] then this [GraphQL field][1] is represented by a struct
     /// field.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) arguments: Option<Vec<MethodArgument>>,
 
     /// Indicator whether the Rust method representing this [GraphQL field][1]
     /// has a [`syn::Receiver`].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) has_receiver: bool,
 
     /// Indicator whether this [GraphQL field][1] should be resolved
     /// asynchronously.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) is_async: bool,
 }
 
@@ -255,7 +239,7 @@ impl Definition {
     /// Indicates whether this [GraphQL field][1] is represented by a method,
     /// not a struct field.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     #[must_use]
     pub(crate) fn is_method(&self) -> bool {
         self.arguments.is_some()
@@ -265,14 +249,14 @@ impl Definition {
     /// tried to be resolved in the [`GraphQLValue::resolve_field`] method.
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     #[must_use]
     pub(crate) fn method_resolve_field_err_no_field_tokens(
         scalar: &scalar::Type,
         ty_name: &str,
     ) -> TokenStream {
         quote! {
-            return Err(::juniper::FieldError::from(format!(
+            return Err(::juniper::FieldError::from(::std::format!(
                 "Field `{}` not found on type `{}`",
                 field,
                 <Self as ::juniper::GraphQLType<#scalar>>::name(info)
@@ -285,7 +269,7 @@ impl Definition {
     /// which performs static checks for this [GraphQL field][1].
     ///
     /// [`marker::IsOutputType::mark`]: juniper::marker::IsOutputType::mark
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     #[must_use]
     pub(crate) fn method_mark_tokens(
         &self,
@@ -321,7 +305,7 @@ impl Definition {
     ///
     /// [`GraphQLType::meta`]: juniper::GraphQLType::meta
     /// [`Registry`]: juniper::Registry
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     #[must_use]
     pub(crate) fn method_meta_tokens(
         &self,
@@ -335,18 +319,8 @@ impl Definition {
             };
         }
 
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
-
-        let deprecated = self.deprecated.as_ref().map(|reason| {
-            let reason = reason
-                .as_ref()
-                .map(|rsn| quote! { Some(#rsn) })
-                .unwrap_or_else(|| quote! { None });
-            quote! { .deprecated(#reason) }
-        });
+        let description = &self.description;
+        let deprecated = &self.deprecated;
 
         let args = self
             .arguments
@@ -366,8 +340,8 @@ impl Definition {
     /// resolves this [GraphQL field][1] as [subscription][2].
     ///
     /// [0]: juniper::GraphQLSubscriptionValue::resolve_field_into_stream
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
-    /// [2]: https://spec.graphql.org/June2018/#sec-Subscription
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Subscription
     #[must_use]
     pub(crate) fn method_resolve_field_into_stream_tokens(
         &self,
@@ -405,7 +379,7 @@ impl Definition {
                     let stream = ::juniper::futures::StreamExt::then(res, move |res| {
                         let executor = executor.clone();
                         let res2: ::juniper::FieldResult<_, #scalar> =
-                            ::juniper::IntoResolvable::into(res, executor.context());
+                            ::juniper::IntoResolvable::into_resolvable(res, executor.context());
                         async move {
                             let ex = executor.as_executor();
                             match res2 {
@@ -431,7 +405,7 @@ impl Definition {
 
 /// Checks whether all [GraphQL fields][1] fields have different names.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Language.Fields
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
 #[must_use]
 pub(crate) fn all_different(fields: &[Definition]) -> bool {
     let mut names: Vec<_> = fields.iter().map(|f| &f.name).collect();

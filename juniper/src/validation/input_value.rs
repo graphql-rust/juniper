@@ -99,7 +99,7 @@ where
                     var_name,
                     var_pos,
                     &path,
-                    &format!(r#"Expected "{}", found null"#, meta_type),
+                    format!(r#"Expected "{meta_type}", found null"#),
                 ));
             } else {
                 errors.append(&mut unify_value(
@@ -121,10 +121,10 @@ where
                                 var_name,
                                 var_pos,
                                 &path,
-                                &format!(
-                                    "Expected list of {} elements, found {} elements",
-                                    expected,
-                                    l.len()
+                                format!(
+                                    "Expected list of {expected} elements, \
+                                     found {} elements",
+                                    l.len(),
                                 ),
                             ));
                         }
@@ -168,11 +168,11 @@ where
                                 var_name,
                                 var_pos,
                                 &path,
-                                &format!(
-                                    "Expected input of type `{}`. Got: `{}`. \
+                                format!(
+                                    "Expected input of type `{}`. \
+                                     Got: `{value}`. \
                                      Details: {}",
                                     iom.name,
-                                    value,
                                     e.message(),
                                 ),
                             ));
@@ -205,10 +205,9 @@ where
             var_name,
             var_pos,
             path,
-            &format!(
-                "Expected input scalar `{}`. Got: `{}`. Details: {}",
+            format!(
+                "Expected input scalar `{}`. Got: `{value}`. Details: {}",
                 meta.name,
-                value,
                 e.message(),
             ),
         )];
@@ -219,13 +218,13 @@ where
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found list"#, meta.name),
+            format!(r#"Expected "{}", found list"#, meta.name),
         )),
         InputValue::Object(_) => errors.push(unification_error(
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found object"#, meta.name),
+            format!(r#"Expected "{}", found object"#, meta.name),
         )),
         _ => (),
     }
@@ -244,27 +243,27 @@ where
 {
     let mut errors: Vec<RuleError> = vec![];
 
-    match *value {
+    match value {
         // TODO: avoid this bad duplicate as_str() call. (value system refactor)
-        InputValue::Scalar(ref scalar) if scalar.as_str().is_some() => {
+        InputValue::Scalar(scalar) if scalar.as_str().is_some() => {
             if let Some(name) = scalar.as_str() {
                 if !meta.values.iter().any(|ev| ev.name == *name) {
                     errors.push(unification_error(
                         var_name,
                         var_pos,
                         path,
-                        &format!(r#"Invalid value for enum "{}""#, meta.name),
+                        format!(r#"Invalid value for enum "{}""#, meta.name),
                     ))
                 }
             }
         }
-        InputValue::Enum(ref name) => {
+        InputValue::Enum(name) => {
             if !meta.values.iter().any(|ev| &ev.name == name) {
                 errors.push(unification_error(
                     var_name,
                     var_pos,
                     path,
-                    &format!(r#"Invalid value for enum "{}""#, meta.name),
+                    format!(r#"Invalid value for enum "{}""#, meta.name),
                 ))
             }
         }
@@ -272,7 +271,7 @@ where
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found not a string or enum"#, meta.name),
+            format!(r#"Expected "{}", found not a string or enum"#, meta.name),
         )),
     }
     errors
@@ -318,7 +317,7 @@ where
                     var_name,
                     var_pos,
                     &Path::ObjectField(&input_field.name, path),
-                    &format!(r#"Expected "{}", found null"#, input_field.arg_type),
+                    format!(r#"Expected "{}", found null"#, input_field.arg_type),
                 ));
             }
         }
@@ -336,7 +335,7 @@ where
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found not an object"#, meta.name),
+            format!(r#"Expected "{}", found not an object"#, meta.name),
         ));
     }
     errors
@@ -349,17 +348,14 @@ where
     v.map_or(true, InputValue::is_null)
 }
 
-fn unification_error<'a>(
-    var_name: &str,
+fn unification_error(
+    var_name: impl fmt::Display,
     var_pos: &SourcePosition,
-    path: &Path<'a>,
-    message: &str,
+    path: &Path<'_>,
+    message: impl fmt::Display,
 ) -> RuleError {
     RuleError::new(
-        &format!(
-            r#"Variable "${}" got invalid value. {}{}."#,
-            var_name, path, message,
-        ),
+        &format!(r#"Variable "${var_name}" got invalid value. {path}{message}."#),
         &[*var_pos],
     )
 }
@@ -368,8 +364,8 @@ impl<'a> fmt::Display for Path<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Path::Root => write!(f, ""),
-            Path::ArrayElement(idx, prev) => write!(f, "{}In element #{}: ", prev, idx),
-            Path::ObjectField(name, prev) => write!(f, r#"{}In field "{}": "#, prev, name),
+            Path::ArrayElement(idx, prev) => write!(f, "{prev}In element #{idx}: "),
+            Path::ObjectField(name, prev) => write!(f, r#"{prev}In field "{name}": "#),
         }
     }
 }

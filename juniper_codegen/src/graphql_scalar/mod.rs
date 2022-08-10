@@ -2,8 +2,6 @@
 //!
 //! [1]: https://spec.graphql.org/October2021#sec-Scalars
 
-use std::convert::TryFrom;
-
 use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use syn::{
@@ -16,16 +14,13 @@ use syn::{
 };
 use url::Url;
 
-use crate::{
-    common::{
-        behavior,
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    behavior, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer},
+    scalar, Description, SpanContainer,
 };
 
 pub mod attr;
@@ -45,7 +40,7 @@ struct Attr {
     /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Spec [`Url`] of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
@@ -126,20 +121,16 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "specified_by_url" => {
                     input.parse::<token::Eq>()?;
                     let lit = input.parse::<syn::LitStr>()?;
                     let url = lit.value().parse::<Url>().map_err(|err| {
-                        syn::Error::new(lit.span(), format!("Invalid URL: {}", err))
+                        syn::Error::new(lit.span(), format!("Invalid URL: {err}"))
                     })?;
                     out.specified_by_url
                         .replace(SpanContainer::new(ident.span(), Some(lit.span()), url))
@@ -277,7 +268,7 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -315,7 +306,7 @@ struct Definition {
     /// Description of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    description: Option<String>,
+    description: Option<Description>,
 
     /// Spec [`Url`] of this [GraphQL scalar][1] to put into GraphQL schema.
     ///
@@ -386,11 +377,11 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::marker::IsInputType<#scalar> for #ty
+            impl #impl_gens ::juniper::marker::IsInputType<#scalar> for #ty
                 #where_clause { }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::marker::IsOutputType<#scalar> for #ty
+            impl #impl_gens ::juniper::marker::IsOutputType<#scalar> for #ty
                 #where_clause { }
         }
     }
@@ -416,7 +407,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
+            impl #impl_gens ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
                 for #ty #where_clause
             {
                 fn assert_input_type() {}
@@ -445,7 +436,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn assert_output_type() {}
@@ -475,7 +466,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::Scalar<#lt, #inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::graphql::Scalar<#lt, #inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn assert_scalar() {}
@@ -490,12 +481,9 @@ impl Definition {
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
     fn impl_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
-        let name = &self.name;
 
-        let description = self
-            .description
-            .as_ref()
-            .map(|val| quote! { .description(#val) });
+        let name = &self.name;
+        let description = &self.description;
         let specified_by_url = self.specified_by_url.as_ref().map(|url| {
             let url_lit = url.as_str();
             quote! { .specified_by_url(#url_lit) }
@@ -506,7 +494,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::GraphQLType<#scalar> for #ty
+            impl #impl_gens ::juniper::GraphQLType<#scalar> for #ty
                 #where_clause
             {
                 fn name(_: &Self::TypeInfo) -> Option<&'static str> {
@@ -542,7 +530,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::TypeName<#inf, #bh> for #ty
+            impl #impl_gens ::juniper::resolve::TypeName<#inf, #bh> for #ty
                 #where_clause
             {
                 fn type_name(_: &#inf) -> &'static str {
@@ -572,11 +560,7 @@ impl Definition {
         });
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-        let description = self
-            .description
-            .as_ref()
-            .map(|text| quote! { .description(#text) });
-
+        let description = &self.description;
         let specified_by_url = self.specified_by_url.as_ref().map(|url| {
             let url_lit = url.as_str();
             quote! { .specified_by_url(#url_lit) }
@@ -584,7 +568,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::Type<#inf, #sv, #bh> for #ty
+            impl #impl_gens ::juniper::resolve::Type<#inf, #sv, #bh> for #ty
                 #where_clause
             {
                 fn meta<'__r, '__ti: '__r>(
@@ -597,8 +581,7 @@ impl Definition {
                     registry.register_scalar_with::<
                         ::juniper::behavior::Coerce<Self>, _, _,
                     >(type_info, |meta| {
-                        meta#description
-                            #specified_by_url
+                        meta #description #specified_by_url
                     })
                 }
             }
@@ -620,7 +603,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::GraphQLValue<#scalar> for #ty
+            impl #impl_gens ::juniper::GraphQLValue<#scalar> for #ty
                 #where_clause
             {
                 type Context = ();
@@ -663,7 +646,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn resolve_value(
@@ -691,7 +674,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty
+            impl #impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty
                 #where_clause
             {
                 fn resolve_async<'b>(
@@ -730,7 +713,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::ValueAsync<#inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::resolve::ValueAsync<#inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn resolve_value_async<'__r>(
@@ -765,7 +748,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::ToInputValue<#scalar> for #ty
+            impl #impl_gens ::juniper::ToInputValue<#scalar> for #ty
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
@@ -794,7 +777,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::ToInputValue<#sv, #bh> for #ty
+            impl #impl_gens ::juniper::resolve::ToInputValue<#sv, #bh> for #ty
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::graphql::InputValue<#sv> {
@@ -819,7 +802,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::FromInputValue<#scalar> for #ty
+            impl #impl_gens ::juniper::FromInputValue<#scalar> for #ty
                 #where_clause
             {
                 type Error = ::juniper::executor::FieldError<#scalar>;
@@ -853,8 +836,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh>
+                for #ty #where_clause
             {
                 type Error = #error_ty;
 
@@ -882,12 +865,12 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::ParseScalarValue<#scalar> for #ty
+            impl #impl_gens ::juniper::ParseScalarValue<#scalar> for #ty
                 #where_clause
             {
                 fn from_str(
                     token: ::juniper::parser::ScalarToken<'_>,
-                ) -> ::juniper::ParseScalarResult<'_, #scalar> {
+                ) -> ::juniper::ParseScalarResult<#scalar> {
                     #from_str
                 }
             }
@@ -913,15 +896,12 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::ScalarToken<#sv, #bh> for #ty
+            impl #impl_gens ::juniper::resolve::ScalarToken<#sv, #bh> for #ty
                 #where_clause
             {
                 fn parse_scalar_token(
                     token: ::juniper::parser::ScalarToken<'_>,
-                ) -> ::std::result::Result<
-                    #sv,
-                    ::juniper::parser::ParseError<'_>,
-                > {
+                ) -> ::std::result::Result<#sv, ::juniper::parser::ParseError> {
                     #body
                 }
             }
@@ -944,14 +924,14 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
+            impl #impl_gens ::juniper::macros::reflect::BaseType<#scalar> for #ty
                 #where_clause
             {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
+            impl #impl_gens ::juniper::macros::reflect::BaseSubTypes<#scalar> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types =
@@ -959,7 +939,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
+            impl #impl_gens ::juniper::macros::reflect::WrappedType<#scalar> for #ty
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
@@ -984,14 +964,14 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseType<#bh> for #ty
                 #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Types =
@@ -999,7 +979,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
                 #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
@@ -1023,7 +1003,7 @@ impl Definition {
         let ty = {
             let ident = &self.ident;
             let (_, ty_gen, _) = self.generics.split_for_impl();
-            quote! { #ident#ty_gen }
+            quote! { #ident #ty_gen }
         };
 
         if !self.where_clause.is_empty() {
@@ -1056,7 +1036,7 @@ impl Definition {
                 let ty = {
                     let ident = &self.ident;
                     let (_, ty_gen, _) = generics.split_for_impl();
-                    quote! { #ident#ty_gen }
+                    quote! { #ident #ty_gen }
                 };
 
                 quote! { for<#( #lifetimes ),*> #ty }
@@ -1087,7 +1067,7 @@ impl Definition {
         let ty = {
             let ident = &self.ident;
             let (_, ty_gen, _) = generics.split_for_impl();
-            parse_quote! { #ident#ty_gen }
+            parse_quote! { #ident #ty_gen }
         };
 
         if !self.where_clause.is_empty() {
@@ -1434,7 +1414,7 @@ impl Methods {
                     quote! { .map_scalar_value() }
                 });
                 quote! {
-                    #from_input(input#map_sv)
+                    #from_input(input #map_sv)
                         .map_err(
                             ::juniper::IntoFieldError::<#sv>::into_field_error,
                         )

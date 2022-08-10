@@ -11,11 +11,11 @@ pub type QueryResult = Result<
     String,
 >;
 
-pub struct Context {}
+pub struct Context;
 
 impl Context {
     fn new() -> Self {
-        Self {}
+        Self
     }
 }
 
@@ -51,8 +51,8 @@ impl User {
         Self {
             id,
             kind: UserKind::Admin,
-            username: "userx".to_string(),
-            email: "userx@domain.com".to_string(),
+            username: "userx".into(),
+            email: "userx@domain.com".into(),
             gender: Some(Gender::Female),
         }
     }
@@ -97,7 +97,7 @@ pub fn new_schema() -> RootNode<'static, Query, EmptyMutation<Context>, EmptySub
 pub fn execute_sync(query: &str, vars: Variables) -> QueryResult {
     let root = new_schema();
     let ctx = Context::new();
-    juniper::execute_sync(query, None, &root, &vars, &ctx).map_err(|e| format!("{:?}", e))
+    juniper::execute_sync(query, None, &root, &vars, &ctx).map_err(|e| format!("{e:?}"))
 }
 
 pub async fn execute(query: &str, vars: Variables) -> QueryResult {
@@ -105,5 +105,5 @@ pub async fn execute(query: &str, vars: Variables) -> QueryResult {
     let ctx = Context::new();
     juniper::execute(query, None, &root, &vars, &ctx)
         .await
-        .map_err(|e| format!("{:?}", e))
+        .map_err(|e| format!("{e:?}"))
 }

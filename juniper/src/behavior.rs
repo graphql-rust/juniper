@@ -88,7 +88,7 @@ where
     B1: ?Sized,
     B2: ?Sized,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError> {
         T::parse_scalar_token(token)
     }
 }

@@ -4,4 +4,4 @@ error: GraphQL union expects trait method to accept `&self` only and, optionally
 5 |     fn a(&self, ctx: &(), rand: u8) -> Option<&Human>;
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Unions
+  = note: https://spec.graphql.org/October2021#sec-Unions

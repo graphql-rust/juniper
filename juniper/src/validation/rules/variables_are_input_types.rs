@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     ast::VariableDefinition,
     parser::Spanning,
@@ -26,7 +28,7 @@ where
         {
             if !var_type.is_input() {
                 ctx.report_error(
-                    &error_message(var_name.item, &format!("{}", var_def.var_type.item)),
+                    &error_message(var_name.item, &var_def.var_type.item),
                     &[var_def.var_type.start],
                 );
             }
@@ -34,11 +36,8 @@ where
     }
 }
 
-fn error_message(var_name: &str, type_name: &str) -> String {
-    format!(
-        "Variable \"{}\" cannot be of non-input type \"{}\"",
-        var_name, type_name
-    )
+fn error_message(var_name: impl fmt::Display, type_name: impl fmt::Display) -> String {
+    format!("Variable \"{var_name}\" cannot be of non-input type \"{type_name}\"")
 }
 
 #[cfg(test)]

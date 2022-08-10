@@ -285,22 +285,18 @@ where
         DeprecationStatus::Current => None,
         DeprecationStatus::Deprecated(reason) => Some(ExternalDirective {
             position: Pos::default(),
-            name: From::from("deprecated"),
-            arguments: if let Some(reason) = reason {
-                vec![(
-                    From::from("reason"),
-                    ExternalValue::String(reason.to_string()),
-                )]
-            } else {
-                vec![]
-            },
+            name: "deprecated".into(),
+            arguments: reason
+                .as_ref()
+                .map(|rsn| vec![(From::from("reason"), ExternalValue::String(rsn.into()))])
+                .unwrap_or_default(),
         }),
     }
 }
 
-// Right now the only directive supported is `@deprecated`. `@skip` and `@include`
-// are dealt with elsewhere.
-// <https://facebook.github.io/graphql/draft/#sec-Type-System.Directives>
+// Right now the only directive supported is `@deprecated`.
+// `@skip` and `@include` are dealt with elsewhere.
+// https://spec.graphql.org/October2021#sec-Type-System.Directives.Built-in-Directives
 fn generate_directives<'a, T>(status: &DeprecationStatus) -> Vec<ExternalDirective<'a, T>>
 where
     T: Text<'a>,

@@ -41,8 +41,7 @@ where
 /// [`GraphQLType::name`]: crate::GraphQLType::name
 pub fn err_unnamed_type<S>(name: &str) -> FieldError<S> {
     FieldError::from(format!(
-        "Expected `{}` type to implement `GraphQLType::name`",
-        name,
+        "Expected `{name}` type to implement `GraphQLType::name`",
     ))
 }
 

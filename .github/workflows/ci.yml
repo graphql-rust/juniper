@@ -29,6 +29,7 @@ jobs:
       - release-check
       - rustfmt
       - test
+      - test-book
       - wasm
     runs-on: ubuntu-latest
     steps:
@@ -171,7 +172,6 @@ jobs:
           - juniper_graphql_ws
           - juniper_integration_tests
           - juniper_codegen_tests
-          - juniper_book_tests
           - juniper_actix
           - juniper_hyper
           - juniper_iron
@@ -194,14 +194,6 @@ jobs:
             os: macOS
           - crate: juniper_codegen_tests
             os: windows
-          - crate: juniper_book_tests
-            toolchain: beta
-          - crate: juniper_book_tests
-            toolchain: nightly
-          # TODO: LLVM ERROR: out of memory
-          - crate: juniper_integration_tests
-            os: windows
-
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
@@ -212,6 +204,34 @@ jobs:
           override: true
 
       - run: make test.cargo crate=${{ matrix.crate }}
+
+  test-book:
+    name: test Book
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu
+          - macOS
+          # TODO: Re-enable once rust-lang/rust#99466 is fixed:
+          #       https://github.com/rust-lang/rust/issues/99466
+          #- windows
+        toolchain:
+          - stable
+          - beta
+          - nightly
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+
+      - run: cargo install mdbook
+
+      - run: make test.book
 
   wasm:
     strategy:
@@ -281,6 +301,7 @@ jobs:
       - package
       - rustfmt
       - test
+      - test-book
       - wasm
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
@@ -304,7 +325,7 @@ jobs:
       - name: Parse CHANGELOG link
         id: changelog
         run: echo ::set-output
-                  name=LINK::https://github.com/${{ github.repository }}/blob/${{ steps.crate.outputs.NAME }}%40${{ steps.release.outputs.VERSION }}//${{ steps.crate.outputs.NAME }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.release.outputs.VERSION }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.crate.outputs.NAME }}/CHANGELOG.md)
+                  name=LINK::${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.crate.outputs.NAME }}%40${{ steps.release.outputs.VERSION }}//${{ steps.crate.outputs.NAME }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.release.outputs.VERSION }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.crate.outputs.NAME }}/CHANGELOG.md)
 
       - uses: softprops/action-gh-release@v1
         env:
@@ -347,19 +368,17 @@ jobs:
 
   deploy-book:
     name: deploy Book
-    needs: ["test"]
+    needs: ["test", "test-book"]
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/juniper@') }}
+         || startsWith(github.ref, 'refs/tags/juniper@') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: peaceiris/actions-mdbook@v1
 
-      - run: make book.build out=gh-pages/master
-        if: ${{ github.ref == 'refs/heads/master' }}
-
-      - run: make book.build out=gh-pages
-        if: ${{ startsWith(github.ref, 'refs/tags/juniper@') }}
+      - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'
+                                              && '/master')
+                                          ||     '' }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

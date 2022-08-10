@@ -198,7 +198,7 @@ where
     T: resolve::ScalarToken<SV, BH> + ?Sized,
     BH: ?Sized,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError> {
         T::parse_scalar_token(token)
     }
 }

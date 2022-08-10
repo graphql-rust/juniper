@@ -34,8 +34,6 @@ use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 type Decimal = rust_decimal::Decimal;
 
 mod rust_decimal_scalar {
-    use std::convert::TryFrom as _;
-
     use super::*;
 
     pub(super) fn to_output<S: ScalarValue>(v: &Decimal) -> Value<S> {
@@ -46,14 +44,13 @@ mod rust_decimal_scalar {
         if let Some(i) = v.as_int_value() {
             Ok(Decimal::from(i))
         } else if let Some(f) = v.as_float_value() {
-            Decimal::try_from(f)
-                .map_err(|e| format!("Failed to parse `Decimal` from `Float`: {}", e))
+            Decimal::try_from(f).map_err(|e| format!("Failed to parse `Decimal` from `Float`: {e}"))
         } else {
             v.as_string_value()
-                .ok_or_else(|| format!("Expected `String`, found: {}", v))
+                .ok_or_else(|| format!("Expected `String`, found: {v}"))
                 .and_then(|s| {
                     Decimal::from_str(s)
-                        .map_err(|e| format!("Failed to parse `Decimal` from `String`: {}", e))
+                        .map_err(|e| format!("Failed to parse `Decimal` from `String`: {e}"))
                 })
         }
     }
@@ -84,11 +81,10 @@ mod test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{:?}`: {:?}",
-                input,
+                "failed to parse `{input:?}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {:?}", input);
+            assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
         }
     }
 
@@ -108,7 +104,7 @@ mod test {
             let input: InputValue = input;
             let parsed = Decimal::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -117,7 +113,7 @@ mod test {
         for raw in ["4.20", "0", "999.999999999", "875533788", "123", "43.44"] {
             let actual: InputValue = Decimal::from_str(raw).unwrap().to_input_value();
 
-            assert_eq!(actual, graphql_input_value!((raw)), "on value: {}", raw);
+            assert_eq!(actual, graphql_input_value!((raw)), "on value: {raw}");
         }
     }
 }

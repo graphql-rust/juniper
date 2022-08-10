@@ -10,16 +10,17 @@ use syn::{
     parse_quote,
 };
 
-use crate::util::span_container::SpanContainer;
+use crate::common::SpanContainer;
 
 /// [`Behaviour`] parametrization of the code generation.
 ///
 /// [`Behaviour`]: juniper::behavior
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) enum Type {
     /// [`behavior::Standard`] should be used in the generated code.
     ///
     /// [`behavior::Standard`]: juniper::behavior::Standard
+    #[default]
     Standard,
 
     /// Concrete custom Rust type should be used as [`Behaviour`] in the
@@ -27,12 +28,6 @@ pub(crate) enum Type {
     ///
     /// [`Behaviour`]: juniper::behavior
     Custom(syn::Type),
-}
-
-impl Default for Type {
-    fn default() -> Self {
-        Self::Standard
-    }
 }
 
 impl Parse for Type {

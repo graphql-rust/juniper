@@ -49,7 +49,6 @@ pub enum TypeKind {
     /// ## Input objects
     ///
     /// Represents complex values provided in queries _into_ the system.
-    #[graphql(name = "INPUT_OBJECT")]
     InputObject,
 
     /// ## List types
@@ -63,7 +62,6 @@ pub enum TypeKind {
     ///
     /// In GraphQL, nullable types are the default. By putting a `!` after a\
     /// type, it becomes non-nullable.
-    #[graphql(name = "NON_NULL")]
     NonNull,
 }
 
@@ -89,7 +87,7 @@ impl<'a, S> Arguments<'a, S> {
         if let (Some(args), Some(meta_args)) = (&mut args, meta_args) {
             for arg in meta_args {
                 let arg_name = arg.name.as_str();
-                if args.get(arg_name).map_or(true, InputValue::is_null) {
+                if args.get(arg_name).is_none() {
                     if let Some(val) = arg.default_value.as_ref() {
                         args.insert(arg_name, val.clone());
                     }
@@ -150,14 +148,14 @@ impl<'a, S> Arguments<'a, S> {
 /// This trait is intended to be used in a conjunction with a [`GraphQLType`] trait. See the example
 /// in the documentation of a [`GraphQLType`] trait.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-/// [2]: https://spec.graphql.org/June2018/#sec-Unions
-/// [3]: https://spec.graphql.org/June2018/#sec-Objects
-/// [4]: https://spec.graphql.org/June2018/#sec-Scalars
-/// [5]: https://spec.graphql.org/June2018/#sec-Enums
-/// [6]: https://spec.graphql.org/June2018/#sec-Type-System.List
-/// [7]: https://spec.graphql.org/June2018/#sec-Type-System.Non-Null
-/// [8]: https://spec.graphql.org/June2018/#sec-Input-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+/// [2]: https://spec.graphql.org/October2021#sec-Unions
+/// [3]: https://spec.graphql.org/October2021#sec-Objects
+/// [4]: https://spec.graphql.org/October2021#sec-Scalars
+/// [5]: https://spec.graphql.org/October2021#sec-Enums
+/// [6]: https://spec.graphql.org/October2021#sec-List
+/// [7]: https://spec.graphql.org/October2021#sec-Non-Null
+/// [8]: https://spec.graphql.org/October2021#sec-Input-Objects
 /// [11]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 /// [12]: https://doc.rust-lang.org/reference/types/trait-object.html
 pub trait GraphQLValue<S = DefaultScalarValue>
@@ -196,7 +194,7 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_field(
         &self,
         _info: &Self::TypeInfo,
@@ -217,9 +215,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_into_type(
         &self,
         info: &Self::TypeInfo,
@@ -243,9 +241,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     #[allow(unused_variables)]
     fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
         panic!(
@@ -271,8 +269,8 @@ where
     ///
     /// The default implementation panics, if `selection_set` is [`None`].
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [0]: https://spec.graphql.org/October2021#sec-Errors-and-Non-Nullability
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve(
         &self,
         info: &Self::TypeInfo,
@@ -379,13 +377,13 @@ where
 ///             // schema in `meta()` above, or a validation failed because of a this library bug.
 ///             //
 ///             // In either of those two cases, the only reasonable way out is to panic the thread.
-///             _ => panic!("Field {} not found on type User", field_name),
+///             _ => panic!("Field {field_name} not found on type User"),
 ///         }
 ///     }
 /// }
 /// ```
 ///
-/// [3]: https://spec.graphql.org/June2018/#sec-Objects
+/// [3]: https://spec.graphql.org/October2021#sec-Objects
 pub trait GraphQLType<S = DefaultScalarValue>: GraphQLValue<S>
 where
     S: ScalarValue,
@@ -454,7 +452,7 @@ where
                     panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
-                        meta_type.name()
+                        meta_type.name(),
                     )
                 });
 
@@ -474,8 +472,8 @@ where
                         f.arguments.as_ref().map(|m| {
                             m.item
                                 .iter()
-                                .map(|&(ref k, ref v)| {
-                                    (k.item, v.item.clone().into_const(exec_vars))
+                                .filter_map(|&(ref k, ref v)| {
+                                    v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
                                 })
                                 .collect()
                         }),
@@ -608,7 +606,7 @@ where
                 .arguments
                 .iter()
                 .flat_map(|m| m.item.get("if"))
-                .flat_map(|v| v.item.clone().into_const(vars).convert())
+                .filter_map(|v| v.item.clone().into_const(vars)?.convert().ok())
                 .next()
                 .unwrap();
 

@@ -1,54 +1,52 @@
 //! Code generation for [GraphQL object][1].
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Objects
+//! [1]: https://spec.graphql.org/October2021#sec-Objects
 
 pub mod attr;
 pub mod derive;
 
-use std::{any::TypeId, collections::HashSet, convert::TryInto as _, marker::PhantomData};
+use std::{any::TypeId, collections::HashSet, marker::PhantomData};
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
+    ext::IdentExt as _,
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned as _,
     token,
 };
 
-use crate::{
-    common::{
-        behavior, field, gen,
-        parse::{
-            attr::{err, OptionExt as _},
-            GenericsExt as _, ParseBufferExt as _, TypeExt,
-        },
-        scalar,
+use crate::common::{
+    behavior, field, filter_attrs, gen,
+    parse::{
+        attr::{err, OptionExt as _},
+        GenericsExt as _, ParseBufferExt as _, TypeExt,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
+    rename, scalar, Description, SpanContainer,
 };
-use syn::ext::IdentExt;
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
 /// when generating code for [GraphQL object][1] type.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
 #[derive(Debug, Default)]
 pub(crate) struct Attr {
     /// Explicitly specified name of this [GraphQL object][1] type.
     ///
     /// If [`None`], then Rust type name is used by default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of this [GraphQL object][1] type.
     ///
-    /// If [`None`], then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    pub(crate) description: Option<SpanContainer<String>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    pub(crate) description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL object][1] type with.
@@ -56,7 +54,7 @@ pub(crate) struct Attr {
     /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
     ///
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) context: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type (or type parameter with its bounds) of
@@ -70,7 +68,7 @@ pub(crate) struct Attr {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified type of the custom [`Behavior`] to parametrize this
@@ -87,17 +85,18 @@ pub(crate) struct Attr {
     /// Explicitly specified [GraphQL interfaces][2] this [GraphQL object][1]
     /// type implements.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021#sec-Interfaces
     pub(crate) interfaces: HashSet<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified [`RenameRule`] for all fields of this
+    /// Explicitly specified [`rename::Policy`] for all fields of this
     /// [GraphQL object][1] type.
     ///
-    /// If [`None`] then the default rule will be [`RenameRule::CamelCase`].
+    /// If [`None`], then the [`rename::Policy::CamelCase`] will be applied by
+    /// default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub(crate) rename_fields: Option<SpanContainer<RenameRule>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    pub(crate) rename_fields: Option<SpanContainer<rename::Policy>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -123,13 +122,9 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -213,7 +208,7 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -222,38 +217,38 @@ impl Attr {
 
 /// Definition of [GraphQL object][1] for code generation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
 #[derive(Debug)]
 pub(crate) struct Definition<Operation: ?Sized> {
     /// Name of this [GraphQL object][1] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) name: String,
 
     /// Rust type that this [GraphQL object][1] is represented with.
     ///
     /// It should contain all its generics, if any.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) ty: syn::Type,
 
     /// Generics of the Rust type that this [GraphQL object][1] is implemented
     /// for.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) generics: syn::Generics,
 
     /// Description of this [GraphQL object][1] to put into GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    pub(crate) description: Option<String>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    pub(crate) description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL object][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
@@ -261,7 +256,7 @@ pub(crate) struct Definition<Operation: ?Sized> {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     pub(crate) scalar: scalar::Type,
 
     /// [`Behavior`] parametrization to generate code with for this
@@ -273,23 +268,23 @@ pub(crate) struct Definition<Operation: ?Sized> {
 
     /// Defined [GraphQL fields][2] of this [GraphQL object][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) fields: Vec<field::Definition>,
 
     /// [GraphQL interfaces][2] implemented by this [GraphQL object][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
-    /// [2]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
+    /// [2]: https://spec.graphql.org/October2021#sec-Interfaces
     pub(crate) interfaces: HashSet<syn::Type>,
 
     /// [GraphQL operation][1] this [`Definition`] should generate code for.
     ///
     /// Either [GraphQL query][2] or [GraphQL subscription][3].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Operations
-    /// [2]: https://spec.graphql.org/June2018/#sec-Query
-    /// [3]: https://spec.graphql.org/June2018/#sec-Subscription
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Operations
+    /// [2]: https://spec.graphql.org/October2021#sec-Query
+    /// [3]: https://spec.graphql.org/October2021#sec-Subscription
     pub(crate) _operation: PhantomData<Box<Operation>>,
 }
 
@@ -302,7 +297,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     ///
     /// [`GraphQLAsyncValue`]: juniper::GraphQLAsyncValue
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     pub(crate) fn impl_generics(&self, for_async: bool) -> (TokenStream, Option<syn::WhereClause>) {
         let mut generics = self.generics.clone();
@@ -330,7 +325,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                 let mut ty = self.ty.clone();
                 ty.lifetimes_iter_mut(&mut |lt| {
                     let ident = lt.ident.unraw();
-                    lt.ident = format_ident!("__fa__{}", ident);
+                    lt.ident = format_ident!("__fa__{ident}");
                     lifetimes.push(lt.clone());
                 });
 
@@ -366,7 +361,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     /// this [GraphQL object][1].
     ///
     /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     pub(crate) fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -384,7 +379,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::marker::IsOutputType<#scalar> for #ty #where_clause
             {
                 fn mark() {
                     #( #fields_marks )*
@@ -401,7 +396,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     /// [`BaseType`]: juniper::macros::reflect::BaseType
     /// [`Fields`]: juniper::macros::reflect::Fields
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -413,7 +408,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
                 for #ty
                 #where_clause
             {
@@ -421,7 +416,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ty
                 #where_clause
             {
@@ -430,7 +425,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::Implements<#scalar>
                 for #ty
                 #where_clause
             {
@@ -439,7 +434,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ty
                 #where_clause
             {
@@ -447,7 +442,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Fields<#scalar>
+            impl #impl_generics ::juniper::macros::reflect::Fields<#scalar>
                 for #ty
                 #where_clause
             {
@@ -479,14 +474,14 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseType<#bh> for #ty
                 #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Types =
@@ -494,7 +489,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::Implements<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::Implements<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Types = &[#(
@@ -503,7 +498,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
                 #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
@@ -511,7 +506,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::Fields<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::Fields<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Names = &[#( #fields ),*];
@@ -557,7 +552,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                 quote! {
                     #[allow(deprecated, non_snake_case)]
                     #[automatically_derived]
-                    impl#impl_gens ::juniper::reflect::Field<
+                    impl #impl_gens ::juniper::reflect::Field<
                         { ::juniper::reflect::fnv1a128(#f_name) }, #bh,
                     > for #ty #where_clause {
                         const TYPE: ::juniper::reflect::Type =
@@ -587,7 +582,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     /// [GraphQL object][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     pub(crate) fn impl_graphql_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -596,16 +591,13 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         let ty = &self.ty;
 
         let name = &self.name;
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         let extract_stream_type = TypeId::of::<Operation>() != TypeId::of::<Query>();
         let fields_meta = self
             .fields
             .iter()
-            .map(|f| f.method_meta_tokens(extract_stream_type.then(|| scalar)));
+            .map(|f| f.method_meta_tokens(extract_stream_type.then_some(scalar)));
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
         let mut interface_tys: Vec<_> = self.interfaces.iter().collect();
@@ -623,7 +615,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
@@ -650,7 +642,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
 /// [GraphQL query operation][2] of the [`Definition`] to generate code for.
 ///
-/// [2]: https://spec.graphql.org/June2018/#sec-Query
+/// [2]: https://spec.graphql.org/October2021#sec-Query
 struct Query;
 
 impl ToTokens for Definition<Query> {
@@ -665,7 +657,7 @@ impl ToTokens for Definition<Query> {
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        self.impl_reflect().to_tokens(into);
+        //self.impl_reflect().to_tokens(into);
         //self.impl_reflect_field().to_tokens(into);
         //self.impl_resolve_field_static().to_tokens(into);
     }
@@ -676,7 +668,7 @@ impl Definition<Query> {
     /// [GraphQL object][1].
     ///
     /// [`GraphQLObject`]: juniper::GraphQLObject
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     fn impl_graphql_object_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -708,7 +700,7 @@ impl Definition<Query> {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::marker::GraphQLObject<#scalar> for #ty #where_clause
             {
                 fn mark() {
                     #( <#interface_tys as ::juniper::marker::GraphQLInterface<#scalar>>::mark(); )*
@@ -724,7 +716,7 @@ impl Definition<Query> {
     /// of this [GraphQL object][1].
     ///
     /// [`FieldMeta`]: juniper::FieldMeta
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     fn impl_field_meta_tokens(&self) -> TokenStream {
         let impl_ty = &self.ty;
@@ -785,7 +777,7 @@ impl Definition<Query> {
     /// this [GraphQL object][1].
     ///
     /// [`Field`]: juniper::Field
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     fn impl_field_tokens(&self) -> TokenStream {
         let (impl_ty, scalar) = (&self.ty, &self.scalar);
@@ -858,7 +850,7 @@ impl Definition<Query> {
     /// of this [GraphQL object][1].
     ///
     /// [`AsyncField`]: juniper::AsyncField
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     fn impl_async_field_tokens(&self) -> TokenStream {
         let (impl_ty, scalar) = (&self.ty, &self.scalar);
@@ -920,7 +912,7 @@ impl Definition<Query> {
     /// [GraphQL object][1].
     ///
     /// [`GraphQLValue`]: juniper::GraphQLValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -950,7 +942,7 @@ impl Definition<Query> {
         quote! {
             #[allow(deprecated)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLValue<#scalar> for #ty #where_clause
             {
                 type Context = #context;
                 type TypeInfo = ();
@@ -977,7 +969,7 @@ impl Definition<Query> {
                     _: &Self::Context,
                     _: &Self::TypeInfo,
                 ) -> String {
-                    #name.to_string()
+                    #name.into()
                 }
             }
         }
@@ -987,7 +979,7 @@ impl Definition<Query> {
     /// [GraphQL object][1].
     ///
     /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
-    /// [1]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Objects
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
@@ -1014,7 +1006,7 @@ impl Definition<Query> {
         quote! {
             #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
+            impl #impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause
             {
                 fn resolve_field_async<'b>(
                     &'b self,

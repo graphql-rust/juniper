@@ -51,6 +51,8 @@ pub enum Nullable<T> {
     Some(T),
 }
 
+// Implemented manually to omit redundant `T: Default` trait bound, imposed by
+// `#[derive(Default)]`.
 impl<T> Default for Nullable<T> {
     fn default() -> Self {
         Self::ImplicitNull

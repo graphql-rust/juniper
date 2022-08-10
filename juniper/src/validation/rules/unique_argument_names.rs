@@ -46,7 +46,7 @@ where
 }
 
 fn error_message(arg_name: &str) -> String {
-    format!("There can only be one argument named \"{}\"", arg_name)
+    format!("There can only be one argument named \"{arg_name}\"")
 }
 
 #[cfg(test)]

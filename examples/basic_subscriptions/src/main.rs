@@ -16,7 +16,7 @@ impl juniper::Context for Database {}
 
 impl Database {
     fn new() -> Self {
-        Self {}
+        Self
     }
 }
 
@@ -45,7 +45,7 @@ impl Subscription {
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 
 fn schema() -> Schema {
-    Schema::new(Query {}, EmptyMutation::new(), Subscription {})
+    Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
 #[tokio::main]

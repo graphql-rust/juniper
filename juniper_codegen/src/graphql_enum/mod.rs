@@ -4,8 +4,6 @@
 
 pub(crate) mod derive;
 
-use std::convert::TryInto as _;
-
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
@@ -16,22 +14,17 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        behavior,
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    behavior, deprecation, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _,
     },
-    util::{
-        filter_attrs, get_deprecated, get_doc_comment, span_container::SpanContainer, RenameRule,
-    },
+    rename, scalar, Description, SpanContainer,
 };
 
 /// Available arguments behind `#[graphql]` attribute placed on a Rust enum
-/// definition, when generating code for a [GraphQL enum][0] type.
+/// definition, when generating code for a [GraphQL enum][0].
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Enums
 #[derive(Debug, Default)]
@@ -45,12 +38,12 @@ struct ContainerAttr {
 
     /// Explicitly specified [description][2] of this [GraphQL enum][0].
     ///
-    /// If [`None`], then Rust doc comment will be used as [description][2], if
-    /// any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified type of [`Context`] to use for resolving this
     /// [GraphQL enum][0] type with.
@@ -83,15 +76,15 @@ struct ContainerAttr {
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     behavior: Option<SpanContainer<behavior::Type>>,
 
-    /// Explicitly specified [`RenameRule`] for all [values][1] of this
+    /// Explicitly specified [`rename::Policy`] for all [values][1] of this
     /// [GraphQL enum][0].
     ///
-    /// If [`None`], then the [`RenameRule::ScreamingSnakeCase`] rule will be
+    /// If [`None`], then the [`rename::Policy::ScreamingSnakeCase`] will be
     /// applied by default.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     /// [1]: https://spec.graphql.org/October2021#EnumValuesDefinition
-    rename_values: Option<SpanContainer<RenameRule>>,
+    rename_values: Option<SpanContainer<rename::Policy>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -117,13 +110,9 @@ impl Parse for ContainerAttr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -194,7 +183,7 @@ impl ContainerAttr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -210,30 +199,29 @@ impl ContainerAttr {
 struct VariantAttr {
     /// Explicitly specified name of this [GraphQL enum value][1].
     ///
-    /// If [`None`], then Rust enum variant's name is used by default.
+    /// If [`None`], then Rust enum variant's name will be used by default.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of this [GraphQL enum value][1].
     ///
-    /// If [`None`], then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified [deprecation][2] of this [GraphQL enum value][1].
     ///
-    /// If [`None`], then Rust `#[deprecated]` attribute is used as the
+    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the
     /// [deprecation][2], if any.
-    ///
-    /// If the inner [`Option`] is [`None`], then no [reason][3] was provided.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec--deprecated
     /// [3]: https://spec.graphql.org/October2021#sel-GAHnBZDACEDDGAA_6L
-    deprecated: Option<SpanContainer<Option<syn::LitStr>>>,
+    deprecated: Option<SpanContainer<deprecation::Directive>>,
 
     /// Explicitly specified marker for the Rust enum variant to be ignored and
     /// not included into the code generated for a [GraphQL enum][0]
@@ -262,26 +250,18 @@ impl Parse for VariantAttr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "deprecated" => {
-                    let mut reason = None;
-                    if input.is_next::<token::Eq>() {
-                        input.parse::<token::Eq>()?;
-                        reason = Some(input.parse::<syn::LitStr>()?);
-                    }
+                    let directive = input.parse::<deprecation::Directive>()?;
                     out.deprecated
                         .replace(SpanContainer::new(
                             ident.span(),
-                            reason.as_ref().map(|r| r.span()),
-                            reason,
+                            directive.reason.as_ref().map(|r| r.span()),
+                            directive,
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -319,14 +299,11 @@ impl VariantAttr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         if attr.deprecated.is_none() {
-            attr.deprecated = get_deprecated(attrs).map(|sc| {
-                let span = sc.span_ident();
-                sc.map(|depr| depr.reason.map(|rsn| syn::LitStr::new(&rsn, span)))
-            });
+            attr.deprecated = deprecation::Directive::parse_from_deprecated_attr(attrs)?;
         }
 
         Ok(attr)
@@ -354,18 +331,14 @@ struct ValueDefinition {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// [Deprecation][2] of this [GraphQL enum value][1] to put into GraphQL
     /// schema.
     ///
-    /// If the inner [`Option`] is [`None`], then [deprecation][2] has no
-    /// [reason][3] attached.
-    ///
     /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
     /// [2]: https://spec.graphql.org/October2021#sec--deprecated
-    /// [3]: https://spec.graphql.org/October2021#sel-GAHnBZDACEDDGAA_6L
-    deprecated: Option<Option<Box<str>>>,
+    deprecated: Option<deprecation::Directive>,
 }
 
 /// Representation of a [GraphQL enum][0] for code generation.
@@ -377,8 +350,9 @@ struct Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     ident: syn::Ident,
 
-    /// [`syn::Generics`] of the Rust enum behind this [GraphQL enum][0].
+    /// [`Generics`] of the Rust enum behind this [GraphQL enum][0].
     ///
+    /// [`Generics`]: syn::Generics
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     generics: syn::Generics,
 
@@ -391,7 +365,7 @@ struct Definition {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Enums
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL enum][0].
@@ -468,13 +442,13 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsInputType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::marker::IsInputType<#scalar>
+                for #ident #ty_generics
                 #where_clause {}
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::marker::IsOutputType<#scalar>
+                for #ident #ty_generics
                 #where_clause {}
         }
     }
@@ -500,7 +474,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
+            impl #impl_gens ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
                 for #ty #where_clause
             {
                 fn assert_input_type() {}
@@ -529,7 +503,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn assert_output_type() {}
@@ -558,7 +532,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::graphql::Enum<#lt, #inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::graphql::Enum<#lt, #inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn assert_enum() {}
@@ -580,44 +554,24 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let name = &self.name;
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         let variants_meta = self.values.iter().map(|v| {
-            let name = &v.name;
-            let description = v.description.as_ref().map_or_else(
-                || quote! { None },
-                |desc| quote! { Some(String::from(#desc)) },
-            );
-            let deprecation_status = match &v.deprecated {
-                None => quote! { ::juniper::meta::DeprecationStatus::Current },
-                Some(None) => quote! {
-                    ::juniper::meta::DeprecationStatus::Deprecated(None)
-                },
-                Some(Some(reason)) => {
-                    quote! {
-                        ::juniper::meta::DeprecationStatus::Deprecated(
-                            Some(String::from(#reason))
-                        )
-                    }
-                }
-            };
+            let v_name = &v.name;
+            let v_description = &v.description;
+            let v_deprecation = &v.deprecated;
 
             quote! {
-                ::juniper::meta::EnumValue {
-                    name: String::from(#name),
-                    description: #description,
-                    deprecation_status: #deprecation_status,
-                }
+                ::juniper::meta::EnumValue::new(#v_name)
+                    #v_description
+                    #v_deprecation
             }
         });
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::GraphQLType<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
@@ -632,7 +586,7 @@ impl Definition {
                 {
                     let variants = [#( #variants_meta ),*];
 
-                    registry.build_enum_type::<#ident#ty_generics>(info, &variants)
+                    registry.build_enum_type::<#ident #ty_generics>(info, &variants)
                         #description
                         .into_meta()
                 }
@@ -659,24 +613,12 @@ impl Definition {
         });
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-        let description = self
-            .description
-            .as_ref()
-            .map(|text| quote! { .description(#text) });
+        let description = &self.description;
 
         let values_meta = self.values.iter().map(|v| {
             let v_name = &v.name;
-            let v_description = v
-                .description
-                .as_ref()
-                .map(|text| quote! { .description(#text) });
-            let v_deprecation = v.deprecated.as_ref().map(|depr| {
-                let reason = depr.as_ref().map_or_else(
-                    || quote! { ::std::option::Option::None },
-                    |text| quote! { ::std::option::Option::Some(#text) },
-                );
-                quote! { .deprecated(#reason) }
-            });
+            let v_description = &v.description;
+            let v_deprecation = &v.deprecated;
 
             quote! {
                 ::juniper::meta::EnumValue::new(#v_name)
@@ -687,7 +629,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::Type<#inf, #sv, #bh> for #ty
+            impl #impl_gens ::juniper::resolve::Type<#inf, #sv, #bh> for #ty
                 #where_clause
             {
                 fn meta<'__r, '__ti: '__r>(
@@ -702,7 +644,7 @@ impl Definition {
                     registry.register_enum_with::<
                         ::juniper::behavior::Coerce<Self>, _, _,
                     >(&values, type_info, |meta| {
-                        meta#description
+                        meta #description
                     })
                 }
             }
@@ -722,7 +664,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::TypeName<#inf, #bh> for #ty
+            impl #impl_gens ::juniper::resolve::TypeName<#inf, #bh> for #ty
                 #where_clause
             {
                 fn type_name(_: &#inf) -> &'static str {
@@ -764,8 +706,8 @@ impl Definition {
         });
 
         quote! {
-            impl#impl_generics ::juniper::GraphQLValue<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::GraphQLValue<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 type Context = #context;
@@ -830,7 +772,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn resolve_value(
@@ -862,8 +804,8 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         quote! {
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::GraphQLValueAsync<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 fn resolve_async<'__a>(
@@ -901,7 +843,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::ValueAsync<#inf, #cx, #sv, #bh>
+            impl #impl_gens ::juniper::resolve::ValueAsync<#inf, #cx, #sv, #bh>
                 for #ty #where_clause
             {
                 fn resolve_value_async<'__r>(
@@ -944,8 +886,8 @@ impl Definition {
         });
 
         quote! {
-            impl#impl_generics ::juniper::FromInputValue<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::FromInputValue<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 type Error = ::std::string::String;
@@ -987,8 +929,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh>
+                for #ty #where_clause
             {
                 type Error = ::std::string::String;
 
@@ -1040,8 +982,8 @@ impl Definition {
         });
 
         quote! {
-            impl#impl_generics ::juniper::ToInputValue<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::ToInputValue<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
@@ -1088,7 +1030,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::resolve::ToInputValue<#sv, #bh> for #ty
+            impl #impl_gens ::juniper::resolve::ToInputValue<#sv, #bh> for #ty
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::graphql::InputValue<#sv> {
@@ -1118,23 +1060,23 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         quote! {
-            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
-            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types =
                     &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
-            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
-                for #ident#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ident #ty_generics
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
@@ -1159,14 +1101,14 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseType<#bh> for #ty
                 #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Types =
@@ -1174,7 +1116,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
                 #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
@@ -1215,14 +1157,14 @@ impl Definition {
                 let mut generics = self.generics.clone();
                 for lt in generics.lifetimes_mut() {
                     let ident = lt.lifetime.ident.unraw();
-                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                    lt.lifetime.ident = format_ident!("__fa__{ident}");
                 }
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
                 let ident = &self.ident;
                 let (_, ty_generics, _) = generics.split_for_impl();
 
-                quote! { for<#( #lifetimes ),*> #ident#ty_generics }
+                quote! { for<#( #lifetimes ),*> #ident #ty_generics }
             } else {
                 quote! { Self }
             };
@@ -1249,7 +1191,7 @@ impl Definition {
         let ty = {
             let ident = &self.ident;
             let (_, ty_gen, _) = generics.split_for_impl();
-            parse_quote! { #ident#ty_gen }
+            parse_quote! { #ident #ty_gen }
         };
         (ty, generics)
     }

@@ -200,5 +200,5 @@ pub trait InputValueAsRef<ScalarValue, Behavior: ?Sized = behavior::Standard> {
 }
 
 pub trait ScalarToken<ScalarValue, Behavior: ?Sized = behavior::Standard> {
-    fn parse_scalar_token(token: parser::ScalarToken<'_>) -> Result<ScalarValue, ParseError<'_>>;
+    fn parse_scalar_token(token: parser::ScalarToken<'_>) -> Result<ScalarValue, ParseError>;
 }

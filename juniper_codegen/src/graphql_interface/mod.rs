@@ -1,11 +1,11 @@
 //! Code generation for [GraphQL interface][1].
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+//! [1]: https://spec.graphql.org/October2021#sec-Interfaces
 
 pub mod attr;
 pub mod derive;
 
-use std::{collections::HashSet, convert::TryInto as _};
+use std::collections::HashSet;
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, quote_spanned, ToTokens};
@@ -19,33 +19,30 @@ use syn::{
     visit::Visit,
 };
 
-use crate::{
-    common::{
-        behavior, field, gen,
-        parse::{
-            attr::{err, OptionExt as _},
-            GenericsExt as _, ParseBufferExt as _,
-        },
-        scalar,
+use crate::common::{
+    behavior, field, filter_attrs, gen,
+    parse::{
+        attr::{err, OptionExt as _},
+        GenericsExt as _, ParseBufferExt as _,
     },
-    util::{filter_attrs, get_doc_comment, span_container::SpanContainer, RenameRule},
+    rename, scalar, Description, SpanContainer,
 };
 
 /// Returns [`syn::Ident`]s for a generic enum deriving [`Clone`] and [`Copy`]
 /// on it and enum alias which generic arguments are filled with
 /// [GraphQL interface][1] implementers.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 fn enum_idents(
     trait_ident: &syn::Ident,
     alias_ident: Option<&syn::Ident>,
 ) -> (syn::Ident, syn::Ident) {
     let enum_alias_ident = alias_ident
         .cloned()
-        .unwrap_or_else(|| format_ident!("{}Value", trait_ident.to_string()));
+        .unwrap_or_else(|| format_ident!("{trait_ident}Value"));
     let enum_ident = alias_ident.map_or_else(
-        || format_ident!("{}ValueEnum", trait_ident.to_string()),
-        |c| format_ident!("{}Enum", c.to_string()),
+        || format_ident!("{trait_ident}ValueEnum"),
+        |c| format_ident!("{c}Enum"),
     );
     (enum_ident, enum_alias_ident)
 }
@@ -54,23 +51,24 @@ fn enum_idents(
 /// trait or struct definition, when generating code for [GraphQL interface][1]
 /// type.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 #[derive(Debug, Default)]
 struct Attr {
     /// Explicitly specified name of [GraphQL interface][1] type.
     ///
     /// If [`None`], then Rust trait name is used by default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [description][2] of [GraphQL interface][1] type.
     ///
-    /// If [`None`], then Rust doc comment is used as [description][2], if any.
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    description: Option<SpanContainer<String>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified identifier of the type alias of Rust enum type
     /// behind the trait or struct, being an actual implementation of a
@@ -78,14 +76,14 @@ struct Attr {
     ///
     /// If [`None`], then `{trait_name}Value` identifier will be used.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     r#enum: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified Rust types of [GraphQL objects][2] or
     /// [interfaces][1] implementing this [GraphQL interface][1] type.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Objects
     implemented_for: HashSet<SpanContainer<syn::TypePath>>,
 
     /// Explicitly specified [GraphQL interfaces, implemented][1] by this
@@ -101,7 +99,7 @@ struct Attr {
     /// If [`None`], then unit type `()` is assumed as a type of [`Context`].
     ///
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     context: Option<SpanContainer<syn::Type>>,
 
     /// Explicitly specified type (or type parameter with its bounds) of
@@ -115,7 +113,7 @@ struct Attr {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
     /// Explicitly specified type of the custom [`Behavior`] to parametrize this
@@ -136,13 +134,14 @@ struct Attr {
     /// it contains async methods.
     asyncness: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified [`RenameRule`] for all fields of this
+    /// Explicitly specified [`rename::Policy`] for all fields of this
     /// [GraphQL interface][1] type.
     ///
-    /// If [`None`] then the default rule will be [`RenameRule::CamelCase`].
+    /// If [`None`], then the [`rename::Policy::CamelCase`] will be applied by
+    /// default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    rename_fields: Option<SpanContainer<RenameRule>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    rename_fields: Option<SpanContainer<rename::Policy>>,
 
     /// Indicator whether the generated code is intended to be used only inside
     /// the [`juniper`] library.
@@ -168,13 +167,9 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            Some(desc.span()),
-                            desc.value(),
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ctx" | "context" | "Context" => {
@@ -286,7 +281,7 @@ impl Attr {
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if attr.description.is_none() {
-            attr.description = get_doc_comment(attrs);
+            attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
         Ok(attr)
@@ -295,18 +290,18 @@ impl Attr {
 
 /// Definition of [GraphQL interface][1] for code generation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 struct Definition {
     /// [`syn::Generics`] of the trait or struct describing the
     /// [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     generics: syn::Generics,
 
     /// [`syn::Visibility`] of the trait or struct describing the
     /// [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     vis: syn::Visibility,
 
     /// Name of the generic enum describing all [`implementers`]. It's generic
@@ -330,14 +325,14 @@ struct Definition {
     /// Description of this [GraphQL interface][0] to put into GraphQL schema.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
-    description: Option<Box<str>>,
+    description: Option<Description>,
 
     /// Rust type of [`Context`] to generate [`GraphQLType`] implementation with
     /// for this [GraphQL interface][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     context: syn::Type,
 
     /// [`ScalarValue`] parametrization to generate [`GraphQLType`]
@@ -345,7 +340,7 @@ struct Definition {
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
     /// [`ScalarValue`]: juniper::ScalarValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     scalar: scalar::Type,
 
     /// [`Behavior`] parametrization to generate code with for this
@@ -357,13 +352,13 @@ struct Definition {
 
     /// Defined [GraphQL fields][2] of this [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     fields: Vec<field::Definition>,
 
     /// Defined [`Implementer`]s of this [GraphQL interface][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     implemented_for: Vec<syn::TypePath>,
 
     /// [GraphQL interfaces implemented][1] by this [GraphQL interface][0].
@@ -377,7 +372,7 @@ struct Definition {
     /// [GraphQL interface][1]. We generate hacky `const` which doesn't actually
     /// use it, but suppresses this warning.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     suppress_dead_code: Option<(syn::Ident, syn::Fields)>,
 
     /// Intra-doc link to the [`syn::Item`] defining this
@@ -400,7 +395,7 @@ impl ToTokens for Definition {
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        self.impl_reflect().to_tokens(into);
+        //self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -415,7 +410,7 @@ impl Definition {
         let alias_ident = &self.enum_alias_ident;
 
         let variant_gens_pars = (0..self.implemented_for.len()).map::<syn::GenericParam, _>(|id| {
-            let par = format_ident!("__I{}", id);
+            let par = format_ident!("__I{id}");
             parse_quote! { #par }
         });
         let variants_idents = self
@@ -467,13 +462,13 @@ impl Definition {
             "Enum building an opaque value represented by [`{}`]({}) \
              [GraphQL interface][0].\
              \n\n\
-             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+             [0]: https://spec.graphql.org/October2021#sec-Interfaces",
             self.name, self.src_intra_doc_link,
         );
         let enum_alias_doc = format!(
             "Opaque value represented by [`{}`]({}) [GraphQL interface][0].\
              \n\n\
-             [0]: https://spec.graphql.org/June2018/#sec-Interfaces",
+             [0]: https://spec.graphql.org/October2021#sec-Interfaces",
             self.name, self.src_intra_doc_link,
         );
 
@@ -507,8 +502,8 @@ impl Definition {
             .map(|(ty, ident)| {
                 quote! {
                     #[automatically_derived]
-                    impl#interface_impl_gens ::std::convert::From<#ty>
-                        for #alias_ident#interface_ty_gens
+                    impl #interface_impl_gens ::std::convert::From<#ty>
+                        for #alias_ident #interface_ty_gens
                         #interface_where_clause
                     {
                         fn from(v: #ty) -> Self {
@@ -522,14 +517,14 @@ impl Definition {
             #[automatically_derived]
             #[derive(Clone, Copy, Debug)]
             #[doc = #enum_doc]
-            #vis enum #enum_ident#enum_gens {
+            #vis enum #enum_ident #enum_gens {
                 #( #[doc(hidden)] #variants_idents(#variant_gens_pars), )*
                 #( #[doc(hidden)] #phantom_variant, )*
             }
 
             #[automatically_derived]
             #[doc = #enum_alias_doc]
-            #vis type #alias_ident#enum_alias_gens =
+            #vis type #alias_ident #enum_alias_gens =
                 #enum_ident<#( #enum_to_alias_gens ),*>;
 
             #( #from_impls )*
@@ -540,7 +535,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLInterface`]: juniper::GraphQLInterface
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_interface_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -556,7 +551,7 @@ impl Definition {
 
             quote! {{
                 const SUPPRESS_DEAD_CODE: () = {
-                    let none = Option::<#ident#const_gens>::None;
+                    let none = Option::<#ident #const_gens>::None;
                     match none {
                         Some(unreachable) => {
                             #( let _ = unreachable.#fields; )*
@@ -613,8 +608,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::GraphQLInterface<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::marker::GraphQLInterface<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 fn mark() {
@@ -630,7 +625,7 @@ impl Definition {
     /// this [GraphQL interface][1].
     ///
     /// [`marker::IsOutputType`]: juniper::marker::IsOutputType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_output_type_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -670,7 +665,7 @@ impl Definition {
             quote_spanned! { const_impl_for.span() =>
                 ::juniper::assert_transitive_impls!(
                     #const_scalar,
-                    #ty#ty_const_generics,
+                    #ty #ty_const_generics,
                     #const_impl_for,
                     #( #const_implements ),*
                 );
@@ -679,8 +674,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::marker::IsOutputType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::marker::IsOutputType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 fn mark() {
@@ -688,12 +683,12 @@ impl Definition {
                     #( #is_output )*
                     ::juniper::assert_interfaces_impls!(
                         #const_scalar,
-                        #ty#ty_const_generics,
+                        #ty #ty_const_generics,
                         #( #const_impl_for ),*
                     );
                     ::juniper::assert_implemented_for!(
                         #const_scalar,
-                        #ty#ty_const_generics,
+                        #ty #ty_const_generics,
                         #( #const_implements ),*
                     );
                     #( #transitive_checks )*
@@ -706,7 +701,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLType`]: juniper::GraphQLType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_type_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -717,10 +712,7 @@ impl Definition {
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
         let name = &self.name;
-        let description = self
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &self.description;
 
         // Sorting is required to preserve/guarantee the order of implementers registered in schema.
         let mut implemented_for = self.implemented_for.clone();
@@ -747,8 +739,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::GraphQLType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
@@ -767,7 +759,7 @@ impl Definition {
                     let fields = [
                         #( #fields_meta, )*
                     ];
-                    registry.build_interface_type::<#ty#ty_generics>(info, &fields)
+                    registry.build_interface_type::<#ty #ty_generics>(info, &fields)
                         #description
                         #impl_interfaces
                         .into_meta()
@@ -780,7 +772,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLValue`]: juniper::GraphQLValue
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -814,7 +806,7 @@ impl Definition {
         quote! {
             #[allow(deprecated)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValue<#scalar> for #ty#ty_generics
+            impl #impl_generics ::juniper::GraphQLValue<#scalar> for #ty #ty_generics
                 #where_clause
             {
                 type Context = #context;
@@ -862,7 +854,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`GraphQLValueAsync`]: juniper::GraphQLValueAsync
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_graphql_value_async_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -892,7 +884,7 @@ impl Definition {
         quote! {
             #[allow(deprecated, non_snake_case)]
             #[automatically_derived]
-            impl#impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty#ty_generics
+            impl #impl_generics ::juniper::GraphQLValueAsync<#scalar> for #ty #ty_generics
                 #where_clause
             {
                 fn resolve_field_async<'b>(
@@ -928,7 +920,7 @@ impl Definition {
     /// [`BaseType`]: juniper::macros::reflect::BaseType
     /// [`Fields`]: juniper::macros::reflect::Fields
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     #[must_use]
     fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
@@ -944,16 +936,16 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types = &[
@@ -963,8 +955,8 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Implements<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::Implements<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Types =
@@ -972,16 +964,16 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
 
             #[automatically_derived]
-            impl#impl_generics ::juniper::macros::reflect::Fields<#scalar>
-                for #ty#ty_generics
+            impl #impl_generics ::juniper::macros::reflect::Fields<#scalar>
+                for #ty #ty_generics
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
@@ -1010,14 +1002,14 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseType<#bh> for #ty
                 #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Types = &[
@@ -1027,7 +1019,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::Implements<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::Implements<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Types = &[#(
@@ -1036,7 +1028,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
                 #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
@@ -1044,7 +1036,7 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl#impl_gens ::juniper::reflect::Fields<#bh> for #ty
+            impl #impl_gens ::juniper::reflect::Fields<#bh> for #ty
                 #where_clause
             {
                 const NAMES: ::juniper::reflect::Names = &[#( #fields ),*];
@@ -1056,7 +1048,7 @@ impl Definition {
     /// [GraphQL interface][1].
     ///
     /// [`FieldMeta`]: juniper::macros::reflect::FieldMeta
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     fn impl_field_meta_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let context = &self.context;
@@ -1086,10 +1078,10 @@ impl Definition {
                 quote! {
                     #[allow(non_snake_case)]
                     #[automatically_derived]
-                    impl#impl_generics ::juniper::macros::reflect::FieldMeta<
+                    impl #impl_generics ::juniper::macros::reflect::FieldMeta<
                         #scalar,
                         { ::juniper::macros::reflect::fnv1a128(#field_name) }
-                    > for #ty#ty_generics #where_clause {
+                    > for #ty #ty_generics #where_clause {
                         type Context = #context;
                         type TypeInfo = ();
                         const TYPE: ::juniper::macros::reflect::Type =
@@ -1117,7 +1109,7 @@ impl Definition {
     /// this [GraphQL interface][1].
     ///
     /// [`Field`]: juniper::macros::reflect::Field
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     fn impl_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
@@ -1160,10 +1152,10 @@ impl Definition {
                 quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
                     #[automatically_derived]
-                    impl#impl_generics ::juniper::macros::reflect::Field<
+                    impl #impl_generics ::juniper::macros::reflect::Field<
                         #scalar,
                         { ::juniper::macros::reflect::fnv1a128(#field_name) }
-                    > for #ty#ty_generics #where_clause {
+                    > for #ty #ty_generics #where_clause {
                         fn call(
                             &self,
                             info: &Self::TypeInfo,
@@ -1173,7 +1165,7 @@ impl Definition {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
-                                        #ty#const_ty_generics,
+                                        #ty #const_ty_generics,
                                         #const_implemented_for,
                                         #const_scalar,
                                         #field_name,
@@ -1197,7 +1189,7 @@ impl Definition {
     /// of this [GraphQL interface][1].
     ///
     /// [`AsyncField`]: juniper::macros::reflect::AsyncField
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     fn impl_async_field_tokens(&self) -> TokenStream {
         let ty = &self.enum_alias_ident;
         let scalar = &self.scalar;
@@ -1240,10 +1232,10 @@ impl Definition {
                 quote_spanned! { field.ident.span() =>
                     #[allow(non_snake_case)]
                     #[automatically_derived]
-                    impl#impl_generics ::juniper::macros::reflect::AsyncField<
+                    impl #impl_generics ::juniper::macros::reflect::AsyncField<
                         #scalar,
                         { ::juniper::macros::reflect::fnv1a128(#field_name) }
-                    > for #ty#ty_generics #where_clause {
+                    > for #ty #ty_generics #where_clause {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
@@ -1253,7 +1245,7 @@ impl Definition {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
-                                        #ty#const_ty_generics,
+                                        #ty #const_ty_generics,
                                         #const_implemented_for,
                                         #const_scalar,
                                         #field_name,
@@ -1445,14 +1437,14 @@ impl Definition {
                 let mut generics = self.generics.clone();
                 for lt in generics.lifetimes_mut() {
                     let ident = lt.lifetime.ident.unraw();
-                    lt.lifetime.ident = format_ident!("__fa__{}", ident);
+                    lt.lifetime.ident = format_ident!("__fa__{ident}");
                 }
 
                 let lifetimes = generics.lifetimes().map(|lt| &lt.lifetime);
                 let ty = &self.enum_alias_ident;
                 let (_, ty_generics, _) = generics.split_for_impl();
 
-                quote! { for<#( #lifetimes ),*> #ty#ty_generics }
+                quote! { for<#( #lifetimes ),*> #ty #ty_generics }
             } else {
                 quote! { Self }
             };
@@ -1480,7 +1472,7 @@ impl Definition {
         let ty = {
             let ident = &self.enum_alias_ident;
             let (_, ty_gen, _) = generics.split_for_impl();
-            parse_quote! { #ident#ty_gen }
+            parse_quote! { #ident #ty_gen }
         };
 
         (ty, generics)

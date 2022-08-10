@@ -274,30 +274,61 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     ) where
         S: ScalarValue,
     {
-        let fragment = match self.named_fragments.get(fragment_name) {
-            Some(f) => f,
-            None => return,
-        };
+        let mut to_check = Vec::new();
+        if let Some(fragments) = self.collect_conflicts_between_fields_and_fragment_inner(
+            conflicts,
+            field_map,
+            fragment_name,
+            mutually_exclusive,
+            ctx,
+        ) {
+            to_check.push((fragment_name, fragments))
+        }
+
+        while let Some((fragment_name, fragment_names2)) = to_check.pop() {
+            for fragment_name2 in fragment_names2 {
+                // Early return on fragment recursion, as it makes no sense.
+                // Fragment recursions are prevented by `no_fragment_cycles` validator.
+                if fragment_name == fragment_name2 {
+                    return;
+                }
+                if let Some(fragments) = self.collect_conflicts_between_fields_and_fragment_inner(
+                    conflicts,
+                    field_map,
+                    fragment_name2,
+                    mutually_exclusive,
+                    ctx,
+                ) {
+                    to_check.push((fragment_name2, fragments));
+                };
+            }
+        }
+    }
+
+    /// This function should be called only inside
+    /// [`Self::collect_conflicts_between_fields_and_fragment()`], as it's a
+    /// recursive function using heap instead of a stack. So, instead of the
+    /// recursive call, we return a [`Vec`] that is visited inside
+    /// [`Self::collect_conflicts_between_fields_and_fragment()`].
+    fn collect_conflicts_between_fields_and_fragment_inner(
+        &self,
+        conflicts: &mut Vec<Conflict>,
+        field_map: &AstAndDefCollection<'a, S>,
+        fragment_name: &str,
+        mutually_exclusive: bool,
+        ctx: &ValidatorContext<'a, S>,
+    ) -> Option<Vec<&'a str>>
+    where
+        S: ScalarValue,
+    {
+        let fragment = self.named_fragments.get(fragment_name)?;
 
         let (field_map2, fragment_names2) =
             self.get_referenced_fields_and_fragment_names(fragment, ctx);
 
         self.collect_conflicts_between(conflicts, mutually_exclusive, field_map, &field_map2, ctx);
 
-        for fragment_name2 in fragment_names2 {
-            // Early return on fragment recursion, as it makes no sense.
-            // Fragment recursions are prevented by `no_fragment_cycles` validator.
-            if fragment_name == fragment_name2 {
-                return;
-            }
-            self.collect_conflicts_between_fields_and_fragment(
-                conflicts,
-                field_map,
-                fragment_name2,
-                mutually_exclusive,
-                ctx,
-            );
-        }
+        Some(fragment_names2)
     }
 
     fn collect_conflicts_between(
@@ -376,10 +407,9 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             if name1 != name2 {
                 return Some(Conflict(
                     ConflictReason(
-                        response_name.to_owned(),
+                        response_name.into(),
                         ConflictReasonMessage::Message(format!(
-                            "{} and {} are different fields",
-                            name1, name2
+                            "{name1} and {name2} are different fields",
                         )),
                     ),
                     vec![ast1.start],
@@ -390,8 +420,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             if !self.is_same_arguments(&ast1.item.arguments, &ast2.item.arguments) {
                 return Some(Conflict(
                     ConflictReason(
-                        response_name.to_owned(),
-                        ConflictReasonMessage::Message("they have differing arguments".to_owned()),
+                        response_name.into(),
+                        ConflictReasonMessage::Message("they have differing arguments".into()),
                     ),
                     vec![ast1.start],
                     vec![ast2.start],
@@ -406,10 +436,9 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             if self.is_type_conflict(ctx, t1, t2) {
                 return Some(Conflict(
                     ConflictReason(
-                        response_name.to_owned(),
+                        response_name.into(),
                         ConflictReasonMessage::Message(format!(
-                            "they return conflicting types {} and {}",
-                            t1, t2
+                            "they return conflicting types {t1} and {t2}",
                         )),
                     ),
                     vec![ast1.start],
@@ -513,7 +542,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
 
         Some(Conflict(
             ConflictReason(
-                response_name.to_owned(),
+                response_name.into(),
                 ConflictReasonMessage::Nested(conflicts.iter().map(|c| c.0.clone()).collect()),
             ),
             vec![*pos1]
@@ -722,10 +751,8 @@ where
 fn error_message(reason_name: &str, reason: &ConflictReasonMessage) -> String {
     let suffix = "Use different aliases on the fields to fetch both if this was intentional";
     format!(
-        r#"Fields "{}" conflict because {}. {}"#,
-        reason_name,
+        r#"Fields "{reason_name}" conflict because {}. {suffix}"#,
         format_reason(reason),
-        suffix
     )
 }
 
@@ -736,9 +763,8 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
             .iter()
             .map(|&ConflictReason(ref name, ref subreason)| {
                 format!(
-                    r#"subfields "{}" conflict because {}"#,
-                    name,
-                    format_reason(subreason)
+                    r#"subfields "{name}" conflict because {}"#,
+                    format_reason(subreason),
                 )
             })
             .collect::<Vec<_>>()
@@ -872,7 +898,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "fido",
-                    &Message("name and nickname are different fields".to_owned()),
+                    &Message("name and nickname are different fields".into()),
                 ),
                 &[
                     SourcePosition::new(78, 2, 12),
@@ -912,7 +938,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "name",
-                    &Message("nickname and name are different fields".to_owned()),
+                    &Message("nickname and name are different fields".into()),
                 ),
                 &[
                     SourcePosition::new(71, 2, 12),
@@ -935,7 +961,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "doesKnowCommand",
-                    &Message("they have differing arguments".to_owned()),
+                    &Message("they have differing arguments".into()),
                 ),
                 &[
                     SourcePosition::new(57, 2, 12),
@@ -958,7 +984,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "doesKnowCommand",
-                    &Message("they have differing arguments".to_owned()),
+                    &Message("they have differing arguments".into()),
                 ),
                 &[
                     SourcePosition::new(57, 2, 12),
@@ -981,7 +1007,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "doesKnowCommand",
-                    &Message("they have differing arguments".to_owned()),
+                    &Message("they have differing arguments".into()),
                 ),
                 &[
                     SourcePosition::new(57, 2, 12),
@@ -1025,10 +1051,7 @@ mod tests {
           }
         "#,
             &[RuleError::new(
-                &error_message(
-                    "x",
-                    &Message("name and barks are different fields".to_owned()),
-                ),
+                &error_message("x", &Message("name and barks are different fields".into())),
                 &[
                     SourcePosition::new(101, 6, 12),
                     SourcePosition::new(163, 9, 12),
@@ -1066,10 +1089,7 @@ mod tests {
         "#,
             &[
                 RuleError::new(
-                    &error_message(
-                        "x",
-                        &Message("name and barks are different fields".to_owned()),
-                    ),
+                    &error_message("x", &Message("name and barks are different fields".into())),
                     &[
                         SourcePosition::new(235, 13, 14),
                         SourcePosition::new(311, 17, 12),
@@ -1078,7 +1098,7 @@ mod tests {
                 RuleError::new(
                     &error_message(
                         "x",
-                        &Message("name and nickname are different fields".to_owned()),
+                        &Message("name and nickname are different fields".into()),
                     ),
                     &[
                         SourcePosition::new(235, 13, 14),
@@ -1088,7 +1108,7 @@ mod tests {
                 RuleError::new(
                     &error_message(
                         "x",
-                        &Message("barks and nickname are different fields".to_owned()),
+                        &Message("barks and nickname are different fields".into()),
                     ),
                     &[
                         SourcePosition::new(311, 17, 12),
@@ -1117,8 +1137,8 @@ mod tests {
                 &error_message(
                     "dog",
                     &Nested(vec![ConflictReason(
-                        "x".to_owned(),
-                        Message("name and barks are different fields".to_owned()),
+                        "x".into(),
+                        Message("name and barks are different fields".into()),
                     )]),
                 ),
                 &[
@@ -1152,12 +1172,12 @@ mod tests {
                     "dog",
                     &Nested(vec![
                         ConflictReason(
-                            "x".to_owned(),
-                            Message("barks and nickname are different fields".to_owned()),
+                            "x".into(),
+                            Message("barks and nickname are different fields".into()),
                         ),
                         ConflictReason(
-                            "y".to_owned(),
-                            Message("name and barkVolume are different fields".to_owned()),
+                            "y".into(),
+                            Message("name and barkVolume are different fields".into()),
                         ),
                     ]),
                 ),
@@ -1195,10 +1215,10 @@ mod tests {
                 &error_message(
                     "human",
                     &Nested(vec![ConflictReason(
-                        "relatives".to_owned(),
+                        "relatives".into(),
                         Nested(vec![ConflictReason(
-                            "x".to_owned(),
-                            Message("name and iq are different fields".to_owned()),
+                            "x".into(),
+                            Message("name and iq are different fields".into()),
                         )]),
                     )]),
                 ),
@@ -1239,8 +1259,8 @@ mod tests {
                 &error_message(
                     "relatives",
                     &Nested(vec![ConflictReason(
-                        "x".to_owned(),
-                        Message("iq and name are different fields".to_owned()),
+                        "x".into(),
+                        Message("iq and name are different fields".into()),
                     )]),
                 ),
                 &[
@@ -1286,8 +1306,8 @@ mod tests {
                 &error_message(
                     "relatives",
                     &Nested(vec![ConflictReason(
-                        "x".to_owned(),
-                        Message("iq and name are different fields".to_owned()),
+                        "x".into(),
+                        Message("iq and name are different fields".into()),
                     )]),
                 ),
                 &[
@@ -1333,12 +1353,12 @@ mod tests {
                     "dog",
                     &Nested(vec![
                         ConflictReason(
-                            "x".to_owned(),
-                            Message("name and barks are different fields".to_owned()),
+                            "x".into(),
+                            Message("name and barks are different fields".into()),
                         ),
                         ConflictReason(
-                            "y".to_owned(),
-                            Message("barkVolume and nickname are different fields".to_owned()),
+                            "y".into(),
+                            Message("barkVolume and nickname are different fields".into()),
                         ),
                     ]),
                 ),
@@ -1794,7 +1814,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "scalar",
-                    &Message("they return conflicting types Int and String!".to_owned()),
+                    &Message("they return conflicting types Int and String!".into()),
                 ),
                 &[
                     SourcePosition::new(88, 4, 18),
@@ -1858,7 +1878,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "scalar",
-                    &Message("they return conflicting types Int and String".to_owned()),
+                    &Message("they return conflicting types Int and String".into()),
                 ),
                 &[
                     SourcePosition::new(89, 4, 18),
@@ -1922,8 +1942,8 @@ mod tests {
                 &error_message(
                     "other",
                     &Nested(vec![ConflictReason(
-                        "otherField".to_owned(),
-                        Message("otherField and unrelatedField are different fields".to_owned()),
+                        "otherField".into(),
+                        Message("otherField and unrelatedField are different fields".into()),
                     )]),
                 ),
                 &[
@@ -1957,7 +1977,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "scalar",
-                    &Message("they return conflicting types String! and String".to_owned()),
+                    &Message("they return conflicting types String! and String".into()),
                 ),
                 &[
                     SourcePosition::new(100, 4, 18),
@@ -1992,7 +2012,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "box",
-                    &Message("they return conflicting types [StringBox] and StringBox".to_owned()),
+                    &Message("they return conflicting types [StringBox] and StringBox".into()),
                 ),
                 &[
                     SourcePosition::new(89, 4, 18),
@@ -2024,7 +2044,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "box",
-                    &Message("they return conflicting types StringBox and [StringBox]".to_owned()),
+                    &Message("they return conflicting types StringBox and [StringBox]".into()),
                 ),
                 &[
                     SourcePosition::new(89, 4, 18),
@@ -2060,7 +2080,7 @@ mod tests {
             &[RuleError::new(
                 &error_message(
                     "val",
-                    &Message("scalar and unrelatedField are different fields".to_owned()),
+                    &Message("scalar and unrelatedField are different fields".into()),
                 ),
                 &[
                     SourcePosition::new(126, 5, 20),
@@ -2096,8 +2116,8 @@ mod tests {
                 &error_message(
                     "box",
                     &Nested(vec![ConflictReason(
-                        "scalar".to_owned(),
-                        Message("they return conflicting types String and Int".to_owned()),
+                        "scalar".into(),
+                        Message("they return conflicting types String and Int".into()),
                     )]),
                 ),
                 &[
@@ -2227,10 +2247,10 @@ mod tests {
                 &error_message(
                     "edges",
                     &Nested(vec![ConflictReason(
-                        "node".to_owned(),
+                        "node".into(),
                         Nested(vec![ConflictReason(
-                            "id".to_owned(),
-                            Message("name and id are different fields".to_owned()),
+                            "id".into(),
+                            Message("name and id are different fields".into()),
                         )]),
                     )]),
                 ),
@@ -2278,7 +2298,7 @@ mod tests {
     #[test]
     fn error_message_contains_hint_for_alias_conflict() {
         assert_eq!(
-            &error_message("x", &Message("a and b are different fields".to_owned())),
+            &error_message("x", &Message("a and b are different fields".into())),
             "Fields \"x\" conflict because a and b are different fields. Use \
              different aliases on the fields to fetch both if this \
              was intentional"

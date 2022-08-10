@@ -7,12 +7,12 @@ use crate::parser::{ParseError, ScalarToken};
 pub use juniper_codegen::ScalarValue;
 
 /// The result of converting a string into a scalar value
-pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;
+pub type ParseScalarResult<S = DefaultScalarValue> = Result<S, ParseError>;
 
 /// A trait used to convert a `ScalarToken` into a certain scalar value type
 pub trait ParseScalarValue<S = DefaultScalarValue> {
     /// See the trait documentation
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<S>;
 }
 
 /// A trait marking a type that could be used as internal representation of
@@ -34,7 +34,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// integers.
 ///
 /// ```rust
-/// # use std::{fmt, convert::TryInto as _};
+/// # use std::fmt;
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
 /// # use juniper::ScalarValue;
@@ -228,20 +228,20 @@ pub trait ScalarValue:
 ///
 /// These types closely follow the [GraphQL specification][0].
 ///
-/// [0]: https://spec.graphql.org/June2018
+/// [0]: https://spec.graphql.org/October2021
 #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Int
+    /// [0]: https://spec.graphql.org/October2021#sec-Int
     #[value(as_float, as_int)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
     /// specified by [IEEE 754].
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Float
+    /// [0]: https://spec.graphql.org/October2021#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
     #[value(as_float)]
     Float(f64),
@@ -249,13 +249,13 @@ pub enum DefaultScalarValue {
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
     /// sequences.
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-String
+    /// [0]: https://spec.graphql.org/October2021#sec-String
     #[value(as_str, as_string, into_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Boolean
+    /// [0]: https://spec.graphql.org/October2021#sec-Boolean
     #[value(as_bool)]
     Boolean(bool),
 }

@@ -1,14 +1,15 @@
 [package]
 name = "juniper_codegen_tests"
 version = "0.0.0"
-edition = "2018"
+edition = "2021"
 publish = false
 
 [dependencies]
-futures = "0.3.1"
-juniper = { path = "../../juniper" }
+rustversion = "1.0"
 
 [dev-dependencies]
+futures = "0.3.1"
+juniper = { path = "../../juniper" }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["rt", "time", "macros"] }
-trybuild = "1.0.25"
+trybuild = "1.0.63"

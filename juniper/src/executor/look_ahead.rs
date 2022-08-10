@@ -112,12 +112,11 @@ pub struct LookAheadSelection<'a, S: 'a> {
     pub(super) children: Vec<ChildSelection<'a, S>>,
 }
 
-impl<'a, S> Default for LookAheadSelection<'a, S>
-where
-    S: ScalarValue,
-{
+// Implemented manually to omit redundant `S: Default` trait bound, imposed by
+// `#[derive(Default)]`.
+impl<'a, S: 'a> Default for LookAheadSelection<'a, S> {
     fn default() -> Self {
-        LookAheadSelection {
+        Self {
             name: "",
             alias: None,
             arguments: vec![],

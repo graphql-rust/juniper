@@ -222,37 +222,35 @@ mod tests {
 
         assert_eq!(
             vars! {"key": 123},
-            vec![("key".to_owned(), IV::scalar(123))]
+            vec![("key".into(), IV::scalar(123))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": "val"},
-            vec![("key".to_owned(), IV::scalar("val"))]
+            vec![("key".into(), IV::scalar("val"))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": 1.23},
-            vec![("key".to_owned(), IV::scalar(1.23))]
+            vec![("key".into(), IV::scalar(1.23))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": 1 + 2},
-            vec![("key".to_owned(), IV::scalar(3))]
-                .into_iter()
-                .collect(),
+            vec![("key".into(), IV::scalar(3))].into_iter().collect(),
         );
         assert_eq!(
             vars! {"key": false},
-            vec![("key".to_owned(), IV::scalar(false))]
+            vec![("key".into(), IV::scalar(false))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": (val)},
-            vec![("key".to_owned(), IV::scalar(42))]
+            vec![("key".into(), IV::scalar(42))]
                 .into_iter()
                 .collect::<V>(),
         );
@@ -262,13 +260,13 @@ mod tests {
     fn r#enum() {
         assert_eq!(
             vars! {"key": ENUM},
-            vec![("key".to_owned(), IV::enum_value("ENUM"))]
+            vec![("key".into(), IV::enum_value("ENUM"))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": lowercase},
-            vec![("key".to_owned(), IV::enum_value("lowercase"))]
+            vec![("key".into(), IV::enum_value("lowercase"))]
                 .into_iter()
                 .collect::<V>(),
         );
@@ -278,19 +276,19 @@ mod tests {
     fn variable() {
         assert_eq!(
             vars! {"key": @var},
-            vec![("key".to_owned(), IV::variable("var"))]
+            vec![("key".into(), IV::variable("var"))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": @array},
-            vec![("key".to_owned(), IV::variable("array"))]
+            vec![("key".into(), IV::variable("array"))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": @object},
-            vec![("key".to_owned(), IV::variable("object"))]
+            vec![("key".into(), IV::variable("object"))]
                 .into_iter()
                 .collect::<V>(),
         );
@@ -302,68 +300,65 @@ mod tests {
 
         assert_eq!(
             vars! {"key": []},
-            vec![("key".to_owned(), IV::list(vec![]))]
+            vec![("key".into(), IV::list(vec![]))]
                 .into_iter()
                 .collect::<V>(),
         );
 
         assert_eq!(
             vars! {"key": [null]},
-            vec![("key".to_owned(), IV::list(vec![IV::Null]))]
+            vec![("key".into(), IV::list(vec![IV::Null]))]
                 .into_iter()
                 .collect::<V>(),
         );
 
         assert_eq!(
             vars! {"key": [1]},
-            vec![("key".to_owned(), IV::list(vec![IV::scalar(1)]))]
+            vec![("key".into(), IV::list(vec![IV::scalar(1)]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": [1 + 2]},
-            vec![("key".to_owned(), IV::list(vec![IV::scalar(3)]))]
+            vec![("key".into(), IV::list(vec![IV::scalar(3)]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": [(val)]},
-            vec![("key".to_owned(), IV::list(vec![IV::scalar(42)]))]
+            vec![("key".into(), IV::list(vec![IV::scalar(42)]))]
                 .into_iter()
                 .collect::<V>(),
         );
 
         assert_eq!(
             vars! {"key": [ENUM]},
-            vec![("key".to_owned(), IV::list(vec![IV::enum_value("ENUM")]))]
+            vec![("key".into(), IV::list(vec![IV::enum_value("ENUM")]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": [lowercase]},
-            vec![(
-                "key".to_owned(),
-                IV::list(vec![IV::enum_value("lowercase")])
-            )]
-            .into_iter()
-            .collect::<V>(),
+            vec![("key".into(), IV::list(vec![IV::enum_value("lowercase")]))]
+                .into_iter()
+                .collect::<V>(),
         );
 
         assert_eq!(
             vars! {"key": [@var]},
-            vec![("key".to_owned(), IV::list(vec![IV::variable("var")]))]
+            vec![("key".into(), IV::list(vec![IV::variable("var")]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": [@array]},
-            vec![("key".to_owned(), IV::list(vec![IV::variable("array")]))]
+            vec![("key".into(), IV::list(vec![IV::variable("array")]))]
                 .into_iter()
                 .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": [@object]},
-            vec![("key".to_owned(), IV::list(vec![IV::variable("object")]))]
+            vec![("key".into(), IV::list(vec![IV::variable("object")]))]
                 .into_iter()
                 .collect::<V>(),
         );
@@ -371,7 +366,7 @@ mod tests {
         assert_eq!(
             vars! {"key": [1, [2], 3]},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::scalar(2)]),
@@ -384,7 +379,7 @@ mod tests {
         assert_eq!(
             vars! {"key": [1, [2 + 3], 3]},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::scalar(5)]),
@@ -397,7 +392,7 @@ mod tests {
         assert_eq!(
             vars! {"key": [1, [ENUM], (val)]},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::enum_value("ENUM")]),
@@ -410,7 +405,7 @@ mod tests {
         assert_eq!(
             vars! {"key": [1 + 2, [(val)], @val]},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::list(vec![
                     IV::scalar(3),
                     IV::list(vec![IV::scalar(42)]),
@@ -423,7 +418,7 @@ mod tests {
         assert_eq!(
             vars! {"key": [1, [@val], ENUM]},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::list(vec![
                     IV::scalar(1),
                     IV::list(vec![IV::variable("val")]),
@@ -441,14 +436,14 @@ mod tests {
 
         assert_eq!(
             vars! {"key": {}},
-            vec![("key".to_owned(), IV::object(IndexMap::<String, _>::new()))]
+            vec![("key".into(), IV::object(IndexMap::<String, _>::new()))]
                 .into_iter()
                 .collect::<V>(),
         );
 
         assert_eq!(
             vars! {"key": {"key": null}},
-            vec![("key".to_owned(), IV::object(indexmap! {"key" => IV::Null}))]
+            vec![("key".into(), IV::object(indexmap! {"key" => IV::Null}))]
                 .into_iter()
                 .collect::<V>(),
         );
@@ -456,7 +451,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": 123}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::scalar(123)}),
             )]
             .into_iter()
@@ -464,17 +459,14 @@ mod tests {
         );
         assert_eq!(
             vars! {"key": {"key": 1 + 2}},
-            vec![(
-                "key".to_owned(),
-                IV::object(indexmap! {"key" => IV::scalar(3)}),
-            )]
-            .into_iter()
-            .collect::<V>(),
+            vec![("key".into(), IV::object(indexmap! {"key" => IV::scalar(3)}),)]
+                .into_iter()
+                .collect::<V>(),
         );
         assert_eq!(
             vars! {"key": {"key": (val)}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::scalar(42)}),
             )]
             .into_iter()
@@ -484,7 +476,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": []}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::list(vec![])}),
             )]
             .into_iter()
@@ -493,7 +485,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": [null]}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::list(vec![IV::Null])}),
             )]
             .into_iter()
@@ -502,7 +494,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": [1]}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::list(vec![IV::scalar(1)])}),
             )]
             .into_iter()
@@ -511,7 +503,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": [1 + 2]}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::list(vec![IV::scalar(3)])}),
             )]
             .into_iter()
@@ -520,7 +512,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": [(val)]}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::list(vec![IV::scalar(42)])}),
             )]
             .into_iter()
@@ -529,7 +521,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": ENUM}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::enum_value("ENUM")}),
             )]
             .into_iter()
@@ -538,7 +530,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": lowercase}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::enum_value("lowercase")}),
             )]
             .into_iter()
@@ -547,7 +539,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": @val}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::variable("val")}),
             )]
             .into_iter()
@@ -556,7 +548,7 @@ mod tests {
         assert_eq!(
             vars! {"key": {"key": @array}},
             vec![(
-                "key".to_owned(),
+                "key".into(),
                 IV::object(indexmap! {"key" => IV::variable("array")}),
             )]
             .into_iter()
@@ -581,7 +573,7 @@ mod tests {
             },
             vec![
                 (
-                    "inner".to_owned(),
+                    "inner".into(),
                     IV::object(indexmap! {
                         "key1" => IV::scalar(42),
                         "key2" => IV::scalar("val"),
@@ -607,7 +599,7 @@ mod tests {
                         ]),
                     }),
                 ),
-                ("more".to_owned(), IV::variable("var")),
+                ("more".into(), IV::variable("var")),
             ]
             .into_iter()
             .collect::<V>(),

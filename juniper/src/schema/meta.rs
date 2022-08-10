@@ -72,7 +72,7 @@ impl<'a, S> Clone for ScalarMeta<'a, S> {
 pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>;
 
 /// Shortcut for a [`ScalarToken`] parsing function.
-pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>;
+pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError>;
 
 /// List type metadata
 #[derive(Clone, Debug)]
@@ -433,7 +433,7 @@ impl<'a, S> MetaType<'a, S> {
             // "used exclusively by GraphQL’s introspection system"
             {
                 name.starts_with("__") ||
-            // <https://facebook.github.io/graphql/draft/#sec-Scalars>
+            // https://spec.graphql.org/October2021#sec-Scalars
             name == "Boolean" || name == "String" || name == "Int" || name == "Float" || name == "ID" ||
             // Our custom empty markers
             name == "_EmptyMutation" || name == "_EmptySubscription"
@@ -543,7 +543,7 @@ impl<'a, S> ScalarMeta<'a, S> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -613,7 +613,7 @@ impl<'a, S> ObjectMeta<'a, S> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -624,7 +624,7 @@ impl<'a, S> ObjectMeta<'a, S> {
     pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> Self {
         self.interface_names = interfaces
             .iter()
-            .map(|t| t.innermost_name().to_owned())
+            .map(|t| t.innermost_name().into())
             .collect();
         self
     }
@@ -674,7 +674,7 @@ impl<'a, S> EnumMeta<'a, S> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -704,7 +704,7 @@ impl<'a, S> InterfaceMeta<'a, S> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -715,7 +715,7 @@ impl<'a, S> InterfaceMeta<'a, S> {
     pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> Self {
         self.interface_names = interfaces
             .iter()
-            .map(|t| t.innermost_name().to_owned())
+            .map(|t| t.innermost_name().into())
             .collect();
         self
     }
@@ -733,10 +733,7 @@ impl<'a> UnionMeta<'a> {
         Self {
             name,
             description: None,
-            of_type_names: of_types
-                .iter()
-                .map(|t| t.innermost_name().to_owned())
-                .collect(),
+            of_type_names: of_types.iter().map(|t| t.innermost_name().into()).collect(),
         }
     }
 
@@ -745,7 +742,7 @@ impl<'a> UnionMeta<'a> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -777,7 +774,7 @@ impl<'a, S> InputObjectMeta<'a, S> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -793,7 +790,7 @@ impl<'a, S> Field<'a, S> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -818,7 +815,7 @@ impl<'a, S> Field<'a, S> {
     /// Overwrites any previously set deprecation reason.
     #[must_use]
     pub fn deprecated(mut self, reason: Option<&str>) -> Self {
-        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(ToOwned::to_owned));
+        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(Into::into));
         self
     }
 }
@@ -827,7 +824,7 @@ impl<'a, S> Argument<'a, S> {
     /// Builds a new [`Argument`] of the given [`Type`] with the given `name`.
     pub fn new(name: &str, arg_type: Type<'a>) -> Self {
         Self {
-            name: name.to_owned(),
+            name: name.into(),
             description: None,
             arg_type,
             default_value: None,
@@ -839,7 +836,7 @@ impl<'a, S> Argument<'a, S> {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -857,7 +854,7 @@ impl EnumValue {
     /// Constructs a new [`EnumValue`] with the provided `name`.
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_owned(),
+            name: name.into(),
             description: None,
             deprecation_status: DeprecationStatus::Current,
         }
@@ -868,7 +865,7 @@ impl EnumValue {
     /// Overwrites any previously set description.
     #[must_use]
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 
@@ -877,7 +874,7 @@ impl EnumValue {
     /// Overwrites any previously set deprecation reason.
     #[must_use]
     pub fn deprecated(mut self, reason: Option<&str>) -> Self {
-        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(ToOwned::to_owned));
+        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(Into::into));
         self
     }
 }

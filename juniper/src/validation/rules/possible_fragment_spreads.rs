@@ -119,15 +119,13 @@ where
 fn error_message(frag_name: Option<&str>, parent_type_name: &str, frag_type: &str) -> String {
     if let Some(frag_name) = frag_name {
         format!(
-            "Fragment \"{}\" cannot be spread here as objects of type \
-             \"{}\" can never be of type \"{}\"",
-            frag_name, parent_type_name, frag_type
+            "Fragment \"{frag_name}\" cannot be spread here as objects of type \
+             \"{parent_type_name}\" can never be of type \"{frag_type}\"",
         )
     } else {
         format!(
-            "Fragment cannot be spread here as objects of type \"{}\" \
-             can never be of type \"{}\"",
-            parent_type_name, frag_type
+            "Fragment cannot be spread here as objects of type \
+             \"{parent_type_name}\" can never be of type \"{frag_type}\"",
         )
     }
 }

@@ -9,9 +9,9 @@ use actix_web::{
 };
 
 use juniper::{
-    graphql_object, graphql_subscription, graphql_value,
+    graphql_subscription, graphql_value,
     tests::fixtures::starwars::schema::{Database, Query},
-    EmptyMutation, FieldError, RootNode,
+    EmptyMutation, FieldError, GraphQLObject, RootNode,
 };
 use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
 use juniper_graphql_ws::ConnectionConfig;
@@ -37,21 +37,10 @@ async fn graphql(
 
 struct Subscription;
 
+#[derive(GraphQLObject)]
 struct RandomHuman {
     id: String,
     name: String,
-}
-
-// TODO: remove this when async interfaces are merged
-#[graphql_object(context = Database)]
-impl RandomHuman {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
 }
 
 type RandomHumanStream =
@@ -84,8 +73,8 @@ impl Subscription {
                     let human = context.get_human(&random_id).unwrap().clone();
 
                     yield Ok(RandomHuman {
-                        id: human.id().to_owned(),
-                        name: human.name().unwrap().to_owned(),
+                        id: human.id().into(),
+                        name: human.name().unwrap().into(),
                     })
                 }
             }
@@ -142,7 +131,7 @@ async fn main() -> std::io::Result<()> {
                     .finish()
             }))
     })
-    .bind(format!("{}:{}", "127.0.0.1", 8080))?
+    .bind("127.0.0.1:8080")?
     .run()
     .await
 }

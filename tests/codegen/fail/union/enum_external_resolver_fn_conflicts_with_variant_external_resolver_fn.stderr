@@ -4,4 +4,4 @@ error: GraphQL union variant `Human` already has external resolver function `res
 6 |     #[graphql(with = resolve_fn2)]
   |               ^^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Unions
+  = note: https://spec.graphql.org/October2021#sec-Unions

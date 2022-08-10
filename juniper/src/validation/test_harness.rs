@@ -725,6 +725,9 @@ where
                 .field::<Option<String>>("stringListArgField", i)
                 .argument(registry.arg::<Option<Vec<Option<String>>>>("stringListArg", i)),
             registry
+                .field::<Option<String>>("nonNullStringListArgField", i)
+                .argument(registry.arg::<Vec<String>>("nonNullStringListArg", i)),
+            registry
                 .field::<Option<String>>("complexArgField", i)
                 .argument(registry.arg::<Option<ComplexInput>>("complexArg", i)),
             registry
@@ -920,7 +923,7 @@ where
     ));
 
     let doc =
-        parse_document_source(q, &root.schema).expect(&format!("Parse error on input {:#?}", q));
+        parse_document_source(q, &root.schema).expect(&format!("Parse error on input {q:#?}"));
     let mut ctx = ValidatorContext::new(unsafe { mem::transmute(&root.schema) }, &doc);
 
     visit_fn(&mut ctx, unsafe { mem::transmute(doc.as_slice()) });

@@ -49,9 +49,9 @@ async fn main() {
     });
 
     let server = Server::bind(&addr).serve(new_service);
-    println!("Listening on http://{}", addr);
+    println!("Listening on http://{addr}");
 
     if let Err(e) = server.await {
-        eprintln!("server error: {}", e)
+        eprintln!("server error: {e}")
     }
 }

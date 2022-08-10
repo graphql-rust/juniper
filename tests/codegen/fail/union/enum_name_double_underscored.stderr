@@ -4,4 +4,4 @@ error: All types and directives defined within a schema must not have a name whi
 4 | enum __Character {
   |      ^^^^^^^^^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Schema
+  = note: https://spec.graphql.org/October2021#sec-Schema

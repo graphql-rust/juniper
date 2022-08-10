@@ -1,7 +1,7 @@
 //! Common functions, definitions and extensions for parsing and code generation
 //! of [GraphQL arguments][1]
 //!
-//! [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments.
+//! [1]: https://spec.graphql.org/October2021#sec-Language.Arguments.
 
 use std::mem;
 
@@ -14,23 +14,19 @@ use syn::{
     token,
 };
 
-use crate::{
-    common::{
-        behavior,
-        parse::{
-            attr::{err, OptionExt as _},
-            ParseBufferExt as _, TypeExt as _,
-        },
-        scalar,
+use crate::common::{
+    behavior, default, diagnostic, filter_attrs,
+    parse::{
+        attr::{err, OptionExt as _},
+        ParseBufferExt as _, TypeExt as _,
     },
-    result::GraphQLScope,
-    util::{filter_attrs, path_eq_single, span_container::SpanContainer, RenameRule},
+    path_eq_single, rename, scalar, Description, SpanContainer,
 };
 
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a
 /// method argument, when generating code for [GraphQL argument][1].
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
 #[derive(Debug, Default)]
 pub(crate) struct Attr {
     /// Explicitly specified name of a [GraphQL argument][1] represented by this
@@ -38,29 +34,26 @@ pub(crate) struct Attr {
     ///
     /// If [`None`], then `camelCased` Rust argument name is used by default.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     pub(crate) name: Option<SpanContainer<syn::LitStr>>,
 
     /// Explicitly specified [description][2] of this [GraphQL argument][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    pub(crate) description: Option<SpanContainer<syn::LitStr>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    pub(crate) description: Option<SpanContainer<Description>>,
 
     /// Explicitly specified [default value][2] of this [GraphQL argument][1].
-    ///
-    /// If the exact default expression is not specified, then the [`Default`]
-    /// value is used.
     ///
     /// If [`None`], then this [GraphQL argument][1] is considered as
     /// [required][2].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
-    /// [2]: https://spec.graphql.org/June2018/#sec-Required-Arguments
-    pub(crate) default: Option<SpanContainer<Option<syn::Expr>>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Required-Arguments
+    pub(crate) default: Option<SpanContainer<default::Value>>,
 
     /// Explicitly specified type of the custom [`Behavior`] this
-    /// [GraphQL argument][0] implementation is parametrized with, to [coerce]
+    /// [GraphQL argument][1] implementation is parametrized with, to [coerce]
     /// in the generated code from.
     ///
     /// If [`None`], then [`behavior::Standard`] will be used for the generated
@@ -68,7 +61,7 @@ pub(crate) struct Attr {
     ///
     /// [`Behavior`]: juniper::behavior
     /// [`behavior::Standard`]: juniper::behavior::Standard
-    /// [0]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [coerce]: juniper::behavior::Coerce
     pub(crate) behavior: Option<SpanContainer<behavior::Type>>,
 
@@ -80,8 +73,8 @@ pub(crate) struct Attr {
     /// if it's named `context` or `ctx`.
     ///
     /// [`Context`]: juniper::Context
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) context: Option<SpanContainer<syn::Ident>>,
 
     /// Explicitly specified marker indicating that this method argument doesn't
@@ -92,8 +85,8 @@ pub(crate) struct Attr {
     /// if it's named `executor`.
     ///
     /// [`Executor`]: juniper::Executor
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     pub(crate) executor: Option<SpanContainer<syn::Ident>>,
 }
 
@@ -112,27 +105,15 @@ impl Parse for Attr {
                 }
                 "desc" | "description" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<syn::LitStr>()?;
+                    let desc = input.parse::<Description>()?;
                     out.description
                         .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "default" => {
-                    let mut expr = None;
-                    if input.is_next::<token::Eq>() {
-                        input.parse::<token::Eq>()?;
-                        expr = Some(input.parse::<syn::Expr>()?);
-                    } else if input.is_next::<token::Paren>() {
-                        let inner;
-                        let _ = syn::parenthesized!(inner in input);
-                        expr = Some(inner.parse::<syn::Expr>()?);
-                    }
+                    let val = input.parse::<default::Value>()?;
                     out.default
-                        .replace(SpanContainer::new(
-                            ident.span(),
-                            expr.as_ref().map(|e| e.span()),
-                            expr,
-                        ))
+                        .replace(SpanContainer::new(ident.span(), Some(val.span()), val))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "behave" | "behavior" => {
@@ -235,52 +216,46 @@ impl Attr {
     fn err_disallowed<S: Spanned>(span: &S, arg: &str) -> syn::Error {
         syn::Error::new(
             span.span(),
-            format!(
-                "attribute argument `#[graphql({} = ...)]` is not allowed here",
-                arg,
-            ),
+            format!("attribute argument `#[graphql({arg} = ...)]` is not allowed here",),
         )
     }
 }
 
 /// Representation of a [GraphQL field argument][1] for code generation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+/// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
 #[derive(Debug)]
 pub(crate) struct OnField {
     /// Rust type that this [GraphQL field argument][1] is represented by.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     pub(crate) ty: syn::Type,
 
     /// Name of this [GraphQL field argument][2] in GraphQL schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     pub(crate) name: String,
 
     /// [Description][2] of this [GraphQL field argument][1] to put into GraphQL
     /// schema.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
-    /// [2]: https://spec.graphql.org/June2018/#sec-Descriptions
-    pub(crate) description: Option<String>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    pub(crate) description: Option<Description>,
 
     /// Default value of this [GraphQL field argument][1] in GraphQL schema.
     ///
-    /// If outer [`Option`] is [`None`], then this [argument][1] is a
-    /// [required][2] one.
+    /// If [`None`], then this [argument][1] is a [required][2] one.
     ///
-    /// If inner [`Option`] is [`None`], then the [`Default`] value is used.
-    ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
-    /// [2]: https://spec.graphql.org/June2018/#sec-Required-Arguments
-    pub(crate) default: Option<Option<syn::Expr>>,
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Required-Arguments
+    pub(crate) default: Option<default::Value>,
 
-    /// [`Behavior`] parametrization of this [GraphQL argument][0]
+    /// [`Behavior`] parametrization of this [GraphQL field argument][1]
     /// implementation to [coerce] from in the generated code.
     ///
     /// [`Behavior`]: juniper::behavior
-    /// [0]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [coerce]: juniper::behavior::Coerce
     pub(crate) behavior: behavior::Type,
 }
@@ -290,19 +265,19 @@ pub(crate) struct OnField {
 pub(crate) enum OnMethod {
     /// Regular [GraphQL field argument][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Language.Arguments
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     Regular(Box<OnField>),
 
     /// [`Context`] passed into a [GraphQL field][2] resolving method.
     ///
     /// [`Context`]: juniper::Context
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     Context(Box<syn::Type>),
 
     /// [`Executor`] passed into a [GraphQL field][2] resolving method.
     ///
     /// [`Executor`]: juniper::Executor
-    /// [2]: https://spec.graphql.org/June2018/#sec-Language.Fields
+    /// [2]: https://spec.graphql.org/October2021#sec-Language.Fields
     Executor,
 }
 
@@ -353,16 +328,9 @@ impl OnMethod {
 
         let (name, ty) = (&arg.name, &arg.ty);
 
-        let description = arg
-            .description
-            .as_ref()
-            .map(|desc| quote! { .description(#desc) });
+        let description = &arg.description;
 
         let method = if let Some(val) = &arg.default {
-            let val = val
-                .as_ref()
-                .map(|v| quote! { (#v).into() })
-                .unwrap_or_else(|| quote! { <#ty as Default>::default() });
             quote_spanned! { val.span() =>
                 .arg_with_default::<#ty>(#name, &#val, info)
             }
@@ -370,7 +338,7 @@ impl OnMethod {
             quote! { .arg::<#ty>(#name, info) }
         };
 
-        Some(quote! { .argument(registry#method#description) })
+        Some(quote! { .argument(registry #method #description) })
     }
 
     /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
@@ -387,7 +355,7 @@ impl OnMethod {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
-                let err_text = format!("Missing argument `{}`: {{}}", &name);
+                let err_text = format!("Missing argument `{name}`: {{}}");
 
                 let arg = quote! {
                     args.get::<#ty>(#name).and_then(|opt| opt.map_or_else(|| {
@@ -425,8 +393,8 @@ impl OnMethod {
     /// given `scope`.
     pub(crate) fn parse(
         argument: &mut syn::PatType,
-        renaming: &RenameRule,
-        scope: &GraphQLScope,
+        renaming: &rename::Policy,
+        scope: &diagnostic::Scope,
     ) -> Option<Self> {
         let orig_attrs = argument.attrs.clone();
 
@@ -492,8 +460,8 @@ impl OnMethod {
         Some(Self::Regular(Box::new(OnField {
             name,
             ty: argument.ty.as_ref().clone(),
-            description: attr.description.as_ref().map(|d| d.as_ref().value()),
-            default: attr.default.as_ref().map(|v| v.as_ref().clone()),
+            description: attr.description.map(SpanContainer::into_inner),
+            default: attr.default.map(SpanContainer::into_inner),
             behavior: attr.behavior.into(),
         })))
     }

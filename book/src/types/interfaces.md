@@ -227,7 +227,7 @@ impl ObjA {
 //     ^^ the evaluated program panicked at 
 //        'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` 
 //         isn't present on the interface and so has to be nullable.'        
-        is_present.then(|| self.id.as_str()).unwrap_or("missing")
+        is_present.then_some(&self.id).unwrap_or("missing")
     }
 }
 
@@ -473,9 +473,9 @@ struct Droid {
 
 
 
-[1]: https://spec.graphql.org/June2018/#sec-Interfaces
+[1]: https://spec.graphql.org/October2021#sec-Interfaces
 [2]: https://doc.rust-lang.org/reference/types/trait-object.html
 [3]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
 [4]: https://docs.rs/juniper/latest/juniper/struct.Executor.html
-[5]: https://spec.graphql.org/June2018/#sec-Objects
+[5]: https://spec.graphql.org/October2021#sec-Objects
 [6]: https://docs.rs/juniper/0.14.2/juniper/trait.Context.html

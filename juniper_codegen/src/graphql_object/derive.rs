@@ -7,16 +7,12 @@ use proc_macro_error::ResultExt as _;
 use quote::ToTokens;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
-use crate::{
-    common::{field, parse::TypeExt as _, scalar},
-    result::GraphQLScope,
-    util::{span_container::SpanContainer, RenameRule},
-};
+use crate::common::{diagnostic, field, parse::TypeExt as _, rename, scalar, SpanContainer};
 
 use super::{Attr, Definition, Query};
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLObject)]` macro.
-const ERR: GraphQLScope = GraphQLScope::ObjectDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLObject)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::ObjectDerive;
 
 /// Expands `#[derive(GraphQLObject)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -38,7 +34,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
     let struct_ident = ast.ident;
 
     let (_, struct_generics, _) = ast.generics.split_for_impl();
-    let ty = parse_quote! { #struct_ident#struct_generics };
+    let ty = parse_quote! { #struct_ident #struct_generics };
 
     let name = attr
         .name
@@ -62,7 +58,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
         .rename_fields
         .as_deref()
         .copied()
-        .unwrap_or(RenameRule::CamelCase);
+        .unwrap_or(rename::Policy::CamelCase);
 
     let mut fields = vec![];
     if let syn::Data::Struct(data) = &ast.data {
@@ -113,7 +109,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
 ///
 /// Returns [`None`] if parsing fails, or the struct field is ignored.
 #[must_use]
-fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
+fn parse_field(field: &syn::Field, renaming: &rename::Policy) -> Option<field::Definition> {
     let attr = field::Attr::from_attrs("graphql", &field.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
@@ -142,17 +138,11 @@ fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Defin
     let mut ty = field.ty.unparenthesized().clone();
     ty.lifetimes_anonymized();
 
-    let description = attr.description.as_ref().map(|d| d.as_ref().value());
-    let deprecated = attr
-        .deprecated
-        .as_deref()
-        .map(|d| d.as_ref().map(syn::LitStr::value));
-
     Some(field::Definition {
         name,
         ty,
-        description,
-        deprecated,
+        description: attr.description.map(SpanContainer::into_inner),
+        deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: field_ident.clone(),
         behavior: attr.behavior.into(),
         arguments: None,

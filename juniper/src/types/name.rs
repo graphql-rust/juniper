@@ -50,11 +50,10 @@ impl FromStr for Name {
     type Err = NameParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if Name::is_valid(s) {
-            Ok(Name(s.to_string()))
+            Ok(Name(s.into()))
         } else {
             Err(NameParseError(format!(
-                "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
-                s
+                "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{s}\" does not",
             )))
         }
     }

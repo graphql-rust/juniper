@@ -25,6 +25,7 @@ where
             }
         }
         TypeType::List(ref inner, expected_size) => match *arg_value {
+            InputValue::Null | InputValue::Variable(_) => true,
             InputValue::List(ref items) => {
                 if let Some(expected) = expected_size {
                     if items.len() != expected {
@@ -71,7 +72,7 @@ where
                         let mut remaining_required_fields = input_fields
                             .iter()
                             .filter_map(|f| {
-                                if f.arg_type.is_non_null() {
+                                if f.arg_type.is_non_null() && f.default_value.is_none() {
                                     Some(&f.name)
                                 } else {
                                     None

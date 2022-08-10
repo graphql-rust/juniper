@@ -218,15 +218,15 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
             Self::Null => write!(f, "null"),
             Self::Scalar(s) => {
                 if let Some(string) = s.as_string() {
-                    write!(f, "\"{}\"", string)
+                    write!(f, "\"{string}\"")
                 } else {
-                    write!(f, "{}", s)
+                    write!(f, "{s}")
                 }
             }
             Self::List(list) => {
                 write!(f, "[")?;
                 for (idx, item) in list.iter().enumerate() {
-                    write!(f, "{}", item)?;
+                    write!(f, "{item}")?;
                     if idx < list.len() - 1 {
                         write!(f, ", ")?;
                     }
@@ -238,7 +238,7 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
             Self::Object(obj) => {
                 write!(f, "{{")?;
                 for (idx, (key, value)) in obj.iter().enumerate() {
-                    write!(f, "\"{}\": {}", key, value)?;
+                    write!(f, "\"{key}\": {value}")?;
 
                     if idx < obj.field_count() - 1 {
                         write!(f, ", ")?;
@@ -309,52 +309,52 @@ mod tests {
     #[test]
     fn display_null() {
         let s: Value = graphql_value!(null);
-        assert_eq!("null", format!("{}", s));
+        assert_eq!(s.to_string(), "null");
     }
 
     #[test]
     fn display_int() {
         let s: Value = graphql_value!(123);
-        assert_eq!("123", format!("{}", s));
+        assert_eq!(s.to_string(), "123");
     }
 
     #[test]
     fn display_float() {
         let s: Value = graphql_value!(123.456);
-        assert_eq!("123.456", format!("{}", s));
+        assert_eq!(s.to_string(), "123.456");
     }
 
     #[test]
     fn display_string() {
         let s: Value = graphql_value!("foo");
-        assert_eq!("\"foo\"", format!("{}", s));
+        assert_eq!(s.to_string(), "\"foo\"");
     }
 
     #[test]
     fn display_bool() {
         let s: Value = graphql_value!(false);
-        assert_eq!("false", format!("{}", s));
+        assert_eq!(s.to_string(), "false");
 
         let s: Value = graphql_value!(true);
-        assert_eq!("true", format!("{}", s));
+        assert_eq!(s.to_string(), "true");
     }
 
     #[test]
     fn display_list() {
         let s: Value = graphql_value!([1, null, "foo"]);
-        assert_eq!("[1, null, \"foo\"]", format!("{}", s));
+        assert_eq!(s.to_string(), "[1, null, \"foo\"]");
     }
 
     #[test]
     fn display_list_one_element() {
         let s: Value = graphql_value!([1]);
-        assert_eq!("[1]", format!("{}", s));
+        assert_eq!(s.to_string(), "[1]");
     }
 
     #[test]
     fn display_list_empty() {
         let s: Value = graphql_value!([]);
-        assert_eq!("[]", format!("{}", s));
+        assert_eq!(s.to_string(), "[]");
     }
 
     #[test]
@@ -365,8 +365,8 @@ mod tests {
             "string": "foo",
         });
         assert_eq!(
+            s.to_string(),
             r#"{"int": 1, "null": null, "string": "foo"}"#,
-            format!("{}", s)
         );
     }
 
@@ -375,12 +375,12 @@ mod tests {
         let s: Value = graphql_value!({
             "int": 1,
         });
-        assert_eq!(r#"{"int": 1}"#, format!("{}", s));
+        assert_eq!(s.to_string(), r#"{"int": 1}"#);
     }
 
     #[test]
     fn display_object_empty() {
         let s: Value = graphql_value!({});
-        assert_eq!(r#"{}"#, format!("{}", s));
+        assert_eq!(s.to_string(), r#"{}"#);
     }
 }

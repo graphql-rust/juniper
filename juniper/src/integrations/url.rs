@@ -14,8 +14,8 @@ mod url_scalar {
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Url, String> {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
-            .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse `Url`: {}", e)))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse `Url`: {e}")))
     }
 }
 

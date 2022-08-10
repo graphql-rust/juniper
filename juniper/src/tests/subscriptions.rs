@@ -1,4 +1,4 @@
-use std::{iter, iter::FromIterator as _, pin::Pin};
+use std::{iter, pin::Pin};
 
 use futures::{stream, StreamExt as _};
 
@@ -48,9 +48,9 @@ impl MySubscription {
     async fn async_human() -> HumanStream {
         Box::pin(stream::once(async {
             Human {
-                id: "stream id".to_string(),
-                name: "stream name".to_string(),
-                home_planet: "stream home planet".to_string(),
+                id: "stream id".into(),
+                name: "stream name".into(),
+                home_planet: "stream home planet".into(),
             }
         }))
     }
@@ -78,7 +78,7 @@ impl MySubscription {
             Human {
                 id,
                 name,
-                home_planet: "default home planet".to_string(),
+                home_planet: "default home planet".into(),
             }
         }))
     }
@@ -154,10 +154,10 @@ fn returns_requested_object() {
             id
             name
         }
-    }"#
-    .to_string();
+    }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(
@@ -182,10 +182,9 @@ fn returns_error() {
             id
             name
         }
-    }"#
-    .to_string();
+    }"#;
 
-    let response = create_and_execute(query);
+    let response = create_and_execute(query.into());
 
     assert!(response.is_err());
 
@@ -206,10 +205,10 @@ fn can_access_context() {
             humanWithContext {
                 id
               }
-        }"#
-    .to_string();
+        }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
@@ -234,10 +233,10 @@ fn resolves_typed_inline_fragments() {
                   id
                 }
              }
-           }"#
-    .to_string();
+           }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
@@ -262,10 +261,10 @@ fn resolves_nontyped_inline_fragments() {
                   id
                 }
              }
-           }"#
-    .to_string();
+           }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
@@ -289,10 +288,10 @@ fn can_access_arguments() {
                 id
                 name
               }
-        }"#
-    .to_string();
+        }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
@@ -317,10 +316,10 @@ fn type_alias() {
             id
             name
         }
-    }"#
-    .to_string();
+    }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(

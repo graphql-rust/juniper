@@ -7,7 +7,7 @@ pub struct ObjA {
 #[graphql_object(impl = CharacterValue)]
 impl ObjA {
     fn id(&self, is_present: bool) -> &str {
-        is_present.then(|| self.id.as_str()).unwrap_or("missing")
+        is_present.then_some(&*self.id).unwrap_or("missing")
     }
 }
 

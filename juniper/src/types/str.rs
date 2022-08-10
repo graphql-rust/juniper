@@ -80,7 +80,7 @@ impl<SV: ScalarValue> resolve::InputValueAsRef<SV> for str {
 
     fn try_from_input_value(v: &graphql::InputValue<SV>) -> Result<&Self, Self::Error> {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
     }
 }
 
@@ -137,7 +137,7 @@ impl<SV> resolve::ScalarToken<SV> for str
 where
     String: resolve::ScalarToken<SV>,
 {
-    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError<'_>> {
+    fn parse_scalar_token(token: ScalarToken<'_>) -> Result<SV, ParseError> {
         <String as resolve::ScalarToken<SV>>::parse_scalar_token(token)
     }
 }

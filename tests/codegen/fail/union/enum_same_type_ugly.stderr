@@ -1,5 +1,5 @@
 error[E0119]: conflicting implementations of trait `<Character as juniper::GraphQLUnion<__S>>::mark::_::{closure#0}::MutuallyExclusive` for type `std::string::String`
- --> $DIR/enum_same_type_ugly.rs:3:10
+ --> fail/union/enum_same_type_ugly.rs:3:10
   |
 3 | #[derive(GraphQLUnion)]
   |          ^^^^^^^^^^^^
@@ -7,4 +7,4 @@ error[E0119]: conflicting implementations of trait `<Character as juniper::Graph
   |          first implementation here
   |          conflicting implementation for `std::string::String`
   |
-  = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` which comes from the expansion of the derive macro `GraphQLUnion` (in Nightly builds, run with -Z macro-backtrace for more info)

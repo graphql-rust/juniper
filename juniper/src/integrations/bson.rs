@@ -14,9 +14,9 @@ mod object_id {
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ObjectId, String> {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectId`: {}", e))
+                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectId`: {e}"))
             })
     }
 }
@@ -30,16 +30,16 @@ mod utc_date_time {
     pub(super) fn to_output<S: ScalarValue>(v: &UtcDateTime) -> Value<S> {
         Value::scalar(
             (*v).try_to_rfc3339_string()
-                .unwrap_or_else(|e| panic!("failed to format `UtcDateTime` as RFC3339: {}", e)),
+                .unwrap_or_else(|e| panic!("failed to format `UtcDateTime` as RFC3339: {e}")),
         )
     }
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcDateTime, String> {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 UtcDateTime::parse_rfc3339_str(s)
-                    .map_err(|e| format!("Failed to parse `UtcDateTime`: {}", e))
+                    .map_err(|e| format!("Failed to parse `UtcDateTime`: {e}"))
             })
     }
 }

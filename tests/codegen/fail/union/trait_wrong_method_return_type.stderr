@@ -4,4 +4,4 @@ error: GraphQL union expects trait method return type to be `Option<&VariantType
 5 |     fn a(&self) -> &Human;
   |                    ^^^^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Unions
+  = note: https://spec.graphql.org/October2021#sec-Unions

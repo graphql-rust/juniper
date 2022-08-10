@@ -7,4 +7,4 @@ error: GraphQL union must have a different type for each union variant
 7 | | }
   | |_^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Unions
+  = note: https://spec.graphql.org/October2021#sec-Unions

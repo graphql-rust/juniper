@@ -41,7 +41,7 @@ where
 }
 
 fn duplicate_message(frag_name: &str) -> String {
-    format!("There can only be one fragment named {}", frag_name)
+    format!("There can only be one fragment named {frag_name}")
 }
 
 #[cfg(test)]

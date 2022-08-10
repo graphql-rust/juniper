@@ -9,4 +9,4 @@ error: GraphQL interface must have a different name for each field
 9 | | }
   | |_^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Interfaces
+  = note: https://spec.graphql.org/October2021#sec-Interfaces

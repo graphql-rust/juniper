@@ -30,7 +30,7 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_field_async<'a>(
         &'a self,
         _info: &'a Self::TypeInfo,
@@ -54,9 +54,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -91,8 +91,8 @@ where
     ///
     /// The default implementation panics, if `selection_set` is [`None`].
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [0]: https://spec.graphql.org/October2021#sec-Handling-Field-Errors
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -226,7 +226,7 @@ where
                     panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
-                        meta_type.name()
+                        meta_type.name(),
                     )
                 });
 
@@ -242,7 +242,9 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
+                            .filter_map(|&(ref k, ref v)| {
+                                v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
+                            })
                             .collect()
                     }),
                     &meta_field.arguments,

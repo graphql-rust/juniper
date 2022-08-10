@@ -46,7 +46,7 @@ where
 }
 
 fn error_message(var_name: &str) -> String {
-    format!("There can only be one variable named {}", var_name)
+    format!("There can only be one variable named {var_name}")
 }
 
 #[cfg(test)]

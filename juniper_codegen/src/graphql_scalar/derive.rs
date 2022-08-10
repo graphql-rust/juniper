@@ -1,17 +1,15 @@
 //! Code generation for `#[derive(GraphQLScalar)]` macro.
 
-use std::convert::TryFrom;
-
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{parse_quote, spanned::Spanned};
 
-use crate::{common::scalar, result::GraphQLScope};
+use crate::common::{diagnostic, scalar, SpanContainer};
 
 use super::{Attr, Definition, Field, Methods, ParseToken};
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLScalar)]` macro.
-const ERR: GraphQLScope = GraphQLScope::ScalarDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLScalar)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::ScalarDerive;
 
 /// Expands `#[derive(GraphQLScalar)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -20,10 +18,10 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
     let methods = parse_derived_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
+
     let name = attr
         .name
-        .as_deref()
-        .cloned()
+        .map(SpanContainer::into_inner)
         .unwrap_or_else(|| ast.ident.to_string());
 
     Ok(Definition {
@@ -34,8 +32,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         generics: ast.generics,
         methods,
         name,
-        description: attr.description.as_deref().cloned(),
-        specified_by_url: attr.specified_by_url.as_deref().cloned(),
+        description: attr.description.map(SpanContainer::into_inner),
+        specified_by_url: attr.specified_by_url.map(SpanContainer::into_inner),
         scalar,
         scalar_value: attr.scalar.as_deref().into(),
         behavior: attr.behavior.into(),

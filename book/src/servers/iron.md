@@ -50,7 +50,7 @@ struct Root;
 #[juniper::graphql_object]
 impl Root {
     fn foo() -> String {
-        "Bar".to_owned()
+        "Bar".into()
     }
 }
 

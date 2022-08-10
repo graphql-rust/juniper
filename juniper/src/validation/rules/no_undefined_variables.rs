@@ -12,13 +12,6 @@ pub enum Scope<'a> {
     Fragment(&'a str),
 }
 
-pub struct NoUndefinedVariables<'a> {
-    defined_variables: HashMap<Option<&'a str>, (SourcePosition, HashSet<&'a str>)>,
-    used_variables: HashMap<Scope<'a>, Vec<Spanning<&'a str>>>,
-    current_scope: Option<Scope<'a>>,
-    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
-}
-
 pub fn factory<'a>() -> NoUndefinedVariables<'a> {
     NoUndefinedVariables {
         defined_variables: HashMap::new(),
@@ -26,6 +19,13 @@ pub fn factory<'a>() -> NoUndefinedVariables<'a> {
         current_scope: None,
         spreads: HashMap::new(),
     }
+}
+
+pub struct NoUndefinedVariables<'a> {
+    defined_variables: HashMap<Option<&'a str>, (SourcePosition, HashSet<&'a str>)>,
+    used_variables: HashMap<Scope<'a>, Vec<Spanning<&'a str>>>,
+    current_scope: Option<Scope<'a>>,
+    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
 }
 
 impl<'a> NoUndefinedVariables<'a> {
@@ -36,8 +36,34 @@ impl<'a> NoUndefinedVariables<'a> {
         unused: &mut Vec<&'a Spanning<&'a str>>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
+        let mut to_visit = Vec::new();
+        if let Some(spreads) = self.find_undef_vars_inner(scope, defined, unused, visited) {
+            to_visit.push(spreads);
+        }
+        while let Some(spreads) = to_visit.pop() {
+            for spread in spreads {
+                if let Some(spreads) =
+                    self.find_undef_vars_inner(&Scope::Fragment(spread), defined, unused, visited)
+                {
+                    to_visit.push(spreads);
+                }
+            }
+        }
+    }
+
+    /// This function should be called only inside [`Self::find_undef_vars()`],
+    /// as it's a recursive function using heap instead of a stack. So, instead
+    /// of the recursive call, we return a [`Vec`] that is visited inside
+    /// [`Self::find_undef_vars()`].
+    fn find_undef_vars_inner(
+        &'a self,
+        scope: &Scope<'a>,
+        defined: &HashSet<&'a str>,
+        unused: &mut Vec<&'a Spanning<&'a str>>,
+        visited: &mut HashSet<Scope<'a>>,
+    ) -> Option<&'a Vec<&'a str>> {
         if visited.contains(scope) {
-            return;
+            return None;
         }
 
         visited.insert(scope.clone());
@@ -50,11 +76,7 @@ impl<'a> NoUndefinedVariables<'a> {
             }
         }
 
-        if let Some(spreads) = self.spreads.get(scope) {
-            for spread in spreads {
-                self.find_undef_vars(&Scope::Fragment(spread), defined, unused, visited);
-            }
-        }
+        self.spreads.get(scope)
     }
 }
 
@@ -151,12 +173,9 @@ where
 
 fn error_message(var_name: &str, op_name: Option<&str>) -> String {
     if let Some(op_name) = op_name {
-        format!(
-            r#"Variable "${}" is not defined by operation "{}""#,
-            var_name, op_name
-        )
+        format!(r#"Variable "${var_name}" is not defined by operation "{op_name}""#)
     } else {
-        format!(r#"Variable "${}" is not defined"#, var_name)
+        format!(r#"Variable "${var_name}" is not defined"#)
     }
 }
 

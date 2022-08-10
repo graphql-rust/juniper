@@ -75,15 +75,15 @@ fn test_node() {
             baz
         }"#;
     let node_info = NodeTypeInfo {
-        name: "MyNode".to_string(),
-        attribute_names: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
+        name: "MyNode".into(),
+        attribute_names: vec!["foo".into(), "bar".into(), "baz".into()],
     };
     let mut node = Node {
         attributes: IndexMap::new(),
     };
-    node.attributes.insert("foo".to_string(), "1".to_string());
-    node.attributes.insert("bar".to_string(), "2".to_string());
-    node.attributes.insert("baz".to_string(), "3".to_string());
+    node.attributes.insert("foo".into(), "1".into());
+    node.attributes.insert("bar".into(), "2".into());
+    node.attributes.insert("baz".into(), "3".into());
     let schema: RootNode<_, _, _> = RootNode::new_with_info(
         node,
         EmptyMutation::new(),

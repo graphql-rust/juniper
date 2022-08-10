@@ -368,7 +368,7 @@ pub mod subscriptions {
                 Err(e) => {
                     let reason = ws::CloseReason {
                         code: ws::CloseCode::Error,
-                        description: Some(format!("error serializing response: {}", e)),
+                        description: Some(format!("error serializing response: {e}")),
                     };
 
                     // TODO: trace
@@ -389,7 +389,7 @@ pub mod subscriptions {
     #[derive(Debug)]
     struct Message(ws::Message);
 
-    impl<S: ScalarValue> std::convert::TryFrom<Message> for ClientMessage<S> {
+    impl<S: ScalarValue> TryFrom<Message> for ClientMessage<S> {
         type Error = Error;
 
         fn try_from(msg: Message) -> Result<Self, Self::Error> {
@@ -416,7 +416,7 @@ pub mod subscriptions {
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Self::Serde(e) => write!(f, "serde error: {}", e),
+                Self::Serde(e) => write!(f, "serde error: {e}"),
                 Self::UnexpectedClientMessage => {
                     write!(f, "unexpected message received from client")
                 }
@@ -712,7 +712,7 @@ mod tests {
             self.make_request(
                 TestRequest::post()
                     .append_header(("content-type", "application/json"))
-                    .set_payload(body.to_string())
+                    .set_payload(body.to_owned())
                     .uri(url),
             )
         }
@@ -721,7 +721,7 @@ mod tests {
             self.make_request(
                 TestRequest::post()
                     .append_header(("content-type", "application/graphql"))
-                    .set_payload(body.to_string())
+                    .set_payload(body.to_owned())
                     .uri(url),
             )
         }
@@ -735,7 +735,7 @@ mod tests {
             .unwrap()
             .to_str()
             .unwrap()
-            .to_string();
+            .into();
         let body = take_response_body_string(resp).await;
         TestResponse {
             status_code: status_code as i32,
@@ -797,29 +797,28 @@ mod subscription_tests {
                         framed
                             .send(ws::Message::Text(body.to_owned().into()))
                             .await
-                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+                            .map_err(|e| anyhow::anyhow!("WS error: {e:?}"))?;
                     }
                     WsIntegrationMessage::Expect(body, message_timeout) => {
                         let frame = timeout(Duration::from_millis(*message_timeout), framed.next())
                             .await
                             .map_err(|_| anyhow::anyhow!("Timed-out waiting for message"))?
                             .ok_or_else(|| anyhow::anyhow!("Empty message received"))?
-                            .map_err(|e| anyhow::anyhow!("WS error: {:?}", e))?;
+                            .map_err(|e| anyhow::anyhow!("WS error: {e:?}"))?;
 
                         match frame {
                             ws::Frame::Text(ref bytes) => {
                                 let expected_value =
                                     serde_json::from_str::<serde_json::Value>(body)
-                                        .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+                                        .map_err(|e| anyhow::anyhow!("Serde error: {e:?}"))?;
 
                                 let value: serde_json::Value = serde_json::from_slice(bytes)
-                                    .map_err(|e| anyhow::anyhow!("Serde error: {:?}", e))?;
+                                    .map_err(|e| anyhow::anyhow!("Serde error: {e:?}"))?;
 
                                 if value != expected_value {
                                     return Err(anyhow::anyhow!(
-                                        "Expected message: {}. Received message: {}",
-                                        expected_value,
-                                        value,
+                                        "Expected message: {expected_value}. \
+                                         Received message: {value}",
                                     ));
                                 }
                             }

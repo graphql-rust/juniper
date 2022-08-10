@@ -1,9 +1,10 @@
-error: GraphQL input object does not allow fields with the same name
- --> fail/input-object/derive_unique_name.rs:4:5
+error: GraphQL input object expected all fields to have unique names
+ --> fail/input-object/derive_unique_name.rs:4:15
   |
-4 | /     #[graphql(name = "test")]
-5 | |     test2: String,
-  | |_________________^
-  |
-  = help: There is at least one other field with the same name `test`, possibly renamed via the #[graphql] attribute
-  = note: https://spec.graphql.org/June2018/#sec-Input-Objects
+4 |   struct Object {
+  |  _______________^
+5 | |     test: String,
+6 | |     #[graphql(name = "test")]
+7 | |     test2: String,
+8 | | }
+  | |_^
