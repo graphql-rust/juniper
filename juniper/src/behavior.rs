@@ -64,6 +64,17 @@ where
     }
 }
 
+impl<T, SV, B1, B2> resolve::ToInputValue<SV, B1> for Coerce<T, B2>
+where
+    T: resolve::ToInputValue<SV, B2> + ?Sized,
+    B1: ?Sized,
+    B2: ?Sized,
+{
+    fn to_input_value(&self) -> graphql::InputValue<SV> {
+        self.1.to_input_value()
+    }
+}
+
 impl<'i, T, SV, B1, B2> resolve::InputValue<'i, SV, B1> for Coerce<T, B2>
 where
     T: resolve::InputValue<'i, SV, B2>,
