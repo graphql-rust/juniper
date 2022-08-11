@@ -533,9 +533,14 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::graphql::Enum<#lt, #inf, #cx, #sv, #bh>
-                for #ty #where_clause
+             for #ty #where_clause
             {
-                fn assert_enum() {}
+                fn assert_enum() {
+                    <Self as ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>>
+                        ::assert_input_type();
+                    <Self as ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>>
+                        ::assert_output_type();
+                }
             }
         }
     }

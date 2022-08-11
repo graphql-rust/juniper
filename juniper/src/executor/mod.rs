@@ -1263,6 +1263,16 @@ impl<'r, S: 'r> Registry<'r, S> {
         Argument::new(name, self.get_type::<T>(info)).default_value(value.to_input_value())
     }
 
+    /// Creates an [`Argument`] with the provided `name`.
+    pub fn arg_reworked<'ti, T, TI>(&mut self, name: &str, type_info: &'ti TI) -> Argument<'r, S>
+    where
+        T: resolve::Type<TI, S> + resolve::InputValueOwned<S>,
+        TI: ?Sized,
+        'ti: 'r,
+    {
+        Argument::new(name, T::meta(self, type_info).as_type())
+    }
+
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
         self.types
             .entry(name)
@@ -1530,5 +1540,40 @@ impl<'r, S: 'r> Registry<'r, S> {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 
         InputObjectMeta::new::<T>(Cow::Owned(name.into()), args)
+    }
+
+    /// Builds an [`InputObjectMeta`] information for the specified
+    /// [`graphql::Type`], allowing to `customize` the created [`ScalarMeta`],
+    /// and stores it in this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_input_object_with<'ti, T, TI, F>(
+        &mut self,
+        fields: &[Argument<'r, S>],
+        type_info: &'ti TI,
+        customize: F,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueOwned<S>,
+        TI: ?Sized,
+        'ti: 'r,
+        F: FnOnce(InputObjectMeta<'r, S>) -> InputObjectMeta<'r, S>,
+        S: Clone,
+    {
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                customize(InputObjectMeta::new_reworked::<T, _>(
+                    T::type_name(type_info),
+                    fields,
+                ))
+                .into_meta()
+            })
+            .clone()
     }
 }

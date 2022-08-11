@@ -769,6 +769,25 @@ impl<'a, S> InputObjectMeta<'a, S> {
         }
     }
 
+    /// Builds a new [`InputObjectMeta`] information with the specified `name`
+    /// and its `fields`.
+    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
+    //       `explicit_generic_args_with_impl_trait` hits stable:
+    //       https://github.com/rust-lang/rust/issues/83701
+    pub fn new_reworked<T, N>(name: N, fields: &[Argument<'a, S>]) -> Self
+    where
+        T: resolve::InputValueOwned<S>,
+        Cow<'a, str>: From<N>,
+        S: Clone,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            input_fields: fields.to_vec(),
+            try_parse_fn: try_parse_fn_reworked::<T, S>,
+        }
+    }
+
     /// Set the `description` of this [`InputObjectMeta`] type.
     ///
     /// Overwrites any previously set description.

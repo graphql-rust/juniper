@@ -47,6 +47,16 @@ pub trait Object<S>: OutputType<S>
     fn assert_object();
 }*/
 
+pub trait InputObject<
+    'inp,
+    TypeInfo: ?Sized,
+    ScalarValue: 'inp,
+    Behavior: ?Sized = behavior::Standard,
+>: InputType<'inp, TypeInfo, ScalarValue, Behavior>
+{
+    fn assert_input_object();
+}
+
 pub trait Scalar<
     'inp,
     TypeInfo: ?Sized,
