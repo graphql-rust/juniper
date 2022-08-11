@@ -474,23 +474,23 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::BaseType<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::BaseType<#bh>
+             for #ty #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh>
+             for #ty #where_clause
             {
                 const NAMES: ::juniper::reflect::Types =
                     &[<Self as ::juniper::reflect::BaseType<#bh>>::NAME];
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::Implements<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::Implements<#bh>
+             for #ty #where_clause
             {
                 const NAMES: ::juniper::reflect::Types = &[#(
                     <#interfaces as ::juniper::reflect::BaseType<#bh>>::NAME
@@ -498,16 +498,16 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh>
+             for #ty #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
                     ::juniper::reflect::wrap::SINGULAR;
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::Fields<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::Fields<#bh>
+             for #ty #where_clause
             {
                 const NAMES: ::juniper::reflect::Names = &[#( #fields ),*];
             }
@@ -531,9 +531,8 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             .map(|field| {
                 let (f_name, f_ty, f_bh) = (&field.name, &field.ty, &field.behavior);
 
-                let arguments = field
-                    .arguments
-                    .as_ref()
+                let arguments = field.arguments.as_ref();
+                let arguments = arguments
                     .iter()
                     .flat_map(|vec| vec.iter().filter_map(field::MethodArgument::as_regular))
                     .map(|arg| {
@@ -546,11 +545,9 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                             <#a_ty as ::juniper::reflect::WrappedType<#a_bh>>
                                 ::VALUE,
                         )}
-                    })
-                    .collect::<Vec<_>>();
+                    });
 
                 quote! {
-                    #[allow(deprecated, non_snake_case)]
                     #[automatically_derived]
                     impl #impl_gens ::juniper::reflect::Field<
                         { ::juniper::reflect::fnv1a128(#f_name) }, #bh,
@@ -657,8 +654,8 @@ impl ToTokens for Definition<Query> {
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        //self.impl_reflect().to_tokens(into);
-        //self.impl_reflect_field().to_tokens(into);
+        self.impl_reflect().to_tokens(into);
+        self.impl_reflect_field().to_tokens(into);
         //self.impl_resolve_field_static().to_tokens(into);
     }
 }

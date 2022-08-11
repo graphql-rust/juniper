@@ -395,7 +395,7 @@ impl ToTokens for Definition {
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        //self.impl_reflect().to_tokens(into);
+        self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -1002,15 +1002,15 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::BaseType<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::BaseType<#bh>
+             for #ty #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh>
+             for #ty #where_clause
             {
                 const NAMES: ::juniper::reflect::Types = &[
                     <Self as ::juniper::reflect::BaseType<#bh>>::NAME,
@@ -1019,8 +1019,8 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::Implements<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::Implements<#bh>
+             for #ty #where_clause
             {
                 const NAMES: ::juniper::reflect::Types = &[#(
                     <#interfaces as ::juniper::reflect::BaseType<#bh>>::NAME
@@ -1028,16 +1028,16 @@ impl Definition {
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh>
+             for #ty #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
                     ::juniper::reflect::wrap::SINGULAR;
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::Fields<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::Fields<#bh>
+             for #ty #where_clause
             {
                 const NAMES: ::juniper::reflect::Names = &[#( #fields ),*];
             }

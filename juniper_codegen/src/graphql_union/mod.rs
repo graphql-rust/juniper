@@ -315,6 +315,8 @@ impl ToTokens for Definition {
         self.impl_graphql_value_tokens().to_tokens(into);
         self.impl_graphql_value_async_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
+        ////////////////////////////////////////////////////////////////////////
+        self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -610,7 +612,7 @@ impl Definition {
     /// [`WrappedType`]: juniper::macros::reflect::WrappedType
     /// [1]: https://spec.graphql.org/October2021#sec-Unions
     #[must_use]
-    pub(crate) fn impl_reflection_traits_tokens(&self) -> TokenStream {
+    pub(crate)fn impl_reflection_traits_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
         let name = &self.name;
         let variants = self.variants.iter().map(|var| &var.ty);
@@ -642,6 +644,47 @@ impl Definition {
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`reflect::BaseType`],
+    /// [`reflect::BaseSubTypes`] and [`reflect::WrappedType`] traits for this
+    /// [GraphQL union][0].
+    ///
+    /// [`reflect::BaseSubTypes`]: juniper::reflect::BaseSubTypes
+    /// [`reflect::BaseType`]: juniper::reflect::BaseType
+    /// [`reflect::WrappedType`]: juniper::reflect::WrappedType
+    /// [0]: https://spec.graphql.org/October2021#sec-Unions
+    fn impl_reflect(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let name = &self.name;
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::BaseType<#bh>
+             for #ty #where_clause
+            {
+                const NAME: ::juniper::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh>
+             for #ty #where_clause
+            {
+                const NAMES: ::juniper::reflect::Types =
+                    &[<Self as ::juniper::reflect::BaseType<#bh>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh>
+             for #ty #where_clause
+            {
+                const VALUE: ::juniper::reflect::WrappedValue =
+                    ::juniper::reflect::wrap::SINGULAR;
             }
         }
     }
