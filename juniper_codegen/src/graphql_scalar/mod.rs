@@ -408,7 +408,7 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
-                for #ty #where_clause
+             for #ty #where_clause
             {
                 fn assert_input_type() {}
             }
@@ -437,7 +437,7 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
-                for #ty #where_clause
+             for #ty #where_clause
             {
                 fn assert_output_type() {}
             }
@@ -535,8 +535,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::resolve::TypeName<#inf, #bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::resolve::TypeName<#inf, #bh>
+             for #ty #where_clause
             {
                 fn type_name(_: &#inf) -> &'static str {
                     <Self as ::juniper::reflect::BaseType<#bh>>::NAME
@@ -573,8 +573,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::resolve::Type<#inf, #sv, #bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::resolve::Type<#inf, #sv, #bh>
+             for #ty #where_clause
             {
                 fn meta<'__r, '__ti: '__r>(
                     registry: &mut ::juniper::Registry<'__r, #sv>,
@@ -652,7 +652,7 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
-                for #ty #where_clause
+             for #ty #where_clause
             {
                 fn resolve_value(
                     &self,
@@ -719,7 +719,7 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::resolve::ValueAsync<#inf, #cx, #sv, #bh>
-                for #ty #where_clause
+             for #ty #where_clause
             {
                 fn resolve_value_async<'__r>(
                     &'__r self,
@@ -782,8 +782,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::resolve::ToInputValue<#sv, #bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::resolve::ToInputValue<#sv, #bh>
+             for #ty #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::graphql::InputValue<#sv> {
                     #body
@@ -842,7 +842,7 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh>
-                for #ty #where_clause
+             for #ty #where_clause
             {
                 type Error = #error_ty;
 
@@ -901,8 +901,8 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::resolve::ScalarToken<#sv, #bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::resolve::ScalarToken<#sv, #bh>
+             for #ty #where_clause
             {
                 fn parse_scalar_token(
                     token: ::juniper::parser::ScalarToken<'_>,
@@ -969,23 +969,23 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::BaseType<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::BaseType<#bh>
+             for #ty #where_clause
             {
                 const NAME: ::juniper::reflect::Type = #name;
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh>
+             for #ty #where_clause
             {
                 const NAMES: ::juniper::reflect::Types =
                     &[<Self as ::juniper::reflect::BaseType<#bh>>::NAME];
             }
 
             #[automatically_derived]
-            impl #impl_gens ::juniper::reflect::WrappedType<#bh> for #ty
-                #where_clause
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh>
+             for #ty #where_clause
             {
                 const VALUE: ::juniper::reflect::WrappedValue =
                     ::juniper::reflect::wrap::SINGULAR;
