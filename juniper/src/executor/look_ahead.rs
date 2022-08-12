@@ -10,7 +10,7 @@ use super::Variables;
 
 /// An enum that describes if a field is available in all types of the interface
 /// or only in a certain subtype
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Applies<'a> {
     /// The field is available independent from the type
     All,

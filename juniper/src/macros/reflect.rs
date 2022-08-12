@@ -883,11 +883,11 @@ macro_rules! const_concat {
         }
         const CON: [u8; LEN] = concat([$($s),*]);
 
-        // TODO: Use `str::from_utf8()` once it becomes `const`.
-        // SAFETY: This is safe, as we concatenate multiple UTF-8 strings one
-        //         after another byte-by-byte.
-        #[allow(unsafe_code)]
-        unsafe { ::std::str::from_utf8_unchecked(&CON) }
+        // TODO: Use `.unwrap()` once it becomes `const`.
+        match ::std::str::from_utf8(&CON) {
+            ::std::result::Result::Ok(s) => s,
+            _ => unreachable!(),
+        }
     }};
 }
 
@@ -1005,12 +1005,11 @@ macro_rules! format_type {
 
         const TYPE_ARR: [u8; RES_LEN] = format_type_arr();
 
-        // TODO: Use `str::from_utf8()` once it becomes `const`.
-        // SAFETY: This is safe, as we concatenate multiple UTF-8 strings one
-        //         after another byte-by-byte.
-        #[allow(unsafe_code)]
-        const TYPE_FORMATTED: &str =
-            unsafe { ::std::str::from_utf8_unchecked(TYPE_ARR.as_slice()) };
+        // TODO: Use `.unwrap()` once it becomes `const`.
+        const TYPE_FORMATTED: &str = match ::std::str::from_utf8(TYPE_ARR.as_slice()) {
+            ::std::result::Result::Ok(s) => s,
+            _ => unreachable!(),
+        };
 
         TYPE_FORMATTED
     }};

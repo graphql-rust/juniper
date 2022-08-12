@@ -46,7 +46,7 @@ impl User {
 
     async fn friends(&self) -> Vec<User> {
         if self.id == 1 {
-            return vec![
+            vec![
                 User {
                     id: 11,
                     kind: UserKind::User,
@@ -62,15 +62,15 @@ impl User {
                     kind: UserKind::Guest,
                     name: "user13".into(),
                 },
-            ];
+            ]
         } else if self.id == 2 {
-            return vec![User {
+            vec![User {
                 id: 21,
                 kind: UserKind::User,
                 name: "user21".into(),
-            }];
+            }]
         } else if self.id == 3 {
-            return vec![
+            vec![
                 User {
                     id: 31,
                     kind: UserKind::User,
@@ -81,9 +81,9 @@ impl User {
                     kind: UserKind::Guest,
                     name: "user32".into(),
                 },
-            ];
+            ]
         } else {
-            return vec![];
+            vec![]
         }
     }
 }

@@ -17,7 +17,7 @@ use crate::common::parse::TypeExt as _;
 /// corresponding error at.
 pub(crate) fn output_type(ret_ty: &syn::ReturnType) -> Result<syn::Type, Span> {
     let ret_ty = match &ret_ty {
-        syn::ReturnType::Type(_, ty) => &*ty,
+        syn::ReturnType::Type(_, ty) => &**ty,
         _ => return Err(ret_ty.span()),
     };
 

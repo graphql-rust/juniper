@@ -114,7 +114,7 @@ pub struct Directive<'a, S> {
 }
 
 #[allow(missing_docs)]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OperationType {
     Query,
     Mutation,

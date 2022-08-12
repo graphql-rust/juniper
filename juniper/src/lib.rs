@@ -94,8 +94,8 @@ pub use crate::{
 };
 
 /// An error that prevented query execution
-#[derive(Debug, PartialEq)]
 #[allow(missing_docs)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum GraphQLError {
     ParseError(Spanning<ParseError>),
     ValidationError(Vec<RuleError>),
