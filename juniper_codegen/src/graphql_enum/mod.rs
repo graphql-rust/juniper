@@ -647,7 +647,7 @@ impl Definition {
                     let values = [#( #values_meta ),*];
 
                     registry.register_enum_with::<
-                        ::juniper::behavior::Coerce<Self>, _, _,
+                        ::juniper::behavior::Coerce<Self>, _,
                     >(&values, type_info, |meta| {
                         meta #description
                     })

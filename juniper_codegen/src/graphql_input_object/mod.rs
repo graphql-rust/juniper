@@ -734,7 +734,7 @@ impl Definition {
                     let fields = [#( #fields_meta ),*];
 
                     registry.register_input_object_with::<
-                        ::juniper::behavior::Coerce<Self>, _, _,
+                        ::juniper::behavior::Coerce<Self>, _,
                     >(&fields, type_info, |meta| {
                         meta #description
                     })

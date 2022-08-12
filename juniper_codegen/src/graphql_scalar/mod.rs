@@ -584,7 +584,7 @@ impl Definition {
                     #sv: '__r,
                 {
                     registry.register_scalar_with::<
-                        ::juniper::behavior::Coerce<Self>, _, _,
+                        ::juniper::behavior::Coerce<Self>, _,
                     >(type_info, |meta| {
                         meta #description #specified_by_url
                     })

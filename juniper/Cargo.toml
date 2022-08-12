@@ -39,7 +39,7 @@ schema-language = ["graphql-parser"]
 anyhow = { version = "1.0.32", default-features = false, optional = true }
 async-trait = "0.1.39"
 bigdecimal = { version = "0.3", optional = true }
-bson = { version = "2.3", features = ["chrono-0_4"], optional = true }
+bson = { version = "2.4", features = ["chrono-0_4"], optional = true }
 chrono = { version = "0.4", features = ["alloc"], default-features = false, optional = true }
 chrono-tz = { version = "0.6", default-features = false, optional = true }
 fnv = "1.0.3"
@@ -59,8 +59,6 @@ uuid = { version = "1.0", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
-# not used, to fix `bson` compilation only
-uuid_08 = { version = "0.8", package = "uuid", default-features = false, features = ["wasm-bindgen"] }
 
 [dev-dependencies]
 bencher = "0.1.2"

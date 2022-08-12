@@ -655,7 +655,7 @@ impl ToTokens for Definition<Query> {
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
         self.impl_reflect().to_tokens(into);
-        self.impl_reflect_field().to_tokens(into);
+        //self.impl_reflect_field().to_tokens(into);
         //self.impl_resolve_field_static().to_tokens(into);
     }
 }

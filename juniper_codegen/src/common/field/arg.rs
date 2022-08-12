@@ -286,7 +286,7 @@ impl OnMethod {
     #[must_use]
     pub(crate) fn as_regular(&self) -> Option<&OnField> {
         if let Self::Regular(arg) = self {
-            Some(&*arg)
+            Some(&**arg)
         } else {
             None
         }
@@ -297,7 +297,7 @@ impl OnMethod {
     #[must_use]
     pub(crate) fn context_ty(&self) -> Option<&syn::Type> {
         if let Self::Context(ty) = self {
-            Some(&*ty)
+            Some(&**ty)
         } else {
             None
         }

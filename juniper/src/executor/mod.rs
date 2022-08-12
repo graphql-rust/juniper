@@ -1302,21 +1302,20 @@ impl<'r, S: 'r> Registry<'r, S> {
     ///
     /// [`graphql::Type`]: resolve::Type
     /// [`TypeName`]: resolve::TypeName
-    pub fn register_scalar_with<'ti, T, TI, F>(
+    pub fn register_scalar_with<'ti, T, TI>(
         &mut self,
         type_info: &'ti TI,
-        customize: F,
+        customize: impl FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
     ) -> MetaType<'r, S>
     where
         T: resolve::TypeName<TI> + resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
         TI: ?Sized,
         'ti: 'r,
-        F: FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
         S: Clone,
     {
         self.entry_type::<T, _>(type_info)
             .or_insert_with(move || {
-                customize(ScalarMeta::new_reworked::<T, _>(T::type_name(type_info))).into_meta()
+                customize(ScalarMeta::new_reworked::<T>(T::type_name(type_info))).into_meta()
             })
             .clone()
     }
@@ -1338,7 +1337,7 @@ impl<'r, S: 'r> Registry<'r, S> {
         'ti: 'r,
         S: Clone,
     {
-        self.register_scalar_unsized_with::<T, TI, _>(type_info, convert::identity)
+        self.register_scalar_unsized_with::<T, TI>(type_info, convert::identity)
     }
 
     /// Builds a [`ScalarMeta`] information for the specified non-[`Sized`]
@@ -1352,21 +1351,20 @@ impl<'r, S: 'r> Registry<'r, S> {
     ///
     /// [`graphql::Type`]: resolve::Type
     /// [`TypeName`]: resolve::TypeName
-    pub fn register_scalar_unsized_with<'ti, T, TI, F>(
+    pub fn register_scalar_unsized_with<'ti, T, TI>(
         &mut self,
         type_info: &'ti TI,
-        customize: F,
+        customize: impl FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
     ) -> MetaType<'r, S>
     where
         T: resolve::TypeName<TI> + resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
         TI: ?Sized,
         'ti: 'r,
-        F: FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
         S: Clone,
     {
         self.entry_type::<T, _>(type_info)
             .or_insert_with(move || {
-                customize(ScalarMeta::new_unsized::<T, _>(T::type_name(type_info))).into_meta()
+                customize(ScalarMeta::new_unsized::<T>(T::type_name(type_info))).into_meta()
             })
             .clone()
     }
@@ -1474,26 +1472,21 @@ impl<'r, S: 'r> Registry<'r, S> {
     ///
     /// [`graphql::Type`]: resolve::Type
     /// [`TypeName`]: resolve::TypeName
-    pub fn register_enum_with<'ti, T, TI, F>(
+    pub fn register_enum_with<'ti, T, TI>(
         &mut self,
         values: &[EnumValue],
         type_info: &'ti TI,
-        customize: F,
+        customize: impl FnOnce(EnumMeta<'r, S>) -> EnumMeta<'r, S>,
     ) -> MetaType<'r, S>
     where
         T: resolve::TypeName<TI> + resolve::InputValueOwned<S>,
         TI: ?Sized,
         'ti: 'r,
-        F: FnOnce(EnumMeta<'r, S>) -> EnumMeta<'r, S>,
         S: Clone,
     {
         self.entry_type::<T, _>(type_info)
             .or_insert_with(move || {
-                customize(EnumMeta::new_reworked::<T, _>(
-                    T::type_name(type_info),
-                    values,
-                ))
-                .into_meta()
+                customize(EnumMeta::new_reworked::<T>(T::type_name(type_info), values)).into_meta()
             })
             .clone()
     }
@@ -1553,22 +1546,21 @@ impl<'r, S: 'r> Registry<'r, S> {
     ///
     /// [`graphql::Type`]: resolve::Type
     /// [`TypeName`]: resolve::TypeName
-    pub fn register_input_object_with<'ti, T, TI, F>(
+    pub fn register_input_object_with<'ti, T, TI>(
         &mut self,
         fields: &[Argument<'r, S>],
         type_info: &'ti TI,
-        customize: F,
+        customize: impl FnOnce(InputObjectMeta<'r, S>) -> InputObjectMeta<'r, S>,
     ) -> MetaType<'r, S>
     where
         T: resolve::TypeName<TI> + resolve::InputValueOwned<S>,
         TI: ?Sized,
         'ti: 'r,
-        F: FnOnce(InputObjectMeta<'r, S>) -> InputObjectMeta<'r, S>,
         S: Clone,
     {
         self.entry_type::<T, _>(type_info)
             .or_insert_with(move || {
-                customize(InputObjectMeta::new_reworked::<T, _>(
+                customize(InputObjectMeta::new_reworked::<T>(
                     T::type_name(type_info),
                     fields,
                 ))

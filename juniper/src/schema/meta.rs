@@ -16,7 +16,7 @@ use crate::{
 };
 
 /// Whether an item is deprecated, with context.
-#[derive(Debug, PartialEq, Hash, Clone)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum DeprecationStatus {
     /// The field/variant is not deprecated.
     Current,
@@ -502,13 +502,9 @@ impl<'a, S> ScalarMeta<'a, S> {
     }
 
     /// Builds a new [`ScalarMeta`] information with the specified `name`.
-    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
-    //       `explicit_generic_args_with_impl_trait` hits stable:
-    //       https://github.com/rust-lang/rust/issues/83701
-    pub fn new_reworked<T, N>(name: N) -> Self
+    pub fn new_reworked<T>(name: impl Into<Cow<'a, str>>) -> Self
     where
         T: resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
-        Cow<'a, str>: From<N>,
     {
         Self {
             name: name.into(),
@@ -521,13 +517,9 @@ impl<'a, S> ScalarMeta<'a, S> {
 
     /// Builds a new [`ScalarMeta`] information with the specified `name` for
     /// the non-[`Sized`] `T`ype that may only be parsed as a reference.
-    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
-    //       `explicit_generic_args_with_impl_trait` hits stable:
-    //       https://github.com/rust-lang/rust/issues/83701
-    pub fn new_unsized<T, N>(name: N) -> Self
+    pub fn new_unsized<T>(name: impl Into<Cow<'a, str>>) -> Self
     where
         T: resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
-        Cow<'a, str>: From<N>,
     {
         Self {
             name: name.into(),
@@ -653,13 +645,9 @@ impl<'a, S> EnumMeta<'a, S> {
 
     /// Builds a new [`EnumMeta`] information with the specified `name` and
     /// possible `values`.
-    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
-    //       `explicit_generic_args_with_impl_trait` hits stable:
-    //       https://github.com/rust-lang/rust/issues/83701
-    pub fn new_reworked<T, N>(name: N, values: &[EnumValue]) -> Self
+    pub fn new_reworked<T>(name: impl Into<Cow<'a, str>>, values: &[EnumValue]) -> Self
     where
         T: resolve::InputValueOwned<S>,
-        Cow<'a, str>: From<N>,
     {
         Self {
             name: name.into(),
@@ -771,13 +759,9 @@ impl<'a, S> InputObjectMeta<'a, S> {
 
     /// Builds a new [`InputObjectMeta`] information with the specified `name`
     /// and its `fields`.
-    // TODO: Use `impl Into<Cow<'a, str>>` argument once feature
-    //       `explicit_generic_args_with_impl_trait` hits stable:
-    //       https://github.com/rust-lang/rust/issues/83701
-    pub fn new_reworked<T, N>(name: N, fields: &[Argument<'a, S>]) -> Self
+    pub fn new_reworked<T>(name: impl Into<Cow<'a, str>>, fields: &[Argument<'a, S>]) -> Self
     where
         T: resolve::InputValueOwned<S>,
-        Cow<'a, str>: From<N>,
         S: Clone,
     {
         Self {

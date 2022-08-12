@@ -5,7 +5,7 @@ use smartstring::alias::String;
 use crate::parser::{Lexer, LexerError, Spanning, Token};
 
 /// Error while parsing a GraphQL query
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ParseError {
     /// An unexpected token occurred in the source
     // TODO: Previously was `Token<'a>`.
