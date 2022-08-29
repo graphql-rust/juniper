@@ -15,7 +15,7 @@ keywords = ["graphql", "server", "subscription", "web", "websocket"]
 exclude = ["/release.toml"]
 
 [dependencies]
-futures = "0.3.1"
+futures = "0.3.22"
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 
 [dev-dependencies]
