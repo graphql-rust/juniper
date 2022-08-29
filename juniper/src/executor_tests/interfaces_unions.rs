@@ -96,30 +96,20 @@ mod interface {
 
 mod union {
     use crate::{
-        graphql_object, graphql_union, graphql_value,
+        graphql_object, GraphQLUnion, graphql_value,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
-    #[graphql_union]
-    trait Pet {
-        fn as_dog(&self) -> Option<&Dog> {
-            None
-        }
-        fn as_cat(&self) -> Option<&Cat> {
-            None
-        }
+    #[derive(GraphQLUnion)]
+    enum Pet {
+        Dog(Dog),
+        Cat(Cat),
     }
 
     struct Dog {
         name: String,
         woofs: bool,
-    }
-
-    impl Pet for Dog {
-        fn as_dog(&self) -> Option<&Dog> {
-            Some(self)
-        }
     }
 
     #[graphql_object]
@@ -137,12 +127,6 @@ mod union {
         meows: bool,
     }
 
-    impl Pet for Cat {
-        fn as_cat(&self) -> Option<&Cat> {
-            Some(self)
-        }
-    }
-
     #[graphql_object]
     impl Cat {
         fn name(&self) -> &str {
@@ -154,13 +138,13 @@ mod union {
     }
 
     struct Schema {
-        pets: Vec<Box<dyn Pet + Send + Sync>>,
+        pets: Vec<Pet>,
     }
 
     #[graphql_object]
     impl Schema {
-        fn pets(&self) -> Vec<&(dyn Pet + Send + Sync)> {
-            self.pets.iter().map(|p| p.as_ref()).collect()
+        fn pets(&self) -> &[Pet] {
+            &self.pets
         }
     }
 
@@ -169,11 +153,11 @@ mod union {
         let schema = RootNode::new(
             Schema {
                 pets: vec![
-                    Box::new(Dog {
+                    Pet::Dog(Dog {
                         name: "Odie".into(),
                         woofs: true,
                     }),
-                    Box::new(Cat {
+                    Pet::Cat(Cat {
                         name: "Garfield".into(),
                         meows: false,
                     }),

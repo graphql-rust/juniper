@@ -89,6 +89,35 @@ impl<'r, 'a, CX: ?Sized, SV> Executor<'r, 'a, CX, SV> {
     pub(crate) fn current_type_reworked(&self) -> &TypeType<'a, SV> {
         &self.current_type
     }
+
+    /// Resolves the specified single arbitrary `Type` `value` as
+    /// [`graphql::Value`].
+    ///
+    /// # Errors
+    ///
+    /// Whenever [`Type::resolve_value()`] errors.
+    ///
+    /// [`graphql::Value`]: crate::graphql::Value
+    /// [`Type::resolve_value()`]: resolve::Value::resolve_value
+    pub fn resolve_value<BH, Type, TI>(&self, value: &Type, type_info: &TI) -> ExecutionResult<SV>
+    where
+        Type: resolve::Value<TI, CX, SV, BH> + ?Sized,
+        TI: ?Sized,
+        BH: ?Sized,
+    {
+        value.resolve_value(self.current_selection_set, type_info, self)
+    }
+
+    /// Returns the current context of this [`Executor`].
+    ///
+    /// Context is usually provided when the top-level [`execute()`] function is
+    /// called.
+    ///
+    /// [`execute()`]: crate::execute
+    #[must_use]
+    pub fn context(&self) -> &'r CX {
+        self.context
+    }
 }
 
 /// Error type for errors that occur during query execution
@@ -633,14 +662,6 @@ where
     /// `Executor`'s current selection set
     pub(crate) fn current_selection_set(&self) -> Option<&[Selection<'a, S>]> {
         self.current_selection_set
-    }
-
-    /// Access the current context
-    ///
-    /// You usually provide the context when calling the top-level `execute`
-    /// function, or using the context factory in the Iron integration.
-    pub fn context(&self) -> &'r CtxT {
-        self.context
     }
 
     /// The currently executing schema

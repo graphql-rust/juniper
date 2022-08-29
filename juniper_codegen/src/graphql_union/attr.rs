@@ -93,6 +93,7 @@ fn expand_on_trait(
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar: scalar::Type::parse(attr.scalar.as_deref(), &ast.generics),
+        behavior: attr.behavior.into(),
         generics: ast.generics.clone(),
         variants,
     };
@@ -210,6 +211,7 @@ fn parse_variant_from_trait_method(
         ty,
         resolver_code,
         resolver_check,
+        behavior: attr.behavior.into(),
         context: method_context_ty,
     })
 }

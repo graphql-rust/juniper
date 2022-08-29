@@ -33,6 +33,7 @@ pub mod macros;
 mod ast;
 pub mod behavior;
 pub mod executor;
+pub mod extract;
 pub mod graphql;
 pub mod http;
 pub mod integrations;
@@ -94,6 +95,7 @@ pub use crate::{
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    extract::Extract,
 };
 
 /// An error that prevented query execution

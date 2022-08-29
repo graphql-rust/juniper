@@ -4,6 +4,7 @@ use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
+    resolve,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
     FieldResult, GraphQLEnum, IntoFieldError,
@@ -98,6 +99,8 @@ impl<'a, S> Arguments<'a, S> {
         Self { args }
     }
 
+    /// TODO: DEPRECATED!
+    ///
     /// Gets an argument by the given `name` and converts it into the desired
     /// type.
     ///
@@ -120,6 +123,38 @@ impl<'a, S> Arguments<'a, S> {
             .map(InputValue::convert)
             .transpose()
             .map_err(IntoFieldError::into_field_error)
+    }
+
+    /// Resolves an argument with the provided `name` as the specified type `T`.
+    ///
+    /// If [`None`] argument is found, then `T` is
+    /// [tried to be resolved from implicit `null`][0].
+    ///
+    /// # Errors
+    ///
+    /// If the [`resolve::InputValue`] conversion fails.
+    ///
+    /// [0]: resolve::InputValue::try_from_implicit_null
+    pub fn resolve<'s, T, BH>(&'s self, name: &str) -> FieldResult<T, S>
+    where
+        T: resolve::InputValue<'s, S, BH>,
+        BH: ?Sized,
+    {
+        self.args
+            .as_ref()
+            .and_then(|args| args.get(name))
+            .map(<T as resolve::InputValue<'s, S, BH>>::try_from_input_value)
+            .transpose()
+            .map_err(IntoFieldError::into_field_error)?
+            .map_or_else(
+                || {
+                    <T as resolve::InputValue<'s, S, BH>>::try_from_implicit_null().map_err(|e| {
+                        IntoFieldError::into_field_error(e)
+                            .map_message(|m| format!("Missing argument `{name}`: {m}"))
+                    })
+                },
+                Ok,
+            )
     }
 }
 

@@ -18,7 +18,7 @@ use syn::{
 };
 
 use crate::common::{
-    filter_attrs, gen,
+    filter_attrs, gen, behavior,
     parse::{
         attr::{err, OptionExt as _},
         ParseBufferExt as _,
@@ -74,6 +74,17 @@ struct Attr {
     /// [1]: https://spec.graphql.org/October2021#sec-Unions
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
+    /// Explicitly specified type of the custom [`Behavior`] to parametrize this
+    /// [GraphQL union][0] implementation with.
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Unions
+    behavior: Option<SpanContainer<behavior::Type>>,
+
     /// Explicitly specified external resolver functions for [GraphQL union][1]
     /// variants.
     ///
@@ -128,6 +139,13 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "on" => {
                     let ty = input.parse::<syn::Type>()?;
                     input.parse::<token::Eq>()?;
@@ -160,6 +178,7 @@ impl Attr {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
+            behavior: try_merge_opt!(behavior: self, another),
             external_resolvers: try_merge_hashmap!(
                 external_resolvers: self, another => span_joined
             ),
@@ -188,6 +207,19 @@ impl Attr {
 /// [1]: https://spec.graphql.org/October2021#sec-Unions
 #[derive(Debug, Default)]
 struct VariantAttr {
+    /// Explicitly specified type of the custom [`Behavior`] this
+    /// [GraphQL union][0] member implementation is parametrized with, to
+    /// [coerce] in the generated code from.
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Unions
+    /// [coerce]: juniper::behavior::Coerce
+    behavior: Option<SpanContainer<behavior::Type>>,
+
     /// Explicitly specified marker for the variant/field being ignored and not
     /// included into [GraphQL union][1].
     ///
@@ -210,6 +242,13 @@ impl Parse for VariantAttr {
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "ignore" | "skip" => out
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
@@ -236,6 +275,7 @@ impl VariantAttr {
     /// duplicates, if any.
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
+            behavior: try_merge_opt!(behavior: self, another),
             ignore: try_merge_opt!(ignore: self, another),
             external_resolver: try_merge_opt!(external_resolver: self, another),
         })
@@ -301,6 +341,13 @@ struct Definition {
     /// [1]: https://spec.graphql.org/October2021#sec-Unions
     scalar: scalar::Type,
 
+    /// [`Behavior`] parametrization to generate code with for this
+    /// [GraphQL union][0].
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [0]: https://spec.graphql.org/October2021#sec-Unions
+    behavior: behavior::Type,
+
     /// Variants definitions of this [GraphQL union][1].
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Unions
@@ -316,7 +363,7 @@ impl ToTokens for Definition {
         self.impl_graphql_value_async_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
-        //self.impl_reflect().to_tokens(into);
+        self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -647,7 +694,7 @@ impl Definition {
             }
         }
     }
-    /*
+
     /// Returns generated code implementing [`reflect::BaseType`],
     /// [`reflect::BaseSubTypes`] and [`reflect::WrappedType`] traits for this
     /// [GraphQL union][0].
@@ -663,6 +710,15 @@ impl Definition {
 
         let name = &self.name;
 
+        let member_names = self.variants.iter().map(|m| {
+            let m_ty = &m.ty;
+            let m_bh = &m.behavior;
+
+            quote! {
+                <#m_ty as ::juniper::reflect::BaseType<#m_bh>>::NAME
+            }
+        });
+
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::reflect::BaseType<#bh>
@@ -675,8 +731,10 @@ impl Definition {
             impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh>
              for #ty #where_clause
             {
-                const NAMES: ::juniper::reflect::Types =
-                    &[<Self as ::juniper::reflect::BaseType<#bh>>::NAME];
+                const NAMES: ::juniper::reflect::Types = &[
+                    <Self as ::juniper::reflect::BaseType<#bh>>::NAME,
+                    #( #member_names ),*
+                ];
             }
 
             #[automatically_derived]
@@ -687,7 +745,19 @@ impl Definition {
                     ::juniper::reflect::wrap::SINGULAR;
             }
         }
-    }*/
+    }
+
+    /// Returns prepared self [`syn::Type`] and [`syn::Generics`] for a trait
+    /// implementation.
+    fn ty_and_generics(&self) -> (syn::Type, syn::Generics) {
+        let generics = self.generics.clone();
+        let ty = {
+            let ident = &self.ty;
+            let (_, ty_gen, _) = generics.split_for_impl();
+            parse_quote! { #ident #ty_gen }
+        };
+        (ty, generics)
+    }
 }
 
 /// Definition of [GraphQL union][1] variant for code generation.
@@ -709,6 +779,14 @@ struct VariantDefinition {
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Unions
     resolver_check: syn::Expr,
+
+    /// [`Behavior`] parametrization of this [GraphQL union][0] member
+    /// implementation to [coerce] from in the generated code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [0]: https://spec.graphql.org/October2021#sec-Unions
+    /// [coerce]: juniper::behavior::Coerce
+    behavior: behavior::Type,
 
     /// Rust type of [`Context`] that this [GraphQL union][1] variant requires
     /// for resolution.
@@ -826,6 +904,7 @@ fn emerge_union_variants_from_attr(
                 ty,
                 resolver_code,
                 resolver_check,
+                behavior: behavior::Type::default(), // TODO: remove at all
                 context: None,
             })
         }
