@@ -1,6 +1,18 @@
 //! GraphQL implementation for [`Result`].
 
-use crate::reflect;
+use crate::{reflect, resolve, FieldResult, IntoFieldError};
+
+impl<T, E, SV, BH> resolve::Resolvable<SV, BH> for Result<T, E>
+where
+    E: IntoFieldError<SV>,
+    BH: ?Sized,
+{
+    type Value = T;
+
+    fn into_value(self) -> FieldResult<Self::Value, SV> {
+        self.map_err(IntoFieldError::into_field_error)
+    }
+}
 
 impl<T, E, BH> reflect::BaseType<BH> for Result<T, E>
 where

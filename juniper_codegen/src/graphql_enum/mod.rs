@@ -417,6 +417,7 @@ impl ToTokens for Definition {
         self.impl_resolve_type_name().to_tokens(into);
         self.impl_resolve_value().to_tokens(into);
         self.impl_resolve_value_async().to_tokens(into);
+        self.impl_resolvable().to_tokens(into);
         self.impl_resolve_to_input_value().to_tokens(into);
         self.impl_resolve_input_value().to_tokens(into);
         self.impl_graphql_input_type().to_tokens(into);
@@ -863,6 +864,31 @@ impl Definition {
                         <Self as ::juniper::resolve::Value<#inf, #cx, #sv, #bh>>
                             ::resolve_value(self, sel_set, type_info, executor);
                     ::std::boxed::Box::pin(::juniper::futures::future::ready(v))
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::Resolvable`] trait for
+    /// this [GraphQL enum][0].
+    ///
+    /// [`resolve::Resolvable`]: juniper::resolve::Resolvable
+    /// [0]: https://spec.graphql.org/October2021#sec-Enums
+    fn impl_resolvable(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (sv, generics) = self.mix_scalar_value(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::Resolvable<#sv, #bh>
+             for #ty #where_clause
+            {
+                type Value = Self;
+
+                fn into_value(self) -> ::juniper::FieldResult<Self, #sv> {
+                    ::juniper::FieldResult::Ok(self)
                 }
             }
         }

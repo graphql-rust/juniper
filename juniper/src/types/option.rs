@@ -7,7 +7,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     graphql, reflect, resolve,
     schema::meta::MetaType,
-    BoxFuture, Selection,
+    BoxFuture, FieldResult, Selection,
 };
 
 impl<T, TI, SV, BH> resolve::Type<TI, SV, BH> for Option<T>
@@ -62,6 +62,17 @@ where
             Some(v) => v.resolve_value_async(selection_set, type_info, executor),
             None => Box::pin(future::ok(graphql::Value::Null)),
         }
+    }
+}
+
+impl<T, SV, BH> resolve::Resolvable<SV, BH> for Option<T>
+where
+    BH: ?Sized,
+{
+    type Value = Self;
+
+    fn into_value(self) -> FieldResult<Self, SV> {
+        Ok(self)
     }
 }
 

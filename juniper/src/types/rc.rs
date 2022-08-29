@@ -6,7 +6,8 @@ use crate::{
     graphql,
     meta::MetaType,
     parser::{ParseError, ScalarToken},
-    reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, Registry, Selection,
+    reflect, resolve, Arguments, BoxFuture, ExecutionResult, Executor, FieldResult, Registry,
+    Selection,
 };
 
 impl<T, TI, SV, BH> resolve::Type<TI, SV, BH> for Rc<T>
@@ -76,6 +77,18 @@ where
         executor: &'r Executor<CX, SV>,
     ) -> BoxFuture<'r, ExecutionResult<SV>> {
         (**self).resolve_value_async(selection_set, type_info, executor)
+    }
+}
+
+impl<T, SV, BH> resolve::Resolvable<SV, BH> for Rc<T>
+where
+    T: ?Sized,
+    BH: ?Sized,
+{
+    type Value = Self;
+
+    fn into_value(self) -> FieldResult<Self, SV> {
+        Ok(self)
     }
 }
 

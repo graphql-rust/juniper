@@ -5,7 +5,6 @@ use crate::{
     reflect, Arguments, BoxFuture, ExecutionResult, Executor, FieldResult, IntoFieldError,
     Registry, Selection,
 };
-use juniper::resolve;
 
 pub trait Type<TypeInfo: ?Sized, ScalarValue, Behavior: ?Sized = behavior::Standard> {
     fn meta<'r, 'ti: 'r>(
@@ -52,6 +51,12 @@ pub trait ValueAsync<
         type_info: &'r TypeInfo,
         executor: &'r Executor<Context, ScalarValue>,
     ) -> BoxFuture<'r, ExecutionResult<ScalarValue>>;
+}
+
+pub trait Resolvable<ScalarValue, Behavior: ?Sized = behavior::Standard> {
+    type Value;
+
+    fn into_value(self) -> FieldResult<Self::Value, ScalarValue>;
 }
 
 pub trait ConcreteValue<
@@ -203,76 +208,4 @@ pub trait InputValueAsRef<ScalarValue, Behavior: ?Sized = behavior::Standard> {
 
 pub trait ScalarToken<ScalarValue, Behavior: ?Sized = behavior::Standard> {
     fn parse_scalar_token(token: parser::ScalarToken<'_>) -> Result<ScalarValue, ParseError>;
-}
-
-/*
-pub trait IntoResolvable<
-    ScalarValue,
->
-{
-    type Type;
-
-    fn into_resolvable(self) -> FieldResult<Self::Type, ScalarValue>;
-}
-
-impl<T, SV> IntoResolvable<SV> for T
-where
-    T: crate::GraphQLValue<SV>,
-    SV: crate::ScalarValue,
-{
-    type Type = Self;
-
-    fn into_resolvable(self) -> FieldResult<Self, SV> {
-        Ok(self)
-    }
-}
-
-impl<T, E, SV> IntoResolvable<SV> for Result<T, E>
-where
-    T: crate::GraphQLValue<SV>,
-    SV: crate::ScalarValue,
-    E: IntoFieldError<SV>,
-{
-    type Type = T;
-
-    fn into_resolvable(self) -> FieldResult<Self::Type, SV> {
-        self.map_err(IntoFieldError::into_field_error)
-    }
-}
-*/
-
-#[doc(hidden)]
-pub trait IntoResolvable<S, T>
-where
-    T: crate::GraphQLValue<S>,
-    S: crate::ScalarValue,
-{
-    type Type;
-
-    #[doc(hidden)]
-    fn into_resolvable(self) -> FieldResult<T, S>;
-}
-
-impl<'a, S, T> IntoResolvable<S, T> for T
-where
-    T: crate::GraphQLValue<S>,
-    S: crate::ScalarValue,
-{
-    type Type = T;
-
-    fn into_resolvable(self) -> FieldResult<T, S> {
-        Ok(self)
-    }
-}
-
-impl<'a, S, T, E: IntoFieldError<S>> IntoResolvable<S, T> for Result<T, E>
-where
-    S: crate::ScalarValue,
-    T: crate::GraphQLValue<S>,
-{
-    type Type = T;
-
-    fn into_resolvable(self) -> FieldResult<T, S> {
-        self.map_err(IntoFieldError::into_field_error)
-    }
 }

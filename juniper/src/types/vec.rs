@@ -5,7 +5,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     graphql, reflect, resolve,
     schema::meta::MetaType,
-    BoxFuture, FieldError, IntoFieldError, Selection,
+    BoxFuture, FieldError, FieldResult, IntoFieldError, Selection,
 };
 
 use super::iter;
@@ -61,6 +61,17 @@ where
             type_info,
             executor,
         ))
+    }
+}
+
+impl<T, SV, BH> resolve::Resolvable<SV, BH> for Vec<T>
+where
+    BH: ?Sized,
+{
+    type Value = Self;
+
+    fn into_value(self) -> FieldResult<Self, SV> {
+        Ok(self)
     }
 }
 

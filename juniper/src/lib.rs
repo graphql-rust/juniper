@@ -75,6 +75,7 @@ pub use crate::{
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
+    extract::Extract,
     introspection::IntrospectionFormat,
     macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
     parser::{ParseError, ScalarToken, Spanning},
@@ -95,7 +96,6 @@ pub use crate::{
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
-    extract::Extract,
 };
 
 /// An error that prevented query execution

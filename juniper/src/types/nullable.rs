@@ -15,7 +15,7 @@ use crate::{
         base::{GraphQLType, GraphQLValue},
         marker::IsInputType,
     },
-    BoxFuture, ScalarValue, Selection,
+    BoxFuture, FieldResult, ScalarValue, Selection,
 };
 
 /// [`Nullable`] wrapper allowing to distinguish between an implicit and
@@ -327,6 +327,17 @@ where
             Self::Some(v) => v.resolve_value_async(selection_set, type_info, executor),
             Self::ImplicitNull | Self::ExplicitNull => Box::pin(future::ok(graphql::Value::Null)),
         }
+    }
+}
+
+impl<T, SV, BH> resolve::Resolvable<SV, BH> for Nullable<T>
+where
+    BH: ?Sized,
+{
+    type Value = Self;
+
+    fn into_value(self) -> FieldResult<Self, SV> {
+        Ok(self)
     }
 }
 

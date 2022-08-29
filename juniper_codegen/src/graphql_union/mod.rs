@@ -18,7 +18,7 @@ use syn::{
 };
 
 use crate::common::{
-    filter_attrs, gen, behavior,
+    behavior, filter_attrs, gen,
     parse::{
         attr::{err, OptionExt as _},
         ParseBufferExt as _,
