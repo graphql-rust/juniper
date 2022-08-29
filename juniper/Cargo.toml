@@ -40,7 +40,7 @@ anyhow = { version = "1.0.32", default-features = false, optional = true }
 async-trait = "0.1.39"
 bigdecimal = { version = "0.3", optional = true }
 bson = { version = "2.4", features = ["chrono-0_4"], optional = true }
-chrono = { version = "0.4", features = ["alloc"], default-features = false, optional = true }
+chrono = { version = "0.4.20", features = ["alloc"], default-features = false, optional = true }
 chrono-tz = { version = "0.6", default-features = false, optional = true }
 fnv = "1.0.3"
 futures = { version = "0.3.22", features = ["alloc"], default-features = false }
@@ -62,7 +62,7 @@ getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 bencher = "0.1.2"
-chrono = { version = "0.4", features = ["alloc"], default-features = false }
+chrono = { version = "0.4.20", features = ["alloc"], default-features = false }
 pretty_assertions = "1.0.0"
 serde_json = "1.0.2"
 tokio = { version = "1.0", features = ["macros", "time", "rt-multi-thread"] }
