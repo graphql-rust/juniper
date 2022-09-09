@@ -15,7 +15,7 @@ use syn::{
 };
 
 use crate::common::{
-    behavior, default, filter_attrs,
+    behavior, default, filter_attrs, gen,
     parse::{
         attr::{err, OptionExt as _},
         ParseBufferExt as _,
@@ -520,9 +520,9 @@ impl Definition {
     fn impl_graphql_input_type(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
-        let (sv, generics) = self.mix_scalar_value(generics);
-        let (lt, mut generics) = self.mix_input_lifetime(generics, &sv);
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, &sv);
         generics.make_where_clause().predicates.push(parse_quote! {
             Self: ::juniper::resolve::Type<#inf, #sv, #bh>
                   + ::juniper::resolve::ToInputValue<#sv, #bh>
@@ -572,9 +572,9 @@ impl Definition {
     fn impl_graphql_input_object(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
-        let (sv, generics) = self.mix_scalar_value(generics);
-        let (lt, mut generics) = self.mix_input_lifetime(generics, &sv);
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, &sv);
         generics.make_where_clause().predicates.push(parse_quote! {
             Self: ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
         });
@@ -661,8 +661,8 @@ impl Definition {
     fn impl_resolve_type(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
-        let (sv, mut generics) = self.mix_scalar_value(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (sv, mut generics) = gen::mix_scalar_value(generics);
         let preds = &mut generics.make_where_clause().predicates;
         preds.push(parse_quote! { #sv: Clone });
         preds.push(parse_quote! {
@@ -751,7 +751,7 @@ impl Definition {
     fn impl_resolve_type_name(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -905,8 +905,8 @@ impl Definition {
     fn impl_resolve_input_value(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (sv, generics) = self.mix_scalar_value(generics);
-        let (lt, mut generics) = self.mix_input_lifetime(generics, &sv);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, &sv);
         generics.make_where_clause().predicates.push(parse_quote! {
             #sv: ::juniper::ScalarValue
         });
@@ -1033,7 +1033,7 @@ impl Definition {
     fn impl_resolve_to_input_value(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (sv, mut generics) = self.mix_scalar_value(generics);
+        let (sv, mut generics) = gen::mix_scalar_value(generics);
         for f in self.fields.iter().filter(|f| !f.ignored) {
             let field_ty = &f.ty;
             let field_bh = &f.behavior;
@@ -1224,41 +1224,5 @@ impl Definition {
             parse_quote! { #ident #ty_gen }
         };
         (ty, generics)
-    }
-
-    /// Mixes a type info [`syn::GenericParam`] into the provided
-    /// [`syn::Generics`] and returns its [`syn::Ident`].
-    fn mix_type_info(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
-        let ty = parse_quote! { __TypeInfo };
-        generics.params.push(parse_quote! { #ty: ?Sized });
-        (ty, generics)
-    }
-
-    /// Mixes a [`ScalarValue`] [`syn::GenericParam`] into the provided
-    /// [`syn::Generics`] and returns it.
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
-    fn mix_scalar_value(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
-        let sv = parse_quote! { __ScalarValue };
-        generics.params.push(parse_quote! { #sv });
-        (sv, generics)
-    }
-
-    /// Mixes an [`InputValue`]'s lifetime [`syn::GenericParam`] into the
-    /// provided [`syn::Generics`] and returns it.
-    ///
-    /// [`InputValue`]: juniper::resolve::InputValue
-    fn mix_input_lifetime(
-        &self,
-        mut generics: syn::Generics,
-        sv: &syn::Ident,
-    ) -> (syn::GenericParam, syn::Generics) {
-        let lt: syn::GenericParam = parse_quote! { '__inp };
-        generics.params.push(lt.clone());
-        generics
-            .make_where_clause()
-            .predicates
-            .push(parse_quote! { #sv: #lt });
-        (lt, generics)
     }
 }

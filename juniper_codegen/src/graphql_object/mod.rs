@@ -352,34 +352,8 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
 
     /// Returns prepared self [`syn::Type`] and [`syn::Generics`] for a trait
     /// implementation.
-    fn ty_and_generics(&self) -> (&syn::Type, syn::Generics) {
-        (&self.ty, self.generics.clone())
-    }
-
-    /// Mixes a type info [`syn::GenericParam`] into the provided
-    /// [`syn::Generics`] and returns its [`syn::Ident`].
-    fn mix_type_info(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
-        let ty = parse_quote! { __TypeInfo };
-        generics.params.push(parse_quote! { #ty: ?Sized });
-        (ty, generics)
-    }
-
-    /// Mixes a context [`syn::GenericParam`] into the provided
-    /// [`syn::Generics`] and returns its [`syn::Ident`].
-    fn mix_context(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
-        let ty = parse_quote! { __Context };
-        generics.params.push(parse_quote! { #ty: ?Sized });
-        (ty, generics)
-    }
-
-    /// Mixes a [`ScalarValue`] [`syn::GenericParam`] into the provided
-    /// [`syn::Generics`] and returns it.
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
-    fn mix_scalar_value(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
-        let sv = parse_quote! { __ScalarValue };
-        generics.params.push(parse_quote! { #sv });
-        (sv, generics)
+    fn ty_and_generics(&self) -> (syn::Type, syn::Generics) {
+        (self.ty.clone(), self.generics.clone())
     }
 
     /// Returns generated code implementing [`marker::IsOutputType`] trait for
@@ -599,108 +573,149 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             })
             .collect()
     }
-    /*
-        /// Returns generated code implementing [`resolve::StaticField`] trait for
-        /// each [field][1] of this [GraphQL object][0].
-        ///
-        /// [`resolve::StaticField`]: juniper::resolve::StaticField
-        /// [0]: https://spec.graphql.org/October2021#sec-Objects
-        /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
-        #[must_use]
-        pub(crate) fn impl_resolve_static_field(&self) -> TokenStream {
-            let bh = &self.behavior;
-            let (ty, generics) = self.ty_and_generics();
-            let (inf, generics) = self.mix_type_info(generics);
-            let (cx, generics) = self.mix_context(generics);
-            let (sv, generics) = self.mix_scalar_value(generics);
 
-            self.fields
-                .iter()
-                .map(|field| {
-                    let mut generics = generics.clone();
-                    let (f_name, f_bh) = (&field.name, &field.behavior);
-                    let (f_ident, f_ty) = (&field.ident, &field.ty);
+    /// Returns generated code implementing [`resolve::Value`] trait for this
+    /// [GraphQL object][0].
+    ///
+    /// [`resolve::Value`]: juniper::resolve::Value
+    /// [0]: https://spec.graphql.org/October2021#sec-Objects
+    pub(crate) fn impl_resolve_value(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
 
-                    let body = if !field.is_async {
-                        generics.make_where_clause().predicates.push(parse_quote! {
-                            #f_ty: ::juniper::resolve::Value<#inf, #cx, #sv, #f_bh>
-                        });
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
+             for #ty #where_clause
+            {
+                fn resolve_value(
+                    &self,
+                    _: Option<&[::juniper::Selection<'_, #sv>]>,
+                    _: &#inf,
+                    _: &::juniper::Executor<'_, '_, #cx, #sv>,
+                ) -> ::juniper::ExecutionResult<#sv> {
+                    todo!()
+                }
+            }
+        }
+    }
 
-                        let res = if field.is_method() {
-                            let args = field.arguments.as_ref().unwrap().iter().map(|arg| {
-                                match arg {
-                                    field::MethodArgument::Regular(arg) => {
-                                        let (a_ty, a_bh) = (&arg.ty, &arg.behavior);
-                                        generics.make_where_clause().predicates.push(parse_quote! {
-                                            #a_ty: ::juniper::resolve::InputValueOwned<#sv, #a_bh>
-                                        });
-                                        quote! {
-                                            args.resolve::<#a_ty, #a_bh>(#name)?
-                                        }
+    /// Returns generated code implementing [`resolve::StaticField`] trait for
+    /// each [field][1] of this [GraphQL object][0].
+    ///
+    /// [`resolve::StaticField`]: juniper::resolve::StaticField
+    /// [0]: https://spec.graphql.org/October2021#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
+    #[must_use]
+    pub(crate) fn impl_resolve_static_field(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+
+        self.fields
+            .iter()
+            .map(|field| {
+                let mut generics = generics.clone();
+                let (f_name, f_bh) = (&field.name, &field.behavior);
+                let (f_ident, f_ty) = (&field.ident, &field.ty);
+
+                let body = if !field.is_async {
+                    generics.make_where_clause().predicates.push(parse_quote! {
+                        #f_ty: ::juniper::resolve::Resolvable<#sv, #f_bh>
+                    });
+                    generics.make_where_clause().predicates.push(parse_quote! {
+                        <#f_ty as ::juniper::resolve::Resolvable<#sv, #f_bh>>::Value:
+                            ::juniper::resolve::Value<#inf, #cx, #sv, #f_bh>
+                    });
+
+                    let res = if field.is_method() {
+                        let args = field
+                            .arguments
+                            .as_ref()
+                            .unwrap()
+                            .iter()
+                            .map(|arg| match arg {
+                                field::MethodArgument::Regular(arg) => {
+                                    let a_name = &arg.name;
+                                    let (a_ty, a_bh) = (&arg.ty, &arg.behavior);
+                                    generics.make_where_clause().predicates.push(parse_quote! {
+                                        #a_ty: ::juniper::resolve::InputValueOwned<#sv, #a_bh>
+                                    });
+                                    quote! {
+                                        args.resolve::<#a_ty, #a_bh>(#a_name)?
                                     }
-                                    field::MethodArgument::Context(cx_ty) => {
-                                        generics.make_where_clause().predicates.push(parse_quote! {
-                                            #cx: ::juniper::Extract<#cx_ty>
-                                        });
-                                        quote! {
-                                            <#cx as ::juniper::Extract<#cx_ty>>
-                                                ::extract(executor.context())
-                                        }
+                                }
+                                field::MethodArgument::Context(cx_ty) => {
+                                    generics.make_where_clause().predicates.push(parse_quote! {
+                                        #cx: ::juniper::Extract<#cx_ty>
+                                    });
+                                    quote! {
+                                        <#cx as ::juniper::Extract<#cx_ty>>
+                                            ::extract(executor.context())
                                     }
-                                    field::MethodArgument::Executor => {
-                                        quote! {
-                                            executor
-                                        }
+                                }
+                                field::MethodArgument::Executor => {
+                                    quote! {
+                                        executor
                                     }
                                 }
                             });
 
-                            let rcv = field.has_receiver.then(|| {
-                                quote! { self, }
-                            });
-
-                            quote! { Self::#ident(#rcv #( #args ),*) }
-                        } else {
-                            quote! {
-                                &self.#f_ident
-                            }
-                        };
+                        let rcv = field.has_receiver.then(|| {
+                            quote! { self, }
+                        });
 
                         quote! {
-                            executor.resolve_value::<#f_bh, _, _>(#res, type_info)
+                            <#f_ty as ::juniper::resolve::Resolvable<#sv, #f_bh>>
+                                ::into_value(Self::#f_ident(#rcv #( #args ),*))?
                         }
                     } else {
                         quote! {
-                            ::std::panic!(
-                                 "Tried to resolve async field `{}` on type `{}` with a sync resolver",
-                                 #f_name,
-                                 <Self as ::juniper::reflect::BaseType<#bh>>::NAME,
-                             );
+                            &self.#f_ident
                         }
                     };
 
-                    let (impl_gens, _, where_clause) = generics.split_for_impl();
-
                     quote! {
-                        #[automatically_derived]
-                        impl #impl_gens ::juniper::resolve::StaticField<
-                            { ::juniper::reflect::fnv1a128(#f_name) },
-                            #inf, #cx, #sv, #bh,
-                        > for #ty #where_clause {
-                            fn resolve_static_field(
-                                &self,
-                                args: &::juniper::Arguments<'_, #sv>,
-                                type_info: &#inf,
-                                executor: &::juniper::Executor<'_, '_, #cx, #sv>,
-                            ) -> ::juniper::ExecutionResult<#sv> {
-                                #body
-                            }
+                        executor.resolve_value::<#f_bh, _, _>(#res, type_info)
+                    }
+                } else {
+                    quote! {
+                        ::std::panic!(
+                             "Tried to resolve async field `{}` on type `{}` with a sync resolver",
+                             #f_name,
+                             <Self as ::juniper::reflect::BaseType<#bh>>::NAME,
+                         );
+                    }
+                };
+
+                let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+                quote! {
+                    #[automatically_derived]
+                    impl #impl_gens ::juniper::resolve::StaticField<
+                        { ::juniper::reflect::fnv1a128(#f_name) },
+                        #inf, #cx, #sv, #bh,
+                    > for #ty #where_clause {
+                        fn resolve_static_field(
+                            &self,
+                            args: &::juniper::Arguments<'_, #sv>,
+                            type_info: &#inf,
+                            executor: &::juniper::Executor<'_, '_, #cx, #sv>,
+                        ) -> ::juniper::ExecutionResult<#sv> {
+                            #body
                         }
                     }
-                })
-                .collect()
-        }
-    */
+                }
+            })
+            .collect()
+    }
+
     /// Returns generated code implementing [`GraphQLType`] trait for this
     /// [GraphQL object][1].
     ///
@@ -780,9 +795,11 @@ impl ToTokens for Definition<Query> {
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
+        self.impl_resolve_value().to_tokens(into);
+        gen::impl_resolvable(&self.behavior, self.ty_and_generics()).to_tokens(into);
+        self.impl_resolve_static_field().to_tokens(into);
         self.impl_reflect().to_tokens(into);
         self.impl_reflect_field().to_tokens(into);
-        //self.impl_resolve_static_field().to_tokens(into);
     }
 }
 

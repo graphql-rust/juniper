@@ -395,6 +395,8 @@ impl ToTokens for Definition {
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
         ////////////////////////////////////////////////////////////////////////
+        self.impl_resolve_value().to_tokens(into);
+        gen::impl_resolvable(&self.behavior, self.ty_and_generics()).to_tokens(into);
         self.impl_reflect().to_tokens(into);
     }
 }
@@ -845,6 +847,36 @@ impl Definition {
                     executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     #downcast
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::Value`] trait for this
+    /// [GraphQL interface][0].
+    ///
+    /// [`resolve::Value`]: juniper::resolve::Value
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    fn impl_resolve_value(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
+             for #ty #where_clause
+            {
+                fn resolve_value(
+                    &self,
+                    _: Option<&[::juniper::Selection<'_, #sv>]>,
+                    _: &#inf,
+                    _: &::juniper::Executor<'_, '_, #cx, #sv>,
+                ) -> ::juniper::ExecutionResult<#sv> {
+                    todo!()
                 }
             }
         }

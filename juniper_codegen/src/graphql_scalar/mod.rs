@@ -2,6 +2,9 @@
 //!
 //! [1]: https://spec.graphql.org/October2021#sec-Scalars
 
+pub mod attr;
+pub mod derive;
+
 use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 use syn::{
@@ -15,16 +18,13 @@ use syn::{
 use url::Url;
 
 use crate::common::{
-    behavior, filter_attrs,
+    behavior, filter_attrs, gen,
     parse::{
         attr::{err, OptionExt as _},
         ParseBufferExt as _,
     },
     scalar, Description, SpanContainer,
 };
-
-pub mod attr;
-pub mod derive;
 
 /// Available arguments behind `#[graphql]`/`#[graphql_scalar]` attributes when
 /// generating code for [GraphQL scalar][1].
@@ -351,7 +351,7 @@ impl ToTokens for Definition {
         self.impl_resolve_type_name().to_tokens(into);
         self.impl_resolve_value().to_tokens(into);
         self.impl_resolve_value_async().to_tokens(into);
-        self.impl_resolvable().to_tokens(into);
+        gen::impl_resolvable(&self.behavior, self.ty_and_generics()).to_tokens(into);
         self.impl_resolve_to_input_value().to_tokens(into);
         self.impl_resolve_input_value().to_tokens(into);
         self.impl_resolve_scalar_token().to_tokens(into);
@@ -396,9 +396,9 @@ impl Definition {
     fn impl_graphql_input_type(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
         let (sv, generics) = self.mix_scalar_value(generics);
-        let (lt, mut generics) = self.mix_input_lifetime(generics, sv);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, sv);
         generics.make_where_clause().predicates.push(parse_quote! {
             Self: ::juniper::resolve::Type<#inf, #sv, #bh>
                   + ::juniper::resolve::ToInputValue<#sv, #bh>
@@ -425,8 +425,8 @@ impl Definition {
     fn impl_graphql_output_type(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
-        let (cx, generics) = self.mix_context(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
         let (sv, mut generics) = self.mix_scalar_value(generics);
         generics.make_where_clause().predicates.push(parse_quote! {
             Self: ::juniper::resolve::Type<#inf, #sv, #bh>
@@ -454,10 +454,10 @@ impl Definition {
     fn impl_graphql_scalar(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
-        let (cx, generics) = self.mix_context(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
         let (sv, generics) = self.mix_scalar_value(generics);
-        let (lt, mut generics) = self.mix_input_lifetime(generics, sv);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, sv);
         generics.make_where_clause().predicates.push(parse_quote! {
             Self: ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
                   + ::juniper::graphql::OutputType<#inf, #cx, #sv, #bh>
@@ -531,7 +531,7 @@ impl Definition {
     fn impl_resolve_type_name(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
@@ -554,7 +554,7 @@ impl Definition {
     fn impl_resolve_type(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
         let (sv, mut generics) = self.mix_scalar_value(generics);
         let preds = &mut generics.make_where_clause().predicates;
         preds.push(parse_quote! { #sv: Clone });
@@ -639,8 +639,8 @@ impl Definition {
     fn impl_resolve_value(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
-        let (cx, generics) = self.mix_context(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
         let (sv, mut generics) = self.mix_scalar_value(generics);
         generics
             .make_where_clause()
@@ -705,8 +705,8 @@ impl Definition {
     fn impl_resolve_value_async(&self) -> TokenStream {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
-        let (inf, generics) = self.mix_type_info(generics);
-        let (cx, generics) = self.mix_context(generics);
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
         let (sv, mut generics) = self.mix_scalar_value(generics);
         let preds = &mut generics.make_where_clause().predicates;
         preds.push(parse_quote! {
@@ -734,31 +734,6 @@ impl Definition {
                         <Self as ::juniper::resolve::Value<#inf, #cx, #sv, #bh>>
                             ::resolve_value(self, sel_set, type_info, executor);
                     ::std::boxed::Box::pin(::juniper::futures::future::ready(v))
-                }
-            }
-        }
-    }
-
-    /// Returns generated code implementing [`resolve::Resolvable`] trait for
-    /// this [GraphQL scalar][0].
-    ///
-    /// [`resolve::Resolvable`]: juniper::resolve::Resolvable
-    /// [0]: https://spec.graphql.org/October2021#sec-Scalars
-    fn impl_resolvable(&self) -> TokenStream {
-        let bh = &self.behavior;
-        let (ty, generics) = self.ty_and_generics();
-        let (sv, generics) = self.mix_scalar_value(generics);
-        let (impl_gens, _, where_clause) = generics.split_for_impl();
-
-        quote! {
-            #[automatically_derived]
-            impl #impl_gens ::juniper::resolve::Resolvable<#sv, #bh>
-             for #ty #where_clause
-            {
-                type Value = Self;
-
-                fn into_value(self) -> ::juniper::FieldResult<Self, #sv> {
-                    ::juniper::FieldResult::Ok(self)
                 }
             }
         }
@@ -855,7 +830,7 @@ impl Definition {
         let bh = &self.behavior;
         let (ty, generics) = self.ty_and_generics();
         let (sv, generics) = self.mix_scalar_value(generics);
-        let (lt, mut generics) = self.mix_input_lifetime(generics, sv);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, sv);
         generics
             .make_where_clause()
             .predicates
@@ -1111,24 +1086,6 @@ impl Definition {
         (ty, generics)
     }
 
-    /// Mixes a type info [`syn::GenericParam`] into the provided
-    /// [`syn::Generics`] and returns its [`syn::Ident`].
-    #[must_use]
-    fn mix_type_info(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
-        let ty = parse_quote! { __TypeInfo };
-        generics.params.push(parse_quote! { #ty: ?Sized });
-        (ty, generics)
-    }
-
-    /// Mixes a context [`syn::GenericParam`] into the provided
-    /// [`syn::Generics`] and returns its [`syn::Ident`].
-    #[must_use]
-    fn mix_context(&self, mut generics: syn::Generics) -> (syn::Ident, syn::Generics) {
-        let ty = parse_quote! { __Context };
-        generics.params.push(parse_quote! { #ty: ?Sized });
-        (ty, generics)
-    }
-
     /// Mixes a [`ScalarValue`] [`syn::GenericParam`] into the provided
     /// [`syn::Generics`] and returns it.
     ///
@@ -1142,25 +1099,6 @@ impl Definition {
         let sv = &self.scalar_value;
         generics.params.push(parse_quote! { #sv });
         (sv, generics)
-    }
-
-    /// Mixes an [`InputValue`]'s lifetime [`syn::GenericParam`] into the
-    /// provided [`syn::Generics`] and returns it.
-    ///
-    /// [`InputValue`]: juniper::resolve::InputValue
-    #[must_use]
-    fn mix_input_lifetime(
-        &self,
-        mut generics: syn::Generics,
-        sv: &ScalarValue,
-    ) -> (syn::GenericParam, syn::Generics) {
-        let lt: syn::GenericParam = parse_quote! { '__inp };
-        generics.params.push(lt.clone());
-        generics
-            .make_where_clause()
-            .predicates
-            .push(parse_quote! { #sv: #lt });
-        (lt, generics)
     }
 }
 
