@@ -323,7 +323,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                 // Modify lifetime names to omit "lifetime name `'a` shadows a
                 // lifetime name that is already in scope" error.
                 let mut ty = self.ty.clone();
-                ty.lifetimes_iter_mut(&mut |lt| {
+                ty.named_lifetimes_iter_mut(&mut |lt| {
                     let ident = lt.ident.unraw();
                     lt.ident = format_ident!("__fa__{ident}");
                     lifetimes.push(lt.clone());

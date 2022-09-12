@@ -7,7 +7,7 @@ pub(crate) mod downcaster;
 use std::{any::TypeId, iter, mem};
 
 use proc_macro2::Span;
-use quote::quote;
+use quote::{quote, format_ident};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseBuffer},
@@ -105,14 +105,28 @@ pub(crate) trait TypeExt {
     #[must_use]
     fn unreferenced(&self) -> &Self;
 
-    /// Iterates mutably over all the lifetime parameters of this [`syn::Type`]
-    /// with the given `func`tion.
-    fn lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F);
+    /// Iterates mutably over all the lifetime parameters (even implicit) of
+    /// this [`syn::Type`] with the given `func`tion.
+    fn lifetimes_iter_mut<F: FnMut(&mut Option<syn::Lifetime>)>(&mut self, func: &mut F);
+
+    /// Iterates mutably over all the named lifetime parameters (explicit only)
+    /// of this [`syn::Type`] with the given `func`tion.
+    fn named_lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F) {
+        self.lifetimes_iter_mut(&mut |lt| {
+            if let Some(lt) = lt {
+                func(lt);
+            }
+        })
+    }
 
     /// Anonymizes all the lifetime parameters of this [`syn::Type`] (except
     /// the `'static` ones), making it suitable for using in contexts with
     /// inferring.
     fn lifetimes_anonymized(&mut self);
+
+    /// Lifts all the lifetimes of this [`syn::Type`] (except `'static`) to a
+    /// `for<>` quantifier, preserving the type speciality as much as possible.
+    fn to_hrtb_lifetimes(&self) -> (Option<syn::BoundLifetimes>, syn::Type);
 
     /// Returns the topmost [`syn::Ident`] of this [`syn::TypePath`], if any.
     #[must_use]
@@ -135,7 +149,7 @@ impl TypeExt for syn::Type {
         }
     }
 
-    fn lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F) {
+    fn lifetimes_iter_mut<F: FnMut(&mut Option<syn::Lifetime>)>(&mut self, func: &mut F) {
         use syn::{GenericArgument as GA, Type as T};
 
         fn iter_path<F: FnMut(&mut syn::Lifetime)>(path: &mut syn::Path, func: &mut F) {
@@ -213,11 +227,34 @@ impl TypeExt for syn::Type {
     }
 
     fn lifetimes_anonymized(&mut self) {
-        self.lifetimes_iter_mut(&mut |lt| {
+        self.named_lifetimes_iter_mut(&mut |lt| {
             if lt.ident != "_" && lt.ident != "static" {
                 lt.ident = syn::Ident::new("_", Span::call_site());
             }
         });
+    }
+
+    fn to_hrtb_lifetimes(&self) -> (Option<syn::BoundLifetimes>, syn::Type) {
+        let mut ty = self.clone();
+        let mut lts = vec![];
+
+        let anon_ident = &syn::Ident::new("_", Span::call_site());
+
+        ty.lifetimes_iter_mut(&mut |lt| {
+            let ident = lt.map(|l| l.ident).unwrap_or(anon_ident);
+            if ident != "static" {
+                let ident = format_ident!("__fa_f_{ident}");
+                if !lts.contains(&ident) {
+                    lts.push(ident);
+                }
+                *lt = Some(parse_quote! { '#ident })
+            }
+        });
+
+        let for_ = (!lts.is_empty()).then(|| parse_quote! {
+            for< #( #lts ),* >}
+        );
+        (for_, ty)
     }
 
     fn topmost_ident(&self) -> Option<&syn::Ident> {
