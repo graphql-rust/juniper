@@ -84,7 +84,7 @@ jobs:
           toolchain: stable
           override: true
 
-      - run: cargo clippy -p juniper_benchmarks --benches -- -D warning
+      - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
       - run: cargo bench -p juniper_benchmarks
 
   example:
