@@ -17,7 +17,7 @@ pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<Body>,
-) -> Response<Body>
+) -> Response<String>
 where
     QueryT: GraphQLType<S, Context = CtxT>,
     QueryT::TypeInfo: Sync,
@@ -38,7 +38,7 @@ pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<Body>,
-) -> Response<Body>
+) -> Response<String>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Sync,
@@ -57,7 +57,7 @@ where
 
 async fn parse_req<S: ScalarValue>(
     req: Request<Body>,
-) -> Result<GraphQLBatchRequest<S>, Response<Body>> {
+) -> Result<GraphQLBatchRequest<S>, Response<String>> {
     match *req.method() {
         Method::GET => parse_get_req(req),
         Method::POST => {
@@ -121,32 +121,27 @@ async fn parse_post_graphql_req<S: ScalarValue>(
 pub async fn graphiql(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
-) -> Response<Body> {
+) -> Response<String> {
     let mut resp = new_html_response(StatusCode::OK);
     // XXX: is the call to graphiql_source blocking?
-    *resp.body_mut() = Body::from(juniper::http::graphiql::graphiql_source(
-        graphql_endpoint,
-        subscriptions_endpoint,
-    ));
+    *resp.body_mut() =
+        juniper::http::graphiql::graphiql_source(graphql_endpoint, subscriptions_endpoint);
     resp
 }
 
 pub async fn playground(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
-) -> Response<Body> {
+) -> Response<String> {
     let mut resp = new_html_response(StatusCode::OK);
-    *resp.body_mut() = Body::from(juniper::http::playground::playground_source(
-        graphql_endpoint,
-        subscriptions_endpoint,
-    ));
+    *resp.body_mut() =
+        juniper::http::playground::playground_source(graphql_endpoint, subscriptions_endpoint);
     resp
 }
 
-fn render_error(err: GraphQLRequestError) -> Response<Body> {
-    let message = err.to_string();
+fn render_error(err: GraphQLRequestError) -> Response<String> {
     let mut resp = new_response(StatusCode::BAD_REQUEST);
-    *resp.body_mut() = Body::from(message);
+    *resp.body_mut() = err.to_string();
     resp
 }
 
@@ -154,7 +149,7 @@ async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
-) -> Response<Body>
+) -> Response<String>
 where
     QueryT: GraphQLType<S, Context = CtxT>,
     QueryT::TypeInfo: Sync,
@@ -166,7 +161,7 @@ where
     S: ScalarValue + Send + Sync,
 {
     let res = request.execute_sync(&*root_node, &context);
-    let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
+    let body = serde_json::to_string_pretty(&res).unwrap();
     let code = if res.is_ok() {
         StatusCode::OK
     } else {
@@ -185,7 +180,7 @@ async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
-) -> Response<Body>
+) -> Response<String>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Sync,
@@ -197,7 +192,7 @@ where
     S: ScalarValue + Send + Sync,
 {
     let res = request.execute(&*root_node, &context).await;
-    let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
+    let body = serde_json::to_string_pretty(&res).unwrap();
     let code = if res.is_ok() {
         StatusCode::OK
     } else {
@@ -260,13 +255,13 @@ fn invalid_err(parameter_name: &str) -> GraphQLRequestError {
     ))
 }
 
-fn new_response(code: StatusCode) -> Response<Body> {
-    let mut r = Response::new(Body::empty());
+fn new_response(code: StatusCode) -> Response<String> {
+    let mut r = Response::new(String::new());
     *r.status_mut() = code;
     r
 }
 
-fn new_html_response(code: StatusCode) -> Response<Body> {
+fn new_html_response(code: StatusCode) -> Response<String> {
     let mut resp = new_response(code);
     resp.headers_mut().insert(
         header::CONTENT_TYPE,
@@ -313,7 +308,7 @@ mod tests {
     use hyper::{
         server::Server,
         service::{make_service_fn, service_fn},
-        Body, Method, Response, StatusCode,
+        Method, Response, StatusCode,
     };
     use juniper::{
         http::tests as http_tests,
@@ -409,7 +404,7 @@ mod tests {
                                 super::graphql(root_node, ctx, req).await
                             }
                         } else {
-                            let mut resp = Response::new(Body::empty());
+                            let mut resp = Response::new(String::new());
                             *resp.status_mut() = StatusCode::NOT_FOUND;
                             resp
                         })
