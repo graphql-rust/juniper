@@ -3,7 +3,7 @@ use std::{convert::Infallible, sync::Arc};
 use hyper::{
     server::Server,
     service::{make_service_fn, service_fn},
-    Body, Method, Response, StatusCode,
+    Method, Response, StatusCode,
 };
 use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
@@ -38,7 +38,7 @@ async fn main() {
                             juniper_hyper::graphql(root_node, ctx, req).await
                         }
                         _ => {
-                            let mut response = Response::new(Body::empty());
+                            let mut response = Response::new(String::new());
                             *response.status_mut() = StatusCode::NOT_FOUND;
                             response
                         }
