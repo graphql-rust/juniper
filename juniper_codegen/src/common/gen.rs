@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::parse_quote;
 
-use crate::common::{behavior};
+use crate::common::behavior;
 
 /// Returns generated code implementing [`resolve::Resolvable`] trait for the
 /// provided [`syn::Type`] with its [`syn::Generics`].
