@@ -141,7 +141,7 @@ impl<'a, S: ScalarValue + 'a> SchemaType<'a, S> {
         self.description.as_deref()
     }
 
-    fn types(&self) -> Vec<TypeType<S>> {
+    fn types(&self) -> Vec<TypeType<'_, S>> {
         self.type_list()
             .into_iter()
             .filter(|t| {
@@ -156,21 +156,21 @@ impl<'a, S: ScalarValue + 'a> SchemaType<'a, S> {
     }
 
     #[graphql(name = "queryType")]
-    fn query_type_(&self) -> TypeType<S> {
+    fn query_type_(&self) -> TypeType<'_, S> {
         self.query_type()
     }
 
     #[graphql(name = "mutationType")]
-    fn mutation_type_(&self) -> Option<TypeType<S>> {
+    fn mutation_type_(&self) -> Option<TypeType<'_, S>> {
         self.mutation_type()
     }
 
     #[graphql(name = "subscriptionType")]
-    fn subscription_type_(&self) -> Option<TypeType<S>> {
+    fn subscription_type_(&self) -> Option<TypeType<'_, S>> {
         self.subscription_type()
     }
 
-    fn directives(&self) -> Vec<&DirectiveType<S>> {
+    fn directives(&self) -> Vec<&DirectiveType<'_, S>> {
         self.directive_list()
     }
 }
@@ -214,7 +214,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn fields(
         &self,
         #[graphql(default = false)] include_deprecated: Option<bool>,
-    ) -> Option<Vec<&Field<S>>> {
+    ) -> Option<Vec<&Field<'_, S>>> {
         match self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
             | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
@@ -231,14 +231,14 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn of_type(&self) -> Option<&TypeType<S>> {
+    fn of_type(&self) -> Option<&TypeType<'_, S>> {
         match self {
             TypeType::Concrete(_) => None,
             TypeType::List(l, _) | TypeType::NonNull(l) => Some(&**l),
         }
     }
 
-    fn input_fields(&self) -> Option<&[Argument<S>]> {
+    fn input_fields(&self) -> Option<&[Argument<'_, S>]> {
         match self {
             TypeType::Concrete(&MetaType::InputObject(InputObjectMeta {
                 ref input_fields,
@@ -343,7 +343,7 @@ impl<'a, S: ScalarValue + 'a> Field<'a, S> {
         self.description.as_deref()
     }
 
-    fn args(&self) -> Vec<&Argument<S>> {
+    fn args(&self) -> Vec<&Argument<'_, S>> {
         self.arguments
             .as_ref()
             .map_or_else(Vec::new, |v| v.iter().collect())
@@ -434,7 +434,7 @@ impl<'a, S: ScalarValue + 'a> DirectiveType<'a, S> {
         self.is_repeatable
     }
 
-    fn args(&self) -> &[Argument<S>] {
+    fn args(&self) -> &[Argument<'_, S>] {
         &self.arguments
     }
 

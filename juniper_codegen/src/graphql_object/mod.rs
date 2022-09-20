@@ -21,7 +21,7 @@ use crate::common::{
     behavior, field, filter_attrs, gen,
     parse::{
         attr::{err, OptionExt as _},
-        GenericsExt as _, ParseBufferExt as _, TypeExt,
+        GenericsExt as _, ParseBufferExt as _, TypeExt as _,
     },
     rename, scalar, Description, SpanContainer,
 };
@@ -626,15 +626,18 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                 let (f_ident, f_ty) = (&field.ident, &field.ty);
 
                 let body = if !field.is_async {
+                    let (f_for_ty, f_hrtb_ty) = f_ty.to_hrtb_lifetimes();
                     generics.make_where_clause().predicates.push(parse_quote! {
-                        #f_ty: ::juniper::resolve::Resolvable<#sv, #f_bh>
+                        #f_for_ty #f_hrtb_ty:
+                            ::juniper::resolve::Resolvable<#sv, #f_bh>
                     });
                     generics.make_where_clause().predicates.push(parse_quote! {
-                        <#f_ty as ::juniper::resolve::Resolvable<#sv, #f_bh>>::Value:
+                        #f_for_ty <#f_hrtb_ty as ::juniper::resolve::Resolvable<#sv, #f_bh>>::Value:
                             ::juniper::resolve::Value<#inf, #cx, #sv, #f_bh>
                     });
 
-                    let res = if field.is_method() {
+                    let val = if field.is_method() {
+                        let f_anon_ty = f_ty.to_anonymized_lifetimes();
                         let args = field
                             .arguments
                             .as_ref()
@@ -666,23 +669,22 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
                                     }
                                 }
                             });
-
                         let rcv = field.has_receiver.then(|| {
                             quote! { self, }
                         });
 
                         quote! {
-                            <#f_ty as ::juniper::resolve::Resolvable<#sv, #f_bh>>
+                            <#f_anon_ty as ::juniper::resolve::Resolvable<#sv, #f_bh>>
                                 ::into_value(Self::#f_ident(#rcv #( #args ),*))?
                         }
                     } else {
                         quote! {
-                            &self.#f_ident
+                            self.#f_ident
                         }
                     };
 
                     quote! {
-                        executor.resolve_value::<#f_bh, _, _>(#res, type_info)
+                        executor.resolve_value::<#f_bh, _, _>(&#val, type_info)
                     }
                 } else {
                     quote! {

@@ -124,9 +124,16 @@ pub(crate) trait TypeExt {
     /// inferring.
     fn lifetimes_anonymized(&mut self);
 
+    /// Anonymizes all the lifetime parameters of this [`syn::Type`] (except
+    /// the `'static` ones), making it suitable for using in contexts with
+    /// inferring, and returns it as a new type, leaving the original one
+    /// unchanged.
+    fn to_anonymized_lifetimes(&self) -> syn::Type;
+
     /// Lifts all the lifetimes of this [`syn::Type`] (even elided, but except
     /// `'static`) to a `for<>` quantifier, preserving the type speciality as
-    /// much as possible.
+    /// much as possible, and returns it as a new type, leaving the original one
+    /// unchanged.
     fn to_hrtb_lifetimes(&self) -> (Option<syn::BoundLifetimes>, syn::Type);
 
     /// Returns the topmost [`syn::Ident`] of this [`syn::TypePath`], if any.
@@ -231,6 +238,12 @@ impl TypeExt for syn::Type {
                 lt.ident = syn::Ident::new("_", Span::call_site());
             }
         });
+    }
+
+    fn to_anonymized_lifetimes(&self) -> syn::Type {
+        let mut ty = self.clone();
+        ty.lifetimes_anonymized();
+        ty
     }
 
     fn to_hrtb_lifetimes(&self) -> (Option<syn::BoundLifetimes>, syn::Type) {
