@@ -21,7 +21,7 @@ pub struct User {
     name: String,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 pub struct Database {
     ///this could be a database connection
     users: HashMap<i32, User>,
@@ -33,28 +33,28 @@ impl Database {
             1,
             User {
                 id: 1,
-                name: "Aron".to_string(),
+                name: "Aron".into(),
             },
         );
         users.insert(
             2,
             User {
                 id: 2,
-                name: "Bea".to_string(),
+                name: "Bea".into(),
             },
         );
         users.insert(
             3,
             User {
                 id: 3,
-                name: "Carl".to_string(),
+                name: "Carl".into(),
             },
         );
         users.insert(
             4,
             User {
                 id: 4,
-                name: "Dora".to_string(),
+                name: "Dora".into(),
             },
         );
         Database { users }

@@ -1,6 +1,5 @@
 #![doc = include_str!("../README.md")]
-#![deny(missing_docs)]
-#![deny(warnings)]
+#![deny(missing_docs, warnings)]
 
 mod client_message;
 pub use client_message::*;
@@ -14,13 +13,8 @@ pub use schema::*;
 mod utils;
 
 use std::{
-    collections::HashMap,
-    convert::{Infallible, TryInto},
-    error::Error,
-    marker::PhantomPinned,
-    pin::Pin,
-    sync::Arc,
-    time::Duration,
+    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
+    sync::Arc, time::Duration,
 };
 
 use juniper::{
@@ -292,9 +286,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
     }
 
     async fn start(id: String, params: ExecutionParams<S>) -> BoxStream<'static, Reaction<S>> {
-        // TODO: This could be made more efficient if juniper exposed functionality to allow us to
-        // parse and validate the query, determine whether it's a subscription, and then execute
-        // it. For now, the query gets parsed and validated twice.
+        // TODO: This could be made more efficient if `juniper` exposed
+        //       functionality to allow us to parse and validate the query,
+        //       determine whether it's a subscription, and then execute it.
+        //       For now, the query gets parsed and validated twice.
 
         let params = Arc::new(params);
 
@@ -319,8 +314,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             Err(e) => {
                 return Reaction::ServerMessage(ServerMessage::Error {
                     id: id.clone(),
-                    // e only references data owned by params. The new ErrorPayload will continue to keep that data alive.
-                    payload: unsafe { ErrorPayload::new_unchecked(Box::new(params.clone()), e) },
+                    payload: ErrorPayload::new(Box::new(params.clone()), e),
                 })
                 .into_stream();
             }
@@ -358,10 +352,7 @@ enum SubscriptionStartState<S: Schema> {
         id: String,
         future: BoxFuture<
             'static,
-            Result<
-                juniper_subscriptions::Connection<'static, S::ScalarValue>,
-                GraphQLError<'static>,
-            >,
+            Result<juniper_subscriptions::Connection<'static, S::ScalarValue>, GraphQLError>,
         >,
     },
     /// Streaming is the state after we've successfully obtained the event stream for the
@@ -441,10 +432,7 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                             return Poll::Ready(Some(Reaction::ServerMessage(
                                 ServerMessage::Error {
                                     id: id.clone(),
-                                    // e only references data owned by params. The new ErrorPayload will continue to keep that data alive.
-                                    payload: unsafe {
-                                        ErrorPayload::new_unchecked(Box::new(params.clone()), e)
-                                    },
+                                    payload: ErrorPayload::new(Box::new(params.clone()), e),
                                 },
                             )));
                         }
@@ -629,7 +617,7 @@ mod test {
     use juniper::{
         futures::sink::SinkExt,
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
-        parser::{ParseError, Spanning, Token},
+        parser::{ParseError, Spanning},
         DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode,
     };
 
@@ -710,9 +698,9 @@ mod test {
         assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
         conn.send(ClientMessage::Start {
-            id: "foo".to_string(),
+            id: "foo".into(),
             payload: StartPayload {
-                query: "{context}".to_string(),
+                query: "{context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -722,7 +710,7 @@ mod test {
 
         assert_eq!(
             ServerMessage::Data {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
@@ -732,9 +720,7 @@ mod test {
         );
 
         assert_eq!(
-            ServerMessage::Complete {
-                id: "foo".to_string(),
-            },
+            ServerMessage::Complete { id: "foo".into() },
             conn.next().await.unwrap()
         );
     }
@@ -755,9 +741,9 @@ mod test {
         assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
         conn.send(ClientMessage::Start {
-            id: "foo".to_string(),
+            id: "foo".into(),
             payload: StartPayload {
-                query: "subscription Foo {context}".to_string(),
+                query: "subscription Foo {context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -767,7 +753,7 @@ mod test {
 
         assert_eq!(
             ServerMessage::Data {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
@@ -777,9 +763,9 @@ mod test {
         );
 
         conn.send(ClientMessage::Start {
-            id: "bar".to_string(),
+            id: "bar".into(),
             payload: StartPayload {
-                query: "subscription Bar {context}".to_string(),
+                query: "subscription Bar {context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -789,7 +775,7 @@ mod test {
 
         assert_eq!(
             ServerMessage::Data {
-                id: "bar".to_string(),
+                id: "bar".into(),
                 payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
@@ -798,16 +784,12 @@ mod test {
             conn.next().await.unwrap()
         );
 
-        conn.send(ClientMessage::Stop {
-            id: "foo".to_string(),
-        })
-        .await
-        .unwrap();
+        conn.send(ClientMessage::Stop { id: "foo".into() })
+            .await
+            .unwrap();
 
         assert_eq!(
-            ServerMessage::Complete {
-                id: "foo".to_string(),
-            },
+            ServerMessage::Complete { id: "foo".into() },
             conn.next().await.unwrap()
         );
     }
@@ -844,7 +826,7 @@ mod test {
         assert_eq!(
             ServerMessage::ConnectionError {
                 payload: ConnectionErrorPayload {
-                    message: "init error".to_string(),
+                    message: "init error".into(),
                 },
             },
             conn.next().await.unwrap()
@@ -869,9 +851,9 @@ mod test {
         assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
         conn.send(ClientMessage::Start {
-            id: "foo".to_string(),
+            id: "foo".into(),
             payload: StartPayload {
-                query: "subscription Foo {never}".to_string(),
+                query: "subscription Foo {never}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -880,9 +862,9 @@ mod test {
         .unwrap();
 
         conn.send(ClientMessage::Start {
-            id: "bar".to_string(),
+            id: "bar".into(),
             payload: StartPayload {
-                query: "subscription Bar {never}".to_string(),
+                query: "subscription Bar {never}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -894,7 +876,7 @@ mod test {
             ServerMessage::Error { id, .. } => {
                 assert_eq!(id, "bar");
             }
-            msg @ _ => panic!("expected error, got: {:?}", msg),
+            msg @ _ => panic!("expected error, got: {msg:?}"),
         }
     }
 
@@ -914,9 +896,9 @@ mod test {
         assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
         conn.send(ClientMessage::Start {
-            id: "foo".to_string(),
+            id: "foo".into(),
             payload: StartPayload {
-                query: "asd".to_string(),
+                query: "asd".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -929,13 +911,13 @@ mod test {
                 assert_eq!(id, "foo");
                 match payload.graphql_error() {
                     GraphQLError::ParseError(Spanning {
-                        item: ParseError::UnexpectedToken(Token::Name("asd")),
+                        item: ParseError::UnexpectedToken(token),
                         ..
-                    }) => {}
-                    p @ _ => panic!("expected graphql parse error, got: {:?}", p),
+                    }) => assert_eq!(token, "asd"),
+                    p @ _ => panic!("expected graphql parse error, got: {p:?}"),
                 }
             }
-            msg @ _ => panic!("expected error, got: {:?}", msg),
+            msg @ _ => panic!("expected error, got: {msg:?}"),
         }
     }
 
@@ -977,9 +959,9 @@ mod test {
 
         // If we send the start message before the init is handled, we should still get results.
         conn.send(ClientMessage::Start {
-            id: "foo".to_string(),
+            id: "foo".into(),
             payload: StartPayload {
-                query: "{context}".to_string(),
+                query: "{context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -991,7 +973,7 @@ mod test {
 
         assert_eq!(
             ServerMessage::Data {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
@@ -1017,9 +999,9 @@ mod test {
         assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
         conn.send(ClientMessage::Start {
-            id: "foo".to_string(),
+            id: "foo".into(),
             payload: StartPayload {
-                query: "subscription Foo {error}".to_string(),
+                query: "subscription Foo {error}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
             },
@@ -1036,7 +1018,7 @@ mod test {
                 assert_eq!(data, graphql_value!({ "error": null }));
                 assert_eq!(errors.len(), 1);
             }
-            msg @ _ => panic!("expected data, got: {:?}", msg),
+            msg @ _ => panic!("expected data, got: {msg:?}"),
         }
     }
 }

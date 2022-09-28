@@ -12,7 +12,7 @@ use juniper_warp::{playground_filter, subscriptions::serve_graphql_ws};
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
-struct Context {}
+struct Context;
 
 impl juniper::Context for Context {}
 
@@ -46,7 +46,7 @@ impl User {
 
     async fn friends(&self) -> Vec<User> {
         if self.id == 1 {
-            return vec![
+            vec![
                 User {
                     id: 11,
                     kind: UserKind::User,
@@ -62,15 +62,15 @@ impl User {
                     kind: UserKind::Guest,
                     name: "user13".into(),
                 },
-            ];
+            ]
         } else if self.id == 2 {
-            return vec![User {
+            vec![User {
                 id: 21,
                 kind: UserKind::User,
                 name: "user21".into(),
-            }];
+            }]
         } else if self.id == 3 {
-            return vec![
+            vec![
                 User {
                     id: 31,
                     kind: UserKind::User,
@@ -81,9 +81,9 @@ impl User {
                     kind: UserKind::Guest,
                     name: "user32".into(),
                 },
-            ];
+            ]
         } else {
-            return vec![];
+            vec![]
         }
     }
 }
@@ -123,7 +123,7 @@ impl Subscription {
                     yield Ok(User {
                         id: counter,
                         kind: UserKind::Admin,
-                        name: "stream user".to_string(),
+                        name: "stream user".into(),
                     })
                 }
             }
@@ -149,11 +149,11 @@ async fn main() {
     let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body("<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>".to_string())
+            .body("<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>")
     });
 
     let qm_schema = schema();
-    let qm_state = warp::any().map(move || Context {});
+    let qm_state = warp::any().map(|| Context);
     let qm_graphql_filter = juniper_warp::make_graphql_filter(qm_schema, qm_state.boxed());
 
     let root_node = Arc::new(schema());
@@ -165,10 +165,10 @@ async fn main() {
         .map(move |ws: warp::ws::Ws| {
             let root_node = root_node.clone();
             ws.on_upgrade(move |websocket| async move {
-                serve_graphql_ws(websocket, root_node, ConnectionConfig::new(Context {}))
+                serve_graphql_ws(websocket, root_node, ConnectionConfig::new(Context))
                     .map(|r| {
                         if let Err(e) = r {
-                            println!("Websocket error: {}", e);
+                            println!("Websocket error: {e}");
                         }
                     })
                     .await

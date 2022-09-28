@@ -1,7 +1,7 @@
 use std::{
     borrow::Cow,
     collections::{HashMap, HashSet},
-    fmt::Debug,
+    fmt,
 };
 
 use crate::{
@@ -17,15 +17,7 @@ pub enum Scope<'a> {
     Fragment(&'a str),
 }
 
-pub struct VariableInAllowedPosition<'a, S: Debug + 'a> {
-    spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
-    variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String>, Type<'a>)>>,
-    #[allow(clippy::type_complexity)]
-    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
-    current_scope: Option<Scope<'a>>,
-}
-
-pub fn factory<'a, S: Debug>() -> VariableInAllowedPosition<'a, S> {
+pub fn factory<'a, S: fmt::Debug>() -> VariableInAllowedPosition<'a, S> {
     VariableInAllowedPosition {
         spreads: HashMap::new(),
         variable_usages: HashMap::new(),
@@ -34,16 +26,54 @@ pub fn factory<'a, S: Debug>() -> VariableInAllowedPosition<'a, S> {
     }
 }
 
-impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
-    fn collect_incorrect_usages(
-        &self,
+pub struct VariableInAllowedPosition<'a, S: fmt::Debug + 'a> {
+    spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String>, Type<'a>)>>,
+    #[allow(clippy::type_complexity)]
+    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
+    current_scope: Option<Scope<'a>>,
+}
+
+impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
+    fn collect_incorrect_usages<'me>(
+        &'me self,
         from: &Scope<'a>,
         var_defs: &[&'a (Spanning<&'a str>, VariableDefinition<S>)],
         ctx: &mut ValidatorContext<'a, S>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
+        let mut to_visit = Vec::new();
+        if let Some(spreads) = self.collect_incorrect_usages_inner(from, var_defs, ctx, visited) {
+            to_visit.push(spreads);
+        }
+
+        while let Some(spreads) = to_visit.pop() {
+            for spread in spreads {
+                if let Some(spreads) = self.collect_incorrect_usages_inner(
+                    &Scope::Fragment(spread),
+                    var_defs,
+                    ctx,
+                    visited,
+                ) {
+                    to_visit.push(spreads);
+                }
+            }
+        }
+    }
+
+    /// This function should be called only inside
+    /// [`Self::collect_incorrect_usages()`], as it's a recursive function using
+    /// heap instead of a stack. So, instead of the recursive call, we return a
+    /// [`Vec`] that is visited inside [`Self::collect_incorrect_usages()`].
+    fn collect_incorrect_usages_inner<'me>(
+        &'me self,
+        from: &Scope<'a>,
+        var_defs: &[&'a (Spanning<&'a str>, VariableDefinition<S>)],
+        ctx: &mut ValidatorContext<'a, S>,
+        visited: &mut HashSet<Scope<'a>>,
+    ) -> Option<&'me HashSet<&'a str>> {
         if visited.contains(from) {
-            return;
+            return None;
         }
 
         visited.insert(from.clone());
@@ -66,11 +96,7 @@ impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
 
                     if !ctx.schema.is_subtype(&expected_type, var_type) {
                         ctx.report_error(
-                            &error_message(
-                                var_name.item,
-                                &format!("{}", expected_type),
-                                &format!("{}", var_type),
-                            ),
+                            &error_message(var_name.item, expected_type, var_type),
                             &[var_def_name.start, var_name.start],
                         );
                     }
@@ -78,11 +104,7 @@ impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
             }
         }
 
-        if let Some(spreads) = self.spreads.get(from) {
-            for spread in spreads {
-                self.collect_incorrect_usages(&Scope::Fragment(spread), var_defs, ctx, visited);
-            }
-        }
+        self.spreads.get(from)
     }
 }
 
@@ -157,10 +179,13 @@ where
     }
 }
 
-fn error_message(var_name: &str, type_name: &str, expected_type_name: &str) -> String {
+fn error_message(
+    var_name: impl fmt::Display,
+    type_name: impl fmt::Display,
+    expected_type_name: impl fmt::Display,
+) -> String {
     format!(
-        "Variable \"{}\" of type \"{}\" used in position expecting type \"{}\"",
-        var_name, type_name, expected_type_name
+        "Variable \"{var_name}\" of type \"{type_name}\" used in position expecting type \"{expected_type_name}\"",
     )
 }
 

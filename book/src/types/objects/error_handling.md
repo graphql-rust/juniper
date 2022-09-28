@@ -60,7 +60,7 @@ there - those errors are automatically converted into `FieldError`.
 
 ## Error payloads, `null`, and partial errors
 
-Juniper's error behavior conforms to the [GraphQL specification](https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability).
+Juniper's error behavior conforms to the [GraphQL specification](https://spec.graphql.org/October2021#sec-Handling-Field-Errors).
 
 When a field returns an error, the field's result is replaced by `null`, an
 additional `errors` object is created at the top level of the response, and the
@@ -168,7 +168,7 @@ impl Example {
 # fn main() {}
 ```
 
-The specified structured error information is included in the [`extensions`](https://facebook.github.io/graphql/June2018/#sec-Errors) key:
+The specified structured error information is included in the [`extensions`](https://spec.graphql.org/October2021#sec-Errors) key:
 
 ```json
 {
@@ -242,15 +242,15 @@ impl Mutation {
 
         if !(10 <= name.len() && name.len() <= 100) {
             errors.push(ValidationError {
-                field: "name".to_string(),
-                message: "between 10 and 100".to_string()
+                field: "name".into(),
+                message: "between 10 and 100".into(),
             });
         }
 
         if !(1 <= quantity && quantity <= 10) {
             errors.push(ValidationError {
-                field: "quantity".to_string(),
-                message: "between 1 and 10".to_string()
+                field: "quantity".into(),
+                message: "between 1 and 10".into(),
             });
         }
 
@@ -338,11 +338,11 @@ impl Mutation {
         };
 
         if !(10 <= name.len() && name.len() <= 100) {
-            error.name = Some("between 10 and 100".to_string());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 <= quantity && quantity <= 10) {
-            error.quantity = Some("between 1 and 10".to_string());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() && error.quantity.is_none() {
@@ -436,11 +436,11 @@ impl Mutation {
         };
 
         if !(10 <= name.len() && name.len() <= 100) {
-            error.name = Some("between 10 and 100".to_string());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 <= quantity && quantity <= 10) {
-            error.quantity = Some("between 1 and 10".to_string());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() && error.quantity.is_none() {

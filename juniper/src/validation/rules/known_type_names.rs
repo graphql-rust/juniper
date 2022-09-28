@@ -56,7 +56,7 @@ fn validate_type<'a, S: Debug>(
 }
 
 fn error_message(type_name: &str) -> String {
-    format!(r#"Unknown type "{}""#, type_name)
+    format!(r#"Unknown type "{type_name}""#)
 }
 
 #[cfg(test)]

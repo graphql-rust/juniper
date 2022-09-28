@@ -4,4 +4,4 @@ error: GraphQL union expects at least one union variant
 4 | struct Character;
   | ^^^^^^^^^^^^^^^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Unions
+  = note: https://spec.graphql.org/October2021#sec-Unions

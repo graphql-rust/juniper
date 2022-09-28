@@ -1,3 +1,5 @@
+use std::future;
+
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
@@ -30,7 +32,7 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_field_async<'a>(
         &'a self,
         _info: &'a Self::TypeInfo,
@@ -54,9 +56,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -91,8 +93,8 @@ where
     ///
     /// The default implementation panics, if `selection_set` is [`None`].
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [0]: https://spec.graphql.org/October2021#sec-Handling-Field-Errors
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -226,7 +228,7 @@ where
                     panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
-                        meta_type.name()
+                        meta_type.name(),
                     )
                 });
 
@@ -242,7 +244,9 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
+                            .filter_map(|&(ref k, ref v)| {
+                                v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
+                            })
                             .collect()
                     }),
                     &meta_field.arguments,
@@ -252,7 +256,7 @@ where
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                async_values.push(AsyncValueFuture::Field(async move {
+                async_values.push_back(AsyncValueFuture::Field(async move {
                     // TODO: implement custom future type instead of
                     //       two-level boxing.
                     let res = instance
@@ -315,12 +319,12 @@ where
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
-                            async_values.push(AsyncValueFuture::FragmentSpread(async move {
-                                AsyncValue::Field(AsyncField {
+                            async_values.push_back(AsyncValueFuture::FragmentSpread(
+                                future::ready(AsyncValue::Field(AsyncField {
                                     name: k,
                                     value: Some(v),
-                                })
-                            }));
+                                })),
+                            ));
                         }
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, *start_pos);
@@ -360,19 +364,19 @@ where
 
                         if let Ok(Value::Object(obj)) = sub_result {
                             for (k, v) in obj {
-                                async_values.push(AsyncValueFuture::InlineFragment1(async move {
-                                    AsyncValue::Field(AsyncField {
+                                async_values.push_back(AsyncValueFuture::InlineFragment1(
+                                    future::ready(AsyncValue::Field(AsyncField {
                                         name: k,
                                         value: Some(v),
-                                    })
-                                }));
+                                    })),
+                                ));
                             }
                         } else if let Err(e) = sub_result {
                             sub_exec.push_error_at(e, *start_pos);
                         }
                     }
                 } else {
-                    async_values.push(AsyncValueFuture::InlineFragment2(async move {
+                    async_values.push_back(AsyncValueFuture::InlineFragment2(async move {
                         let value = resolve_selection_set_into_async(
                             instance,
                             info,

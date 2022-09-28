@@ -1,0 +1,26 @@
+error[E0391]: cycle detected when expanding type alias `Node1Value`
+  --> fail/interface/trait/cyclic_impl.rs:3:46
+   |
+3  | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+   |                                              ^^^^^^^^^^
+   |
+note: ...which requires expanding type alias `Node2Value`...
+  --> fail/interface/trait/cyclic_impl.rs:8:46
+   |
+8  | #[graphql_interface(impl = Node1Value, for = Node1Value)]
+   |                                              ^^^^^^^^^^
+   = note: ...which again requires expanding type alias `Node1Value`, completing the cycle
+   = note: type aliases cannot be recursive
+   = help: consider using a struct, enum, or union instead to break the cycle
+   = help: see <https://doc.rust-lang.org/reference/types.html#recursive-types> for more information
+note: cycle used when collecting item types in top-level module
+  --> fail/interface/trait/cyclic_impl.rs:1:1
+   |
+1  | / use juniper::graphql_interface;
+2  | |
+3  | | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+4  | | trait Node1 {
+...  |
+12 | |
+13 | | fn main() {}
+   | |____________^

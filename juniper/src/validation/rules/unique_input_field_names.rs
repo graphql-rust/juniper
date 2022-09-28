@@ -53,7 +53,7 @@ where
 type SpannedObject<'a, S> = Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>;
 
 fn error_message(field_name: &str) -> String {
-    format!("There can only be one input field named \"{}\"", field_name)
+    format!("There can only be one input field named \"{field_name}\"")
 }
 
 #[cfg(test)]

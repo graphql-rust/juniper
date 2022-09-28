@@ -23,7 +23,7 @@ impl TestComplexScalar {
         v.as_string_value()
             .filter(|s| *s == "SerializedValue")
             .map(|_| Self)
-            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {}"#, v))
+            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {v}"#))
     }
 }
 
@@ -49,7 +49,7 @@ struct ExampleInputObject {
 
 #[derive(GraphQLInputObject, Debug)]
 struct InputWithDefaults {
-    #[graphql(default = "123")]
+    #[graphql(default = 123)]
     a: i32,
 }
 
@@ -58,41 +58,47 @@ struct TestType;
 #[graphql_object]
 impl TestType {
     fn field_with_object_input(input: Option<TestInputObject>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn field_with_nullable_string_input(input: Option<String>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn field_with_non_nullable_string_input(input: String) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn field_with_default_argument_value(
         #[graphql(default = "Hello World")] input: String,
     ) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
+    }
+
+    fn nullable_field_with_default_argument_value(
+        #[graphql(default = "Hello World".to_owned())] input: Option<String>,
+    ) -> String {
+        format!("{input:?}")
     }
 
     fn field_with_nested_object_input(input: Option<TestNestedInputObject>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn list(input: Option<Vec<Option<String>>>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn nn_list(input: Vec<Option<String>>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn list_nn(input: Option<Vec<String>>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn nn_list_nn(input: Vec<String>) -> String {
-        format!("{:?}", input)
+        format!("{input:?}")
     }
 
     fn example_input(arg: ExampleInputObject) -> String {
@@ -104,11 +110,11 @@ impl TestType {
     }
 
     fn integer_input(value: i32) -> String {
-        format!("value: {}", value)
+        format!("value: {value}")
     }
 
     fn float_input(value: f64) -> String {
-        format!("value: {}", value)
+        format!("value: {value}")
     }
 }
 
@@ -128,7 +134,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {result:?}");
 
     let obj = result.as_object_value().expect("Result is not an object");
 
@@ -791,13 +797,14 @@ async fn default_argument_when_not_provided() {
 }
 
 #[tokio::test]
-async fn default_argument_when_nullable_variable_not_provided() {
-    run_query(
-        r#"query q($input: String) { fieldWithDefaultArgumentValue(input: $input) }"#,
+async fn provided_variable_overwrites_default_value() {
+    run_variable_query(
+        r#"query q($input: String!) { fieldWithDefaultArgumentValue(input: $input) }"#,
+        graphql_vars! {"input": "Overwritten"},
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&graphql_value!(r#""Hello World""#)),
+                Some(&graphql_value!(r#""Overwritten""#)),
             );
         },
     )
@@ -805,14 +812,28 @@ async fn default_argument_when_nullable_variable_not_provided() {
 }
 
 #[tokio::test]
-async fn default_argument_when_nullable_variable_set_to_null() {
+async fn default_argument_when_nullable_variable_not_provided() {
+    run_query(
+        r#"query q($input: String) { nullableFieldWithDefaultArgumentValue(input: $input) }"#,
+        |result| {
+            assert_eq!(
+                result.get_field_value("nullableFieldWithDefaultArgumentValue"),
+                Some(&graphql_value!(r#"Some("Hello World")"#)),
+            );
+        },
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn null_when_nullable_variable_of_argument_with_default_value_set_to_null() {
     run_variable_query(
-        r#"query q($input: String) { fieldWithDefaultArgumentValue(input: $input) }"#,
+        r#"query q($input: String) { nullableFieldWithDefaultArgumentValue(input: $input) }"#,
         graphql_vars! {"input": null},
         |result| {
             assert_eq!(
-                result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&graphql_value!(r#""Hello World""#)),
+                result.get_field_value("nullableFieldWithDefaultArgumentValue"),
+                Some(&graphql_value!(r#"None"#)),
             );
         },
     )

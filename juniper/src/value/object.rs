@@ -1,4 +1,4 @@
-use std::{iter::FromIterator, mem};
+use std::mem;
 
 use super::Value;
 use indexmap::map::{IndexMap, IntoIter};

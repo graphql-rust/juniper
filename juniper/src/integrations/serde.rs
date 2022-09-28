@@ -1,8 +1,4 @@
-use std::{
-    convert::{TryFrom as _, TryInto as _},
-    fmt,
-    marker::PhantomData,
-};
+use std::{fmt, marker::PhantomData};
 
 use indexmap::IndexMap;
 use serde::{
@@ -42,7 +38,7 @@ impl<T: Serialize> Serialize for ExecutionError<T> {
     }
 }
 
-impl<'a> Serialize for GraphQLError<'a> {
+impl Serialize for GraphQLError {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         #[derive(Serialize)]
         struct Helper {
@@ -247,11 +243,11 @@ impl Serialize for SourcePosition {
     }
 }
 
-impl<'a> Serialize for Spanning<ParseError<'a>> {
+impl Serialize for Spanning<ParseError> {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         let mut map = ser.serialize_map(Some(2))?;
 
-        let msg = format!("{}", self.item);
+        let msg = self.item.to_string();
         map.serialize_key("message")?;
         map.serialize_value(&msg)?;
 
@@ -396,7 +392,7 @@ mod tests {
     #[test]
     fn error_extensions() {
         let mut obj: Object<DefaultScalarValue> = Object::with_capacity(1);
-        obj.add_field("foo".to_string(), Value::scalar("bar"));
+        obj.add_field("foo", Value::scalar("bar"));
         assert_eq!(
             to_string(&ExecutionError::at_origin(FieldError::new(
                 "foo error",

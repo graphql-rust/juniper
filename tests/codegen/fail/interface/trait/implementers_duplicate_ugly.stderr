@@ -18,4 +18,4 @@ error[E0119]: conflicting implementations of trait `<CharacterValueEnum<ObjA, Ob
    | first implementation here
    | conflicting implementation for `ObjA`
    |
-   = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` which comes from the expansion of the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)

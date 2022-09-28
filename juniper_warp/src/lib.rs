@@ -44,7 +44,7 @@ use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 ///         format!(
 ///             "good morning {}, the app state is {:?}",
 ///             context.1,
-///             context.0
+///             context.0,
 ///         )
 ///     }
 /// }
@@ -108,7 +108,7 @@ where
         let schema = post_graphql_schema.clone();
         async move {
             let query = str::from_utf8(body.as_ref())
-                .map_err(|e| anyhow!("Request body query is not a valid UTF-8 string: {}", e))?;
+                .map_err(|e| anyhow!("Request body query is not a valid UTF-8 string: {e}"))?;
             let req = GraphQLRequest::new(query.into(), None, None);
 
             let resp = req.execute(&schema, &context).await;
@@ -192,7 +192,7 @@ where
         async move {
             let res = task::spawn_blocking(move || {
                 let query = str::from_utf8(body.as_ref())
-                    .map_err(|e| anyhow!("Request body is not a valid UTF-8 string: {}", e))?;
+                    .map_err(|e| anyhow!("Request body is not a valid UTF-8 string: {e}"))?;
                 let req = GraphQLRequest::new(query.into(), None, None);
 
                 let resp = req.execute_sync(&schema, &context);
@@ -359,7 +359,7 @@ pub mod subscriptions {
 
     struct Message(warp::ws::Message);
 
-    impl<S: ScalarValue> std::convert::TryFrom<Message> for ClientMessage<S> {
+    impl<S: ScalarValue> TryFrom<Message> for ClientMessage<S> {
         type Error = serde_json::Error;
 
         fn try_from(msg: Message) -> serde_json::Result<Self> {
@@ -381,8 +381,8 @@ pub mod subscriptions {
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Self::Warp(e) => write!(f, "warp error: {}", e),
-                Self::Serde(e) => write!(f, "serde error: {}", e),
+                Self::Warp(e) => write!(f, "warp error: {e}"),
+                Self::Serde(e) => write!(f, "serde error: {e}"),
             }
         }
     }
@@ -711,7 +711,7 @@ mod tests_http_harness {
             const QUERY_ENCODE_SET: &AsciiSet =
                 &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
 
-            let url = Url::parse(&format!("http://localhost:3000{}", url)).expect("url to parse");
+            let url = Url::parse(&format!("http://localhost:3000{url}")).expect("url to parse");
 
             let url: String = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
                 .into_iter()
@@ -721,7 +721,7 @@ mod tests_http_harness {
             self.make_request(
                 warp::test::request()
                     .method("GET")
-                    .path(&format!("/?{}", url)),
+                    .path(&format!("/?{url}")),
             )
         }
 
@@ -756,7 +756,7 @@ mod tests_http_harness {
                 .expect("missing content-type header in warp response")
                 .to_str()
                 .expect("invalid content-type string")
-                .to_owned(),
+                .into(),
         }
     }
 

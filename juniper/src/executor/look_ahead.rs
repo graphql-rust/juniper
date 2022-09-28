@@ -10,7 +10,7 @@ use super::Variables;
 
 /// An enum that describes if a field is available in all types of the interface
 /// or only in a certain subtype
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Applies<'a> {
     /// The field is available independent from the type
     All,
@@ -112,12 +112,11 @@ pub struct LookAheadSelection<'a, S: 'a> {
     pub(super) children: Vec<ChildSelection<'a, S>>,
 }
 
-impl<'a, S> Default for LookAheadSelection<'a, S>
-where
-    S: ScalarValue,
-{
+// Implemented manually to omit redundant `S: Default` trait bound, imposed by
+// `#[derive(Default)]`.
+impl<'a, S: 'a> Default for LookAheadSelection<'a, S> {
     fn default() -> Self {
-        LookAheadSelection {
+        Self {
             name: "",
             alias: None,
             arguments: vec![],

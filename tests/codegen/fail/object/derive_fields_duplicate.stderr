@@ -8,4 +8,4 @@ error: GraphQL object must have a different name for each field
 8 | | }
   | |_^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Objects
+  = note: https://spec.graphql.org/October2021#sec-Objects

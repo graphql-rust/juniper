@@ -47,7 +47,7 @@ see the [actix][actix_examples], [hyper][hyper_examples], [rocket][rocket_exampl
 ## Features
 
 Juniper supports the full GraphQL query language according to the
-[specification][graphql_spec], including interfaces, unions, schema
+[specification (October 2021)][graphql_spec], including interfaces, unions, schema
 introspection, and validations. It can also output the schema in the [GraphQL Schema Language][schema_language].
 
 As an exception to other GraphQL libraries for other languages, Juniper builds
@@ -97,7 +97,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [graphiql]: https://github.com/graphql/graphiql
 [playground]: https://github.com/prisma/graphql-playground
 [iron]: https://github.com/iron/iron
-[graphql_spec]: http://facebook.github.io/graphql
+[graphql_spec]: https://spec.graphql.org/October2021
 [schema_language]: https://graphql.org/learn/schema/#type-language
 [schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/fixtures/starwars/schema.rs

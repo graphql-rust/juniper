@@ -66,7 +66,7 @@ type Schema = juniper::RootNode<
 
 fn main() {
     // Create a context object.
-    let ctx = Context{};
+    let ctx = Context;
 
     // Run the built-in introspection query.
     let (res, _errors) = juniper::introspect(

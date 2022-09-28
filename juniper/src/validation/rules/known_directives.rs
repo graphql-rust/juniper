@@ -154,14 +154,11 @@ where
 }
 
 fn unknown_error_message(directive_name: &str) -> String {
-    format!(r#"Unknown directive "{}""#, directive_name)
+    format!(r#"Unknown directive "{directive_name}""#)
 }
 
 fn misplaced_error_message(directive_name: &str, location: &DirectiveLocation) -> String {
-    format!(
-        r#"Directive "{}" may not be used on {}"#,
-        directive_name, location
-    )
+    format!(r#"Directive "{directive_name}" may not be used on {location}"#)
 }
 
 #[cfg(test)]

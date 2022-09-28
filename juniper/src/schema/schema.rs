@@ -211,13 +211,19 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn fields(&self, #[graphql(default)] include_deprecated: bool) -> Option<Vec<&Field<S>>> {
+    fn fields(
+        &self,
+        #[graphql(default = false)] include_deprecated: Option<bool>,
+    ) -> Option<Vec<&Field<S>>> {
         match self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
             | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
                 fields
                     .iter()
-                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
+                    .filter(|f| {
+                        include_deprecated.unwrap_or_default()
+                            || !f.deprecation_status.is_deprecated()
+                    })
                     .filter(|f| !f.name.starts_with("__"))
                     .collect(),
             ),
@@ -228,7 +234,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn of_type(&self) -> Option<&TypeType<S>> {
         match self {
             TypeType::Concrete(_) => None,
-            TypeType::List(l, _) | TypeType::NonNull(l) => Some(&*l),
+            TypeType::List(l, _) | TypeType::NonNull(l) => Some(&**l),
         }
     }
 
@@ -244,10 +250,16 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
     fn interfaces<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
-            TypeType::Concrete(&MetaType::Object(ObjectMeta {
-                ref interface_names,
-                ..
-            })) => Some(
+            TypeType::Concrete(
+                &MetaType::Object(ObjectMeta {
+                    ref interface_names,
+                    ..
+                })
+                | &MetaType::Interface(InterfaceMeta {
+                    ref interface_names,
+                    ..
+                }),
+            ) => Some(
                 interface_names
                     .iter()
                     .filter_map(|n| context.type_by_name(n))
@@ -276,16 +288,16 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                     .iter()
                     .filter_map(|&ct| {
                         if let MetaType::Object(ObjectMeta {
-                            ref name,
-                            ref interface_names,
+                            name,
+                            interface_names,
                             ..
-                        }) = *ct
+                        }) = ct
                         {
-                            if interface_names.contains(&iface_name.to_string()) {
-                                context.type_by_name(name)
-                            } else {
-                                None
-                            }
+                            interface_names
+                                .iter()
+                                .any(|name| name == iface_name)
+                                .then(|| context.type_by_name(name))
+                                .flatten()
                         } else {
                             None
                         }
@@ -296,12 +308,18 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn enum_values(&self, #[graphql(default)] include_deprecated: bool) -> Option<Vec<&EnumValue>> {
+    fn enum_values(
+        &self,
+        #[graphql(default = false)] include_deprecated: Option<bool>,
+    ) -> Option<Vec<&EnumValue>> {
         match self {
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
                 values
                     .iter()
-                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
+                    .filter(|f| {
+                        include_deprecated.unwrap_or_default()
+                            || !f.deprecation_status.is_deprecated()
+                    })
                     .collect(),
             ),
             _ => None,

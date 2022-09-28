@@ -16,10 +16,11 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
     - Removed support for `dyn` attribute argument (interface values as trait objects).
     - Removed support for `downcast` attribute argument (custom resolution into implementer types).
     - Removed support for `async` trait methods (not required anymore).
-    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now).
+    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now). ([#113])
     - Forbade default implementations of non-ignored trait methods.
     - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
     - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
+    - Supported interfaces implementing other interfaces. ([#1028])
 - Split `#[derive(GraphQLScalarValue)]` macro into: 
     - `#[derive(GraphQLScalar)]` for implementing GraphQL scalar: ([#1017]) 
         - Supported generic `ScalarValue`.
@@ -41,6 +42,7 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 - All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
 
+[#113]: /../../issues/113
 [#971]: /../../pull/971
 [#985]: /../../pull/985
 [#987]: /../../pull/987
@@ -51,6 +53,7 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 [#1017]: /../../pull/1017
 [#1025]: /../../pull/1025
 [#1026]: /../../pull/1026
+[#1028]: /../../pull/1028
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
 

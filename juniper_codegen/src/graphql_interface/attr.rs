@@ -6,20 +6,16 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-use crate::{
-    common::{
-        field,
-        parse::{self, TypeExt as _},
-        scalar,
-    },
-    result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, RenameRule},
+use crate::common::{
+    diagnostic, field,
+    parse::{self, TypeExt as _},
+    path_eq_single, rename, scalar, SpanContainer,
 };
 
 use super::{enum_idents, Attr, Definition};
 
-/// [`GraphQLScope`] of errors for `#[graphql_interface]` macro.
-const ERR: GraphQLScope = GraphQLScope::InterfaceAttr;
+/// [`diagnostic::Scope`] of errors for `#[graphql_interface]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::InterfaceAttr;
 
 /// Expands `#[graphql_interface]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
@@ -55,7 +51,8 @@ fn expand_on_trait(
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| trait_ident.unraw().to_string());
+        .unwrap_or_else(|| trait_ident.unraw().to_string())
+        .into_boxed_str();
     if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             attr.name
@@ -73,7 +70,7 @@ fn expand_on_trait(
         .rename_fields
         .as_deref()
         .copied()
-        .unwrap_or(RenameRule::CamelCase);
+        .unwrap_or(rename::Policy::CamelCase);
 
     let fields = ast
         .items
@@ -120,17 +117,22 @@ fn expand_on_trait(
         enum_ident,
         enum_alias_ident,
         name,
-        description: attr.description.as_deref().cloned(),
+        description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
         fields,
         implemented_for: attr
             .implemented_for
-            .iter()
-            .map(|c| c.inner().clone())
+            .into_iter()
+            .map(SpanContainer::into_inner)
+            .collect(),
+        implements: attr
+            .implements
+            .into_iter()
+            .map(SpanContainer::into_inner)
             .collect(),
         suppress_dead_code: None,
-        src_intra_doc_link: format!("trait@{}", trait_ident),
+        src_intra_doc_link: format!("trait@{trait_ident}").into_boxed_str(),
     };
 
     Ok(quote! {
@@ -145,7 +147,7 @@ fn expand_on_trait(
 #[must_use]
 fn parse_trait_method(
     method: &mut syn::TraitItemMethod,
-    renaming: &RenameRule,
+    renaming: &rename::Policy,
 ) -> Option<field::Definition> {
     let method_ident = &method.sig.ident;
     let method_attrs = method.attrs.clone();
@@ -199,17 +201,11 @@ fn parse_trait_method(
     };
     ty.lifetimes_anonymized();
 
-    let description = attr.description.as_ref().map(|d| d.as_ref().value());
-    let deprecated = attr
-        .deprecated
-        .as_deref()
-        .map(|d| d.as_ref().map(syn::LitStr::value));
-
     Some(field::Definition {
         name,
         ty,
-        description,
-        deprecated,
+        description: attr.description.map(SpanContainer::into_inner),
+        deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: method_ident.clone(),
         arguments: Some(arguments),
         has_receiver: method.sig.receiver().is_some(),
@@ -242,7 +238,8 @@ fn expand_on_derive_input(
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| struct_ident.unraw().to_string());
+        .unwrap_or_else(|| struct_ident.unraw().to_string())
+        .into_boxed_str();
     if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             attr.name
@@ -260,7 +257,7 @@ fn expand_on_derive_input(
         .rename_fields
         .as_deref()
         .copied()
-        .unwrap_or(RenameRule::CamelCase);
+        .unwrap_or(rename::Policy::CamelCase);
 
     let fields = data
         .fields
@@ -301,17 +298,22 @@ fn expand_on_derive_input(
         enum_ident,
         enum_alias_ident,
         name,
-        description: attr.description.as_deref().cloned(),
+        description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
         fields,
         implemented_for: attr
             .implemented_for
-            .iter()
-            .map(|c| c.inner().clone())
+            .into_iter()
+            .map(SpanContainer::into_inner)
+            .collect(),
+        implements: attr
+            .implements
+            .into_iter()
+            .map(SpanContainer::into_inner)
             .collect(),
         suppress_dead_code: None,
-        src_intra_doc_link: format!("struct@{}", struct_ident),
+        src_intra_doc_link: format!("struct@{struct_ident}").into_boxed_str(),
     };
 
     Ok(quote! {
@@ -325,7 +327,10 @@ fn expand_on_derive_input(
 ///
 /// Returns [`None`] if the parsing fails, or the struct field is ignored.
 #[must_use]
-fn parse_struct_field(field: &mut syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
+fn parse_struct_field(
+    field: &mut syn::Field,
+    renaming: &rename::Policy,
+) -> Option<field::Definition> {
     let field_ident = field.ident.as_ref().or_else(|| err_unnamed_field(&field))?;
     let field_attrs = field.attrs.clone();
 
@@ -361,17 +366,11 @@ fn parse_struct_field(field: &mut syn::Field, renaming: &RenameRule) -> Option<f
     let mut ty = field.ty.clone();
     ty.lifetimes_anonymized();
 
-    let description = attr.description.as_ref().map(|d| d.as_ref().value());
-    let deprecated = attr
-        .deprecated
-        .as_deref()
-        .map(|d| d.as_ref().map(syn::LitStr::value));
-
     Some(field::Definition {
         name,
         ty,
-        description,
-        deprecated,
+        description: attr.description.map(SpanContainer::into_inner),
+        deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: field_ident.clone(),
         arguments: None,
         has_receiver: false,

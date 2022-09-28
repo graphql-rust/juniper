@@ -97,6 +97,7 @@ Context cannot be specified by a mutable reference, because concurrent fields re
 For example, when using async runtime with [work stealing][2] (like `tokio`), which obviously requires thread safety in addition, you will need to use a corresponding async version of `RwLock`:
 ```rust
 # extern crate juniper;
+# extern crate tokio;
 # use std::collections::HashMap;
 # use juniper::graphql_object;
 use tokio::sync::RwLock;

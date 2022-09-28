@@ -16,18 +16,15 @@ where
         s,
         &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
     )
-    .expect(&format!("Parse error on input {:#?}", s))
+    .expect(&format!("Parse error on input {s:#?}"))
 }
 
-fn parse_document_error<'a, S>(s: &'a str) -> Spanning<ParseError<'a>>
-where
-    S: ScalarValue,
-{
+fn parse_document_error<S: ScalarValue>(s: &str) -> Spanning<ParseError> {
     match parse_document_source::<S>(
         s,
         &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
     ) {
-        Ok(doc) => panic!("*No* parse error on input {:#?} =>\n{:#?}", s, doc),
+        Ok(doc) => panic!("*No* parse error on input {s:#?} =>\n{doc:#?}"),
         Err(err) => err,
     }
 }
@@ -136,7 +133,7 @@ fn errors() {
         Spanning::start_end(
             &SourcePosition::new(36, 1, 19),
             &SourcePosition::new(40, 1, 23),
-            ParseError::UnexpectedToken(Token::Name("Type"))
+            ParseError::UnexpectedToken("Type".into())
         )
     );
 
@@ -145,7 +142,7 @@ fn errors() {
         Spanning::start_end(
             &SourcePosition::new(8, 0, 8),
             &SourcePosition::new(9, 0, 9),
-            ParseError::UnexpectedToken(Token::CurlyClose)
+            ParseError::unexpected_token(Token::CurlyClose)
         )
     );
 }

@@ -76,9 +76,9 @@ struct FieldDescription {
 
 #[derive(GraphQLInputObject, Debug)]
 struct FieldWithDefaults {
-    #[graphql(default = "123")]
+    #[graphql(default = 123)]
     field_one: i32,
-    #[graphql(default = "456", description = "The second field")]
+    #[graphql(default = 456, description = "The second field")]
     field_two: i32,
 }
 
@@ -117,7 +117,7 @@ where
     F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let schema = RootNode::new(
-        Root {},
+        Root,
         EmptyMutation::<()>::new(),
         EmptySubscription::<()>::new(),
     );
@@ -128,7 +128,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -312,7 +312,7 @@ fn derive_derived() {
         format!(
             "{:?}",
             Derive {
-                field_one: "test".to_owned(),
+                field_one: "test".into(),
             },
         ),
         "Derive { field_one: \"test\" }"
@@ -462,6 +462,9 @@ async fn field_with_defaults_introspection() {
                 name
                 type {
                     name
+                    ofType {
+                        name
+                    }
                 }
                 defaultValue
             }
@@ -477,12 +480,12 @@ async fn field_with_defaults_introspection() {
         assert_eq!(fields.len(), 2);
         assert!(fields.contains(&graphql_value!({
             "name": "fieldOne",
-            "type": {"name": "Int"},
+            "type": {"name": null, "ofType": {"name": "Int"}},
             "defaultValue": "123",
         })));
         assert!(fields.contains(&graphql_value!({
             "name": "fieldTwo",
-            "type": {"name": "Int"},
+            "type": {"name": null, "ofType": {"name": "Int"}},
             "defaultValue": "456",
         })));
     })

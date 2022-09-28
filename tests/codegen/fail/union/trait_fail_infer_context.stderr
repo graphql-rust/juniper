@@ -23,6 +23,6 @@ error[E0308]: mismatched types
 note: associated function defined here
    --> $WORKSPACE/juniper/src/executor/mod.rs
     |
-    |     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
-    |        ^^^^
+    |     fn into_resolvable(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
+    |        ^^^^^^^^^^^^^^^
     = note: this error originates in the attribute macro `graphql_union` (in Nightly builds, run with -Z macro-backtrace for more info)
