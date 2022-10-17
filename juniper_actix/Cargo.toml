@@ -31,8 +31,8 @@ futures = "0.3.22"
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0-dev", path = "../juniper_graphql_ws", optional = true }
 http = "0.2.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { version = "1.0.103", features = ["derive"] }
+serde_json = "1.0.18"
 thiserror = "1.0"
 tokio = { version = "1.0", features = ["sync"], optional = true }
 
