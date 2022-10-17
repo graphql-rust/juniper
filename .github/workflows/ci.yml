@@ -47,9 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
           components: clippy
 
@@ -59,9 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: nightly
           components: rustfmt
 
@@ -78,11 +76,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
 
       - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
       - run: cargo bench -p juniper_benchmarks
@@ -107,11 +103,10 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
+      - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo check -p example_${{ matrix.example }}
 
@@ -141,11 +136,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
 
       # TODO: Enable once MSRV is supported.
       #- run: cargo +nightly update -Z minimal-versions
@@ -162,9 +155,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
 
       - name: Parse crate name
@@ -211,11 +203,10 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
+      - run: rustup default ${{ matrix.toolchain }}
 
       - run: make test.cargo crate=${{ matrix.crate }}
 
@@ -237,11 +228,10 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
+      - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo install mdbook
 
@@ -261,12 +251,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          target: wasm32-unknown-unknown
-          override: true
+          targets: wasm32-unknown-unknown
+      - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo check --target wasm32-unknown-unknown -p ${{ matrix.crate }}
 
@@ -278,7 +267,7 @@ jobs:
   #############
 
   release-check:
-    name: Check release automation
+    name: check release
     if: ${{ !startsWith(github.ref, 'refs/tags/juniper') }}
     strategy:
       fail-fast: false
@@ -296,9 +285,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
 
       - run: cargo install cargo-release
@@ -306,8 +294,29 @@ jobs:
       - run: make cargo.release crate=${{ matrix.crate }} ver=minor
                                 exec=no install=no
 
+  release-crate:
+    name: release on crates.io
+    needs: ["release-github"]
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Parse crate name
+        id: crate
+        run: echo ::set-output
+                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
+                                                    | cut -d '@' -f1)
+
+      - name: Publish crate
+        run: cargo publish -p ${{ steps.crate.outputs.NAME }}
+                           --token ${{ secrets.CRATESIO_TOKEN }}
+
   release-github:
-    name: Release on GitHub
+    name: release on GitHub
     needs:
       - bench
       - clippy
@@ -351,28 +360,6 @@ jobs:
             [API docs](https://docs.rs/${{ steps.crate.outputs.NAME }}/${{ steps.release.outputs.VERSION }})
             [Changelog](${{ steps.changelog.outputs.LINK }})
           prerelease: ${{ contains(steps.release.outputs.VERSION, '-') }}
-
-  release-crate:
-    name: Release on crates.io
-    needs: ["release-github"]
-    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-
-      - name: Parse crate name
-        id: crate
-        run: echo ::set-output
-                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
-                                                    | cut -d '@' -f1)
-
-      - name: Publish crate
-        run: cargo publish -p ${{ steps.crate.outputs.NAME }}
-                           --token ${{ secrets.CRATESIO_TOKEN }}
 
 
 
