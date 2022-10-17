@@ -27,6 +27,7 @@ jobs:
       - clippy
       - example
       - feature
+      - msrv
       - release-check
       - rustfmt
       - test
@@ -139,9 +140,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
 
-      # TODO: Enable once MSRV is supported.
-      #- run: cargo +nightly update -Z minimal-versions
+      - run: cargo +nightly update -Z minimal-versions
 
       - run: cargo check -p ${{ matrix.crate }} --no-default-features
                    ${{ matrix.feature != '<none>'
@@ -149,6 +152,41 @@ jobs:
                        || '' }}
         env:
           RUSTFLAGS: -D warnings
+
+  msrv:
+    name: MSRV
+    strategy:
+      fail-fast: false
+      matrix:
+        msrv: ["1.62.0"]
+        crate:
+          - juniper_codegen
+          - juniper
+          - juniper_subscriptions
+          - juniper_graphql_ws
+          - juniper_actix
+          - juniper_hyper
+          - juniper_iron
+          - juniper_rocket
+          - juniper_warp
+        os:
+          - ubuntu
+          - macOS
+          - windows
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.msrv }}
+      - run: rustup default ${{ matrix.msrv }}
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+
+      - run: cargo +nightly update -Z minimal-versions
+
+      - run: make test.cargo crate=${{ matrix.crate }}
 
   package:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
@@ -323,6 +361,7 @@ jobs:
       - clippy
       - example
       - feature
+      - msrv
       - package
       - rustfmt
       - test
