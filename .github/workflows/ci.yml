@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: ["master"]
-    tags: ["juniper*@*"]
+    tags: ["juniper*"]
   pull_request:
     branches: ["master"]
 
@@ -305,14 +305,15 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Parse crate name
-        id: crate
-        run: echo ::set-output
-                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
-                                                    | cut -d '@' -f1)
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
 
-      - name: Publish crate
-        run: cargo publish -p ${{ steps.crate.outputs.NAME }}
+      - name: Publish `${{ steps.tag.outputs.group2 }}` crate
+        run: cargo publish -p ${{ steps.tag.outputs.group2 }}
                            --token ${{ secrets.CRATESIO_TOKEN }}
 
   release-github:
@@ -332,34 +333,31 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Parse crate name
-        id: crate
-        run: echo ::set-output
-                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
-                                                    | cut -d '@' -f1)
-      - name: Parse release version
-        id: release
-        run: echo ::set-output
-                  name=VERSION::$(printf "$GITHUB_REF" | cut -d '@' -f2)
-
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
       - name: Verify release version matches crate's Cargo manifest
-        run: >-
-          test "${{ steps.release.outputs.VERSION }}" \
-            == "$(grep -m1 'version = "' ${{ steps.crate.outputs.NAME }}/Cargo.toml | cut -d '"' -f2)"
+        run: |
+          test "${{ steps.tag.outputs.group3 }}" \
+            == "$(grep -m1 'version = "' \
+                       ${{ steps.tag.outputs.group2 }}/Cargo.toml \
+                  | cut -d '"' -f2)"
+
       - name: Parse CHANGELOG link
         id: changelog
         run: echo ::set-output
-                  name=LINK::${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.crate.outputs.NAME }}%40${{ steps.release.outputs.VERSION }}//${{ steps.crate.outputs.NAME }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.release.outputs.VERSION }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.crate.outputs.NAME }}/CHANGELOG.md)
+                  name=link::${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)
 
       - uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: ${{ steps.crate.outputs.NAME }} ${{ steps.release.outputs.VERSION }}
+          name: ${{ steps.tag.outputs.group2 }} ${{ steps.tag.outputs.group3 }}
           body: |
-            [API docs](https://docs.rs/${{ steps.crate.outputs.NAME }}/${{ steps.release.outputs.VERSION }})
-            [Changelog](${{ steps.changelog.outputs.LINK }})
-          prerelease: ${{ contains(steps.release.outputs.VERSION, '-') }}
+            [API docs](https://docs.rs/${{ steps.tag.outputs.group2 }}/${{ steps.tag.outputs.group3 }})
+            [Changelog](${{ steps.changelog.outputs.link }})
+          prerelease: ${{ contains(steps.tag.outputs.group3, '-') }}
 
 
 
