@@ -41,7 +41,7 @@ async-trait = "0.1.39"
 bigdecimal = { version = "0.3", optional = true }
 bson = { version = "2.4", features = ["chrono-0_4"], optional = true }
 chrono = { version = "0.4.20", features = ["alloc"], default-features = false, optional = true }
-chrono-tz = { version = "0.6", default-features = false, optional = true }
+chrono-tz = { version = "0.7", default-features = false, optional = true }
 fnv = "1.0.3"
 futures = { version = "0.3.22", features = ["alloc"], default-features = false }
 futures-enum = { version = "0.1.12", default-features = false }
