@@ -22,6 +22,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Renamed `rename = "<policy>"` attribute argument to `rename_all = "<policy>"` (following `serde` style). ([#971])
 - Upgraded [`bson` crate] integration to [2.0 version](https://github.com/mongodb/bson-rust/releases/tag/v2.0.0). ([#979])
 - Upgraded [`uuid` crate] integration to [1.0 version](https://github.com/uuid-rs/uuid/releases/tag/1.0.0). ([#1057])
+- Upgraded [`chrono-tz` crate] integration to [0.7 version](https://github.com/chronotope/chrono-tz/blob/107e8716d9e065f0fe712b6ef3a4822df4d366f7/CHANGELOG.md#07). ([#1114])
 - Made `FromInputValue` trait methods fallible to allow post-validation. ([#987])
 - Redesigned `#[graphql_interface]` macro: ([#1009])
     - Removed support for `dyn` attribute argument (interface values as trait objects).
@@ -111,6 +112,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1081]: /../../pull/1081
 [#1085]: /../../issues/1085
 [#1086]: /../../pull/1086
+[#1114]: /../../pull/1114
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
@@ -126,6 +128,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
+[`chrono-tz` crate]: https://docs.rs/chrono-tz
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [graphql-scalars.dev]: https://graphql-scalars.dev
