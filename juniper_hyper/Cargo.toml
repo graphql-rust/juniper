@@ -16,11 +16,15 @@ exclude = ["/examples/", "/release.toml"]
 
 [dependencies]
 futures = "0.3.22"
-hyper = { version = "0.14", features = ["server", "runtime"] }
+hyper = { version = "0.14.7", features = ["server", "runtime"] }
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 serde_json = "1.0.18"
 tokio = "1.0"
 url = "2.0"
+
+# Fixes for MSRV check.
+# TODO: Try remove on upgrade of `hyper` crate.
+http-body = "0.4.5"
 
 [dev-dependencies]
 juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }

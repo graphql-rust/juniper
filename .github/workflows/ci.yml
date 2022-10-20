@@ -166,7 +166,7 @@ jobs:
           - juniper_graphql_ws
           - juniper_actix
           - juniper_hyper
-          - juniper_iron
+          #- juniper_iron
           - juniper_rocket
           - juniper_warp
         os:
@@ -197,13 +197,14 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Parse crate name
-        id: crate
-        run: echo ::set-output
-                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
-                                                    | cut -d '@' -f1)
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
 
-      - run: cargo package -p ${{ steps.crate.outputs.NAME }}
+      - run: cargo package -p ${{ steps.tag.outputs.group2 }}
 
   test:
     strategy:
