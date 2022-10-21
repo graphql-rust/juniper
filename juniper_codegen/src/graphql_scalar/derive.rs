@@ -6,7 +6,7 @@ use syn::{parse_quote, spanned::Spanned};
 
 use crate::common::{diagnostic, scalar, SpanContainer};
 
-use super::{Attr, Definition, Field, Methods, ParseToken, TypeOrIdent};
+use super::{Attr, Definition, Field, Methods, ParseToken};
 
 /// [`diagnostic::Scope`] of errors for `#[derive(GraphQLScalar)]` macro.
 const ERR: diagnostic::Scope = diagnostic::Scope::ScalarDerive;
@@ -15,23 +15,28 @@ const ERR: diagnostic::Scope = diagnostic::Scope::ScalarDerive;
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = Attr::from_attrs("graphql", &ast.attrs)?;
+
     let methods = parse_derived_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
+    let name = attr
+        .name
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| ast.ident.to_string());
+
     Ok(Definition {
-        ty: TypeOrIdent::Ident(ast.ident.clone()),
+        ident: ast.ident,
         where_clause: attr
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),
-        generics: ast.generics.clone(),
+        generics: ast.generics,
         methods,
-        name: attr
-            .name
-            .map(SpanContainer::into_inner)
-            .unwrap_or_else(|| ast.ident.to_string()),
+        name,
         description: attr.description.map(SpanContainer::into_inner),
         specified_by_url: attr.specified_by_url.map(SpanContainer::into_inner),
         scalar,
+        scalar_value: attr.scalar.as_deref().into(),
+        behavior: attr.behavior.into(),
     }
     .to_token_stream())
 }
@@ -81,7 +86,8 @@ pub(super) fn parse_derived_methods(ast: &syn::DeriveInput, attr: &Attr) -> syn:
                     .first()
                     .filter(|_| fields.unnamed.len() == 1)
                     .cloned()
-                    .map(Field::Unnamed)
+                    .map(Field::try_from)
+                    .transpose()?
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),
@@ -94,7 +100,8 @@ pub(super) fn parse_derived_methods(ast: &syn::DeriveInput, attr: &Attr) -> syn:
                     .first()
                     .filter(|_| fields.named.len() == 1)
                     .cloned()
-                    .map(Field::Named)
+                    .map(Field::try_from)
+                    .transpose()?
                     .ok_or_else(|| {
                         ERR.custom_error(
                             ast.span(),

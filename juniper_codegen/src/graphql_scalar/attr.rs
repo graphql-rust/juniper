@@ -6,7 +6,7 @@ use syn::{parse_quote, spanned::Spanned};
 
 use crate::common::{diagnostic, parse, scalar, SpanContainer};
 
-use super::{derive::parse_derived_methods, Attr, Definition, Methods, ParseToken, TypeOrIdent};
+use super::{derive::parse_derived_methods, Attr, Definition, Methods, ParseToken};
 
 /// [`diagnostic::Scope`] of errors for `#[graphql_scalar]` macro.
 const ERR: diagnostic::Scope = diagnostic::Scope::ScalarAttr;
@@ -47,7 +47,7 @@ fn expand_on_type_alias(
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     let def = Definition {
-        ty: TypeOrIdent::Type(ast.ty.clone()),
+        ident: ast.ident.clone(),
         where_clause: attr
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),
@@ -60,6 +60,8 @@ fn expand_on_type_alias(
         description: attr.description.map(SpanContainer::into_inner),
         specified_by_url: attr.specified_by_url.map(SpanContainer::into_inner),
         scalar,
+        scalar_value: attr.scalar.as_deref().into(),
+        behavior: attr.behavior.into(),
     };
 
     Ok(quote! {
@@ -74,11 +76,12 @@ fn expand_on_derive_input(
     ast: syn::DeriveInput,
 ) -> syn::Result<TokenStream> {
     let attr = Attr::from_attrs("graphql_scalar", &attrs)?;
+
     let methods = parse_derived_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
     let def = Definition {
-        ty: TypeOrIdent::Ident(ast.ident.clone()),
+        ident: ast.ident.clone(),
         where_clause: attr
             .where_clause
             .map_or_else(Vec::new, |cl| cl.into_inner()),
@@ -91,6 +94,8 @@ fn expand_on_derive_input(
         description: attr.description.map(SpanContainer::into_inner),
         specified_by_url: attr.specified_by_url.map(SpanContainer::into_inner),
         scalar,
+        scalar_value: attr.scalar.as_deref().into(),
+        behavior: attr.behavior.into(),
     };
 
     Ok(quote! {

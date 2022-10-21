@@ -29,19 +29,23 @@ pub use juniper_codegen::{
 #[doc(hidden)]
 #[macro_use]
 pub mod macros;
+
 mod ast;
+pub mod behavior;
 pub mod executor;
+pub mod extract;
+pub mod graphql;
+pub mod http;
+pub mod integrations;
 mod introspection;
 pub mod parser;
+pub mod reflect;
+pub mod resolve;
 pub(crate) mod schema;
 mod types;
 mod util;
 pub mod validation;
-mod value;
-// This needs to be public until docs have support for private modules:
-// https://github.com/rust-lang/cargo/issues/1520
-pub mod http;
-pub mod integrations;
+pub(crate) mod value;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
@@ -71,6 +75,7 @@ pub use crate::{
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
+    extract::Extract,
     introspection::IntrospectionFormat,
     macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
     parser::{ParseError, ScalarToken, Spanning},
@@ -82,12 +87,12 @@ pub use crate::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},
         base::{Arguments, GraphQLType, GraphQLValue, TypeKind},
         marker::{self, GraphQLInterface, GraphQLObject, GraphQLUnion},
-        nullable::Nullable,
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{
             ExecutionOutput, GraphQLSubscriptionType, GraphQLSubscriptionValue,
             SubscriptionConnection, SubscriptionCoordinator,
         },
+        Nullable,
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},

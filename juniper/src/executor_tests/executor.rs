@@ -369,6 +369,8 @@ mod threads_context_correctly {
     }
 }
 
+// TODO: Remove as should be unnecessary with generic context.
+/*
 mod dynamic_context_switching {
     use indexmap::IndexMap;
 
@@ -672,7 +674,7 @@ mod dynamic_context_switching {
         assert_eq!(result, graphql_value!({"first": {"value": "First value"}}));
     }
 }
-
+*/
 mod propagates_errors_to_nullable_fields {
     use crate::{
         executor::{ExecutionError, FieldError, FieldResult, IntoFieldError},

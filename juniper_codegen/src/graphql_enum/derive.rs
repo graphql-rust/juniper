@@ -87,6 +87,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
+        behavior: attr.behavior.into(),
         values,
         has_ignored_variants,
     };

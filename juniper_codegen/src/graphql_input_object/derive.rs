@@ -80,6 +80,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
+        behavior: attr.behavior.into(),
         fields,
     };
 
@@ -94,13 +95,13 @@ fn parse_field(
     renaming: rename::Policy,
     is_internal: bool,
 ) -> Option<FieldDefinition> {
-    let field_attr = FieldAttr::from_attrs("graphql", &f.attrs)
+    let attr = FieldAttr::from_attrs("graphql", &f.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
 
     let ident = f.ident.as_ref().or_else(|| err_unnamed_field(f))?;
 
-    let name = field_attr
+    let name = attr
         .name
         .map_or_else(
             || renaming.apply(&ident.unraw().to_string()),
@@ -114,10 +115,11 @@ fn parse_field(
     Some(FieldDefinition {
         ident: ident.clone(),
         ty: f.ty.clone(),
-        default: field_attr.default.map(SpanContainer::into_inner),
+        default: attr.default.map(SpanContainer::into_inner),
+        behavior: attr.behavior.into(),
         name,
-        description: field_attr.description.map(SpanContainer::into_inner),
-        ignored: field_attr.ignore.is_some(),
+        description: attr.description.map(SpanContainer::into_inner),
+        ignored: attr.ignore.is_some(),
     })
 }
 

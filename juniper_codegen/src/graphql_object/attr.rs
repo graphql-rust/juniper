@@ -117,6 +117,7 @@ where
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
+        behavior: attr.behavior.into(),
         fields,
         interfaces: attr
             .interfaces
@@ -218,6 +219,7 @@ fn parse_field(
         description: attr.description.map(SpanContainer::into_inner),
         deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: method_ident.clone(),
+        behavior: attr.behavior.into(),
         arguments: Some(arguments),
         has_receiver: method.sig.receiver().is_some(),
         is_async: method.sig.asyncness.is_some(),

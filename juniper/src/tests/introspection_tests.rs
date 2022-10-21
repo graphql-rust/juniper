@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    graphql_vars,
+    graphql_value, graphql_vars,
     introspection::IntrospectionFormat,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},

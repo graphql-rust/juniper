@@ -94,6 +94,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
             .map(SpanContainer::into_inner)
             .unwrap_or_else(|| parse_quote! { () }),
         scalar,
+        behavior: attr.behavior.into(),
         fields,
         interfaces: attr
             .interfaces
@@ -143,6 +144,7 @@ fn parse_field(field: &syn::Field, renaming: &rename::Policy) -> Option<field::D
         description: attr.description.map(SpanContainer::into_inner),
         deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: field_ident.clone(),
+        behavior: attr.behavior.into(),
         arguments: None,
         has_receiver: false,
         is_async: false,

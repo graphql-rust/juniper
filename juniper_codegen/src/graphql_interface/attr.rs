@@ -120,6 +120,7 @@ fn expand_on_trait(
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
+        behavior: attr.behavior.into(),
         fields,
         implemented_for: attr
             .implemented_for
@@ -207,6 +208,7 @@ fn parse_trait_method(
         description: attr.description.map(SpanContainer::into_inner),
         deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: method_ident.clone(),
+        behavior: attr.behavior.into(),
         arguments: Some(arguments),
         has_receiver: method.sig.receiver().is_some(),
         is_async: method.sig.asyncness.is_some(),
@@ -301,6 +303,7 @@ fn expand_on_derive_input(
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
+        behavior: attr.behavior.into(),
         fields,
         implemented_for: attr
             .implemented_for
@@ -372,6 +375,7 @@ fn parse_struct_field(
         description: attr.description.map(SpanContainer::into_inner),
         deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: field_ident.clone(),
+        behavior: attr.behavior.into(),
         arguments: None,
         has_receiver: false,
         is_async: false,

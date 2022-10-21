@@ -93,6 +93,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
+        behavior: attr.behavior.into(),
         fields,
         implemented_for: attr
             .implemented_for
@@ -149,6 +150,7 @@ fn parse_field(field: &syn::Field, renaming: &rename::Policy) -> Option<field::D
         description: attr.description.map(SpanContainer::into_inner),
         deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: field_ident.clone(),
+        behavior: attr.behavior.into(),
         arguments: None,
         has_receiver: false,
         is_async: false,

@@ -84,6 +84,7 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<Definition> {
             .map(SpanContainer::into_inner)
             .unwrap_or_else(|| parse_quote! { () }),
         scalar: scalar::Type::parse(attr.scalar.as_deref(), &ast.generics),
+        behavior: attr.behavior.into(),
         generics: ast.generics,
         variants,
     })
@@ -163,6 +164,7 @@ fn parse_variant_from_enum_variant(
         ty,
         resolver_code,
         resolver_check,
+        behavior: attr.behavior.into(),
         context: None,
     })
 }
@@ -214,6 +216,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
             .map(SpanContainer::into_inner)
             .unwrap_or_else(|| parse_quote! { () }),
         scalar: scalar::Type::parse(attr.scalar.as_deref(), &ast.generics),
+        behavior: attr.behavior.into(),
         generics: ast.generics,
         variants,
     })

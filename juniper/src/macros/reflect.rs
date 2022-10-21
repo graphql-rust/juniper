@@ -8,20 +8,10 @@ use crate::{
     Arguments as FieldArguments, ExecutionResult, Executor, GraphQLValue, Nullable, ScalarValue,
 };
 
-/// Alias for a [GraphQL object][1], [scalar][2] or [interface][3] type's name
-/// in a GraphQL schema.
-///
-/// See [`BaseType`] for more info.
-///
-/// [1]: https://spec.graphql.org/October2021#sec-Objects
-/// [2]: https://spec.graphql.org/October2021#sec-Scalars
-/// [3]: https://spec.graphql.org/October2021#sec-Interfaces
-pub type Type = &'static str;
-
-/// Alias for a slice of [`Type`]s.
-///
-/// See [`BaseSubTypes`] for more info.
-pub type Types = &'static [Type];
+pub use crate::reflect::{
+    can_be_subtype, fnv1a128, str_eq, str_exists_in_arr, type_len_with_wrapped_val, Argument,
+    Arguments, FieldName, Name, Names, Type, Types, WrappedValue,
+};
 
 /// Naming of a [GraphQL object][1], [scalar][2] or [interface][3] [`Type`].
 ///
@@ -153,9 +143,6 @@ impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for Rc<T> {
     const NAMES: Types = T::NAMES;
 }
 
-/// Alias for a value of a [`WrappedType`] (composed GraphQL type).
-pub type WrappedValue = u128;
-
 // TODO: Just use `&str`s once they're allowed in `const` generics.
 /// Encoding of a composed GraphQL type in numbers.
 ///
@@ -163,7 +150,7 @@ pub type WrappedValue = u128;
 /// because of the [wrapping types][2]. To work around this we use a
 /// [`WrappedValue`] which is represented via [`u128`] number in the following
 /// encoding:
-/// - In base case of non-nullable [object][1] [`VALUE`] is `1`.
+/// - In base case of non-nullable singular [object][1] [`VALUE`] is `1`.
 /// - To represent nullability we "append" `2` to the [`VALUE`], so
 ///   [`Option`]`<`[object][1]`>` has [`VALUE`] of `12`.
 /// - To represent list we "append" `3` to the [`VALUE`], so
@@ -177,7 +164,7 @@ pub type WrappedValue = u128;
 ///
 /// ```rust
 /// # use juniper::{
-/// #     format_type,
+/// #     reflect::format_type,
 /// #     macros::reflect::{WrappedType, BaseType, WrappedValue, Type},
 /// #     DefaultScalarValue,
 /// # };
@@ -252,34 +239,6 @@ impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Arc<T> {
 impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for Rc<T> {
     const VALUE: u128 = T::VALUE;
 }
-
-/// Alias for a [GraphQL object][1] or [interface][2] [field argument][3] name.
-///
-/// See [`Fields`] for more info.
-///
-/// [1]: https://spec.graphql.org/October2021#sec-Objects
-/// [2]: https://spec.graphql.org/October2021#sec-Interfaces
-/// [3]: https://spec.graphql.org/October2021#sec-Language.Arguments
-pub type Name = &'static str;
-
-/// Alias for a slice of [`Name`]s.
-///
-/// See [`Fields`] for more info.
-pub type Names = &'static [Name];
-
-/// Alias for [field argument][1]s [`Name`], [`Type`] and [`WrappedValue`].
-///
-/// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
-pub type Argument = (Name, Type, WrappedValue);
-
-/// Alias for a slice of [field argument][1]s [`Name`], [`Type`] and
-/// [`WrappedValue`].
-///
-/// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
-pub type Arguments = &'static [(Name, Type, WrappedValue)];
-
-/// Alias for a `const`-hashed [`Name`] used in a `const` context.
-pub type FieldName = u128;
 
 /// [GraphQL object][1] or [interface][2] [field arguments][3] [`Names`].
 ///
@@ -394,107 +353,6 @@ pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
     ) -> BoxFuture<'b, ExecutionResult<S>>;
 }
 
-/// Non-cryptographic hash with good dispersion to use as a [`str`](prim@str) in
-/// `const` generics. See [spec] for more info.
-///
-/// [spec]: https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-17.html
-#[must_use]
-pub const fn fnv1a128(str: Name) -> u128 {
-    const FNV_OFFSET_BASIS: u128 = 0x6c62272e07bb014262b821756295c58d;
-    const FNV_PRIME: u128 = 0x0000000001000000000000000000013b;
-
-    let bytes = str.as_bytes();
-    let mut hash = FNV_OFFSET_BASIS;
-    let mut i = 0;
-    while i < bytes.len() {
-        hash ^= bytes[i] as u128;
-        hash = hash.wrapping_mul(FNV_PRIME);
-        i += 1;
-    }
-    hash
-}
-
-/// Length __in bytes__ of the [`format_type!`] macro result.
-#[must_use]
-pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
-    let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
-
-    let mut curr = val;
-    while curr % 10 != 0 {
-        match curr % 10 {
-            2 => len -= "!".as_bytes().len(),   // remove !
-            3 => len += "[]!".as_bytes().len(), // [Type]!
-            _ => {}
-        }
-        curr /= 10;
-    }
-
-    len
-}
-
-/// Checks whether the given GraphQL [object][1] represents a `subtype` of the
-/// given GraphQL `ty`pe, basing on the [`WrappedType`] encoding.
-///
-/// To fully determine the sub-typing relation the [`Type`] should be one of the
-/// [`BaseSubTypes::NAMES`].
-///
-/// [1]: https://spec.graphql.org/October2021#sec-Objects
-#[must_use]
-pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
-    let ty_curr = ty % 10;
-    let sub_curr = subtype % 10;
-
-    if ty_curr == sub_curr {
-        if ty_curr == 1 {
-            true
-        } else {
-            can_be_subtype(ty / 10, subtype / 10)
-        }
-    } else if ty_curr == 2 {
-        can_be_subtype(ty / 10, subtype)
-    } else {
-        false
-    }
-}
-
-/// Checks whether the given `val` exists in the given `arr`.
-#[must_use]
-pub const fn str_exists_in_arr(val: &str, arr: &[&str]) -> bool {
-    let mut i = 0;
-    while i < arr.len() {
-        if str_eq(val, arr[i]) {
-            return true;
-        }
-        i += 1;
-    }
-    false
-}
-
-/// Compares strings in a `const` context.
-///
-/// As there is no `const impl Trait` and `l == r` calls [`Eq`], we have to
-/// write custom comparison function.
-///
-/// [`Eq`]: std::cmp::Eq
-// TODO: Remove once `Eq` trait is allowed in `const` context.
-pub const fn str_eq(l: &str, r: &str) -> bool {
-    let (l, r) = (l.as_bytes(), r.as_bytes());
-
-    if l.len() != r.len() {
-        return false;
-    }
-
-    let mut i = 0;
-    while i < l.len() {
-        if l[i] != r[i] {
-            return false;
-        }
-        i += 1;
-    }
-
-    true
-}
-
 /// Asserts that `#[graphql_interface(for = ...)]` has all the types referencing
 /// this interface in the `impl = ...` attribute argument.
 ///
@@ -509,7 +367,7 @@ macro_rules! assert_implemented_for {
                     <$interfaces as ::juniper::macros::reflect::BaseSubTypes<$scalar>>::NAMES,
                 );
                 if !is_present {
-                    const MSG: &str = $crate::const_concat!(
+                    const MSG: &str = $crate::reflect::const_concat!(
                         "Failed to implement interface `",
                         <$interfaces as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
@@ -537,7 +395,7 @@ macro_rules! assert_interfaces_impls {
                     <$implementers as ::juniper::macros::reflect::Implements<$scalar>>::NAMES,
                 );
                 if !is_present {
-                    const MSG: &str = $crate::const_concat!(
+                    const MSG: &str = $crate::reflect::const_concat!(
                         "Failed to implement interface `",
                         <$interface as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
@@ -622,7 +480,7 @@ macro_rules! assert_subtype {
                 <$base_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
             const IMPL_TY: $crate::macros::reflect::Type =
                 <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
-            const ERR_PREFIX: &str = $crate::const_concat!(
+            const ERR_PREFIX: &str = $crate::reflect::const_concat!(
                 "Failed to implement interface `",
                 BASE_TY,
                 "` on `",
@@ -664,14 +522,14 @@ macro_rules! assert_subtype {
             let is_subtype = $crate::macros::reflect::str_exists_in_arr(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
                 && $crate::macros::reflect::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
             if !is_subtype {
-                const MSG: &str = $crate::const_concat!(
+                const MSG: &str = $crate::reflect::const_concat!(
                     ERR_PREFIX,
                     "Field `",
                     FIELD_NAME,
                     "`: implementor is expected to return a subtype of interface's return object: `",
-                    $crate::format_type!(IMPL_RETURN_TY, IMPL_RETURN_WRAPPED_VAL),
+                    $crate::reflect::format_type!(IMPL_RETURN_TY, IMPL_RETURN_WRAPPED_VAL),
                     "` is not a subtype of `",
-                    $crate::format_type!(BASE_RETURN_TY, BASE_RETURN_WRAPPED_VAL),
+                    $crate::reflect::format_type!(BASE_RETURN_TY, BASE_RETURN_WRAPPED_VAL),
                     "`.",
                 );
                 ::std::panic!("{}", MSG);
@@ -695,7 +553,7 @@ macro_rules! assert_field_args {
         const _: () = {
             const BASE_NAME: &str = <$base_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
             const IMPL_NAME: &str = <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
-            const ERR_PREFIX: &str = $crate::const_concat!(
+            const ERR_PREFIX: &str = $crate::reflect::const_concat!(
                 "Failed to implement interface `",
                 BASE_NAME,
                 "` on `",
@@ -818,13 +676,14 @@ macro_rules! assert_field_args {
                 const BASE_ARG_NAME: &str = ERROR.base.0;
                 const IMPL_ARG_NAME: &str = ERROR.implementation.0;
 
-                const BASE_TYPE_FORMATTED: &str = $crate::format_type!(ERROR.base.1, ERROR.base.2);
+                const BASE_TYPE_FORMATTED: &str =
+                    $crate::reflect::format_type!(ERROR.base.1, ERROR.base.2);
                 const IMPL_TYPE_FORMATTED: &str =
-                    $crate::format_type!(ERROR.implementation.1, ERROR.implementation.2);
+                    $crate::reflect::format_type!(ERROR.implementation.1, ERROR.implementation.2);
 
                 const MSG: &str = match ERROR.cause {
                     Cause::TypeMismatch => {
-                        $crate::const_concat!(
+                        $crate::reflect::const_concat!(
                             "Argument `",
                             BASE_ARG_NAME,
                             "`: expected type `",
@@ -835,7 +694,7 @@ macro_rules! assert_field_args {
                         )
                     }
                     Cause::RequiredField => {
-                        $crate::const_concat!(
+                        $crate::reflect::const_concat!(
                             "Argument `",
                             BASE_ARG_NAME,
                             "` of type `",
@@ -844,7 +703,7 @@ macro_rules! assert_field_args {
                         )
                     }
                     Cause::AdditionalNonNullableField => {
-                        $crate::const_concat!(
+                        $crate::reflect::const_concat!(
                             "Argument `",
                             IMPL_ARG_NAME,
                             "` of type `",
@@ -854,41 +713,11 @@ macro_rules! assert_field_args {
                     }
                 };
                 const ERROR_MSG: &str =
-                    $crate::const_concat!(ERR_PREFIX, "Field `", FIELD_NAME, "`: ", MSG);
+                    $crate::reflect::const_concat!(ERR_PREFIX, "Field `", FIELD_NAME, "`: ", MSG);
                 ::std::panic!("{}", ERROR_MSG);
             }
         };
     };
-}
-
-/// Concatenates `const` [`str`](prim@str)s in a `const` context.
-#[macro_export]
-macro_rules! const_concat {
-    ($($s:expr),* $(,)?) => {{
-        const LEN: usize = 0 $(+ $s.as_bytes().len())*;
-        const CNT: usize = [$($s),*].len();
-        const fn concat(input: [&str; CNT]) -> [u8; LEN] {
-            let mut bytes = [0; LEN];
-            let (mut i, mut byte) = (0, 0);
-            while i < CNT {
-                let mut b = 0;
-                while b < input[i].len() {
-                    bytes[byte] = input[i].as_bytes()[b];
-                    byte += 1;
-                    b += 1;
-                }
-                i += 1;
-            }
-            bytes
-        }
-        const CON: [u8; LEN] = concat([$($s),*]);
-
-        // TODO: Use `.unwrap()` once it becomes `const`.
-        match ::std::str::from_utf8(&CON) {
-            ::std::result::Result::Ok(s) => s,
-            _ => unreachable!(),
-        }
-    }};
 }
 
 /// Ensures that the given `$impl_ty` implements [`Field`] and returns a
@@ -903,7 +732,7 @@ macro_rules! checked_hash {
         if exists {
             $crate::macros::reflect::fnv1a128(FIELD_NAME)
         } else {
-            const MSG: &str = $crate::const_concat!(
+            const MSG: &str = $crate::reflect::const_concat!(
                 $($prefix,)?
                 "Field `",
                 $field_name,
@@ -913,104 +742,5 @@ macro_rules! checked_hash {
             );
             ::std::panic!("{}", MSG)
         }
-    }};
-}
-
-/// Formats the given [`Type`] and [`WrappedValue`] into a readable GraphQL type
-/// name.
-///
-/// # Examples
-///
-/// ```rust
-/// # use juniper::format_type;
-/// #
-/// assert_eq!(format_type!("String", 123), "[String]!");
-/// assert_eq!(format_type!("🦀", 123), "[🦀]!");
-/// ```
-#[macro_export]
-macro_rules! format_type {
-    ($ty: expr, $wrapped_value: expr $(,)?) => {{
-        const TYPE: (
-            $crate::macros::reflect::Type,
-            $crate::macros::reflect::WrappedValue,
-        ) = ($ty, $wrapped_value);
-        const RES_LEN: usize = $crate::macros::reflect::type_len_with_wrapped_val(TYPE.0, TYPE.1);
-
-        const OPENING_BRACKET: &str = "[";
-        const CLOSING_BRACKET: &str = "]";
-        const BANG: &str = "!";
-
-        const fn format_type_arr() -> [u8; RES_LEN] {
-            let (ty, wrap_val) = TYPE;
-            let mut type_arr: [u8; RES_LEN] = [0; RES_LEN];
-
-            let mut current_start = 0;
-            let mut current_end = RES_LEN - 1;
-            let mut current_wrap_val = wrap_val;
-            let mut is_null = false;
-            while current_wrap_val % 10 != 0 {
-                match current_wrap_val % 10 {
-                    2 => is_null = true, // Skips writing `BANG` later.
-                    3 => {
-                        // Write `OPENING_BRACKET` at `current_start`.
-                        let mut i = 0;
-                        while i < OPENING_BRACKET.as_bytes().len() {
-                            type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_start += i;
-                        if !is_null {
-                            // Write `BANG` at `current_end`.
-                            i = 0;
-                            while i < BANG.as_bytes().len() {
-                                type_arr[current_end - BANG.as_bytes().len() + i + 1] =
-                                    BANG.as_bytes()[i];
-                                i += 1;
-                            }
-                            current_end -= i;
-                        }
-                        // Write `CLOSING_BRACKET` at `current_end`.
-                        i = 0;
-                        while i < CLOSING_BRACKET.as_bytes().len() {
-                            type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                CLOSING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
-                        is_null = false;
-                    }
-                    _ => {}
-                }
-
-                current_wrap_val /= 10;
-            }
-
-            // Writes `Type` at `current_start`.
-            let mut i = 0;
-            while i < ty.as_bytes().len() {
-                type_arr[current_start + i] = ty.as_bytes()[i];
-                i += 1;
-            }
-            i = 0;
-            if !is_null {
-                // Writes `BANG` at `current_end`.
-                while i < BANG.as_bytes().len() {
-                    type_arr[current_end - BANG.as_bytes().len() + i + 1] = BANG.as_bytes()[i];
-                    i += 1;
-                }
-            }
-
-            type_arr
-        }
-
-        const TYPE_ARR: [u8; RES_LEN] = format_type_arr();
-
-        // TODO: Use `.unwrap()` once it becomes `const`.
-        const TYPE_FORMATTED: &str = match ::std::str::from_utf8(TYPE_ARR.as_slice()) {
-            ::std::result::Result::Ok(s) => s,
-            _ => unreachable!(),
-        };
-
-        TYPE_FORMATTED
     }};
 }

@@ -20,7 +20,7 @@ use syn::{
 };
 
 use crate::common::{
-    field, filter_attrs, gen,
+    behavior, field, filter_attrs, gen,
     parse::{
         attr::{err, OptionExt as _},
         GenericsExt as _, ParseBufferExt as _,
@@ -116,6 +116,17 @@ struct Attr {
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     scalar: Option<SpanContainer<scalar::AttrValue>>,
 
+    /// Explicitly specified type of the custom [`Behavior`] to parametrize this
+    /// [GraphQL interface][0] implementation with.
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    behavior: Option<SpanContainer<behavior::Type>>,
+
     /// Explicitly specified marker indicating that the Rust trait should be
     /// transformed into [`async_trait`].
     ///
@@ -173,6 +184,13 @@ impl Parse for Attr {
                     let scl = input.parse::<scalar::AttrValue>()?;
                     out.scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "for" | "implementers" => {
@@ -245,6 +263,7 @@ impl Attr {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
+            behavior: try_merge_opt!(behavior: self, another),
             implemented_for: try_merge_hashset!(implemented_for: self, another => span_joined),
             implements: try_merge_hashset!(implements: self, another => span_joined),
             r#enum: try_merge_opt!(r#enum: self, another),
@@ -324,6 +343,13 @@ struct Definition {
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     scalar: scalar::Type,
 
+    /// [`Behavior`] parametrization to generate code with for this
+    /// [GraphQL interface][0].
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    behavior: behavior::Type,
+
     /// Defined [GraphQL fields][2] of this [GraphQL interface][1].
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
@@ -368,6 +394,10 @@ impl ToTokens for Definition {
         self.impl_field_meta_tokens().to_tokens(into);
         self.impl_field_tokens().to_tokens(into);
         self.impl_async_field_tokens().to_tokens(into);
+        ////////////////////////////////////////////////////////////////////////
+        self.impl_resolve_value().to_tokens(into);
+        gen::impl_resolvable(&self.behavior, self.ty_and_generics()).to_tokens(into);
+        self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -822,6 +852,36 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`resolve::Value`] trait for this
+    /// [GraphQL interface][0].
+    ///
+    /// [`resolve::Value`]: juniper::resolve::Value
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    fn impl_resolve_value(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (cx, generics) = gen::mix_context(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::Value<#inf, #cx, #sv, #bh>
+             for #ty #where_clause
+            {
+                fn resolve_value(
+                    &self,
+                    _: Option<&[::juniper::Selection<'_, #sv>]>,
+                    _: &#inf,
+                    _: &::juniper::Executor<'_, '_, #cx, #sv>,
+                ) -> ::juniper::ExecutionResult<#sv> {
+                    todo!()
+                }
+            }
+        }
+    }
+
     /// Returns generated code implementing [`GraphQLValueAsync`] trait for this
     /// [GraphQL interface][1].
     ///
@@ -949,6 +1009,69 @@ impl Definition {
                 #where_clause
             {
                 const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`reflect::BaseType`],
+    /// [`reflect::BaseSubTypes`], [`reflect::WrappedType`] and
+    /// [`reflect::Fields`] traits for this [GraphQL interface][0].
+    ///
+    /// [`reflect::BaseSubTypes`]: juniper::reflect::BaseSubTypes
+    /// [`reflect::BaseType`]: juniper::reflect::BaseType
+    /// [`reflect::Fields`]: juniper::reflect::Fields
+    /// [`reflect::WrappedType`]: juniper::reflect::WrappedType
+    /// [0]: https://spec.graphql.org/October2021#sec-Interfaces
+    fn impl_reflect(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let name = &self.name;
+        let implers = &self.implemented_for;
+        let interfaces = &self.implements;
+        let fields = self.fields.iter().map(|f| &f.name);
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::BaseType<#bh>
+             for #ty #where_clause
+            {
+                const NAME: ::juniper::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh>
+             for #ty #where_clause
+            {
+                const NAMES: ::juniper::reflect::Types = &[
+                    <Self as ::juniper::reflect::BaseType<#bh>>::NAME,
+                    #( <#implers as ::juniper::reflect::BaseType<#bh>>::NAME ),*
+                ];
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::Implements<#bh>
+             for #ty #where_clause
+            {
+                const NAMES: ::juniper::reflect::Types = &[#(
+                    <#interfaces as ::juniper::reflect::BaseType<#bh>>::NAME
+                ),*];
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh>
+             for #ty #where_clause
+            {
+                const VALUE: ::juniper::reflect::WrappedValue =
+                    ::juniper::reflect::wrap::SINGULAR;
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::Fields<#bh>
+             for #ty #where_clause
+            {
+                const NAMES: ::juniper::reflect::Names = &[#( #fields ),*];
             }
         }
     }
@@ -1371,6 +1494,20 @@ impl Definition {
         }
 
         generics
+    }
+
+    /// Returns prepared self [`syn::Type`] and [`syn::Generics`] for a trait
+    /// implementation.
+    fn ty_and_generics(&self) -> (syn::Type, syn::Generics) {
+        let generics = self.generics.clone();
+
+        let ty = {
+            let ident = &self.enum_alias_ident;
+            let (_, ty_gen, _) = generics.split_for_impl();
+            parse_quote! { #ident #ty_gen }
+        };
+
+        (ty, generics)
     }
 
     /// Indicates whether this enum has non-exhaustive phantom variant to hold

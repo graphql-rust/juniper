@@ -15,7 +15,7 @@ use syn::{
 };
 
 use crate::common::{
-    default, filter_attrs,
+    behavior, default, filter_attrs, gen,
     parse::{
         attr::{err, OptionExt as _},
         ParseBufferExt as _,
@@ -65,6 +65,17 @@ struct ContainerAttr {
     /// [`ScalarValue`]: juniper::ScalarValue
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     scalar: Option<SpanContainer<scalar::AttrValue>>,
+
+    /// Explicitly specified type of the custom [`Behavior`] to parametrize this
+    /// [GraphQL input object][0] implementation with.
+    ///
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    behavior: Option<SpanContainer<behavior::Type>>,
 
     /// Explicitly specified [`rename::Policy`] for all fields of this
     /// [GraphQL input object][0].
@@ -118,6 +129,13 @@ impl Parse for ContainerAttr {
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "behave" | "behavior" => {
+                    input.parse::<token::Eq>()?;
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "rename_all" => {
                     input.parse::<token::Eq>()?;
                     let val = input.parse::<syn::LitStr>()?;
@@ -151,6 +169,7 @@ impl ContainerAttr {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
+            behavior: try_merge_opt!(behavior: self, another),
             rename_fields: try_merge_opt!(rename_fields: self, another),
             is_internal: self.is_internal || another.is_internal,
         })
@@ -185,6 +204,16 @@ struct FieldAttr {
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     name: Option<SpanContainer<String>>,
 
+    /// Explicitly specified [description][2] of this
+    /// [GraphQL input object field][1].
+    ///
+    /// If [`None`], then Rust doc comment will be used as the [description][2],
+    /// if any.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
+    description: Option<SpanContainer<Description>>,
+
     /// Explicitly specified [default value][2] of this
     /// [GraphQL input object field][1] to be used used in case a field value is
     /// not provided.
@@ -195,15 +224,18 @@ struct FieldAttr {
     /// [2]: https://spec.graphql.org/October2021#DefaultValue
     default: Option<SpanContainer<default::Value>>,
 
-    /// Explicitly specified [description][2] of this
-    /// [GraphQL input object field][1].
+    /// Explicitly specified type of the custom [`Behavior`] this
+    /// [GraphQL input object field][1] implementation is parametrized with, to
+    /// [coerce] in the generated code from.
     ///
-    /// If [`None`], then Rust doc comment will be used as the [description][2],
-    /// if any.
+    /// If [`None`], then [`behavior::Standard`] will be used for the generated
+    /// code.
     ///
+    /// [`Behavior`]: juniper::behavior
+    /// [`behavior::Standard`]: juniper::behavior::Standard
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
-    /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
-    description: Option<SpanContainer<Description>>,
+    /// [coerce]: juniper::behavior::Coerce
+    behavior: Option<SpanContainer<behavior::Type>>,
 
     /// Explicitly specified marker for the Rust struct field to be ignored and
     /// not included into the code generated for a [GraphQL input object][0]
@@ -234,17 +266,24 @@ impl Parse for FieldAttr {
                         ))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "desc" | "description" => {
+                    input.parse::<token::Eq>()?;
+                    let desc = input.parse::<Description>()?;
+                    out.description
+                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "default" => {
                     let val = input.parse::<default::Value>()?;
                     out.default
                         .replace(SpanContainer::new(ident.span(), Some(val.span()), val))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
-                "desc" | "description" => {
+                "behave" | "behavior" => {
                     input.parse::<token::Eq>()?;
-                    let desc = input.parse::<Description>()?;
-                    out.description
-                        .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
+                    let bh = input.parse::<behavior::Type>()?;
+                    out.behavior
+                        .replace(SpanContainer::new(ident.span(), Some(bh.span()), bh))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 "ignore" | "skip" => out
@@ -267,8 +306,9 @@ impl FieldAttr {
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
-            default: try_merge_opt!(default: self, another),
             description: try_merge_opt!(description: self, another),
+            default: try_merge_opt!(default: self, another),
+            behavior: try_merge_opt!(behavior: self, another),
             ignore: try_merge_opt!(ignore: self, another),
         })
     }
@@ -314,6 +354,14 @@ struct FieldDefinition {
     /// [2]: https://spec.graphql.org/October2021#DefaultValue
     default: Option<default::Value>,
 
+    /// [`Behavior`] parametrization of this [GraphQL input object field][1]
+    /// implementation to [coerce] from in the generated code.
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [coerce]: juniper::behavior::Coerce
+    behavior: behavior::Type,
+
     /// Name of this [GraphQL input object field][1] in GraphQL schema.
     ///
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
@@ -336,6 +384,14 @@ struct FieldDefinition {
     /// [`default`]: Self::default
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     ignored: bool,
+}
+
+impl FieldDefinition {
+    /// Indicates whether this [`FieldDefinition`] uses [`Default::default()`]
+    /// ans its [`FieldDefinition::default`] value.
+    fn needs_default_trait_bound(&self) -> bool {
+        matches!(self.default, Some(default::Value::Default))
+    }
 }
 
 /// Representation of [GraphQL input object][0] for code generation.
@@ -383,6 +439,13 @@ struct Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     scalar: scalar::Type,
 
+    /// [`Behavior`] parametrization to generate code with for this
+    /// [GraphQL input object][0].
+    ///
+    /// [`Behavior`]: juniper::behavior
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    behavior: behavior::Type,
+
     /// [Fields][1] of this [GraphQL input object][0].
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
@@ -399,6 +462,14 @@ impl ToTokens for Definition {
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
+        ////////////////////////////////////////////////////////////////////////
+        self.impl_resolve_type().to_tokens(into);
+        self.impl_resolve_type_name().to_tokens(into);
+        self.impl_resolve_to_input_value().to_tokens(into);
+        self.impl_resolve_input_value().to_tokens(into);
+        self.impl_graphql_input_type().to_tokens(into);
+        self.impl_graphql_input_object().to_tokens(into);
+        self.impl_reflect().to_tokens(into);
     }
 }
 
@@ -435,6 +506,88 @@ impl Definition {
             {
                 fn mark() {
                     #( #assert_fields_input_values )*
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`graphql::InputType`] trait for
+    /// [GraphQL input object][0].
+    ///
+    /// [`graphql::InputType`]: juniper::graphql::InputType
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    #[must_use]
+    fn impl_graphql_input_type(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, &sv);
+        generics.make_where_clause().predicates.push(parse_quote! {
+            Self: ::juniper::resolve::Type<#inf, #sv, #bh>
+                  + ::juniper::resolve::ToInputValue<#sv, #bh>
+                  + ::juniper::resolve::InputValue<#lt, #sv, #bh>
+        });
+        for f in self.fields.iter().filter(|f| !f.ignored) {
+            let field_ty = &f.ty;
+            let field_bh = &f.behavior;
+            generics.make_where_clause().predicates.push(parse_quote! {
+                #field_ty:
+                    ::juniper::graphql::InputType<#lt, #inf, #sv, #field_bh>
+            });
+        }
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let fields_assertions = self.fields.iter().filter_map(|f| {
+            (!f.ignored).then(|| {
+                let field_ty = &f.ty;
+                let field_bh = &f.behavior;
+
+                quote! {
+                    <#field_ty as
+                     ::juniper::graphql::InputType<#lt, #inf, #sv, #field_bh>>
+                        ::assert_input_type();
+                }
+            })
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
+             for #ty #where_clause
+            {
+                fn assert_input_type() {
+                    #( #fields_assertions )*
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`graphql::InputObject`] trait for
+    /// this [GraphQL input object][0].
+    ///
+    /// [`graphql::InputObject`]: juniper::graphql::InputObject
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    #[must_use]
+    fn impl_graphql_input_object(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, &sv);
+        generics.make_where_clause().predicates.push(parse_quote! {
+            Self: ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>
+        });
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::graphql::InputObject<#lt, #inf, #sv, #bh>
+             for #ty #where_clause
+            {
+                fn assert_input_object() {
+                    <Self as ::juniper::graphql::InputType<#lt, #inf, #sv, #bh>>
+                        ::assert_input_type();
                 }
             }
         }
@@ -495,6 +648,119 @@ impl Definition {
                         .build_input_object_type::<#ident #ty_generics>(info, &fields)
                         #description
                         .into_meta()
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::Type`] trait for this
+    /// [GraphQL input object][0].
+    ///
+    /// [`resolve::Type`]: juniper::resolve::Type
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    fn impl_resolve_type(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (sv, mut generics) = gen::mix_scalar_value(generics);
+        let preds = &mut generics.make_where_clause().predicates;
+        preds.push(parse_quote! { #sv: Clone });
+        preds.push(parse_quote! {
+            ::juniper::behavior::Coerce<Self>:
+                ::juniper::resolve::TypeName<#inf>
+                + ::juniper::resolve::InputValueOwned<#sv>
+        });
+        for f in self.fields.iter().filter(|f| !f.ignored) {
+            let field_ty = &f.ty;
+            let field_bh = &f.behavior;
+            preds.push(parse_quote! {
+                ::juniper::behavior::Coerce<#field_ty>:
+                    ::juniper::resolve::Type<#inf, #sv>
+                    + ::juniper::resolve::InputValueOwned<#sv>
+            });
+            if f.default.is_some() {
+                preds.push(parse_quote! {
+                    #field_ty: ::juniper::resolve::ToInputValue<#sv, #field_bh>
+                });
+            }
+            if f.needs_default_trait_bound() {
+                preds.push(parse_quote! {
+                    #field_ty: ::std::default::Default
+                });
+            }
+        }
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let description = &self.description;
+
+        let fields_meta = self.fields.iter().filter_map(|f| {
+            (!f.ignored).then(|| {
+                let f_ty = &f.ty;
+                let f_bh = &f.behavior;
+                let f_name = &f.name;
+                let f_description = &f.description;
+                let f_default = f.default.as_ref().map(|expr| {
+                    quote! {
+                        .default_value(
+                            <#f_ty as
+                             ::juniper::resolve::ToInputValue<#sv, #f_bh>>
+                                ::to_input_value(&{ #expr }),
+                        )
+                    }
+                });
+
+                quote! {
+                    registry.arg_reworked::<
+                        ::juniper::behavior::Coerce<#f_ty>, _,
+                    >(#f_name, type_info)
+                        #f_description
+                        #f_default
+                }
+            })
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::Type<#inf, #sv, #bh>
+             for #ty #where_clause
+            {
+                fn meta<'__r, '__ti: '__r>(
+                    registry: &mut ::juniper::Registry<'__r, #sv>,
+                    type_info: &'__ti #inf,
+                ) -> ::juniper::meta::MetaType<'__r, #sv>
+                where
+                    #sv: '__r,
+                {
+                    let fields = [#( #fields_meta ),*];
+
+                    registry.register_input_object_with::<
+                        ::juniper::behavior::Coerce<Self>, _,
+                    >(&fields, type_info, |meta| {
+                        meta #description
+                    })
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::TypeName`] trait for this
+    /// [GraphQL input object][0].
+    ///
+    /// [`resolve::TypeName`]: juniper::resolve::TypeName
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    fn impl_resolve_type_name(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (inf, generics) = gen::mix_type_info(generics);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::TypeName<#inf, #bh>
+             for #ty #where_clause
+            {
+                fn type_name(_: &#inf) -> &'static str {
+                    <Self as ::juniper::reflect::BaseType<#bh>>::NAME
                 }
             }
         }
@@ -631,6 +897,96 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`resolve::InputValue`] trait for
+    /// this [GraphQL input object][0].
+    ///
+    /// [`resolve::InputValue`]: juniper::resolve::InputValue
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    fn impl_resolve_input_value(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (sv, generics) = gen::mix_scalar_value(generics);
+        let (lt, mut generics) = gen::mix_input_lifetime(generics, &sv);
+        generics.make_where_clause().predicates.push(parse_quote! {
+            #sv: ::juniper::ScalarValue
+        });
+        for f in self.fields.iter().filter(|f| !f.ignored) {
+            let field_ty = &f.ty;
+            let field_bh = &f.behavior;
+            generics.make_where_clause().predicates.push(parse_quote! {
+                #field_ty: ::juniper::resolve::InputValue<#lt, #sv, #field_bh>
+            });
+        }
+        for f in self.fields.iter().filter(|f| f.needs_default_trait_bound()) {
+            let field_ty = &f.ty;
+            generics.make_where_clause().predicates.push(parse_quote! {
+                #field_ty: ::std::default::Default,
+            });
+        }
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let fields = self.fields.iter().map(|f| {
+            let field = &f.ident;
+            let field_ty = &f.ty;
+            let field_bh = &f.behavior;
+
+            let constructor = if f.ignored {
+                let expr = f.default.clone().unwrap_or_default();
+
+                quote! { #expr }
+            } else {
+                let name = &f.name;
+
+                let fallback = f.default.as_ref().map_or_else(
+                    || {
+                        quote! {
+                            <#field_ty as ::juniper::resolve::InputValue<#lt, #sv, #field_bh>>
+                                ::try_from_implicit_null()
+                                .map_err(::juniper::IntoFieldError::<#sv>::into_field_error)?
+                        }
+                    },
+                    |expr| quote! { #expr },
+                );
+
+                quote! {
+                    match obj.get(#name) {
+                        ::std::option::Option::Some(v) => {
+                            <#field_ty as ::juniper::resolve::InputValue<#lt, #sv, #field_bh>>
+                                ::try_from_input_value(v)
+                                .map_err(::juniper::IntoFieldError::<#sv>::into_field_error)?
+                        }
+                        ::std::option::Option::None => { #fallback }
+                    }
+                }
+            };
+
+            quote! { #field: { #constructor }, }
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::InputValue<#lt, #sv, #bh>
+             for #ty #where_clause
+            {
+                type Error = ::juniper::FieldError<#sv>;
+
+                fn try_from_input_value(
+                    input: &#lt ::juniper::graphql::InputValue<#sv>,
+                ) -> ::std::result::Result<Self, Self::Error> {
+                    let obj = input
+                        .to_object_value()
+                        .ok_or_else(|| ::std::format!(
+                            "Expected input object, found: {}", input,
+                        ))?;
+
+                    ::std::result::Result::Ok(Self {
+                        #( #fields )*
+                    })
+                }
+            }
+        }
+    }
+
     /// Returns generated code implementing [`ToInputValue`] trait for this
     /// [GraphQL input object][0].
     ///
@@ -663,11 +1019,52 @@ impl Definition {
                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                    ::juniper::InputValue::object(
-                        #[allow(deprecated)]
-                        ::std::array::IntoIter::new([#( #fields ),*])
-                            .collect()
-                    )
+                    ::juniper::InputValue::object([#( #fields ),*])
+                }
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`resolve::ToInputValue`] trait for
+    /// this [GraphQL input object][0].
+    ///
+    /// [`resolve::ToInputValue`]: juniper::resolve::ToInputValue
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    fn impl_resolve_to_input_value(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (sv, mut generics) = gen::mix_scalar_value(generics);
+        for f in self.fields.iter().filter(|f| !f.ignored) {
+            let field_ty = &f.ty;
+            let field_bh = &f.behavior;
+            generics.make_where_clause().predicates.push(parse_quote! {
+                #field_ty: ::juniper::resolve::ToInputValue<#sv, #field_bh>
+            });
+        }
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let fields = self.fields.iter().filter_map(|f| {
+            (!f.ignored).then(|| {
+                let field = &f.ident;
+                let field_ty = &f.ty;
+                let field_bh = &f.behavior;
+                let name = &f.name;
+
+                quote! {
+                    (#name, <#field_ty as
+                             ::juniper::resolve::ToInputValue<#sv, #field_bh>>
+                                ::to_input_value(&self.#field))
+                }
+            })
+        });
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::resolve::ToInputValue<#sv, #bh>
+             for #ty #where_clause
+            {
+                fn to_input_value(&self) -> ::juniper::graphql::InputValue<#sv> {
+                    ::juniper::InputValue::object([#( #fields ),*])
                 }
             }
         }
@@ -712,6 +1109,47 @@ impl Definition {
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
+            }
+        }
+    }
+
+    /// Returns generated code implementing [`reflect::BaseType`],
+    /// [`reflect::BaseSubTypes`] and [`reflect::WrappedType`] traits for this
+    /// [GraphQL input object][0].
+    ///
+    /// [`reflect::BaseSubTypes`]: juniper::reflect::BaseSubTypes
+    /// [`reflect::BaseType`]: juniper::reflect::BaseType
+    /// [`reflect::WrappedType`]: juniper::reflect::WrappedType
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    fn impl_reflect(&self) -> TokenStream {
+        let bh = &self.behavior;
+        let (ty, generics) = self.ty_and_generics();
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let name = &self.name;
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::BaseType<#bh>
+             for #ty #where_clause
+            {
+                const NAME: ::juniper::reflect::Type = #name;
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::BaseSubTypes<#bh>
+             for #ty #where_clause
+            {
+                const NAMES: ::juniper::reflect::Types =
+                    &[<Self as ::juniper::reflect::BaseType<#bh>>::NAME];
+            }
+
+            #[automatically_derived]
+            impl #impl_gens ::juniper::reflect::WrappedType<#bh>
+             for #ty #where_clause
+            {
+                const VALUE: ::juniper::reflect::WrappedValue =
+                    ::juniper::reflect::wrap::SINGULAR;
             }
         }
     }
@@ -774,5 +1212,17 @@ impl Definition {
         }
 
         generics
+    }
+
+    /// Returns prepared self [`syn::Type`] and [`syn::Generics`] for a trait
+    /// implementation.
+    fn ty_and_generics(&self) -> (syn::Type, syn::Generics) {
+        let generics = self.generics.clone();
+        let ty = {
+            let ident = &self.ident;
+            let (_, ty_gen, _) = generics.split_for_impl();
+            parse_quote! { #ident #ty_gen }
+        };
+        (ty, generics)
     }
 }

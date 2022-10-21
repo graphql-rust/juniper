@@ -183,7 +183,7 @@ where
     S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
-        InputValue::list(self.iter().map(T::to_input_value).collect())
+        InputValue::list(self.iter().map(T::to_input_value))
     }
 }
 
@@ -283,7 +283,7 @@ where
     S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
-        InputValue::list(self.iter().map(T::to_input_value).collect())
+        InputValue::list(self.iter().map(T::to_input_value))
     }
 }
 
@@ -481,7 +481,7 @@ where
     S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
-        InputValue::list(self.iter().map(T::to_input_value).collect())
+        InputValue::list(self.iter().map(T::to_input_value))
     }
 }
 

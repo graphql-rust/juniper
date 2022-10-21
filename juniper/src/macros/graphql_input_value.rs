@@ -1,45 +1,43 @@
-//! [`graphql_input_value!`] macro implementation.
-//!
-//! [`graphql_input_value!`]: graphql_input_value
+//! [`input_value!`] macro implementation.
 
-/// Constructs [`InputValue`]s via JSON-like syntax.
+/// Constructs [`graphql::InputValue`]s via JSON-like syntax.
 ///
 /// # Differences from [`graphql_value!`]
 ///
 /// - [`InputValue::Enum`] is constructed with `ident`, so to capture outer
 ///   variable as [`InputValue::Scalar`] surround it with parens: `(var)`.
 /// ```rust
-/// # use juniper::{graphql_input_value, graphql_value};
+/// # use juniper::graphql;
 /// #
-/// # type InputValue = juniper::InputValue;
-/// # type Value = juniper::Value;
+/// # type InputValue = graphql::InputValue;
+/// # type Value = graphql::Value;
 /// #
 /// const OUTER_VAR: i32 = 42;
-/// assert_eq!(graphql_value!(OUTER_VAR), Value::scalar(42));
-/// assert_eq!(graphql_input_value!(OUTER_VAR), InputValue::enum_value("OUTER_VAR"));
-/// assert_eq!(graphql_input_value!((OUTER_VAR)), InputValue::scalar(42));
+/// assert_eq!(graphql::value!(OUTER_VAR), Value::scalar(42));
+/// assert_eq!(graphql::input_value!(OUTER_VAR), InputValue::enum_value("OUTER_VAR"));
+/// assert_eq!(graphql::input_value!((OUTER_VAR)), InputValue::scalar(42));
 /// ```
 ///
 /// - [`InputValue::Variable`] is constructed by prefixing `ident` with `@`.
 /// ```rust
-/// # use juniper::graphql_input_value;
+/// # use juniper::graphql;
 /// #
-/// # type InputValue = juniper::InputValue;
+/// # type InputValue = graphql::InputValue;
 /// #
-/// assert_eq!(graphql_input_value!(@var), InputValue::variable("var"));
+/// assert_eq!(graphql::input_value!(@var), InputValue::variable("var"));
 /// ```
 ///
 /// - [`InputValue::Object`] key should implement [`Into`]`<`[`String`]`>`.
 /// ```rust
 /// # use std::borrow::Cow;
 /// #
-/// # use juniper::{graphql_input_value, InputValue};
+/// # use juniper::graphql;
 /// #
 /// let code = 200;
 /// let features = vec!["key", "value"];
 /// let key: Cow<'static, str> = "key".into();
 ///
-/// let value: InputValue = graphql_input_value!({
+/// let value: graphql::InputValue = graphql::input_value!({
 ///     "code": code,
 ///     "success": code == 200,
 ///     "payload": {
@@ -55,35 +53,35 @@
 /// # Example
 ///
 /// ```rust
-/// # use juniper::{graphql_input_value, InputValue};
+/// # use juniper::graphql;
 /// #
-/// # type V = InputValue;
+/// # type V = graphql::InputValue;
 /// #
 /// # let _: V =
-/// graphql_input_value!(null);
+/// graphql::input_value!(null);
 /// # let _: V =
-/// graphql_input_value!(1234);
+/// graphql::input_value!(1234);
 /// # let _: V =
-/// graphql_input_value!("test");
+/// graphql::input_value!("test");
 /// # let _: V =
-/// graphql_input_value!([1234, "test", true]);
+/// graphql::input_value!([1234, "test", true]);
 /// # let _: V =
-/// graphql_input_value!({"key": "value", "foo": 1234});
+/// graphql::input_value!({"key": "value", "foo": 1234});
 /// # let _: V =
-/// graphql_input_value!({"key": ENUM});
+/// graphql::input_value!({"key": ENUM});
 /// let captured_var = 42;
 /// # let _: V =
-/// graphql_input_value!({"key": (captured_var)});
+/// graphql::input_value!({"key": (captured_var)});
 /// # let _: V =
-/// graphql_input_value!({"key": @variable});
+/// graphql::input_value!({"key": @variable});
 /// ```
 ///
-/// [`InputValue`]: crate::InputValue
-/// [`InputValue::Enum`]: crate::InputValue::Enum
-/// [`InputValue::List`]: crate::InputValue::List
-/// [`InputValue::Object`]: crate::InputValue::Object
-/// [`InputValue::Scalar`]: crate::InputValue::Scalar
-/// [`InputValue::Variable`]: crate::InputValue::Variable
+/// [`graphql::InputValue`]: crate::graphql::InputValue
+/// [`InputValue::Enum`]: crate::graphql::InputValue::Enum
+/// [`InputValue::List`]: crate::graphql::InputValue::List
+/// [`InputValue::Object`]: crate::graphql::InputValue::Object
+/// [`InputValue::Scalar`]: crate::graphql::InputValue::Scalar
+/// [`InputValue::Variable`]: crate::graphql::InputValue::Variable
 /// [`Spanning::unlocated`]: crate::Spanning::unlocated
 #[macro_export]
 macro_rules! graphql_input_value {
@@ -93,90 +91,90 @@ macro_rules! graphql_input_value {
 
     // Done with trailing comma.
     (@@array [$($elems:expr,)*]) => {
-        $crate::InputValue::list(vec![
+        $crate::graphql::InputValue::list(::std::vec![
             $( $elems, )*
         ])
     };
 
     // Done without trailing comma.
     (@@array [$($elems:expr),*]) => {
-        $crate::InputValue::list(vec![
+        $crate::graphql::InputValue::list(::std::vec![
             $( $elems, )*
         ])
     };
 
     // Next element is `null`.
     (@@array [$($elems:expr,)*] null $($rest:tt)*) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!(null)] $($rest)*
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!(null)] $($rest)*
         )
     };
 
     // Next element is `None`.
     (@@array [$($elems:expr,)*] None $($rest:tt)*) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!(None)] $($rest)*
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!(None)] $($rest)*
         )
     };
 
     // Next element is a variable.
     (@@array [$($elems:expr,)*] @$var:ident $($rest:tt)*) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!(@$var)] $($rest)*
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!(@$var)] $($rest)*
         )
     };
 
 
     // Next element is an array.
     (@@array [$($elems:expr,)*] [$($array:tt)*] $($rest:tt)*) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!([$($array)*])] $($rest)*
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!([$($array)*])] $($rest)*
         )
     };
 
     // Next element is a map.
     (@@array [$($elems:expr,)*] {$($map:tt)*} $($rest:tt)*) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!({$($map)*})] $($rest)*
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!({$($map)*})] $($rest)*
         )
     };
 
     // Next element is `true`, `false` or enum ident followed by comma.
     (@@array [$($elems:expr,)*] $ident:ident, $($rest:tt)*) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!($ident),] $($rest)*
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!($ident),] $($rest)*
         )
     };
 
     // Next element is `true`, `false` or enum ident without trailing comma.
     (@@array [$($elems:expr,)*] $last:ident ) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!($last)]
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!($last)]
         )
     };
 
     // Next element is an expression followed by comma.
     (@@array [$($elems:expr,)*] $next:expr, $($rest:tt)*) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!($next),] $($rest)*
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!($next),] $($rest)*
         )
     };
 
     // Last element is an expression with no trailing comma.
     (@@array [$($elems:expr,)*] $last:expr) => {
-        $crate::graphql_input_value!(
-            @@array [$($elems,)* $crate::graphql_input_value!($last)]
+        $crate::graphql::input_value!(
+            @@array [$($elems,)* $crate::graphql::input_value!($last)]
         )
     };
 
     // Comma after the most recent element.
     (@@array [$($elems:expr),*] , $($rest:tt)*) => {
-        $crate::graphql_input_value!(@@array [$($elems,)*] $($rest)*)
+        $crate::graphql::input_value!(@@array [$($elems,)*] $($rest)*)
     };
 
     // Unexpected token after most recent element.
     (@@array [$($elems:expr),*] $unexpected:tt $($rest:tt)*) => {
-        $crate::graphql_input_value!(@unexpected $unexpected)
+        $crate::graphql::input_value!(@unexpected $unexpected)
     };
 
     ////////////
@@ -192,12 +190,12 @@ macro_rules! graphql_input_value {
             $crate::Spanning::unlocated(($($key)+).into()),
             $crate::Spanning::unlocated($value),
         ));
-        $crate::graphql_input_value!(@@object $object () ($($rest)*) ($($rest)*));
+        $crate::graphql::input_value!(@@object $object () ($($rest)*) ($($rest)*));
     };
 
     // Current entry followed by unexpected token.
     (@@object $object:ident [$($key:tt)+] ($value:expr) $unexpected:tt $($rest:tt)*) => {
-        $crate::graphql_input_value!(@unexpected $unexpected);
+        $crate::graphql::input_value!(@unexpected $unexpected);
     };
 
     // Insert the last entry without trailing comma.
@@ -210,114 +208,114 @@ macro_rules! graphql_input_value {
 
     // Next value is `null`.
     (@@object $object:ident ($($key:tt)+) (: null $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!(null)) $($rest)*
+            ($crate::graphql::input_value!(null)) $($rest)*
         );
     };
 
     // Next value is `None`.
     (@@object $object:ident ($($key:tt)+) (: None $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!(None)) $($rest)*
+            ($crate::graphql::input_value!(None)) $($rest)*
         );
     };
 
     // Next value is a variable.
     (@@object $object:ident ($($key:tt)+) (: @$var:ident $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!(@$var)) $($rest)*
+            ($crate::graphql::input_value!(@$var)) $($rest)*
         );
     };
 
     // Next value is an array.
     (@@object $object:ident ($($key:tt)+) (: [$($array:tt)*] $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!([$($array)*])) $($rest)*
+            ($crate::graphql::input_value!([$($array)*])) $($rest)*
         );
     };
 
     // Next value is a map.
     (@@object $object:ident ($($key:tt)+) (: {$($map:tt)*} $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!({$($map)*})) $($rest)*
+            ($crate::graphql::input_value!({$($map)*})) $($rest)*
         );
     };
 
     // Next value is `true`, `false` or enum ident followed by comma.
     (@@object $object:ident ($($key:tt)+) (: $ident:ident , $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!($ident)) , $($rest)*
+            ($crate::graphql::input_value!($ident)) , $($rest)*
         );
     };
 
     // Next value is `true`, `false` or enum ident without trailing comma.
     (@@object $object:ident ($($key:tt)+) (: $last:ident ) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!($last))
+            ($crate::graphql::input_value!($last))
         );
     };
 
     // Next value is an expression followed by comma.
     (@@object $object:ident ($($key:tt)+) (: $value:expr , $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!($value)) , $($rest)*
+            ($crate::graphql::input_value!($value)) , $($rest)*
         );
     };
 
     // Last value is an expression with no trailing comma.
     (@@object $object:ident ($($key:tt)+) (: $value:expr) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             [$($key)+]
-            ($crate::graphql_input_value!($value))
+            ($crate::graphql::input_value!($value))
         );
     };
 
     // Missing value for last entry. Trigger a reasonable error message.
     (@@object $object:ident ($($key:tt)+) (:) $copy:tt) => {
         // "unexpected end of macro invocation"
-        $crate::graphql_input_value!();
+        $crate::graphql::input_value!();
     };
 
     // Missing colon and value for last entry. Trigger a reasonable error
     // message.
     (@@object $object:ident ($($key:tt)+) () $copy:tt) => {
         // "unexpected end of macro invocation"
-        $crate::graphql_input_value!();
+        $crate::graphql::input_value!();
     };
 
     // Misplaced colon. Trigger a reasonable error message.
     (@@object $object:ident () (: $($rest:tt)*) ($colon:tt $($copy:tt)*)) => {
         // Takes no arguments so "no rules expected the token `:`".
-        $crate::graphql_input_value!(@unexpected $colon);
+        $crate::graphql::input_value!(@unexpected $colon);
     };
 
     // Found a comma inside a key. Trigger a reasonable error message.
     (@@object $object:ident ($($key:tt)*) (, $($rest:tt)*) ($comma:tt $($copy:tt)*)) => {
         // Takes no arguments so "no rules expected the token `,`".
-        $crate::graphql_input_value!(@unexpected $comma);
+        $crate::graphql::input_value!(@unexpected $comma);
     };
 
     // Key is fully parenthesized. This avoids `clippy::double_parens` false
     // positives because the parenthesization may be necessary here.
     (@@object $object:ident () (($key:expr) : $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             ($key)
             (: $($rest)*) (: $($rest)*)
@@ -326,12 +324,12 @@ macro_rules! graphql_input_value {
 
     // Refuse to absorb colon token into key expression.
     (@@object $object:ident ($($key:tt)*) (: $($unexpected:tt)+) $copy:tt) => {
-        $crate::graphql_input_value!(@@unexpected $($unexpected)+);
+        $crate::graphql::input_value!(@@unexpected $($unexpected)+);
     };
 
     // Munch a token into the current key.
     (@@object $object:ident ($($key:tt)*) ($tt:tt $($rest:tt)*) $copy:tt) => {
-        $crate::graphql_input_value!(
+        $crate::graphql::input_value!(
             @@object $object
             ($($key)* $tt)
             ($($rest)*) ($($rest)*)
@@ -349,109 +347,107 @@ macro_rules! graphql_input_value {
     //////////////
 
     ([ $($arr:tt)* ]$(,)?) => {
-        $crate::graphql_input_value!(@@array [] $($arr)*)
+        $crate::graphql::input_value!(@@array [] $($arr)*)
     };
 
     ({}$(,)?) => {
-        $crate::InputValue::parsed_object(vec![])
+        $crate::graphql::InputValue::parsed_object(vec![])
     };
 
     ({ $($map:tt)+ }$(,)?) => {
-        $crate::InputValue::parsed_object({
+        $crate::graphql::InputValue::parsed_object({
             let mut object = vec![];
-            $crate::graphql_input_value!(@@object object () ($($map)*) ($($map)*));
+            $crate::graphql::input_value!(@@object object () ($($map)*) ($($map)*));
             object
         })
     };
 
-    (null$(,)?) => ($crate::InputValue::null());
+    (null$(,)?) => ($crate::graphql::InputValue::null());
 
-    (None$(,)?) => ($crate::InputValue::null());
+    (None$(,)?) => ($crate::graphql::InputValue::null());
 
-    (true$(,)?) => ($crate::InputValue::from(true));
+    (true$(,)?) => ($crate::graphql::InputValue::from(true));
 
-    (false$(,)?) => ($crate::InputValue::from(false));
+    (false$(,)?) => ($crate::graphql::InputValue::from(false));
 
-    (@$var:ident$(,)?) => ($crate::InputValue::variable(stringify!($var)));
+    (@$var:ident$(,)?) => ($crate::graphql::InputValue::variable(stringify!($var)));
 
-    ($enum:ident$(,)?) => ($crate::InputValue::enum_value(stringify!($enum)));
+    ($enum:ident$(,)?) => ($crate::graphql::InputValue::enum_value(stringify!($enum)));
 
-    (($e:expr)$(,)?) => ($crate::InputValue::from($e));
+    (($e:expr)$(,)?) => ($crate::graphql::InputValue::from($e));
 
-    ($e:expr$(,)?) => ($crate::InputValue::from($e));
+    ($e:expr$(,)?) => ($crate::graphql::InputValue::from($e));
 }
+
+#[doc(inline)]
+pub use graphql_input_value as input_value;
 
 #[cfg(test)]
 mod tests {
     use indexmap::{indexmap, IndexMap};
 
-    type V = crate::InputValue;
+    use crate::graphql;
+
+    use super::input_value;
+
+    type V = graphql::InputValue;
 
     #[test]
     fn null() {
-        assert_eq!(graphql_input_value!(null), V::Null);
+        assert_eq!(input_value!(null), V::Null);
     }
 
     #[test]
     fn scalar() {
         let val = 42;
-        assert_eq!(graphql_input_value!(1), V::scalar(1));
-        assert_eq!(graphql_input_value!("val"), V::scalar("val"));
-        assert_eq!(graphql_input_value!(1.34), V::scalar(1.34));
-        assert_eq!(graphql_input_value!(false), V::scalar(false));
-        assert_eq!(graphql_input_value!(1 + 2), V::scalar(3));
-        assert_eq!(graphql_input_value!((val)), V::scalar(42));
+        assert_eq!(input_value!(1), V::scalar(1));
+        assert_eq!(input_value!("val"), V::scalar("val"));
+        assert_eq!(input_value!(1.34), V::scalar(1.34));
+        assert_eq!(input_value!(false), V::scalar(false));
+        assert_eq!(input_value!(1 + 2), V::scalar(3));
+        assert_eq!(input_value!((val)), V::scalar(42));
     }
 
     #[test]
     fn r#enum() {
-        assert_eq!(graphql_input_value!(ENUM), V::enum_value("ENUM"));
-        assert_eq!(graphql_input_value!(lowercase), V::enum_value("lowercase"));
+        assert_eq!(input_value!(ENUM), V::enum_value("ENUM"));
+        assert_eq!(input_value!(lowercase), V::enum_value("lowercase"));
     }
 
     #[test]
     fn variable() {
-        assert_eq!(graphql_input_value!(@var), V::variable("var"));
-        assert_eq!(graphql_input_value!(@array), V::variable("array"));
-        assert_eq!(graphql_input_value!(@object), V::variable("object"));
+        assert_eq!(input_value!(@var), V::variable("var"));
+        assert_eq!(input_value!(@array), V::variable("array"));
+        assert_eq!(input_value!(@object), V::variable("object"));
     }
 
     #[test]
     fn list() {
         let val = 42;
 
-        assert_eq!(graphql_input_value!([]), V::list(vec![]));
+        assert_eq!(input_value!([]), V::list(vec![]));
 
-        assert_eq!(graphql_input_value!([null]), V::list(vec![V::Null]));
+        assert_eq!(input_value!([null]), V::list(vec![V::Null]));
 
-        assert_eq!(graphql_input_value!([1]), V::list(vec![V::scalar(1)]));
-        assert_eq!(graphql_input_value!([1 + 2]), V::list(vec![V::scalar(3)]));
-        assert_eq!(graphql_input_value!([(val)]), V::list(vec![V::scalar(42)]));
+        assert_eq!(input_value!([1]), V::list(vec![V::scalar(1)]));
+        assert_eq!(input_value!([1 + 2]), V::list(vec![V::scalar(3)]));
+        assert_eq!(input_value!([(val)]), V::list(vec![V::scalar(42)]));
 
+        assert_eq!(input_value!([ENUM]), V::list(vec![V::enum_value("ENUM")]));
         assert_eq!(
-            graphql_input_value!([ENUM]),
-            V::list(vec![V::enum_value("ENUM")]),
-        );
-        assert_eq!(
-            graphql_input_value!([lowercase]),
+            input_value!([lowercase]),
             V::list(vec![V::enum_value("lowercase")]),
         );
 
+        assert_eq!(input_value!([@var]), V::list(vec![V::variable("var")]),);
+        assert_eq!(input_value!([@array]), V::list(vec![V::variable("array")]));
         assert_eq!(
-            graphql_input_value!([@var]),
-            V::list(vec![V::variable("var")]),
-        );
-        assert_eq!(
-            graphql_input_value!([@array]),
-            V::list(vec![V::variable("array")]),
-        );
-        assert_eq!(
-            graphql_input_value!([@object]),
+            input_value!([@object]),
             V::list(vec![V::variable("object")]),
         );
 
         assert_eq!(
-            graphql_input_value!([1, [2], 3]),
+            input_value!([1, [2], 3]),
             V::list(vec![
                 V::scalar(1),
                 V::list(vec![V::scalar(2)]),
@@ -459,7 +455,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_input_value!([1, [2 + 3], 3]),
+            input_value!([1, [2 + 3], 3]),
             V::list(vec![
                 V::scalar(1),
                 V::list(vec![V::scalar(5)]),
@@ -467,7 +463,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_input_value!([1, [ENUM], (val)]),
+            input_value!([1, [ENUM], (val)]),
             V::list(vec![
                 V::scalar(1),
                 V::list(vec![V::enum_value("ENUM")]),
@@ -475,7 +471,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_input_value!([1 + 2, [(val)], @val]),
+            input_value!([1 + 2, [(val)], @val]),
             V::list(vec![
                 V::scalar(3),
                 V::list(vec![V::scalar(42)]),
@@ -483,7 +479,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            graphql_input_value!([1, [@val], ENUM]),
+            input_value!([1, [@val], ENUM]),
             V::list(vec![
                 V::scalar(1),
                 V::list(vec![V::variable("val")]),
@@ -495,68 +491,65 @@ mod tests {
     #[test]
     fn object() {
         let val = 42;
-        assert_eq!(
-            graphql_input_value!({}),
-            V::object(IndexMap::<String, _>::new()),
-        );
+        assert_eq!(input_value!({}), V::object(IndexMap::<String, _>::new()));
 
         assert_eq!(
-            graphql_input_value!({ "key": null }),
+            input_value!({ "key": null }),
             V::object(indexmap! {"key" => V::Null}),
         );
 
         assert_eq!(
-            graphql_input_value!({"key": 123}),
+            input_value!({"key": 123}),
             V::object(indexmap! {"key" => V::scalar(123)}),
         );
         assert_eq!(
-            graphql_input_value!({"key": 1 + 2}),
+            input_value!({"key": 1 + 2}),
             V::object(indexmap! {"key" => V::scalar(3)}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": (val) }),
+            input_value!({ "key": (val) }),
             V::object(indexmap! {"key" => V::scalar(42)}),
         );
 
         assert_eq!(
-            graphql_input_value!({"key": []}),
+            input_value!({"key": []}),
             V::object(indexmap! {"key" => V::list(vec![])}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": [null] }),
+            input_value!({ "key": [null] }),
             V::object(indexmap! {"key" => V::list(vec![V::Null])}),
         );
         assert_eq!(
-            graphql_input_value!({"key": [1] }),
+            input_value!({"key": [1] }),
             V::object(indexmap! {"key" => V::list(vec![V::scalar(1)])}),
         );
         assert_eq!(
-            graphql_input_value!({"key": [1 + 2] }),
+            input_value!({"key": [1 + 2] }),
             V::object(indexmap! {"key" => V::list(vec![V::scalar(3)])}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": [(val)] }),
+            input_value!({ "key": [(val)] }),
             V::object(indexmap! {"key" => V::list(vec![V::scalar(42)])}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": ENUM }),
+            input_value!({ "key": ENUM }),
             V::object(indexmap! {"key" => V::enum_value("ENUM")}),
         );
         assert_eq!(
-            graphql_input_value!({ "key": lowercase }),
+            input_value!({ "key": lowercase }),
             V::object(indexmap! {"key" => V::enum_value("lowercase")}),
         );
         assert_eq!(
-            graphql_input_value!({"key": @val}),
+            input_value!({"key": @val}),
             V::object(indexmap! {"key" => V::variable("val")}),
         );
         assert_eq!(
-            graphql_input_value!({"key": @array }),
+            input_value!({"key": @array }),
             V::object(indexmap! {"key" => V::variable("array")}),
         );
 
         assert_eq!(
-            graphql_input_value!({
+            input_value!({
                 "inner": {
                     "key1": (val),
                     "key2": "val",
@@ -606,8 +599,8 @@ mod tests {
     fn option() {
         let val = Some(42);
 
-        assert_eq!(graphql_input_value!(None), V::Null);
-        assert_eq!(graphql_input_value!(Some(42)), V::scalar(42));
-        assert_eq!(graphql_input_value!((val)), V::scalar(42));
+        assert_eq!(input_value!(None), V::Null);
+        assert_eq!(input_value!(Some(42)), V::scalar(42));
+        assert_eq!(input_value!((val)), V::scalar(42));
     }
 }

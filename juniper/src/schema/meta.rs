@@ -1,6 +1,5 @@
 //! Types used to describe a `GraphQL` schema
 
-use juniper::IntoFieldError;
 use std::{
     borrow::{Cow, ToOwned},
     fmt,
@@ -9,10 +8,11 @@ use std::{
 use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{ParseError, ScalarToken},
+    resolve,
     schema::model::SchemaType,
     types::base::TypeKind,
     value::{DefaultScalarValue, ParseScalarValue},
-    FieldError,
+    FieldError, IntoFieldError,
 };
 
 /// Whether an item is deprecated, with context.
@@ -28,16 +28,16 @@ impl DeprecationStatus {
     /// If this deprecation status indicates the item is deprecated.
     pub fn is_deprecated(&self) -> bool {
         match self {
-            DeprecationStatus::Current => false,
-            DeprecationStatus::Deprecated(_) => true,
+            Self::Current => false,
+            Self::Deprecated(_) => true,
         }
     }
 
     /// An optional reason for the deprecation, or none if `Current`.
     pub fn reason(&self) -> Option<&str> {
         match self {
-            DeprecationStatus::Current => None,
-            DeprecationStatus::Deprecated(rsn) => rsn.as_deref(),
+            Self::Current => None,
+            Self::Deprecated(rsn) => rsn.as_deref(),
         }
     }
 }
@@ -54,6 +54,20 @@ pub struct ScalarMeta<'a, S> {
     pub(crate) parse_fn: ScalarTokenParseFn<S>,
 }
 
+// Manual implementation is required here to omit redundant `S: Clone` trait
+// bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for ScalarMeta<'a, S> {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            description: self.description.clone(),
+            specified_by_url: self.specified_by_url.clone(),
+            try_parse_fn: self.try_parse_fn,
+            parse_fn: self.parse_fn,
+        }
+    }
+}
+
 /// Shortcut for an [`InputValue`] parsing function.
 pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), FieldError<S>>;
 
@@ -61,7 +75,7 @@ pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), Fiel
 pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError>;
 
 /// List type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ListMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -71,14 +85,14 @@ pub struct ListMeta<'a> {
 }
 
 /// Nullable type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NullableMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
 }
 
 /// Object type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -101,8 +115,21 @@ pub struct EnumMeta<'a, S> {
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
+// Manual implementation is required here to omit redundant `S: Clone` trait
+// bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for EnumMeta<'a, S> {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            description: self.description.clone(),
+            values: self.values.clone(),
+            try_parse_fn: self.try_parse_fn,
+        }
+    }
+}
+
 /// Interface type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InterfaceMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -115,7 +142,7 @@ pub struct InterfaceMeta<'a, S> {
 }
 
 /// Union type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct UnionMeta<'a> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -126,6 +153,7 @@ pub struct UnionMeta<'a> {
 }
 
 /// Input object metadata
+#[derive(Clone)]
 pub struct InputObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -140,14 +168,14 @@ pub struct InputObjectMeta<'a, S> {
 ///
 /// After a type's `meta` method has been called but before it has returned, a placeholder type
 /// is inserted into a registry to indicate existence.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PlaceholderMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
 }
 
 /// Generic type metadata
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum MetaType<'a, S = DefaultScalarValue> {
     #[doc(hidden)]
     Scalar(ScalarMeta<'a, S>),
@@ -170,7 +198,7 @@ pub enum MetaType<'a, S = DefaultScalarValue> {
 }
 
 /// Metadata for a field
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Field<'a, S> {
     #[doc(hidden)]
     pub name: smartstring::alias::String,
@@ -193,7 +221,7 @@ impl<'a, S> Field<'a, S> {
 }
 
 /// Metadata for an argument to a field
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Argument<'a, S> {
     #[doc(hidden)]
     pub name: String,
@@ -434,6 +462,29 @@ impl<'a, S> MetaType<'a, S> {
     }
 }
 
+impl<'a, S> From<MetaType<'a, S>> for Type<'a> {
+    fn from(meta: MetaType<'a, S>) -> Self {
+        match meta {
+            MetaType::Scalar(ScalarMeta { name, .. })
+            | MetaType::Object(ObjectMeta { name, .. })
+            | MetaType::Enum(EnumMeta { name, .. })
+            | MetaType::Interface(InterfaceMeta { name, .. })
+            | MetaType::Union(UnionMeta { name, .. })
+            | MetaType::InputObject(InputObjectMeta { name, .. }) => Type::NonNullNamed(name),
+            MetaType::List(ListMeta {
+                of_type,
+                expected_size,
+            }) => Type::NonNullList(Box::new(of_type), expected_size),
+            MetaType::Nullable(NullableMeta { of_type }) => match of_type {
+                Type::NonNullNamed(inner) => Type::Named(inner),
+                Type::NonNullList(inner, expected_size) => Type::List(inner, expected_size),
+                t => t,
+            },
+            MetaType::Placeholder(PlaceholderMeta { of_type }) => of_type,
+        }
+    }
+}
+
 impl<'a, S> ScalarMeta<'a, S> {
     /// Builds a new [`ScalarMeta`] type with the specified `name`.
     pub fn new<T>(name: Cow<'a, str>) -> Self
@@ -447,6 +498,35 @@ impl<'a, S> ScalarMeta<'a, S> {
             specified_by_url: None,
             try_parse_fn: try_parse_fn::<S, T>,
             parse_fn: <T as ParseScalarValue<S>>::from_str,
+        }
+    }
+
+    /// Builds a new [`ScalarMeta`] information with the specified `name`.
+    pub fn new_reworked<T>(name: impl Into<Cow<'a, str>>) -> Self
+    where
+        T: resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            specified_by_url: None,
+            try_parse_fn: try_parse_fn_reworked::<T, S>,
+            parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
+        }
+    }
+
+    /// Builds a new [`ScalarMeta`] information with the specified `name` for
+    /// the non-[`Sized`] `T`ype that may only be parsed as a reference.
+    pub fn new_unsized<T>(name: impl Into<Cow<'a, str>>) -> Self
+    where
+        T: resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            specified_by_url: None,
+            try_parse_fn: try_parse_unsized_fn::<T, S>,
+            parse_fn: <T as resolve::ScalarToken<S>>::parse_scalar_token,
         }
     }
 
@@ -477,7 +557,7 @@ impl<'a, S> ScalarMeta<'a, S> {
 }
 
 impl<'a> ListMeta<'a> {
-    /// Build a new [`ListMeta`] type by wrapping the specified [`Type`].
+    /// Builds a new [`ListMeta`] type by wrapping the specified [`Type`].
     ///
     /// Specifying `expected_size` will be used to ensure that values of this
     /// type will always match it.
@@ -495,7 +575,7 @@ impl<'a> ListMeta<'a> {
 }
 
 impl<'a> NullableMeta<'a> {
-    /// Build a new [`NullableMeta`] type by wrapping the specified [`Type`].
+    /// Builds a new [`NullableMeta`] type by wrapping the specified [`Type`].
     pub fn new(of_type: Type<'a>) -> Self {
         Self { of_type }
     }
@@ -560,6 +640,20 @@ impl<'a, S> EnumMeta<'a, S> {
             description: None,
             values: values.to_owned(),
             try_parse_fn: try_parse_fn::<S, T>,
+        }
+    }
+
+    /// Builds a new [`EnumMeta`] information with the specified `name` and
+    /// possible `values`.
+    pub fn new_reworked<T>(name: impl Into<Cow<'a, str>>, values: &[EnumValue]) -> Self
+    where
+        T: resolve::InputValueOwned<S>,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            values: values.to_owned(),
+            try_parse_fn: try_parse_fn_reworked::<T, S>,
         }
     }
 
@@ -660,6 +754,21 @@ impl<'a, S> InputObjectMeta<'a, S> {
             description: None,
             input_fields: input_fields.to_vec(),
             try_parse_fn: try_parse_fn::<S, T>,
+        }
+    }
+
+    /// Builds a new [`InputObjectMeta`] information with the specified `name`
+    /// and its `fields`.
+    pub fn new_reworked<T>(name: impl Into<Cow<'a, str>>, fields: &[Argument<'a, S>]) -> Self
+    where
+        T: resolve::InputValueOwned<S>,
+        S: Clone,
+    {
+        Self {
+            name: name.into(),
+            description: None,
+            input_fields: fields.to_vec(),
+            try_parse_fn: try_parse_fn_reworked::<T, S>,
         }
     }
 
@@ -808,6 +917,24 @@ where
     T::Error: IntoFieldError<S>,
 {
     T::from_input_value(v)
+        .map(drop)
+        .map_err(T::Error::into_field_error)
+}
+
+fn try_parse_fn_reworked<T, SV>(v: &InputValue<SV>) -> Result<(), FieldError<SV>>
+where
+    T: resolve::InputValueOwned<SV>,
+{
+    T::try_from_input_value(v)
+        .map(drop)
+        .map_err(T::Error::into_field_error)
+}
+
+fn try_parse_unsized_fn<T, SV>(v: &InputValue<SV>) -> Result<(), FieldError<SV>>
+where
+    T: resolve::InputValueAsRef<SV> + ?Sized,
+{
+    T::try_from_input_value(v)
         .map(drop)
         .map_err(T::Error::into_field_error)
 }

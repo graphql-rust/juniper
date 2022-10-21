@@ -105,14 +105,36 @@ pub(crate) trait TypeExt {
     #[must_use]
     fn unreferenced(&self) -> &Self;
 
-    /// Iterates mutably over all the lifetime parameters of this [`syn::Type`]
-    /// with the given `func`tion.
-    fn lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F);
+    /// Iterates mutably over all the lifetime parameters (even elided) of this
+    /// [`syn::Type`] with the given `func`tion.
+    fn lifetimes_iter_mut<F: FnMut(MaybeElidedLifetimeMut<'_>)>(&mut self, func: &mut F);
+
+    /// Iterates mutably over all the named lifetime parameters (no elided) of
+    /// this [`syn::Type`] with the given `func`tion.
+    fn named_lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F) {
+        self.lifetimes_iter_mut(&mut |lt| {
+            if let MaybeElidedLifetimeMut::Named(lt) = lt {
+                func(lt);
+            }
+        })
+    }
 
     /// Anonymizes all the lifetime parameters of this [`syn::Type`] (except
     /// the `'static` ones), making it suitable for using in contexts with
     /// inferring.
     fn lifetimes_anonymized(&mut self);
+
+    /// Anonymizes all the lifetime parameters of this [`syn::Type`] (except
+    /// the `'static` ones), making it suitable for using in contexts with
+    /// inferring, and returns it as a new type, leaving the original one
+    /// unchanged.
+    fn to_anonymized_lifetimes(&self) -> syn::Type;
+
+    /// Lifts all the lifetimes of this [`syn::Type`] (even elided, but except
+    /// `'static`) to a `for<>` quantifier, preserving the type speciality as
+    /// much as possible, and returns it as a new type, leaving the original one
+    /// unchanged.
+    fn to_hrtb_lifetimes(&self) -> (Option<syn::BoundLifetimes>, syn::Type);
 
     /// Returns the topmost [`syn::Ident`] of this [`syn::TypePath`], if any.
     #[must_use]
@@ -135,16 +157,16 @@ impl TypeExt for syn::Type {
         }
     }
 
-    fn lifetimes_iter_mut<F: FnMut(&mut syn::Lifetime)>(&mut self, func: &mut F) {
+    fn lifetimes_iter_mut<F: FnMut(MaybeElidedLifetimeMut<'_>)>(&mut self, func: &mut F) {
         use syn::{GenericArgument as GA, Type as T};
 
-        fn iter_path<F: FnMut(&mut syn::Lifetime)>(path: &mut syn::Path, func: &mut F) {
+        fn iter_path<F: FnMut(MaybeElidedLifetimeMut<'_>)>(path: &mut syn::Path, func: &mut F) {
             for seg in path.segments.iter_mut() {
                 match &mut seg.arguments {
                     syn::PathArguments::AngleBracketed(angle) => {
                         for arg in angle.args.iter_mut() {
                             match arg {
-                                GA::Lifetime(lt) => func(lt),
+                                GA::Lifetime(lt) => func(lt.into()),
                                 GA::Type(ty) => ty.lifetimes_iter_mut(func),
                                 GA::Binding(b) => b.ty.lifetimes_iter_mut(func),
                                 GA::Constraint(_) | GA::Const(_) => {}
@@ -181,7 +203,7 @@ impl TypeExt for syn::Type {
             | T::TraitObject(syn::TypeTraitObject { bounds, .. }) => {
                 for bound in bounds.iter_mut() {
                     match bound {
-                        syn::TypeParamBound::Lifetime(lt) => func(lt),
+                        syn::TypeParamBound::Lifetime(lt) => func(lt.into()),
                         syn::TypeParamBound::Trait(bound) => {
                             if bound.lifetimes.is_some() {
                                 todo!("Iterating over HRTB lifetimes in trait is not yet supported")
@@ -193,9 +215,7 @@ impl TypeExt for syn::Type {
             }
 
             T::Reference(ref_ty) => {
-                if let Some(lt) = ref_ty.lifetime.as_mut() {
-                    func(lt)
-                }
+                func((&mut ref_ty.lifetime).into());
                 (*ref_ty.elem).lifetimes_iter_mut(func)
             }
 
@@ -213,11 +233,46 @@ impl TypeExt for syn::Type {
     }
 
     fn lifetimes_anonymized(&mut self) {
-        self.lifetimes_iter_mut(&mut |lt| {
+        self.named_lifetimes_iter_mut(&mut |lt| {
             if lt.ident != "_" && lt.ident != "static" {
                 lt.ident = syn::Ident::new("_", Span::call_site());
             }
         });
+    }
+
+    fn to_anonymized_lifetimes(&self) -> syn::Type {
+        let mut ty = self.clone();
+        ty.lifetimes_anonymized();
+        ty
+    }
+
+    fn to_hrtb_lifetimes(&self) -> (Option<syn::BoundLifetimes>, syn::Type) {
+        let mut ty = self.clone();
+        let mut lts = vec![];
+
+        let anon_ident = &syn::Ident::new("_", Span::call_site());
+
+        ty.lifetimes_iter_mut(&mut |mut lt_mut| {
+            let ident = match &lt_mut {
+                MaybeElidedLifetimeMut::Elided(v) => {
+                    v.as_ref().map(|l| &l.ident).unwrap_or(anon_ident)
+                }
+                MaybeElidedLifetimeMut::Named(l) => &l.ident,
+            };
+            if ident != "static" {
+                let new_lt = syn::Lifetime::new(&format!("'__fa_f_{ident}"), Span::call_site());
+                if !lts.contains(&new_lt) {
+                    lts.push(new_lt.clone());
+                }
+                lt_mut.set(new_lt);
+            }
+        });
+
+        let for_ = (!lts.is_empty()).then(|| {
+            parse_quote! {
+            for< #( #lts ),* >}
+        });
+        (for_, ty)
     }
 
     fn topmost_ident(&self) -> Option<&syn::Ident> {
@@ -236,6 +291,38 @@ impl TypeExt for syn::Type {
         .segments
         .last()
         .map(|s| &s.ident)
+    }
+}
+
+/// Mutable reference to a place that may containing a [`syn::Lifetime`].
+pub(crate) enum MaybeElidedLifetimeMut<'a> {
+    /// [`syn::Lifetime`] may be elided.
+    Elided(&'a mut Option<syn::Lifetime>),
+
+    /// [`syn::Lifetime`] is always present.
+    Named(&'a mut syn::Lifetime),
+}
+
+impl<'a> MaybeElidedLifetimeMut<'a> {
+    /// Assigns the provided [`syn::Lifetime`] to the place pointed by this
+    /// [`MaybeElidedLifetimeMut`] reference.
+    fn set(&mut self, lt: syn::Lifetime) {
+        match self {
+            Self::Elided(v) => **v = Some(lt),
+            Self::Named(l) => **l = lt,
+        }
+    }
+}
+
+impl<'a> From<&'a mut Option<syn::Lifetime>> for MaybeElidedLifetimeMut<'a> {
+    fn from(lt: &'a mut Option<syn::Lifetime>) -> Self {
+        Self::Elided(lt)
+    }
+}
+
+impl<'a> From<&'a mut syn::Lifetime> for MaybeElidedLifetimeMut<'a> {
+    fn from(lt: &'a mut syn::Lifetime) -> Self {
+        Self::Named(lt)
     }
 }
 
@@ -351,6 +438,46 @@ impl<'a> VisitMut for ReplaceWithDefaults<'a> {
                 }
             }
             _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_type_ext_to_hrtb_lifetimes {
+    use quote::quote;
+    use syn::parse_quote;
+
+    use super::TypeExt as _;
+
+    #[test]
+    fn test() {
+        for (input, expected) in [
+            (parse_quote! { &'static T }, quote! { &'static T }),
+            (parse_quote! { &T }, quote! { for<'__fa_f__>: &'__fa_f__ T }),
+            (
+                parse_quote! { &'a mut T },
+                quote! { for<'__fa_f_a>: &'__fa_f_a mut T },
+            ),
+            (
+                parse_quote! { &str },
+                quote! { for<'__fa_f__>: &'__fa_f__ str },
+            ),
+            (
+                parse_quote! { &Cow<'static, str> },
+                quote! { for<'__fa_f__>: &'__fa_f__ Cow<'static, str> },
+            ),
+            (
+                parse_quote! { &Cow<'a, str> },
+                quote! { for<'__fa_f__, '__fa_f_a>: &'__fa_f__ Cow<'__fa_f_a, str> },
+            ),
+        ] {
+            let (actual_for, actual_ty) = syn::Type::to_hrtb_lifetimes(&input);
+            let actual_for = actual_for.map(|for_| quote! { #for_: });
+
+            assert_eq!(
+                quote! { #actual_for #actual_ty }.to_string(),
+                expected.to_string(),
+            );
         }
     }
 }

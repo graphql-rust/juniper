@@ -63,15 +63,17 @@ pub(crate) enum Type {
     /// [`ScalarValue`]: juniper::ScalarValue
     Concrete(syn::Type),
 
-    /// One of type parameters of the original type is specified as [`ScalarValue`].
+    /// One of type parameters of the original type is specified as
+    /// [`ScalarValue`].
     ///
     /// The original type is the type that the code is generated for.
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     ExplicitGeneric(syn::Ident),
 
-    /// [`ScalarValue`] parametrization is assumed to be generic and is not specified
-    /// explicitly, or specified as bound predicate (like `S: ScalarValue + Send + Sync`).
+    /// [`ScalarValue`] parametrization is assumed to be generic and is not
+    /// specified explicitly, or specified as bound predicate (like
+    /// `S: ScalarValue + Send + Sync`).
     ///
     /// [`ScalarValue`]: juniper::ScalarValue
     ImplicitGeneric(Option<syn::PredicateType>),

@@ -1,5 +1,6 @@
 //! Common functions, definitions and extensions for code generation, used by this crate.
 
+pub(crate) mod behavior;
 pub(crate) mod default;
 pub(crate) mod deprecation;
 mod description;

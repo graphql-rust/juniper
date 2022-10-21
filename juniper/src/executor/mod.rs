@@ -3,7 +3,8 @@
 use std::{
     borrow::Cow,
     cmp::Ordering,
-    collections::HashMap,
+    collections::{hash_map, HashMap},
+    convert,
     fmt::{Debug, Display},
     sync::{Arc, RwLock},
 };
@@ -17,6 +18,7 @@ use crate::{
         Selection, ToInputValue, Type,
     },
     parser::{SourcePosition, Spanning},
+    resolve,
     schema::{
         meta::{
             Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
@@ -69,7 +71,7 @@ pub enum FieldPath<'a> {
 /// of the current field stack, context, variables, and errors.
 pub struct Executor<'r, 'a, CtxT, S = DefaultScalarValue>
 where
-    CtxT: 'a,
+    CtxT: ?Sized + 'a,
     S: 'a,
 {
     fragments: &'r HashMap<&'a str, Fragment<'a, S>>,
@@ -81,6 +83,41 @@ where
     context: &'a CtxT,
     errors: &'r RwLock<Vec<ExecutionError<S>>>,
     field_path: Arc<FieldPath<'a>>,
+}
+
+impl<'r, 'a, CX: ?Sized, SV> Executor<'r, 'a, CX, SV> {
+    pub(crate) fn current_type_reworked(&self) -> &TypeType<'a, SV> {
+        &self.current_type
+    }
+
+    /// Resolves the specified single arbitrary `Type` `value` as
+    /// [`graphql::Value`].
+    ///
+    /// # Errors
+    ///
+    /// Whenever [`Type::resolve_value()`] errors.
+    ///
+    /// [`graphql::Value`]: crate::graphql::Value
+    /// [`Type::resolve_value()`]: resolve::Value::resolve_value
+    pub fn resolve_value<BH, Type, TI>(&self, value: &Type, type_info: &TI) -> ExecutionResult<SV>
+    where
+        Type: resolve::Value<TI, CX, SV, BH> + ?Sized,
+        TI: ?Sized,
+        BH: ?Sized,
+    {
+        value.resolve_value(self.current_selection_set, type_info, self)
+    }
+
+    /// Returns the current context of this [`Executor`].
+    ///
+    /// Context is usually provided when the top-level [`execute()`] function is
+    /// called.
+    ///
+    /// [`execute()`]: crate::execute
+    #[must_use]
+    pub fn context(&self) -> &'r CX {
+        self.context
+    }
 }
 
 /// Error type for errors that occur during query execution
@@ -625,14 +662,6 @@ where
     /// `Executor`'s current selection set
     pub(crate) fn current_selection_set(&self) -> Option<&[Selection<'a, S>]> {
         self.current_selection_set
-    }
-
-    /// Access the current context
-    ///
-    /// You usually provide the context when calling the top-level `execute`
-    /// function, or using the context factory in the Iron integration.
-    pub fn context(&self) -> &'r CtxT {
-        self.context
     }
 
     /// The currently executing schema
@@ -1183,6 +1212,21 @@ impl<'r, S: 'r> Registry<'r, S> {
         }
     }
 
+    /// Returns an entry with a [`Type`] meta information for the specified
+    /// named [`graphql::Type`], registered in this [`Registry`].
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    pub fn entry_type<T, TI>(
+        &mut self,
+        type_info: &TI,
+    ) -> hash_map::Entry<'_, Name, MetaType<'r, S>>
+    where
+        T: resolve::TypeName<TI> + ?Sized,
+        TI: ?Sized,
+    {
+        self.types.entry(T::type_name(type_info).parse().unwrap())
+    }
+
     /// Creates a [`Field`] with the provided `name`.
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
@@ -1240,6 +1284,16 @@ impl<'r, S: 'r> Registry<'r, S> {
         Argument::new(name, self.get_type::<T>(info)).default_value(value.to_input_value())
     }
 
+    /// Creates an [`Argument`] with the provided `name`.
+    pub fn arg_reworked<'ti, T, TI>(&mut self, name: &str, type_info: &'ti TI) -> Argument<'r, S>
+    where
+        T: resolve::Type<TI, S> + resolve::InputValueOwned<S>,
+        TI: ?Sized,
+        'ti: 'r,
+    {
+        Argument::new(name, T::meta(self, type_info).as_type())
+    }
+
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
         self.types
             .entry(name)
@@ -1256,6 +1310,84 @@ impl<'r, S: 'r> Registry<'r, S> {
         let name = T::name(info).expect("Scalar types must be named. Implement `name()`");
 
         ScalarMeta::new::<T>(Cow::Owned(name.into()))
+    }
+
+    /// Builds a [`ScalarMeta`] information for the specified [`graphql::Type`],
+    /// allowing to `customize` the created [`ScalarMeta`], and stores it in
+    /// this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_scalar_with<'ti, T, TI>(
+        &mut self,
+        type_info: &'ti TI,
+        customize: impl FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueOwned<S> + resolve::ScalarToken<S>,
+        TI: ?Sized,
+        'ti: 'r,
+        S: Clone,
+    {
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                customize(ScalarMeta::new_reworked::<T>(T::type_name(type_info))).into_meta()
+            })
+            .clone()
+    }
+
+    /// Builds a [`ScalarMeta`] information for the specified non-[`Sized`]
+    /// [`graphql::Type`], and stores it in this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_scalar_unsized<'ti, T, TI>(&mut self, type_info: &'ti TI) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
+        TI: ?Sized,
+        'ti: 'r,
+        S: Clone,
+    {
+        self.register_scalar_unsized_with::<T, TI>(type_info, convert::identity)
+    }
+
+    /// Builds a [`ScalarMeta`] information for the specified non-[`Sized`]
+    /// [`graphql::Type`], allowing to `customize` the created [`ScalarMeta`],
+    /// and stores it in this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_scalar_unsized_with<'ti, T, TI>(
+        &mut self,
+        type_info: &'ti TI,
+        customize: impl FnOnce(ScalarMeta<'r, S>) -> ScalarMeta<'r, S>,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueAsRef<S> + resolve::ScalarToken<S> + ?Sized,
+        TI: ?Sized,
+        'ti: 'r,
+        S: Clone,
+    {
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                customize(ScalarMeta::new_unsized::<T>(T::type_name(type_info))).into_meta()
+            })
+            .clone()
     }
 
     /// Creates a [`ListMeta`] type.
@@ -1275,6 +1407,25 @@ impl<'r, S: 'r> Registry<'r, S> {
         ListMeta::new(of_type, expected_size)
     }
 
+    /// Builds a [`ListMeta`] information for the specified [`graphql::Type`].
+    ///
+    /// Specifying `expected_size` will be used in validation to ensure that
+    /// values of this type matches it.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    pub fn wrap_list<'ti, T, TI>(
+        &mut self,
+        type_info: &'ti TI,
+        expected_size: Option<usize>,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::Type<TI, S> + ?Sized,
+        TI: ?Sized,
+        'ti: 'r,
+    {
+        ListMeta::new(T::meta(self, type_info).into(), expected_size).into_meta()
+    }
+
     /// Creates a [`NullableMeta`] type.
     pub fn build_nullable_type<T>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
     where
@@ -1283,6 +1434,19 @@ impl<'r, S: 'r> Registry<'r, S> {
     {
         let of_type = self.get_type::<T>(info);
         NullableMeta::new(of_type)
+    }
+
+    /// Builds a [`NullableMeta`] information for the specified
+    /// [`graphql::Type`].
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    pub fn wrap_nullable<'ti, T, TI>(&mut self, type_info: &'ti TI) -> MetaType<'r, S>
+    where
+        T: resolve::Type<TI, S> + ?Sized,
+        TI: ?Sized,
+        'ti: 'r,
+    {
+        NullableMeta::new(T::meta(self, type_info).into()).into_meta()
     }
 
     /// Creates an [`ObjectMeta`] type with the given `fields`.
@@ -1316,6 +1480,36 @@ impl<'r, S: 'r> Registry<'r, S> {
         let name = T::name(info).expect("Enum types must be named. Implement `name()`");
 
         EnumMeta::new::<T>(Cow::Owned(name.into()), values)
+    }
+
+    /// Builds an [`EnumMeta`] information for the specified [`graphql::Type`],
+    /// allowing to `customize` the created [`ScalarMeta`], and stores it in
+    /// this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_enum_with<'ti, T, TI>(
+        &mut self,
+        values: &[EnumValue],
+        type_info: &'ti TI,
+        customize: impl FnOnce(EnumMeta<'r, S>) -> EnumMeta<'r, S>,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueOwned<S>,
+        TI: ?Sized,
+        'ti: 'r,
+        S: Clone,
+    {
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                customize(EnumMeta::new_reworked::<T>(T::type_name(type_info), values)).into_meta()
+            })
+            .clone()
     }
 
     /// Creates an [`InterfaceMeta`] type with the given `fields`.
@@ -1360,5 +1554,39 @@ impl<'r, S: 'r> Registry<'r, S> {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 
         InputObjectMeta::new::<T>(Cow::Owned(name.into()), args)
+    }
+
+    /// Builds an [`InputObjectMeta`] information for the specified
+    /// [`graphql::Type`], allowing to `customize` the created [`ScalarMeta`],
+    /// and stores it in this [`Registry`].
+    ///
+    /// # Idempotent
+    ///
+    /// If this [`Registry`] contains a [`MetaType`] with such [`TypeName`]
+    /// already, then just returns it without doing anything.
+    ///
+    /// [`graphql::Type`]: resolve::Type
+    /// [`TypeName`]: resolve::TypeName
+    pub fn register_input_object_with<'ti, T, TI>(
+        &mut self,
+        fields: &[Argument<'r, S>],
+        type_info: &'ti TI,
+        customize: impl FnOnce(InputObjectMeta<'r, S>) -> InputObjectMeta<'r, S>,
+    ) -> MetaType<'r, S>
+    where
+        T: resolve::TypeName<TI> + resolve::InputValueOwned<S>,
+        TI: ?Sized,
+        'ti: 'r,
+        S: Clone,
+    {
+        self.entry_type::<T, _>(type_info)
+            .or_insert_with(move || {
+                customize(InputObjectMeta::new_reworked::<T>(
+                    T::type_name(type_info),
+                    fields,
+                ))
+                .into_meta()
+            })
+            .clone()
     }
 }
