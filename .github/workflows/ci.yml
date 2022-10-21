@@ -293,7 +293,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
-          targets: wasm32-unknown-unknown
+          target: wasm32-unknown-unknown
       - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo check --target wasm32-unknown-unknown -p ${{ matrix.crate }}
