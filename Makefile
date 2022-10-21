@@ -100,11 +100,21 @@ endif
 # Run Rust tests of project crates.
 #
 # Usage:
-#	make test.cargo [crate=<crate-name>]
+#	make test.cargo [crate=<crate-name>] [careful=(no|yes)]
 
 test.cargo:
-	cargo $(if $(call eq,$(crate),juniper_codegen_tests),+nightly,) test \
-		$(if $(call eq,$(crate),),--workspace,-p $(crate)) --all-features
+ifeq ($(careful),yes)
+ifeq ($(shell cargo install --list | grep cargo-careful),)
+	cargo install cargo-careful
+endif
+ifeq ($(shell rustup component list --toolchain=nightly \
+              | grep 'rust-src (installed)'),)
+	rustup component add --toolchain=nightly rust-src
+endif
+endif
+	cargo $(if $(call eq,$(careful),yes),+nightly careful,\
+	      $(if $(call eq,$(crate),juniper_codegen_tests),+nightly,)) \
+		test $(if $(call eq,$(crate),),--workspace,-p $(crate)) --all-features
 
 
 
