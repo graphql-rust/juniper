@@ -19,22 +19,31 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-subscriptions = ["juniper_graphql_ws", "tokio"]
+subscriptions = [
+    "dep:actix",
+    "dep:actix-web-actors",
+    "dep:juniper_graphql_ws",
+    "dep:tokio",
+]
 
 [dependencies]
-actix = "0.13"
-actix-http = "3.0"
-actix-web = "4.0"
-actix-web-actors = "4.1.0"
-anyhow = "1.0"
+actix = { version = ">=0.12,<=0.13", optional = true }
+actix-http = "3.2"
+actix-web = "4.2.1"
+actix-web-actors = { version = "4.1", optional = true }
+anyhow = "1.0.47"
 futures = "0.3.22"
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0-dev", path = "../juniper_graphql_ws", optional = true }
 http = "0.2.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { version = "1.0.122", features = ["derive"] }
+serde_json = "1.0.18"
 thiserror = "1.0"
 tokio = { version = "1.0", features = ["sync"], optional = true }
+
+# Fixes for MSRV check.
+# TODO: Try remove on upgrade to 4.3 version of `actix-web` crate.
+derive_more = { version = "0.99.8", default-features = false }
 
 [dev-dependencies]
 actix-cors = "0.6"

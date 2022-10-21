@@ -6,12 +6,13 @@ replace = "{{crate_name}} = { version = \"{{version}}\""
 
 [[pre-release-replacements]]
 file = "CHANGELOG.md"
-exactly = 1
+max = 1
+min = 0
 search = "## master"
-replace = "## [{{version}}] · {{date}}\n[{{version}}]: /../../tree/{{crate_name}}%40{{version}}/{{crate_name}}"
+replace = "## [{{version}}] · {{date}}\n[{{version}}]: /../../tree/{{crate_name}}-v{{version}}/{{crate_name}}"
 
 [[pre-release-replacements]]
 file = "README.md"
 exactly = 2
 search = "graphql-rust/juniper/blob/[^/]+/"
-replace = "graphql-rust/juniper/blob/{{crate_name}}%40{{version}}/"
+replace = "graphql-rust/juniper/blob/{{crate_name}}-v{{version}}/"

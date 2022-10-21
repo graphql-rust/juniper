@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: ["master"]
-    tags: ["juniper*@*"]
+    tags: ["juniper*"]
   pull_request:
     branches: ["master"]
 
@@ -27,6 +27,7 @@ jobs:
       - clippy
       - example
       - feature
+      - msrv
       - release-check
       - rustfmt
       - test
@@ -47,9 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
           components: clippy
 
@@ -59,9 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: nightly
           components: rustfmt
 
@@ -78,11 +77,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
 
       - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
       - run: cargo bench -p juniper_benchmarks
@@ -107,11 +104,10 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
+      - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo check -p example_${{ matrix.example }}
 
@@ -141,14 +137,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
 
-      # TODO: Enable once MSRV is supported.
-      #- run: cargo +nightly update -Z minimal-versions
+      - run: cargo +nightly update -Z minimal-versions
 
       - run: cargo check -p ${{ matrix.crate }} --no-default-features
                    ${{ matrix.feature != '<none>'
@@ -157,23 +153,58 @@ jobs:
         env:
           RUSTFLAGS: -D warnings
 
+  msrv:
+    name: MSRV
+    strategy:
+      fail-fast: false
+      matrix:
+        msrv: ["1.62.0"]
+        crate:
+          - juniper_codegen
+          - juniper
+          - juniper_subscriptions
+          - juniper_graphql_ws
+          - juniper_actix
+          - juniper_hyper
+          #- juniper_iron
+          - juniper_rocket
+          - juniper_warp
+        os:
+          - ubuntu
+          - macOS
+          - windows
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.msrv }}
+      - run: rustup default ${{ matrix.msrv }}
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+
+      - run: cargo +nightly update -Z minimal-versions
+
+      - run: make test.cargo crate=${{ matrix.crate }}
+
   package:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
 
-      - name: Parse crate name
-        id: crate
-        run: echo ::set-output
-                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
-                                                    | cut -d '@' -f1)
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
 
-      - run: cargo package -p ${{ steps.crate.outputs.NAME }}
+      - run: cargo package -p ${{ steps.tag.outputs.group2 }}
 
   test:
     strategy:
@@ -211,13 +242,18 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
+          components: rust-src
+      - run: rustup default ${{ matrix.toolchain }}
+
+      - run: cargo install cargo-careful
+        if: ${{ matrix.toolchain == 'nightly' }}
 
       - run: make test.cargo crate=${{ matrix.crate }}
+                  careful=${{ (matrix.toolchain == 'nightly' && 'yes')
+                           ||                                   'no' }}
 
   test-book:
     name: test Book
@@ -237,11 +273,10 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
+      - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo install mdbook
 
@@ -261,12 +296,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
           target: wasm32-unknown-unknown
-          override: true
+      - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo check --target wasm32-unknown-unknown -p ${{ matrix.crate }}
 
@@ -278,7 +312,7 @@ jobs:
   #############
 
   release-check:
-    name: Check release automation
+    name: check release
     if: ${{ !startsWith(github.ref, 'refs/tags/juniper') }}
     strategy:
       fail-fast: false
@@ -296,9 +330,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
 
       - run: cargo install cargo-release
@@ -306,13 +339,36 @@ jobs:
       - run: make cargo.release crate=${{ matrix.crate }} ver=minor
                                 exec=no install=no
 
+  release-crate:
+    name: release on crates.io
+    needs: ["release-github"]
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
+
+      - name: Publish `${{ steps.tag.outputs.group2 }}` crate
+        run: cargo publish -p ${{ steps.tag.outputs.group2 }}
+                           --token ${{ secrets.CRATESIO_TOKEN }}
+
   release-github:
-    name: Release on GitHub
+    name: release on GitHub
     needs:
       - bench
       - clippy
       - example
       - feature
+      - msrv
       - package
       - rustfmt
       - test
@@ -323,56 +379,31 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Parse crate name
-        id: crate
-        run: echo ::set-output
-                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
-                                                    | cut -d '@' -f1)
-      - name: Parse release version
-        id: release
-        run: echo ::set-output
-                  name=VERSION::$(printf "$GITHUB_REF" | cut -d '@' -f2)
-
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
       - name: Verify release version matches crate's Cargo manifest
-        run: >-
-          test "${{ steps.release.outputs.VERSION }}" \
-            == "$(grep -m1 'version = "' ${{ steps.crate.outputs.NAME }}/Cargo.toml | cut -d '"' -f2)"
+        run: |
+          test "${{ steps.tag.outputs.group3 }}" \
+            == "$(grep -m1 'version = "' \
+                       ${{ steps.tag.outputs.group2 }}/Cargo.toml \
+                  | cut -d '"' -f2)"
+
       - name: Parse CHANGELOG link
         id: changelog
         run: echo ::set-output
-                  name=LINK::${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.crate.outputs.NAME }}%40${{ steps.release.outputs.VERSION }}//${{ steps.crate.outputs.NAME }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.release.outputs.VERSION }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.crate.outputs.NAME }}/CHANGELOG.md)
+                  name=link::${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)
 
       - uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: ${{ steps.crate.outputs.NAME }} ${{ steps.release.outputs.VERSION }}
+          name: ${{ steps.tag.outputs.group2 }} ${{ steps.tag.outputs.group3 }}
           body: |
-            [API docs](https://docs.rs/${{ steps.crate.outputs.NAME }}/${{ steps.release.outputs.VERSION }})
-            [Changelog](${{ steps.changelog.outputs.LINK }})
-          prerelease: ${{ contains(steps.release.outputs.VERSION, '-') }}
-
-  release-crate:
-    name: Release on crates.io
-    needs: ["release-github"]
-    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-
-      - name: Parse crate name
-        id: crate
-        run: echo ::set-output
-                  name=NAME::$(printf "$GITHUB_REF" | cut -d '/' -f3
-                                                    | cut -d '@' -f1)
-
-      - name: Publish crate
-        run: cargo publish -p ${{ steps.crate.outputs.NAME }}
-                           --token ${{ secrets.CRATESIO_TOKEN }}
+            [API docs](https://docs.rs/${{ steps.tag.outputs.group2 }}/${{ steps.tag.outputs.group3 }})
+            [Changelog](${{ steps.changelog.outputs.link }})
+          prerelease: ${{ contains(steps.tag.outputs.group3, '-') }}
 
 
 
