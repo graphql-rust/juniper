@@ -263,9 +263,7 @@ jobs:
         os:
           - ubuntu
           - macOS
-          # TODO: Re-enable once rust-lang/rust#99466 is fixed:
-          #       https://github.com/rust-lang/rust/issues/99466
-          #- windows
+          - windows
         toolchain:
           - stable
           - beta
@@ -277,8 +275,7 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
       - run: rustup default ${{ matrix.toolchain }}
-
-      - run: cargo install mdbook
+      - uses: peaceiris/actions-mdbook@v1
 
       - run: make test.book
 
