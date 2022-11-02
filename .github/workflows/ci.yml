@@ -263,9 +263,7 @@ jobs:
         os:
           - ubuntu
           - macOS
-          # TODO: Re-enable once rust-lang/rust#99466 is fixed:
-          #       https://github.com/rust-lang/rust/issues/99466
-          #- windows
+          - windows
         toolchain:
           - stable
           - beta
@@ -277,8 +275,7 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
       - run: rustup default ${{ matrix.toolchain }}
-
-      - run: cargo install mdbook
+      - uses: peaceiris/actions-mdbook@v1
 
       - run: make test.book
 
@@ -394,8 +391,8 @@ jobs:
 
       - name: Parse CHANGELOG link
         id: changelog
-        run: echo ::set-output
-                  name=link::${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)
+        run: echo "link=${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)"
+             >> $GITHUB_OUTPUT
 
       - uses: softprops/action-gh-release@v1
         with:
