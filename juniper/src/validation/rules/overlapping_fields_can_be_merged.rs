@@ -433,7 +433,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         let t2 = def2.as_ref().map(|def| &def.field_type);
 
         if let (Some(t1), Some(t2)) = (t1, t2) {
-            if self.is_type_conflict(ctx, t1, t2) {
+            if Self::is_type_conflict(ctx, t1, t2) {
                 return Some(Conflict(
                     ConflictReason(
                         response_name.into(),
@@ -564,7 +564,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         ))
     }
 
-    fn is_type_conflict(&self, ctx: &ValidatorContext<'a, S>, t1: &Type, t2: &Type) -> bool {
+    fn is_type_conflict(ctx: &ValidatorContext<'a, S>, t1: &Type, t2: &Type) -> bool {
         match (t1, t2) {
             (&Type::List(ref inner1, expected_size1), &Type::List(ref inner2, expected_size2))
             | (
@@ -574,7 +574,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                 if expected_size1 != expected_size2 {
                     return false;
                 }
-                self.is_type_conflict(ctx, inner1, inner2)
+                Self::is_type_conflict(ctx, inner1, inner2)
             }
             (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2))
             | (&Type::Named(ref n1), &Type::Named(ref n2)) => {
@@ -655,7 +655,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         let mut ast_and_defs = OrderedMap::new();
         let mut fragment_names = Vec::new();
 
-        self.collect_fields_and_fragment_names(
+        Self::collect_fields_and_fragment_names(
             parent_type,
             selection_set,
             ctx,
@@ -667,7 +667,6 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     }
 
     fn collect_fields_and_fragment_names(
-        &self,
         parent_type: Option<&'a MetaType<S>>,
         selection_set: &'a [Selection<S>],
         ctx: &ValidatorContext<'a, S>,
@@ -709,7 +708,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                         .and_then(|cond| ctx.schema.concrete_type_by_name(cond.item))
                         .or(parent_type);
 
-                    self.collect_fields_and_fragment_names(
+                    Self::collect_fields_and_fragment_names(
                         parent_type,
                         &inline.selection_set,
                         ctx,

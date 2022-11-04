@@ -130,7 +130,7 @@ impl TypeExt for syn::Type {
 
     fn unreferenced(&self) -> &Self {
         match self.unparenthesized() {
-            Self::Reference(ref_ty) => &*ref_ty.elem,
+            Self::Reference(ref_ty) => &ref_ty.elem,
             ty => ty,
         }
     }
