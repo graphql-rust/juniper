@@ -61,13 +61,13 @@ Also, enum name can be specified explicitly, if desired.
 # extern crate juniper;
 use juniper::{graphql_interface, GraphQLObject};
 
-#[graphql_interface(enum = CharaterInterface, for = Human)] 
+#[graphql_interface(enum = CharacterInterface, for = Human)] 
 trait Character {
     fn id(&self) -> &str;
 }
 
 #[derive(GraphQLObject)]
-#[graphql(impl = CharaterInterface)]
+#[graphql(impl = CharacterInterface)]
 struct Human {
     id: String,
     home_planet: String,
