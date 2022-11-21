@@ -29,8 +29,8 @@ e.g. to run the `actix_server` example:
 cargo run --example actix_server
 ```
 
-You can also run an example directly from an `examples` workspace directory. For
-example, to run the `actix_server` example:
+You can also run an example directly from an `examples` workspace directory. To
+run the `actix_server` example:
 
 ```bash
 cd examples/actix_subscriptions
@@ -42,10 +42,9 @@ cargo run
 ```
 
 Note if you want to run the code within your own project, you need to change
-the relative paths in `Cargo.tom`l, e.g":
+the relative paths in `Cargo.tom`l, e.g:
 
 ```toml
-
 juniper_graphql_ws = { path = "../../juniper_graphql_ws" }
 ```
 
