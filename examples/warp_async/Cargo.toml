@@ -7,7 +7,7 @@ authors = ["Christoph Herzog <chris@theduke.at>"]
 publish = false
 
 [dependencies]
-env_logger = "0.9"
+env_logger = "0.10"
 futures = "0.3"
 juniper = { path = "../../juniper" }
 juniper_warp = { path = "../../juniper_warp" }

@@ -52,7 +52,7 @@ actix-rt = "2.0"
 actix-test = "0.1"
 async-stream = "0.3"
 bytes = "1.0"
-env_logger = "0.9"
+env_logger = "0.10"
 juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 tokio = "1.0"
