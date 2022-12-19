@@ -157,7 +157,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        msrv: ["1.62.0"]
+        msrv: ["1.65.0"]
         crate:
           - juniper_codegen
           - juniper

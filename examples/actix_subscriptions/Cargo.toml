@@ -2,7 +2,7 @@
 name = "example_actix_subscriptions"
 version = "0.0.0"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 publish = false
 

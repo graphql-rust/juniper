@@ -2,7 +2,7 @@
 name = "juniper_graphql_ws"
 version = "0.4.0-dev"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 description = "GraphQL over WebSocket Protocol implementation for `juniper` crate."
 license = "BSD-2-Clause"
 authors = ["Christopher Brown <ccbrown112@gmail.com>"]

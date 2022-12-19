@@ -2,7 +2,7 @@
 name = "juniper_codegen"
 version = "0.16.0-dev"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 description = "Code generation for `juniper` crate."
 license = "BSD-2-Clause"
 authors = [
