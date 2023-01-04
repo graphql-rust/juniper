@@ -63,14 +63,14 @@ use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 ///     })
 ///     .boxed();
 ///
-/// let graphql_filter = make_graphql_filter(schema, context_extractor);
+/// let graphql_filter = make_graphql_filter(schema.into(), context_extractor);
 ///
 /// let graphql_endpoint = warp::path("graphql")
 ///     .and(warp::post())
 ///     .and(graphql_filter);
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
@@ -83,7 +83,6 @@ where
     CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
-    let schema = Arc::new(schema);
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
@@ -155,7 +154,7 @@ where
 
 /// Make a synchronous filter for graphql endpoint.
 pub fn make_graphql_filter_sync<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
@@ -165,7 +164,6 @@ where
     CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
-    let schema = Arc::new(schema);
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
@@ -569,7 +567,7 @@ mod tests {
         );
 
         let state = warp::any().map(Database::new);
-        let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
+        let filter = warp::path("graphql2").and(make_graphql_filter(schema.into(), state.boxed()));
 
         let response = request()
             .method("POST")
@@ -608,7 +606,7 @@ mod tests {
         );
 
         let state = warp::any().map(Database::new);
-        let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
+        let filter = warp::path("graphql2").and(make_graphql_filter(schema.into(), state.boxed()));
 
         let response = request()
             .method("POST")
@@ -672,9 +670,9 @@ mod tests_http_harness {
             let state = warp::any().map(move || Database::new());
 
             let filter = path::end().and(if is_sync {
-                make_graphql_filter_sync(schema, state.boxed())
+                make_graphql_filter_sync(schema.into(), state.boxed())
             } else {
-                make_graphql_filter(schema, state.boxed())
+                make_graphql_filter(schema.into(), state.boxed())
             });
             Self {
                 filter: filter.boxed(),
