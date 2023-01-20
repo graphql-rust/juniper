@@ -140,7 +140,31 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
   --> fail/interface/struct/attr_missing_field.rs:11:5
@@ -180,14 +204,6 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
-   = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-note: erroneous constant used
-  --> fail/interface/struct/attr_missing_field.rs:11:5
-   |
-11 |     id: String,
-   |     ^^
-   |
    = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
@@ -212,6 +228,14 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
@@ -237,6 +261,14 @@ note: erroneous constant used
    |     ^^
    |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
   --> fail/interface/struct/attr_missing_field.rs:11:5
@@ -300,6 +332,14 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
+   = note: this note originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
    = note: this note originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
@@ -357,6 +397,14 @@ note: erroneous constant used
    |     ^^
    |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
   --> fail/interface/struct/attr_missing_field.rs:11:5
@@ -524,7 +572,31 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
   --> fail/interface/struct/attr_missing_field.rs:11:5
@@ -564,14 +636,6 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
-   = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-note: erroneous constant used
-  --> fail/interface/struct/attr_missing_field.rs:11:5
-   |
-11 |     id: String,
-   |     ^^
-   |
    = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
@@ -596,6 +660,14 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
@@ -621,6 +693,14 @@ note: erroneous constant used
    |     ^^
    |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::assert_field_args` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
   --> fail/interface/struct/attr_missing_field.rs:11:5
@@ -684,6 +764,14 @@ note: erroneous constant used
 11 |     id: String,
    |     ^^
    |
+   = note: this note originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
    = note: this note originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
@@ -741,6 +829,14 @@ note: erroneous constant used
    |     ^^
    |
    = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant used
+  --> fail/interface/struct/attr_missing_field.rs:11:5
+   |
+11 |     id: String,
+   |     ^^
+   |
+   = note: this note originates in the macro `$crate::assert_subtype` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 note: erroneous constant used
   --> fail/interface/struct/attr_missing_field.rs:11:5
