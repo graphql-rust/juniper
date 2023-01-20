@@ -36,7 +36,7 @@ async fn main() {
     log::info!("Listening on 127.0.0.1:8080");
 
     let state = warp::any().map(move || Database::new());
-    let graphql_filter = juniper_warp::make_graphql_filter(schema().into(), state.boxed());
+    let graphql_filter = juniper_warp::make_graphql_filter(schema(), state.boxed());
 
     warp::serve(
         warp::get()

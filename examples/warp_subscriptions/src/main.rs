@@ -154,7 +154,7 @@ async fn main() {
 
     let qm_schema = schema();
     let qm_state = warp::any().map(|| Context);
-    let qm_graphql_filter = juniper_warp::make_graphql_filter(qm_schema.into(), qm_state.boxed());
+    let qm_graphql_filter = juniper_warp::make_graphql_filter(qm_schema, qm_state.boxed());
 
     let root_node = Arc::new(schema());
 
