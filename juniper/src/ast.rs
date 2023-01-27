@@ -567,8 +567,8 @@ impl<'a, S> Arguments<'a, S> {
     pub fn get(&self, key: &str) -> Option<&Spanning<InputValue<S>>> {
         self.items
             .iter()
-            .filter(|&&(ref k, _)| k.item == key)
-            .map(|&(_, ref v)| v)
+            .filter(|&(k, _)| k.item == key)
+            .map(|(_, v)| v)
             .next()
     }
 }

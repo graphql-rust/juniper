@@ -472,7 +472,7 @@ where
                         f.arguments.as_ref().map(|m| {
                             m.item
                                 .iter()
-                                .filter_map(|&(ref k, ref v)| {
+                                .filter_map(|(k, v)| {
                                     v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
                                 })
                                 .collect()
@@ -596,10 +596,9 @@ pub(super) fn is_excluded<S>(
 where
     S: ScalarValue,
 {
-    if let Some(ref directives) = *directives {
-        for &Spanning {
-            item: ref directive,
-            ..
+    if let Some(directives) = directives {
+        for Spanning {
+            item: directive, ..
         } in directives
         {
             let condition: bool = directive

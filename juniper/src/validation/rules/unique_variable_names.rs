@@ -32,7 +32,7 @@ where
     fn enter_variable_definition(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         match self.names.entry(var_name.item) {
             Entry::Occupied(e) => {

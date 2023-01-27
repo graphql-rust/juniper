@@ -38,15 +38,15 @@ where
     fn enter_variable_definition(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (_, var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         let type_name = var_def.var_type.item.innermost_name();
         validate_type(ctx, type_name, &var_def.var_type.start);
     }
 }
 
-fn validate_type<'a, S: Debug>(
-    ctx: &mut ValidatorContext<'a, S>,
+fn validate_type<S: Debug>(
+    ctx: &mut ValidatorContext<'_, S>,
     type_name: &str,
     location: &SourcePosition,
 ) {

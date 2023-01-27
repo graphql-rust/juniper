@@ -244,7 +244,7 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .filter_map(|&(ref k, ref v)| {
+                            .filter_map(|(k, v)| {
                                 v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
                             })
                             .collect()

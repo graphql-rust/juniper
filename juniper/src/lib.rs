@@ -268,8 +268,8 @@ where
 }
 
 /// Execute the reference introspection query in the provided schema
-pub fn introspect<'a, S, QueryT, MutationT, SubscriptionT>(
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+pub fn introspect<S, QueryT, MutationT, SubscriptionT>(
+    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     context: &QueryT::Context,
     format: IntrospectionFormat,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
