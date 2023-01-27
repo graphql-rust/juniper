@@ -253,7 +253,7 @@ jobs:
                            ||                                   'no' }}
 
   test-book:
-    name: test Book
+    name: test (Book)
     strategy:
       fail-fast: false
       matrix:
@@ -303,6 +303,28 @@ jobs:
   # Releasing #
   #############
 
+  publish:
+    name: publish (crates.io)
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
+    needs: ["release-github"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
+
+      - run: cargo publish -p ${{ steps.tag.outputs.group2 }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATESIO_TOKEN }}
+
   release-check:
     name: check release
     if: ${{ !startsWith(github.ref, 'refs/tags/juniper') }}
@@ -331,30 +353,9 @@ jobs:
       - run: make cargo.release crate=${{ matrix.crate }} ver=minor
                                 exec=no install=no
 
-  release-crate:
-    name: release on crates.io
-    needs: ["release-github"]
-    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: Parse crate name and version from Git tag
-        id: tag
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.ref }}
-          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
-
-      - name: Publish `${{ steps.tag.outputs.group2 }}` crate
-        run: cargo publish -p ${{ steps.tag.outputs.group2 }}
-                           --token ${{ secrets.CRATESIO_TOKEN }}
-
   release-github:
-    name: release on GitHub
+    name: release (GitHub)
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     needs:
       - bench
       - clippy
@@ -366,7 +367,6 @@ jobs:
       - test
       - test-book
       - wasm
-    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -389,7 +389,8 @@ jobs:
         run: echo "link=${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)"
              >> $GITHUB_OUTPUT
 
-      - uses: softprops/action-gh-release@v1
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
         with:
           name: ${{ steps.tag.outputs.group2 }} ${{ steps.tag.outputs.group3 }}
           body: |
@@ -405,10 +406,10 @@ jobs:
   ##########
 
   deploy-book:
-    name: deploy Book
-    needs: ["test", "test-book"]
+    name: deploy (Book)
     if: ${{ github.ref == 'refs/heads/master'
          || startsWith(github.ref, 'refs/tags/juniper@') }}
+    needs: ["test", "test-book"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
