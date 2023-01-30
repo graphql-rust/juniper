@@ -36,7 +36,7 @@ run the `actix_server` example:
 cd examples/actix_subscriptions
 cargo run
      Finished dev [unoptimized + debuginfo] target(s) in 0.13s
-     Running `/Users/lhinds/repos/rust-projects/juniper/target/debug/example_actix_subscriptions`
+     Running `/path/to/repo/juniper/target/debug/example_actix_subscriptions`
 [2022-11-20T07:46:08Z INFO  actix_server::builder] Starting 10 workers
 [2022-11-20T07:46:08Z INFO  actix_server::server] Actix runtime found; starting in Actix runtime
 ```
