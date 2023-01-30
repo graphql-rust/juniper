@@ -70,7 +70,7 @@ use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 ///     .and(graphql_filter);
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
@@ -83,7 +83,7 @@ where
     CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
-    let schema = Arc::new(schema);
+    let schema = schema.into();
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
@@ -155,7 +155,7 @@ where
 
 /// Make a synchronous filter for graphql endpoint.
 pub fn make_graphql_filter_sync<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
@@ -165,7 +165,7 @@ where
     CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
-    let schema = Arc::new(schema);
+    let schema = schema.into();
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 

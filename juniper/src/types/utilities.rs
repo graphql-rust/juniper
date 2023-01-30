@@ -80,7 +80,7 @@ where
                             })
                             .collect::<HashSet<_>>();
 
-                        let all_types_ok = obj.iter().all(|&(ref key, ref value)| {
+                        let all_types_ok = obj.iter().all(|(key, value)| {
                             remaining_required_fields.remove(&key.item);
                             if let Some(ref arg_type) = input_fields
                                 .iter()

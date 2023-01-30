@@ -32,7 +32,7 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         match self.known_names.entry(arg_name.item) {
             Entry::Occupied(e) => {

@@ -2,7 +2,7 @@
 name = "example_actix_subscriptions"
 version = "0.0.0"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 publish = false
 
@@ -10,7 +10,7 @@ publish = false
 actix-cors = "0.6"
 actix-web = "4.0"
 async-stream = "0.3"
-env_logger = "0.9"
+env_logger = "0.10"
 futures = "0.3"
 juniper = { path = "../../juniper", features = ["expose-test-schema"] }
 juniper_actix = { path = "../../juniper_actix", features = ["subscriptions"] }

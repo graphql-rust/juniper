@@ -173,7 +173,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn current_type_literal(&self) -> Option<&Type<'a>> {
         match self.type_literal_stack.last() {
-            Some(&Some(ref t)) => Some(t),
+            Some(Some(t)) => Some(t),
             _ => None,
         }
     }
@@ -186,7 +186,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn current_input_type_literal(&self) -> Option<&Type<'a>> {
         match self.input_type_literal_stack.last() {
-            Some(&Some(ref t)) => Some(t),
+            Some(Some(t)) => Some(t),
             _ => None,
         }
     }

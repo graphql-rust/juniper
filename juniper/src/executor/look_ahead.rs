@@ -52,7 +52,7 @@ where
             ),
             InputValue::Object(ref o) => LookAheadValue::Object(
                 o.iter()
-                    .map(|&(ref n, ref i)| {
+                    .map(|(n, i)| {
                         (
                             &n.item as &str,
                             LookAheadValue::from_input_value(&i.item, vars),
@@ -76,7 +76,7 @@ where
     S: ScalarValue,
 {
     pub(super) fn new(
-        &(ref name, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (name, value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
         vars: &'a Variables<S>,
     ) -> Self {
         LookAheadArgument {
@@ -143,12 +143,12 @@ where
                     let d = &d.item;
                     let arguments = &d.arguments;
                     match (d.name.item, arguments) {
-                        ("include", &Some(ref a)) => a
+                        ("include", Some(a)) => a
                             .item
                             .items
                             .iter()
                             .find(|item| item.0.item == "if")
-                            .map(|&(_, ref v)| {
+                            .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(s) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
@@ -158,12 +158,12 @@ where
                                 }
                             })
                             .unwrap_or(false),
-                        ("skip", &Some(ref a)) => a
+                        ("skip", Some(a)) => a
                             .item
                             .items
                             .iter()
                             .find(|item| item.0.item == "if")
-                            .map(|&(_, ref v)| {
+                            .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(b) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {

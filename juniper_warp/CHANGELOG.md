@@ -12,6 +12,13 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 - Switched to 0.16 version of [`juniper` crate].
 
+### Changed
+
+- Made `schema` argument of `make_graphql_filter()` and `make_graphql_filter_sync()` polymorphic, allowing to specify external `Arc`ed `schema`. ([#1136], [#1135])
+
+[#1135]: /../../issues/1136
+[#1136]: /../../pull/1136
+
 
 
 

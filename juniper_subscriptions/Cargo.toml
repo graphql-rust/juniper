@@ -2,7 +2,7 @@
 name = "juniper_subscriptions"
 version = "0.17.0-dev"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 description = "Juniper `SubscriptionCoordinator` and `SubscriptionConnection` implementations."
 license = "BSD-2-Clause"
 authors = ["nWacky <gosha.evtushenko@gmail.com>"]
