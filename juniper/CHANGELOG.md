@@ -1,4 +1,4 @@
-# [[0.15.11] 2023-01-??](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.11)
+# [[0.15.11] 2023-01-31](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.11)
 
 - Fix string mangling on dynamic schema by upgrading `smartstring` to `1.0` version. ([#1142](https://github.com/graphql-rust/juniper/issues/1142), [#1143](https://github.com/graphql-rust/juniper/issues/1143))
  
