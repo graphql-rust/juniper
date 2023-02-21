@@ -1591,7 +1591,7 @@ query Hero {
     }
 }",
         )
-            .unwrap();
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
@@ -1601,8 +1601,8 @@ query Hero {
                 &vars,
                 &fragments,
             )
-                .unwrap()
-                .for_explicit_type("Human");
+            .unwrap()
+            .for_explicit_type("Human");
 
             let mut children = look_ahead.children().into_iter();
             let heights_child = children.next().unwrap();
