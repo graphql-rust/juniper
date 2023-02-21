@@ -52,7 +52,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
 
 ### Added
-
+- Expose applied_for on the look ahead functionality ([#1145])
 - Usage of Rust arrays as GraphQL lists. ([#966], [#918])
 - `From` implementations for `InputValue` mirroring the ones for `Value` and better support for `Option` handling. ([#996])
 - `null` in addition to `None` for creating `Value::Null` in `graphql_value!` macro (following `serde_json::json!` style). ([#996])
