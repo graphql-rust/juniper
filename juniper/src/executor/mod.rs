@@ -941,7 +941,7 @@ where
         defs.item
             .items
             .iter()
-            .filter_map(|&(ref name, ref def)| {
+            .filter_map(|(name, def)| {
                 def.default_value
                     .as_ref()
                     .map(|i| (name.item.into(), i.item.clone()))
@@ -1088,7 +1088,7 @@ where
         defs.item
             .items
             .iter()
-            .filter_map(|&(ref name, ref def)| {
+            .filter_map(|(name, def)| {
                 def.default_value
                     .as_ref()
                     .map(|i| (name.item.into(), i.item.clone()))
