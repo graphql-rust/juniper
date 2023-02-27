@@ -125,7 +125,6 @@ jobs:
           - { feature: graphql-parser, crate: juniper }
           - { feature: rust_decimal, crate: juniper }
           - { feature: schema-language, crate: juniper }
-          - { feature: serde_json, crate: juniper }
           - { feature: time, crate: juniper }
           - { feature: url, crate: juniper }
           - { feature: uuid, crate: juniper }
@@ -284,15 +283,10 @@ jobs:
         target:
           - wasm32-unknown-unknown
           - wasm32-wasi
-        feature:
-          - <none>
         toolchain:
           - stable
           - beta
           - nightly
-        include:
-          - target: wasm32-unknown-unknown
-            feature: js
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -302,9 +296,10 @@ jobs:
           target: ${{ matrix.target }}
 
       - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
-                   ${{ matrix.feature != '<none>'
-                       && format('--features {0}', matrix.feature)
-                       || '' }}
+
+      - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
+                         --features js
+        if: ${{ matrix.target == 'wasm32-unknown-unknown' }}
 
 
 
