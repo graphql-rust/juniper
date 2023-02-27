@@ -296,10 +296,9 @@ jobs:
           target: ${{ matrix.target }}
 
       - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
-
-      - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
-                         --features js
-        if: ${{ matrix.target == 'wasm32-unknown-unknown' }}
+                   ${{ matrix.target == 'wasm32-unknown-unknown'
+                       && '--feature js'
+                       || '' }}
 
 
 
