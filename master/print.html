@@ -5,8 +5,10 @@
         <meta charset="UTF-8">
         <title>Juniper Book (GraphQL server for Rust)</title>
         <meta name="robots" content="noindex" />
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        
         <meta name="description" content="User guide for Juniper (GraphQL server library for Rust).">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
@@ -17,25 +19,29 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -51,7 +57,7 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
@@ -63,7 +69,7 @@
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
+        <script>
             var html = document.querySelector('html');
             var sidebar = 'hidden';
             if (document.body.clientWidth >= 1080) {
@@ -84,7 +90,7 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
+                                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky bordered">
                     <div class="left-buttons">
                         <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -94,7 +100,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -111,6 +117,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -124,8 +131,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -303,8 +311,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&l
 <span class="boring">
 </span><span class="boring">fn main() {
 </span><span class="boring">  let _ = Schema::new(Query, Mutation, EmptySubscription::new());
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>We now have a very simple but functional schema for a GraphQL server!</p>
 <p>To actually serve the schema, see the guides for our various <a href="./servers/index.html">server integrations</a>.</p>
 <p>Juniper is a library that can be used in many contexts--it does not require a server and it does not have a dependency on a particular transport or serialization format. You can invoke the executor directly to get a result for a query:</p>
@@ -362,8 +369,7 @@ fn main() {
             &quot;favoriteEpisode&quot;: &quot;NEW_HOPE&quot;,
         })
     );
-}
-</code></pre></pre>
+}</code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-system"><a class="header" href="#type-system">Type System</a></h1>
 <p>Most of the work in working with juniper consists of mapping the 
 GraphQL type system to the Rust types your application uses.</p>
@@ -403,8 +409,7 @@ struct Person {
     age: i32,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>This will create a GraphQL object type called <code>Person</code>, with two fields: <code>name</code>
 of type <code>String!</code>, and <code>age</code> of type <code>Int!</code>. Because of Rust's type system,
 everything is exported as non-null by default. If you need a nullable field, you
@@ -425,8 +430,7 @@ struct Person {
     age: i32,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Objects and fields without doc comments can instead set a <code>description</code>
 via the <code>graphql</code> attribute. The following example is equivalent to the above:</p>
 <p>!FILENAME GraphQL descriptions via attribute</p>
@@ -441,8 +445,7 @@ struct Person {
     age: i32,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Descriptions set via the <code>graphql</code> attribute take precedence over Rust
 doc comments. This enables internal Rust documentation and external GraphQL
 documentation to differ:</p>
@@ -459,8 +462,7 @@ struct Person {
     age: i32,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="relationships"><a class="header" href="#relationships">Relationships</a></h2>
 <p>You can only use the custom derive attribute under these circumstances:</p>
 <ul>
@@ -490,8 +492,7 @@ struct House {
     inhabitants: Vec&lt;Person&gt;, // Converted into [Person!]!
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Because <code>Person</code> is a valid GraphQL type, you can have a <code>Vec&lt;Person&gt;</code> in a
 struct and it'll be automatically converted into a list of non-nullable <code>Person</code>
 objects.</p>
@@ -506,8 +507,7 @@ struct Person {
     last_name: String, // Exposed as lastName
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>You can override the name by using the <code>graphql</code> attribute on individual struct
 fields:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -520,8 +520,7 @@ struct Person {
     website_url: Option&lt;String&gt;, // now exposed as `websiteURL` in the schema
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Or provide a different renaming policy on a struct for all its fields:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
@@ -533,8 +532,7 @@ struct Person {
     website_url: Option&lt;String&gt;, // now exposed as `website_url` in the schema
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="deprecating-fields"><a class="header" href="#deprecating-fields">Deprecating fields</a></h2>
 <p>To deprecate a field, you specify a deprecation reason using the <code>graphql</code>
 attribute:</p>
@@ -548,8 +546,7 @@ struct Person {
     first_name: String,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>The <code>name</code>, <code>description</code>, and <code>deprecation</code> arguments can of course be
 combined. Some restrictions from the GraphQL spec still applies though; you can
 only deprecate object fields and enum values.</p>
@@ -566,8 +563,7 @@ struct Person {
 </span>    password_hash: String, // cannot be queried or modified from GraphQL
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="complex-fields"><a class="header" href="#complex-fields">Complex fields</a></h1>
 <p>If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
@@ -609,8 +605,7 @@ impl Person {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <p>While this is a bit more verbose, it lets you write any kind of function in the
 field resolver. With this syntax, fields can also take arguments:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -634,8 +629,7 @@ impl House {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>To access global data such as database connections or authentication
 information, a <em>context</em> is used. To learn more about this, see the next
 chapter: <a href="types/objects/using_contexts.html">Using contexts</a>.</p>
@@ -686,8 +680,7 @@ impl Person {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <p>Or provide a different renaming policy on a <code>impl</code> block for all its fields:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
@@ -701,8 +694,7 @@ impl Person {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="customizing-arguments"><a class="header" href="#customizing-arguments">Customizing arguments</a></h2>
 <p>Method field arguments can also be customized.</p>
 <p>They can have custom descriptions and default values.</p>
@@ -733,8 +725,7 @@ impl Person {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <p>Provide a different renaming policy on a <code>impl</code> block also implies for arguments:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
@@ -748,8 +739,7 @@ impl Person {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="more-features"><a class="header" href="#more-features">More features</a></h2>
 <p>These, and more features, are described more thoroughly in <a href="https://docs.rs/juniper/latest/juniper/attr.graphql_object.html">the reference documentation</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="using-contexts"><a class="header" href="#using-contexts">Using contexts</a></h1>
@@ -774,8 +764,7 @@ struct User {
     friend_ids: Vec&lt;i32&gt;,
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <p>We would like a <code>friends</code> field on <code>User</code> that returns a list of <code>User</code> objects.
 In order to write such a field though, the database must be queried.</p>
 <p>To solve this, we mark the <code>Database</code> as a valid context type and assign it to
@@ -823,8 +812,7 @@ impl User {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <p>You only get an immutable reference to the context, so if you want to affect
 change to the execution, you'll need to use <a href="https://doc.rust-lang.org/book/first-edition/mutability.html#interior-vs-exterior-mutability">interior
 mutability</a>
@@ -876,8 +864,7 @@ impl User {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <p>Replace <code>tokio::sync::RwLock</code> with <code>std::sync::RwLock</code> (or similar) if you don't intend to use async resolving.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="error-handling"><a class="header" href="#error-handling">Error handling</a></h1>
 <p>Error handling in GraphQL can be done in multiple ways. In the
@@ -925,8 +912,7 @@ impl Example {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p><code>FieldResult&lt;T&gt;</code> is an alias for <code>Result&lt;T, FieldError&gt;</code>, which is the error
 type all fields must return. By using the <code>?</code> operator or <code>try!</code> macro, any type
 that implements the <code>Display</code> trait - which are most of the error types out
@@ -1017,8 +1003,7 @@ impl Example {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>The specified structured error information is included in the <a href="https://spec.graphql.org/October2021#sec-Errors"><code>extensions</code></a> key:</p>
 <pre><code class="language-json">{
   &quot;errors&quot;: [{
@@ -1103,8 +1088,7 @@ impl Mutation {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Each function may have a different return type and depending on the input
 parameters a new result type is required. For example, adding a user
 requires a new result type which contains the variant <code>Ok(User)</code>
@@ -1184,8 +1168,7 @@ impl Mutation {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <pre><code class="language-graphql">{
   mutation {
     addItem {
@@ -1274,8 +1257,7 @@ impl Mutation {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="additional-material"><a class="header" href="#additional-material">Additional Material</a></h2>
 <p>The <a href="https://shopify.dev/docs/admin-api/graphql/reference">Shopify API</a>
 implements a similar approach. Their API is a good reference to
@@ -1305,8 +1287,7 @@ enum Episode {
     Jedi,
 }
 
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <p>Juniper converts all enum variants to uppercase, so the corresponding string
 values for these variants are <code>NEWHOPE</code>, <code>EMPIRE</code>, and <code>JEDI</code>, respectively. If
 you want to override this, you can use the <code>graphql</code> attribute, similar to how
@@ -1320,8 +1301,7 @@ enum Episode {
     Jedi,
 }
 
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="documentation-and-deprecation"><a class="header" href="#documentation-and-deprecation">Documentation and deprecation</a></h2>
 <p>Just like when defining objects, the type itself can be renamed and documented,
 while individual enum variants can be renamed, documented, and deprecated:</p>
@@ -1340,8 +1320,7 @@ enum StarWarsEpisode {
     Jedi,
 }
 
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="supported-macro-attributes-derive"><a class="header" href="#supported-macro-attributes-derive">Supported Macro Attributes (Derive)</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Name of Attribute</th><th style="text-align: center">Container Support</th><th style="text-align: center">Field Support</th></tr></thead><tbody>
 <tr><td>context</td><td style="text-align: center">✔</td><td style="text-align: center">?</td></tr>
@@ -1367,8 +1346,7 @@ trait Character {
     fn id(&amp;self) -&gt; &amp;str;
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>However, to return values of such <a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a>, we should provide its implementers and the Rust type representing a <em>boxed value of this trait</em>. The last one can be represented in two flavors: enum and <a href="https://doc.rust-lang.org/reference/types/trait-object.html">trait object</a>.</p>
 <h3 id="enum-values-default"><a class="header" href="#enum-values-default">Enum values (default)</a></h3>
 <p>By default, Juniper generates an enum representing the values of the defined <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a>, and names it straightforwardly, <code>{Interface}Value</code>.</p>
@@ -1392,8 +1370,7 @@ struct Droid {
     id: String,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Also, enum name can be specified explicitly, if desired.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, GraphQLObject};
@@ -1410,8 +1387,7 @@ struct Human {
     home_planet: String,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="interfaces-implementing-other-interfaces"><a class="header" href="#interfaces-implementing-other-interfaces">Interfaces implementing other interfaces</a></h3>
 <p>GraphQL allows implementing interfaces on other interfaces in addition to objects.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -1447,8 +1423,7 @@ impl Luke {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
 <p><strong>NOTE:</strong> Every interface has to specify all other interfaces/objects it implements or implemented for. Missing one of <code>for = </code> or <code>impl = </code> attributes is a compile-time error.</p>
 </blockquote>
@@ -1539,8 +1514,7 @@ impl Luke {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Violating GraphQL &quot;subtyping&quot; or additional nullable field rules is a compile-time error.</p>
 <pre><code class="language-compile_fail"># extern crate juniper;
 use juniper::{graphql_interface, graphql_object};
@@ -1604,8 +1578,7 @@ struct Human {
     id: String,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="fields-arguments-and-interface-customization"><a class="header" href="#fields-arguments-and-interface-customization">Fields, arguments and interface customization</a></h3>
 <p>Similarly to <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a> Juniper allows to fully customize <a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a> fields and their arguments.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(deprecated)]
@@ -1645,8 +1618,7 @@ trait Character {
     ) -&gt; &amp;str;
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Renaming policies for all <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> fields and arguments are supported as well:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(deprecated)]
 </span><span class="boring">extern crate juniper;
@@ -1658,8 +1630,7 @@ trait Character {
     fn my_id(&amp;self, my_num: i32) -&gt; &amp;str;
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="custom-context"><a class="header" href="#custom-context">Custom context</a></h3>
 <p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -1688,8 +1659,7 @@ struct Human {
     name: String,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="using-executor-and-explicit-generic-scalar"><a class="header" href="#using-executor-and-explicit-generic-scalar">Using executor and explicit generic scalar</a></h3>
 <p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
 <p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so. </p>
@@ -1735,8 +1705,7 @@ impl Human {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="scalarvalue-considerations"><a class="header" href="#scalarvalue-considerations"><code>ScalarValue</code> considerations</a></h2>
 <p>By default, <code>#[graphql_interface]</code> macro generates code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> implementers is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -1762,8 +1731,7 @@ struct Droid {
     primary_function: String,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="input-objects"><a class="header" href="#input-objects">Input objects</a></h1>
 <p>Input objects are complex data structures that can be used as arguments to
 GraphQL fields. In Juniper, you can define input objects using a custom derive
@@ -1788,8 +1756,7 @@ impl Root {
 </span>    }
 }
 
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="documentation-and-renaming"><a class="header" href="#documentation-and-renaming">Documentation and renaming</a></h2>
 <p>Just like the <a href="types/objects/defining_objects.html">other</a> <a href="types/enums.html">derives</a>, you can rename
 and add documentation to both the type and the fields:</p>
@@ -1817,8 +1784,7 @@ impl Root {
 </span>    }
 }
 
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="scalars"><a class="header" href="#scalars">Scalars</a></h1>
 <p>Scalars are the primitive types at the leaves of a GraphQL query: numbers,
 strings, and booleans. You can create custom scalars to other primitive values,
@@ -1872,8 +1838,7 @@ struct User {
     id: UserId,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p><code>#[derive(GraphQLScalar)]</code> is mostly interchangeable with <code>#[graphql_scalar]</code> 
 attribute:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -1889,8 +1854,7 @@ struct User {
     id: UserId,
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>That's it, you can now use <code>UserId</code> in your schema.</p>
 <p>The macro also allows for more customization:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -1906,8 +1870,7 @@ struct User {
 )]
 pub struct UserId(i32);
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>All the methods used from newtype's field can be replaced with attributes:</p>
 <h3 id="graphqlto_output_with--fn-attribute"><a class="header" href="#graphqlto_output_with--fn-attribute"><code>#[graphql(to_output_with = &lt;fn&gt;)]</code> attribute</a></h3>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -1922,8 +1885,7 @@ fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; Value&lt;S&gt; {
     Value::from(v.0 + 1)
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="graphqlfrom_input_with--fn-attribute"><a class="header" href="#graphqlfrom_input_with--fn-attribute"><code>#[graphql(from_input_with = &lt;fn&gt;)]</code> attribute</a></h3>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
@@ -1954,8 +1916,7 @@ impl UserId {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="graphqlparse_token_with--fn-or-graphqlparse_tokentypes-attributes"><a class="header" href="#graphqlparse_token_with--fn-or-graphqlparse_tokentypes-attributes"><code>#[graphql(parse_token_with = &lt;fn&gt;]</code> or <code>#[graphql(parse_token(&lt;types&gt;)]</code> attributes</a></h3>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
@@ -2002,8 +1963,7 @@ fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseSc
         .or_else(|_| &lt;i32 as ParseScalarValue&lt;S&gt;&gt;::from_str(value))
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
 <p><strong>NOTE:</strong> As you can see, once you provide all 3 custom resolvers, there
 is no need to follow <code>newtype</code> pattern.</p>
@@ -2053,8 +2013,7 @@ impl StringOrInt {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Or it can be path to a module, where custom resolvers are located.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
@@ -2101,8 +2060,7 @@ mod string_or_int {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Also, you can partially override <code>#[graphql(with)]</code> attribute with other custom scalars.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLScalar, InputValue, ParseScalarResult, ScalarValue, ScalarToken, Value};
@@ -2136,8 +2094,7 @@ impl StringOrInt {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="using-foreign-types-as-scalars"><a class="header" href="#using-foreign-types-as-scalars">Using foreign types as scalars</a></h3>
 <p>For implementing custom scalars on foreign types there is <code>#[graphql_scalar]</code> attribute macro.</p>
 <blockquote>
@@ -2187,8 +2144,7 @@ mod date_scalar {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="unions"><a class="header" href="#unions">Unions</a></h1>
 <p>From the server's point of view, <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> are somewhat similar to <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> - the main difference is that they don't contain fields on their own.</p>
 <p>The most obvious and straightforward way to represent a <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> in Rust is enum. However, we also can do so either with trait or a regular struct. That's why, for implementing <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> Juniper provides:</p>
@@ -2221,8 +2177,7 @@ enum Character {
     Droid(Droid),
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="ignoring-enum-variants"><a class="header" href="#ignoring-enum-variants">Ignoring enum variants</a></h3>
 <p>In some rare situations we may want to omit exposing an enum variant in the GraphQL schema.</p>
 <p>As an example, let's consider the situation where we need to bind some type parameter <code>T</code> for doing interesting type-level stuff in our resolvers. To achieve this we need to have <code>PhantomData&lt;T&gt;</code>, but we don't want it exposed in the GraphQL schema.</p>
@@ -2257,8 +2212,7 @@ enum Character&lt;S&gt; {
     _State(PhantomData&lt;S&gt;),
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="external-resolver-functions"><a class="header" href="#external-resolver-functions">External resolver functions</a></h3>
 <p>If some custom logic is needed to resolve a <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> variant, you may specify an external function to do so:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
@@ -2300,8 +2254,7 @@ impl Character {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>With an external resolver function we can even declare a new <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> variant where the Rust type is absent in the initial enum definition. The attribute syntax <code>#[graphql(on VariantType = resolver_fn)]</code> follows the <a href="https://spec.graphql.org/October2021#example-f8163">GraphQL syntax for dispatching union variants</a>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
 </span><span class="boring">extern crate juniper;
@@ -2353,8 +2306,7 @@ impl Character {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="structs"><a class="header" href="#structs">Structs</a></h2>
 <p>Using Rust structs as <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> is very similar to using enums, with the nuance that specifying an external resolver function is the only way to declare a <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> variant.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -2401,8 +2353,7 @@ impl Character {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="traits-1"><a class="header" href="#traits-1">Traits</a></h2>
 <p>To use a Rust trait definition as a <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> you need to use the <code>#[graphql_union]</code> macro. <a href="https://doc.rust-lang.org/stable/reference/procedural-macros.html#derive-macros">Rust doesn't allow derive macros on traits</a>, so using <code>#[derive(GraphQLUnion)]</code> on traits doesn't work.</p>
 <blockquote>
@@ -2439,8 +2390,7 @@ impl Character for Droid {
     fn as_droid(&amp;self) -&gt; Option&lt;&amp;Droid&gt; { Some(&amp;self) }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="custom-context-1"><a class="header" href="#custom-context-1">Custom context</a></h3>
 <p>If a <a href="https://docs.rs/juniper/0.14.2/juniper/trait.Context.html"><code>Context</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> variant, specify it as an argument.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
@@ -2487,8 +2437,7 @@ impl Character for Droid {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="ignoring-trait-methods-1"><a class="header" href="#ignoring-trait-methods-1">Ignoring trait methods</a></h3>
 <p>As with enums, we may want to omit some trait methods to be assumed as <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> variants and ignore them.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -2524,8 +2473,7 @@ impl Character for Droid {
     fn id(&amp;self) -&gt; &amp;str { self.id.as_str() }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="external-resolver-functions-1"><a class="header" href="#external-resolver-functions-1">External resolver functions</a></h3>
 <p>Similarly to enums and structs, it's not mandatory to use trait methods as <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> variant resolvers. Instead, custom functions may be specified:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -2585,8 +2533,7 @@ fn get_droid&lt;'db&gt;(ch: &amp;DynCharacter&lt;'_&gt;, ctx: &amp;'db Database)
     ctx.droids.get(ch.id())
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h2 id="scalarvalue-considerations-1"><a class="header" href="#scalarvalue-considerations-1"><code>ScalarValue</code> considerations</a></h2>
 <p>By default, <code>#[derive(GraphQLUnion)]</code> and <code>#[graphql_union]</code> macros generate code, which is generic over a <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type. This may introduce a problem when at least one of <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> variants is restricted to a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type in its implementation. To resolve such problem, a concrete <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type should be specified:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
@@ -2613,8 +2560,7 @@ enum Character {
     Droid(Droid),
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="schemas"><a class="header" href="#schemas">Schemas</a></h1>
 <p>Juniper follows a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">code-first approach</a> to defining GraphQL schemas. If you would like to use a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">schema-first approach</a> instead, consider <a href="https://github.com/davidpdrsn/juniper-from-schema">juniper-from-schema</a> for generating code from a schema file.</p>
 <p>A schema consists of three types: a query object, a mutation object, and a subscription object.
@@ -2644,8 +2590,7 @@ impl Root {
 </span>    }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <h2 id="mutations"><a class="header" href="#mutations">Mutations</a></h2>
 <p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field
 that performs some mutating side-effect such as updating a database.</p>
@@ -2663,8 +2608,7 @@ impl Mutations {
 </span>    }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <h1 id="converting-a-rust-schema-to-the-graphql-schema-language"><a class="header" href="#converting-a-rust-schema-to-the-graphql-schema-language">Converting a Rust schema to the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a></a></h1>
 <p>Many tools in the GraphQL ecosystem require the schema to be defined in the <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a>. You can generate a <a href="https://graphql.org/learn/schema/#type-language">GraphQL Schema Language</a> representation of your schema defined in Rust using the <code>schema-language</code> feature (on by default):</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
@@ -2703,8 +2647,7 @@ schema {
 &quot;;
 <span class="boring">  #[cfg(not(target_os = &quot;windows&quot;))]
 </span>    assert_eq!(result, expected);
-}
-</code></pre></pre>
+}</code></pre></pre>
 <p>Note the <code>schema-language</code> feature may be turned off if you do not need this functionality to reduce dependencies and speed up
 compile times.</p>
 <!--TODO: Fix This URL when the EmptySubscription become available in the Documentation  -->
@@ -2724,7 +2667,7 @@ third-party integration crates that will get you there.</p>
 </li>
 <li><a href="servers/third-party.html">Third Party Integrations</a>
 <ul>
-<li><a href="https://github.com/actix/examples/tree/master/juniper">Actix-Web</a></li>
+<li><a href="https://github.com/actix/examples/tree/master/graphql/juniper">Actix-Web</a></li>
 <li><a href="https://github.com/finchers-rs/finchers-juniper">Finchers</a></li>
 <li><a href="https://github.com/tsukuyomi-rs/tsukuyomi/tree/master/examples/juniper">Tsukuyomi</a></li>
 </ul>
@@ -2821,8 +2764,7 @@ impl Root {
 
 <span class="boring">  return;
 </span>    Iron::new(chain).http(&quot;0.0.0.0:8080&quot;).unwrap();
-}
-</code></pre>
+}</code></pre>
 <h2 id="accessing-data-from-the-request"><a class="header" href="#accessing-data-from-the-request">Accessing data from the request</a></h2>
 <p>If you want to access e.g. the source IP address of the request from a field
 resolver, you need to pass this data using Juniper's <a href="servers/../types/objects/using_contexts.html">context feature</a>.</p>
@@ -2861,8 +2803,7 @@ impl Root {
 </span><span class="boring">        Root,
 </span><span class="boring">        juniper::EmptyMutation::&lt;Context&gt;::new(),
 </span><span class="boring">    );
-</span><span class="boring">}
-</span></code></pre>
+</span><span class="boring">}</span></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="integrating-with-hyper"><a class="header" href="#integrating-with-hyper">Integrating with Hyper</a></h1>
 <p><a href="https://hyper.rs/">Hyper</a> is a fast HTTP implementation that many other Rust web frameworks
 leverage. It offers asynchronous I/O via the tokio runtime and works on
@@ -2966,8 +2907,7 @@ fn main() {
     // Convert introspection result to json.
     let json_result = serde_json::to_string_pretty(&amp;res);
     assert!(json_result.is_ok());
-}
-</code></pre></pre>
+}</code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="non-struct-objects"><a class="header" href="#non-struct-objects">Non-struct objects</a></h1>
 <p>Up until now, we've only looked at mapping structs to GraphQL objects. However,
 any Rust type can be mapped into a GraphQL object. In this chapter, we'll look
@@ -3008,8 +2948,7 @@ impl SignUpResult {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() {}
-</span></code></pre></pre>
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Here, we use an enum to decide whether a user's input data was valid or not, and
 it could be used as the result of e.g. a sign up mutation.</p>
 <p>While this is an example of how you could use something other than a struct to
@@ -3047,8 +2986,7 @@ pub struct UserPatch {
     pub least_favorite_number: Option&lt;Option&lt;i32&gt;&gt;,
 }
 
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <p>To set a user's favorite number to 7, you would set <code>favorite_number</code> to
 <code>Some(Some(7))</code>. In GraphQL, that might look like this:</p>
 <pre><code class="language-graphql">mutation { patchUser(patch: { favoriteNumber: 7 }) }
@@ -3107,8 +3045,7 @@ impl Mutation {
         Ok(true)
     }
 }
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <p>This type functions much like <code>Option</code>, but has two empty variants so you can
 distinguish between implicit and explicit null.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="objects-and-generics"><a class="header" href="#objects-and-generics">Objects and generics</a></h1>
@@ -3160,8 +3097,7 @@ impl MutationResult&lt;ForumPost&gt; {
     }
 }
 
-<span class="boring">fn main() {}
-</span></code></pre></pre>
+<span class="boring">fn main() {}</span></code></pre></pre>
 <p>Here, we've made a wrapper around <code>Result</code> and exposed some concrete
 instantiations of <code>Result&lt;T, E&gt;</code> as distinct GraphQL objects. The reason we
 needed the wrapper is of Rust's rules for when you can derive a trait - in this
@@ -3342,7 +3278,6 @@ impl Cult {
     ctx.cult_loader.load(id).await
   }
 }
-
 </code></pre>
 <h3 id="how-do-i-call-them"><a class="header" href="#how-do-i-call-them">How do I call them?</a></h3>
 <p>Once created, a dataloader has the async functions <code>.load()</code> and <code>.load_many()</code>.
@@ -3367,8 +3302,7 @@ impl Context {
             cult_loader
         }
     }
-}
-</code></pre>
+}</code></pre>
 <p><em>Your handler for GraphQL (Note: instantiating context here keeps it per-request)</em></p>
 <pre><code class="language-rust  ignore">pub async fn graphql(
     st: web::Data&lt;Arc&lt;Schema&gt;&gt;,
@@ -3386,8 +3320,7 @@ impl Context {
     Ok(HttpResponse::Ok()
         .content_type(&quot;application/json&quot;)
         .body(json))
-}
-</code></pre>
+}</code></pre>
 <h3 id="further-example"><a class="header" href="#further-example">Further Example:</a></h3>
 <p>For a full example using Dataloaders and Context check out <a href="https://github.com/jayy-lmao/rust-graphql-docker">jayy-lmao/rust-graphql-docker</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="subscriptions"><a class="header" href="#subscriptions">Subscriptions</a></h1>
@@ -3441,8 +3374,7 @@ impl Subscription {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main () {}
-</span></code></pre></pre>
+</span><span class="boring">fn main () {}</span></code></pre></pre>
 <h3 id="coordinator"><a class="header" href="#coordinator">Coordinator</a></h3>
 <p>Subscriptions require a bit more resources than regular queries and provide a great vector for DOS attacks. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> trait provides coordination logic to enable functionality like DOS attack mitigation and resource limits.</p>
 <p>The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the schema and can keep track of opened connections, handle subscription 
@@ -3521,8 +3453,7 @@ async fn run_subscription() {
     }
 }
 <span class="boring">
-</span><span class="boring">fn main() { }
-</span></code></pre></pre>
+</span><span class="boring">fn main() { }</span></code></pre></pre>
 <h3 id="web-integration-and-examples"><a class="header" href="#web-integration-and-examples">Web Integration and Examples</a></h3>
 <p>Currently there is an example of subscriptions with <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_warp">warp</a>, but it still in an alpha state.
 GraphQL over <a href="https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md">WS</a> is not fully supported yet and is non-standard.</p>
@@ -3537,31 +3468,43 @@ GraphQL over <a href="https://github.com/apollographql/subscriptions-transport-w
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
             </nav>
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script type="text/javascript">
+
+        <script>
         window.addEventListener('load', function() {
             window.setTimeout(window.print, 100);
         });
         </script>
+
+    </div>
     </body>
 </html>
