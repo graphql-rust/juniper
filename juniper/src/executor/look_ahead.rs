@@ -218,7 +218,6 @@ where
                             .collect()
                     })
                     .unwrap_or_else(Vec::new);
-
                 let applies_for = match &parent {
                     Some(p) => p.applies_for,
                     None => Applies::All,
@@ -1580,7 +1579,7 @@ query Hero {
     }
 
     #[test]
-    fn check_resolves_applies_fir() {
+    fn check_resolves_applies_for() {
         let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
