@@ -55,21 +55,3 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
              <bson::datetime::DateTime as FromInputValue<__S>>
            and $N others
    = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
-  --> fail/object/argument_non_input_type.rs:10:1
-   |
-10 | #[graphql_object]
-   | ^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
-   |
-   = help: the following other types implement trait `FromInputValue<S>`:
-             <Arc<T> as FromInputValue<S>>
-             <Box<T> as FromInputValue<S>>
-             <ID as FromInputValue<__S>>
-             <TypeKind as FromInputValue<__S>>
-             <Vec<T> as FromInputValue<S>>
-             <[T; N] as FromInputValue<S>>
-             <bool as FromInputValue<__S>>
-             <bson::datetime::DateTime as FromInputValue<__S>>
-           and $N others
-   = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)

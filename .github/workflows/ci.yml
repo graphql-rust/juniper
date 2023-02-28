@@ -125,7 +125,6 @@ jobs:
           - { feature: graphql-parser, crate: juniper }
           - { feature: rust_decimal, crate: juniper }
           - { feature: schema-language, crate: juniper }
-          - { feature: serde_json, crate: juniper }
           - { feature: time, crate: juniper }
           - { feature: url, crate: juniper }
           - { feature: uuid, crate: juniper }
@@ -280,8 +279,10 @@ jobs:
       fail-fast: false
       matrix:
         crate:
-          - juniper_codegen
           - juniper
+        target:
+          - wasm32-unknown-unknown
+          - wasm32-wasi
         toolchain:
           - stable
           - beta
@@ -292,9 +293,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
-          target: wasm32-unknown-unknown
+          target: ${{ matrix.target }}
 
-      - run: cargo check --target wasm32-unknown-unknown -p ${{ matrix.crate }}
+      - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
+                   ${{ matrix.target == 'wasm32-unknown-unknown'
+                       && '--features js'
+                       || '' }}
 
 
 
