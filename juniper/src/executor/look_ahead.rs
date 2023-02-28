@@ -369,7 +369,7 @@ pub trait LookAheadMethods<'sel, S> {
     fn children(&self) -> Vec<&Self>;
 
     /// Get the parent type in case there is any for this selection
-    fn applies_for(&self) -> Applies;
+    fn applies_for(&self) -> Option<&str>;
 }
 
 impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
@@ -401,8 +401,11 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
         self.children.iter().collect()
     }
 
-    fn applies_for(&self) -> Applies {
-        self.applies_for
+    fn applies_for(&self) -> Option<&str> {
+        match self.applies_for {
+            Applies::OnlyType(typ) => Some(typ),
+            Applies::All => None
+        }
     }
 }
 
@@ -439,8 +442,11 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
             .collect()
     }
 
-    fn applies_for(&self) -> Applies {
-        self.applies_for
+    fn applies_for(&self) -> Option<&str> {
+        match self.applies_for {
+            Applies::OnlyType(typ) => Some(typ),
+            Applies::All => None
+        }
     }
 }
 
@@ -1511,6 +1517,8 @@ query Hero {
             let heights_child = children.next().unwrap();
             assert_eq!(heights_child.name, "height");
             assert_eq!(heights_child.applies_for, Applies::OnlyType("Human"));
+            assert_eq!(heights_child.applies_for().unwrap(), "Human");
+
         } else {
             panic!("No Operation found");
         }
