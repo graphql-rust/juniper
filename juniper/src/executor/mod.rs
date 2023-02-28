@@ -37,7 +37,7 @@ use crate::{
 
 pub use self::{
     look_ahead::{
-        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+        Applies, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
     owned_executor::OwnedExecutor,
