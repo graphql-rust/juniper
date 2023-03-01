@@ -37,7 +37,7 @@ use crate::{
 
 pub use self::{
     look_ahead::{
-        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+        Applies, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
     owned_executor::OwnedExecutor,
@@ -729,6 +729,7 @@ where
                     alias: None,
                     arguments: Vec::new(),
                     children: Vec::new(),
+                    applies_for: Applies::All,
                 };
 
                 // Add in all the children - this will mutate `ret`

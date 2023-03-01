@@ -62,6 +62,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - [`bigdecimal` crate] integration behind `bigdecimal` [Cargo feature]. ([#1060])
 - [`rust_decimal` crate] integration behind `rust_decimal` [Cargo feature]. ([#1060])
 - `js` [Cargo feature] enabling `js-sys` and `wasm-bindgen` support for `wasm32-unknown-unknown` target. ([#1118], [#1147])
+- `LookAheadMethods::applies_for()` method. ([#1138], [#1145])
 
 ### Changed
 
@@ -115,6 +116,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1086]: /../../pull/1086
 [#1118]: /../../issues/1118
 [#1119]: /../../pull/1119
+[#1138]: /../../issues/1138
+[#1145]: /../../pull/1145
 [#1147]: /../../pull/1147
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
