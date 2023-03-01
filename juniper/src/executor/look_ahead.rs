@@ -305,9 +305,7 @@ where
                 .children
                 .iter()
                 .filter_map(|c| match c.applies_for {
-                    Applies::OnlyType(t) if t == type_name => {
-                        Some(c.for_explicit_type(type_name))
-                    }
+                    Applies::OnlyType(t) if t == type_name => Some(c.for_explicit_type(type_name)),
                     Applies::All => Some(c.for_explicit_type(type_name)),
                     Applies::OnlyType(_) => None,
                 })
@@ -404,7 +402,7 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
     fn applies_for(&self) -> Option<&str> {
         match self.applies_for {
             Applies::OnlyType(typ) => Some(typ),
-            Applies::All => None
+            Applies::All => None,
         }
     }
 }
@@ -415,9 +413,7 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
     }
 
     fn select_child(&self, name: &str) -> Option<&Self> {
-        self.children
-            .iter()
-            .find(|c| c.field_name() == name)
+        self.children.iter().find(|c| c.field_name() == name)
     }
 
     fn arguments(&self) -> &[LookAheadArgument<S>] {
@@ -437,15 +433,13 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
     }
 
     fn children(&self) -> Vec<&Self> {
-        self.children
-            .iter()
-            .collect()
+        self.children.iter().collect()
     }
 
     fn applies_for(&self) -> Option<&str> {
         match self.applies_for {
             Applies::OnlyType(typ) => Some(typ),
-            Applies::All => None
+            Applies::All => None,
         }
     }
 }
@@ -916,11 +910,11 @@ query Hero {
                 applies_for: Applies::All,
                 children: vec![
                     LookAheadSelection {
-                            name: "id",
-                            alias: None,
-                            arguments: Vec::new(),
-                            children: Vec::new(),
-                            applies_for: Applies::All,
+                        name: "id",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                        applies_for: Applies::All,
                     },
                     LookAheadSelection {
                         name: "height",
@@ -1518,7 +1512,6 @@ query Hero {
             assert_eq!(heights_child.name, "height");
             assert_eq!(heights_child.applies_for, Applies::OnlyType("Human"));
             assert_eq!(heights_child.applies_for().unwrap(), "Human");
-
         } else {
             panic!("No Operation found");
         }
