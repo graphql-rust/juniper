@@ -386,7 +386,7 @@ impl<'a, S: ScalarValue + 'a> Argument<'a, S> {
 
     #[graphql(name = "defaultValue")]
     fn default_value_(&self) -> Option<String> {
-        self.default_value.as_ref().map(ToString::to_string)
+        self.default_value.as_ref().map(|v| v.item.to_string())
     }
 }
 
