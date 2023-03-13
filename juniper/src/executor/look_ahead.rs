@@ -28,37 +28,50 @@ pub enum LookAheadValue<'a, S: 'a> {
     Null,
     Scalar(&'a S),
     Enum(&'a str),
-    List(Vec<LookAheadValue<'a, S>>),
-    Object(Vec<(&'a str, LookAheadValue<'a, S>)>),
+    List(Vec<Spanning<LookAheadValue<'a, S>>>),
+    Object(Vec<(Spanning<&'a str>, Spanning<LookAheadValue<'a, S>>)>),
 }
 
 impl<'a, S> LookAheadValue<'a, S>
 where
     S: ScalarValue,
 {
-    fn from_input_value(input_value: &'a InputValue<S>, vars: &'a Variables<S>) -> Self {
-        match *input_value {
-            InputValue::Null => LookAheadValue::Null,
-            InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
-            InputValue::Enum(ref e) => LookAheadValue::Enum(e),
+    fn from_input_value(
+        input_value: Spanning<&'a InputValue<S>>,
+        vars: &'a Variables<S>,
+    ) -> Spanning<Self> {
+        let start = &input_value.start;
+        let end = &input_value.end;
+        match input_value.item {
+            InputValue::Null => Spanning::start_end(start, end, LookAheadValue::Null),
+            InputValue::Scalar(ref s) => Spanning::start_end(start, end, LookAheadValue::Scalar(s)),
+            InputValue::Enum(ref e) => Spanning::start_end(start, end, LookAheadValue::Enum(e)),
             InputValue::Variable(ref name) => vars
                 .get(name)
-                .map(|v| Self::from_input_value(v, vars))
-                .unwrap_or(LookAheadValue::Null),
-            InputValue::List(ref l) => LookAheadValue::List(
-                l.iter()
-                    .map(|i| LookAheadValue::from_input_value(&i.item, vars))
-                    .collect(),
+                .map(|v| Self::from_input_value(Spanning::start_end(start, end, v), vars))
+                .unwrap_or(Spanning::start_end(start, end, LookAheadValue::Null)),
+            InputValue::List(ref l) => Spanning::start_end(
+                start,
+                end,
+                LookAheadValue::List(
+                    l.iter()
+                        .map(|i| LookAheadValue::from_input_value(i.as_ref(), vars))
+                        .collect(),
+                ),
             ),
-            InputValue::Object(ref o) => LookAheadValue::Object(
-                o.iter()
-                    .map(|(n, i)| {
-                        (
-                            &n.item as &str,
-                            LookAheadValue::from_input_value(&i.item, vars),
-                        )
-                    })
-                    .collect(),
+            InputValue::Object(ref o) => Spanning::start_end(
+                start,
+                end,
+                LookAheadValue::Object(
+                    o.iter()
+                        .map(|(n, i)| {
+                            (
+                                n.as_ref().map(|n| n.as_str()),
+                                LookAheadValue::from_input_value(i.as_ref(), vars),
+                            )
+                        })
+                        .collect(),
+                ),
             ),
         }
     }
@@ -68,7 +81,7 @@ where
 #[derive(Debug, Clone, PartialEq)]
 pub struct LookAheadArgument<'a, S: 'a> {
     name: &'a str,
-    value: LookAheadValue<'a, S>,
+    value: Spanning<LookAheadValue<'a, S>>,
 }
 
 impl<'a, S> LookAheadArgument<'a, S>
@@ -81,7 +94,7 @@ where
     ) -> Self {
         LookAheadArgument {
             name: name.item,
-            value: LookAheadValue::from_input_value(&value.item, vars),
+            value: LookAheadValue::from_input_value(value.as_ref(), vars),
         }
     }
 
@@ -92,6 +105,11 @@ where
 
     /// The value of the argument
     pub fn value(&'a self) -> &LookAheadValue<'a, S> {
+        &self.value.item
+    }
+
+    /// The spanned value of the argument
+    pub fn spanned_value(&'a self) -> &Spanning<LookAheadValue<'a, S>> {
         &self.value
     }
 }
@@ -145,7 +163,7 @@ where
                             .find(|item| item.0.item == "if")
                             .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(s) =
-                                    LookAheadValue::from_input_value(&v.item, vars)
+                                    LookAheadValue::from_input_value(v.as_ref(), vars).item
                                 {
                                     s.as_bool().unwrap_or(false)
                                 } else {
@@ -160,7 +178,7 @@ where
                             .find(|item| item.0.item == "if")
                             .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(b) =
-                                    LookAheadValue::from_input_value(&v.item, vars)
+                                    LookAheadValue::from_input_value(v.as_ref(), vars).item
                                 {
                                     b.as_bool().map(::std::ops::Not::not).unwrap_or(false)
                                 } else {
@@ -477,7 +495,7 @@ mod tests {
     use crate::{
         ast::{Document, OwnedDocument},
         graphql_vars,
-        parser::UnlocatedParseResult,
+        parser::{SourcePosition, UnlocatedParseResult},
         schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
         value::{DefaultScalarValue, ScalarValue},
@@ -716,7 +734,11 @@ query Hero {
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "episode",
-                    value: LookAheadValue::Enum("EMPIRE"),
+                    value: Spanning::start_end(
+                        &SourcePosition::new(32, 2, 18),
+                        &SourcePosition::new(38, 2, 24),
+                        LookAheadValue::Enum("EMPIRE"),
+                    ),
                 }],
                 applies_for: Applies::All,
                 children: vec![
@@ -732,7 +754,11 @@ query Hero {
                         alias: None,
                         arguments: vec![LookAheadArgument {
                             name: "uppercase",
-                            value: LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
+                            value: Spanning::start_end(
+                                &SourcePosition::new(77, 4, 24),
+                                &SourcePosition::new(81, 4, 28),
+                                LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
+                            ),
                         }],
                         children: Vec::new(),
                         applies_for: Applies::All,
@@ -773,7 +799,11 @@ query Hero($episode: Episode) {
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "episode",
-                    value: LookAheadValue::Enum("JEDI"),
+                    value: Spanning::start_end(
+                        &SourcePosition::new(51, 2, 18),
+                        &SourcePosition::new(59, 2, 26),
+                        LookAheadValue::Enum("JEDI"),
+                    ),
                 }],
                 applies_for: Applies::All,
                 children: vec![
@@ -826,7 +856,11 @@ query Hero($episode: Episode) {
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "episode",
-                    value: LookAheadValue::Null,
+                    value: Spanning::start_end(
+                        &SourcePosition::new(51, 2, 18),
+                        &SourcePosition::new(59, 2, 26),
+                        LookAheadValue::Null,
+                    ),
                 }],
                 applies_for: Applies::All,
                 children: vec![LookAheadSelection {
@@ -1126,7 +1160,11 @@ fragment comparisonFields on Character {
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "id",
-                    value: LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
+                    value: Spanning::start_end(
+                        &SourcePosition::new(85, 2, 11),
+                        &SourcePosition::new(88, 2, 14),
+                        LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
+                    ),
                 }],
                 applies_for: Applies::All,
                 children: vec![

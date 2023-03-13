@@ -90,6 +90,15 @@ impl<T> Spanning<T> {
         }
     }
 
+    /// Convert the item to a reference
+    pub fn as_ref(&self) -> Spanning<&T> {
+        Spanning {
+            item: &self.item,
+            start: self.start,
+            end: self.end,
+        }
+    }
+
     /// Modifies the contents of the spanned item in case `f` returns [`Some`],
     /// or returns [`None`] otherwise.
     pub fn and_then<O, F: Fn(T) -> Option<O>>(self, f: F) -> Option<Spanning<O>> {

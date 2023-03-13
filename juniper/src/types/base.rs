@@ -125,9 +125,7 @@ impl<'a, S> Arguments<'a, S> {
 
     /// Gets a direct reference to the spanned argument input value
     pub fn get_input_value(&self, name: &str) -> Option<&Spanning<InputValue<S>>> {
-        self.args
-            .as_ref()
-            .and_then(|args| args.get(name))
+        self.args.as_ref().and_then(|args| args.get(name))
     }
 }
 
@@ -482,11 +480,14 @@ where
                                 .iter()
                                 .filter_map(|(k, v)| {
                                     let value = v.item.clone().into_const(exec_vars)?;
-                                    Some((k.item, Spanning {
-                                        item: value,
-                                        start: v.start,
-                                        end: v.end,
-                                    }))
+                                    Some((
+                                        k.item,
+                                        Spanning {
+                                            item: value,
+                                            start: v.start,
+                                            end: v.end,
+                                        },
+                                    ))
                                 })
                                 .collect()
                         }),

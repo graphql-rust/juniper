@@ -318,11 +318,14 @@ where
                             .iter()
                             .filter_map(|(k, v)| {
                                 let value = v.item.clone().into_const(exec_vars)?;
-                                Some((k.item, Spanning {
-                                    item: value,
-                                    start: v.start,
-                                    end: v.end,
-                                }))
+                                Some((
+                                    k.item,
+                                    Spanning {
+                                        item: value,
+                                        start: v.start,
+                                        end: v.end,
+                                    },
+                                ))
                             })
                             .collect()
                     }),
