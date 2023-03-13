@@ -52,15 +52,15 @@ impl Span {
 
 /// Data structure used to wrap items into a [`Span`].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct Spanning<T> {
+pub struct Spanning<T, Sp = Span> {
     /// Wrapped item.
     pub item: T,
 
     /// [`Span`] of the wrapped item.
-    pub span: Span,
+    pub span: Sp,
 }
 
-impl<T> Spanning<T> {
+impl<T> Spanning<T, Span> {
     #[doc(hidden)]
     pub fn new(span: Span, item: T) -> Self {
         Self { item, span }
@@ -125,6 +125,14 @@ impl<T> Spanning<T> {
     /// or returns [`None`] otherwise.
     pub fn and_then<O, F: Fn(T) -> Option<O>>(self, f: F) -> Option<Spanning<O>> {
         f(self.item).map(|item| Spanning::new(self.span, item))
+    }
+
+    /// Make a Spanning that contains a borrowed item and a borrowed span.
+    pub(crate) fn as_ref(&self) -> Spanning<&'_ T, &'_ Span> {
+        Spanning {
+            item: &self.item,
+            span: &self.span,
+        }
     }
 }
 

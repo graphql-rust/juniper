@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     ast::{Directive, Fragment, InputValue, Selection},
-    parser::Spanning,
+    parser::{Span, Spanning},
     value::ScalarValue,
 };
 
@@ -18,6 +18,8 @@ pub enum Applies<'a> {
     OnlyType(&'a str),
 }
 
+type BorrowedSpanning<'a, T> = Spanning<T, &'a Span>;
+
 /// A JSON-like value that can is used as argument in the query execution
 ///
 /// In contrast to `InputValue` these values do only contain constants,
@@ -28,37 +30,57 @@ pub enum LookAheadValue<'a, S: 'a> {
     Null,
     Scalar(&'a S),
     Enum(&'a str),
-    List(Vec<LookAheadValue<'a, S>>),
-    Object(Vec<(&'a str, LookAheadValue<'a, S>)>),
+    List(Vec<BorrowedSpanning<'a, LookAheadValue<'a, S>>>),
+    Object(
+        Vec<(
+            BorrowedSpanning<'a, &'a str>,
+            BorrowedSpanning<'a, LookAheadValue<'a, S>>,
+        )>,
+    ),
 }
 
 impl<'a, S> LookAheadValue<'a, S>
 where
     S: ScalarValue,
 {
-    fn from_input_value(input_value: &'a InputValue<S>, vars: &'a Variables<S>) -> Self {
-        match *input_value {
-            InputValue::Null => LookAheadValue::Null,
-            InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
-            InputValue::Enum(ref e) => LookAheadValue::Enum(e),
+    fn from_input_value(
+        input_value: BorrowedSpanning<'a, &'a InputValue<S>>,
+        vars: &'a Variables<S>,
+    ) -> BorrowedSpanning<'a, Self> {
+        fn borrow_spanning<T>(span: &Span, item: T) -> BorrowedSpanning<'_, T> {
+            Spanning { item, span }
+        }
+
+        let span = &input_value.span;
+
+        match input_value.item {
+            InputValue::Null => borrow_spanning(span, LookAheadValue::Null),
+            InputValue::Scalar(ref s) => borrow_spanning(span, LookAheadValue::Scalar(s)),
+            InputValue::Enum(ref e) => borrow_spanning(span, LookAheadValue::Enum(e)),
             InputValue::Variable(ref name) => vars
                 .get(name)
-                .map(|v| Self::from_input_value(v, vars))
-                .unwrap_or(LookAheadValue::Null),
-            InputValue::List(ref l) => LookAheadValue::List(
-                l.iter()
-                    .map(|i| LookAheadValue::from_input_value(&i.item, vars))
-                    .collect(),
+                .map(|v| Self::from_input_value(borrow_spanning(span, v), vars))
+                .unwrap_or(borrow_spanning(span, LookAheadValue::Null)),
+            InputValue::List(ref l) => borrow_spanning(
+                span,
+                LookAheadValue::List(
+                    l.iter()
+                        .map(|i| LookAheadValue::from_input_value(i.as_ref(), vars))
+                        .collect(),
+                ),
             ),
-            InputValue::Object(ref o) => LookAheadValue::Object(
-                o.iter()
-                    .map(|(n, i)| {
-                        (
-                            &n.item as &str,
-                            LookAheadValue::from_input_value(&i.item, vars),
-                        )
-                    })
-                    .collect(),
+            InputValue::Object(ref o) => borrow_spanning(
+                span,
+                LookAheadValue::Object(
+                    o.iter()
+                        .map(|(n, i)| {
+                            (
+                                borrow_spanning(&n.span, n.item.as_str()),
+                                LookAheadValue::from_input_value(i.as_ref(), vars),
+                            )
+                        })
+                        .collect(),
+                ),
             ),
         }
     }
@@ -68,7 +90,7 @@ where
 #[derive(Debug, Clone, PartialEq)]
 pub struct LookAheadArgument<'a, S: 'a> {
     name: &'a str,
-    value: LookAheadValue<'a, S>,
+    value: BorrowedSpanning<'a, LookAheadValue<'a, S>>,
 }
 
 impl<'a, S> LookAheadArgument<'a, S>
@@ -81,7 +103,7 @@ where
     ) -> Self {
         LookAheadArgument {
             name: name.item,
-            value: LookAheadValue::from_input_value(&value.item, vars),
+            value: LookAheadValue::from_input_value(value.as_ref(), vars),
         }
     }
 
@@ -92,7 +114,12 @@ where
 
     /// The value of the argument
     pub fn value(&'a self) -> &LookAheadValue<'a, S> {
-        &self.value
+        &self.value.item
+    }
+
+    /// The input source span of the argument
+    pub fn span(&self) -> &Span {
+        self.value.span
     }
 }
 
@@ -145,7 +172,7 @@ where
                             .find(|item| item.0.item == "if")
                             .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(s) =
-                                    LookAheadValue::from_input_value(&v.item, vars)
+                                    LookAheadValue::from_input_value(v.as_ref(), vars).item
                                 {
                                     s.as_bool().unwrap_or(false)
                                 } else {
@@ -160,7 +187,7 @@ where
                             .find(|item| item.0.item == "if")
                             .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(b) =
-                                    LookAheadValue::from_input_value(&v.item, vars)
+                                    LookAheadValue::from_input_value(v.as_ref(), vars).item
                                 {
                                     b.as_bool().map(::std::ops::Not::not).unwrap_or(false)
                                 } else {
@@ -472,12 +499,12 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, ops::Range};
 
     use crate::{
         ast::{Document, OwnedDocument},
         graphql_vars,
-        parser::UnlocatedParseResult,
+        parser::{SourcePosition, UnlocatedParseResult},
         schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
         value::{DefaultScalarValue, ScalarValue},
@@ -507,6 +534,13 @@ mod tests {
             }
         }
         fragments
+    }
+
+    fn span(range: Range<(usize, usize, usize)>) -> Span {
+        Span {
+            start: SourcePosition::new(range.start.0, range.start.1, range.start.2),
+            end: SourcePosition::new(range.end.0, range.end.1, range.end.2),
+        }
     }
 
     #[test]
@@ -711,12 +745,17 @@ query Hero {
                 &fragments,
             )
             .unwrap();
+            let span0 = span((32, 2, 18)..(38, 2, 24));
+            let span1 = span((77, 4, 24)..(81, 4, 28));
             let expected = LookAheadSelection {
                 name: "hero",
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "episode",
-                    value: LookAheadValue::Enum("EMPIRE"),
+                    value: Spanning {
+                        item: LookAheadValue::Enum("EMPIRE"),
+                        span: &span0,
+                    },
                 }],
                 applies_for: Applies::All,
                 children: vec![
@@ -732,7 +771,10 @@ query Hero {
                         alias: None,
                         arguments: vec![LookAheadArgument {
                             name: "uppercase",
-                            value: LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
+                            value: Spanning {
+                                item: LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
+                                span: &span1,
+                            },
                         }],
                         children: Vec::new(),
                         applies_for: Applies::All,
@@ -768,12 +810,16 @@ query Hero($episode: Episode) {
                 &fragments,
             )
             .unwrap();
+            let span0 = span((51, 2, 18)..(59, 2, 26));
             let expected = LookAheadSelection {
                 name: "hero",
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "episode",
-                    value: LookAheadValue::Enum("JEDI"),
+                    value: Spanning {
+                        item: LookAheadValue::Enum("JEDI"),
+                        span: &span0,
+                    },
                 }],
                 applies_for: Applies::All,
                 children: vec![
@@ -821,12 +867,16 @@ query Hero($episode: Episode) {
                 &fragments,
             )
             .unwrap();
+            let span0 = span((51, 2, 18)..(59, 2, 26));
             let expected = LookAheadSelection {
                 name: "hero",
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "episode",
-                    value: LookAheadValue::Null,
+                    value: Spanning {
+                        item: LookAheadValue::Null,
+                        span: &span0,
+                    },
                 }],
                 applies_for: Applies::All,
                 children: vec![LookAheadSelection {
@@ -1121,12 +1171,16 @@ fragment comparisonFields on Character {
                 &fragments,
             )
             .unwrap();
+            let span0 = span((85, 2, 11)..(88, 2, 14));
             let expected = LookAheadSelection {
                 name: "hero",
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "id",
-                    value: LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
+                    value: Spanning {
+                        item: LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
+                        span: &span0,
+                    },
                 }],
                 applies_for: Applies::All,
                 children: vec![
