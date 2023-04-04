@@ -5,9 +5,6 @@ use std::{
     str::FromStr,
 };
 
-// Helper functions until the corresponding AsciiExt methods
-// stabilise (https://github.com/rust-lang/rust/issues/39658).
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Name(String);
 
