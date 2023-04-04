@@ -515,15 +515,15 @@ fn is_source_char(c: char) -> bool {
 }
 
 fn is_name_start(c: char) -> bool {
-    c == '_' || ('A'..='Z').contains(&c) || ('a'..='z').contains(&c)
+    c == '_' || c.is_ascii_alphabetic()
 }
 
 fn is_name_cont(c: char) -> bool {
-    is_name_start(c) || ('0'..='9').contains(&c)
+    is_name_start(c) || c.is_ascii_digit()
 }
 
 fn is_number_start(c: char) -> bool {
-    c == '-' || ('0'..='9').contains(&c)
+    c == '-' || c.is_ascii_digit()
 }
 
 impl fmt::Display for LexerError {
