@@ -5,24 +5,13 @@ use std::{
     str::FromStr,
 };
 
-// Helper functions until the corresponding AsciiExt methods
-// stabilise (https://github.com/rust-lang/rust/issues/39658).
-
-fn is_ascii_alphabetic(c: char) -> bool {
-    ('a'..='z').contains(&c) || ('A'..='Z').contains(&c)
-}
-
-fn is_ascii_digit(c: char) -> bool {
-    ('0'..='9').contains(&c)
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Name(String);
 
 impl Name {
     pub fn is_valid(input: &str) -> bool {
         for (i, c) in input.chars().enumerate() {
-            let is_valid = is_ascii_alphabetic(c) || c == '_' || (i > 0 && is_ascii_digit(c));
+            let is_valid = c.is_ascii_alphabetic() || c == '_' || (i > 0 && c.is_ascii_digit());
             if !is_valid {
                 return false;
             }
