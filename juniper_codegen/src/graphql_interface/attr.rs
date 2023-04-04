@@ -76,7 +76,7 @@ fn expand_on_trait(
         .items
         .iter_mut()
         .filter_map(|item| {
-            if let syn::TraitItem::Method(m) = item {
+            if let syn::TraitItem::Fn(m) = item {
                 return parse_trait_method(m, &renaming);
             }
             None
@@ -146,7 +146,7 @@ fn expand_on_trait(
 /// Returns [`None`] if the parsing fails, or the method field is ignored.
 #[must_use]
 fn parse_trait_method(
-    method: &mut syn::TraitItemMethod,
+    method: &mut syn::TraitItemFn,
     renaming: &rename::Policy,
 ) -> Option<field::Definition> {
     let method_ident = &method.sig.ident;
@@ -155,7 +155,7 @@ fn parse_trait_method(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &method_attrs)
@@ -337,7 +337,7 @@ fn parse_struct_field(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     field.attrs = mem::take(&mut field.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &field_attrs)

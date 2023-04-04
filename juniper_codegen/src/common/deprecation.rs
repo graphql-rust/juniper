@@ -77,20 +77,24 @@ impl Directive {
     ///
     /// If the `#[deprecated(note = ...)]` attribute has incorrect format.
     fn parse_from_deprecated_meta_list(list: &syn::MetaList) -> syn::Result<Self> {
-        for meta in &list.nested {
-            if let syn::NestedMeta::Meta(syn::Meta::NameValue(nv)) = meta {
+        for meta in syn::parse2::<syn::Meta>(&list.tokens)? {
+            if let syn::Meta::NameValue(nv) = meta {
                 return if !nv.path.is_ident("note") {
                     Err(syn::Error::new(
                         nv.path.span(),
                         "unrecognized setting on #[deprecated(..)] attribute",
                     ))
-                } else if let syn::Lit::Str(strlit) = &nv.lit {
+                } else if let syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Str(strlit),
+                    ..
+                }) = &nv.value
+                {
                     Ok(Self {
                         reason: Some(strlit.clone()),
                     })
                 } else {
                     Err(syn::Error::new(
-                        nv.lit.span(),
+                        nv.value.span(),
                         "only strings are allowed for deprecation",
                     ))
                 };

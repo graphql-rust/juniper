@@ -372,7 +372,7 @@ impl OnMethod {
         // Remove repeated attributes from the method, to omit incorrect expansion.
         argument.attrs = mem::take(&mut argument.attrs)
             .into_iter()
-            .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+            .filter(|attr| !path_eq_single(attr.path(), "graphql"))
             .collect();
 
         let attr = Attr::from_attrs("graphql", &orig_attrs)

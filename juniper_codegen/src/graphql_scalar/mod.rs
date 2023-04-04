@@ -160,8 +160,7 @@ impl Parse for Attr {
                 "parse_token" => {
                     let types;
                     let _ = syn::parenthesized!(types in input);
-                    let parsed_types =
-                        types.parse_terminated::<_, token::Comma>(syn::Type::parse)?;
+                    let parsed_types = types.parse_terminated(syn::Type::parse, token::Comma)?;
 
                     if parsed_types.is_empty() {
                         return Err(syn::Error::new(ident.span(), "expected at least 1 type."));

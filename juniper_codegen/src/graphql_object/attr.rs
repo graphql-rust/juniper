@@ -76,7 +76,7 @@ where
         .items
         .iter_mut()
         .filter_map(|item| {
-            if let syn::ImplItem::Method(m) = item {
+            if let syn::ImplItem::Fn(m) = item {
                 parse_field(m, async_only, &renaming)
             } else {
                 None
@@ -132,12 +132,12 @@ where
     })
 }
 
-/// Parses a [`field::Definition`] from the given Rust [`syn::ImplItemMethod`].
+/// Parses a [`field::Definition`] from the given Rust [`syn::ImplItemFn`].
 ///
 /// Returns [`None`] if parsing fails, or the method field is ignored.
 #[must_use]
 fn parse_field(
-    method: &mut syn::ImplItemMethod,
+    method: &mut syn::ImplItemFn,
     async_only: bool,
     renaming: &rename::Policy,
 ) -> Option<field::Definition> {
@@ -146,7 +146,7 @@ fn parse_field(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &method_attrs)

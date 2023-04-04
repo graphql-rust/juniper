@@ -58,7 +58,7 @@ fn expand_on_trait(
         .items
         .iter_mut()
         .filter_map(|i| match i {
-            syn::TraitItem::Method(m) => parse_variant_from_trait_method(m, trait_ident, &attr),
+            syn::TraitItem::Fn(m) => parse_variant_from_trait_method(m, trait_ident, &attr),
             _ => None,
         })
         .collect();
@@ -110,7 +110,7 @@ fn expand_on_trait(
 ///
 /// [1]: https://spec.graphql.org/October2021#sec-Unions
 fn parse_variant_from_trait_method(
-    method: &mut syn::TraitItemMethod,
+    method: &mut syn::TraitItemFn,
     trait_ident: &syn::Ident,
     trait_attr: &Attr,
 ) -> Option<VariantDefinition> {
@@ -119,7 +119,7 @@ fn parse_variant_from_trait_method(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = VariantAttr::from_attrs("graphql", &method_attrs)
