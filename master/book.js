@@ -68,7 +68,7 @@ function playground_text(playground, hidden = true) {
     }
 
     // updates the visibility of play button based on `no_run` class and
-    // used crates vs ones available on http://play.rust-lang.org
+    // used crates vs ones available on https://play.rust-lang.org
     function update_play_button(pre_block, playground_crates) {
         var play_button = pre_block.querySelector(".play-button");
 
@@ -179,7 +179,7 @@ function playground_text(playground, hidden = true) {
     // even if highlighting doesn't apply
     code_nodes.forEach(function (block) { block.classList.add('hljs'); });
 
-    Array.from(document.querySelectorAll("code.language-rust")).forEach(function (block) {
+    Array.from(document.querySelectorAll("code.hljs")).forEach(function (block) {
 
         var lines = Array.from(block.querySelectorAll('.boring'));
         // If no lines were hidden, return
