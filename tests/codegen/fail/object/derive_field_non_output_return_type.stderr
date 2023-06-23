@@ -7,10 +7,10 @@ error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
    = help: the following other types implement trait `IsOutputType<S>`:
              <&T as IsOutputType<S>>
              <Arc<T> as IsOutputType<S>>
+             <Argument<'a, S> as IsOutputType<S>>
              <Box<T> as IsOutputType<S>>
              <EnumValue as IsOutputType<__S>>
              <ID as IsOutputType<__S>>
              <ObjA as IsOutputType<__S>>
              <SchemaType<'a, S> as IsOutputType<S>>
-             <TypeKind as IsOutputType<__S>>
-           and 18 others
+           and $N others
