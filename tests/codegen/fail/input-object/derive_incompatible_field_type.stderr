@@ -13,31 +13,8 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
             <TypeKind as IsInputType<__S>>
             <Vec<T> as IsInputType<S>>
             <[T; N] as IsInputType<S>>
-          and 13 others
+          and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
-    --> fail/input-object/derive_incompatible_field_type.rs:8:10
-     |
-8    | #[derive(GraphQLInputObject)]
-     |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
-     |
-     = help: the following other types implement trait `FromInputValue<S>`:
-               <Arc<T> as FromInputValue<S>>
-               <Box<T> as FromInputValue<S>>
-               <ID as FromInputValue<__S>>
-               <Object as FromInputValue<__S>>
-               <TypeKind as FromInputValue<__S>>
-               <Vec<T> as FromInputValue<S>>
-               <[T; N] as FromInputValue<S>>
-               <bool as FromInputValue<__S>>
-             and 10 others
-note: required by a bound in `Registry::<'r, S>::arg`
-    --> $WORKSPACE/juniper/src/executor/mod.rs
-     |
-     |         T: GraphQLType<S> + FromInputValue<S>,
-     |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<'r, S>::arg`
-     = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> fail/input-object/derive_incompatible_field_type.rs:8:10
@@ -54,7 +31,33 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
             <Vec<T> as FromInputValue<S>>
             <[T; N] as FromInputValue<S>>
             <bool as FromInputValue<__S>>
-          and 10 others
+          and $N others
+note: required by a bound in `Registry::<'r, S>::arg`
+ --> $WORKSPACE/juniper/src/executor/mod.rs
+  |
+  |     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
+  |            --- required by a bound in this associated function
+  |     where
+  |         T: GraphQLType<S> + FromInputValue<S>,
+  |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<'r, S>::arg`
+  = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
+ --> fail/input-object/derive_incompatible_field_type.rs:8:10
+  |
+8 | #[derive(GraphQLInputObject)]
+  |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
+  |
+  = help: the following other types implement trait `FromInputValue<S>`:
+            <Arc<T> as FromInputValue<S>>
+            <Box<T> as FromInputValue<S>>
+            <ID as FromInputValue<__S>>
+            <Object as FromInputValue<__S>>
+            <TypeKind as FromInputValue<__S>>
+            <Vec<T> as FromInputValue<S>>
+            <[T; N] as FromInputValue<S>>
+            <bool as FromInputValue<__S>>
+          and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
@@ -72,5 +75,5 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
             <ID as ToInputValue<__S>>
             <Object as ToInputValue<__S>>
             <TypeKind as ToInputValue<__S>>
-          and 14 others
+          and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

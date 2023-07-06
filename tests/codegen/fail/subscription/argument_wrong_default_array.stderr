@@ -9,10 +9,10 @@ error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
              <&'a [u32; 4] as From<&'a ppv_lite86::x86_64::vec128_storage>>
              <&'a [u8] as From<&'a ascii::ascii_str::AsciiStr>>
              <&'a mut [ascii::ascii_char::AsciiChar] as From<&'a mut ascii::ascii_str::AsciiStr>>
-             <[T; LANES] as From<Simd<T, LANES>>>
-             <[bool; LANES] as From<Mask<T, LANES>>>
-             <[u128; 1] as From<ppv_lite86::x86_64::vec128_storage>>
-             <[u128; 2] as From<ppv_lite86::x86_64::vec256_storage>>
+             <&'input [u8] as From<gimli::read::endian_slice::EndianSlice<'input, Endian>>>
+             <[T; 10] as From<(T, T, T, T, T, T, T, T, T, T)>>
+             <[T; 11] as From<(T, T, T, T, T, T, T, T, T, T, T)>>
+             <[T; 12] as From<(T, T, T, T, T, T, T, T, T, T, T, T)>>
            and $N others
    = note: required for `[bool; 3]` to implement `Into<[bool; 2]>`
    = note: this error originates in the attribute macro `graphql_subscription` (in Nightly builds, run with -Z macro-backtrace for more info)
