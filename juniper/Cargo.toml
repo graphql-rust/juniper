@@ -56,7 +56,7 @@ fnv = "1.0.3"
 futures = { version = "0.3.22", features = ["alloc"], default-features = false }
 futures-enum = { version = "0.1.12", default-features = false }
 graphql-parser = { version = "0.4", optional = true }
-indexmap = { version = "1.0", features = ["serde-1"] }
+indexmap = { version = "2.0", features = ["serde"] }
 juniper_codegen = { version = "0.16.0-dev", path = "../juniper_codegen" }
 rust_decimal = { version = "1.20", default-features = false, optional = true }
 serde = { version = "1.0.122", features = ["derive"] }
