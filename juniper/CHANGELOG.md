@@ -23,6 +23,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Upgraded [`bson` crate] integration to [2.0 version](https://github.com/mongodb/bson-rust/releases/tag/v2.0.0). ([#979])
 - Upgraded [`uuid` crate] integration to [1.0 version](https://github.com/uuid-rs/uuid/releases/tag/1.0.0). ([#1057])
 - Upgraded [`chrono-tz` crate] integration to [0.8 version](https://github.com/chronotope/chrono-tz/blob/ea628d3131b4a659acb42dbac885cfd08a2e5de9/CHANGELOG.md#080). ([#1119])
+- Upgraded [`bigdecimal` crate] integration to 0.4 version. ([#1176])
 - Made `FromInputValue` trait methods fallible to allow post-validation. ([#987])
 - Redesigned `#[graphql_interface]` macro: ([#1009])
     - Removed support for `dyn` attribute argument (interface values as trait objects).
@@ -119,6 +120,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1138]: /../../issues/1138
 [#1145]: /../../pull/1145
 [#1147]: /../../pull/1147
+[#1176]: /../../pull/1176
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
@@ -132,6 +134,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 
 
 
+[`bigdecimal` crate]: https://docs.rs/bigdecimal
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
