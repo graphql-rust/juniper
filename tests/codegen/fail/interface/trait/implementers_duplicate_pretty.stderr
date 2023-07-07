@@ -9,35 +9,3 @@ error[E0412]: cannot find type `CharacterValue` in this scope
   |
 4 | #[graphql(impl = CharacterValue)]
   |                  ^^^^^^^^^^^^^^ not found in this scope
-
-note: erroneous constant used
- --> fail/interface/trait/implementers_duplicate_pretty.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^
-  |
-  = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-note: erroneous constant used
- --> fail/interface/trait/implementers_duplicate_pretty.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^
-  |
-  = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-note: erroneous constant used
- --> fail/interface/trait/implementers_duplicate_pretty.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^
-  |
-  = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-note: erroneous constant used
- --> fail/interface/trait/implementers_duplicate_pretty.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^
-  |
-  = note: this note originates in the macro `$crate::const_concat` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
