@@ -44,7 +44,8 @@ mod bigdecimal_scalar {
         } else if let Some(f) = v.as_float_value() {
             // See akubera/bigdecimal-rs#103 for details:
             // https://github.com/akubera/bigdecimal-rs/issues/103
-            BigDecimal::from_str(&f.to_string())
+            let mut buf = ryu::Buffer::new();
+            BigDecimal::from_str(buf.format(f))
                 .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}"))
         } else {
             v.as_string_value()
