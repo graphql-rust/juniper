@@ -33,7 +33,7 @@ mod ast;
 pub mod executor;
 mod introspection;
 pub mod parser;
-pub(crate) mod schema;
+pub mod schema;
 pub mod types;
 mod util;
 pub mod validation;
