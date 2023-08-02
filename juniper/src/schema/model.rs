@@ -49,11 +49,11 @@ pub struct RootNode<
 /// Metadata for a schema
 #[derive(Debug)]
 pub struct SchemaType<'a, S> {
-    pub(crate) description: Option<Cow<'a, str>>,
-    pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
-    pub(crate) query_type_name: String,
-    pub(crate) mutation_type_name: Option<String>,
-    pub(crate) subscription_type_name: Option<String>,
+    pub description: Option<Cow<'a, str>>,
+    pub types: FnvHashMap<Name, MetaType<'a, S>>,
+    pub query_type_name: String,
+    pub mutation_type_name: Option<String>,
+    pub subscription_type_name: Option<String>,
     directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
