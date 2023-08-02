@@ -34,7 +34,7 @@ pub mod executor;
 mod introspection;
 pub mod parser;
 pub(crate) mod schema;
-mod types;
+pub mod types;
 mod util;
 pub mod validation;
 mod value;
