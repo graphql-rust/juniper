@@ -54,7 +54,7 @@ pub struct SchemaType<'a, S> {
     pub query_type_name: String,
     pub mutation_type_name: Option<String>,
     pub subscription_type_name: Option<String>,
-    directives: FnvHashMap<String, DirectiveType<'a, S>>,
+    pub directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
 impl<'a, S> Context for SchemaType<'a, S> {}
