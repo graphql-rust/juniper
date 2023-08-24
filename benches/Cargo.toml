@@ -10,7 +10,7 @@ futures = "0.3"
 juniper = { path = "../juniper" }
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"
 tokio = { version = "1.0", features = ["rt-multi-thread"] }
 
 [[bench]]
