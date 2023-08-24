@@ -42,7 +42,10 @@ mod bigdecimal_scalar {
         if let Some(i) = v.as_int_value() {
             Ok(BigDecimal::from(i))
         } else if let Some(f) = v.as_float_value() {
-            BigDecimal::try_from(f)
+            // See akubera/bigdecimal-rs#103 for details:
+            // https://github.com/akubera/bigdecimal-rs/issues/103
+            let mut buf = ryu::Buffer::new();
+            BigDecimal::from_str(buf.format(f))
                 .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}"))
         } else {
             v.as_string_value()
