@@ -511,10 +511,10 @@ mod tests {
         parse_string("simple", "simple");
         parse_string(" white space ", " white space ");
         parse_string(r#"quote \""#, "quote \"");
-        parse_string(r#"escaped \n\r\b\t\f"#, "escaped \n\r\u{0008}\t\u{000c}");
-        parse_string(r#"slashes \\ \/"#, "slashes \\ /");
+        parse_string(r"escaped \n\r\b\t\f", "escaped \n\r\u{0008}\t\u{000c}");
+        parse_string(r"slashes \\ \/", "slashes \\ /");
         parse_string(
-            r#"unicode \u1234\u5678\u90AB\uCDEF"#,
+            r"unicode \u1234\u5678\u90AB\uCDEF",
             "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
         );
     }

@@ -949,7 +949,7 @@ mod test {
             Output::Message(ServerMessage::Error { id, .. }) => {
                 assert_eq!(id, "bar");
             }
-            msg @ _ => panic!("expected error, got: {msg:?}"),
+            msg => panic!("expected error, got: {msg:?}"),
         }
     }
 
@@ -991,10 +991,10 @@ mod test {
                         item: ParseError::UnexpectedToken(token),
                         ..
                     }) => assert_eq!(token, "asd"),
-                    p @ _ => panic!("expected graphql parse error, got: {p:?}"),
+                    p => panic!("expected graphql parse error, got: {p:?}"),
                 }
             }
-            msg @ _ => panic!("expected error, got: {msg:?}"),
+            msg => panic!("expected error, got: {msg:?}"),
         }
     }
 
@@ -1106,7 +1106,7 @@ mod test {
                 assert_eq!(data, graphql_value!({ "error": null }));
                 assert_eq!(errors.len(), 1);
             }
-            msg @ _ => panic!("expected data, got: {msg:?}"),
+            msg => panic!("expected data, got: {msg:?}"),
         }
     }
 }
