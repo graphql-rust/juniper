@@ -570,7 +570,7 @@ mod tests {
         let req = TestRequest::post()
             .append_header(("content-type", "application/json; charset=utf-8"))
             .set_payload(
-                r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##,
+                r#"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"#,
             )
             .uri("/")
             .to_request();
@@ -643,10 +643,10 @@ mod tests {
         let req = TestRequest::post()
             .append_header(("content-type", "application/json"))
             .set_payload(
-                r##"[
+                r#"[
                      { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
                      { "variables": null, "query": "{ hero(episode: EMPIRE) { id name } }" }
-                 ]"##,
+                 ]"#,
             )
             .uri("/")
             .to_request();
@@ -857,6 +857,6 @@ mod subscription_tests {
 
     #[actix_web::rt::test]
     async fn test_actix_ws_integration() {
-        run_ws_test_suite(&mut TestActixWsIntegration::default()).await;
+        run_ws_test_suite(&mut TestActixWsIntegration).await;
     }
 }

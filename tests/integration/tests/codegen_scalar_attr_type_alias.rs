@@ -299,7 +299,7 @@ mod multiple_delegated_parse_token {
     fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
         v.as_string_value()
             .map(|s| StringOrInt::String(s.to_owned()))
-            .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
+            .or_else(|| v.as_int_value().map(StringOrInt::Int))
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
 

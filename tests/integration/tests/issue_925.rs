@@ -29,7 +29,7 @@ struct SubscriptionsRoot;
 #[graphql_subscription(name = "Subscription")]
 impl SubscriptionsRoot {
     async fn users() -> Result<BoxStream<'static, User>, Error> {
-        Ok(users_stream()?)
+        users_stream()
     }
 }
 

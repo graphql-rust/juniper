@@ -16,7 +16,7 @@ where
         s,
         &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
     )
-    .expect(&format!("Parse error on input {s:#?}"))
+    .unwrap_or_else(|_| panic!("Parse error on input {s:#?}"))
 }
 
 fn parse_document_error<S: ScalarValue>(s: &str) -> Spanning<ParseError> {

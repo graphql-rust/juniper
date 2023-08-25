@@ -139,7 +139,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
-                .or_insert_with(HashSet::new)
+                .or_default()
                 .insert(spread.item.name.item);
         }
     }
@@ -152,7 +152,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(def);
         }
     }
@@ -167,7 +167,7 @@ where
         {
             self.variable_usages
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((
                     Spanning::start_end(&var_name.start, &var_name.end, var_name.item),
                     input_type.clone(),

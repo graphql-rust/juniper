@@ -131,7 +131,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(spread.item.name.item);
         }
     }
@@ -156,7 +156,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .append(&mut value.item.referenced_variables());
         }
     }

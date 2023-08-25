@@ -121,12 +121,12 @@ mod test {
 
         assert_eq!(
             serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
-            r##"{"type":"connection_ack"}"##,
+            r#"{"type":"connection_ack"}"#,
         );
 
         assert_eq!(
             serde_json::to_string(&ServerMessage::Pong).unwrap(),
-            r##"{"type":"pong"}"##,
+            r#"{"type":"pong"}"#,
         );
 
         assert_eq!(
@@ -138,7 +138,7 @@ mod test {
                 },
             })
             .unwrap(),
-            r##"{"type":"next","id":"foo","payload":{"data":null}}"##,
+            r#"{"type":"next","id":"foo","payload":{"data":null}}"#,
         );
 
         assert_eq!(
@@ -147,12 +147,12 @@ mod test {
                 payload: GraphQLError::UnknownOperationName.into(),
             })
             .unwrap(),
-            r##"{"type":"error","id":"foo","payload":[{"message":"Unknown operation"}]}"##,
+            r#"{"type":"error","id":"foo","payload":[{"message":"Unknown operation"}]}"#,
         );
 
         assert_eq!(
             serde_json::to_string(&ServerMessage::Complete { id: "foo".into() }).unwrap(),
-            r##"{"type":"complete","id":"foo"}"##,
+            r#"{"type":"complete","id":"foo"}"#,
         );
     }
 }

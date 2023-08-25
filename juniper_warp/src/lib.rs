@@ -641,7 +641,7 @@ mod tests {
             .path("/graphql2")
             .header("accept", "application/json")
             .header("content-type", "application/json")
-            .body(r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##)
+            .body(r#"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"#)
             .reply(&filter)
             .await;
 
@@ -681,10 +681,10 @@ mod tests {
             .header("accept", "application/json")
             .header("content-type", "application/json")
             .body(
-                r##"[
+                r#"[
                      { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
                      { "variables": null, "query": "{ hero(episode: EMPIRE) { id name } }" }
-                 ]"##,
+                 ]"#,
             )
             .reply(&filter)
             .await;
@@ -734,7 +734,7 @@ mod tests_http_harness {
                 EmptyMutation::<Database>::new(),
                 EmptySubscription::<Database>::new(),
             );
-            let state = warp::any().map(move || Database::new());
+            let state = warp::any().map(Database::new);
 
             let filter = path::end().and(if is_sync {
                 make_graphql_filter_sync(schema, state.boxed())
@@ -779,7 +779,6 @@ mod tests_http_harness {
             let url = Url::parse(&format!("http://localhost:3000{url}")).expect("url to parse");
 
             let url: String = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
-                .into_iter()
                 .collect::<Vec<_>>()
                 .join("");
 

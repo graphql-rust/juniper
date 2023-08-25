@@ -72,7 +72,7 @@ where
         if let Some(current_fragment) = self.current_fragment {
             self.spreads
                 .entry(current_fragment)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(Spanning::start_end(
                     &spread.start,
                     &spread.end,

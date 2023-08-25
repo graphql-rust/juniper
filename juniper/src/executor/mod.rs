@@ -112,11 +112,7 @@ where
     Self: PartialEq,
 {
     fn partial_cmp(&self, other: &ExecutionError<S>) -> Option<Ordering> {
-        (&self.location, &self.path, &self.error.message).partial_cmp(&(
-            &other.location,
-            &other.path,
-            &other.error.message,
-        ))
+        Some(self.cmp(other))
     }
 }
 

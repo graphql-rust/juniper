@@ -2527,7 +2527,7 @@ mod inferred_custom_context_from_field {
             &self.primary_function
         }
 
-        fn info<'b>(&'b self) -> &'b str {
+        fn info(&self) -> &str {
             &self.primary_function
         }
     }
@@ -3246,10 +3246,11 @@ mod nullable_argument_subtyping {
     #[graphql_object(impl = CharacterValue)]
     impl Droid {
         fn id(&self, is_present: Option<bool>) -> &str {
-            is_present
-                .unwrap_or_default()
-                .then_some(&*self.id)
-                .unwrap_or("missing")
+            if is_present.unwrap_or_default() {
+                &self.id
+            } else {
+                "missing"
+            }
         }
 
         fn primary_function(&self) -> &str {

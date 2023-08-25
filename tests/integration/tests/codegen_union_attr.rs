@@ -70,13 +70,13 @@ mod trivial {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl Character for Droid {
         fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -207,13 +207,13 @@ mod generic {
 
     impl<A, B> Character<A, B> for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl<A, B> Character<A, B> for Droid {
         fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -310,7 +310,7 @@ mod description_from_doc_comment {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -383,7 +383,7 @@ mod explicit_name_and_description {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -474,13 +474,13 @@ mod explicit_scalar {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl Character for Droid {
         fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -565,13 +565,13 @@ mod custom_scalar {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl Character for Droid {
         fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -654,13 +654,13 @@ mod explicit_generic_scalar {
 
     impl<S: ScalarValue> Character<S> for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl<S: ScalarValue> Character<S> for Droid {
         fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -743,13 +743,13 @@ mod bounded_generic_scalar {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl Character for Droid {
         fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -832,13 +832,13 @@ mod explicit_custom_context {
 
     impl Character for HumanCustomContext {
         fn as_human(&self) -> Option<&HumanCustomContext> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl Character for DroidCustomContext {
         fn as_droid(&self) -> Option<&DroidCustomContext> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -919,13 +919,13 @@ mod inferred_custom_context {
 
     impl Character for HumanCustomContext {
         fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl Character for DroidCustomContext {
         fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -1009,7 +1009,7 @@ mod ignored_method {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -1084,7 +1084,7 @@ mod external_resolver {
 
     impl Character for Human {
         fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+            Some(self)
         }
     }
 
@@ -1197,19 +1197,19 @@ mod full_featured {
 
     impl<T> Character<T> for HumanCustomContext {
         fn as_human(&self, _: &()) -> Option<&HumanCustomContext> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl<T> Character<T> for DroidCustomContext {
         fn as_droid(&self) -> Option<&DroidCustomContext> {
-            Some(&self)
+            Some(self)
         }
     }
 
     impl<T> Character<T> for EwokCustomContext {
         fn as_ewok(&self) -> Option<&EwokCustomContext> {
-            Some(&self)
+            Some(self)
         }
     }
 
