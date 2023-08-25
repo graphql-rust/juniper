@@ -11,6 +11,12 @@ search = "juniper_subscriptions = \\{ version = \"[^\"]+\""
 replace = "juniper_subscriptions = { version = \"{{version}}\""
 
 [[pre-release-replacements]]
+file = "../juniper_graphql_transport_ws/Cargo.toml"
+exactly = 1
+search = "juniper_subscriptions = \\{ version = \"[^\"]+\""
+replace = "juniper_subscriptions = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
 file = "CHANGELOG.md"
 max = 1
 min = 0

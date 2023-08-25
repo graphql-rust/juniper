@@ -355,11 +355,20 @@ pub mod subscriptions {
         },
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
-    use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
+    use juniper_graphql_transport_ws;
+    use juniper_graphql_ws;
 
     struct Message(warp::ws::Message);
 
-    impl<S: ScalarValue> TryFrom<Message> for ClientMessage<S> {
+    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_ws::ClientMessage<S> {
+        type Error = serde_json::Error;
+
+        fn try_from(msg: Message) -> serde_json::Result<Self> {
+            serde_json::from_slice(msg.0.as_bytes())
+        }
+    }
+
+    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_transport_ws::ClientMessage<S> {
         type Error = serde_json::Error;
 
         fn try_from(msg: Message) -> serde_json::Result<Self> {
@@ -408,6 +417,9 @@ pub mod subscriptions {
     /// configuration are already known, or it can be a closure that gets executed asynchronously
     /// when the client sends the ConnectionInit message. Using a closure allows you to perform
     /// authentication based on the parameters provided by the client.
+    ///
+    /// This protocol has been deprecated in favor of the `graphql-transport-ws` protocol, which is
+    /// provided by the `serve_graphql_transport_ws` function.
     pub async fn serve_graphql_ws<Query, Mutation, Subscription, CtxT, S, I>(
         websocket: warp::ws::WebSocket,
         root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
@@ -422,16 +434,69 @@ pub mod subscriptions {
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
         S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: juniper_graphql_ws::Init<S, CtxT> + Send,
     {
         let (ws_tx, ws_rx) = websocket.split();
-        let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split();
+        let (s_tx, s_rx) =
+            juniper_graphql_ws::Connection::new(juniper_graphql_ws::ArcSchema(root_node), init)
+                .split();
 
         let ws_rx = ws_rx.map(|r| r.map(Message));
         let s_rx = s_rx.map(|msg| {
             serde_json::to_string(&msg)
                 .map(warp::ws::Message::text)
                 .map_err(Error::Serde)
+        });
+
+        match future::select(
+            ws_rx.forward(s_tx.sink_err_into()),
+            s_rx.forward(ws_tx.sink_err_into()),
+        )
+        .await
+        {
+            Either::Left((r, _)) => r.map_err(|e| e.into()),
+            Either::Right((r, _)) => r,
+        }
+    }
+
+    /// Serves the graphql-transport-ws protocol over a WebSocket connection.
+    ///
+    /// The `init` argument is used to provide the context and additional configuration for
+    /// connections. This can be a `juniper_graphql_transport_ws::ConnectionConfig` if the context and
+    /// configuration are already known, or it can be a closure that gets executed asynchronously
+    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
+    /// authentication based on the parameters provided by the client.
+    pub async fn serve_graphql_transport_ws<Query, Mutation, Subscription, CtxT, S, I>(
+        websocket: warp::ws::WebSocket,
+        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+    ) -> Result<(), Error>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: juniper_graphql_transport_ws::Init<S, CtxT> + Send,
+    {
+        let (ws_tx, ws_rx) = websocket.split();
+        let (s_tx, s_rx) = juniper_graphql_transport_ws::Connection::new(
+            juniper_graphql_transport_ws::ArcSchema(root_node),
+            init,
+        )
+        .split();
+
+        let ws_rx = ws_rx.map(|r| r.map(Message));
+        let s_rx = s_rx.map(|output| match output {
+            juniper_graphql_transport_ws::Output::Message(msg) => serde_json::to_string(&msg)
+                .map(warp::ws::Message::text)
+                .map_err(Error::Serde),
+            juniper_graphql_transport_ws::Output::Close { code, message } => {
+                Ok(warp::ws::Message::close_with(code, message))
+            }
         });
 
         match future::select(
