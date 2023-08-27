@@ -1,8 +1,8 @@
 error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
-  --> fail/object/argument_non_input_type.rs:12:23
+  --> fail/object/argument_non_input_type.rs:10:1
    |
-12 |     fn id(&self, obj: ObjA) -> &str {
-   |                       ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
+10 | #[graphql_object]
+   | ^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
    |
    = help: the following other types implement trait `IsInputType<S>`:
              <bool as IsInputType<__S>>
