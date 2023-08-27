@@ -7,10 +7,10 @@ warning: unused variable: `obj`
    = note: `#[warn(unused_variables)]` on by default
 
 error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
-  --> fail/subscription/argument_non_input_type.rs:17:29
+  --> fail/subscription/argument_non_input_type.rs:15:1
    |
-17 |     async fn id(&self, obj: ObjA) -> Stream<'static, &'static str> {
-   |                             ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
+15 | #[graphql_subscription]
+   | ^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
    |
    = help: the following other types implement trait `IsInputType<S>`:
              <bool as IsInputType<__S>>
