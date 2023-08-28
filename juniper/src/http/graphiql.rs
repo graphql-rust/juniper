@@ -20,12 +20,16 @@ pub fn graphiql_source(
 
     let stylesheet_source = r#"
     <style>
-        html, body, #app {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-            width: 100%;
-        }
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #graphiql {
+        height: 100vh;
+      }
     </style>
     "#;
     let fetcher_source = r#"
@@ -50,23 +54,25 @@ pub fn graphiql_source(
             return null
         }
 
-        function graphQLFetcher(params) {
-            return fetch(GRAPHQL_URL, {
-                method: 'post',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
+        function graphQLFetcher(graphQLParams, opts) {
+            const { headers = {} } = opts;
+
+            return fetch(
+                GRAPHQL_URL,
+                {
+                    method: 'post',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        ...headers,
+                    },
+                    body: JSON.stringify(graphQLParams),
+                    credentials: 'omit',
                 },
-                credentials: 'include',
-                body: JSON.stringify(params)
-            }).then(function (response) {
-                return response.text();
-            }).then(function (body) {
-                try {
-                    return JSON.parse(body);
-                } catch (error) {
-                    return body;
-                }
+            ).then(function (response) {
+                return response.json().catch(function () {
+                    return response.text();
+                });
             });
         }
 
@@ -74,9 +80,11 @@ pub fn graphiql_source(
 
         ReactDOM.render(
             React.createElement(GraphiQL, {
-                fetcher,
+              fetcher,
+              defaultVariableEditorOpen: true,
             }),
-            document.querySelector('#app'));
+            document.getElementById('graphiql'),
+        );
     </script>
     "#;
 
@@ -87,16 +95,22 @@ pub fn graphiql_source(
 <head>
     <title>GraphQL</title>
     {stylesheet_source}
-    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/graphiql@0.17.5/graphiql.min.css">
+    <script
+      crossorigin
+      src="https://unpkg.com/react@17/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+    ></script>
+    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
 </head>
 <body>
-    <div id="app"></div>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/2.0.3/fetch.js"></script>
-    <script src="//unpkg.com/subscriptions-transport-ws@0.8.3/browser/client.js"></script>
-    <script src="//unpkg.com/graphiql-subscriptions-fetcher@0.0.2/browser/client.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react/16.10.2/umd/react.production.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react-dom/16.10.2/umd/react-dom.production.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/graphiql@0.17.5/graphiql.min.js"></script>
+    <div id="graphiql">Loading...</div>
+    <script
+        src="https://unpkg.com/graphiql/graphiql.min.js"
+        type="application/javascript"
+    ></script>
     <script>var GRAPHQL_URL = '{graphql_url}';</script>
     <script>var usingSubscriptions = {using_subscriptions};</script>
     <script>var GRAPHQL_SUBSCRIPTIONS_URL = '{graphql_subscriptions_url}';</script>
