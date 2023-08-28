@@ -378,7 +378,7 @@ pub mod subscriptions {
         /// while deserializing incoming messages are handled internally by the protocol.
         Serde(serde_json::Error),
 
-        /// Errors that can happen while communication with Juniper
+        /// Errors that can happen while communicating with Juniper
         Juniper(WebsocketError),
     }
 
