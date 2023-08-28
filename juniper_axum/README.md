@@ -2,7 +2,7 @@
 ====================
 
 [![Crates.io](https://img.shields.io/crates/v/juniper_axum.svg?maxAge=2592000)](https://crates.io/crates/juniper_warp)
-[![Documentation](https://docs.rs/juniper_warp/badge.svg)](https://docs.rs/juniper_warp)
+[![Documentation](https://docs.rs/juniper_axum/badge.svg)](https://docs.rs/juniper_axum)
 [![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
 
 - [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_axum/CHANGELOG.md)
