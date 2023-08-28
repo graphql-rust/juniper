@@ -1,7 +1,8 @@
 [package]
 name = "example_basic_subscriptions"
 version = "0.0.0"
-edition = "2018"
+edition = "2021"
+rust-version = "1.65"
 authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
 publish = false
 

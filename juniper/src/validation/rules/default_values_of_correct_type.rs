@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     ast::VariableDefinition,
     parser::Spanning,
@@ -19,7 +21,7 @@ where
     fn enter_variable_definition(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (var_name, var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         if let Some(Spanning {
             item: ref var_value,
@@ -29,7 +31,7 @@ where
         {
             if var_def.var_type.item.is_non_null() {
                 ctx.report_error(
-                    &non_null_error_message(var_name.item, &format!("{}", var_def.var_type.item)),
+                    &non_null_error_message(var_name.item, &var_def.var_type.item),
                     &[*start],
                 )
             } else {
@@ -37,7 +39,7 @@ where
 
                 if !is_valid_literal_value(ctx.schema, &meta_type, var_value) {
                     ctx.report_error(
-                        &type_error_message(var_name.item, &format!("{}", var_def.var_type.item)),
+                        &type_error_message(var_name.item, &var_def.var_type.item),
                         &[*start],
                     );
                 }
@@ -46,17 +48,14 @@ where
     }
 }
 
-fn type_error_message(arg_name: &str, type_name: &str) -> String {
-    format!(
-        "Invalid default value for argument \"{}\", expected type \"{}\"",
-        arg_name, type_name
-    )
+fn type_error_message(arg_name: impl fmt::Display, type_name: impl fmt::Display) -> String {
+    format!("Invalid default value for argument \"{arg_name}\", expected type \"{type_name}\"")
 }
 
-fn non_null_error_message(arg_name: &str, type_name: &str) -> String {
+fn non_null_error_message(arg_name: impl fmt::Display, type_name: impl fmt::Display) -> String {
     format!(
-        "Argument \"{}\" has type \"{}\" and is not nullable, so it can't have a default value",
-        arg_name, type_name
+        "Argument \"{arg_name}\" has type \"{type_name}\" and is not nullable, \
+         so it can't have a default value",
     )
 }
 

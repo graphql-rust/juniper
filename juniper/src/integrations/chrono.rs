@@ -62,9 +62,9 @@ mod date {
         S: ScalarValue,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                Date::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `Date`: {}", e))
+                Date::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `Date`: {e}"))
             })
     }
 }
@@ -127,7 +127,7 @@ mod local_time {
         S: ScalarValue,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
@@ -135,7 +135,7 @@ mod local_time {
                 LocalTime::parse_from_str(s, FORMAT_NO_MILLIS)
                     .or_else(|_| LocalTime::parse_from_str(s, FORMAT_NO_SECS))
                     .or_else(|_| LocalTime::parse_from_str(s, FORMAT))
-                    .map_err(|e| format!("Invalid `LocalTime`: {}", e))
+                    .map_err(|e| format!("Invalid `LocalTime`: {e}"))
             })
     }
 }
@@ -166,10 +166,10 @@ mod local_date_time {
         S: ScalarValue,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 LocalDateTime::parse_from_str(s, FORMAT)
-                    .map_err(|e| format!("Invalid `LocalDateTime`: {}", e))
+                    .map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
             })
     }
 }
@@ -219,10 +219,10 @@ mod date_time {
         Tz: TimeZone + FromFixedOffset,
     {
         v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {}", v))
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 DateTime::<FixedOffset>::parse_from_rfc3339(s)
-                    .map_err(|e| format!("Invalid `DateTime`: {}", e))
+                    .map_err(|e| format!("Invalid `DateTime`: {e}"))
                     .map(FromFixedOffset::from_fixed_offset)
             })
     }
@@ -337,19 +337,18 @@ mod date_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("1996-12-19", Date::from_ymd(1996, 12, 19)),
-            ("1564-01-30", Date::from_ymd(1564, 01, 30)),
+            ("1996-12-19", Date::from_ymd_opt(1996, 12, 19)),
+            ("1564-01-30", Date::from_ymd_opt(1564, 01, 30)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = Date::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected.unwrap(), "input: {raw}");
         }
     }
 
@@ -372,7 +371,7 @@ mod date_test {
             let input: InputValue = input;
             let parsed = Date::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -380,21 +379,22 @@ mod date_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                Date::from_ymd(1996, 12, 19),
+                Date::from_ymd_opt(1996, 12, 19),
                 graphql_input_value!("1996-12-19"),
             ),
             (
-                Date::from_ymd(1564, 01, 30),
+                Date::from_ymd_opt(1564, 01, 30),
                 graphql_input_value!("1564-01-30"),
             ),
             (
-                Date::from_ymd(2020, 01, 01),
+                Date::from_ymd_opt(2020, 01, 01),
                 graphql_input_value!("2020-01-01"),
             ),
         ] {
+            let val = val.unwrap();
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }
@@ -408,23 +408,25 @@ mod local_time_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("14:23:43", LocalTime::from_hms(14, 23, 43)),
-            ("14:00:00", LocalTime::from_hms(14, 00, 00)),
-            ("14:00", LocalTime::from_hms(14, 00, 00)),
-            ("14:32", LocalTime::from_hms(14, 32, 00)),
-            ("14:00:00.000", LocalTime::from_hms(14, 00, 00)),
-            ("14:23:43.345", LocalTime::from_hms_milli(14, 23, 43, 345)),
+            ("14:23:43", LocalTime::from_hms_opt(14, 23, 43)),
+            ("14:00:00", LocalTime::from_hms_opt(14, 00, 00)),
+            ("14:00", LocalTime::from_hms_opt(14, 00, 00)),
+            ("14:32", LocalTime::from_hms_opt(14, 32, 00)),
+            ("14:00:00.000", LocalTime::from_hms_opt(14, 00, 00)),
+            (
+                "14:23:43.345",
+                LocalTime::from_hms_milli_opt(14, 23, 43, 345),
+            ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = LocalTime::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected.unwrap(), "input: {raw}");
         }
     }
 
@@ -451,7 +453,7 @@ mod local_time_test {
             let input: InputValue = input;
             let parsed = LocalTime::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -459,25 +461,26 @@ mod local_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                LocalTime::from_hms_micro(1, 2, 3, 4005),
+                LocalTime::from_hms_micro_opt(1, 2, 3, 4005),
                 graphql_input_value!("01:02:03.004"),
             ),
             (
-                LocalTime::from_hms(0, 0, 0),
+                LocalTime::from_hms_opt(0, 0, 0),
                 graphql_input_value!("00:00:00"),
             ),
             (
-                LocalTime::from_hms(12, 0, 0),
+                LocalTime::from_hms_opt(12, 0, 0),
                 graphql_input_value!("12:00:00"),
             ),
             (
-                LocalTime::from_hms(1, 2, 3),
+                LocalTime::from_hms_opt(1, 2, 3),
                 graphql_input_value!("01:02:03"),
             ),
         ] {
+            let val = val.unwrap();
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }
@@ -496,15 +499,15 @@ mod local_date_time_test {
             (
                 "1996-12-19 14:23:43",
                 LocalDateTime::new(
-                    NaiveDate::from_ymd(1996, 12, 19),
-                    NaiveTime::from_hms(14, 23, 43),
+                    NaiveDate::from_ymd_opt(1996, 12, 19).unwrap(),
+                    NaiveTime::from_hms_opt(14, 23, 43).unwrap(),
                 ),
             ),
             (
                 "1564-01-30 14:00:00",
                 LocalDateTime::new(
-                    NaiveDate::from_ymd(1564, 1, 30),
-                    NaiveTime::from_hms(14, 00, 00),
+                    NaiveDate::from_ymd_opt(1564, 1, 30).unwrap(),
+                    NaiveTime::from_hms_opt(14, 00, 00).unwrap(),
                 ),
             ),
         ] {
@@ -513,11 +516,10 @@ mod local_date_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -546,7 +548,7 @@ mod local_date_time_test {
             let input: InputValue = input;
             let parsed = LocalDateTime::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -555,22 +557,22 @@ mod local_date_time_test {
         for (val, expected) in [
             (
                 LocalDateTime::new(
-                    NaiveDate::from_ymd(1996, 12, 19),
-                    NaiveTime::from_hms(0, 0, 0),
+                    NaiveDate::from_ymd_opt(1996, 12, 19).unwrap(),
+                    NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
                 ),
                 graphql_input_value!("1996-12-19 00:00:00"),
             ),
             (
                 LocalDateTime::new(
-                    NaiveDate::from_ymd(1564, 1, 30),
-                    NaiveTime::from_hms(14, 0, 0),
+                    NaiveDate::from_ymd_opt(1564, 1, 30).unwrap(),
+                    NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
                 ),
                 graphql_input_value!("1564-01-30 14:00:00"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }
@@ -593,40 +595,40 @@ mod date_time_test {
                 "2014-11-28T21:00:09+09:00",
                 DateTime::<FixedOffset>::from_utc(
                     NaiveDateTime::new(
-                        NaiveDate::from_ymd(2014, 11, 28),
-                        NaiveTime::from_hms(12, 0, 9),
+                        NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
+                        NaiveTime::from_hms_opt(12, 0, 9).unwrap(),
                     ),
-                    FixedOffset::east(9 * 3600),
+                    FixedOffset::east_opt(9 * 3600).unwrap(),
                 ),
             ),
             (
                 "2014-11-28T21:00:09Z",
                 DateTime::<FixedOffset>::from_utc(
                     NaiveDateTime::new(
-                        NaiveDate::from_ymd(2014, 11, 28),
-                        NaiveTime::from_hms(21, 0, 9),
+                        NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
+                        NaiveTime::from_hms_opt(21, 0, 9).unwrap(),
                     ),
-                    FixedOffset::east(0),
+                    FixedOffset::east_opt(0).unwrap(),
                 ),
             ),
             (
                 "2014-11-28T21:00:09+00:00",
                 DateTime::<FixedOffset>::from_utc(
                     NaiveDateTime::new(
-                        NaiveDate::from_ymd(2014, 11, 28),
-                        NaiveTime::from_hms(21, 0, 9),
+                        NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
+                        NaiveTime::from_hms_opt(21, 0, 9).unwrap(),
                     ),
-                    FixedOffset::east(0),
+                    FixedOffset::east_opt(0).unwrap(),
                 ),
             ),
             (
                 "2014-11-28T21:00:09.05+09:00",
                 DateTime::<FixedOffset>::from_utc(
                     NaiveDateTime::new(
-                        NaiveDate::from_ymd(2014, 11, 28),
-                        NaiveTime::from_hms_milli(12, 0, 9, 50),
+                        NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
+                        NaiveTime::from_hms_milli_opt(12, 0, 9, 50).unwrap(),
                     ),
-                    FixedOffset::east(0),
+                    FixedOffset::east_opt(0).unwrap(),
                 ),
             ),
         ] {
@@ -635,11 +637,10 @@ mod date_time_test {
 
             assert!(
                 parsed.is_ok(),
-                "failed to parse `{}`: {:?}",
-                raw,
+                "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected, "input: {}", raw);
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -673,7 +674,7 @@ mod date_time_test {
             let input: InputValue = input;
             let parsed = DateTime::<FixedOffset>::from_input_value(&input);
 
-            assert!(parsed.is_err(), "allows input: {:?}", input);
+            assert!(parsed.is_err(), "allows input: {input:?}");
         }
     }
 
@@ -683,27 +684,27 @@ mod date_time_test {
             (
                 DateTime::<FixedOffset>::from_utc(
                     NaiveDateTime::new(
-                        NaiveDate::from_ymd(1996, 12, 19),
-                        NaiveTime::from_hms(0, 0, 0),
+                        NaiveDate::from_ymd_opt(1996, 12, 19).unwrap(),
+                        NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
                     ),
-                    FixedOffset::east(0),
+                    FixedOffset::east_opt(0).unwrap(),
                 ),
                 graphql_input_value!("1996-12-19T00:00:00Z"),
             ),
             (
                 DateTime::<FixedOffset>::from_utc(
                     NaiveDateTime::new(
-                        NaiveDate::from_ymd(1564, 1, 30),
-                        NaiveTime::from_hms_milli(5, 0, 0, 123),
+                        NaiveDate::from_ymd_opt(1564, 1, 30).unwrap(),
+                        NaiveTime::from_hms_milli_opt(5, 0, 0, 123).unwrap(),
                     ),
-                    FixedOffset::east(9 * 3600),
+                    FixedOffset::east_opt(9 * 3600).unwrap(),
                 ),
                 graphql_input_value!("1564-01-30T05:00:00.123Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
 
-            assert_eq!(actual, expected, "on value: {}", val);
+            assert_eq!(actual, expected, "on value: {val}");
         }
     }
 }
@@ -764,22 +765,25 @@ mod integration_test {
         #[graphql_object]
         impl Root {
             fn date() -> Date {
-                Date::from_ymd(2015, 3, 14)
+                Date::from_ymd_opt(2015, 3, 14).unwrap()
             }
 
             fn local_time() -> LocalTime {
-                LocalTime::from_hms(16, 7, 8)
+                LocalTime::from_hms_opt(16, 7, 8).unwrap()
             }
 
             fn local_date_time() -> LocalDateTime {
-                LocalDateTime::new(Date::from_ymd(2016, 7, 8), LocalTime::from_hms(9, 10, 11))
+                LocalDateTime::new(
+                    Date::from_ymd_opt(2016, 7, 8).unwrap(),
+                    LocalTime::from_hms_opt(9, 10, 11).unwrap(),
+                )
             }
 
             fn date_time() -> DateTime<chrono::Utc> {
                 DateTime::from_utc(
                     LocalDateTime::new(
-                        Date::from_ymd(1996, 12, 20),
-                        LocalTime::from_hms(0, 39, 57),
+                        Date::from_ymd_opt(1996, 12, 20).unwrap(),
+                        LocalTime::from_hms_opt(0, 39, 57).unwrap(),
                     ),
                     chrono::Utc,
                 )

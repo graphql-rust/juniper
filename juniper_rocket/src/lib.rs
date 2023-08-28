@@ -242,9 +242,9 @@ where
 
     fn push_value(ctx: &mut Self::Context, field: ValueField<'f>) {
         match field.name.key().map(|key| key.as_str()) {
-            Some("query") => ctx.query(field.value.to_owned()),
-            Some("operation_name") => ctx.operation_name(field.value.to_owned()),
-            Some("variables") => ctx.variables(field.value.to_owned()),
+            Some("query") => ctx.query(field.value.into()),
+            Some("operation_name") => ctx.operation_name(field.value.into()),
+            Some("variables") => ctx.variables(field.value.into()),
             Some(key) => {
                 if ctx.opts.strict {
                     let error = Error::from(ErrorKind::Unknown).with_name(key);
@@ -318,13 +318,13 @@ where
             let mut reader = data.open(limit);
             let mut body = String::new();
             if let Err(e) = reader.read_to_string(&mut body).await {
-                return Failure((Status::InternalServerError, format!("{:?}", e)));
+                return Failure((Status::InternalServerError, format!("{e:?}")));
             }
 
             Success(GraphQLRequest(if is_json {
                 match serde_json::from_str(&body) {
                     Ok(req) => req,
-                    Err(e) => return Failure((Status::BadRequest, format!("{}", e))),
+                    Err(e) => return Failure((Status::BadRequest, e.to_string())),
                 }
             } else {
                 GraphQLBatchRequest::Single(http::GraphQLRequest::new(body, None, None))
@@ -437,7 +437,7 @@ mod fromform_tests {
         check_error(
             "query=test&variables=NOT_JSON",
             vec![Error::from(ErrorKind::Validation(Cow::Owned(
-                "expected value at line 1 column 1".to_owned(),
+                "expected value at line 1 column 1".into(),
             )))
             .with_name("variables")],
             false,
@@ -451,7 +451,7 @@ mod fromform_tests {
         assert!(result.is_ok());
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"bar"}"#).unwrap();
         let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-            "test".to_string(),
+            "test".into(),
             None,
             Some(variables),
         )));
@@ -465,7 +465,7 @@ mod fromform_tests {
         ));
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"x y&? z"}"#).unwrap();
         let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-            "test".to_string(),
+            "test".into(),
             None,
             Some(variables),
         )));
@@ -479,8 +479,8 @@ mod fromform_tests {
         ));
         assert!(result.is_ok());
         let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-            "%foo bar baz&?".to_string(),
-            Some("test".to_string()),
+            "%foo bar baz&?".into(),
+            Some("test".into()),
             None,
         )));
         assert_eq!(result.unwrap(), expected);
@@ -489,8 +489,6 @@ mod fromform_tests {
 
 #[cfg(test)]
 mod tests {
-
-    use futures;
 
     use juniper::{
         http::tests as http_tests,
@@ -512,7 +510,7 @@ mod tests {
         request: super::GraphQLRequest,
         schema: &State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute_sync(&*schema, &*context)
+        request.execute_sync(schema, context)
     }
 
     #[post("/", data = "<request>")]
@@ -521,7 +519,7 @@ mod tests {
         request: super::GraphQLRequest,
         schema: &State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute_sync(&*schema, &*context)
+        request.execute_sync(schema, context)
     }
 
     struct TestRocketIntegration {
@@ -570,7 +568,7 @@ mod tests {
             schema: &State<Schema>,
         ) -> super::GraphQLResponse {
             assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-            request.execute_sync(&*schema, &*context)
+            request.execute_sync(schema, context)
         }
 
         let rocket = make_rocket_without_routes()

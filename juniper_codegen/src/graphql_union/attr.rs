@@ -6,19 +6,15 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
-use crate::{
-    common::{parse, scalar},
-    result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer},
-};
+use crate::common::{diagnostic, parse, path_eq_single, scalar, SpanContainer};
 
 use super::{
     all_variants_different, emerge_union_variants_from_attr, Attr, Definition, VariantAttr,
     VariantDefinition,
 };
 
-/// [`GraphQLScope`] of errors for `#[graphql_union]` macro.
-const ERR: GraphQLScope = GraphQLScope::UnionAttr;
+/// [`diagnostic::Scope`] of errors for `#[graphql_union]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::UnionAttr;
 
 /// Expands `#[graphql_union]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
@@ -112,7 +108,7 @@ fn expand_on_trait(
 /// On failure returns [`None`] and internally fills up [`proc_macro_error`]
 /// with the corresponding errors.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 fn parse_variant_from_trait_method(
     method: &mut syn::TraitItemMethod,
     trait_ident: &syn::Ident,
@@ -177,10 +173,9 @@ fn parse_variant_from_trait_method(
             ERR.custom(
                 method_span,
                 format!(
-                    "trait method `{}` conflicts with the external resolver \
-                     function `{}` declared on the trait to resolve the \
-                     variant type `{}`",
-                    method_ident,
+                    "trait method `{method_ident}` conflicts with the external \
+                     resolver function `{}` declared on the trait to resolve \
+                     the variant type `{}`",
                     other.to_token_stream(),
                     ty.to_token_stream(),
                 ),

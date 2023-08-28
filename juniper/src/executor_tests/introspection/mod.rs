@@ -69,7 +69,7 @@ async fn test_execution() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     assert_eq!(
         result,
@@ -114,7 +114,7 @@ async fn enum_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -223,7 +223,7 @@ async fn interface_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -247,7 +247,7 @@ async fn interface_introspection() {
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!(null)),
+        Some(&graphql_value!([])),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
@@ -355,7 +355,7 @@ async fn object_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -406,7 +406,7 @@ async fn object_introspection() {
 
     assert_eq!(fields.len(), 2);
 
-    println!("Fields: {:#?}", fields);
+    println!("Fields: {fields:#?}");
 
     assert!(fields.contains(&graphql_value!({
         "name": "sampleEnum",
@@ -444,9 +444,13 @@ async fn object_introspection() {
             "name": "second",
             "description": "The second number",
             "type": {
-                "name": "Int",
-                "kind": "SCALAR",
-                "ofType": null,
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                    "name": "Int",
+                    "kind": "SCALAR",
+                    "ofType": null,
+                },
             },
             "defaultValue": "123",
         }],
@@ -493,7 +497,7 @@ async fn scalar_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()

@@ -32,7 +32,7 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         match self.known_names.entry(arg_name.item) {
             Entry::Occupied(e) => {
@@ -46,7 +46,7 @@ where
 }
 
 fn error_message(arg_name: &str) -> String {
-    format!("There can only be one argument named \"{}\"", arg_name)
+    format!("There can only be one argument named \"{arg_name}\"")
 }
 
 #[cfg(test)]

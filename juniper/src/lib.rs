@@ -6,6 +6,7 @@
 
 // Required for using `juniper_codegen` macros inside this crate to resolve
 // absolute `::juniper` path correctly, without errors.
+extern crate core;
 extern crate self as juniper;
 
 use std::fmt;
@@ -93,10 +94,10 @@ pub use crate::{
 };
 
 /// An error that prevented query execution
-#[derive(Debug, PartialEq)]
 #[allow(missing_docs)]
-pub enum GraphQLError<'a> {
-    ParseError(Spanning<ParseError<'a>>),
+#[derive(Debug, Eq, PartialEq)]
+pub enum GraphQLError {
+    ParseError(Spanning<ParseError>),
     ValidationError(Vec<RuleError>),
     NoOperationProvided,
     MultipleOperationsProvided,
@@ -105,26 +106,38 @@ pub enum GraphQLError<'a> {
     NotSubscription,
 }
 
-impl<'a> fmt::Display for GraphQLError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl fmt::Display for GraphQLError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            GraphQLError::ParseError(error) => write!(f, "{}", error),
-            GraphQLError::ValidationError(errors) => {
-                for error in errors {
-                    writeln!(f, "{}", error)?;
+            Self::ParseError(e) => write!(f, "{e}"),
+            Self::ValidationError(errs) => {
+                for e in errs {
+                    writeln!(f, "{e}")?;
                 }
                 Ok(())
             }
-            GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
-            GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
-            GraphQLError::UnknownOperationName => write!(f, "Unknown operation name"),
-            GraphQLError::IsSubscription => write!(f, "Operation is a subscription"),
-            GraphQLError::NotSubscription => write!(f, "Operation is not a subscription"),
+            Self::NoOperationProvided => write!(f, "No operation provided"),
+            Self::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
+            Self::UnknownOperationName => write!(f, "Unknown operation name"),
+            Self::IsSubscription => write!(f, "Operation is a subscription"),
+            Self::NotSubscription => write!(f, "Operation is not a subscription"),
         }
     }
 }
 
-impl<'a> std::error::Error for GraphQLError<'a> {}
+impl std::error::Error for GraphQLError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::ParseError(e) => Some(e),
+            Self::ValidationError(errs) => Some(errs.first()?),
+            Self::NoOperationProvided
+            | Self::MultipleOperationsProvided
+            | Self::UnknownOperationName
+            | Self::IsSubscription
+            | Self::NotSubscription => None,
+        }
+    }
+}
 
 /// Execute a query synchronously in a provided schema
 pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
@@ -133,7 +146,7 @@ pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,
@@ -172,7 +185,7 @@ pub async fn execute<'a, S, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
 where
     QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
@@ -216,7 +229,7 @@ pub async fn resolve_into_stream<'a, S, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'a QueryT::Context,
-) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError>
 where
     QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
@@ -255,11 +268,11 @@ where
 }
 
 /// Execute the reference introspection query in the provided schema
-pub fn introspect<'a, S, QueryT, MutationT, SubscriptionT>(
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+pub fn introspect<S, QueryT, MutationT, SubscriptionT>(
+    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     context: &QueryT::Context,
     format: IntrospectionFormat,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,
@@ -278,8 +291,8 @@ where
     )
 }
 
-impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
-    fn from(f: Spanning<ParseError<'a>>) -> GraphQLError<'a> {
-        GraphQLError::ParseError(f)
+impl From<Spanning<ParseError>> for GraphQLError {
+    fn from(err: Spanning<ParseError>) -> Self {
+        Self::ParseError(err)
     }
 }

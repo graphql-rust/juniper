@@ -1,0 +1,24 @@
+[[pre-release-replacements]]
+file = "../juniper_actix/Cargo.toml"
+exactly = 1
+search = "juniper_graphql_transport_ws = \\{ version = \"[^\"]+\""
+replace = "juniper_graphql_transport_ws = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_warp/Cargo.toml"
+exactly = 1
+search = "juniper_graphql_transport_ws = \\{ version = \"[^\"]+\""
+replace = "juniper_graphql_transport_ws = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+max = 1
+min = 0
+search = "## master"
+replace = "## [{{version}}] · {{date}}\n[{{version}}]: /../../tree/{{crate_name}}-v{{version}}/{{crate_name}}"
+
+[[pre-release-replacements]]
+file = "README.md"
+exactly = 2
+search = "graphql-rust/juniper/blob/[^/]+/"
+replace = "graphql-rust/juniper/blob/{{crate_name}}-v{{version}}/"

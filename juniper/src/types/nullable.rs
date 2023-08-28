@@ -32,12 +32,16 @@ use crate::{
 pub enum Nullable<T> {
     /// No value
     ImplicitNull,
+
     /// No value, explicitly specified to be null
     ExplicitNull,
+
     /// Some value `T`
     Some(T),
 }
 
+// Implemented manually to omit redundant `T: Default` trait bound, imposed by
+// `#[derive(Default)]`.
 impl<T> Default for Nullable<T> {
     fn default() -> Self {
         Self::ImplicitNull

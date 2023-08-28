@@ -4,16 +4,12 @@ use proc_macro2::TokenStream;
 use quote::ToTokens as _;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-use crate::{
-    common::{field, parse::TypeExt as _, scalar},
-    result::GraphQLScope,
-    util::{span_container::SpanContainer, RenameRule},
-};
+use crate::common::{diagnostic, field, parse::TypeExt as _, rename, scalar, SpanContainer};
 
 use super::{attr::err_unnamed_field, enum_idents, Attr, Definition};
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLInterface)]` macro.
-const ERR: GraphQLScope = GraphQLScope::InterfaceDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLInterface)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::InterfaceDerive;
 
 /// Expands `#[derive(GraphQLInterface)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -33,7 +29,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| struct_ident.unraw().to_string());
+        .unwrap_or_else(|| struct_ident.unraw().to_string())
+        .into_boxed_str();
     if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
             attr.name
@@ -51,7 +48,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .rename_fields
         .as_deref()
         .copied()
-        .unwrap_or(RenameRule::CamelCase);
+        .unwrap_or(rename::Policy::CamelCase);
 
     let fields = data
         .fields
@@ -93,17 +90,22 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         enum_ident,
         enum_alias_ident,
         name,
-        description: attr.description.as_deref().cloned(),
+        description: attr.description.map(SpanContainer::into_inner),
         context,
         scalar,
         fields,
         implemented_for: attr
             .implemented_for
-            .iter()
-            .map(|c| c.inner().clone())
+            .into_iter()
+            .map(SpanContainer::into_inner)
+            .collect(),
+        implements: attr
+            .implements
+            .into_iter()
+            .map(SpanContainer::into_inner)
             .collect(),
         suppress_dead_code: Some((ast.ident.clone(), data.fields.clone())),
-        src_intra_doc_link: format!("struct@{}", struct_ident),
+        src_intra_doc_link: format!("struct@{struct_ident}").into_boxed_str(),
     }
     .into_token_stream())
 }
@@ -112,7 +114,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 ///
 /// Returns [`None`] if the parsing fails, or the struct field is ignored.
 #[must_use]
-fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Definition> {
+fn parse_field(field: &syn::Field, renaming: &rename::Policy) -> Option<field::Definition> {
     let field_ident = field.ident.as_ref().or_else(|| err_unnamed_field(&field))?;
 
     let attr = field::Attr::from_attrs("graphql", &field.attrs)
@@ -141,17 +143,11 @@ fn parse_field(field: &syn::Field, renaming: &RenameRule) -> Option<field::Defin
     let mut ty = field.ty.clone();
     ty.lifetimes_anonymized();
 
-    let description = attr.description.as_ref().map(|d| d.as_ref().value());
-    let deprecated = attr
-        .deprecated
-        .as_deref()
-        .map(|d| d.as_ref().map(syn::LitStr::value));
-
     Some(field::Definition {
         name,
         ty,
-        description,
-        deprecated,
+        description: attr.description.map(SpanContainer::into_inner),
+        deprecated: attr.deprecated.map(SpanContainer::into_inner),
         ident: field_ident.clone(),
         arguments: None,
         has_receiver: false,

@@ -1,9 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![recursion_limit = "1024"]
 
-mod result;
-mod util;
-
 // NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust
 //         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,
 //         and so we cannot move the definition into a sub-module and use the `#[macro_export]`
@@ -16,8 +13,8 @@ mod util;
 /// By default, [`SpanContainer::span_ident`] is used.
 ///
 /// [`Span`]: proc_macro2::Span
-/// [`SpanContainer`]: crate::util::span_container::SpanContainer
-/// [`SpanContainer::span_ident`]: crate::util::span_container::SpanContainer::span_ident
+/// [`SpanContainer`]: crate::common::SpanContainer
+/// [`SpanContainer::span_ident`]: crate::common::SpanContainer::span_ident
 macro_rules! try_merge_opt {
     ($field:ident: $self:ident, $another:ident => $span:ident) => {{
         if let Some(v) = $self.$field {
@@ -47,8 +44,8 @@ macro_rules! try_merge_opt {
 ///
 /// [`HashMap`]: std::collections::HashMap
 /// [`Span`]: proc_macro2::Span
-/// [`SpanContainer`]: crate::util::span_container::SpanContainer
-/// [`SpanContainer::span_ident`]: crate::util::span_container::SpanContainer::span_ident
+/// [`SpanContainer`]: crate::common::SpanContainer
+/// [`SpanContainer::span_ident`]: crate::common::SpanContainer::span_ident
 macro_rules! try_merge_hashmap {
     ($field:ident: $self:ident, $another:ident => $span:ident) => {{
         if !$self.$field.is_empty() {
@@ -80,8 +77,8 @@ macro_rules! try_merge_hashmap {
 ///
 /// [`HashSet`]: std::collections::HashSet
 /// [`Span`]: proc_macro2::Span
-/// [`SpanContainer`]: crate::util::span_container::SpanContainer
-/// [`SpanContainer::span_ident`]: crate::util::span_container::SpanContainer::span_ident
+/// [`SpanContainer`]: crate::common::SpanContainer
+/// [`SpanContainer::span_ident`]: crate::common::SpanContainer::span_ident
 macro_rules! try_merge_hashset {
     ($field:ident: $self:ident, $another:ident => $span:ident) => {{
         if !$self.$field.is_empty() {
@@ -100,10 +97,9 @@ macro_rules! try_merge_hashset {
     };
 }
 
-mod derive_enum;
-mod derive_input_object;
-
 mod common;
+mod graphql_enum;
+mod graphql_input_object;
 mod graphql_interface;
 mod graphql_object;
 mod graphql_scalar;
@@ -113,28 +109,245 @@ mod scalar_value;
 
 use proc_macro::TokenStream;
 use proc_macro_error::{proc_macro_error, ResultExt as _};
-use result::GraphQLScope;
 
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
-pub fn derive_enum(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(ast, GraphQLScope::DeriveEnum);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
-
+/// `#[derive(GraphQLInputObject)]` macro for deriving a
+/// [GraphQL input object][0] implementation for a Rust struct. Each
+/// non-ignored field type must itself be [GraphQL input object][0] or a
+/// [GraphQL scalar][2].
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived
+/// implementation. Specifying multiple `#[graphql]` attributes on the same
+/// definition is totally okay. They all will be treated as a single attribute.
+///
+/// ```rust
+/// use juniper::GraphQLInputObject;
+///
+/// #[derive(GraphQLInputObject)]
+/// struct Point2D {
+///     x: f64,
+///     y: f64,
+/// }
+/// ```
+///
+/// # Custom name and description
+///
+/// The name of a [GraphQL input object][0] or its [fields][1] may be overridden
+/// with the `name` attribute's argument. By default, a type name or a struct
+/// field name is used in a `camelCase`.
+///
+/// The description of a [GraphQL input object][0] or its [fields][1] may be
+/// specified either with the `description`/`desc` attribute's argument, or with
+/// a regular Rust doc comment.
+///
+/// ```rust
+/// # use juniper::GraphQLInputObject;
+/// #
+/// #[derive(GraphQLInputObject)]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "Point",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "A point is the simplest two-dimensional primitive.",
+/// )]
+/// struct Point2D {
+///     /// Abscissa value.
+///     x: f64,
+///
+///     #[graphql(name = "y", desc = "Ordinate value")]
+///     y_coord: f64,
+/// }
+/// ```
+///
+/// # Renaming policy
+///
+/// By default, all [GraphQL input object fields][1] are renamed in a
+/// `camelCase` manner (so a `y_coord` Rust struct field becomes a
+/// `yCoord` [value][1] in GraphQL schema, and so on). This complies with
+/// default GraphQL naming conventions as [demonstrated in spec][0].
+///
+/// However, if you need for some reason another naming convention, it's
+/// possible to do so by using the `rename_all` attribute's argument. At the
+/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
+/// `camelCase`, `none` (disables any renaming).
+///
+/// ```rust
+/// # use juniper::GraphQLInputObject;
+/// #
+/// #[derive(GraphQLInputObject)]
+/// #[graphql(rename_all = "none")] // disables renaming
+/// struct Point2D {
+///     x: f64,
+///     y_coord: f64, // will be `y_coord` instead of `yCoord` in GraphQL schema
+/// }
+/// ```
+///
+/// # Ignoring fields
+///
+/// To omit exposing a Rust field in a GraphQL schema, use the `ignore`
+/// attribute's argument directly on that field. Ignored fields must implement
+/// [`Default`] or have the `default = <expression>` attribute's argument.
+///
+/// ```rust
+/// # use juniper::GraphQLInputObject;
+/// #
+/// enum System {
+///     Cartesian,
+/// }
+///
+/// #[derive(GraphQLInputObject)]
+/// struct Point2D {
+///     x: f64,
+///     y: f64,
+///     #[graphql(ignore)]
+///     shift: f64, // `Default::default()` impl is used.
+///     #[graphql(skip, default = System::Cartesian)]
+///     //              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+///     // This attribute is required, as we need to be to construct `Point2D`
+///     // from `{ x: 0.0, y: 0.0 }` GraphQL input.
+///     system: System,
+/// }
+/// ```
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+/// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+/// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(ast, GraphQLScope::DeriveInputObject);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    graphql_input_object::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
+}
+
+/// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][0]
+/// implementation for Rust enums.
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived
+/// implementation. Specifying multiple `#[graphql]` attributes on the same
+/// definition is totally okay. They all will be treated as a single attribute.
+///
+/// ```rust
+/// use juniper::GraphQLEnum;
+///
+/// #[derive(GraphQLEnum)]
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// # Custom name, description and deprecation
+///
+/// The name of a [GraphQL enum][0] or its [values][1] may be overridden with
+/// the `name` attribute's argument. By default, a type name is used or a
+/// variant name in `SCREAMING_SNAKE_CASE`.
+///
+/// The description of a [GraphQL enum][0] or its [values][1] may be specified
+/// either with the `description`/`desc` attribute's argument, or with a regular
+/// Rust doc comment.
+///
+/// [GraphQL enum value][1] may be deprecated by specifying the `deprecated`
+/// attribute's argument, or with regular a Rust `#[deprecated]` attribute.
+///
+/// ```rust
+/// # #![allow(deprecated)]
+/// #
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "AvailableEpisodes",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "Possible episodes.",
+/// )]
+/// enum Episode {
+///     /// Doc comment, also acting as description.
+///     #[deprecated(note = "Don't use it")]
+///     NewHope,
+///
+///     #[graphql(name = "Jedi", desc = "Arguably the best one in the trilogy")]
+///     #[graphql(deprecated = "Don't use it")]
+///     Jedai,
+///
+///     Empire,
+/// }
+/// ```
+///
+/// # Renaming policy
+///
+/// By default, all [GraphQL enum values][1] are renamed in a
+/// `SCREAMING_SNAKE_CASE` manner (so a `NewHope` Rust enum variant becomes a
+/// `NEW_HOPE` [value][1] in GraphQL schema, and so on). This complies with
+/// default GraphQL naming conventions as [demonstrated in spec][0].
+///
+/// However, if you need for some reason another naming convention, it's
+/// possible to do so by using the `rename_all` attribute's argument. At the
+/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
+/// `camelCase`, `none` (disables any renaming).
+///
+/// ```rust
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(rename_all = "none")] // disables renaming
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// # Ignoring enum variants
+///
+/// To omit exposing a Rust enum variant in a GraphQL schema, use the `ignore`
+/// attribute's argument directly on that variant. Only ignored Rust enum
+/// variants are allowed to contain fields.
+///
+/// ```rust
+/// # use juniper::GraphQLEnum;
+/// #
+/// #[derive(GraphQLEnum)]
+/// enum Episode<T> {
+///     NewHope,
+///     Empire,
+///     Jedi,
+///     #[graphql(ignore)]
+///     Legends(T),
+/// }
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, `#[derive(GraphQLEnum)]` macro generates code, which is generic
+/// over a [`ScalarValue`] type. This can be changed with the `scalar`
+/// attribute's argument.
+///
+/// ```rust
+/// # use juniper::{DefaultScalarValue, GraphQLEnum};
+/// #
+/// #[derive(GraphQLEnum)]
+/// #[graphql(scalar = DefaultScalarValue)]
+/// enum Episode {
+///     NewHope,
+///     Empire,
+///     Jedi,
+/// }
+/// ```
+///
+/// [`ScalarValue`]: juniper::ScalarValue
+/// [0]: https://spec.graphql.org/October2021#sec-Enums
+/// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
+pub fn derive_enum(input: TokenStream) -> TokenStream {
+    graphql_enum::derive::expand(input.into())
+        .unwrap_or_abort()
+        .into()
 }
 
 /// `#[derive(GraphQLScalar)]` macro for deriving a [GraphQL scalar][0]
@@ -227,18 +440,17 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///     ) -> Result<Self, String> {
 ///         //            ^^^^^^ must implement `IntoFieldError`
 ///         input.as_string_value()
-///             .ok_or_else(|| format!("Expected `String`, found: {}", input))
+///             .ok_or_else(|| format!("Expected `String`, found: {input}"))
 ///             .and_then(|str| {
 ///                 str.strip_prefix("id: ")
 ///                     .ok_or_else(|| {
 ///                         format!(
 ///                             "Expected `UserId` to begin with `id: `, \
-///                              found: {}",
-///                             input,
+///                              found: {input}",
 ///                         )
 ///                     })
 ///             })
-///             .map(|id| Self(id.to_owned()))
+///             .map(|id| Self(id.into()))
 ///     }
 /// }
 /// ```
@@ -270,19 +482,19 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 /// fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
 ///     match v {
-///         StringOrInt::String(str) => Value::scalar(str.to_owned()),
+///         StringOrInt::String(s) => Value::scalar(s.to_owned()),
 ///         StringOrInt::Int(i) => Value::scalar(*i),
 ///     }
 /// }
 ///
 /// fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
 ///     v.as_string_value()
-///         .map(|s| StringOrInt::String(s.to_owned()))
+///         .map(|s| StringOrInt::String(s.into()))
 ///         .or_else(|| v.as_int_value().map(StringOrInt::Int))
-///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 /// }
 ///
-/// fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+/// fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
 ///     <String as ParseScalarValue<S>>::from_str(value)
 ///         .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 /// }
@@ -313,19 +525,19 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 ///     pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
 ///         match v {
-///             StringOrInt::String(str) => Value::scalar(str.to_owned()),
+///             StringOrInt::String(s) => Value::scalar(s.to_owned()),
 ///             StringOrInt::Int(i) => Value::scalar(*i),
 ///         }
 ///     }
 ///
 ///     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
 ///         v.as_string_value()
-///             .map(|s| StringOrInt::String(s.to_owned()))
+///             .map(|s| StringOrInt::String(s.into()))
 ///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
-///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
-///     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+///     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
 ///         <String as ParseScalarValue<S>>::from_str(t)
 ///             .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(t))
 ///     }
@@ -351,7 +563,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// impl StringOrInt {
 ///     fn to_output<S: ScalarValue>(&self) -> Value<S> {
 ///         match self {
-///             Self::String(str) => Value::scalar(str.to_owned()),
+///             Self::String(s) => Value::scalar(s.to_owned()),
 ///             Self::Int(i) => Value::scalar(*i),
 ///         }
 ///     }
@@ -361,12 +573,12 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///         S: ScalarValue
 ///     {
 ///         v.as_string_value()
-///             .map(|s| Self::String(s.to_owned()))
+///             .map(|s| Self::String(s.into()))
 ///             .or_else(|| v.as_int_value().map(Self::Int))
-///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
-///     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>
+///     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
 ///     where
 ///         S: ScalarValue
 ///     {
@@ -403,7 +615,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///         S: ScalarValue,
 ///     {
 ///         match v {
-///             StringOrInt::String(str) => Value::scalar(str.to_owned()),
+///             StringOrInt::String(s) => Value::scalar(s.to_owned()),
 ///             StringOrInt::Int(i) => Value::scalar(*i),
 ///         }
 ///     }
@@ -413,9 +625,9 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///         S: ScalarValue,
 ///     {
 ///         v.as_string_value()
-///             .map(|s| StringOrInt::String(s.to_owned()))
+///             .map(|s| StringOrInt::String(s.into()))
 ///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
-///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {}", v))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
 ///     // No need in `parse_token()` function.
@@ -523,8 +735,8 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///
 ///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
 ///       v.as_string_value()
-///           .ok_or_else(|| format!("Expected `String`, found: {}", v))
-///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {}", e)))
+///           .ok_or_else(|| format!("Expected `String`, found: {v}"))
+///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
 ///     }
 /// }
 /// #
@@ -553,7 +765,7 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// methods).
 ///
 /// ```rust
-/// # use std::{fmt, convert::TryInto as _};
+/// # use std::fmt;
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
 /// # use juniper::ScalarValue;
@@ -757,6 +969,125 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
+/// # Interfaces implementing other interfaces
+///
+/// GraphQL allows implementing interfaces on other interfaces in addition to
+/// objects.
+///
+/// > __NOTE:__ Every interface has to specify all other interfaces/objects it
+/// >           implements or is implemented for. Missing one of `for = ` or
+/// >           `impl = ` attributes is an understandable compile-time error.
+///
+/// ```rust
+/// # extern crate juniper;
+/// use juniper::{graphql_interface, graphql_object, ID};
+///
+/// #[graphql_interface(for = [HumanValue, Luke])]
+/// struct Node {
+///     id: ID,
+/// }
+///
+/// #[graphql_interface(impl = NodeValue, for = Luke)]
+/// struct Human {
+///     id: ID,
+///     home_planet: String,
+/// }
+///
+/// struct Luke {
+///     id: ID,
+/// }
+///
+/// #[graphql_object(impl = [HumanValue, NodeValue])]
+/// impl Luke {
+///     fn id(&self) -> &ID {
+///         &self.id
+///     }
+///
+///     // As `String` and `&str` aren't distinguished by
+///     // GraphQL spec, you can use them interchangeably.
+///     // Same is applied for `Cow<'a, str>`.
+///     //                  ⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+///     fn home_planet() -> &'static str {
+///         "Tatooine"
+///     }
+/// }
+/// ```
+///
+/// # GraphQL subtyping and additional `null`able fields
+///
+/// GraphQL allows implementers (both objects and other interfaces) to return
+/// "subtypes" instead of an original value. Basically, this allows you to
+/// impose additional bounds on the implementation.
+///
+/// Valid "subtypes" are:
+/// - interface implementer instead of an interface itself:
+///   - `I implements T` in place of a `T`;
+///   - `Vec<I implements T>` in place of a `Vec<T>`.
+/// - non-`null` value in place of a `null`able:
+///   - `T` in place of a `Option<T>`;
+///   - `Vec<T>` in place of a `Vec<Option<T>>`.
+///
+/// These rules are recursively applied, so `Vec<Vec<I implements T>>` is a
+/// valid "subtype" of a `Option<Vec<Option<Vec<Option<T>>>>>`.
+///
+/// Also, GraphQL allows implementers to add `null`able fields, which aren't
+/// present on an original interface.
+///
+/// ```rust
+/// # extern crate juniper;
+/// use juniper::{graphql_interface, graphql_object, ID};
+///
+/// #[graphql_interface(for = [HumanValue, Luke])]
+/// struct Node {
+///     id: ID,
+/// }
+///
+/// #[graphql_interface(for = HumanConnectionValue)]
+/// struct Connection {
+///     nodes: Vec<NodeValue>,
+/// }
+///
+/// #[graphql_interface(impl = NodeValue, for = Luke)]
+/// struct Human {
+///     id: ID,
+///     home_planet: String,
+/// }
+///
+/// #[graphql_interface(impl = ConnectionValue)]
+/// struct HumanConnection {
+///     nodes: Vec<HumanValue>,
+///     //         ^^^^^^^^^^ notice not `NodeValue`
+///     // This can happen, because every `Human` is a `Node` too, so we are
+///     // just imposing additional bounds, which still can be resolved with
+///     // `... on Connection { nodes }`.
+/// }
+///
+/// struct Luke {
+///     id: ID,
+/// }
+///
+/// #[graphql_object(impl = [HumanValue, NodeValue])]
+/// impl Luke {
+///     fn id(&self) -> &ID {
+///         &self.id
+///     }
+///
+///     fn home_planet(language: Option<String>) -> &'static str {
+///         //                   ^^^^^^^^^^^^^^
+///         // Notice additional `null`able field, which is missing on `Human`.
+///         // Resolving `...on Human { homePlanet }` will provide `None` for
+///         // this argument.
+///         match language.as_deref() {
+///             None | Some("en") => "Tatooine",
+///             Some("ko") => "타투인",
+///             _ => todo!(),
+///         }
+///     }
+/// }
+/// #
+/// # fn main() {}
+/// ```
+///
 /// # Renaming policy
 ///
 /// By default, all [GraphQL interface][1] fields and their arguments are renamed
@@ -797,7 +1128,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     // You can return `&str` even if trait definition returns `String`.
 ///     fn detailed_info(&self, info_kind: String) -> &str {
 ///         (info_kind == "planet")
-///             .then(|| &self.home_planet)
+///             .then_some(&self.home_planet)
 ///             .unwrap_or(&self.id)
 ///     }
 /// }
@@ -953,8 +1284,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// [`Context`]: juniper::Context
 /// [`Executor`]: juniper::Executor
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [0]: https://spec.graphql.org/June2018
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [0]: https://spec.graphql.org/October2021
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 /// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
 /// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
@@ -994,7 +1325,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// For more info and possibilities see [`#[graphql_interface]`] macro.
 ///
 /// [`#[graphql_interface]`]: crate::graphql_interface
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInterface, attributes(graphql))]
 pub fn derive_interface(body: TokenStream) -> TokenStream {
@@ -1131,7 +1462,7 @@ pub fn derive_interface(body: TokenStream) -> TokenStream {
 /// ```
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(body: TokenStream) -> TokenStream {
@@ -1455,8 +1786,8 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// [`GraphQLType`]: juniper::GraphQLType
 /// [`GraphQLValue`]: juniper::GraphQLValue
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [0]: https://spec.graphql.org/June2018
-/// [1]: https://spec.graphql.org/June2018/#sec-Objects
+/// [0]: https://spec.graphql.org/October2021
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
@@ -1509,7 +1840,7 @@ pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [`GraphQLType`]: juniper::GraphQLType
 /// [`GraphQLSubscriptionValue`]: juniper::GraphQLSubscriptionValue
 /// [`Stream`]: futures::Stream
-/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+/// [1]: https://spec.graphql.org/October2021#sec-Subscription
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
@@ -1816,7 +2147,7 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///
 /// [`Context`]: juniper::Context
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLUnion, attributes(graphql))]
@@ -2106,7 +2437,7 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 ///
 /// [`Context`]: juniper::Context
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 /// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
 /// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html

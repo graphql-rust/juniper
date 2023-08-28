@@ -11,6 +11,10 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 ### BC Breaks
 
 - Switched to 0.16 version of [`juniper` crate].
+- Changed return type of all functions from `Response<Body>` to `Response<String>`. ([#1101], [#1096])
+
+[#1096]: /../../issues/1096
+[#1101]: /../../pull/1101
 
 
 

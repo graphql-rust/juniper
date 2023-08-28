@@ -81,13 +81,20 @@ impl<T> Spanning<T> {
         }
     }
 
-    /// Modify the contents of the spanned item
+    /// Modify the contents of the spanned item.
     pub fn map<O, F: Fn(T) -> O>(self, f: F) -> Spanning<O> {
         Spanning {
             item: f(self.item),
             start: self.start,
             end: self.end,
         }
+    }
+
+    /// Modifies the contents of the spanned item in case `f` returns [`Some`],
+    /// or returns [`None`] otherwise.
+    pub fn and_then<O, F: Fn(T) -> Option<O>>(self, f: F) -> Option<Spanning<O>> {
+        let (start, end) = (self.start, self.end);
+        f(self.item).map(|item| Spanning { item, start, end })
     }
 }
 

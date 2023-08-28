@@ -5,14 +5,14 @@ error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
   | ^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`
   |
   = help: the following other types implement trait `From<T>`:
-            <&'a [ascii::ascii_char::AsciiChar] as From<&'a ascii::ascii_str::AsciiStr>>
-            <&'a [u32; 4] as From<&'a ppv_lite86::x86_64::vec128_storage>>
-            <&'a [u8] as From<&'a ascii::ascii_str::AsciiStr>>
-            <&'a mut [ascii::ascii_char::AsciiChar] as From<&'a mut ascii::ascii_str::AsciiStr>>
-            <[T; LANES] as From<Simd<T, LANES>>>
             <[bool; LANES] as From<Mask<T, LANES>>>
-            <[u128; 1] as From<ppv_lite86::x86_64::vec128_storage>>
-            <[u128; 2] as From<ppv_lite86::x86_64::vec256_storage>>
-          and 7 others
-  = note: required because of the requirements on the impl of `Into<[bool; 2]>` for `[bool; 3]`
+            <[u32; 4] as From<ppv_lite86::generic::vec128_storage>>
+            <[u64; 2] as From<ppv_lite86::generic::vec128_storage>>
+            <[u64; 4] as From<ppv_lite86::generic::vec256_storage>>
+            <[T; N] as From<Simd<T, N>>>
+            <[T; 1] as From<(T,)>>
+            <[T; 2] as From<(T, T)>>
+            <[T; 3] as From<(T, T, T)>>
+          and $N others
+  = note: required for `[bool; 3]` to implement `Into<[bool; 2]>`
   = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -44,7 +44,7 @@ use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 ///         format!(
 ///             "good morning {}, the app state is {:?}",
 ///             context.1,
-///             context.0
+///             context.0,
 ///         )
 ///     }
 /// }
@@ -70,7 +70,7 @@ use warp::{body, filters::BoxedFilter, http, hyper::body::Bytes, query, Filter};
 ///     .and(graphql_filter);
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
@@ -83,7 +83,7 @@ where
     CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
-    let schema = Arc::new(schema);
+    let schema = schema.into();
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
@@ -108,7 +108,7 @@ where
         let schema = post_graphql_schema.clone();
         async move {
             let query = str::from_utf8(body.as_ref())
-                .map_err(|e| anyhow!("Request body query is not a valid UTF-8 string: {}", e))?;
+                .map_err(|e| anyhow!("Request body query is not a valid UTF-8 string: {e}"))?;
             let req = GraphQLRequest::new(query.into(), None, None);
 
             let resp = req.execute(&schema, &context).await;
@@ -155,7 +155,7 @@ where
 
 /// Make a synchronous filter for graphql endpoint.
 pub fn make_graphql_filter_sync<Query, Mutation, Subscription, CtxT, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: BoxedFilter<(CtxT,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
@@ -165,7 +165,7 @@ where
     CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
-    let schema = Arc::new(schema);
+    let schema = schema.into();
     let post_json_schema = schema.clone();
     let post_graphql_schema = schema.clone();
 
@@ -192,7 +192,7 @@ where
         async move {
             let res = task::spawn_blocking(move || {
                 let query = str::from_utf8(body.as_ref())
-                    .map_err(|e| anyhow!("Request body is not a valid UTF-8 string: {}", e))?;
+                    .map_err(|e| anyhow!("Request body is not a valid UTF-8 string: {e}"))?;
                 let req = GraphQLRequest::new(query.into(), None, None);
 
                 let resp = req.execute_sync(&schema, &context);
@@ -355,11 +355,20 @@ pub mod subscriptions {
         },
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
-    use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
+    use juniper_graphql_transport_ws;
+    use juniper_graphql_ws;
 
     struct Message(warp::ws::Message);
 
-    impl<S: ScalarValue> std::convert::TryFrom<Message> for ClientMessage<S> {
+    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_ws::ClientMessage<S> {
+        type Error = serde_json::Error;
+
+        fn try_from(msg: Message) -> serde_json::Result<Self> {
+            serde_json::from_slice(msg.0.as_bytes())
+        }
+    }
+
+    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_transport_ws::ClientMessage<S> {
         type Error = serde_json::Error;
 
         fn try_from(msg: Message) -> serde_json::Result<Self> {
@@ -381,8 +390,8 @@ pub mod subscriptions {
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Self::Warp(e) => write!(f, "warp error: {}", e),
-                Self::Serde(e) => write!(f, "serde error: {}", e),
+                Self::Warp(e) => write!(f, "warp error: {e}"),
+                Self::Serde(e) => write!(f, "serde error: {e}"),
             }
         }
     }
@@ -408,6 +417,9 @@ pub mod subscriptions {
     /// configuration are already known, or it can be a closure that gets executed asynchronously
     /// when the client sends the ConnectionInit message. Using a closure allows you to perform
     /// authentication based on the parameters provided by the client.
+    ///
+    /// This protocol has been deprecated in favor of the `graphql-transport-ws` protocol, which is
+    /// provided by the `serve_graphql_transport_ws` function.
     pub async fn serve_graphql_ws<Query, Mutation, Subscription, CtxT, S, I>(
         websocket: warp::ws::WebSocket,
         root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
@@ -422,16 +434,69 @@ pub mod subscriptions {
         Subscription::TypeInfo: Send + Sync,
         CtxT: Unpin + Send + Sync + 'static,
         S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: juniper_graphql_ws::Init<S, CtxT> + Send,
     {
         let (ws_tx, ws_rx) = websocket.split();
-        let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split();
+        let (s_tx, s_rx) =
+            juniper_graphql_ws::Connection::new(juniper_graphql_ws::ArcSchema(root_node), init)
+                .split();
 
         let ws_rx = ws_rx.map(|r| r.map(Message));
         let s_rx = s_rx.map(|msg| {
             serde_json::to_string(&msg)
                 .map(warp::ws::Message::text)
                 .map_err(Error::Serde)
+        });
+
+        match future::select(
+            ws_rx.forward(s_tx.sink_err_into()),
+            s_rx.forward(ws_tx.sink_err_into()),
+        )
+        .await
+        {
+            Either::Left((r, _)) => r.map_err(|e| e.into()),
+            Either::Right((r, _)) => r,
+        }
+    }
+
+    /// Serves the graphql-transport-ws protocol over a WebSocket connection.
+    ///
+    /// The `init` argument is used to provide the context and additional configuration for
+    /// connections. This can be a `juniper_graphql_transport_ws::ConnectionConfig` if the context and
+    /// configuration are already known, or it can be a closure that gets executed asynchronously
+    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
+    /// authentication based on the parameters provided by the client.
+    pub async fn serve_graphql_transport_ws<Query, Mutation, Subscription, CtxT, S, I>(
+        websocket: warp::ws::WebSocket,
+        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+    ) -> Result<(), Error>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: juniper_graphql_transport_ws::Init<S, CtxT> + Send,
+    {
+        let (ws_tx, ws_rx) = websocket.split();
+        let (s_tx, s_rx) = juniper_graphql_transport_ws::Connection::new(
+            juniper_graphql_transport_ws::ArcSchema(root_node),
+            init,
+        )
+        .split();
+
+        let ws_rx = ws_rx.map(|r| r.map(Message));
+        let s_rx = s_rx.map(|output| match output {
+            juniper_graphql_transport_ws::Output::Message(msg) => serde_json::to_string(&msg)
+                .map(warp::ws::Message::text)
+                .map_err(Error::Serde),
+            juniper_graphql_transport_ws::Output::Close { code, message } => {
+                Ok(warp::ws::Message::close_with(code, message))
+            }
         });
 
         match future::select(
@@ -576,7 +641,7 @@ mod tests {
             .path("/graphql2")
             .header("accept", "application/json")
             .header("content-type", "application/json")
-            .body(r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##)
+            .body(r#"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"#)
             .reply(&filter)
             .await;
 
@@ -616,10 +681,10 @@ mod tests {
             .header("accept", "application/json")
             .header("content-type", "application/json")
             .body(
-                r##"[
+                r#"[
                      { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
                      { "variables": null, "query": "{ hero(episode: EMPIRE) { id name } }" }
-                 ]"##,
+                 ]"#,
             )
             .reply(&filter)
             .await;
@@ -669,7 +734,7 @@ mod tests_http_harness {
                 EmptyMutation::<Database>::new(),
                 EmptySubscription::<Database>::new(),
             );
-            let state = warp::any().map(move || Database::new());
+            let state = warp::any().map(Database::new);
 
             let filter = path::end().and(if is_sync {
                 make_graphql_filter_sync(schema, state.boxed())
@@ -711,17 +776,16 @@ mod tests_http_harness {
             const QUERY_ENCODE_SET: &AsciiSet =
                 &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
 
-            let url = Url::parse(&format!("http://localhost:3000{}", url)).expect("url to parse");
+            let url = Url::parse(&format!("http://localhost:3000{url}")).expect("url to parse");
 
             let url: String = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
-                .into_iter()
                 .collect::<Vec<_>>()
                 .join("");
 
             self.make_request(
                 warp::test::request()
                     .method("GET")
-                    .path(&format!("/?{}", url)),
+                    .path(&format!("/?{url}")),
             )
         }
 
@@ -756,7 +820,7 @@ mod tests_http_harness {
                 .expect("missing content-type header in warp response")
                 .to_str()
                 .expect("invalid content-type string")
-                .to_owned(),
+                .into(),
         }
     }
 

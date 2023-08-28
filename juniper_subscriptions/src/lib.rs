@@ -3,7 +3,6 @@
 #![deny(warnings)]
 
 use std::{
-    iter::FromIterator,
     pin::Pin,
     task::{self, Poll},
 };
@@ -63,8 +62,7 @@ where
     S: ScalarValue + Send + Sync + 'a,
 {
     type Connection = Connection<'a, S>;
-
-    type Error = GraphQLError<'a>;
+    type Error = GraphQLError;
 
     fn subscribe(
         &'a self,

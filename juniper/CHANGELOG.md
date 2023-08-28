@@ -22,15 +22,18 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Renamed `rename = "<policy>"` attribute argument to `rename_all = "<policy>"` (following `serde` style). ([#971])
 - Upgraded [`bson` crate] integration to [2.0 version](https://github.com/mongodb/bson-rust/releases/tag/v2.0.0). ([#979])
 - Upgraded [`uuid` crate] integration to [1.0 version](https://github.com/uuid-rs/uuid/releases/tag/1.0.0). ([#1057])
+- Upgraded [`chrono-tz` crate] integration to [0.8 version](https://github.com/chronotope/chrono-tz/blob/ea628d3131b4a659acb42dbac885cfd08a2e5de9/CHANGELOG.md#080). ([#1119])
+- Upgraded [`bigdecimal` crate] integration to 0.4 version. ([#1176])
 - Made `FromInputValue` trait methods fallible to allow post-validation. ([#987])
 - Redesigned `#[graphql_interface]` macro: ([#1009])
     - Removed support for `dyn` attribute argument (interface values as trait objects).
     - Removed support for `downcast` attribute argument (custom resolution into implementer types).
     - Removed support for `async` trait methods (not required anymore).
-    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now).
+    - Removed necessity of writing `impl Trait for Type` blocks (interfaces are implemented just by matching their fields now). ([#113])
     - Forbade default implementations of non-ignored trait methods.
     - Supported coercion of additional `null`able arguments and return sub-typing on implementer.
     - Supported `rename_all = "<policy>"` attribute argument influencing all its fields and their arguments. ([#971])
+    - Supported interfaces implementing other interfaces. ([#1028])
 - Split `#[derive(GraphQLScalarValue)]` macro into: 
     - `#[derive(GraphQLScalar)]` for implementing GraphQL scalar: ([#1017]) 
         - Supported generic `ScalarValue`.
@@ -47,6 +50,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Reworked [`chrono` crate] integration GraphQL scalars according to [graphql-scalars.dev] specs: ([#1010])
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
+- Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
 
 ### Added
 
@@ -58,6 +62,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `#[derive(GraphQLInterface)]` macro allowing using structs as GraphQL interfaces. ([#1026])
 - [`bigdecimal` crate] integration behind `bigdecimal` [Cargo feature]. ([#1060])
 - [`rust_decimal` crate] integration behind `rust_decimal` [Cargo feature]. ([#1060])
+- `js` [Cargo feature] enabling `js-sys` and `wasm-bindgen` support for `wasm32-unknown-unknown` target. ([#1118], [#1147])
+- `LookAheadMethods::applies_for()` method. ([#1138], [#1145])
 
 ### Changed
 
@@ -70,8 +76,13 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Unsupported expressions in `graphql_value!` macro. ([#996], [#503])
 - Incorrect GraphQL list coercion rules: `null` cannot be coerced to an `[Int!]!` or `[Int]!`. ([#1004])
 - All procedural macros expansion inside `macro_rules!`. ([#1054], [#1051])
+- Incorrect input value coercion with defaults. ([#1080], [#1073])
+- Incorrect error when explicit `null` provided for `null`able list input parameter. ([#1086], [#1085])
+- Stack overflow on nested GraphQL fragments. ([CVE-2022-31173])
 
+[#113]: /../../issues/113
 [#503]: /../../issues/503
+[#528]: /../../issues/528
 [#750]: /../../issues/750
 [#798]: /../../issues/798
 [#918]: /../../issues/918
@@ -94,11 +105,24 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1017]: /../../pull/1017
 [#1025]: /../../pull/1025
 [#1026]: /../../pull/1026
+[#1028]: /../../pull/1028
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
 [#1057]: /../../pull/1057
 [#1060]: /../../pull/1060
+[#1073]: /../../issues/1073
+[#1080]: /../../pull/1080
+[#1081]: /../../pull/1081
+[#1085]: /../../issues/1085
+[#1086]: /../../pull/1086
+[#1118]: /../../issues/1118
+[#1119]: /../../pull/1119
+[#1138]: /../../issues/1138
+[#1145]: /../../pull/1145
+[#1147]: /../../pull/1147
+[#1176]: /../../pull/1176
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
+[CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
 
 
@@ -110,8 +134,10 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 
 
 
+[`bigdecimal` crate]: https://docs.rs/bigdecimal
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
+[`chrono-tz` crate]: https://docs.rs/chrono-tz
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [graphql-scalars.dev]: https://graphql-scalars.dev

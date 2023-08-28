@@ -65,7 +65,7 @@ mod test {
             ClientMessage::ConnectionInit {
                 payload: graphql_vars! {"foo": "bar"},
             },
-            serde_json::from_str(r##"{"type": "connection_init", "payload": {"foo": "bar"}}"##)
+            serde_json::from_str(r#"{"type": "connection_init", "payload": {"foo": "bar"}}"#)
                 .unwrap(),
         );
 
@@ -73,57 +73,55 @@ mod test {
             ClientMessage::ConnectionInit {
                 payload: graphql_vars! {},
             },
-            serde_json::from_str(r##"{"type": "connection_init"}"##).unwrap(),
+            serde_json::from_str(r#"{"type": "connection_init"}"#).unwrap(),
         );
 
         assert_eq!(
             ClientMessage::Start {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: StartPayload {
-                    query: "query MyQuery { __typename }".to_string(),
+                    query: "query MyQuery { __typename }".into(),
                     variables: graphql_vars! {"foo": "bar"},
-                    operation_name: Some("MyQuery".to_string()),
+                    operation_name: Some("MyQuery".into()),
                 },
             },
             serde_json::from_str(
-                r##"{"type": "start", "id": "foo", "payload": {
+                r#"{"type": "start", "id": "foo", "payload": {
                 "query": "query MyQuery { __typename }",
                 "variables": {
                     "foo": "bar"
                 },
                 "operationName": "MyQuery"
-            }}"##
+            }}"#
             )
             .unwrap(),
         );
 
         assert_eq!(
             ClientMessage::Start {
-                id: "foo".to_string(),
+                id: "foo".into(),
                 payload: StartPayload {
-                    query: "query MyQuery { __typename }".to_string(),
+                    query: "query MyQuery { __typename }".into(),
                     variables: graphql_vars! {},
                     operation_name: None,
                 },
             },
             serde_json::from_str(
-                r##"{"type": "start", "id": "foo", "payload": {
+                r#"{"type": "start", "id": "foo", "payload": {
                 "query": "query MyQuery { __typename }"
-            }}"##
+            }}"#
             )
             .unwrap(),
         );
 
         assert_eq!(
-            ClientMessage::Stop {
-                id: "foo".to_string()
-            },
-            serde_json::from_str(r##"{"type": "stop", "id": "foo"}"##).unwrap(),
+            ClientMessage::Stop { id: "foo".into() },
+            serde_json::from_str(r#"{"type": "stop", "id": "foo"}"#).unwrap(),
         );
 
         assert_eq!(
             ClientMessage::ConnectionTerminate,
-            serde_json::from_str(r##"{"type": "connection_terminate"}"##).unwrap(),
+            serde_json::from_str(r#"{"type": "connection_terminate"}"#).unwrap(),
         );
     }
 

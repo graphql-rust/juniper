@@ -28,7 +28,7 @@ where
 }
 
 fn error_message(frag_name: &str) -> String {
-    format!(r#"Unknown fragment: "{}""#, frag_name)
+    format!(r#"Unknown fragment: "{frag_name}""#)
 }
 
 #[cfg(test)]

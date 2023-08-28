@@ -4,4 +4,4 @@ error: GraphQL interface expected named struct field
 4 | struct Character(i32);
   |                  ^^^
   |
-  = note: https://spec.graphql.org/June2018/#sec-Interfaces
+  = note: https://spec.graphql.org/October2021#sec-Interfaces

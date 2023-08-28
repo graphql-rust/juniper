@@ -157,7 +157,7 @@ They can have custom descriptions and default values.
 # extern crate juniper;
 # use juniper::graphql_object;
 #
-struct Person {}
+struct Person;
 
 #[graphql_object]
 impl Person {
@@ -177,7 +177,7 @@ impl Person {
         #[graphql(default)]
         arg2: i32,
     ) -> String {
-        format!("{} {}", arg1, arg2)
+        format!("{arg1} {arg2}")
     }
 }
 #

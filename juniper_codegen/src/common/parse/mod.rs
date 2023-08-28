@@ -4,11 +4,7 @@
 pub(crate) mod attr;
 pub(crate) mod downcaster;
 
-use std::{
-    any::TypeId,
-    iter::{self, FromIterator as _},
-    mem,
-};
+use std::{any::TypeId, iter, mem};
 
 use proc_macro2::Span;
 use quote::quote;
@@ -134,7 +130,7 @@ impl TypeExt for syn::Type {
 
     fn unreferenced(&self) -> &Self {
         match self.unparenthesized() {
-            Self::Reference(ref_ty) => &*ref_ty.elem,
+            Self::Reference(ref_ty) => &ref_ty.elem,
             ty => ty,
         }
     }

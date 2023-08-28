@@ -45,23 +45,11 @@ The output will be in the `_rendered/` directory.
 
 ### Testing
 
-To run the tests validating all code examples in the book, run:
+To run the tests validating all code examples in the book, run (from project root dir):
 ```bash
-cd tests/
-cargo test
+cargo build
+mdbook test -L target/debug/deps
 
-# or from project root dir:
-cargo test -p juniper_book_tests
-
-# or via shortcut from project root dir:
+# or via shortcut:
 make test.book
 ```
-
-
-
-
-## Test setup
-
-All Rust code examples in the book are compiled on the CI.
-
-This is done using the [skeptic](https://github.com/budziq/rust-skeptic) crate.

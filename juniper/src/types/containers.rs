@@ -522,12 +522,11 @@ where
     fn into_field_error(self) -> FieldError<S> {
         const ERROR_PREFIX: &str = "Failed to convert into exact-size array";
         match self {
-            Self::Null => format!("{}: Value cannot be `null`", ERROR_PREFIX).into(),
-            Self::WrongCount { actual, expected } => format!(
-                "{}: wrong elements count: {} instead of {}",
-                ERROR_PREFIX, actual, expected
-            )
-            .into(),
+            Self::Null => format!("{ERROR_PREFIX}: Value cannot be `null`").into(),
+            Self::WrongCount { actual, expected } => {
+                format!("{ERROR_PREFIX}: wrong elements count: {actual} instead of {expected}",)
+                    .into()
+            }
             Self::Item(s) => s.into_field_error(),
         }
     }

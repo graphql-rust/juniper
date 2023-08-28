@@ -1,16 +1,16 @@
 error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
-  --> fail/interface/struct/derive_field_non_output_return_type.rs:10:9
-   |
-10 |     id: ObjB,
-   |         ^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
-   |
-   = help: the following other types implement trait `IsOutputType<S>`:
-             <&T as IsOutputType<S>>
-             <Arc<T> as IsOutputType<S>>
-             <Box<T> as IsOutputType<S>>
-             <CharacterValueEnum as IsOutputType<__S>>
-             <EnumValue as IsOutputType<__S>>
-             <ID as IsOutputType<__S>>
-             <SchemaType<'a, S> as IsOutputType<S>>
-             <TypeKind as IsOutputType<__S>>
-           and 18 others
+ --> fail/interface/struct/derive_field_non_output_return_type.rs:8:10
+  |
+8 | #[derive(GraphQLInterface)]
+  |          ^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
+  |
+  = help: the following other types implement trait `IsOutputType<S>`:
+            <bool as IsOutputType<__S>>
+            <i32 as IsOutputType<__S>>
+            <f64 as IsOutputType<__S>>
+            <CharacterValueEnum as IsOutputType<__S>>
+            <Box<T> as IsOutputType<S>>
+            <uuid::Uuid as IsOutputType<__S>>
+            <url::Url as IsOutputType<__S>>
+            <bson::datetime::DateTime as IsOutputType<__S>>
+          and $N others

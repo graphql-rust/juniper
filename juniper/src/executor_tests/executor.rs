@@ -96,7 +96,7 @@ mod field_execution {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -180,7 +180,7 @@ mod merge_parallel_fragments {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -288,7 +288,7 @@ mod merge_parallel_inline_fragments {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -355,7 +355,7 @@ mod threads_context_correctly {
             &schema,
             &vars,
             &TestContext {
-                value: "Context value".to_owned(),
+                value: "Context value".into(),
             },
         )
         .await
@@ -363,7 +363,7 @@ mod threads_context_correctly {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!({"a": "Context value"}));
     }
@@ -410,7 +410,7 @@ mod dynamic_context_switching {
             let res = context
                 .items
                 .get(&key)
-                .ok_or(format!("Could not find key {}", key))
+                .ok_or(format!("Could not find key {key}"))
                 .map(|c| (c, ItemRef))?;
             Ok(res)
         }
@@ -420,7 +420,7 @@ mod dynamic_context_switching {
             key: i32,
         ) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
             if key > 100 {
-                Err(format!("Key too large: {}", key))?;
+                Err(format!("Key too large: {key}"))?;
             }
             Ok(context.items.get(&key).map(|c| (c, ItemRef)))
         }
@@ -452,13 +452,13 @@ mod dynamic_context_switching {
                 (
                     0,
                     InnerContext {
-                        value: "First value".to_owned(),
+                        value: "First value".into(),
                     },
                 ),
                 (
                     1,
                     InnerContext {
-                        value: "Second value".to_owned(),
+                        value: "Second value".into(),
                     },
                 ),
             ]
@@ -472,7 +472,7 @@ mod dynamic_context_switching {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -500,13 +500,13 @@ mod dynamic_context_switching {
                 (
                     0,
                     InnerContext {
-                        value: "First value".to_owned(),
+                        value: "First value".into(),
                     },
                 ),
                 (
                     1,
                     InnerContext {
-                        value: "Second value".to_owned(),
+                        value: "Second value".into(),
                     },
                 ),
             ]
@@ -520,7 +520,7 @@ mod dynamic_context_switching {
 
         assert_eq!(errs, vec![]);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!({"first": {"value": "First value"}}));
     }
@@ -542,13 +542,13 @@ mod dynamic_context_switching {
                 (
                     0,
                     InnerContext {
-                        value: "First value".to_owned(),
+                        value: "First value".into(),
                     },
                 ),
                 (
                     1,
                     InnerContext {
-                        value: "Second value".to_owned(),
+                        value: "Second value".into(),
                     },
                 ),
             ]
@@ -569,7 +569,7 @@ mod dynamic_context_switching {
             )],
         );
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!(null));
     }
@@ -593,13 +593,13 @@ mod dynamic_context_switching {
                 (
                     0,
                     InnerContext {
-                        value: "First value".to_owned(),
+                        value: "First value".into(),
                     },
                 ),
                 (
                     1,
                     InnerContext {
-                        value: "Second value".to_owned(),
+                        value: "Second value".into(),
                     },
                 ),
             ]
@@ -620,7 +620,7 @@ mod dynamic_context_switching {
             )],
         );
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -647,13 +647,13 @@ mod dynamic_context_switching {
                 (
                     0,
                     InnerContext {
-                        value: "First value".to_owned(),
+                        value: "First value".into(),
                     },
                 ),
                 (
                     1,
                     InnerContext {
-                        value: "Second value".to_owned(),
+                        value: "Second value".into(),
                     },
                 ),
             ]
@@ -667,7 +667,7 @@ mod dynamic_context_switching {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!({"first": {"value": "First value"}}));
     }
@@ -752,7 +752,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -783,7 +783,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!(null));
 
@@ -811,7 +811,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!(null));
 
@@ -839,7 +839,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
 
@@ -867,7 +867,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!(null));
 
@@ -895,7 +895,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
@@ -926,7 +926,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(result, graphql_value!(null));
 
@@ -954,7 +954,7 @@ mod propagates_errors_to_nullable_fields {
             .await
             .expect("Execution failed");
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,

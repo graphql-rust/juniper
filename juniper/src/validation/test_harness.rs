@@ -20,6 +20,7 @@ use crate::{
 struct Being;
 struct Pet;
 struct Canine;
+struct Unpopulated;
 
 struct Dog;
 struct Cat;
@@ -156,6 +157,41 @@ where
 }
 
 impl<S> GraphQLValue<S> for Canine
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        <Self as GraphQLType>::name(info)
+    }
+}
+
+impl<S> GraphQLType<S> for Unpopulated
+where
+    S: ScalarValue,
+{
+    fn name(_: &()) -> Option<&'static str> {
+        Some("Unpopulated")
+    }
+
+    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        let fields = &[registry
+            .field::<Option<String>>("name", i)
+            .argument(registry.arg::<Option<bool>>("surname", i))];
+
+        registry
+            .build_interface_type::<Self>(i, fields)
+            .interfaces(&[registry.get_type::<Being>(i)])
+            .into_meta()
+    }
+}
+
+impl<S> GraphQLValue<S> for Unpopulated
 where
     S: ScalarValue,
 {
@@ -689,6 +725,9 @@ where
                 .field::<Option<String>>("stringListArgField", i)
                 .argument(registry.arg::<Option<Vec<Option<String>>>>("stringListArg", i)),
             registry
+                .field::<Option<String>>("nonNullStringListArgField", i)
+                .argument(registry.arg::<Vec<String>>("nonNullStringListArg", i)),
+            registry
                 .field::<Option<String>>("complexArgField", i)
                 .argument(registry.arg::<Option<ComplexInput>>("complexArg", i)),
             registry
@@ -777,6 +816,8 @@ where
     where
         S: 'r,
     {
+        let _ = registry.get_type::<Unpopulated>(i);
+
         let fields = [registry.field::<i32>("testInput", i).argument(
             registry.arg_with_default::<TestInput>(
                 "input",
@@ -881,8 +922,8 @@ where
         false,
     ));
 
-    let doc =
-        parse_document_source(q, &root.schema).expect(&format!("Parse error on input {:#?}", q));
+    let doc = parse_document_source(q, &root.schema)
+        .unwrap_or_else(|_| panic!("Parse error on input {q:#?}"));
     let mut ctx = ValidatorContext::new(unsafe { mem::transmute(&root.schema) }, &doc);
 
     visit_fn(&mut ctx, unsafe { mem::transmute(doc.as_slice()) });

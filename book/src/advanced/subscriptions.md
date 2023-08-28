@@ -25,9 +25,11 @@ This example shows a subscription operation that returns two events, the strings
 sequentially: 
 
 ```rust
-# use juniper::{graphql_object, graphql_subscription, FieldError};
-# use futures::Stream;
+# extern crate futures;
+# extern crate juniper;
 # use std::pin::Pin;
+# use futures::Stream;
+# use juniper::{graphql_object, graphql_subscription, FieldError};
 #
 # #[derive(Clone)]
 # pub struct Database;
@@ -80,7 +82,6 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # extern crate juniper;
 # extern crate juniper_subscriptions;
 # extern crate serde_json;
-# extern crate tokio;
 # use juniper::{
 #     http::GraphQLRequest,
 #     graphql_object, graphql_subscription, 
@@ -98,7 +99,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 # 
 # impl Database {
 #     fn new() -> Self {
-#         Self {}
+#         Self
 #     }
 # }
 # 
@@ -126,7 +127,7 @@ where [`Connection`][Connection] is a `Stream` of values returned by the operati
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 
 fn schema() -> Schema {
-    Schema::new(Query {}, EmptyMutation::new(), Subscription {})
+    Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
 async fn run_subscription() {

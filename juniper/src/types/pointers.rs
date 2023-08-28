@@ -265,7 +265,7 @@ where
     }
 }
 
-impl<'e, S, T> GraphQLValueAsync<S> for Arc<T>
+impl<S, T> GraphQLValueAsync<S> for Arc<T>
 where
     T: GraphQLValueAsync<S> + Send + ?Sized,
     T::TypeInfo: Sync,
