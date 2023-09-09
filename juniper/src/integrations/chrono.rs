@@ -593,7 +593,7 @@ mod date_time_test {
         for (raw, expected) in [
             (
                 "2014-11-28T21:00:09+09:00",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
                         NaiveTime::from_hms_opt(12, 0, 9).unwrap(),
@@ -603,7 +603,17 @@ mod date_time_test {
             ),
             (
                 "2014-11-28T21:00:09Z",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
+                    NaiveDateTime::new(
+                        NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
+                        NaiveTime::from_hms_opt(21, 0, 9).unwrap(),
+                    ),
+                    FixedOffset::east_opt(0).unwrap(),
+                ),
+            ),
+            (
+                "2014-11-28 21:00:09z",
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
                         NaiveTime::from_hms_opt(21, 0, 9).unwrap(),
@@ -613,7 +623,7 @@ mod date_time_test {
             ),
             (
                 "2014-11-28T21:00:09+00:00",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
                         NaiveTime::from_hms_opt(21, 0, 9).unwrap(),
@@ -623,7 +633,17 @@ mod date_time_test {
             ),
             (
                 "2014-11-28T21:00:09.05+09:00",
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
+                    NaiveDateTime::new(
+                        NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
+                        NaiveTime::from_hms_milli_opt(12, 0, 9, 50).unwrap(),
+                    ),
+                    FixedOffset::east_opt(0).unwrap(),
+                ),
+            ),
+            (
+                "2014-11-28 21:00:09.05+09:00",
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd_opt(2014, 11, 28).unwrap(),
                         NaiveTime::from_hms_milli_opt(12, 0, 9, 50).unwrap(),
@@ -652,7 +672,7 @@ mod date_time_test {
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
             graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43Z"),
+            graphql_input_value!("1996-12-19Q14:23:43Z"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43ZZ"),
             graphql_input_value!("1996-12-19T14:23:43.543"),
@@ -682,7 +702,7 @@ mod date_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd_opt(1996, 12, 19).unwrap(),
                         NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
@@ -692,7 +712,7 @@ mod date_time_test {
                 graphql_input_value!("1996-12-19T00:00:00Z"),
             ),
             (
-                DateTime::<FixedOffset>::from_utc(
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
                     NaiveDateTime::new(
                         NaiveDate::from_ymd_opt(1564, 1, 30).unwrap(),
                         NaiveTime::from_hms_milli_opt(5, 0, 0, 123).unwrap(),
@@ -780,7 +800,7 @@ mod integration_test {
             }
 
             fn date_time() -> DateTime<chrono::Utc> {
-                DateTime::from_utc(
+                DateTime::from_naive_utc_and_offset(
                     LocalDateTime::new(
                         Date::from_ymd_opt(1996, 12, 20).unwrap(),
                         LocalTime::from_hms_opt(0, 39, 57).unwrap(),

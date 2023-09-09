@@ -6,7 +6,7 @@ publish = false
 
 [dev-dependencies]
 async-trait = "0.1.39"
-chrono = { version = "0.4.20", default-features = false }
+chrono = { version = "0.4", default-features = false }
 derive_more = "0.99"
 fnv = "1.0"
 futures = "0.3"

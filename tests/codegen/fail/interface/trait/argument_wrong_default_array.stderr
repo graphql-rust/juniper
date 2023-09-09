@@ -6,13 +6,13 @@ error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
   |
   = help: the following other types implement trait `From<T>`:
             <[bool; LANES] as From<Mask<T, LANES>>>
-            <[u32; 4] as From<ppv_lite86::generic::vec128_storage>>
-            <[u64; 2] as From<ppv_lite86::generic::vec128_storage>>
-            <[u64; 4] as From<ppv_lite86::generic::vec256_storage>>
-            <[T; N] as From<Simd<T, N>>>
-            <[T; 1] as From<(T,)>>
-            <[T; 2] as From<(T, T)>>
-            <[T; 3] as From<(T, T, T)>>
+            <[u32; 4] as From<ppv_lite86::x86_64::vec128_storage>>
+            <[u32; 8] as From<ppv_lite86::x86_64::vec256_storage>>
+            <[u32; 16] as From<ppv_lite86::x86_64::vec512_storage>>
+            <[u64; 2] as From<ppv_lite86::x86_64::vec128_storage>>
+            <[u64; 4] as From<ppv_lite86::x86_64::vec256_storage>>
+            <[u64; 8] as From<ppv_lite86::x86_64::vec512_storage>>
+            <[u128; 1] as From<ppv_lite86::x86_64::vec128_storage>>
           and $N others
   = note: required for `[bool; 3]` to implement `Into<[bool; 2]>`
   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
