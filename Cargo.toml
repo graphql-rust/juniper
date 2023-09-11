@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "1" # unifying Cargo features asap for Book tests
 members = [
     "benches",
     "examples/basic_subscriptions",
