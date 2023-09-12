@@ -14,7 +14,13 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 - Switched to 0.16 version of [`juniper` crate].
 - Switched to 0.4 version of [`juniper_graphql_ws` crate].
 
+### Fixed
+
+- `operationName` not being set. ([#1187], [#1169])
+
 [#1034]: /../../pull/1034
+[#1169]: /../../issues/1169
+[#1187]: /../../pull/1187
 
 
 
