@@ -212,7 +212,7 @@ where
     S: ScalarValue,
 {
     let mut query = None;
-    let operation_name = None;
+    let mut operation_name = None;
     let mut variables = None;
     for (key, value) in form_urlencoded::parse(input.as_bytes()).into_owned() {
         match key.as_ref() {
@@ -226,6 +226,7 @@ where
                 if operation_name.is_some() {
                     return Err(invalid_err("operationName"));
                 }
+                operation_name = Some(value)
             }
             "variables" => {
                 if variables.is_some() {
