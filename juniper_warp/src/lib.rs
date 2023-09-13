@@ -556,7 +556,7 @@ mod tests {
         );
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-        assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
+        assert!(body.contains("var GRAPHQL_URL = '/dogs-api/graphql';"));
     }
 
     #[tokio::test]

@@ -6,7 +6,7 @@
 ///
 /// ```
 /// # use juniper::http::graphiql::graphiql_source;
-/// let graphiql = graphiql_source("/graphql", Some("ws://localhost:8080/subscriptions"));
+/// let graphiql = graphiql_source("/graphql", Some("/subscriptions"));
 /// ```
 pub fn graphiql_source(
     graphql_endpoint_url: &str,

@@ -515,10 +515,8 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let body = take_response_body_string(resp).await;
-        assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
-        assert!(body.contains(
-            "<script>var GRAPHQL_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';</script>"
-        ))
+        assert!(body.contains("var GRAPHQL_URL = '/dogs-api/graphql';"));
+        assert!(body.contains("var GRAPHQL_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
     }
 
     #[actix_web::rt::test]
