@@ -59,8 +59,8 @@
 <!-- inject -->
       const root = ReactDOM.createRoot(document.getElementById('graphiql'));
       const fetcher = GraphiQL.createFetcher({
-        url: GRAPHQL_URL,
-        subscriptionUrl: normalizeSubscriptionEndpoint(GRAPHQL_URL, GRAPHQL_SUBSCRIPTIONS_URL)
+        url: JUNIPER_URL,
+        subscriptionUrl: normalizeSubscriptionEndpoint(JUNIPER_URL, JUNIPER_SUBSCRIPTIONS_URL)
       });
       const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
       root.render(

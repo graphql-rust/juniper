@@ -20,11 +20,11 @@ pub fn graphiql_source(
 
     include_str!("graphiql.html").replace(
         "<!-- inject -->",
-        // Language: JavaScript
         &format!(
+            // language=JavaScript
             "
-      var GRAPHQL_URL = '{graphql_url}';
-      var GRAPHQL_SUBSCRIPTIONS_URL = '{graphql_subscriptions_url}';
+      var JUNIPER_URL = '{graphql_url}';
+      var JUNIPER_SUBSCRIPTIONS_URL = '{graphql_subscriptions_url}';
 
 {grahiql_js}
 
