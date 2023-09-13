@@ -18,7 +18,7 @@ repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]
 keywords = ["apollo", "graphql", "server", "web"]
-exclude = ["/release.toml"]
+include = ["/src/", "/CHANGELOG.md", "/LICENSE", "/README.md"]
 
 [package.metadata.docs.rs]
 all-features = true

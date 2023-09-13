@@ -148,6 +148,23 @@ book.serve:
 
 
 
+######################
+# Forwarded commands #
+######################
+
+# Download and prepare actual version of GraphiQL static files, used for
+# integrating it.
+#
+# Usage:
+#	make graphiql
+
+graphiql:
+	@cd juniper/ && \
+	make graphiql
+
+
+
+
 ##################
 # .PHONY section #
 ##################
@@ -155,4 +172,5 @@ book.serve:
 .PHONY: book fmt lint release test \
         book.build book.serve \
         cargo.fmt cargo.lint cargo.release cargo.test \
+        graphiql \
         test.book test.cargo

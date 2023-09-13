@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "postinstall": "make graphiql"
+  },
+  "dependencies": {
+    "graphiql": "3.0.5"
+  }
+}
