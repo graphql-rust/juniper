@@ -163,6 +163,17 @@ graphiql:
 	make graphiql
 
 
+# Download and prepare actual version of GraphQL Playground static files, used
+# for integrating it.
+#
+# Usage:
+#	make graphql-playground
+
+graphql-playground:
+	@cd juniper/ && \
+	make graphql-playground
+
+
 
 
 ##################
@@ -172,5 +183,5 @@ graphiql:
 .PHONY: book fmt lint release test \
         book.build book.serve \
         cargo.fmt cargo.lint cargo.release cargo.test \
-        graphiql \
+        graphiql graphql-playground \
         test.book test.cargo

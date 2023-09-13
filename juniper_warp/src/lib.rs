@@ -556,7 +556,7 @@ mod tests {
         );
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-        assert!(body.contains("var GRAPHQL_URL = '/dogs-api/graphql';"));
+        assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
     }
 
     #[tokio::test]
@@ -614,7 +614,9 @@ mod tests {
         );
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-        assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
+        assert!(body.contains(
+            "endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions'",
+        ));
     }
 
     #[tokio::test]

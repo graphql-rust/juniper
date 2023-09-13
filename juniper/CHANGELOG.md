@@ -70,6 +70,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 - Made `GraphQLRequest` fields public. ([#750])
 - Relaxed [object safety] requirement for `GraphQLValue` and `GraphQLValueAsync` traits. ([ba1ed85b])
+- Updated [GraphQL Playground] to 1.7.28 version. ([#1190])
 
 ## Fixed
 
@@ -123,6 +124,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1147]: /../../pull/1147
 [#1176]: /../../pull/1176
 [#1188]: /../../pull/1188
+[#1190]: /../../pull/1190
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
@@ -144,6 +146,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [`graphql-ws` GraphQL over WebSocket Protocol]: https://github.com/graphql/graphiql
 [GraphiQL]: https://github.com/enisdenjo/graphql-ws/master/PROTOCOL.md
+[GraphQL Playground]: https://github.com/prisma/graphql-playground
 [graphql-scalars.dev]: https://graphql-scalars.dev
 [October 2021]: https://spec.graphql.org/October2021
 [object safety]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
