@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "postinstall": "make graphiql"
+    "postinstall": "make graphiql graphql-playground"
   },
   "dependencies": {
     "graphiql": "3.0.5",
