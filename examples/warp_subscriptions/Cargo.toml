@@ -11,6 +11,7 @@ env_logger = "0.10"
 futures = "0.3"
 juniper = { path = "../../juniper" }
 juniper_graphql_ws = { path = "../../juniper_graphql_ws" }
+juniper_graphql_transport_ws = { path = "../../juniper_graphql_transport_ws" }
 juniper_warp = { path = "../../juniper_warp", features = ["subscriptions"] }
 log = "0.4.8"
 serde = { version = "1.0", features = ["derive"] }
