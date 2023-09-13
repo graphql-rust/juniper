@@ -515,8 +515,8 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let body = take_response_body_string(resp).await;
-        assert!(body.contains("var GRAPHQL_URL = '/dogs-api/graphql';"));
-        assert!(body.contains("var GRAPHQL_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
+        assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
+        assert!(body.contains("var JUNIPER_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
     }
 
     #[actix_web::rt::test]
@@ -554,7 +554,9 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let body = take_response_body_string(resp).await;
-        assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
+        assert!(body.contains(
+            "endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions'",
+        ));
     }
 
     #[actix_web::rt::test]
