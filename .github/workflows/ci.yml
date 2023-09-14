@@ -161,8 +161,8 @@ jobs:
           - juniper_codegen
           - juniper
           - juniper_subscriptions
-          - juniper_graphql_ws
           - juniper_graphql_transport_ws
+          - juniper_graphql_ws
           - juniper_actix
           - juniper_hyper
           #- juniper_iron
@@ -212,8 +212,8 @@ jobs:
           - juniper_codegen
           - juniper
           - juniper_subscriptions
-          - juniper_graphql_ws
           - juniper_graphql_transport_ws
+          - juniper_graphql_ws
           - juniper_integration_tests
           - juniper_codegen_tests
           - juniper_actix
@@ -341,8 +341,8 @@ jobs:
           - juniper_codegen
           - juniper
           - juniper_subscriptions
-          - juniper_graphql_ws
           - juniper_graphql_transport_ws
+          - juniper_graphql_ws
           - juniper_actix
           - juniper_hyper
           - juniper_iron
