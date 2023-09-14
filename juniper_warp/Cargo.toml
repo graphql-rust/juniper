@@ -12,14 +12,18 @@ repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]
 keywords = ["apollo", "graphql", "juniper", "warp", "websocket"]
-exclude = ["/examples/", "/release.toml"]
+include = ["/examples/", "/src/", "/CHANGELOG.md", "/LICENSE", "/README.md"]
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-subscriptions = ["dep:juniper_graphql_ws", "dep:juniper_graphql_transport_ws", "warp/websocket"]
+subscriptions = [
+    "dep:juniper_graphql_transport_ws",
+    "dep:juniper_graphql_ws",
+    "warp/websocket",
+]
 
 [dependencies]
 anyhow = "1.0.47"
@@ -38,9 +42,14 @@ warp = { version = "0.3.2", default-features = false }
 headers = "0.3.8"
 
 [dev-dependencies]
+async-stream = "0.3"
 env_logger = "0.10"
 juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 percent-encoding = "2.1"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 url = "2.0"
+
+[[example]]
+name = "subscription"
+required-features = ["subscriptions"]

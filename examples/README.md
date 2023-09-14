@@ -16,21 +16,18 @@ cargo run --example <example_name>
 Where `<example_name>` is one of the following workspace members:
 
 ```
-actix_server
-hyper_server
-iron_server
-rocket_server
-warp_server
+actix_subscriptions
+basic_subscriptions
 ```
 
-e.g. to run the `actix_server` example:
+e.g. to run the `actix_subscriptions` example:
 
 ```bash
-cargo run --example actix_server
+cargo run --example actix_subscriptions
 ```
 
 You can also run an example directly from an `examples` workspace directory. To
-run the `actix_server` example:
+run the `actix_subscriptions` example:
 
 ```bash
 cd examples/actix_subscriptions

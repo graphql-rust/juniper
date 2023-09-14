@@ -145,15 +145,20 @@ fn schema() -> Schema {
 
 #[tokio::main]
 async fn main() {
-    env::set_var("RUST_LOG", "warp_subscriptions");
+    env::set_var("RUST_LOG", "subscription");
     env_logger::init();
 
-    let log = warp::log("warp_subscriptions");
+    let log = warp::log("subscription");
 
     let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body("<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>")
+            .body(
+                "<html><h1>juniper_warp/subscription example</h1>\
+                       <div>visit <a href=\"/graphiql\">GraphiQL</a></div>\
+                       <div>visit <a href=\"/playground\">GraphQL Playground</a></div>\
+                 </html>",
+            )
     });
 
     let qm_schema = schema();

@@ -51,7 +51,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
 - Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
-- Upgraded [GraphiQL] to 3.0.5 version (requires new [`graphql-ws` GraphQL over WebSocket Protocol] integration on server, see `examples/warp_subscriptions`). ([#1188])
+- Upgraded [GraphiQL] to 3.0.5 version (requires new [`graphql-ws` GraphQL over WebSocket Protocol] integration on server, see `juniper_warp/examples/subscription.rs`). ([#1188])
 
 ### Added
 
@@ -144,8 +144,8 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
-[`graphql-ws` GraphQL over WebSocket Protocol]: https://github.com/graphql/graphiql
-[GraphiQL]: https://github.com/enisdenjo/graphql-ws/master/PROTOCOL.md
+[`graphql-ws` GraphQL over WebSocket Protocol]: https://github.com/enisdenjo/graphql-ws/master/PROTOCOL.md 
+[GraphiQL]: https://github.com/graphql/graphiql
 [GraphQL Playground]: https://github.com/prisma/graphql-playground
 [graphql-scalars.dev]: https://graphql-scalars.dev
 [October 2021]: https://spec.graphql.org/October2021
