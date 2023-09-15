@@ -26,4 +26,4 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`juniper_graphql_ws` crate]: https://docs.rs/juniper_graphql_ws
 [Apollo]: https://www.apollographql.com
 [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
-[old]: https://github.com/apollographql/subscriptions-transport-ws/blob/0ce7a1e1eb687fe51214483e4735f50a2f2d5c79/PROTOCOL.md
+[old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md

@@ -36,10 +36,23 @@ struct ExecutionParams<S: Schema> {
 
 /// ConnectionConfig is used to configure the connection once the client sends the ConnectionInit
 /// message.
+#[derive(Clone, Copy, Debug)]
 pub struct ConnectionConfig<CtxT> {
-    context: CtxT,
-    max_in_flight_operations: usize,
-    keep_alive_interval: Duration,
+    /// Custom-provided [`juniper::Context`].
+    pub context: CtxT,
+
+    /// Maximum number of in-flight operations that a connection can have.
+    ///
+    /// If this number is exceeded, attempting to start more will result in an error.
+    /// By default, there is no limit to in-flight operations.
+    pub max_in_flight_operations: usize,
+
+    /// Interval at which to send keep-alives.
+    ///
+    /// Specifying a [`Duration::ZERO`] will disable keep-alives.
+    ///
+    /// By default, keep-alives are sent every 15 seconds.
+    pub keep_alive_interval: Duration,
 }
 
 impl<CtxT> ConnectionConfig<CtxT> {
@@ -52,17 +65,21 @@ impl<CtxT> ConnectionConfig<CtxT> {
         }
     }
 
-    /// Specifies the maximum number of in-flight operations that a connection can have. If this
-    /// number is exceeded, attempting to start more will result in an error. By default, there is
-    /// no limit to in-flight operations.
+    /// Specifies the maximum number of in-flight operations that a connection can have.
+    ///
+    /// If this number is exceeded, attempting to start more will result in an error.
+    /// By default, there is no limit to in-flight operations.
     #[must_use]
     pub fn with_max_in_flight_operations(mut self, max: usize) -> Self {
         self.max_in_flight_operations = max;
         self
     }
 
-    /// Specifies the interval at which to send keep-alives. Specifying a zero duration will
-    /// disable keep-alives. By default, keep-alives are sent every 15 seconds.
+    /// Specifies the interval at which to send keep-alives.
+    ///
+    /// Specifying a [`Duration::ZERO`] will disable keep-alives.
+    ///
+    /// By default, keep-alives are sent every 15 seconds.
     #[must_use]
     pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
         self.keep_alive_interval = interval;
