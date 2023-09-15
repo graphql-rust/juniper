@@ -1,5 +1,5 @@
 `juniper_graphql_transport_ws` crate
-==========================
+====================================
 
 [![Crates.io](https://img.shields.io/crates/v/juniper_graphql_transport_ws.svg?maxAge=2592000)](https://crates.io/crates/juniper_graphql_transport_ws)
 [![Documentation](https://docs.rs/juniper_graphql_transport_ws/badge.svg)](https://docs.rs/juniper_graphql_transport_ws)

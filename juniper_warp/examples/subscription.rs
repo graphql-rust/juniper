@@ -2,7 +2,7 @@
 
 use std::{env, pin::Pin, sync::Arc, time::Duration};
 
-use futures::{FutureExt as _, Stream};
+use futures::Stream;
 use juniper::{
     graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLEnum,
     RootNode,
@@ -172,46 +172,36 @@ async fn main() {
 
     let routes = warp::path("subscriptions")
         .and(warp::ws())
-        .map(move |ws: warp::ws::Ws| {
+        .and(warp::filters::header::value("sec-websocket-protocol"))
+        .map(move |ws: warp::ws::Ws, subproto| {
             let transport_ws_schema = transport_ws_schema.clone();
             ws.on_upgrade(move |websocket| async move {
-                serve_graphql_transport_ws(
-                    websocket,
-                    transport_ws_schema,
-                    ConnectionConfig::new(Context),
-                )
-                .map(|r| {
-                    if let Err(e) = r {
-                        println!("Websocket error: {e}");
-                    }
+                if subproto == "graphql-ws" {
+                    serve_graphql_ws(
+                        websocket,
+                        transport_ws_schema,
+                        LegacyConnectionConfig::new(Context),
+                    )
+                    .await
+                } else {
+                    serve_graphql_transport_ws(
+                        websocket,
+                        transport_ws_schema,
+                        ConnectionConfig::new(Context),
+                    )
+                    .await
+                }
+                .unwrap_or_else(|e| {
+                    log::error!("WebSocket error: {e}");
                 })
-                .await
             })
         })
-        .or(warp::path("legacy-subscriptions")
-            .and(warp::ws())
-            .map(move |ws: warp::ws::Ws| {
-                let ws_schema = ws_schema.clone();
-                ws.on_upgrade(move |websocket| async move {
-                    serve_graphql_ws(websocket, ws_schema, LegacyConnectionConfig::new(Context))
-                        .map(|r| {
-                            if let Err(e) = r {
-                                println!("Websocket error: {e}");
-                            }
-                        })
-                        .await
-                })
-            })
-            .map(|reply| {
-                // TODO#584: remove this workaround
-                warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-            }))
         .or(warp::post()
             .and(warp::path("graphql"))
             .and(qm_graphql_filter))
         .or(warp::get()
             .and(warp::path("playground"))
-            .and(playground_filter("/graphql", Some("/legacy-subscriptions"))))
+            .and(playground_filter("/graphql", Some("/subscriptions"))))
         .or(warp::get()
             .and(warp::path("graphiql"))
             .and(graphiql_filter("/graphql", Some("/subscriptions"))))
