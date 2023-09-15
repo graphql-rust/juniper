@@ -359,15 +359,23 @@ pub mod subscriptions {
         type Error = serde_json::Error;
 
         fn try_from(msg: Message) -> serde_json::Result<Self> {
-            serde_json::from_slice(msg.0.as_bytes())
+            if msg.0.is_close() {
+                Ok(Self::ConnectionTerminate)
+            } else {
+                serde_json::from_slice(msg.0.as_bytes())
+            }
         }
     }
 
-    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_transport_ws::ClientMessage<S> {
+    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_transport_ws::Input<S> {
         type Error = serde_json::Error;
 
         fn try_from(msg: Message) -> serde_json::Result<Self> {
-            serde_json::from_slice(msg.0.as_bytes())
+            if msg.0.is_close() {
+                Ok(Self::Close)
+            } else {
+                serde_json::from_slice(msg.0.as_bytes()).map(Self::Message)
+            }
         }
     }
 
@@ -533,16 +541,27 @@ pub mod subscriptions {
             .map(move |ws: warp::ws::Ws, subproto| {
                 let schema = schema.clone();
                 let init = init.clone();
-                ws.on_upgrade(move |ws| async move {
-                    if subproto == "graphql-ws" {
-                        serve_graphql_ws(ws, schema, init).await
+
+                let is_legacy = subproto == "graphql-ws";
+
+                warp::reply::with_header(
+                    ws.on_upgrade(move |ws| async move {
+                        if is_legacy {
+                            serve_graphql_ws(ws, schema, init).await
+                        } else {
+                            serve_graphql_transport_ws(ws, schema, init).await
+                        }
+                        .unwrap_or_else(|e| {
+                            log::error!("GraphQL over WebSocket Protocol error: {e}");
+                        })
+                    }),
+                    "sec-websocket-protocol",
+                    if is_legacy {
+                        "graphql-ws"
                     } else {
-                        serve_graphql_transport_ws(ws, schema, init).await
-                    }
-                    .unwrap_or_else(|e| {
-                        log::error!("GraphQL over WebSocket Protocol error: {e}");
-                    })
-                })
+                        "graphql-transport-ws"
+                    },
+                )
             })
             .boxed()
     }

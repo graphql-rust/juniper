@@ -37,6 +37,15 @@ struct ExecutionParams<S: Schema> {
     schema: S,
 }
 
+/// Possible inputs received from a client.
+pub enum Input<S> {
+    /// Deserialized [`ClientMessage`].
+    Message(ClientMessage<S>),
+
+    /// Client initiated normal closing of a [`Connection`].
+    Close,
+}
+
 /// Output provides the responses that should be sent to the client.
 #[derive(Debug, PartialEq)]
 pub enum Output<S: ScalarValue> {
@@ -423,8 +432,8 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     Closed,
 }
 
-/// Implements the graphql-ws protocol. This is a sink for `TryInto<ClientMessage>` and a stream of
-/// `ServerMessage`.
+/// Implements the `graphql-ws` protocol.
+/// This is a sink for `TryInto<Input>` messages and a stream of `Output` messages.
 pub struct Connection<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     reactions: SelectAll<BoxStream<'static, Output<S::ScalarValue>>>,
     stream_waker: Option<Waker>,
@@ -437,7 +446,8 @@ where
     S: Schema,
     I: Init<S::ScalarValue, S::Context>,
 {
-    /// Creates a new connection, which is a sink for `TryInto<ClientMessage>` and a stream of `ServerMessage`.
+    /// Creates a new connection, which is a sink for `TryInto<Input>` messages and a stream of
+    /// `Output` messages.
     ///
     /// The `schema` argument should typically be an `Arc<RootNode<...>>`.
     ///
@@ -460,7 +470,7 @@ where
 
 impl<S, I, T> Sink<T> for Connection<S, I>
 where
-    T: TryInto<ClientMessage<S::ScalarValue>>,
+    T: TryInto<Input<S::ScalarValue>>,
     T::Error: Error,
     S: Schema,
     I: Init<S::ScalarValue, S::Context> + Send,
@@ -490,9 +500,19 @@ where
         *state = match std::mem::replace(state, ConnectionSinkState::Closed) {
             ConnectionSinkState::Ready { state } => {
                 match item.try_into() {
-                    Ok(msg) => ConnectionSinkState::HandlingMessage {
+                    Ok(Input::Message(msg)) => ConnectionSinkState::HandlingMessage {
                         result: state.handle_message(msg).boxed(),
                     },
+                    Ok(Input::Close) => {
+                        s.reactions.push(
+                            Output::Close {
+                                code: 1000,
+                                message: "Normal Closure".into(),
+                            }
+                            .into_stream(),
+                        );
+                        ConnectionSinkState::Closed
+                    }
                     Err(e) => {
                         // If we weren't able to parse the message, we must close the connection.
                         s.reactions.push(
@@ -570,7 +590,7 @@ mod test {
         futures::sink::SinkExt,
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
         parser::{ParseError, Spanning},
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode,
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode, Variables,
     };
 
     use super::*;
