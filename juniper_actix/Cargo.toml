@@ -47,7 +47,7 @@ derive_more = { version = "0.99.8", default-features = false }
 
 [dev-dependencies]
 actix-cors = "0.6"
-actix-identity = "0.5"
+actix-identity = "0.6"
 actix-rt = "2.0"
 actix-test = "0.1"
 async-stream = "0.3"
