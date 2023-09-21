@@ -165,44 +165,47 @@ pub async fn playground_handler(
         .body(html))
 }
 
-/// `juniper_actix` subscriptions handler implementation.
-/// Cannot be merged to `juniper_actix` yet as GraphQL over WS[1]
-/// is not fully supported in current implementation.
-///
-/// *Note: this implementation is in an alpha state.*
-///
-/// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
+/// `juniper_actix` subscriptions handler implementation.
 pub mod subscriptions {
     use std::{fmt, sync::Arc};
 
-    use actix::{prelude::*, Actor, StreamHandler};
+    use actix::{
+        AsyncContext as _, ContextFutureSpawner as _, Handler, StreamHandler, WrapFuture as _,
+    };
     use actix_web::{
         http::header::{HeaderName, HeaderValue},
         web, HttpRequest, HttpResponse,
     };
     use actix_web_actors::ws;
-    use juniper::{
-        futures::{
-            stream::{SplitSink, SplitStream, StreamExt},
-            SinkExt,
-        },
-        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+    use futures::{
+        stream::{SplitSink, SplitStream},
+        SinkExt as _, Stream, StreamExt as _,
     };
-    use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init, ServerMessage};
+    use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
+    use juniper_graphql_transport_ws::{ArcSchema, Init};
     use tokio::sync::Mutex;
 
-    /// Serves the graphql-ws protocol over a WebSocket connection.
+    /// Serves by auto-selecting between the
+    /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
+    /// [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], based on the
+    /// `Sec-Websocket-Protocol` HTTP header value.
     ///
-    /// The `init` argument is used to provide the context and additional configuration for
-    /// connections. This can be a `juniper_graphql_ws::ConnectionConfig` if the context and
-    /// configuration are already known, or it can be a closure that gets executed asynchronously
-    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
-    /// authentication based on the parameters provided by the client.
-    pub async fn subscriptions_handler<Query, Mutation, Subscription, CtxT, S, I>(
+    /// The `schema` argument is your [`juniper`] schema.
+    ///
+    /// The `init` argument is used to provide the custom [`juniper::Context`] and additional
+    /// configuration for connections. This can be a
+    /// [`juniper_graphql_transport_ws::ConnectionConfig`] if the context and configuration are
+    /// already known, or it can be a closure that gets executed asynchronously whenever a client
+    /// sends the subscription initialization message. Using a closure allows to perform an
+    /// authentication based on the parameters provided by a client.
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+    pub async fn ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
         req: HttpRequest,
         stream: web::Payload,
-        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
@@ -216,12 +219,56 @@ pub mod subscriptions {
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
-        let (s_tx, s_rx) = Connection::new(ArcSchema(root_node), init).split::<Message>();
+        if req
+            .headers()
+            .get("sec-websocket-protocol")
+            .map(AsRef::as_ref)
+            == Some("graphql-ws".as_bytes())
+        {
+            graphql_ws_handler(req, stream, schema, init).await
+        } else {
+            graphql_transport_ws_handler(req, stream, schema, init).await
+        }
+    }
+
+    /// Serves the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
+    ///
+    /// The `init` argument is used to provide the context and additional configuration for
+    /// connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the context and
+    /// configuration are already known, or it can be a closure that gets executed asynchronously
+    /// when the client sends the `GQL_CONNECTION_INIT` message. Using a closure allows to perform
+    /// an authentication based on the parameters provided by a client.
+    ///
+    /// > __WARNING__: This protocol has been deprecated in favor of the
+    ///                [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
+    ///                provided by the [`graphql_transport_ws_handler()`] function.
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+    pub async fn graphql_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
+        req: HttpRequest,
+        stream: web::Payload,
+        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+    ) -> Result<HttpResponse, actix_web::Error>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        let (s_tx, s_rx) =
+            juniper_graphql_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
 
         let mut resp = ws::start(
-            SubscriptionActor {
-                graphql_tx: Arc::new(Mutex::new(s_tx)),
-                graphql_rx: Arc::new(Mutex::new(s_rx)),
+            Actor {
+                tx: Arc::new(Mutex::new(s_tx)),
+                rx: Arc::new(Mutex::new(s_rx)),
             },
             &req,
             stream,
@@ -235,18 +282,21 @@ pub mod subscriptions {
         Ok(resp)
     }
 
-    type ConnectionSplitSink<Query, Mutation, Subscription, CtxT, S, I> = Arc<
-        Mutex<SplitSink<Connection<ArcSchema<Query, Mutation, Subscription, CtxT, S>, I>, Message>>,
-    >;
-
-    type ConnectionSplitStream<Query, Mutation, Subscription, CtxT, S, I> =
-        Arc<Mutex<SplitStream<Connection<ArcSchema<Query, Mutation, Subscription, CtxT, S>, I>>>>;
-
-    /// Subscription Actor
-    /// coordinates messages between actix_web and juniper_graphql_ws
-    /// ws message -> actor -> juniper
-    /// juniper -> actor -> ws response
-    struct SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    /// Serves the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new].
+    ///
+    /// The `init` argument is used to provide the context and additional configuration for
+    /// connections. This can be a [`juniper_graphql_transport_ws::ConnectionConfig`] if the context
+    /// and configuration are already known, or it can be a closure that gets executed
+    /// asynchronously when the client sends the `ConnectionInit` message. Using a closure allows to
+    /// perform an authentication based on the parameters provided by a client.
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    pub async fn graphql_transport_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
+        req: HttpRequest,
+        stream: web::Payload,
+        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+    ) -> Result<HttpResponse, actix_web::Error>
     where
         Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
         Query::TypeInfo: Send + Sync,
@@ -258,37 +308,56 @@ pub mod subscriptions {
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
-        graphql_tx: ConnectionSplitSink<Query, Mutation, Subscription, CtxT, S, I>,
-        graphql_rx: ConnectionSplitStream<Query, Mutation, Subscription, CtxT, S, I>,
+        let (s_tx, s_rx) = juniper_graphql_transport_ws::Connection::new(ArcSchema(schema), init)
+            .split::<Message>();
+
+        let mut resp = ws::start(
+            Actor {
+                tx: Arc::new(Mutex::new(s_tx)),
+                rx: Arc::new(Mutex::new(s_rx)),
+            },
+            &req,
+            stream,
+        )?;
+
+        resp.headers_mut().insert(
+            HeaderName::from_static("sec-websocket-protocol"),
+            HeaderValue::from_static("graphql-transport-ws"),
+        );
+
+        Ok(resp)
     }
 
-    /// ws message -> actor -> juniper
-    impl<Query, Mutation, Subscription, CtxT, S, I>
-        StreamHandler<Result<ws::Message, ws::ProtocolError>>
-        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    type ConnectionSplitSink<Conn> = Arc<Mutex<SplitSink<Conn, Message>>>;
+    type ConnectionSplitStream<Conn> = Arc<Mutex<SplitStream<Conn>>>;
+
+    /// [`actix::Actor`], coordinating messages between [`actix_web`] and [`juniper_graphql_ws`]:
+    /// - incoming [`ws::Message`] -> [`Actor`] -> [`juniper`]
+    /// - [`juniper`] -> [`Actor`] -> response [`ws::Message`]
+    struct Actor<Conn> {
+        tx: ConnectionSplitSink<Conn>,
+        rx: ConnectionSplitStream<Conn>,
+    }
+
+    impl<Conn> StreamHandler<Result<ws::Message, ws::ProtocolError>> for Actor<Conn>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
-        Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        Self: actix::Actor<Context = ws::WebsocketContext<Self>>,
+        Conn: futures::Sink<Message>,
+        <Conn as futures::Sink<Message>>::Error: fmt::Debug,
     {
         fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-            let msg = msg.map(Message);
-
             #[allow(clippy::single_match)]
             match msg {
                 Ok(msg) => {
-                    let tx = self.graphql_tx.clone();
+                    let tx = self.tx.clone();
 
+                    // TODO: Somehow this implementation always closes as `1006: Abnormal closure`
+                    //       due to excessive polling of `tx` part.
+                    //       Needs to be reworked.
                     async move {
                         tx.lock()
                             .await
-                            .send(msg)
+                            .send(Message(msg))
                             .await
                             .expect("Infallible: this should not happen");
                     }
@@ -303,31 +372,23 @@ pub mod subscriptions {
         }
     }
 
-    /// juniper -> actor
-    impl<Query, Mutation, Subscription, CtxT, S, I> Actor
-        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    /// [`juniper`] -> [`Actor`].
+    impl<Conn> actix::Actor for Actor<Conn>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
-        Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        Conn: Stream + 'static,
+        <Conn as Stream>::Item: IntoWsResponse + Send,
     {
         type Context = ws::WebsocketContext<Self>;
 
         fn started(&mut self, ctx: &mut Self::Context) {
-            let stream = self.graphql_rx.clone();
+            let stream = self.rx.clone();
             let addr = ctx.address();
 
             let fut = async move {
                 let mut stream = stream.lock().await;
-                while let Some(message) = stream.next().await {
-                    // sending the message to self so that it can be forwarded back to the client
-                    addr.do_send(ServerMessageWrapper { message });
+                while let Some(msg) = stream.next().await {
+                    // Sending the `msg` to `self`, so that it can be forwarded back to the client.
+                    addr.do_send(ServerMessage(msg));
                 }
             }
             .into_actor(self);
@@ -341,55 +402,75 @@ pub mod subscriptions {
         }
     }
 
-    /// actor -> websocket response
-    impl<Query, Mutation, Subscription, CtxT, S, I> actix::prelude::Handler<ServerMessageWrapper<S>>
-        for SubscriptionActor<Query, Mutation, Subscription, CtxT, S, I>
+    /// [`Actor`] -> response [`ws::Message`].
+    impl<Conn, M> Handler<ServerMessage<M>> for Actor<Conn>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
-        Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
-        S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        Conn: Stream<Item = M> + 'static,
+        M: IntoWsResponse + Send,
     {
         type Result = ();
 
-        fn handle(
-            &mut self,
-            msg: ServerMessageWrapper<S>,
-            ctx: &mut Self::Context,
-        ) -> Self::Result {
-            let msg = serde_json::to_string(&msg.message);
-            match msg {
+        fn handle(&mut self, msg: ServerMessage<M>, ctx: &mut Self::Context) -> Self::Result {
+            match msg.0.into_ws_response() {
                 Ok(msg) => ctx.text(msg),
-                Err(e) => {
-                    let reason = ws::CloseReason {
-                        code: ws::CloseCode::Error,
-                        description: Some(format!("error serializing response: {e}")),
-                    };
-
-                    // TODO: trace
-                    ctx.close(Some(reason))
-                }
-            };
+                // TODO: trace
+                Err(reason) => ctx.close(Some(reason)),
+            }
         }
     }
-    #[derive(Message)]
+
+    #[derive(actix::Message)]
     #[rtype(result = "()")]
-    struct ServerMessageWrapper<S>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-    {
-        message: ServerMessage<S>,
+    struct ServerMessage<T>(T);
+
+    /// Conversion of a [`ServerMessage`] into a response [`ws::Message`].
+    pub trait IntoWsResponse {
+        /// Converts this [`ServerMessage`] into response [`ws::Message`].
+        fn into_ws_response(self) -> Result<String, ws::CloseReason>;
+    }
+
+    impl<S: ScalarValue> IntoWsResponse for juniper_graphql_transport_ws::Output<S> {
+        fn into_ws_response(self) -> Result<String, ws::CloseReason> {
+            match self {
+                Self::Message(msg) => serde_json::to_string(&msg).map_err(|e| ws::CloseReason {
+                    code: ws::CloseCode::Error,
+                    description: Some(format!("error serializing response: {e}")),
+                }),
+                Self::Close { code, message } => Err(ws::CloseReason {
+                    code: code.into(),
+                    description: Some(message),
+                }),
+            }
+        }
+    }
+
+    impl<S: ScalarValue> IntoWsResponse for juniper_graphql_ws::ServerMessage<S> {
+        fn into_ws_response(self) -> Result<String, ws::CloseReason> {
+            serde_json::to_string(&self).map_err(|e| ws::CloseReason {
+                code: ws::CloseCode::Error,
+                description: Some(format!("error serializing response: {e}")),
+            })
+        }
     }
 
     #[derive(Debug)]
     struct Message(ws::Message);
 
-    impl<S: ScalarValue> TryFrom<Message> for ClientMessage<S> {
+    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_transport_ws::Input<S> {
+        type Error = Error;
+
+        fn try_from(msg: Message) -> Result<Self, Self::Error> {
+            match msg.0 {
+                ws::Message::Text(text) => serde_json::from_slice(text.as_bytes())
+                    .map(Self::Message)
+                    .map_err(Error::Serde),
+                ws::Message::Close(_) => Ok(Self::Close),
+                _ => Err(Error::UnexpectedClientMessage),
+            }
+        }
+    }
+
+    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_ws::ClientMessage<S> {
         type Error = Error;
 
         fn try_from(msg: Message) -> Result<Self, Self::Error> {
@@ -397,7 +478,7 @@ pub mod subscriptions {
                 ws::Message::Text(text) => {
                     serde_json::from_slice(text.as_bytes()).map_err(Error::Serde)
                 }
-                ws::Message::Close(_) => Ok(ClientMessage::ConnectionTerminate),
+                ws::Message::Close(_) => Ok(Self::ConnectionTerminate),
                 _ => Err(Error::UnexpectedClientMessage),
             }
         }
@@ -770,7 +851,7 @@ mod subscription_tests {
     use juniper_graphql_ws::ConnectionConfig;
     use tokio::time::timeout;
 
-    use super::subscriptions::subscriptions_handler;
+    use super::subscriptions::graphql_ws_handler;
 
     #[derive(Default)]
     struct TestActixWsIntegration;
@@ -852,7 +933,7 @@ mod subscription_tests {
         let schema = schema.into_inner();
         let config = ConnectionConfig::new(context);
 
-        subscriptions_handler(req, stream, schema, config).await
+        graphql_ws_handler(req, stream, schema, config).await
     }
 
     #[actix_web::rt::test]

@@ -27,7 +27,7 @@ For `SubscriptionCoordinator` and `SubscriptionConnection` documentation, check 
 
 ## Examples
 
-Check [`examples/warp_subscriptions/`][1] for example code of a working [`warp`] server with [GraphQL] subscription handlers.
+Check [`juniper_warp/examples/subscription.rs`][1] for example code of a working [`warp`] server with [GraphQL] subscription handlers.
 
 
 
@@ -43,4 +43,4 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`warp`]: https://docs.rs/warp
 [GraphQL]: http://graphql.org
 
-[1]: https://github.com/graphql-rust/juniper/blob/master/examples/warp_subscriptions/src/main.rs
+[1]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/subscription.rs

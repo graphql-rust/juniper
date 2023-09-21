@@ -1,18 +1,13 @@
-//! This example demonstrates asynchronous subscriptions with warp and tokio 0.2
+//! This example demonstrates asynchronous subscriptions with [`warp`].
 
 use std::{env, pin::Pin, sync::Arc, time::Duration};
 
-use futures::{FutureExt as _, Stream};
+use futures::Stream;
 use juniper::{
     graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLEnum,
     RootNode,
 };
 use juniper_graphql_transport_ws::ConnectionConfig;
-use juniper_graphql_ws::ConnectionConfig as LegacyConnectionConfig;
-use juniper_warp::{
-    graphiql_filter, playground_filter,
-    subscriptions::{serve_graphql_transport_ws, serve_graphql_ws},
-};
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
@@ -145,73 +140,49 @@ fn schema() -> Schema {
 
 #[tokio::main]
 async fn main() {
-    env::set_var("RUST_LOG", "warp_subscriptions");
+    env::set_var("RUST_LOG", "subscription");
     env_logger::init();
 
-    let log = warp::log("warp_subscriptions");
-
+    let log = warp::log("subscription");
     let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body("<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>")
+            .body(
+                "<html><h1>juniper_warp/subscription example</h1>\
+                       <div>visit <a href=\"/graphiql\">GraphiQL</a></div>\
+                       <div>visit <a href=\"/playground\">GraphQL Playground</a></div>\
+                 </html>",
+            )
     });
+    let schema = Arc::new(schema());
 
-    let qm_schema = schema();
-    let qm_state = warp::any().map(|| Context);
-    let qm_graphql_filter = juniper_warp::make_graphql_filter(qm_schema, qm_state.boxed());
-
-    let ws_schema = Arc::new(schema());
-    let transport_ws_schema = ws_schema.clone();
+    let routes = (warp::post()
+        .and(warp::path("graphql"))
+        .and(juniper_warp::make_graphql_filter(
+            schema.clone(),
+            warp::any().map(|| Context).boxed(),
+        )))
+    .or(
+        warp::path("subscriptions").and(juniper_warp::subscriptions::make_ws_filter(
+            schema,
+            ConnectionConfig::new(Context),
+        )),
+    )
+    .or(warp::get()
+        .and(warp::path("playground"))
+        .and(juniper_warp::playground_filter(
+            "/graphql",
+            Some("/subscriptions"),
+        )))
+    .or(warp::get()
+        .and(warp::path("graphiql"))
+        .and(juniper_warp::graphiql_filter(
+            "/graphql",
+            Some("/subscriptions"),
+        )))
+    .or(homepage)
+    .with(log);
 
     log::info!("Listening on 127.0.0.1:8080");
-
-    let routes = warp::path("subscriptions")
-        .and(warp::ws())
-        .map(move |ws: warp::ws::Ws| {
-            let transport_ws_schema = transport_ws_schema.clone();
-            ws.on_upgrade(move |websocket| async move {
-                serve_graphql_transport_ws(
-                    websocket,
-                    transport_ws_schema,
-                    ConnectionConfig::new(Context),
-                )
-                .map(|r| {
-                    if let Err(e) = r {
-                        println!("Websocket error: {e}");
-                    }
-                })
-                .await
-            })
-        })
-        .or(warp::path("legacy-subscriptions")
-            .and(warp::ws())
-            .map(move |ws: warp::ws::Ws| {
-                let ws_schema = ws_schema.clone();
-                ws.on_upgrade(move |websocket| async move {
-                    serve_graphql_ws(websocket, ws_schema, LegacyConnectionConfig::new(Context))
-                        .map(|r| {
-                            if let Err(e) = r {
-                                println!("Websocket error: {e}");
-                            }
-                        })
-                        .await
-                })
-            })
-            .map(|reply| {
-                // TODO#584: remove this workaround
-                warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-            }))
-        .or(warp::post()
-            .and(warp::path("graphql"))
-            .and(qm_graphql_filter))
-        .or(warp::get()
-            .and(warp::path("playground"))
-            .and(playground_filter("/graphql", Some("/legacy-subscriptions"))))
-        .or(warp::get()
-            .and(warp::path("graphiql"))
-            .and(graphiql_filter("/graphql", Some("/subscriptions"))))
-        .or(homepage)
-        .with(log);
-
     warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
 }

@@ -14,10 +14,11 @@ juniper = "0.16.0"
 juniper_warp = "0.8.0"
 ```
 
-Included in the source is a [small example][example] which sets up a basic GraphQL and [GraphiQL] handler.
+Included in the source is a [small example][example] which sets up a basic GraphQL and [GraphiQL]/[GraphQL Playground] handlers with subscriptions support.
 
-[graphiql]: https://github.com/graphql/graphiql
+[GraphiQL]: https://github.com/graphql/graphiql
+[GraphQL Playground]: https://github.com/prisma/graphql-playground
 [hyper]: https://hyper.rs/
 [warp]: https://crates.io/crates/warp
 [juniper_warp]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp
-[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs
+[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/subscription.rs

@@ -25,8 +25,11 @@ use juniper::{
         task::{Context, Poll, Waker},
         Sink, Stream,
     },
-    GraphQLError, RuleError, ScalarValue, Variables,
+    GraphQLError, RuleError, ScalarValue,
 };
+
+#[doc(inline)]
+pub use juniper_graphql_ws::{ConnectionConfig, Init};
 
 struct ExecutionParams<S: Schema> {
     subscribe_payload: SubscribePayload<S::ScalarValue>,
@@ -34,49 +37,19 @@ struct ExecutionParams<S: Schema> {
     schema: S,
 }
 
-/// ConnectionConfig is used to configure the connection once the client sends the ConnectionInit
-/// message.
-pub struct ConnectionConfig<CtxT> {
-    context: CtxT,
-    max_in_flight_operations: usize,
-    keep_alive_interval: Duration,
+/// Possible inputs received from a client.
+#[derive(Debug)]
+pub enum Input<S> {
+    /// Deserialized [`ClientMessage`].
+    Message(ClientMessage<S>),
+
+    /// Client initiated normal closing of a [`Connection`].
+    Close,
 }
 
-impl<CtxT> ConnectionConfig<CtxT> {
-    /// Constructs the configuration required for a connection to be accepted.
-    pub fn new(context: CtxT) -> Self {
-        Self {
-            context,
-            max_in_flight_operations: 0,
-            keep_alive_interval: Duration::from_secs(15),
-        }
-    }
-
-    /// Specifies the maximum number of in-flight operations that a connection can have. If this
-    /// number is exceeded, attempting to start more will result in an error. By default, there is
-    /// no limit to in-flight operations.
-    #[must_use]
-    pub fn with_max_in_flight_operations(mut self, max: usize) -> Self {
-        self.max_in_flight_operations = max;
-        self
-    }
-
-    /// Specifies the interval at which to send unsolicited pong messages as keep-alives.
-    /// Specifying a zero duration will disable keep-alives. By default, keep-alives are sent every
-    /// 15 seconds.
-    #[must_use]
-    pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
-        self.keep_alive_interval = interval;
-        self
-    }
-}
-
-impl<S: ScalarValue, CtxT: Unpin + Send + 'static> Init<S, CtxT> for ConnectionConfig<CtxT> {
-    type Error = Infallible;
-    type Future = future::Ready<Result<Self, Self::Error>>;
-
-    fn init(self, _params: Variables<S>) -> Self::Future {
-        future::ready(Ok(self))
+impl<S> From<ClientMessage<S>> for Input<S> {
+    fn from(val: ClientMessage<S>) -> Self {
+        Self::Message(val)
     }
 }
 
@@ -100,36 +73,6 @@ impl<S: ScalarValue + Send> Output<S> {
     /// Converts the reaction into a one-item stream.
     fn into_stream(self) -> BoxStream<'static, Self> {
         stream::once(future::ready(self)).boxed()
-    }
-}
-
-/// Init defines the requirements for types that can provide connection configurations when
-/// ConnectionInit messages are received. Implementations are provided for `ConnectionConfig` and
-/// closures that meet the requirements.
-pub trait Init<S: ScalarValue, CtxT>: Unpin + 'static {
-    /// The error that is returned on failure. The formatted error will be used as the contents of
-    /// the "message" field sent back to the client.
-    type Error: Error;
-
-    /// The future configuration type.
-    type Future: Future<Output = Result<ConnectionConfig<CtxT>, Self::Error>> + Send + 'static;
-
-    /// Returns a future for the configuration to use.
-    fn init(self, params: Variables<S>) -> Self::Future;
-}
-
-impl<F, S, CtxT, Fut, E> Init<S, CtxT> for F
-where
-    S: ScalarValue,
-    F: FnOnce(Variables<S>) -> Fut + Unpin + 'static,
-    Fut: Future<Output = Result<ConnectionConfig<CtxT>, E>> + Send + 'static,
-    E: Error,
-{
-    type Error = E;
-    type Future = Fut;
-
-    fn init(self, params: Variables<S>) -> Fut {
-        self(params)
     }
 }
 
@@ -496,8 +439,8 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     Closed,
 }
 
-/// Implements the graphql-ws protocol. This is a sink for `TryInto<ClientMessage>` and a stream of
-/// `ServerMessage`.
+/// Implements the `graphql-ws` protocol.
+/// This is a sink for `TryInto<Input>` messages and a stream of `Output` messages.
 pub struct Connection<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     reactions: SelectAll<BoxStream<'static, Output<S::ScalarValue>>>,
     stream_waker: Option<Waker>,
@@ -510,7 +453,8 @@ where
     S: Schema,
     I: Init<S::ScalarValue, S::Context>,
 {
-    /// Creates a new connection, which is a sink for `TryInto<ClientMessage>` and a stream of `ServerMessage`.
+    /// Creates a new connection, which is a sink for `TryInto<Input>` messages and a stream of
+    /// `Output` messages.
     ///
     /// The `schema` argument should typically be an `Arc<RootNode<...>>`.
     ///
@@ -533,7 +477,7 @@ where
 
 impl<S, I, T> Sink<T> for Connection<S, I>
 where
-    T: TryInto<ClientMessage<S::ScalarValue>>,
+    T: TryInto<Input<S::ScalarValue>>,
     T::Error: Error,
     S: Schema,
     I: Init<S::ScalarValue, S::Context> + Send,
@@ -563,9 +507,19 @@ where
         *state = match std::mem::replace(state, ConnectionSinkState::Closed) {
             ConnectionSinkState::Ready { state } => {
                 match item.try_into() {
-                    Ok(msg) => ConnectionSinkState::HandlingMessage {
+                    Ok(Input::Message(msg)) => ConnectionSinkState::HandlingMessage {
                         result: state.handle_message(msg).boxed(),
                     },
+                    Ok(Input::Close) => {
+                        s.reactions.push(
+                            Output::Close {
+                                code: 1000,
+                                message: "Normal Closure".into(),
+                            }
+                            .into_stream(),
+                        );
+                        ConnectionSinkState::Closed
+                    }
                     Err(e) => {
                         // If we weren't able to parse the message, we must close the connection.
                         s.reactions.push(
@@ -588,7 +542,7 @@ where
         <Self as Sink<T>>::poll_ready(self, cx)
     }
 
-    fn poll_close(mut self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Result<(), Self::Error>> {
+    fn poll_close(mut self: Pin<&mut Self>, _: &mut Context) -> Poll<Result<(), Self::Error>> {
         self.sink_state = ConnectionSinkState::Closed;
         if let Some(waker) = self.stream_waker.take() {
             // Wake up the stream so it can close too.
@@ -643,7 +597,7 @@ mod test {
         futures::sink::SinkExt,
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
         parser::{ParseError, Spanning},
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode,
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode, Variables,
     };
 
     use super::*;
