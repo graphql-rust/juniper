@@ -155,7 +155,7 @@ Currently there is an example of subscriptions with [warp][warp], but it still i
 GraphQL over [WS][WS] is not fully supported yet and is non-standard.
 
 - [Warp Subscription Example](https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples/subscription.rs)
-- [Small Example](https://github.com/graphql-rust/juniper/tree/master/examples/basic_subscriptions)
+- [Small Example](https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions/examples/basic.rs)
 
 
 

@@ -25,7 +25,6 @@ jobs:
     needs:
       - bench
       - clippy
-      - example
       - feature
       - msrv
       - release-check
@@ -83,29 +82,6 @@ jobs:
 
       - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
       - run: cargo bench -p juniper_benchmarks
-
-  example:
-    strategy:
-      fail-fast: false
-      matrix:
-        example:
-          - basic_subscriptions
-        os:
-          - ubuntu
-          - macOS
-          - windows
-        toolchain:
-          - stable
-          - beta
-          - nightly
-    runs-on: ${{ matrix.os }}-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain }}
-
-      - run: cargo check -p example_${{ matrix.example }}
 
   feature:
     strategy:
@@ -366,7 +342,6 @@ jobs:
     needs:
       - bench
       - clippy
-      - example
       - feature
       - msrv
       - package
