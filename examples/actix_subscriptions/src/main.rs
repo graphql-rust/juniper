@@ -13,10 +13,7 @@ use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, FieldError, GraphQLObject, RootNode,
 };
-use juniper_actix::{
-    graphiql_handler, graphql_handler, playground_handler,
-    subscriptions::{graphql_transport_ws_handler, graphql_ws_handler},
-};
+use juniper_actix::{graphiql_handler, graphql_handler, playground_handler, subscriptions};
 use juniper_graphql_ws::ConnectionConfig;
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
@@ -26,7 +23,7 @@ fn schema() -> Schema {
 }
 
 async fn playground() -> Result<HttpResponse, Error> {
-    playground_handler("/graphql", Some("/legacy-subscriptions")).await
+    playground_handler("/graphql", Some("/subscriptions")).await
 }
 
 async fn graphiql() -> Result<HttpResponse, Error> {
@@ -103,22 +100,7 @@ async fn subscriptions(
     // playground has a hard-coded timeout set to 20 secs
     let config = config.with_keep_alive_interval(Duration::from_secs(15));
 
-    graphql_transport_ws_handler(req, stream, schema, config).await
-}
-
-async fn legacy_subscriptions(
-    req: HttpRequest,
-    stream: web::Payload,
-    schema: web::Data<Schema>,
-) -> Result<HttpResponse, Error> {
-    let context = Database::new();
-    let schema = schema.into_inner();
-    let config = ConnectionConfig::new(context);
-    // set the keep alive interval to 15 secs so that it doesn't timeout in playground
-    // playground has a hard-coded timeout set to 20 secs
-    let config = config.with_keep_alive_interval(Duration::from_secs(15));
-
-    graphql_ws_handler(req, stream, schema, config).await
+    subscriptions::ws_handler(req, stream, schema, config).await
 }
 
 #[actix_web::main]
@@ -140,7 +122,6 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
-            .service(web::resource("/legacy-subscriptions").route(web::get().to(legacy_subscriptions)))
             .service(web::resource("/subscriptions").route(web::get().to(subscriptions)))
             .service(
                 web::resource("/graphql")

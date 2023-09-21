@@ -165,14 +165,8 @@ pub async fn playground_handler(
         .body(html))
 }
 
-/// `juniper_actix` subscriptions handler implementation.
-/// Cannot be merged to `juniper_actix` yet as GraphQL over WS[1]
-/// is not fully supported in current implementation.
-///
-/// *Note: this implementation is in an alpha state.*
-///
-/// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
+/// `juniper_actix` subscriptions handler implementation.
 pub mod subscriptions {
     use std::{fmt, sync::Arc};
 
@@ -192,17 +186,69 @@ pub mod subscriptions {
     use juniper_graphql_transport_ws::{ArcSchema, Init};
     use tokio::sync::Mutex;
 
-    /// Serves the `graphql-ws` protocol over a WebSocket connection.
+    /// Serves by auto-selecting between the
+    /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
+    /// [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], based on the
+    /// `Sec-Websocket-Protocol` HTTP header value.
+    ///
+    /// The `schema` argument is your [`juniper`] schema.
+    ///
+    /// The `init` argument is used to provide the custom [`juniper::Context`] and additional
+    /// configuration for connections. This can be a
+    /// [`juniper_graphql_transport_ws::ConnectionConfig`] if the context and configuration are
+    /// already known, or it can be a closure that gets executed asynchronously whenever a client
+    /// sends the subscription initialization message. Using a closure allows to perform an
+    /// authentication based on the parameters provided by a client.
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+    pub async fn ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
+        req: HttpRequest,
+        stream: web::Payload,
+        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+    ) -> Result<HttpResponse, actix_web::Error>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        if req
+            .headers()
+            .get("sec-websocket-protocol")
+            .map(AsRef::as_ref)
+            == Some("graphql-ws".as_bytes())
+        {
+            graphql_ws_handler(req, stream, schema, init).await
+        } else {
+            graphql_transport_ws_handler(req, stream, schema, init).await
+        }
+    }
+
+    /// Serves the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
     ///
     /// The `init` argument is used to provide the context and additional configuration for
-    /// connections. This can be a `juniper_graphql_ws::ConnectionConfig` if the context and
+    /// connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the context and
     /// configuration are already known, or it can be a closure that gets executed asynchronously
-    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
-    /// authentication based on the parameters provided by the client.
+    /// when the client sends the `GQL_CONNECTION_INIT` message. Using a closure allows to perform
+    /// an authentication based on the parameters provided by a client.
+    ///
+    /// > __WARNING__: This protocol has been deprecated in favor of the
+    ///                [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
+    ///                provided by the [`graphql_transport_ws_handler()`] function.
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
     pub async fn graphql_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
         req: HttpRequest,
         stream: web::Payload,
-        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
@@ -217,7 +263,7 @@ pub mod subscriptions {
         I: Init<S, CtxT> + Send,
     {
         let (s_tx, s_rx) =
-            juniper_graphql_ws::Connection::new(ArcSchema(root_node), init).split::<Message>();
+            juniper_graphql_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
 
         let mut resp = ws::start(
             Actor {
@@ -236,17 +282,19 @@ pub mod subscriptions {
         Ok(resp)
     }
 
-    /// Serves the `graphql-transport`-ws protocol over a WebSocket connection.
+    /// Serves the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new].
     ///
     /// The `init` argument is used to provide the context and additional configuration for
-    /// connections. This can be a `juniper_graphql_ws::ConnectionConfig` if the context and
-    /// configuration are already known, or it can be a closure that gets executed asynchronously
-    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
-    /// authentication based on the parameters provided by the client.
+    /// connections. This can be a [`juniper_graphql_transport_ws::ConnectionConfig`] if the context
+    /// and configuration are already known, or it can be a closure that gets executed
+    /// asynchronously when the client sends the `ConnectionInit` message. Using a closure allows to
+    /// perform an authentication based on the parameters provided by a client.
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     pub async fn graphql_transport_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
         req: HttpRequest,
         stream: web::Payload,
-        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
@@ -260,9 +308,8 @@ pub mod subscriptions {
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
-        let (s_tx, s_rx) =
-            juniper_graphql_transport_ws::Connection::new(ArcSchema(root_node), init)
-                .split::<Message>();
+        let (s_tx, s_rx) = juniper_graphql_transport_ws::Connection::new(ArcSchema(schema), init)
+            .split::<Message>();
 
         let mut resp = ws::start(
             Actor {
@@ -304,6 +351,9 @@ pub mod subscriptions {
                 Ok(msg) => {
                     let tx = self.tx.clone();
 
+                    // TODO: Somehow this implementation always closes as `1006: Abnormal closure`
+                    //       due to excessive polling of `tx` part.
+                    //       Needs to be reworked.
                     async move {
                         tx.lock()
                             .await

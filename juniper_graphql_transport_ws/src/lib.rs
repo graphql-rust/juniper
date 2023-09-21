@@ -38,6 +38,7 @@ struct ExecutionParams<S: Schema> {
 }
 
 /// Possible inputs received from a client.
+#[derive(Debug)]
 pub enum Input<S> {
     /// Deserialized [`ClientMessage`].
     Message(ClientMessage<S>),
@@ -535,7 +536,7 @@ where
         <Self as Sink<T>>::poll_ready(self, cx)
     }
 
-    fn poll_close(mut self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Result<(), Self::Error>> {
+    fn poll_close(mut self: Pin<&mut Self>, _: &mut Context) -> Poll<Result<(), Self::Error>> {
         self.sink_state = ConnectionSinkState::Closed;
         if let Some(waker) = self.stream_waker.take() {
             // Wake up the stream so it can close too.
