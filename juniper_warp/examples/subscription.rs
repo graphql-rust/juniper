@@ -1,4 +1,4 @@
-//! This example demonstrates asynchronous subscriptions with warp and tokio 0.2
+//! This example demonstrates asynchronous subscriptions with [`warp`].
 
 use std::{env, pin::Pin, sync::Arc, time::Duration};
 

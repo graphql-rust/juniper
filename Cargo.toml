@@ -2,7 +2,6 @@
 resolver = "1" # unifying Cargo features asap for Book tests
 members = [
     "benches",
-    "examples/actix_subscriptions",
     "examples/basic_subscriptions",
     "juniper_codegen",
     "juniper",

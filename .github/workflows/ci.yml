@@ -89,7 +89,6 @@ jobs:
       fail-fast: false
       matrix:
         example:
-          - actix_subscriptions
           - basic_subscriptions
         os:
           - ubuntu
