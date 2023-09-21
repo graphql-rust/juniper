@@ -2716,7 +2716,7 @@ Rust's stable channel.</p>
 juniper = &quot;0.16.0&quot;
 juniper_warp = &quot;0.8.0&quot;
 </code></pre>
-<p>Included in the source is a <a href="https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs">small example</a> which sets up a basic GraphQL and <a href="https://github.com/graphql/graphiql">GraphiQL</a> handler.</p>
+<p>Included in the source is a <a href="https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/subscription.rs">small example</a> which sets up a basic GraphQL and <a href="https://github.com/graphql/graphiql">GraphiQL</a>/<a href="https://github.com/prisma/graphql-playground">GraphQL Playground</a> handlers with subscriptions support.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="integrating-with-rocket"><a class="header" href="#integrating-with-rocket">Integrating with Rocket</a></h1>
 <p><a href="https://rocket.rs/">Rocket</a> is a web framework for Rust that makes it simple to write fast web applications without sacrificing flexibility or type safety. All with minimal code. Rocket
 does not work on Rust's stable channel and instead requires the nightly
@@ -3482,8 +3482,8 @@ async fn run_subscription() {
 <p>Currently there is an example of subscriptions with <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_warp">warp</a>, but it still in an alpha state.
 GraphQL over <a href="https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md">WS</a> is not fully supported yet and is non-standard.</p>
 <ul>
-<li><a href="https://github.com/graphql-rust/juniper/tree/master/examples/warp_subscriptions">Warp Subscription Example</a></li>
-<li><a href="https://github.com/graphql-rust/juniper/tree/master/examples/basic_subscriptions">Small Example</a></li>
+<li><a href="https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples/subscription.rs">Warp Subscription Example</a></li>
+<li><a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions/examples/basic.rs">Small Example</a></li>
 </ul>
 <!-- TODO: Fix these links when the documentation for the `juniper_subscriptions` are defined in the docs. --->
 <!--- --->
