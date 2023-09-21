@@ -136,7 +136,7 @@ jobs:
           - juniper_subscriptions
           - juniper_graphql_transport_ws
           - juniper_graphql_ws
-          - juniper_actix
+          #- juniper_actix
           - juniper_hyper
           #- juniper_iron
           - juniper_rocket
@@ -145,6 +145,10 @@ jobs:
           - ubuntu
           - macOS
           - windows
+        include:
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "ubuntu" }
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "macOS" }
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "windows" }
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4
@@ -158,9 +162,6 @@ jobs:
       - run: cargo +nightly update -Z minimal-versions
 
       - run: make test.cargo crate=${{ matrix.crate }}
-        if: ${{ !contains(fromJSON('["juniper_actix"]'), matrix.crate) }}
-      - run: cargo check -p ${{ matrix.crate }} --all-features
-        if: ${{ contains(fromJSON('["juniper_actix"]'), matrix.crate) }}
 
   package:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
