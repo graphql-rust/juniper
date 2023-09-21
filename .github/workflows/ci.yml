@@ -183,6 +183,9 @@ jobs:
       - run: cargo +nightly update -Z minimal-versions
 
       - run: make test.cargo crate=${{ matrix.crate }}
+        if: ${{ !contains(fromJSON('["juniper_actix"]'), matrix.crate) }}
+      - run: cargo check -p ${{ matrix.crate }} --all-features
+        if: ${{ contains(fromJSON('["juniper_actix"]'), matrix.crate) }}
 
   package:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
