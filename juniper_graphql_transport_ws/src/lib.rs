@@ -47,6 +47,12 @@ pub enum Input<S> {
     Close,
 }
 
+impl<S> From<ClientMessage<S>> for Input<S> {
+    fn from(val: ClientMessage<S>) -> Self {
+        Self::Message(val)
+    }
+}
+
 /// Output provides the responses that should be sent to the client.
 #[derive(Debug, PartialEq)]
 pub enum Output<S: ScalarValue> {
