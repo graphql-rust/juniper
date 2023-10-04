@@ -7,3 +7,10 @@ fn test_failing_compilation() {
     let t = trybuild::TestCases::new();
     t.compile_fail("fail/**/*.rs");
 }
+
+#[rustversion::nightly]
+#[test]
+fn test_passing_compilation() {
+    let t = trybuild::TestCases::new();
+    t.pass("pass/**/*.rs");
+}
