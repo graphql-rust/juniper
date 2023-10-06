@@ -250,46 +250,46 @@ impl Definition {
         let methods = [
             (
                 Method::AsInt,
-                quote! { fn as_int(&self) -> Option<i32> },
-                quote! { i32::from(*v) },
+                quote! { fn as_int(&self) -> ::core::option::Option<::core::primitive::i32> },
+                quote! { ::core::primitive::i32::from(*v) },
             ),
             (
                 Method::AsFloat,
-                quote! { fn as_float(&self) -> Option<f64> },
-                quote! { f64::from(*v) },
+                quote! { fn as_float(&self) -> ::core::option::Option<::core::primitive::f64> },
+                quote! { ::core::primitive::f64::from(*v) },
             ),
             (
                 Method::AsStr,
-                quote! { fn as_str(&self) -> Option<&str> },
+                quote! { fn as_str(&self) -> ::core::option::Option<&::core::primitive::str> },
                 quote! { ::std::convert::AsRef::as_ref(v) },
             ),
             (
                 Method::AsString,
-                quote! { fn as_string(&self) -> Option<String> },
+                quote! { fn as_string(&self) -> ::core::option::Option<::std::string::String> },
                 quote! { ::std::string::ToString::to_string(v) },
             ),
             (
                 Method::IntoString,
-                quote! { fn into_string(self) -> Option<String> },
+                quote! { fn into_string(self) -> ::core::option::Option<::std::string::String> },
                 quote! { ::std::string::String::from(v) },
             ),
             (
                 Method::AsBool,
-                quote! { fn as_bool(&self) -> Option<bool> },
-                quote! { bool::from(*v) },
+                quote! { fn as_bool(&self) -> ::core::option::Option<::core::primitive::bool> },
+                quote! { ::core::primitive::bool::from(*v) },
             ),
         ];
         let methods = methods.iter().map(|(m, sig, def)| {
             let arms = self.methods.get(m).into_iter().flatten().map(|v| {
                 let arm = v.match_arm();
                 let call = v.expr.as_ref().map_or(def.clone(), |f| quote! { #f(v) });
-                quote! { #arm => Some(#call), }
+                quote! { #arm => ::core::option::Option::Some(#call), }
             });
             quote! {
                 #sig {
                     match self {
                         #(#arms)*
-                        _ => None,
+                        _ => ::core::option::Option::None,
                     }
                 }
             }
@@ -341,28 +341,28 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl #impl_gen ::std::convert::From<#ty_ident #ty_gen> for Option<#var_ty>
+                    impl #impl_gen ::std::convert::From<#ty_ident #ty_gen> for ::core::option::Option<#var_ty>
                         #where_clause
                     {
                         fn from(ty: #ty_ident #ty_gen) -> Self {
                             if let #ty_ident::#var_ident #var_field = ty {
-                                Some(v)
+                                ::core::option::Option::Some(v)
                             } else {
-                                None
+                                ::core::option::Option::None
                             }
                         }
                     }
 
                     #[automatically_derived]
                     impl #lf_impl_gen ::std::convert::From<&'___a #ty_ident #ty_gen> for
-                        Option<&'___a #var_ty>
+                        ::core::option::Option<&'___a #var_ty>
                         #where_clause
                     {
                         fn from(ty: &'___a #ty_ident #ty_gen) -> Self {
                             if let #ty_ident::#var_ident #var_field = ty {
-                                Some(v)
+                                ::core::option::Option::Some(v)
                             } else {
-                                None
+                                ::core::option::Option::None
                             }
                         }
                     }
