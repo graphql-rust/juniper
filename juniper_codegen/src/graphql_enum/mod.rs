@@ -450,7 +450,9 @@ impl Definition {
                 for #ident #ty_generics
                 #where_clause
             {
-                fn name(_ : &Self::TypeInfo) -> ::core::option::Option<&'static ::core::primitive::str> {
+                fn name(
+                    _ : &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
                     ::core::option::Option::Some(#name)
                 }
 
@@ -489,7 +491,9 @@ impl Definition {
             let name = &v.name;
 
             quote! {
-                Self::#ident => ::core::result::Result::Ok(::juniper::Value::scalar(::std::string::String::from(#name))),
+                Self::#ident => ::core::result::Result::Ok(::juniper::Value::scalar(
+                    ::std::string::String::from(#name),
+                )),
             }
         });
 
@@ -509,7 +513,10 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> ::core::option::Option<&'__i ::core::primitive::str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
@@ -588,10 +595,14 @@ impl Definition {
             {
                 type Error = ::std::string::String;
 
-                fn from_input_value(v: &::juniper::InputValue<#scalar>) -> ::core::result::Result<Self, Self::Error> {
+                fn from_input_value(
+                    v: &::juniper::InputValue<#scalar>,
+                ) -> ::core::result::Result<Self, Self::Error> {
                     match v.as_enum_value().or_else(|| v.as_string_value()) {
                         #( #variants )*
-                        _ => ::core::result::Result::Err(::std::format!("Unknown enum value: {}", v)),
+                        _ => ::core::result::Result::Err(
+                            ::std::format!("Unknown enum value: {}", v),
+                        ),
                     }
                 }
             }

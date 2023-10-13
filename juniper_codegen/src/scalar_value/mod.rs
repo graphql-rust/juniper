@@ -261,7 +261,7 @@ impl Definition {
             (
                 Method::AsStr,
                 quote! { fn as_str(&self) -> ::core::option::Option<&::core::primitive::str> },
-                quote! { ::std::convert::AsRef::as_ref(v) },
+                quote! { ::core::convert::AsRef::as_ref(v) },
             ),
             (
                 Method::AsString,
@@ -332,7 +332,7 @@ impl Definition {
 
                 quote! {
                     #[automatically_derived]
-                    impl #impl_gen ::std::convert::From<#var_ty> for #ty_ident #ty_gen
+                    impl #impl_gen ::core::convert::From<#var_ty> for #ty_ident #ty_gen
                         #where_clause
                     {
                         fn from(v: #var_ty) -> Self {
@@ -341,8 +341,8 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl #impl_gen ::std::convert::From<#ty_ident #ty_gen> for ::core::option::Option<#var_ty>
-                        #where_clause
+                    impl #impl_gen ::core::convert::From<#ty_ident #ty_gen>
+                     for ::core::option::Option<#var_ty> #where_clause
                     {
                         fn from(ty: #ty_ident #ty_gen) -> Self {
                             if let #ty_ident::#var_ident #var_field = ty {
@@ -354,9 +354,8 @@ impl Definition {
                     }
 
                     #[automatically_derived]
-                    impl #lf_impl_gen ::std::convert::From<&'___a #ty_ident #ty_gen> for
-                        ::core::option::Option<&'___a #var_ty>
-                        #where_clause
+                    impl #lf_impl_gen ::core::convert::From<&'___a #ty_ident #ty_gen>
+                     for ::core::option::Option<&'___a #var_ty> #where_clause
                     {
                         fn from(ty: &'___a #ty_ident #ty_gen) -> Self {
                             if let #ty_ident::#var_ident #var_field = ty {
@@ -390,7 +389,7 @@ impl Definition {
                     .as_mut()
                     .unwrap()
                     .predicates
-                    .push(parse_quote! { #var_ty: ::std::fmt::Display });
+                    .push(parse_quote! { #var_ty: ::core::fmt::Display });
             }
         }
         let (impl_gen, ty_gen, where_clause) = generics.split_for_impl();
@@ -403,15 +402,15 @@ impl Definition {
                 .as_ref()
                 .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
 
-            quote! { Self::#var_ident #var_field => ::std::fmt::Display::fmt(v, f), }
+            quote! { Self::#var_ident #var_field => ::core::fmt::Display::fmt(v, f), }
         });
 
         quote! {
             #[automatically_derived]
-            impl #impl_gen ::std::fmt::Display for #ident #ty_gen
+            impl #impl_gen ::core::fmt::Display for #ident #ty_gen
                 #where_clause
             {
-                fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                     match self {
                         #( #arms )*
                     }

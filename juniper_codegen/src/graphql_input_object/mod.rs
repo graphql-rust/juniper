@@ -479,7 +479,9 @@ impl Definition {
                 for #ident #ty_generics
                 #where_clause
             {
-                fn name(_: &Self::TypeInfo) -> ::core::option::Option<&'static ::core::primitive::str> {
+                fn name(
+                    _: &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
                     ::core::option::Option::Some(#name)
                 }
 
@@ -524,7 +526,10 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> ::core::option::Option<&'__i ::core::primitive::str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
             }

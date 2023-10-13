@@ -341,7 +341,9 @@ impl OnMethod {
                     quote! {
                         match #arg {
                             ::core::result::Result::Ok(v) => v,
-                            ::core::result::Result::Err(e) => return ::std::boxed::Box::pin(async { ::core::result::Result::Err(e) }),
+                            ::core::result::Result::Err(e) => return ::std::boxed::Box::pin(async {
+                                ::core::result::Result::Err(e)
+                            }),
                         }
                     }
                 } else {

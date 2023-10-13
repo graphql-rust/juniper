@@ -457,7 +457,9 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             #[automatically_derived]
             impl #impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
             {
-                fn name(_ : &Self::TypeInfo) -> ::core::option::Option<&'static ::core::primitive::str> {
+                fn name(
+                    _ : &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
                     ::core::option::Option::Some(#name)
                 }
 
@@ -626,7 +628,7 @@ impl Definition<Query> {
 
                 let resolve = if field.is_async {
                     quote! {
-                        ::std::panic!(
+                        ::core::panic!(
                              "Tried to resolve async field `{}` on type `{}` with a sync resolver",
                              #name,
                              <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
@@ -783,7 +785,10 @@ impl Definition<Query> {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> ::core::option::Option<&'__i ::core::primitive::str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 

@@ -516,7 +516,7 @@ macro_rules! assert_implemented_for {
                         <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`: missing implementer reference in interface's `for` attribute.",
                     );
-                    ::std::panic!("{}", MSG);
+                    ::core::panic!("{}", MSG);
                 }
             })*
         };
@@ -544,7 +544,7 @@ macro_rules! assert_interfaces_impls {
                         <$implementers as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`: missing interface reference in implementer's `impl` attribute.",
                     );
-                    ::std::panic!("{}", MSG);
+                    ::core::panic!("{}", MSG);
                 }
             })*
         };
@@ -576,7 +576,7 @@ macro_rules! assert_transitive_impls {
                         <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`."
                     );
-                    ::std::panic!("{}", MSG);
+                    ::core::panic!("{}", MSG);
                 }
             })*
         };
@@ -674,7 +674,7 @@ macro_rules! assert_subtype {
                     $crate::format_type!(BASE_RETURN_TY, BASE_RETURN_WRAPPED_VAL),
                     "`.",
                 );
-                ::std::panic!("{}", MSG);
+                ::core::panic!("{}", MSG);
             }
         };
     };
@@ -855,7 +855,7 @@ macro_rules! assert_field_args {
                 };
                 const ERROR_MSG: &str =
                     $crate::const_concat!(ERR_PREFIX, "Field `", FIELD_NAME, "`: ", MSG);
-                ::std::panic!("{}", ERROR_MSG);
+                ::core::panic!("{}", ERROR_MSG);
             }
         };
     };
@@ -911,7 +911,7 @@ macro_rules! checked_hash {
                 <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                 "`."
             );
-            ::std::panic!("{}", MSG)
+            ::core::panic!("{}", MSG)
         }
     }};
 }

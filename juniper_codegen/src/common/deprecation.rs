@@ -102,12 +102,12 @@ impl Directive {
 
 impl ToTokens for Directive {
     fn to_tokens(&self, into: &mut TokenStream) {
-        let reason = self.reason.as_ref().map_or_else(
-            || quote! { ::core::option::Option::None },
-            |text| quote! { ::core::option::Option::Some(#text) },
-        );
+        let reason = self
+            .reason
+            .as_ref()
+            .map_or_else(|| quote! { None }, |text| quote! { Some(#text) });
         quote! {
-            .deprecated(#reason)
+            .deprecated(::core::option::Option::#reason)
         }
         .to_tokens(into);
     }

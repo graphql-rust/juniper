@@ -375,7 +375,9 @@ impl Definition {
             impl #impl_gens ::juniper::GraphQLType<#scalar> for #ty
                 #where_clause
             {
-                fn name(_: &Self::TypeInfo) -> ::core::option::Option<&'static ::core::primitive::str> {
+                fn name(
+                    _: &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
                     ::core::option::Option::Some(#name)
                 }
 
@@ -416,7 +418,10 @@ impl Definition {
                 type Context = ();
                 type TypeInfo = ();
 
-                fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> ::core::option::Option<&'i ::core::primitive::str> {
+                fn type_name<'i>(
+                    &self,
+                    info: &'i Self::TypeInfo,
+                ) -> ::core::option::Option<&'i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
@@ -454,9 +459,8 @@ impl Definition {
                     selection_set: ::core::option::Option<&'b [::juniper::Selection<'_, #scalar>]>,
                     executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
-                    use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
-                    ::std::boxed::Box::pin(future::ready(v))
+                    ::std::boxed::Box::pin(::juniper::futures::future::ready(v))
                 }
             }
         }
@@ -507,7 +511,9 @@ impl Definition {
             {
                 type Error = ::juniper::executor::FieldError<#scalar>;
 
-                fn from_input_value(input: &::juniper::InputValue<#scalar>) -> ::core::result::Result<Self, Self::Error> {
+                fn from_input_value(
+                    input: &::juniper::InputValue<#scalar>,
+                ) -> ::core::result::Result<Self, Self::Error> {
                     #from_input_value
                         .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
                 }

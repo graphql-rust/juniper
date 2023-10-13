@@ -354,14 +354,20 @@ impl Definition {
                         async move {
                             let ex = executor.as_executor();
                             match res2 {
-                                ::core::result::Result::Ok(::core::option::Option::Some((ctx, r))) => {
+                                ::core::result::Result::Ok(
+                                    ::core::option::Option::Some((ctx, r)),
+                                ) => {
                                     let sub = ex.replaced_context(ctx);
                                     sub.resolve_with_ctx_async(&(), &r)
                                         .await
                                         .map_err(|e| ex.new_error(e))
                                 }
-                                ::core::result::Result::Ok(::core::option::Option::None) => ::core::result::Result::Ok(::juniper::Value::null()),
-                                ::core::result::Result::Err(e) => ::core::result::Result::Err(ex.new_error(e)),
+                                ::core::result::Result::Ok(::core::option::Option::None) => {
+                                    ::core::result::Result::Ok(::juniper::Value::null())
+                                }
+                                ::core::result::Result::Err(e) => {
+                                    ::core::result::Result::Err(ex.new_error(e))
+                                }
                             }
                         }
                     });
