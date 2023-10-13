@@ -9,6 +9,10 @@ use juniper::{
 
 use self::common::util::{schema, schema_with_scalar};
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 mod trivial {
     use super::*;
 
@@ -863,7 +867,7 @@ mod bounded_generic_scalar {
     use super::*;
 
     #[derive(GraphQLEnum)]
-    #[graphql(scalar = S: ScalarValue + Clone)]
+    #[graphql(scalar = S: ScalarValue + prelude::Clone)]
     enum Character {
         Human,
         Droid,
@@ -896,7 +900,7 @@ mod bounded_generic_scalar {
 mod explicit_custom_context {
     use super::*;
 
-    struct CustomContext(String);
+    struct CustomContext(prelude::String);
 
     impl juniper::Context for CustomContext {}
 

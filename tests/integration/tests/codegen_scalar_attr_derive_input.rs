@@ -17,6 +17,10 @@ use self::common::{
     MyScalarValue,
 };
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 mod trivial {
     use super::*;
 
@@ -28,7 +32,7 @@ mod trivial {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -236,7 +240,7 @@ mod all_custom_resolvers {
         Value::scalar(v.0)
     }
 
-    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Counter, String> {
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Counter, prelude::String> {
         v.as_int_value()
             .map(Counter)
             .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -311,7 +315,7 @@ mod explicit_name {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -387,7 +391,7 @@ mod delegated_parse_token {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -451,9 +455,9 @@ mod delegated_parse_token {
 mod multiple_delegated_parse_token {
     use super::*;
 
-    #[graphql_scalar(parse_token(String, i32))]
+    #[graphql_scalar(parse_token(prelude::String, i32))]
     enum StringOrInt {
-        String(String),
+        String(prelude::String),
         Int(i32),
     }
 
@@ -465,7 +469,7 @@ mod multiple_delegated_parse_token {
             }
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_string_value()
                 .map(|s| Self::String(s.to_owned()))
                 .or_else(|| v.as_int_value().map(Self::Int))
@@ -513,7 +517,7 @@ mod where_attribute {
     #[graphql_scalar(
         to_output_with = to_output,
         from_input_with = from_input,
-        parse_token(String),
+        parse_token(prelude::String),
         where(Tz: From<Utc>, Tz::Offset: fmt::Display),
         specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
@@ -528,7 +532,7 @@ mod where_attribute {
         Value::scalar(v.0.to_rfc3339())
     }
 
-    fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
+    fn from_input<S, Tz>(v: &InputValue<S>) -> prelude::Result<CustomDateTime<Tz>, prelude::String>
     where
         S: ScalarValue,
         Tz: From<Utc> + TimeZone,
@@ -598,7 +602,7 @@ mod with_self {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -668,7 +672,7 @@ mod with_module {
 
     #[graphql_scalar(
         with = custom_date_time,
-        parse_token(String),
+        parse_token(prelude::String),
         where(Tz: From<Utc>, Tz::Offset: fmt::Display),
         specified_by_url = "https://tools.ietf.org/html/rfc3339",
     )]
@@ -686,7 +690,9 @@ mod with_module {
             Value::scalar(v.0.to_rfc3339())
         }
 
-        pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<CustomDateTime<Tz>, String>
+        pub(super) fn from_input<S, Tz>(
+            v: &InputValue<S>,
+        ) -> prelude::Result<CustomDateTime<Tz>, prelude::String>
         where
             S: ScalarValue,
             Tz: From<Utc> + TimeZone,
@@ -758,7 +764,7 @@ mod description_from_doc_comment {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -834,7 +840,7 @@ mod description_from_attribute {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -910,7 +916,7 @@ mod custom_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -986,7 +992,7 @@ mod generic_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
@@ -1053,7 +1059,7 @@ mod generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    #[graphql_scalar(scalar = S: ScalarValue + Clone, parse_token(i32))]
+    #[graphql_scalar(scalar = S: ScalarValue + prelude::Clone, parse_token(i32))]
     struct Counter(i32);
 
     impl Counter {
@@ -1061,7 +1067,7 @@ mod bounded_generic_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
             v.as_int_value()
                 .map(Self)
                 .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
