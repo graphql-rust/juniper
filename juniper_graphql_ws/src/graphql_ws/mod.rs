@@ -553,7 +553,7 @@ mod test {
         futures::sink::SinkExt,
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
         parser::{ParseError, Spanning},
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode,
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode, Variables,
     };
 
     use super::*;
