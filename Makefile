@@ -94,7 +94,7 @@ ifeq ($(clean),yes)
 	cargo clean
 endif
 	$(eval target := $(strip $(shell cargo -vV | sed -n 's/host: //p')))
-	cargo build
+	cargo build --all-features
 	mdbook test book -L target/debug/deps $(strip \
 		$(if $(call eq,$(findstring windows,$(target)),),,\
 			$(shell cargo metadata -q \
