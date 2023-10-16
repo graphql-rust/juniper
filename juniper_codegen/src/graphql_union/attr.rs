@@ -203,7 +203,7 @@ fn parse_variant_from_trait_method(
     // no other options here, until the `juniper::GraphQLType` itself will allow
     // to do it in some cleverer way.
     let resolver_check = parse_quote! {
-        ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
+        ({ #resolver_code } as ::core::option::Option<&#ty>).is_some()
     };
 
     Some(VariantDefinition {

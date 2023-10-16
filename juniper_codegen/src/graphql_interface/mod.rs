@@ -460,7 +460,9 @@ impl Definition {
                         syn::GenericParam::Const(_) => return None,
                     };
                     Some(quote! {
-                        ::std::marker::PhantomData<::std::sync::atomic::AtomicPtr<Box<#ty>>>
+                        ::core::marker::PhantomData<
+                            ::core::sync::atomic::AtomicPtr<std::boxed::Box<#ty>>
+                        >
                     })
                 });
                 quote! { __Phantom(#(#phantom_params),*) }
@@ -474,7 +476,7 @@ impl Definition {
             .map(|(ty, ident)| {
                 quote! {
                     #[automatically_derived]
-                    impl #interface_impl_gens ::std::convert::From<#ty>
+                    impl #interface_impl_gens ::core::convert::From<#ty>
                         for #alias_ident #interface_ty_gens
                         #interface_where_clause
                     {
@@ -487,7 +489,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            #[derive(Clone, Copy, Debug)]
+            #[derive(::core::clone::Clone, ::core::marker::Copy, ::core::fmt::Debug)]
             #[doc = #enum_doc]
             #vis enum #enum_ident #enum_gens {
                 #( #[doc(hidden)] #variants_idents(#variant_gens_pars), )*
@@ -523,12 +525,12 @@ impl Definition {
 
             quote! {{
                 const SUPPRESS_DEAD_CODE: () = {
-                    let none = Option::<#ident #const_gens>::None;
+                    let none = ::core::option::Option::<#ident #const_gens>::None;
                     match none {
-                        Some(unreachable) => {
+                        ::core::option::Option::Some(unreachable) => {
                             #( let _ = unreachable.#fields; )*
                         }
-                        None => {}
+                        ::core::option::Option::None => {}
                     }
                 };
                 let _ = SUPPRESS_DEAD_CODE;
@@ -715,8 +717,10 @@ impl Definition {
                 for #ty #ty_generics
                 #where_clause
             {
-                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
-                    Some(#name)
+                fn name(
+                    _ : &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
+                    ::core::option::Option::Some(#name)
                 }
 
                 fn meta<'r>(
@@ -784,14 +788,17 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
                 fn resolve_field(
                     &self,
                     info: &Self::TypeInfo,
-                    field: &str,
+                    field: &::core::primitive::str,
                     args: &::juniper::Arguments<'_, #scalar>,
                     executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
@@ -805,15 +812,15 @@ impl Definition {
                     &self,
                     context: &Self::Context,
                     info: &Self::TypeInfo,
-                ) -> String {
+                ) -> ::std::string::String {
                     #downcast_check
                 }
 
                 fn resolve_into_type(
                     &self,
                     info: &Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    type_name: &::core::primitive::str,
+                    _: ::core::option::Option<&[::juniper::Selection<'_, #scalar>]>,
                     executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     #downcast
@@ -862,21 +869,21 @@ impl Definition {
                 fn resolve_field_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
-                    field: &'b str,
+                    field: &'b ::core::primitive::str,
                     args: &'b ::juniper::Arguments<'_, #scalar>,
                     executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
-                        _ => Box::pin(async move { #no_field_err }),
+                        _ => ::std::boxed::Box::pin(async move { #no_field_err }),
                     }
                 }
 
                 fn resolve_into_type_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
+                    type_name: &::core::primitive::str,
+                    _: ::core::option::Option<&'b [::juniper::Selection<'b, #scalar>]>,
                     executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     #downcast
@@ -1360,13 +1367,13 @@ impl Definition {
             generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote! { #self_ty: Sync });
+                .push(parse_quote! { #self_ty: ::core::marker::Sync });
 
             if scalar.is_generic() {
                 generics
                     .make_where_clause()
                     .predicates
-                    .push(parse_quote! { #scalar: Send + Sync });
+                    .push(parse_quote! { #scalar: ::core::marker::Send + ::core::marker::Sync });
             }
         }
 

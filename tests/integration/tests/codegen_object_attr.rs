@@ -9,6 +9,10 @@ use juniper::{
 
 use self::common::util::{schema, schema_with_scalar};
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 mod trivial {
     use super::*;
 
@@ -333,12 +337,12 @@ mod fallible_method {
     }
 
     struct Human {
-        id: String,
+        id: prelude::String,
     }
 
     #[graphql_object]
     impl Human {
-        fn id(&self) -> Result<&str, CustomError> {
+        fn id(&self) -> prelude::Result<&str, CustomError> {
             Ok(&self.id)
         }
 
@@ -435,7 +439,7 @@ mod generic {
     }
 
     #[graphql_object(name = "HumanString")]
-    impl<B: ?Sized> Human<String, B> {
+    impl<B: ?Sized> Human<prelude::String, B> {
         fn id(&self) -> &str {
             self.id.as_str()
         }
@@ -453,7 +457,7 @@ mod generic {
             }
         }
 
-        fn human_string(&self) -> Human<String> {
+        fn human_string(&self) -> Human<prelude::String> {
             Human {
                 id: "human-32".into(),
                 _home_planet: (),
@@ -526,7 +530,7 @@ mod generic_async {
     }
 
     #[graphql_object(name = "HumanString")]
-    impl<B: ?Sized> Human<String, B> {
+    impl<B: ?Sized> Human<prelude::String, B> {
         async fn id(&self) -> &str {
             self.id.as_str()
         }
@@ -544,7 +548,7 @@ mod generic_async {
             }
         }
 
-        fn human_string(&self) -> Human<String> {
+        fn human_string(&self) -> Human<prelude::String> {
             Human {
                 id: "human-32".into(),
                 _home_planet: (),
@@ -632,7 +636,7 @@ mod generic_lifetime_async {
     }
 
     #[derive(Clone)]
-    struct QueryRoot(String);
+    struct QueryRoot(prelude::String);
 
     #[graphql_object]
     impl QueryRoot {
@@ -780,7 +784,7 @@ mod nested_generic_lifetime_async {
     }
 
     #[derive(Clone)]
-    struct QueryRoot(String);
+    struct QueryRoot(prelude::String);
 
     #[graphql_object]
     impl QueryRoot {
@@ -889,11 +893,15 @@ mod argument {
 
     #[graphql_object]
     impl Human {
-        fn id(arg: String) -> String {
+        fn id(arg: prelude::String) -> prelude::String {
             arg
         }
 
-        async fn home_planet(&self, r#raw_arg: String, r#async: Option<i32>) -> String {
+        async fn home_planet(
+            &self,
+            r#raw_arg: prelude::String,
+            r#async: prelude::Option<i32>,
+        ) -> prelude::String {
             format!("{raw_arg},{async:?}")
         }
     }
@@ -1021,9 +1029,9 @@ mod default_argument {
     impl Human {
         fn id(
             #[graphql(default)] arg1: i32,
-            #[graphql(default = "second".to_string())] arg2: Option<String>,
+            #[graphql(default = "second".to_string())] arg2: prelude::Option<prelude::String>,
             #[graphql(default = true)] r#arg3: bool,
-        ) -> String {
+        ) -> prelude::String {
             format!("{arg1}|{arg2:?}&{arg3}")
         }
 
@@ -1358,7 +1366,7 @@ mod explicit_name_description_and_deprecation {
         #[graphql(name = "myId", desc = "My human ID.", deprecated = "Not used.")]
         #[deprecated(note = "Should be omitted.")]
         fn id(
-            #[graphql(name = "myName", desc = "My argument.", default)] _n: String,
+            #[graphql(name = "myName", desc = "My argument.", default)] _n: prelude::String,
         ) -> &'static str {
             "human-32"
         }
@@ -1526,7 +1534,7 @@ mod renamed_all_fields_and_args {
             "human-32"
         }
 
-        async fn home_planet(&self, planet_name: String) -> String {
+        async fn home_planet(&self, planet_name: prelude::String) -> prelude::String {
             planet_name
         }
 
@@ -1750,7 +1758,7 @@ mod bounded_generic_scalar {
 
     struct Human;
 
-    #[graphql_object(scalar = S: ScalarValue + Clone)]
+    #[graphql_object(scalar = S: ScalarValue + prelude::Clone)]
     impl Human {
         fn id() -> &'static str {
             "human-32"
@@ -1799,7 +1807,7 @@ mod bounded_generic_scalar {
 mod explicit_custom_context {
     use super::*;
 
-    struct CustomContext(String);
+    struct CustomContext(prelude::String);
 
     impl juniper::Context for CustomContext {}
 
@@ -1859,7 +1867,7 @@ mod explicit_custom_context {
 mod inferred_custom_context_from_field {
     use super::*;
 
-    struct CustomContext(String);
+    struct CustomContext(prelude::String);
 
     impl juniper::Context for CustomContext {}
 
@@ -1934,9 +1942,9 @@ mod executor {
 
         fn info<S>(
             &self,
-            arg: String,
+            arg: prelude::String,
             #[graphql(executor)] _another: &Executor<'_, '_, (), S>,
-        ) -> String {
+        ) -> prelude::String {
             arg
         }
 
@@ -2033,7 +2041,7 @@ mod switched_context {
 
         async fn switch_opt<'e, S: ScalarValue>(
             executor: &'e Executor<'_, '_, CustomContext, S>,
-        ) -> Option<(&'e CustomContext, Droid)> {
+        ) -> prelude::Option<(&'e CustomContext, Droid)> {
             Some((executor.context(), Droid { id: 1 }))
         }
 
@@ -2047,7 +2055,7 @@ mod switched_context {
         async fn switch_res_opt<'e, S: ScalarValue>(
             &self,
             executor: &'e Executor<'_, '_, CustomContext, S>,
-        ) -> FieldResult<Option<(&'e CustomContext, Droid)>> {
+        ) -> FieldResult<prelude::Option<(&'e CustomContext, Droid)>> {
             Ok(Some((executor.context(), Droid { id: 3 })))
         }
     }

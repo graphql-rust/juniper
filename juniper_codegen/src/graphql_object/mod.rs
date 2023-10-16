@@ -310,13 +310,13 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote! { #self_ty: Sync });
+                .push(parse_quote! { #self_ty: ::core::marker::Sync });
 
             if scalar.is_generic() {
                 generics
                     .make_where_clause()
                     .predicates
-                    .push(parse_quote! { #scalar: Send + Sync });
+                    .push(parse_quote! { #scalar: ::core::marker::Send + ::core::marker::Sync });
             }
         }
 
@@ -457,8 +457,10 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             #[automatically_derived]
             impl #impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
             {
-                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
-                    Some(#name)
+                fn name(
+                    _ : &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
+                    ::core::option::Option::Some(#name)
                 }
 
                 fn meta<'r>(
@@ -626,7 +628,7 @@ impl Definition<Query> {
 
                 let resolve = if field.is_async {
                     quote! {
-                        ::std::panic!(
+                        ::core::panic!(
                              "Tried to resolve async field `{}` on type `{}` with a sync resolver",
                              #name,
                              <Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME,
@@ -783,14 +785,17 @@ impl Definition<Query> {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
                 fn resolve_field(
                     &self,
                     info: &Self::TypeInfo,
-                    field: &str,
+                    field: &::core::primitive::str,
                     args: &::juniper::Arguments<'_, #scalar>,
                     executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
@@ -804,7 +809,7 @@ impl Definition<Query> {
                     &self,
                     _: &Self::Context,
                     _: &Self::TypeInfo,
-                ) -> String {
+                ) -> ::std::string::String {
                     #name.into()
                 }
             }
@@ -847,13 +852,13 @@ impl Definition<Query> {
                 fn resolve_field_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
-                    field: &'b str,
+                    field: &'b ::core::primitive::str,
                     args: &'b ::juniper::Arguments<'_, #scalar>,
                     executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
-                        _ => Box::pin(async move { #no_field_err }),
+                        _ => ::std::boxed::Box::pin(async move { #no_field_err }),
                     }
                 }
             }

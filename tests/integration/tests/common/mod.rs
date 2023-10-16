@@ -145,3 +145,32 @@ impl<'de> Deserialize<'de> for MyScalarValue {
         de.deserialize_any(Visitor)
     }
 }
+
+/// Definitions shadowing [`std::prelude`] items to check whether macro expansion is hygienic.
+pub mod hygiene {
+    pub use std::prelude::rust_2021 as prelude;
+
+    pub trait Debug {}
+
+    pub trait Display {}
+
+    pub struct Box<T>(T);
+
+    pub trait Clone {}
+
+    pub trait Copy {}
+
+    pub trait Future {}
+
+    pub struct Option<T>(T);
+
+    pub struct PhantomData<T>(T);
+
+    pub struct Result<Ok, Err>(Ok, Err);
+
+    pub trait Send {}
+
+    pub struct String;
+
+    pub trait Sync {}
+}
