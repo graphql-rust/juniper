@@ -1,5 +1,6 @@
-use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
 use std::sync::Arc;
+
+use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
 
 /// Schema defines the requirements for schemas that can be used for operations. Typically this is
 /// just an `Arc<RootNode<...>>` and you should not have to implement it yourself.

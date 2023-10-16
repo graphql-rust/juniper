@@ -7,7 +7,7 @@ use juniper::{
     graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLEnum,
     RootNode,
 };
-use juniper_graphql_transport_ws::ConnectionConfig;
+use juniper_graphql_ws::ConnectionConfig;
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]

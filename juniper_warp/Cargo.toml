@@ -20,7 +20,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 subscriptions = [
-    "dep:juniper_graphql_transport_ws",
     "dep:juniper_graphql_ws",
     "dep:log",
     "warp/websocket",
@@ -31,7 +30,6 @@ anyhow = "1.0.47"
 futures = "0.3.22"
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0-dev", path = "../juniper_graphql_ws", optional = true }
-juniper_graphql_transport_ws = { version = "0.4.0-dev", path = "../juniper_graphql_transport_ws", optional = true }
 log = { version = "0.4", optional = true }
 serde = { version = "1.0.122", features = ["derive"] }
 serde_json = "1.0.18"

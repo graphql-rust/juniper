@@ -1,16 +1,17 @@
-#![doc = include_str!("../README.md")]
-#![deny(missing_docs, warnings)]
+//! Implementation of the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], as now
+//! used by [Apollo] and [`graphql-ws` npm package].
+//!
+//! Implementation of the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] may be found in
+//! the [`graphql_ws` module].
+//!
+//! [`graphql_ws` module]: crate::graphql_ws
+//! [`graphql-ws` npm package]: https://npmjs.com/package/graphql-ws
+//! [Apollo]: https://www.apollographql.com
+//! [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+//! [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 
 mod client_message;
-pub use client_message::*;
-
 mod server_message;
-pub use server_message::*;
-
-mod schema;
-pub use schema::*;
-
-mod utils;
 
 use std::{
     collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
@@ -28,8 +29,12 @@ use juniper::{
     GraphQLError, RuleError, ScalarValue,
 };
 
-#[doc(inline)]
-pub use juniper_graphql_ws::{ConnectionConfig, Init};
+use super::{ConnectionConfig, Init, Schema};
+
+pub use self::{
+    client_message::{ClientMessage, SubscribePayload},
+    server_message::{ErrorPayload, NextPayload, ServerMessage},
+};
 
 struct ExecutionParams<S: Schema> {
     subscribe_payload: SubscribePayload<S::ScalarValue>,
