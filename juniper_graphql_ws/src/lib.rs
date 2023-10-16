@@ -1,7 +1,15 @@
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![deny(missing_docs, warnings)]
 
+#[cfg(not(any(feature = "graphql-transport-ws", feature = "graphql-ws")))]
+compile_error!(
+    r#"at least one feature must be enabled (either "graphql-transport-ws" or "graphql-ws")"#
+);
+
+#[cfg(feature = "graphql-transport-ws")]
 pub mod graphql_transport_ws;
+#[cfg(feature = "graphql-ws")]
 pub mod graphql_ws;
 mod schema;
 mod server_message;

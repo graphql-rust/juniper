@@ -101,6 +101,8 @@ jobs:
           - { feature: time, crate: juniper }
           - { feature: url, crate: juniper }
           - { feature: uuid, crate: juniper }
+          - { feature: graphql-transport-ws, crate: juniper_graphql_ws }
+          - { feature: graphql-ws, crate: juniper_graphql_ws }
           - { feature: <none>, crate: juniper_actix }
           - { feature: subscriptions, crate: juniper_actix }
           - { feature: <none>, crate: juniper_warp }
