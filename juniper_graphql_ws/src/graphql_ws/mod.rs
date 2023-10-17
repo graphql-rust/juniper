@@ -1,16 +1,19 @@
-#![doc = include_str!("../README.md")]
-#![deny(missing_docs, warnings)]
+//! Implementation of the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old], as formerly
+//! used by [Apollo] and [`subscriptions-transport-ws` npm package].
+//!
+//! It has now been deprecated in favor of the
+//! [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], implemented by the
+//! [`graphql_transport_ws` module] and new [`graphql-ws` npm package].
+//!
+//! [`graphql_transport_ws` module]: crate::graphql_transport_ws
+//! [`graphql-ws` npm package]: https://npmjs.com/package/graphql-ws
+//! [`subscriptions-transport-ws` npm package]: https://npmjs.com/package/subscriptions-transport-ws
+//! [Apollo]: https://www.apollographql.com
+//! [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+//! [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 
 mod client_message;
-pub use client_message::*;
-
 mod server_message;
-pub use server_message::*;
-
-mod schema;
-pub use schema::*;
-
-mod utils;
 
 use std::{
     collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
@@ -25,51 +28,28 @@ use juniper::{
         task::{Context, Poll, Waker},
         Sink, Stream,
     },
-    GraphQLError, RuleError, ScalarValue,
+    GraphQLError, RuleError,
 };
 
-#[doc(inline)]
-pub use juniper_graphql_ws::{ConnectionConfig, Init};
+use super::{ConnectionConfig, Init, Schema};
+
+pub use self::{
+    client_message::{ClientMessage, StartPayload},
+    server_message::{ConnectionErrorPayload, DataPayload, ErrorPayload, ServerMessage},
+};
 
 struct ExecutionParams<S: Schema> {
-    subscribe_payload: SubscribePayload<S::ScalarValue>,
+    start_payload: StartPayload<S::ScalarValue>,
     config: Arc<ConnectionConfig<S::Context>>,
     schema: S,
 }
 
-/// Possible inputs received from a client.
-#[derive(Debug)]
-pub enum Input<S> {
-    /// Deserialized [`ClientMessage`].
-    Message(ClientMessage<S>),
-
-    /// Client initiated normal closing of a [`Connection`].
-    Close,
+enum Reaction<S: Schema> {
+    ServerMessage(ServerMessage<S::ScalarValue>),
+    EndStream,
 }
 
-impl<S> From<ClientMessage<S>> for Input<S> {
-    fn from(val: ClientMessage<S>) -> Self {
-        Self::Message(val)
-    }
-}
-
-/// Output provides the responses that should be sent to the client.
-#[derive(Debug, PartialEq)]
-pub enum Output<S: ScalarValue> {
-    /// Message is a message that should be serialized and sent to the client.
-    Message(ServerMessage<S>),
-    /// Close indicates that the connection should be closed and provides a code and message to
-    /// send to the client. This is always the last message in the output stream.
-    Close {
-        /// The WebSocket code that should be sent.
-        code: u16,
-
-        /// A message describing the reason for the connection closing.
-        message: String,
-    },
-}
-
-impl<S: ScalarValue + Send> Output<S> {
+impl<S: Schema> Reaction<S> {
     /// Converts the reaction into a one-item stream.
     fn into_stream(self) -> BoxStream<'static, Self> {
         stream::once(future::ready(self)).boxed()
@@ -91,29 +71,40 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
 
 impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
     // Each message we receive results in a stream of zero or more reactions. For example, a
-    // Ping message results in a one-item stream with the Pong message reaction.
+    // ConnectionTerminate message results in a one-item stream with the EndStream reaction.
     async fn handle_message(
         self,
         msg: ClientMessage<S::ScalarValue>,
-    ) -> (Self, BoxStream<'static, Output<S::ScalarValue>>) {
+    ) -> (Self, BoxStream<'static, Reaction<S>>) {
+        if let ClientMessage::ConnectionTerminate = msg {
+            return (self, Reaction::EndStream.into_stream());
+        }
+
         match self {
             Self::PreInit { init, schema } => match msg {
                 ClientMessage::ConnectionInit { payload } => match init.init(payload).await {
                     Ok(config) => {
                         let keep_alive_interval = config.keep_alive_interval;
 
-                        let mut s =
-                            stream::iter(vec![Output::Message(ServerMessage::ConnectionAck)])
-                                .boxed();
+                        let mut s = stream::iter(vec![Reaction::ServerMessage(
+                            ServerMessage::ConnectionAck,
+                        )])
+                        .boxed();
 
                         if keep_alive_interval > Duration::from_secs(0) {
                             s = s
-                                .chain(Output::Message(ServerMessage::Pong).into_stream())
+                                .chain(
+                                    Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
+                                        .into_stream(),
+                                )
                                 .boxed();
                             s = s
                                 .chain(stream::unfold((), move |_| async move {
                                     tokio::time::sleep(keep_alive_interval).await;
-                                    Some((Output::Message(ServerMessage::Pong), ()))
+                                    Some((
+                                        Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
+                                        (),
+                                    ))
                                 }))
                                 .boxed();
                         }
@@ -129,25 +120,17 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     }
                     Err(e) => (
                         Self::Terminated,
-                        stream::iter(vec![Output::Close {
-                            code: 4403,
-                            message: e.to_string(),
-                        }])
+                        stream::iter(vec![
+                            Reaction::ServerMessage(ServerMessage::ConnectionError {
+                                payload: ConnectionErrorPayload {
+                                    message: e.to_string(),
+                                },
+                            }),
+                            Reaction::EndStream,
+                        ])
                         .boxed(),
                     ),
                 },
-                ClientMessage::Ping { .. } => (
-                    Self::PreInit { init, schema },
-                    stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed(),
-                ),
-                ClientMessage::Subscribe { .. } => (
-                    Self::PreInit { init, schema },
-                    stream::iter(vec![Output::Close {
-                        code: 4401,
-                        message: "Unauthorized".to_string(),
-                    }])
-                    .boxed(),
-                ),
                 _ => (Self::PreInit { init, schema }, stream::empty().boxed()),
             },
             Self::Active {
@@ -156,14 +139,11 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                 schema,
             } => {
                 let reactions = match msg {
-                    ClientMessage::Subscribe { id, payload } => {
+                    ClientMessage::Start { id, payload } => {
                         if stoppers.contains_key(&id) {
-                            // We already have an operation with this id. We must close the connection.
-                            Output::Close {
-                                code: 4409,
-                                message: format!("Subscriber for {} already exists", id),
-                            }
-                            .into_stream()
+                            // We already have an operation with this id, so we can't start a new
+                            // one.
+                            stream::empty().boxed()
                         } else {
                             // Go ahead and prune canceled stoppers before adding a new one.
                             stoppers.retain(|_, tx| !tx.is_canceled());
@@ -173,14 +153,14 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                             {
                                 // Too many in-flight operations. Just send back a validation error.
                                 stream::iter(vec![
-                                    Output::Message(ServerMessage::Error {
+                                    Reaction::ServerMessage(ServerMessage::Error {
                                         id: id.clone(),
                                         payload: GraphQLError::ValidationError(vec![
                                             RuleError::new("Too many in-flight operations.", &[]),
                                         ])
                                         .into(),
                                     }),
-                                    Output::Message(ServerMessage::Complete { id }),
+                                    Reaction::ServerMessage(ServerMessage::Complete { id }),
                                 ])
                                 .boxed()
                             } else {
@@ -188,12 +168,12 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 let (tx, rx) = oneshot::channel::<()>();
                                 stoppers.insert(id.clone(), tx);
 
-                                // Create the operation stream. This stream will emit Next and Error
+                                // Create the operation stream. This stream will emit Data and Error
                                 // messages, but will not emit Complete – that part is up to us.
                                 let s = Self::start(
                                     id.clone(),
                                     ExecutionParams {
-                                        subscribe_payload: payload,
+                                        start_payload: payload,
                                         config: config.clone(),
                                         schema: schema.clone(),
                                     },
@@ -213,19 +193,17 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                                 // Once the stream ends, send the Complete message.
                                 let s = s.chain(
-                                    Output::Message(ServerMessage::Complete { id }).into_stream(),
+                                    Reaction::ServerMessage(ServerMessage::Complete { id })
+                                        .into_stream(),
                                 );
 
                                 s.boxed()
                             }
                         }
                     }
-                    ClientMessage::Complete { id } => {
+                    ClientMessage::Stop { id } => {
                         stoppers.remove(&id);
                         stream::empty().boxed()
-                    }
-                    ClientMessage::Ping { .. } => {
-                        stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed()
                     }
                     _ => stream::empty().boxed(),
                 };
@@ -242,10 +220,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         }
     }
 
-    async fn start(
-        id: String,
-        params: ExecutionParams<S>,
-    ) -> BoxStream<'static, Output<S::ScalarValue>> {
+    async fn start(id: String, params: ExecutionParams<S>) -> BoxStream<'static, Reaction<S>> {
         // TODO: This could be made more efficient if `juniper` exposed
         //       functionality to allow us to parse and validate the query,
         //       determine whether it's a subscription, and then execute it.
@@ -255,24 +230,24 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
         // Try to execute this as a query or mutation.
         match juniper::execute(
-            &params.subscribe_payload.query,
-            params.subscribe_payload.operation_name.as_deref(),
+            &params.start_payload.query,
+            params.start_payload.operation_name.as_deref(),
             params.schema.root_node(),
-            &params.subscribe_payload.variables,
+            &params.start_payload.variables,
             &params.config.context,
         )
         .await
         {
             Ok((data, errors)) => {
-                return Output::Message(ServerMessage::Next {
+                return Reaction::ServerMessage(ServerMessage::Data {
                     id: id.clone(),
-                    payload: NextPayload { data, errors },
+                    payload: DataPayload { data, errors },
                 })
                 .into_stream();
             }
             Err(GraphQLError::IsSubscription) => {}
             Err(e) => {
-                return Output::Message(ServerMessage::Error {
+                return Reaction::ServerMessage(ServerMessage::Error {
                     id: id.clone(),
                     payload: ErrorPayload::new(Box::new(params.clone()), e),
                 })
@@ -343,7 +318,7 @@ impl<S: Schema> SubscriptionStart<S> {
 }
 
 impl<S: Schema> Stream for SubscriptionStart<S> {
-    type Item = Output<S::ScalarValue>;
+    type Item = Reaction<S>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         let (params, state) = unsafe {
@@ -364,10 +339,10 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                         id: id.clone(),
                         future: unsafe {
                             juniper::resolve_into_stream(
-                                &(*params).subscribe_payload.query,
-                                (*params).subscribe_payload.operation_name.as_deref(),
+                                &(*params).start_payload.query,
+                                (*params).start_payload.operation_name.as_deref(),
                                 (*params).schema.root_node(),
-                                &(*params).subscribe_payload.variables,
+                                &(*params).start_payload.variables,
                                 &(*params).config.context,
                             )
                         }
@@ -389,10 +364,12 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                             }
                         }
                         Err(e) => {
-                            return Poll::Ready(Some(Output::Message(ServerMessage::Error {
-                                id: id.clone(),
-                                payload: ErrorPayload::new(Box::new(params.clone()), e),
-                            })));
+                            return Poll::Ready(Some(Reaction::ServerMessage(
+                                ServerMessage::Error {
+                                    id: id.clone(),
+                                    payload: ErrorPayload::new(Box::new(params.clone()), e),
+                                },
+                            )));
                         }
                     },
                     Poll::Pending => return Poll::Pending,
@@ -402,9 +379,9 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                     ref mut stream,
                 } => match Pin::new(stream).poll_next(cx) {
                     Poll::Ready(Some(output)) => {
-                        return Poll::Ready(Some(Output::Message(ServerMessage::Next {
+                        return Poll::Ready(Some(Reaction::ServerMessage(ServerMessage::Data {
                             id: id.clone(),
-                            payload: NextPayload {
+                            payload: DataPayload {
                                 data: output.data,
                                 errors: output.errors,
                             },
@@ -428,23 +405,16 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     },
     HandlingMessage {
         #[allow(clippy::type_complexity)]
-        result: BoxFuture<
-            'static,
-            (
-                ConnectionState<S, I>,
-                BoxStream<'static, Output<S::ScalarValue>>,
-            ),
-        >,
+        result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
     },
     Closed,
 }
 
-/// Implements the `graphql-ws` protocol.
-/// This is a sink for `TryInto<Input>` messages and a stream of `Output` messages.
+/// Implements the graphql-ws protocol. This is a sink for `TryInto<ClientMessage>` and a stream of
+/// `ServerMessage`.
 pub struct Connection<S: Schema, I: Init<S::ScalarValue, S::Context>> {
-    reactions: SelectAll<BoxStream<'static, Output<S::ScalarValue>>>,
+    reactions: SelectAll<BoxStream<'static, Reaction<S>>>,
     stream_waker: Option<Waker>,
-    stream_terminated: bool,
     sink_state: ConnectionSinkState<S, I>,
 }
 
@@ -453,8 +423,7 @@ where
     S: Schema,
     I: Init<S::ScalarValue, S::Context>,
 {
-    /// Creates a new connection, which is a sink for `TryInto<Input>` messages and a stream of
-    /// `Output` messages.
+    /// Creates a new connection, which is a sink for `TryInto<ClientMessage>` and a stream of `ServerMessage`.
     ///
     /// The `schema` argument should typically be an `Arc<RootNode<...>>`.
     ///
@@ -467,7 +436,6 @@ where
         Self {
             reactions: SelectAll::new(),
             stream_waker: None,
-            stream_terminated: false,
             sink_state: ConnectionSinkState::Ready {
                 state: ConnectionState::PreInit { init, schema },
             },
@@ -477,7 +445,7 @@ where
 
 impl<S, I, T> Sink<T> for Connection<S, I>
 where
-    T: TryInto<Input<S::ScalarValue>>,
+    T: TryInto<ClientMessage<S::ScalarValue>>,
     T::Error: Error,
     S: Schema,
     I: Init<S::ScalarValue, S::Context> + Send,
@@ -507,29 +475,20 @@ where
         *state = match std::mem::replace(state, ConnectionSinkState::Closed) {
             ConnectionSinkState::Ready { state } => {
                 match item.try_into() {
-                    Ok(Input::Message(msg)) => ConnectionSinkState::HandlingMessage {
+                    Ok(msg) => ConnectionSinkState::HandlingMessage {
                         result: state.handle_message(msg).boxed(),
                     },
-                    Ok(Input::Close) => {
-                        s.reactions.push(
-                            Output::Close {
-                                code: 1000,
-                                message: "Normal Closure".into(),
-                            }
-                            .into_stream(),
-                        );
-                        ConnectionSinkState::Closed
-                    }
                     Err(e) => {
-                        // If we weren't able to parse the message, we must close the connection.
+                        // If we weren't able to parse the message, send back an error.
                         s.reactions.push(
-                            Output::Close {
-                                code: 4400,
-                                message: e.to_string(),
-                            }
+                            Reaction::ServerMessage(ServerMessage::ConnectionError {
+                                payload: ConnectionErrorPayload {
+                                    message: e.to_string(),
+                                },
+                            })
                             .into_stream(),
                         );
-                        ConnectionSinkState::Closed
+                        ConnectionSinkState::Ready { state }
                     }
                 }
             }
@@ -542,7 +501,7 @@ where
         <Self as Sink<T>>::poll_ready(self, cx)
     }
 
-    fn poll_close(mut self: Pin<&mut Self>, _: &mut Context) -> Poll<Result<(), Self::Error>> {
+    fn poll_close(mut self: Pin<&mut Self>, _cx: &mut Context) -> Poll<Result<(), Self::Error>> {
         self.sink_state = ConnectionSinkState::Closed;
         if let Some(waker) = self.stream_waker.take() {
             // Wake up the stream so it can close too.
@@ -557,25 +516,22 @@ where
     S: Schema,
     I: Init<S::ScalarValue, S::Context>,
 {
-    type Item = Output<S::ScalarValue>;
+    type Item = ServerMessage<S::ScalarValue>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         self.stream_waker = Some(cx.waker().clone());
 
         if let ConnectionSinkState::Closed = self.sink_state {
             return Poll::Ready(None);
-        } else if self.stream_terminated {
-            return Poll::Ready(None);
         }
 
         // Poll the reactions for new outgoing messages.
         if !self.reactions.is_empty() {
             match Pin::new(&mut self.reactions).poll_next(cx) {
-                Poll::Ready(Some(Output::Close { code, message })) => {
-                    self.stream_terminated = true;
-                    return Poll::Ready(Some(Output::Close { code, message }));
-                }
-                Poll::Ready(Some(reaction)) => return Poll::Ready(Some(reaction)),
+                Poll::Ready(Some(reaction)) => match reaction {
+                    Reaction::ServerMessage(msg) => return Poll::Ready(Some(msg)),
+                    Reaction::EndStream => return Poll::Ready(None),
+                },
                 Poll::Ready(None) => {
                     // In rare cases, the reaction stream may terminate. For example, this will
                     // happen if the first message we receive does not require any reaction. Just
@@ -674,68 +630,34 @@ mod test {
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "foo".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "{context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
         assert_eq!(
-            Output::Message(ServerMessage::Next {
+            ServerMessage::Data {
                 id: "foo".into(),
-                payload: NextPayload {
+                payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
-            }),
-            conn.next().await.unwrap()
-        );
-
-        assert_eq!(
-            Output::Message(ServerMessage::Complete { id: "foo".into() }),
-            conn.next().await.unwrap()
-        );
-    }
-
-    #[tokio::test]
-    async fn test_premature_query() {
-        let mut conn = Connection::new(
-            new_test_schema(),
-            ConnectionConfig::new(Context(1)).with_keep_alive_interval(Duration::from_secs(0)),
-        );
-
-        conn.send(ClientMessage::Subscribe {
-            id: "foo".into(),
-            payload: SubscribePayload {
-                query: "{context}".into(),
-                variables: graphql_vars! {},
-                operation_name: None,
-                extensions: Default::default(),
-            },
-        })
-        .await
-        .unwrap();
-
-        assert_eq!(
-            Output::Close {
-                code: 4401,
-                message: "Unauthorized".into(),
             },
             conn.next().await.unwrap()
         );
 
-        assert_eq!(None, conn.next().await);
+        assert_eq!(
+            ServerMessage::Complete { id: "foo".into() },
+            conn.next().await.unwrap()
+        );
     }
 
     #[tokio::test]
@@ -751,63 +673,58 @@ mod test {
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "foo".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "subscription Foo {context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
         assert_eq!(
-            Output::Message(ServerMessage::Next {
+            ServerMessage::Data {
                 id: "foo".into(),
-                payload: NextPayload {
+                payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
-            }),
+            },
             conn.next().await.unwrap()
         );
 
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "bar".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "subscription Bar {context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
         assert_eq!(
-            Output::Message(ServerMessage::Next {
+            ServerMessage::Data {
                 id: "bar".into(),
-                payload: NextPayload {
+                payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
-            }),
+            },
             conn.next().await.unwrap()
         );
 
-        conn.send(ClientMessage::Complete { id: "foo".into() })
+        conn.send(ClientMessage::Stop { id: "foo".into() })
             .await
             .unwrap();
 
         assert_eq!(
-            Output::Message(ServerMessage::Complete { id: "foo".into() }),
+            ServerMessage::Complete { id: "foo".into() },
             conn.next().await.unwrap()
         );
     }
@@ -825,10 +742,7 @@ mod test {
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
     }
 
     #[tokio::test]
@@ -845,14 +759,13 @@ mod test {
         .unwrap();
 
         assert_eq!(
-            Output::Close {
-                code: 4403,
-                message: "init error".into(),
+            ServerMessage::ConnectionError {
+                payload: ConnectionErrorPayload {
+                    message: "init error".into(),
+                },
             },
             conn.next().await.unwrap()
         );
-
-        assert_eq!(None, conn.next().await);
     }
 
     #[tokio::test]
@@ -870,37 +783,32 @@ mod test {
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "foo".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "subscription Foo {never}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "bar".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "subscription Bar {never}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
         match conn.next().await.unwrap() {
-            Output::Message(ServerMessage::Error { id, .. }) => {
+            ServerMessage::Error { id, .. } => {
                 assert_eq!(id, "bar");
             }
             msg => panic!("expected error, got: {msg:?}"),
@@ -920,25 +828,21 @@ mod test {
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "foo".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "asd".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
         match conn.next().await.unwrap() {
-            Output::Message(ServerMessage::Error { id, payload }) => {
+            ServerMessage::Error { id, payload } => {
                 assert_eq!(id, "foo");
                 match payload.graphql_error() {
                     GraphQLError::ParseError(Spanning {
@@ -965,14 +869,11 @@ mod test {
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
         for _ in 0..10 {
             assert_eq!(
-                Output::Message(ServerMessage::Pong),
+                ServerMessage::ConnectionKeepAlive,
                 conn.next().await.unwrap()
             );
         }
@@ -992,31 +893,27 @@ mod test {
         .unwrap();
 
         // If we send the start message before the init is handled, we should still get results.
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "foo".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "{context}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
         assert_eq!(
-            Output::Message(ServerMessage::Next {
+            ServerMessage::Data {
                 id: "foo".into(),
-                payload: NextPayload {
+                payload: DataPayload {
                     data: graphql_value!({"context": 1}),
                     errors: vec![],
                 },
-            }),
+            },
             conn.next().await.unwrap()
         );
     }
@@ -1034,28 +931,24 @@ mod test {
         .await
         .unwrap();
 
-        assert_eq!(
-            Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
-        );
+        assert_eq!(ServerMessage::ConnectionAck, conn.next().await.unwrap());
 
-        conn.send(ClientMessage::Subscribe {
+        conn.send(ClientMessage::Start {
             id: "foo".into(),
-            payload: SubscribePayload {
+            payload: StartPayload {
                 query: "subscription Foo {error}".into(),
                 variables: graphql_vars! {},
                 operation_name: None,
-                extensions: Default::default(),
             },
         })
         .await
         .unwrap();
 
         match conn.next().await.unwrap() {
-            Output::Message(ServerMessage::Next {
+            ServerMessage::Data {
                 id,
-                payload: NextPayload { data, errors },
-            }) => {
+                payload: DataPayload { data, errors },
+            } => {
                 assert_eq!(id, "foo");
                 assert_eq!(data, graphql_value!({ "error": null }));
                 assert_eq!(errors.len(), 1);

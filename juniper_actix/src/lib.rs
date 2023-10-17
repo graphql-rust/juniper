@@ -183,7 +183,7 @@ pub mod subscriptions {
         SinkExt as _, Stream, StreamExt as _,
     };
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
-    use juniper_graphql_transport_ws::{ArcSchema, Init};
+    use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, ArcSchema, Init};
     use tokio::sync::Mutex;
 
     /// Serves by auto-selecting between the
@@ -194,11 +194,10 @@ pub mod subscriptions {
     /// The `schema` argument is your [`juniper`] schema.
     ///
     /// The `init` argument is used to provide the custom [`juniper::Context`] and additional
-    /// configuration for connections. This can be a
-    /// [`juniper_graphql_transport_ws::ConnectionConfig`] if the context and configuration are
-    /// already known, or it can be a closure that gets executed asynchronously whenever a client
-    /// sends the subscription initialization message. Using a closure allows to perform an
-    /// authentication based on the parameters provided by a client.
+    /// configuration for connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the
+    /// context and configuration are already known, or it can be a closure that gets executed
+    /// asynchronously whenever a client sends the subscription initialization message. Using a
+    /// closure allows to perform an authentication based on the parameters provided by a client.
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
@@ -262,8 +261,7 @@ pub mod subscriptions {
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
-        let (s_tx, s_rx) =
-            juniper_graphql_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
+        let (s_tx, s_rx) = graphql_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
 
         let mut resp = ws::start(
             Actor {
@@ -285,10 +283,10 @@ pub mod subscriptions {
     /// Serves the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new].
     ///
     /// The `init` argument is used to provide the context and additional configuration for
-    /// connections. This can be a [`juniper_graphql_transport_ws::ConnectionConfig`] if the context
-    /// and configuration are already known, or it can be a closure that gets executed
-    /// asynchronously when the client sends the `ConnectionInit` message. Using a closure allows to
-    /// perform an authentication based on the parameters provided by a client.
+    /// connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the context and
+    /// configuration are already known, or it can be a closure that gets executed asynchronously
+    /// when the client sends the `ConnectionInit` message. Using a closure allows to perform an
+    /// authentication based on the parameters provided by a client.
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     pub async fn graphql_transport_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
@@ -308,8 +306,8 @@ pub mod subscriptions {
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
-        let (s_tx, s_rx) = juniper_graphql_transport_ws::Connection::new(ArcSchema(schema), init)
-            .split::<Message>();
+        let (s_tx, s_rx) =
+            graphql_transport_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
 
         let mut resp = ws::start(
             Actor {
@@ -429,7 +427,7 @@ pub mod subscriptions {
         fn into_ws_response(self) -> Result<String, ws::CloseReason>;
     }
 
-    impl<S: ScalarValue> IntoWsResponse for juniper_graphql_transport_ws::Output<S> {
+    impl<S: ScalarValue> IntoWsResponse for graphql_transport_ws::Output<S> {
         fn into_ws_response(self) -> Result<String, ws::CloseReason> {
             match self {
                 Self::Message(msg) => serde_json::to_string(&msg).map_err(|e| ws::CloseReason {
@@ -444,7 +442,7 @@ pub mod subscriptions {
         }
     }
 
-    impl<S: ScalarValue> IntoWsResponse for juniper_graphql_ws::ServerMessage<S> {
+    impl<S: ScalarValue> IntoWsResponse for graphql_ws::ServerMessage<S> {
         fn into_ws_response(self) -> Result<String, ws::CloseReason> {
             serde_json::to_string(&self).map_err(|e| ws::CloseReason {
                 code: ws::CloseCode::Error,
@@ -456,7 +454,7 @@ pub mod subscriptions {
     #[derive(Debug)]
     struct Message(ws::Message);
 
-    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_transport_ws::Input<S> {
+    impl<S: ScalarValue> TryFrom<Message> for graphql_transport_ws::Input<S> {
         type Error = Error;
 
         fn try_from(msg: Message) -> Result<Self, Self::Error> {
@@ -470,7 +468,7 @@ pub mod subscriptions {
         }
     }
 
-    impl<S: ScalarValue> TryFrom<Message> for juniper_graphql_ws::ClientMessage<S> {
+    impl<S: ScalarValue> TryFrom<Message> for graphql_ws::ClientMessage<S> {
         type Error = Error;
 
         fn try_from(msg: Message) -> Result<Self, Self::Error> {

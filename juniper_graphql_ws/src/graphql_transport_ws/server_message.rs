@@ -1,11 +1,11 @@
-use std::{any::Any, fmt, marker::PhantomPinned};
+use juniper::{ExecutionError, Value};
+use serde::Serialize;
 
-use juniper::{ExecutionError, GraphQLError, Value};
-use serde::{Serialize, Serializer};
+pub use crate::server_message::ErrorPayload;
 
 /// Sent after execution of an operation. For queries and mutations, this is sent to the client
 /// once. For subscriptions, this is sent for every event in the event stream.
-#[derive(Debug, Serialize, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NextPayload<S> {
     /// The result data.
@@ -17,67 +17,8 @@ pub struct NextPayload<S> {
     pub errors: Vec<ExecutionError<S>>,
 }
 
-/// A payload for errors that can happen before execution. Errors that happen during execution are
-/// instead sent to the client via `NextPayload`. `ErrorPayload` is a wrapper for an owned
-/// `GraphQLError`.
-// XXX: Think carefully before deriving traits. This is self-referential (error references
-// _execution_params).
-pub struct ErrorPayload {
-    _execution_params: Option<Box<dyn Any + Send>>,
-    error: GraphQLError,
-    _marker: PhantomPinned,
-}
-
-impl ErrorPayload {
-    /// Creates a new [`ErrorPayload`] out of the provide `execution_params` and
-    /// [`GraphQLError`].
-    pub(crate) fn new(execution_params: Box<dyn Any + Send>, error: GraphQLError) -> Self {
-        Self {
-            _execution_params: Some(execution_params),
-            error,
-            _marker: PhantomPinned,
-        }
-    }
-
-    /// Returns the contained GraphQLError.
-    pub fn graphql_error(&self) -> &GraphQLError {
-        &self.error
-    }
-}
-
-impl fmt::Debug for ErrorPayload {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.error.fmt(f)
-    }
-}
-
-impl PartialEq for ErrorPayload {
-    fn eq(&self, other: &Self) -> bool {
-        self.error.eq(&other.error)
-    }
-}
-
-impl Serialize for ErrorPayload {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.error.serialize(serializer)
-    }
-}
-
-impl From<GraphQLError> for ErrorPayload {
-    fn from(error: GraphQLError) -> Self {
-        Self {
-            _execution_params: None,
-            error,
-            _marker: PhantomPinned,
-        }
-    }
-}
-
 /// ServerMessage defines the message types that servers can send.
-#[derive(Debug, Serialize, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum ServerMessage<S> {
@@ -111,7 +52,7 @@ pub enum ServerMessage<S> {
 
 #[cfg(test)]
 mod test {
-    use juniper::{graphql_value, DefaultScalarValue};
+    use juniper::{graphql_value, DefaultScalarValue, GraphQLError};
 
     use super::*;
 
