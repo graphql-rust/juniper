@@ -19,18 +19,12 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-subscriptions = [
-    "dep:actix",
-    "dep:actix-web-actors",
-    "dep:juniper_graphql_ws",
-    "dep:tokio",
-]
+subscriptions = ["dep:actix-ws", "dep:juniper_graphql_ws"]
 
 [dependencies]
-actix = { version = ">=0.12, <=0.14", optional = true }
 actix-http = "3.2"
 actix-web = "4.4"
-actix-web-actors = { version = "4.1", optional = true }
+actix-ws = { version = "0.2", optional = true }
 anyhow = "1.0.47"
 futures = "0.3.22"
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
@@ -39,7 +33,6 @@ http = "0.2.4"
 serde = { version = "1.0.122", features = ["derive"] }
 serde_json = "1.0.18"
 thiserror = "1.0"
-tokio = { version = "1.0", features = ["sync"], optional = true }
 
 [dev-dependencies]
 actix-cors = "0.6"

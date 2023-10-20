@@ -168,23 +168,15 @@ pub async fn playground_handler(
 #[cfg(feature = "subscriptions")]
 /// `juniper_actix` subscriptions handler implementation.
 pub mod subscriptions {
-    use std::{fmt, sync::Arc};
+    use std::{fmt, pin::pin, sync::Arc};
 
-    use actix::{
-        AsyncContext as _, ContextFutureSpawner as _, Handler, StreamHandler, WrapFuture as _,
-    };
     use actix_web::{
         http::header::{HeaderName, HeaderValue},
         web, HttpRequest, HttpResponse,
     };
-    use actix_web_actors::ws;
-    use futures::{
-        stream::{SplitSink, SplitStream},
-        SinkExt as _, Stream, StreamExt as _,
-    };
+    use futures::{future, SinkExt as _, StreamExt as _};
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, ArcSchema, Init};
-    use tokio::sync::Mutex;
 
     /// Serves by auto-selecting between the
     /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
@@ -261,22 +253,35 @@ pub mod subscriptions {
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
-        let (s_tx, s_rx) = graphql_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
+        let (mut resp, mut ws_tx, ws_rx) = actix_ws::handle(&req, stream)?;
+        let (s_tx, mut s_rx) = graphql_ws::Connection::new(ArcSchema(schema), init).split();
 
-        let mut resp = ws::start(
-            Actor {
-                tx: Arc::new(Mutex::new(s_tx)),
-                rx: Arc::new(Mutex::new(s_rx)),
-            },
-            &req,
-            stream,
-        )?;
+        actix_web::rt::spawn(async move {
+            let input = ws_rx
+                .map(|r| r.map(Message))
+                .forward(s_tx.sink_map_err(|e| match e {}));
+            let output = pin!(async move {
+                while let Some(msg) = s_rx.next().await {
+                    if ws_tx
+                        .text(serde_json::to_string(&msg).map_err(Error::Serde)?)
+                        .await
+                        .is_err()
+                    {
+                        return Ok(());
+                    }
+                }
+                _ = ws_tx.close(Some(actix_ws::CloseCode::Normal.into())).await;
+                Ok::<_, Error>(())
+            });
+
+            // TODO: Log `input` errors?
+            _ = future::select(input, output).await;
+        });
 
         resp.headers_mut().insert(
             HeaderName::from_static("sec-websocket-protocol"),
             HeaderValue::from_static("graphql-ws"),
         );
-
         Ok(resp)
     }
 
@@ -306,26 +311,53 @@ pub mod subscriptions {
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
-        let (s_tx, s_rx) =
+        let (mut resp, mut ws_tx, ws_rx) = actix_ws::handle(&req, stream)?;
+        let (s_tx, mut s_rx) =
             graphql_transport_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
 
-        let mut resp = ws::start(
-            Actor {
-                tx: Arc::new(Mutex::new(s_tx)),
-                rx: Arc::new(Mutex::new(s_rx)),
-            },
-            &req,
-            stream,
-        )?;
+        actix_web::rt::spawn(async move {
+            let input = ws_rx
+                .map(|r| r.map(Message))
+                .forward(s_tx.sink_map_err(|e| match e {}));
+            let output = pin!(async move {
+                while let Some(output) = s_rx.next().await {
+                    match output {
+                        graphql_transport_ws::Output::Message(msg) => {
+                            if ws_tx
+                                .text(serde_json::to_string(&msg).map_err(Error::Serde)?)
+                                .await
+                                .is_err()
+                            {
+                                return Ok(());
+                            }
+                        }
+                        graphql_transport_ws::Output::Close { code, message } => {
+                            _ = ws_tx
+                                .close(Some(actix_ws::CloseReason {
+                                    code: code.into(),
+                                    description: Some(message),
+                                }))
+                                .await;
+                            return Ok(());
+                        }
+                    }
+                }
+                _ = ws_tx.close(Some(actix_ws::CloseCode::Normal.into())).await;
+                Ok::<_, Error>(())
+            });
+
+            // TODO: Log `input` errors?
+            _ = future::select(input, output).await;
+        });
 
         resp.headers_mut().insert(
             HeaderName::from_static("sec-websocket-protocol"),
             HeaderValue::from_static("graphql-transport-ws"),
         );
-
         Ok(resp)
     }
 
+    /*
     type ConnectionSplitSink<Conn> = Arc<Mutex<SplitSink<Conn, Message>>>;
     type ConnectionSplitStream<Conn> = Arc<Mutex<SplitStream<Conn>>>;
 
@@ -449,21 +481,24 @@ pub mod subscriptions {
                 description: Some(format!("error serializing response: {e}")),
             })
         }
-    }
+    }*/
 
     #[derive(Debug)]
-    struct Message(ws::Message);
+    struct Message(actix_ws::Message);
 
     impl<S: ScalarValue> TryFrom<Message> for graphql_transport_ws::Input<S> {
         type Error = Error;
 
         fn try_from(msg: Message) -> Result<Self, Self::Error> {
             match msg.0 {
-                ws::Message::Text(text) => serde_json::from_slice(text.as_bytes())
+                actix_ws::Message::Text(text) => serde_json::from_slice(text.as_bytes())
                     .map(Self::Message)
                     .map_err(Error::Serde),
-                ws::Message::Close(_) => Ok(Self::Close),
-                _ => Err(Error::UnexpectedClientMessage),
+                actix_ws::Message::Binary(bytes) => serde_json::from_slice(bytes.as_ref())
+                    .map(Self::Message)
+                    .map_err(Error::Serde),
+                actix_ws::Message::Close(_) => Ok(Self::Close),
+                other => Err(Error::UnexpectedClientMessage(other)),
             }
         }
     }
@@ -473,31 +508,34 @@ pub mod subscriptions {
 
         fn try_from(msg: Message) -> Result<Self, Self::Error> {
             match msg.0 {
-                ws::Message::Text(text) => {
+                actix_ws::Message::Text(text) => {
                     serde_json::from_slice(text.as_bytes()).map_err(Error::Serde)
                 }
-                ws::Message::Close(_) => Ok(Self::ConnectionTerminate),
-                _ => Err(Error::UnexpectedClientMessage),
+                actix_ws::Message::Binary(bytes) => {
+                    serde_json::from_slice(bytes.as_ref()).map_err(Error::Serde)
+                }
+                actix_ws::Message::Close(_) => Ok(Self::ConnectionTerminate),
+                other => Err(Error::UnexpectedClientMessage(other)),
             }
         }
     }
 
-    /// Errors that can happen while handling client messages
+    /// Possible errors of serving an [`actix_ws`] connection.
     #[derive(Debug)]
     enum Error {
-        /// Errors that can happen while deserializing client messages
+        /// Deserializing of a client or server message failed.
         Serde(serde_json::Error),
 
-        /// Error for unexpected client messages
-        UnexpectedClientMessage,
+        /// Unexpected client [`actix_ws::Message`].
+        UnexpectedClientMessage(actix_ws::Message),
     }
 
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Self::Serde(e) => write!(f, "serde error: {e}"),
-                Self::UnexpectedClientMessage => {
-                    write!(f, "unexpected message received from client")
+                Self::Serde(e) => write!(f, "`serde` error: {e}"),
+                Self::UnexpectedClientMessage(m) => {
+                    write!(f, "unexpected message received from client: {m:?}")
                 }
             }
         }
