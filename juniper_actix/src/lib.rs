@@ -262,19 +262,29 @@ pub mod subscriptions {
                 .forward(s_tx.sink_map_err(|e| match e {}));
             let output = pin!(async move {
                 while let Some(msg) = s_rx.next().await {
-                    if ws_tx
-                        .text(serde_json::to_string(&msg).map_err(Error::Serde)?)
-                        .await
-                        .is_err()
-                    {
-                        return Ok(());
+                    match serde_json::to_string(&msg) {
+                        Ok(m) => {
+                            if ws_tx.text(m).await.is_err() {
+                                return;
+                            }
+                        }
+                        Err(e) => {
+                            _ = ws_tx
+                                .close(Some(actix_ws::CloseReason {
+                                    code: actix_ws::CloseCode::Error,
+                                    description: Some(format!("error serializing response: {e}")),
+                                }))
+                                .await;
+                            return;
+                        }
                     }
                 }
-                _ = ws_tx.close(Some(actix_ws::CloseCode::Normal.into())).await;
-                Ok::<_, Error>(())
+                _ = ws_tx
+                    .close(Some((actix_ws::CloseCode::Normal, "Normal Closure").into()))
+                    .await;
             });
 
-            // TODO: Log `input` errors?
+            // No errors can be returned here, so ignoring is OK.
             _ = future::select(input, output).await;
         });
 
@@ -313,7 +323,7 @@ pub mod subscriptions {
     {
         let (mut resp, mut ws_tx, ws_rx) = actix_ws::handle(&req, stream)?;
         let (s_tx, mut s_rx) =
-            graphql_transport_ws::Connection::new(ArcSchema(schema), init).split::<Message>();
+            graphql_transport_ws::Connection::new(ArcSchema(schema), init).split();
 
         actix_web::rt::spawn(async move {
             let input = ws_rx
@@ -323,12 +333,23 @@ pub mod subscriptions {
                 while let Some(output) = s_rx.next().await {
                     match output {
                         graphql_transport_ws::Output::Message(msg) => {
-                            if ws_tx
-                                .text(serde_json::to_string(&msg).map_err(Error::Serde)?)
-                                .await
-                                .is_err()
-                            {
-                                return Ok(());
+                            match serde_json::to_string(&msg) {
+                                Ok(m) => {
+                                    if ws_tx.text(m).await.is_err() {
+                                        return;
+                                    }
+                                }
+                                Err(e) => {
+                                    _ = ws_tx
+                                        .close(Some(actix_ws::CloseReason {
+                                            code: actix_ws::CloseCode::Error,
+                                            description: Some(format!(
+                                                "error serializing response: {e}",
+                                            )),
+                                        }))
+                                        .await;
+                                    return;
+                                }
                             }
                         }
                         graphql_transport_ws::Output::Close { code, message } => {
@@ -338,15 +359,16 @@ pub mod subscriptions {
                                     description: Some(message),
                                 }))
                                 .await;
-                            return Ok(());
+                            return;
                         }
                     }
                 }
-                _ = ws_tx.close(Some(actix_ws::CloseCode::Normal.into())).await;
-                Ok::<_, Error>(())
+                _ = ws_tx
+                    .close(Some((actix_ws::CloseCode::Normal, "Normal Closure").into()))
+                    .await;
             });
 
-            // TODO: Log `input` errors?
+            // No errors can be returned here, so ignoring is OK.
             _ = future::select(input, output).await;
         });
 
@@ -356,132 +378,6 @@ pub mod subscriptions {
         );
         Ok(resp)
     }
-
-    /*
-    type ConnectionSplitSink<Conn> = Arc<Mutex<SplitSink<Conn, Message>>>;
-    type ConnectionSplitStream<Conn> = Arc<Mutex<SplitStream<Conn>>>;
-
-    /// [`actix::Actor`], coordinating messages between [`actix_web`] and [`juniper_graphql_ws`]:
-    /// - incoming [`ws::Message`] -> [`Actor`] -> [`juniper`]
-    /// - [`juniper`] -> [`Actor`] -> response [`ws::Message`]
-    struct Actor<Conn> {
-        tx: ConnectionSplitSink<Conn>,
-        rx: ConnectionSplitStream<Conn>,
-    }
-
-    impl<Conn> StreamHandler<Result<ws::Message, ws::ProtocolError>> for Actor<Conn>
-    where
-        Self: actix::Actor<Context = ws::WebsocketContext<Self>>,
-        Conn: futures::Sink<Message>,
-        <Conn as futures::Sink<Message>>::Error: fmt::Debug,
-    {
-        fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-            #[allow(clippy::single_match)]
-            match msg {
-                Ok(msg) => {
-                    let tx = self.tx.clone();
-
-                    // TODO: Somehow this implementation always closes as `1006: Abnormal closure`
-                    //       due to excessive polling of `tx` part.
-                    //       Needs to be reworked.
-                    async move {
-                        tx.lock()
-                            .await
-                            .send(Message(msg))
-                            .await
-                            .expect("Infallible: this should not happen");
-                    }
-                    .into_actor(self)
-                    .wait(ctx);
-                }
-                Err(_) => {
-                    // TODO: trace
-                    // ignore the message if there's a transport error
-                }
-            }
-        }
-    }
-
-    /// [`juniper`] -> [`Actor`].
-    impl<Conn> actix::Actor for Actor<Conn>
-    where
-        Conn: Stream + 'static,
-        <Conn as Stream>::Item: IntoWsResponse + Send,
-    {
-        type Context = ws::WebsocketContext<Self>;
-
-        fn started(&mut self, ctx: &mut Self::Context) {
-            let stream = self.rx.clone();
-            let addr = ctx.address();
-
-            let fut = async move {
-                let mut stream = stream.lock().await;
-                while let Some(msg) = stream.next().await {
-                    // Sending the `msg` to `self`, so that it can be forwarded back to the client.
-                    addr.do_send(ServerMessage(msg));
-                }
-            }
-            .into_actor(self);
-
-            // TODO: trace
-            ctx.spawn(fut);
-        }
-
-        fn stopped(&mut self, _: &mut Self::Context) {
-            // TODO: trace
-        }
-    }
-
-    /// [`Actor`] -> response [`ws::Message`].
-    impl<Conn, M> Handler<ServerMessage<M>> for Actor<Conn>
-    where
-        Conn: Stream<Item = M> + 'static,
-        M: IntoWsResponse + Send,
-    {
-        type Result = ();
-
-        fn handle(&mut self, msg: ServerMessage<M>, ctx: &mut Self::Context) -> Self::Result {
-            match msg.0.into_ws_response() {
-                Ok(msg) => ctx.text(msg),
-                // TODO: trace
-                Err(reason) => ctx.close(Some(reason)),
-            }
-        }
-    }
-
-    #[derive(actix::Message)]
-    #[rtype(result = "()")]
-    struct ServerMessage<T>(T);
-
-    /// Conversion of a [`ServerMessage`] into a response [`ws::Message`].
-    pub trait IntoWsResponse {
-        /// Converts this [`ServerMessage`] into response [`ws::Message`].
-        fn into_ws_response(self) -> Result<String, ws::CloseReason>;
-    }
-
-    impl<S: ScalarValue> IntoWsResponse for graphql_transport_ws::Output<S> {
-        fn into_ws_response(self) -> Result<String, ws::CloseReason> {
-            match self {
-                Self::Message(msg) => serde_json::to_string(&msg).map_err(|e| ws::CloseReason {
-                    code: ws::CloseCode::Error,
-                    description: Some(format!("error serializing response: {e}")),
-                }),
-                Self::Close { code, message } => Err(ws::CloseReason {
-                    code: code.into(),
-                    description: Some(message),
-                }),
-            }
-        }
-    }
-
-    impl<S: ScalarValue> IntoWsResponse for graphql_ws::ServerMessage<S> {
-        fn into_ws_response(self) -> Result<String, ws::CloseReason> {
-            serde_json::to_string(&self).map_err(|e| ws::CloseReason {
-                code: ws::CloseCode::Error,
-                description: Some(format!("error serializing response: {e}")),
-            })
-        }
-    }*/
 
     #[derive(Debug)]
     struct Message(actix_ws::Message);
@@ -552,7 +448,7 @@ mod tests {
     use actix_web::{
         dev::ServiceResponse,
         http,
-        http::header::CONTENT_TYPE,
+        http::header::{ACCEPT, CONTENT_TYPE},
         test::{self, TestRequest},
         web::Data,
         App,
@@ -565,7 +461,6 @@ mod tests {
     };
 
     use super::*;
-    use actix_web::http::header::ACCEPT;
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
