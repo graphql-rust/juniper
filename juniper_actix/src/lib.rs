@@ -765,41 +765,37 @@ mod tests {
 #[cfg(feature = "subscriptions")]
 #[cfg(test)]
 mod subscription_tests {
-    use std::time::Duration;
-
+    use actix_http::ws;
     use actix_test::start;
-    use actix_web::{
-        web::{self, Data},
-        App, Error, HttpRequest, HttpResponse,
-    };
-    use actix_web_actors::ws;
+    use actix_web::{web, App, Error, HttpRequest, HttpResponse};
     use juniper::{
         futures::{SinkExt, StreamExt},
-        http::tests::{run_ws_test_suite, WsIntegration, WsIntegrationMessage},
+        http::tests::{graphql_ws, WsIntegration, WsIntegrationMessage},
         tests::fixtures::starwars::schema::{Database, Query, Subscription},
         EmptyMutation, LocalBoxFuture,
     };
     use juniper_graphql_ws::ConnectionConfig;
     use tokio::time::timeout;
 
-    use super::subscriptions::graphql_ws_handler;
+    use super::subscriptions;
 
-    #[derive(Default)]
-    struct TestActixWsIntegration;
+    struct TestWsIntegration(&'static str);
 
-    impl TestActixWsIntegration {
+    impl TestWsIntegration {
         async fn run_async(
             &self,
             messages: Vec<WsIntegrationMessage>,
         ) -> Result<(), anyhow::Error> {
+            let proto = self.0;
+
             let mut server = start(|| {
                 App::new()
-                    .app_data(Data::new(Schema::new(
+                    .app_data(web::Data::new(Schema::new(
                         Query,
                         EmptyMutation::<Database>::new(),
                         Subscription,
                     )))
-                    .service(web::resource("/subscriptions").to(subscriptions))
+                    .service(web::resource("/subscriptions").to(subscription(proto)))
             });
             let mut framed = server.ws_at("/subscriptions").await.unwrap();
 
@@ -807,12 +803,12 @@ mod subscription_tests {
                 match message {
                     WsIntegrationMessage::Send(body) => {
                         framed
-                            .send(ws::Message::Text(body.to_owned().into()))
+                            .send(ws::Message::Text(body.to_string().into()))
                             .await
                             .map_err(|e| anyhow::anyhow!("WS error: {e:?}"))?;
                     }
                     WsIntegrationMessage::Expect(body, message_timeout) => {
-                        let frame = timeout(Duration::from_millis(*message_timeout), framed.next())
+                        let frame = timeout(*message_timeout, framed.next())
                             .await
                             .map_err(|_| anyhow::anyhow!("Timed-out waiting for message"))?
                             .ok_or_else(|| anyhow::anyhow!("Empty message received"))?
@@ -820,16 +816,12 @@ mod subscription_tests {
 
                         match frame {
                             ws::Frame::Text(ref bytes) => {
-                                let expected_value =
-                                    serde_json::from_str::<serde_json::Value>(body)
-                                        .map_err(|e| anyhow::anyhow!("Serde error: {e:?}"))?;
-
                                 let value: serde_json::Value = serde_json::from_slice(bytes)
                                     .map_err(|e| anyhow::anyhow!("Serde error: {e:?}"))?;
 
-                                if value != expected_value {
+                                if value != *body {
                                     return Err(anyhow::anyhow!(
-                                        "Expected message: {expected_value}. \
+                                        "Expected message: {body}. \
                                          Received message: {value}",
                                     ));
                                 }
@@ -844,7 +836,7 @@ mod subscription_tests {
         }
     }
 
-    impl WsIntegration for TestActixWsIntegration {
+    impl WsIntegration for TestWsIntegration {
         fn run(
             &self,
             messages: Vec<WsIntegrationMessage>,
@@ -855,20 +847,32 @@ mod subscription_tests {
 
     type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 
-    async fn subscriptions(
-        req: HttpRequest,
-        stream: web::Payload,
-        schema: web::Data<Schema>,
-    ) -> Result<HttpResponse, Error> {
-        let context = Database::new();
-        let schema = schema.into_inner();
-        let config = ConnectionConfig::new(context);
+    fn subscription(
+        proto: &'static str,
+    ) -> impl actix_web::Handler<
+        (HttpRequest, web::Payload, web::Data<Schema>),
+        Output = Result<HttpResponse, Error>,
+    > {
+        move |req: HttpRequest, stream: web::Payload, schema: web::Data<Schema>| async move {
+            let context = Database::new();
+            let schema = schema.into_inner();
+            let config = ConnectionConfig::new(context);
 
-        graphql_ws_handler(req, stream, schema, config).await
+            if proto == "graphql-ws" {
+                subscriptions::graphql_ws_handler(req, stream, schema, config).await
+            } else {
+                subscriptions::graphql_transport_ws_handler(req, stream, schema, config).await
+            }
+        }
     }
 
     #[actix_web::rt::test]
-    async fn test_actix_ws_integration() {
-        run_ws_test_suite(&mut TestActixWsIntegration).await;
+    async fn test_graphql_ws_integration() {
+        graphql_ws::run_test_suite(&mut TestWsIntegration("graphql-ws")).await;
     }
+
+    //#[actix_web::rt::test]
+    //async fn test_graphql_transport_ws_integration() {
+    //    graphql_ws::run_test_suite(&mut TestWsIntegration("graphql-transport-ws")).await;
+    //}
 }
