@@ -478,6 +478,30 @@ where
             },
         }
     }
+
+    /// Performs polling of the [`Sink`] part of this [`Connection`].
+    ///
+    /// Effectively represents an implementation of [`Sink::poll_ready()`] and
+    /// [`Sink::poll_flush()`] methods.
+    fn poll_sink(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), &'static str>> {
+        match &mut self.sink_state {
+            ConnectionSinkState::Ready { .. } => Poll::Ready(Ok(())),
+            ConnectionSinkState::HandlingMessage { ref mut result } => {
+                match Pin::new(result).poll(cx) {
+                    Poll::Ready((state, reactions)) => {
+                        self.reactions.push(reactions);
+                        self.sink_state = ConnectionSinkState::Ready { state };
+                        if let Some(waker) = self.stream_waker.take() {
+                            waker.wake();
+                        }
+                        Poll::Ready(Ok(()))
+                    }
+                    Poll::Pending => Poll::Pending,
+                }
+            }
+            ConnectionSinkState::Closed => Poll::Ready(Err("polled after close")),
+        }
+    }
 }
 
 impl<S, I, T> Sink<T> for Connection<S, I>
@@ -489,21 +513,9 @@ where
 {
     type Error = Infallible;
 
-    fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), Self::Error>> {
-        match &mut self.sink_state {
-            ConnectionSinkState::Ready { .. } => Poll::Ready(Ok(())),
-            ConnectionSinkState::HandlingMessage { ref mut result } => {
-                match Pin::new(result).poll(cx) {
-                    Poll::Ready((state, reactions)) => {
-                        self.reactions.push(reactions);
-                        self.sink_state = ConnectionSinkState::Ready { state };
-                        Poll::Ready(Ok(()))
-                    }
-                    Poll::Pending => Poll::Pending,
-                }
-            }
-            ConnectionSinkState::Closed => panic!("poll_ready called after close"),
-        }
+    fn poll_ready(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), Self::Error>> {
+        self.poll_sink(cx)
+            .map_err(|e| panic!("`Connection::poll_ready()`: {e}"))
     }
 
     fn start_send(self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
@@ -538,19 +550,19 @@ where
                     }
                 }
             }
-            _ => panic!("start_send called when not ready"),
+            _ => panic!("`Sink::start_send()`: called when not ready"),
         };
         Ok(())
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), Self::Error>> {
-        <Self as Sink<T>>::poll_ready(self, cx)
+        self.poll_sink(cx).map(|_| Ok(()))
     }
 
     fn poll_close(mut self: Pin<&mut Self>, _: &mut Context) -> Poll<Result<(), Self::Error>> {
         self.sink_state = ConnectionSinkState::Closed;
         if let Some(waker) = self.stream_waker.take() {
-            // Wake up the stream so it can close too.
+            // Wake up the `Stream` so it can close too.
             waker.wake();
         }
         Poll::Ready(Ok(()))
@@ -567,9 +579,7 @@ where
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         self.stream_waker = Some(cx.waker().clone());
 
-        if let ConnectionSinkState::Closed = self.sink_state {
-            return Poll::Ready(None);
-        } else if self.stream_terminated {
+        if self.stream_terminated {
             return Poll::Ready(None);
         }
 
@@ -590,6 +600,11 @@ where
                 _ => (),
             }
         }
+
+        if let ConnectionSinkState::Closed = self.sink_state {
+            return Poll::Ready(None);
+        }
+
         Poll::Pending
     }
 }
