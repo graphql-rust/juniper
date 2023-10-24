@@ -392,8 +392,8 @@ pub mod subscriptions {
     impl fmt::Display for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Self::Warp(e) => write!(f, "warp error: {e}"),
-                Self::Serde(e) => write!(f, "serde error: {e}"),
+                Self::Warp(e) => write!(f, "`warp` error: {e}"),
+                Self::Serde(e) => write!(f, "`serde` error: {e}"),
             }
         }
     }
