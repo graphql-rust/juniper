@@ -613,6 +613,9 @@ pub mod tests {
     /// Default value in milliseconds for how long to wait for an incoming WebSocket message.
     pub const WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT: Duration = Duration::from_millis(100);
 
+    /// Integration tests for the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
+    ///
+    /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
     pub mod graphql_ws {
         use serde_json::json;
 
@@ -711,6 +714,143 @@ pub mod tests {
                 WsIntegrationMessage::Send(json!({
                     "id": "1",
                     "type": "start",
+                    "payload": {
+                        "variables": {},
+                        "extensions": {},
+                        "operationName": null,
+                        "query": "subscription { asyncHuman }",
+                    },
+                })),
+                WsIntegrationMessage::Expect(
+                    json!({
+                        "type": "error",
+                        "id": "1",
+                        "payload": [{
+                            "message": "Field \"asyncHuman\" of type \"Human!\" must have a selection \
+                                        of subfields. Did you mean \"asyncHuman { ... }\"?",
+                            "locations": [{
+                                "line": 1,
+                                "column": 16,
+                            }],
+                        }],
+                    }),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+            ];
+
+            integration.run(messages).await.unwrap();
+        }
+    }
+
+    /// Integration tests for the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new].
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    pub mod graphql_transport_ws {
+        use serde_json::json;
+
+        use super::{WsIntegration, WsIntegrationMessage, WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT};
+
+        #[allow(missing_docs)]
+        pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
+            println!("Running `graphql-ws` test suite for integration");
+
+            println!("  - graphql_ws::test_simple_subscription");
+            test_simple_subscription(integration).await;
+
+            println!("  - graphql_ws::test_invalid_json");
+            test_invalid_json(integration).await;
+
+            println!("  - graphql_ws::test_invalid_query");
+            test_invalid_query(integration).await;
+        }
+
+        async fn test_simple_subscription<T: WsIntegration>(integration: &T) {
+            let messages = vec![
+                WsIntegrationMessage::Send(json!({
+                    "type": "connection_init",
+                    "payload": {},
+                })),
+                WsIntegrationMessage::Expect(
+                    json!({"type": "connection_ack"}),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+                WsIntegrationMessage::Expect(
+                    json!({"type": "pong"}),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+                WsIntegrationMessage::Send(json!({"type": "ping"})),
+                WsIntegrationMessage::Expect(
+                    json!({"type": "pong"}),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+                WsIntegrationMessage::Send(json!({
+                    "id": "1",
+                    "type": "subscribe",
+                    "payload": {
+                        "variables": {},
+                        "extensions": {},
+                        "operationName": null,
+                        "query": "subscription { asyncHuman { id, name, homePlanet } }",
+                    },
+                })),
+                WsIntegrationMessage::Expect(
+                    json!({
+                        "id": "1",
+                        "type": "next",
+                        "payload": {
+                            "data": {
+                                "asyncHuman": {
+                                    "id": "1000",
+                                    "name": "Luke Skywalker",
+                                    "homePlanet": "Tatooine",
+                                },
+                            },
+                        },
+                    }),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+            ];
+
+            integration.run(messages).await.unwrap();
+        }
+
+        async fn test_invalid_json<T: WsIntegration>(integration: &T) {
+            let messages = vec![
+                WsIntegrationMessage::Send(json!({"whatever": "invalid value"})),
+                WsIntegrationMessage::Expect(
+                    json!({
+                        "code": 4400,
+                        "description": "`serde` error: missing field `type` at line 1 column 28",
+                    }),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+            ];
+
+            integration.run(messages).await.unwrap();
+        }
+
+        async fn test_invalid_query<T: WsIntegration>(integration: &T) {
+            let messages = vec![
+                WsIntegrationMessage::Send(json!({
+                    "type": "connection_init",
+                    "payload": {},
+                })),
+                WsIntegrationMessage::Expect(
+                    json!({"type": "connection_ack"}),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+                WsIntegrationMessage::Expect(
+                    json!({"type": "pong"}),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+                WsIntegrationMessage::Send(json!({"type": "ping"})),
+                WsIntegrationMessage::Expect(
+                    json!({"type": "pong"}),
+                    WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT,
+                ),
+                WsIntegrationMessage::Send(json!({
+                    "id": "1",
+                    "type": "subscribe",
                     "payload": {
                         "variables": {},
                         "extensions": {},

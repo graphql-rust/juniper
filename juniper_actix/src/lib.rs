@@ -770,7 +770,7 @@ mod subscription_tests {
     use actix_web::{web, App, Error, HttpRequest, HttpResponse};
     use juniper::{
         futures::{SinkExt, StreamExt},
-        http::tests::{graphql_ws, WsIntegration, WsIntegrationMessage},
+        http::tests::{graphql_transport_ws, graphql_ws, WsIntegration, WsIntegrationMessage},
         tests::fixtures::starwars::schema::{Database, Query, Subscription},
         EmptyMutation, LocalBoxFuture,
     };
@@ -826,7 +826,19 @@ mod subscription_tests {
                                     ));
                                 }
                             }
-                            _ => return Err(anyhow::anyhow!("Received non-text frame")),
+                            ws::Frame::Close(Some(reason)) => {
+                                let actual = serde_json::json!({
+                                    "code": u16::from(reason.code),
+                                    "description": reason.description,
+                                });
+                                if actual != *body {
+                                    return Err(anyhow::anyhow!(
+                                        "Expected message: {body}. \
+                                         Received message: {actual}",
+                                    ));
+                                }
+                            }
+                            f => return Err(anyhow::anyhow!("Received non-text frame: {f:?}")),
                         }
                     }
                 }
@@ -871,8 +883,8 @@ mod subscription_tests {
         graphql_ws::run_test_suite(&mut TestWsIntegration("graphql-ws")).await;
     }
 
-    //#[actix_web::rt::test]
-    //async fn test_graphql_transport_ws_integration() {
-    //    graphql_ws::run_test_suite(&mut TestWsIntegration("graphql-transport-ws")).await;
-    //}
+    #[actix_web::rt::test]
+    async fn test_graphql_transport_ws_integration() {
+        graphql_transport_ws::run_test_suite(&mut TestWsIntegration("graphql-transport-ws")).await;
+    }
 }
