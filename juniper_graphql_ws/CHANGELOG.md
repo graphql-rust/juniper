@@ -16,7 +16,7 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 ### Added
 
-- `graphql_transport_ws` module implementing [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-5.14.0] as of 5.14.0 version of [`graphql-ws` npm package] behind `graphql-transport-ws` Cargo feature. ([#1158], [#1191], [#1196], [#1022])
+- `graphql_transport_ws` module implementing [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-5.14.0] as of 5.14.0 version of [`graphql-ws` npm package] behind `graphql-transport-ws` Cargo feature. ([#1158], [#1191], [#1196], [#1197], [#1022])
 
 ### Changed
 
@@ -26,6 +26,7 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 [#1158]: /../../pull/1158
 [#1191]: /../../pull/1191
 [#1196]: /../../pull/1196
+[#1197]: /../../pull/1197
 [proto-5.14.0]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [proto-legacy]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 
