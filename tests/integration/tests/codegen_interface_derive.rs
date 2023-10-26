@@ -2,8 +2,6 @@
 
 pub mod common;
 
-use std::marker::PhantomData;
-
 use juniper::{
     execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, FieldError,
     FieldResult, GraphQLInterface, GraphQLObject, GraphQLUnion, IntoFieldError, ScalarValue, ID,
@@ -11,12 +9,16 @@ use juniper::{
 
 use self::common::util::{schema, schema_with_scalar};
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 mod no_implers {
     use super::*;
 
     #[derive(GraphQLInterface)]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     struct QueryRoot;
@@ -83,19 +85,19 @@ mod trivial {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid])]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue)]
@@ -312,19 +314,19 @@ mod explicit_alias {
     #[derive(GraphQLInterface)]
     #[graphql(enum = CharacterEnum, for = [Human, Droid])]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterEnum)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterEnum)]
@@ -488,19 +490,19 @@ mod trivial_async {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid])]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue)]
@@ -725,24 +727,24 @@ mod fallible_field {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid])]
     struct Character {
-        id: Result<String, CustomError>,
+        id: prelude::Result<prelude::String, CustomError>,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue)]
     impl Droid {
-        fn id(&self) -> Result<String, CustomError> {
+        fn id(&self) -> prelude::Result<prelude::String, CustomError> {
             Ok(self.id.clone())
         }
 
@@ -892,22 +894,22 @@ mod generic {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid])]
     struct Character<A = (), B: ?Sized = ()> {
-        id: String,
+        id: prelude::String,
 
         #[graphql(skip)]
-        _phantom: PhantomData<(A, B)>,
+        _phantom: std::marker::PhantomData<(A, B)>,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue<(), u8>)]
@@ -1042,14 +1044,14 @@ mod description_from_doc_comment {
     struct Character {
         /// Rust `id` docs.
         /// Long.
-        id: String,
+        id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct QueryRoot;
@@ -1097,18 +1099,18 @@ mod deprecation_from_attr {
     #[derive(GraphQLInterface)]
     #[graphql(for = Human)]
     struct Character {
-        id: String,
+        id: prelude::String,
 
         #[deprecated]
-        a: String,
+        a: prelude::String,
 
         #[deprecated(note = "Use `id`.")]
-        b: String,
+        b: prelude::String,
     }
 
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue)]
@@ -1125,7 +1127,7 @@ mod deprecation_from_attr {
             "a"
         }
 
-        fn b() -> String {
+        fn b() -> prelude::String {
             "b".into()
         }
     }
@@ -1239,23 +1241,23 @@ mod explicit_name_description_and_deprecation {
         /// Rust `id` docs.
         #[graphql(name = "myId", desc = "My character ID.", deprecated = "Not used.")]
         #[deprecated(note = "Should be omitted.")]
-        id: String,
+        id: prelude::String,
 
         #[graphql(deprecated)]
         #[deprecated(note = "Should be omitted.")]
-        a: String,
+        a: prelude::String,
 
-        b: String,
+        b: prelude::String,
     }
 
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue)]
     impl Human {
-        fn my_id(&self, #[graphql(name = "myName")] _: Option<String>) -> &str {
+        fn my_id(&self, #[graphql(name = "myName")] _: prelude::Option<prelude::String>) -> &str {
             &self.id
         }
 
@@ -1263,7 +1265,7 @@ mod explicit_name_description_and_deprecation {
             &self.home_planet
         }
 
-        fn a() -> String {
+        fn a() -> prelude::String {
             "a".into()
         }
 
@@ -1427,7 +1429,7 @@ mod renamed_all_fields_and_args {
     #[derive(GraphQLInterface)]
     #[graphql(rename_all = "none", for = Human)]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     struct Human;
@@ -1503,19 +1505,19 @@ mod explicit_scalar {
     #[graphql(for = [Human, Droid])]
     #[graphql(scalar = DefaultScalarValue)]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue, scalar = DefaultScalarValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue, scalar = DefaultScalarValue)]
@@ -1633,19 +1635,19 @@ mod custom_scalar {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid], scalar = MyScalarValue)]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue, scalar = MyScalarValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue, scalar = MyScalarValue)]
@@ -1761,19 +1763,19 @@ mod explicit_generic_scalar {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid], scalar = S)]
     struct Character<S: ScalarValue = DefaultScalarValue> {
-        id: FieldResult<String, S>,
+        id: FieldResult<prelude::String, S>,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(scalar = S: ScalarValue, impl = CharacterValue<S>)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue<__S>)]
@@ -1887,24 +1889,24 @@ mod bounded_generic_scalar {
     use super::*;
 
     #[derive(GraphQLInterface)]
-    #[graphql(for = [Human, Droid], scalar = S: ScalarValue + Clone)]
+    #[graphql(for = [Human, Droid], scalar = S: ScalarValue + prelude::Clone)]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
-    #[graphql(impl = CharacterValue, scalar = S: ScalarValue + Clone)]
+    #[graphql(impl = CharacterValue, scalar = S: ScalarValue + prelude::Clone)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
-    #[graphql_object(impl = CharacterValue, scalar = S: ScalarValue + Clone)]
+    #[graphql_object(impl = CharacterValue, scalar = S: ScalarValue + prelude::Clone)]
     impl Droid {
         fn id(&self) -> &str {
             &self.id
@@ -2017,10 +2019,10 @@ mod ignored_method {
     #[derive(GraphQLInterface)]
     #[graphql(for = Human)]
     struct Character {
-        id: String,
+        id: prelude::String,
 
         #[graphql(ignore)]
-        ignored: Option<Human>,
+        ignored: prelude::Option<Human>,
 
         #[graphql(skip)]
         skipped: i32,
@@ -2029,8 +2031,8 @@ mod ignored_method {
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct QueryRoot;
@@ -2115,19 +2117,19 @@ mod field_return_subtyping {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid])]
     struct Character {
-        id: Option<String>,
+        id: prelude::Option<prelude::String>,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue)]
@@ -2260,21 +2262,21 @@ mod field_return_union_subtyping {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid])]
     struct Character {
-        id: Option<String>,
+        id: prelude::Option<prelude::String>,
         key_feature: KeyFeature,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
         key_feature: Knowledge,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
         strength: i32,
     }
 
@@ -2421,28 +2423,29 @@ mod nullable_argument_subtyping {
     #[derive(GraphQLInterface)]
     #[graphql(for = [Human, Droid])]
     struct Character {
-        id: Option<String>,
+        id: prelude::Option<prelude::String>,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 
     struct Droid {
-        id: String,
-        primary_function: String,
+        id: prelude::String,
+        primary_function: prelude::String,
     }
 
     #[graphql_object(impl = CharacterValue)]
     impl Droid {
-        fn id(&self, is_present: Option<bool>) -> &str {
-            is_present
-                .unwrap_or_default()
-                .then_some(&*self.id)
-                .unwrap_or("missing")
+        fn id(&self, is_present: prelude::Option<bool>) -> &str {
+            if is_present.unwrap_or_default() {
+                &self.id
+            } else {
+                "missing"
+            }
         }
 
         fn primary_function(&self) -> &str {
@@ -2552,21 +2555,21 @@ mod simple_subtyping {
     #[derive(GraphQLInterface)]
     #[graphql(for = [ResourceValue, Endpoint])]
     struct Node {
-        id: Option<ID>,
+        id: prelude::Option<ID>,
     }
 
     #[derive(GraphQLInterface)]
     #[graphql(impl = NodeValue, for = Endpoint)]
     struct Resource {
         id: ID,
-        url: Option<String>,
+        url: prelude::Option<prelude::String>,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = [ResourceValue, NodeValue])]
     struct Endpoint {
         id: ID,
-        url: String,
+        url: prelude::String,
     }
 
     struct QueryRoot;
@@ -2811,7 +2814,7 @@ mod branching_subtyping {
     #[graphql(impl = NodeValue, for = Luke)]
     struct Human {
         id: ID,
-        home_planet: String,
+        home_planet: prelude::String,
     }
 
     #[derive(GraphQLObject)]
@@ -2824,7 +2827,7 @@ mod branching_subtyping {
     #[graphql(impl = NodeValue, for = R2D2)]
     struct Droid {
         id: ID,
-        primary_function: String,
+        primary_function: prelude::String,
     }
 
     #[derive(GraphQLObject)]
@@ -2837,15 +2840,15 @@ mod branching_subtyping {
     #[graphql(impl = [HumanValue, NodeValue])]
     struct Luke {
         id: ID,
-        home_planet: String,
-        father: String,
+        home_planet: prelude::String,
+        father: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = [DroidValue, NodeValue])]
     struct R2D2 {
         id: ID,
-        primary_function: String,
+        primary_function: prelude::String,
         charge: f64,
     }
 
@@ -3091,14 +3094,14 @@ mod preserves_visibility {
         #[derive(GraphQLInterface)]
         #[graphql(for = Human)]
         pub(crate) struct Character {
-            id: String,
+            id: prelude::String,
         }
 
         #[derive(GraphQLObject)]
         #[graphql(impl = CharacterValue)]
         pub(crate) struct Human {
-            id: String,
-            home_planet: String,
+            id: prelude::String,
+            home_planet: prelude::String,
         }
     }
 }
@@ -3111,13 +3114,13 @@ mod has_no_missing_docs {
     #[derive(GraphQLInterface)]
     #[graphql(for = Human)]
     pub struct Character {
-        pub id: String,
+        pub id: prelude::String,
     }
 
     #[derive(GraphQLObject)]
     #[graphql(impl = CharacterValue)]
     pub struct Human {
-        id: String,
-        home_planet: String,
+        id: prelude::String,
+        home_planet: prelude::String,
     }
 }

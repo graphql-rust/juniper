@@ -114,7 +114,7 @@ impl Root {
 
 async fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
+    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>),
 {
     let schema = RootNode::new(
         Root,

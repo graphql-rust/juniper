@@ -13,6 +13,10 @@ use juniper::{
 
 use self::common::util::extract_next;
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 struct Query;
 
 #[graphql_object]
@@ -45,7 +49,7 @@ where
     RootNode::new_with_scalar_value(query_root, EmptyMutation::<C>::new(), subscription_root)
 }
 
-type Stream<'a, I> = Pin<Box<dyn futures::Stream<Item = I> + Send + 'a>>;
+type Stream<'a, I> = Pin<prelude::Box<dyn futures::Stream<Item = I> + prelude::Send + 'a>>;
 
 mod trivial {
     use super::*;
@@ -54,13 +58,13 @@ mod trivial {
 
     #[graphql_subscription]
     impl Human {
-        async fn id() -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready("human-32".into())))
+        async fn id() -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready("human-32".into())))
         }
 
-        // TODO: Make work for `Stream<'_, String>`.
-        async fn home_planet(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready("earth".into())))
+        // TODO: Make work for `Stream<'_, prelude::String>`.
+        async fn home_planet(&self) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready("earth".into())))
         }
     }
 
@@ -74,7 +78,7 @@ mod trivial {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -90,7 +94,7 @@ mod trivial {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
         );
@@ -153,11 +157,11 @@ mod raw_method {
     #[graphql_subscription]
     impl Human {
         async fn r#my_id() -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
         async fn r#async(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("async-32")))
+            prelude::Box::pin(stream::once(future::ready("async-32")))
         }
     }
 
@@ -171,7 +175,7 @@ mod raw_method {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"myId": "human-32"}), vec![])),
         );
@@ -187,7 +191,7 @@ mod raw_method {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"async": "async-32"}), vec![])),
         );
@@ -228,8 +232,8 @@ mod ignored_method {
 
     #[graphql_subscription]
     impl Human {
-        async fn id() -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready("human-32".into())))
+        async fn id() -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready("human-32".into())))
         }
 
         #[allow(dead_code)]
@@ -249,7 +253,7 @@ mod ignored_method {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -292,12 +296,14 @@ mod fallible_method {
 
     #[graphql_subscription]
     impl Human {
-        async fn id(&self) -> Result<Stream<'static, String>, CustomError> {
-            Ok(Box::pin(stream::once(future::ready("human-32".into()))))
+        async fn id(&self) -> prelude::Result<Stream<'static, prelude::String>, CustomError> {
+            Ok(prelude::Box::pin(stream::once(future::ready(
+                "human-32".into(),
+            ))))
         }
 
         async fn home_planet<__S>() -> FieldResult<Stream<'static, &'static str>, __S> {
-            Ok(Box::pin(stream::once(future::ready("earth"))))
+            Ok(prelude::Box::pin(stream::once(future::ready("earth"))))
         }
     }
 
@@ -311,7 +317,7 @@ mod fallible_method {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -327,7 +333,7 @@ mod fallible_method {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
         );
@@ -380,16 +386,16 @@ mod argument {
 
     #[graphql_subscription]
     impl Human {
-        async fn id(arg: String) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(arg)))
+        async fn id(arg: prelude::String) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(arg)))
         }
 
         async fn home_planet(
             &self,
-            r#raw_arg: String,
-            r#async: Option<i32>,
-        ) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(format!("{raw_arg},{async:?}"))))
+            r#raw_arg: prelude::String,
+            r#async: prelude::Option<i32>,
+        ) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(format!("{raw_arg},{async:?}"))))
         }
     }
 
@@ -403,7 +409,7 @@ mod argument {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -419,7 +425,7 @@ mod argument {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"homePlanet": "earth,None"}), vec![])),
         );
@@ -520,14 +526,14 @@ mod default_argument {
         async fn id(
             &self,
             #[graphql(default)] arg1: i32,
-            #[graphql(default = "second".to_string())] arg2: String,
+            #[graphql(default = "second".to_string())] arg2: prelude::String,
             #[graphql(default = true)] r#arg3: bool,
-        ) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(format!("{arg1}|{arg2}&{arg3}"))))
+        ) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(format!("{arg1}|{arg2}&{arg3}"))))
         }
 
         async fn info(#[graphql(default = Point { x: 1 })] coord: Point) -> Stream<'static, i32> {
-            Box::pin(stream::once(future::ready(coord.x)))
+            prelude::Box::pin(stream::once(future::ready(coord.x)))
         }
     }
 
@@ -547,7 +553,7 @@ mod default_argument {
         ] {
             assert_eq!(
                 resolve_into_stream(input, None, &schema, &graphql_vars! {}, &())
-                    .then(|s| extract_next(s))
+                    .then(extract_next)
                     .await,
                 Ok((graphql_value!({ "id": expected }), vec![])),
             );
@@ -564,7 +570,7 @@ mod default_argument {
         ] {
             assert_eq!(
                 resolve_into_stream(input, None, &schema, &graphql_vars! {}, &())
-                    .then(|s| extract_next(s))
+                    .then(extract_next)
                     .await,
                 Ok((graphql_value!({ "info": expected }), vec![])),
             );
@@ -631,16 +637,16 @@ mod generic {
     }
 
     #[graphql_subscription]
-    impl<B: ?Sized + Sync> Human<i32, B> {
+    impl<B: ?Sized + prelude::Sync> Human<i32, B> {
         async fn id(&self) -> Stream<'static, i32> {
-            Box::pin(stream::once(future::ready(self.id)))
+            prelude::Box::pin(stream::once(future::ready(self.id)))
         }
     }
 
     #[graphql_subscription(name = "HumanString")]
-    impl<B: ?Sized + Sync> Human<String, B> {
-        async fn id(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.id.clone())))
+    impl<B: ?Sized + prelude::Sync> Human<prelude::String, B> {
+        async fn id(&self) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(self.id.clone())))
         }
     }
 
@@ -660,7 +666,7 @@ mod generic {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": 34}), vec![])),
         );
@@ -682,7 +688,7 @@ mod generic {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -722,25 +728,25 @@ mod generic_lifetime {
     #[graphql_subscription]
     impl<'p> Human<'p, i32> {
         async fn id(&self) -> Stream<'static, i32> {
-            Box::pin(stream::once(future::ready(self.id)))
+            prelude::Box::pin(stream::once(future::ready(self.id)))
         }
 
         // TODO: Make it work with `Stream<'_, &str>`.
-        async fn planet(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.home_planet.into())))
+        async fn planet(&self) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(self.home_planet.into())))
         }
     }
 
     #[graphql_subscription(name = "HumanString")]
     impl<'id, 'p> Human<'p, &'id str> {
         // TODO: Make it work with `Stream<'_, &str>`.
-        async fn id(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.id.into())))
+        async fn id(&self) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(self.id.into())))
         }
 
         // TODO: Make it work with `Stream<'_, &str>`.
-        async fn planet(&self) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(self.home_planet.into())))
+        async fn planet(&self) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(self.home_planet.into())))
         }
     }
 
@@ -760,7 +766,7 @@ mod generic_lifetime {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": 34}), vec![])),
         );
@@ -782,7 +788,7 @@ mod generic_lifetime {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"planet": "earth"}), vec![])),
         );
@@ -804,7 +810,7 @@ mod generic_lifetime {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -826,7 +832,7 @@ mod generic_lifetime {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"planet": "mars"}), vec![])),
         );
@@ -866,7 +872,7 @@ mod description_from_doc_comment {
         /// Rust `id` docs.
         /// Here.
         async fn id() -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
     }
 
@@ -904,17 +910,17 @@ mod deprecation_from_attr {
     #[graphql_subscription]
     impl Human {
         async fn id() -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
         #[deprecated]
         async fn a(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("a")))
+            prelude::Box::pin(stream::once(future::ready("a")))
         }
 
         #[deprecated(note = "Use `id`.")]
         async fn b(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("b")))
+            prelude::Box::pin(stream::once(future::ready("b")))
         }
     }
 
@@ -928,7 +934,7 @@ mod deprecation_from_attr {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -944,7 +950,7 @@ mod deprecation_from_attr {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"a": "a"}), vec![])),
         );
@@ -960,7 +966,7 @@ mod deprecation_from_attr {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"b": "b"}), vec![])),
         );
@@ -1031,19 +1037,19 @@ mod explicit_name_description_and_deprecation {
         #[graphql(name = "myId", desc = "My human ID.", deprecated = "Not used.")]
         #[deprecated(note = "Should be omitted.")]
         async fn id(
-            #[graphql(name = "myName", desc = "My argument.", default)] _n: String,
+            #[graphql(name = "myName", desc = "My argument.", default)] _n: prelude::String,
         ) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
         #[graphql(deprecated)]
         #[deprecated(note = "Should be omitted.")]
         async fn a(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("a")))
+            prelude::Box::pin(stream::once(future::ready("a")))
         }
 
         async fn b(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("b")))
+            prelude::Box::pin(stream::once(future::ready("b")))
         }
     }
 
@@ -1057,7 +1063,7 @@ mod explicit_name_description_and_deprecation {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"myId": "human-32"}), vec![])),
         );
@@ -1073,7 +1079,7 @@ mod explicit_name_description_and_deprecation {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"a": "a"}), vec![])),
         );
@@ -1089,7 +1095,7 @@ mod explicit_name_description_and_deprecation {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"b": "b"}), vec![])),
         );
@@ -1214,15 +1220,18 @@ mod renamed_all_fields_and_args {
     #[graphql_subscription(rename_all = "none")]
     impl Human {
         async fn id() -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
-        async fn home_planet(&self, planet_name: String) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(planet_name)))
+        async fn home_planet(
+            &self,
+            planet_name: prelude::String,
+        ) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(planet_name)))
         }
 
         async fn r#async_info(r#my_num: i32) -> Stream<'static, i32> {
-            Box::pin(stream::once(future::ready(r#my_num)))
+            prelude::Box::pin(stream::once(future::ready(r#my_num)))
         }
     }
 
@@ -1236,7 +1245,7 @@ mod renamed_all_fields_and_args {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -1252,7 +1261,7 @@ mod renamed_all_fields_and_args {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"home_planet": "earth"}), vec![])),
         );
@@ -1268,7 +1277,7 @@ mod renamed_all_fields_and_args {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"async_info": 3}), vec![])),
         );
@@ -1311,11 +1320,11 @@ mod explicit_scalar {
     #[graphql_subscription(scalar = DefaultScalarValue)]
     impl Human {
         async fn id(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
         async fn home_planet() -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("earth")))
+            prelude::Box::pin(stream::once(future::ready("earth")))
         }
     }
 
@@ -1329,7 +1338,7 @@ mod explicit_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -1345,7 +1354,7 @@ mod explicit_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
         );
@@ -1362,11 +1371,11 @@ mod custom_scalar {
     #[graphql_subscription(scalar = MyScalarValue)]
     impl Human {
         async fn id(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
         async fn home_planet() -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("earth")))
+            prelude::Box::pin(stream::once(future::ready("earth")))
         }
     }
 
@@ -1380,7 +1389,7 @@ mod custom_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -1396,7 +1405,7 @@ mod custom_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
         );
@@ -1413,11 +1422,11 @@ mod explicit_generic_scalar {
     #[graphql_subscription(scalar = S)]
     impl<S: ScalarValue> Human<S> {
         async fn id(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
         async fn home_planet(_executor: &Executor<'_, '_, (), S>) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("earth")))
+            prelude::Box::pin(stream::once(future::ready("earth")))
         }
     }
 
@@ -1431,7 +1440,7 @@ mod explicit_generic_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -1447,7 +1456,7 @@ mod explicit_generic_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
         );
@@ -1459,16 +1468,16 @@ mod bounded_generic_scalar {
 
     struct Human;
 
-    #[graphql_subscription(scalar = S: ScalarValue + Clone)]
+    #[graphql_subscription(scalar = S: ScalarValue + prelude::Clone)]
     impl Human {
         async fn id(&self) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human-32")))
+            prelude::Box::pin(stream::once(future::ready("human-32")))
         }
 
         async fn home_planet<S>(
             _executor: &Executor<'_, '_, (), S>,
         ) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("earth")))
+            prelude::Box::pin(stream::once(future::ready("earth")))
         }
     }
 
@@ -1482,7 +1491,7 @@ mod bounded_generic_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "human-32"}), vec![])),
         );
@@ -1498,7 +1507,7 @@ mod bounded_generic_scalar {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"homePlanet": "earth"}), vec![])),
         );
@@ -1508,7 +1517,7 @@ mod bounded_generic_scalar {
 mod explicit_custom_context {
     use super::*;
 
-    struct CustomContext(String);
+    struct CustomContext(prelude::String);
 
     impl juniper::Context for CustomContext {}
 
@@ -1525,18 +1534,20 @@ mod explicit_custom_context {
 
     #[graphql_subscription(context = CustomContext)]
     impl Human {
-        // TODO: Make work for `Stream<'c, String>`.
-        async fn id<'c>(&self, context: &'c CustomContext) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(context.0.clone())))
+        // TODO: Make work for `Stream<'c, prelude::String>`.
+        async fn id<'c>(&self, context: &'c CustomContext) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(context.0.clone())))
         }
 
-        // TODO: Make work for `Stream<'_, String>`.
+        // TODO: Make work for `Stream<'_, prelude::String>`.
         async fn info(_ctx: &()) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human being")))
+            prelude::Box::pin(stream::once(future::ready("human being")))
         }
 
-        async fn more(#[graphql(context)] custom: &CustomContext) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(custom.0.clone())))
+        async fn more(
+            #[graphql(context)] custom: &CustomContext,
+        ) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(custom.0.clone())))
         }
     }
 
@@ -1551,7 +1562,7 @@ mod explicit_custom_context {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "ctx!"}), vec![])),
         );
@@ -1568,7 +1579,7 @@ mod explicit_custom_context {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"info": "human being"}), vec![])),
         );
@@ -1585,7 +1596,7 @@ mod explicit_custom_context {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"more": "ctx!"}), vec![])),
         );
@@ -1595,7 +1606,7 @@ mod explicit_custom_context {
 mod inferred_custom_context_from_field {
     use super::*;
 
-    struct CustomContext(String);
+    struct CustomContext(prelude::String);
 
     impl juniper::Context for CustomContext {}
 
@@ -1612,18 +1623,20 @@ mod inferred_custom_context_from_field {
 
     #[graphql_subscription]
     impl Human {
-        // TODO: Make work for `Stream<'c, String>`.
-        async fn id<'c>(&self, context: &'c CustomContext) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(context.0.clone())))
+        // TODO: Make work for `Stream<'c, prelude::String>`.
+        async fn id<'c>(&self, context: &'c CustomContext) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(context.0.clone())))
         }
 
-        // TODO: Make work for `Stream<'_, String>`.
+        // TODO: Make work for `Stream<'_, prelude::String>`.
         async fn info(_ctx: &()) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("human being")))
+            prelude::Box::pin(stream::once(future::ready("human being")))
         }
 
-        async fn more(#[graphql(context)] custom: &CustomContext) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(custom.0.clone())))
+        async fn more(
+            #[graphql(context)] custom: &CustomContext,
+        ) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(custom.0.clone())))
         }
     }
 
@@ -1638,7 +1651,7 @@ mod inferred_custom_context_from_field {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "ctx!"}), vec![])),
         );
@@ -1655,7 +1668,7 @@ mod inferred_custom_context_from_field {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"info": "human being"}), vec![])),
         );
@@ -1672,7 +1685,7 @@ mod inferred_custom_context_from_field {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &ctx)
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"more": "ctx!"}), vec![])),
         );
@@ -1689,28 +1702,31 @@ mod executor {
     #[graphql_subscription(scalar = S: ScalarValue)]
     impl Human {
         // TODO: Make work for `Stream<'e, &'e str>`.
-        async fn id<'e, S>(&self, executor: &'e Executor<'_, '_, (), S>) -> Stream<'static, String>
+        async fn id<'e, S>(
+            &self,
+            executor: &'e Executor<'_, '_, (), S>,
+        ) -> Stream<'static, prelude::String>
         where
             S: ScalarValue,
         {
-            Box::pin(stream::once(future::ready(
+            prelude::Box::pin(stream::once(future::ready(
                 executor.look_ahead().field_name().into(),
             )))
         }
 
         async fn info<S>(
             &self,
-            arg: String,
+            arg: prelude::String,
             #[graphql(executor)] _another: &Executor<'_, '_, (), S>,
-        ) -> Stream<'static, String> {
-            Box::pin(stream::once(future::ready(arg)))
+        ) -> Stream<'static, prelude::String> {
+            prelude::Box::pin(stream::once(future::ready(arg)))
         }
 
         // TODO: Make work for `Stream<'e, &'e str>`.
         async fn info2<'e, S>(
             _executor: &'e Executor<'_, '_, (), S>,
         ) -> Stream<'static, &'static str> {
-            Box::pin(stream::once(future::ready("no info")))
+            prelude::Box::pin(stream::once(future::ready("no info")))
         }
     }
 
@@ -1724,7 +1740,7 @@ mod executor {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"id": "id"}), vec![])),
         );
@@ -1740,7 +1756,7 @@ mod executor {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"info": "input!"}), vec![])),
         );
@@ -1756,7 +1772,7 @@ mod executor {
 
         assert_eq!(
             resolve_into_stream(DOC, None, &schema, &graphql_vars! {}, &())
-                .then(|s| extract_next(s))
+                .then(extract_next)
                 .await,
             Ok((graphql_value!({"info2": "no info"}), vec![])),
         );

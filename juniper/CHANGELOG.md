@@ -51,6 +51,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
 - Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
+- Upgraded [GraphiQL] to 3.0.6 version (requires new [`graphql-transport-ws` GraphQL over WebSocket Protocol] integration on server, see `juniper_warp/examples/subscription.rs`). ([#1188], [#1193])
 
 ### Added
 
@@ -69,6 +70,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 - Made `GraphQLRequest` fields public. ([#750])
 - Relaxed [object safety] requirement for `GraphQLValue` and `GraphQLValueAsync` traits. ([ba1ed85b])
+- Updated [GraphQL Playground] to 1.7.28 version. ([#1190])
 
 ## Fixed
 
@@ -121,6 +123,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1145]: /../../pull/1145
 [#1147]: /../../pull/1147
 [#1176]: /../../pull/1176
+[#1188]: /../../pull/1188
+[#1190]: /../../pull/1190
+[#1193]: /../../pull/1193
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
@@ -140,6 +145,9 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
+[`graphql-transport-ws` GraphQL over WebSocket Protocol]: https://github.com/enisdenjo/graphql-ws/v5.14.0/PROTOCOL.md 
+[GraphiQL]: https://github.com/graphql/graphiql
+[GraphQL Playground]: https://github.com/prisma/graphql-playground
 [graphql-scalars.dev]: https://graphql-scalars.dev
 [October 2021]: https://spec.graphql.org/October2021
 [object safety]: https://doc.rust-lang.org/reference/items/traits.html#object-safety

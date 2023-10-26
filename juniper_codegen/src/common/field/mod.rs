@@ -227,7 +227,7 @@ impl Definition {
         ty_name: &str,
     ) -> TokenStream {
         quote! {
-            return Err(::juniper::FieldError::from(::std::format!(
+            return ::core::result::Result::Err(::juniper::FieldError::from(::std::format!(
                 "Field `{}` not found on type `{}`",
                 field,
                 <Self as ::juniper::GraphQLType<#scalar>>::name(info)
@@ -354,18 +354,24 @@ impl Definition {
                         async move {
                             let ex = executor.as_executor();
                             match res2 {
-                                Ok(Some((ctx, r))) => {
+                                ::core::result::Result::Ok(
+                                    ::core::option::Option::Some((ctx, r)),
+                                ) => {
                                     let sub = ex.replaced_context(ctx);
                                     sub.resolve_with_ctx_async(&(), &r)
                                         .await
                                         .map_err(|e| ex.new_error(e))
                                 }
-                                Ok(None) => Ok(::juniper::Value::null()),
-                                Err(e) => Err(ex.new_error(e)),
+                                ::core::result::Result::Ok(::core::option::Option::None) => {
+                                    ::core::result::Result::Ok(::juniper::Value::null())
+                                }
+                                ::core::result::Result::Err(e) => {
+                                    ::core::result::Result::Err(ex.new_error(e))
+                                }
                             }
                         }
                     });
-                    Ok(::juniper::Value::Scalar::<
+                    ::core::result::Result::Ok(::juniper::Value::Scalar::<
                         ::juniper::ValuesStream::<#scalar>
                     >(::juniper::futures::StreamExt::boxed(stream)))
                 })
