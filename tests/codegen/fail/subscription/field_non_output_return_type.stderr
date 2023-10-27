@@ -1,16 +1,16 @@
 error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
-  --> fail/subscription/field_non_output_return_type.rs:17:27
+  --> fail/subscription/field_non_output_return_type.rs:15:1
    |
-17 |     async fn id(&self) -> Stream<'static, ObjB> {
-   |                           ^^^^^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
+15 | #[graphql_subscription]
+   | ^^^^^^^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
    |
    = help: the following other types implement trait `IsOutputType<S>`:
-             <&T as IsOutputType<S>>
-             <Arc<T> as IsOutputType<S>>
-             <Box<T> as IsOutputType<S>>
-             <EnumValue as IsOutputType<__S>>
-             <ID as IsOutputType<__S>>
+             <bool as IsOutputType<__S>>
+             <i32 as IsOutputType<__S>>
+             <f64 as IsOutputType<__S>>
              <ObjA as IsOutputType<__S>>
-             <SchemaType<'a, S> as IsOutputType<S>>
-             <TypeKind as IsOutputType<__S>>
-           and 18 others
+             <Box<T> as IsOutputType<S>>
+             <uuid::Uuid as IsOutputType<__S>>
+             <url::Url as IsOutputType<__S>>
+             <bson::datetime::DateTime as IsOutputType<__S>>
+           and $N others

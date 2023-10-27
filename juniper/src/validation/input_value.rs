@@ -46,7 +46,7 @@ fn validate_var_defs<S>(
 ) where
     S: ScalarValue,
 {
-    for &(ref name, ref def) in var_defs.iter() {
+    for (name, def) in var_defs.iter() {
         let raw_type_name = def.var_type.item.innermost_name();
         match schema.concrete_type_by_name(raw_type_name) {
             Some(t) if t.is_input() => {
@@ -188,12 +188,12 @@ where
     errors
 }
 
-fn unify_scalar<'a, S>(
+fn unify_scalar<S>(
     var_name: &str,
     var_pos: &SourcePosition,
     value: &InputValue<S>,
     meta: &ScalarMeta<S>,
-    path: &Path<'a>,
+    path: &Path<'_>,
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
@@ -231,12 +231,12 @@ where
     errors
 }
 
-fn unify_enum<'a, S>(
+fn unify_enum<S>(
     var_name: &str,
     var_pos: &SourcePosition,
     value: &InputValue<S>,
     meta: &EnumMeta<S>,
-    path: &Path<'a>,
+    path: &Path<'_>,
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
@@ -277,13 +277,13 @@ where
     errors
 }
 
-fn unify_input_object<'a, S>(
+fn unify_input_object<S>(
     var_name: &str,
     var_pos: &SourcePosition,
     value: &InputValue<S>,
     meta: &InputObjectMeta<S>,
     schema: &SchemaType<S>,
-    path: &Path<'a>,
+    path: &Path<'_>,
 ) -> Vec<RuleError>
 where
     S: ScalarValue,

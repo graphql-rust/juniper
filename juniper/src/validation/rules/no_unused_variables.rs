@@ -131,7 +131,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(spread.item.name.item);
         }
     }
@@ -139,7 +139,7 @@ where
     fn enter_variable_definition(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
@@ -151,12 +151,12 @@ where
     fn enter_argument(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (_, value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .append(&mut value.item.referenced_variables());
         }
     }

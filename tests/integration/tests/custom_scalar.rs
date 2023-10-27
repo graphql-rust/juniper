@@ -63,7 +63,7 @@ impl TestSubscriptionType {
 
 async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)
 where
-    F: Fn(&Object<MyScalarValue>) -> (),
+    F: Fn(&Object<MyScalarValue>),
 {
     let schema =
         RootNode::new_with_scalar_value(TestType, EmptyMutation::<()>::new(), TestSubscriptionType);
@@ -83,7 +83,7 @@ where
 
 async fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&Object<MyScalarValue>) -> (),
+    F: Fn(&Object<MyScalarValue>),
 {
     run_variable_query(query, graphql_vars! {}, f).await;
 }

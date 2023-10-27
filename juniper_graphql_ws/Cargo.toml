@@ -2,17 +2,28 @@
 name = "juniper_graphql_ws"
 version = "0.4.0-dev"
 edition = "2021"
-rust-version = "1.62"
-description = "GraphQL over WebSocket Protocol implementation for `juniper` crate."
+rust-version = "1.65"
+description = "GraphQL over WebSocket Protocol implementations for `juniper` crate."
 license = "BSD-2-Clause"
-authors = ["Christopher Brown <ccbrown112@gmail.com>"]
+authors = [
+    "Christopher Brown <ccbrown112@gmail.com>",
+    "Kai Ren <tyranron@gmail.com>",
+]
 documentation = "https://docs.rs/juniper_graphql_ws"
 homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_graphql_ws"
 repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]
-keywords = ["apollo", "graphql", "graphql-ws", "subscription", "websocket"]
+keywords = ["apollo", "graphql-transport-ws", "graphql-ws", "subscription", "websocket"]
 exclude = ["/release.toml"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+graphql-transport-ws = []
+graphql-ws = []
 
 [dependencies]
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }

@@ -2,7 +2,7 @@
 name = "juniper_subscriptions"
 version = "0.17.0-dev"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 description = "Juniper `SubscriptionCoordinator` and `SubscriptionConnection` implementations."
 license = "BSD-2-Clause"
 authors = ["nWacky <gosha.evtushenko@gmail.com>"]
@@ -20,4 +20,4 @@ juniper = { version = "0.16.0-dev", path = "../juniper", default-features = fals
 
 [dev-dependencies]
 serde_json = "1.0.18"
-tokio = { version = "1.0", features = ["macros", "rt"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }

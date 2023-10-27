@@ -63,7 +63,7 @@ impl MySubscription {
     }
 
     async fn human_with_context(context: &MyContext) -> HumanStream {
-        let context_val = context.0.clone();
+        let context_val = context.0;
         Box::pin(stream::once(async move {
             Human {
                 id: context_val.to_string(),
@@ -110,7 +110,7 @@ fn create_and_execute(
 
     let (values, errors) = response.unwrap();
 
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         return Err(errors);
     }
 
@@ -192,7 +192,7 @@ fn returns_error() {
 
     let expected_error = ExecutionError::new(
         crate::parser::SourcePosition::new(23, 1, 8),
-        &vec!["errorHuman"],
+        &["errorHuman"],
         FieldError::new("handler error", graphql_value!("more details")),
     );
 

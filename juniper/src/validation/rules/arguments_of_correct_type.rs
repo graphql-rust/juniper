@@ -50,7 +50,7 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref arg_name, ref arg_value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (arg_name, arg_value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some(argument_meta) = self
             .current_args

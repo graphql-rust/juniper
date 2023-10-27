@@ -31,9 +31,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
     let mut group = c.benchmark_group("Sync vs Async - Users Flat - Instant");
     for count in [1, 10] {
         group.bench_function(BenchmarkId::new("Sync", count), |b| {
-            let ids = (0..count)
-                .map(|x| InputValue::scalar(x as i32))
-                .collect::<Vec<_>>();
+            let ids = (0..count).map(InputValue::scalar).collect::<Vec<_>>();
             let ids = InputValue::list(ids);
             b.iter(|| {
                 j::execute_sync(
@@ -48,9 +46,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
                 .build()
                 .unwrap();
 
-            let ids = (0..count)
-                .map(|x| InputValue::scalar(x as i32))
-                .collect::<Vec<_>>();
+            let ids = (0..count).map(InputValue::scalar).collect::<Vec<_>>();
             let ids = InputValue::list(ids);
 
             b.iter(|| {
@@ -65,9 +61,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
         group.bench_function(BenchmarkId::new("Async - Threadpool", count), |b| {
             let rt = tokio::runtime::Builder::new_multi_thread().build().unwrap();
 
-            let ids = (0..count)
-                .map(|x| InputValue::scalar(x as i32))
-                .collect::<Vec<_>>();
+            let ids = (0..count).map(InputValue::scalar).collect::<Vec<_>>();
             let ids = InputValue::list(ids);
 
             b.iter(|| {

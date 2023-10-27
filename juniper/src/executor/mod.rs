@@ -37,7 +37,7 @@ use crate::{
 
 pub use self::{
     look_ahead::{
-        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+        Applies, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
     owned_executor::OwnedExecutor,
@@ -112,11 +112,7 @@ where
     Self: PartialEq,
 {
     fn partial_cmp(&self, other: &ExecutionError<S>) -> Option<Ordering> {
-        (&self.location, &self.path, &self.error.message).partial_cmp(&(
-            &other.location,
-            &other.path,
-            &other.error.message,
-        ))
+        Some(self.cmp(other))
     }
 }
 
@@ -729,6 +725,7 @@ where
                     alias: None,
                     arguments: Vec::new(),
                     children: Vec::new(),
+                    applies_for: Applies::All,
                 };
 
                 // Add in all the children - this will mutate `ret`
@@ -940,7 +937,7 @@ where
         defs.item
             .items
             .iter()
-            .filter_map(|&(ref name, ref def)| {
+            .filter_map(|(name, def)| {
                 def.default_value
                     .as_ref()
                     .map(|i| (name.item.into(), i.item.clone()))
@@ -1087,7 +1084,7 @@ where
         defs.item
             .items
             .iter()
-            .filter_map(|&(ref name, ref def)| {
+            .filter_map(|(name, def)| {
                 def.default_value
                     .as_ref()
                     .map(|i| (name.item.into(), i.item.clone()))

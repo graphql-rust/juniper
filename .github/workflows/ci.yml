@@ -26,7 +26,6 @@ jobs:
       - bench
       - codespell
       - clippy
-      - example
       - feature
       - msrv
       - release-check
@@ -56,7 +55,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -67,7 +66,7 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -85,40 +84,13 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
 
       - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
       - run: cargo bench -p juniper_benchmarks
-
-  example:
-    strategy:
-      fail-fast: false
-      matrix:
-        example:
-          - actix_subscriptions
-          - basic_subscriptions
-          - warp_async
-          - warp_subscriptions
-        os:
-          - ubuntu
-          - macOS
-          - windows
-        toolchain:
-          - stable
-          - beta
-          - nightly
-    runs-on: ${{ matrix.os }}-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain }}
-      - run: rustup default ${{ matrix.toolchain }}
-
-      - run: cargo check -p example_${{ matrix.example }}
 
   feature:
     strategy:
@@ -135,23 +107,24 @@ jobs:
           - { feature: graphql-parser, crate: juniper }
           - { feature: rust_decimal, crate: juniper }
           - { feature: schema-language, crate: juniper }
-          - { feature: serde_json, crate: juniper }
           - { feature: time, crate: juniper }
           - { feature: url, crate: juniper }
           - { feature: uuid, crate: juniper }
+          - { feature: graphql-transport-ws, crate: juniper_graphql_ws }
+          - { feature: graphql-ws, crate: juniper_graphql_ws }
           - { feature: <none>, crate: juniper_actix }
           - { feature: subscriptions, crate: juniper_actix }
           - { feature: <none>, crate: juniper_warp }
           - { feature: subscriptions, crate: juniper_warp }
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
 
       - run: cargo +nightly update -Z minimal-versions
 
@@ -167,13 +140,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        msrv: ["1.62.0"]
+        msrv: ["1.65.0"]
         crate:
           - juniper_codegen
           - juniper
           - juniper_subscriptions
           - juniper_graphql_ws
-          - juniper_actix
+          #- juniper_actix
           - juniper_hyper
           #- juniper_iron
           - juniper_rocket
@@ -182,16 +155,19 @@ jobs:
           - ubuntu
           - macOS
           - windows
+        include:
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "ubuntu" }
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "macOS" }
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "windows" }
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ matrix.msrv }}
-      - run: rustup default ${{ matrix.msrv }}
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.msrv }}
 
       - run: cargo +nightly update -Z minimal-versions
 
@@ -201,7 +177,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -250,12 +226,11 @@ jobs:
             os: windows
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
           components: rust-src
-      - run: rustup default ${{ matrix.toolchain }}
 
       - run: cargo install cargo-careful
         if: ${{ matrix.toolchain == 'nightly' }}
@@ -265,7 +240,7 @@ jobs:
                            ||                                   'no' }}
 
   test-book:
-    name: test Book
+    name: test (Book)
     strategy:
       fail-fast: false
       matrix:
@@ -279,11 +254,10 @@ jobs:
           - nightly
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
-      - run: rustup default ${{ matrix.toolchain }}
       - uses: peaceiris/actions-mdbook@v1
 
       - run: make test.book
@@ -293,22 +267,26 @@ jobs:
       fail-fast: false
       matrix:
         crate:
-          - juniper_codegen
           - juniper
+        target:
+          - wasm32-unknown-unknown
+          - wasm32-wasi
         toolchain:
           - stable
           - beta
           - nightly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
-          target: wasm32-unknown-unknown
-      - run: rustup default ${{ matrix.toolchain }}
+          target: ${{ matrix.target }}
 
-      - run: cargo check --target wasm32-unknown-unknown -p ${{ matrix.crate }}
+      - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
+                   ${{ matrix.target == 'wasm32-unknown-unknown'
+                       && '--features js'
+                       || '' }}
 
 
 
@@ -316,6 +294,28 @@ jobs:
   #############
   # Releasing #
   #############
+
+  publish:
+    name: publish (crates.io)
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
+    needs: ["release-github"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
+
+      - run: cargo publish -p ${{ steps.tag.outputs.group2 }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATESIO_TOKEN }}
 
   release-check:
     name: check release
@@ -335,7 +335,7 @@ jobs:
           - juniper_warp
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -345,34 +345,12 @@ jobs:
       - run: make cargo.release crate=${{ matrix.crate }} ver=minor
                                 exec=no install=no
 
-  release-crate:
-    name: release on crates.io
-    needs: ["release-github"]
-    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: Parse crate name and version from Git tag
-        id: tag
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.ref }}
-          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
-
-      - name: Publish `${{ steps.tag.outputs.group2 }}` crate
-        run: cargo publish -p ${{ steps.tag.outputs.group2 }}
-                           --token ${{ secrets.CRATESIO_TOKEN }}
-
   release-github:
-    name: release on GitHub
+    name: release (GitHub)
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     needs:
       - bench
       - clippy
-      - example
       - feature
       - msrv
       - package
@@ -380,10 +358,9 @@ jobs:
       - test
       - test-book
       - wasm
-    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Parse crate name and version from Git tag
         id: tag
@@ -403,7 +380,8 @@ jobs:
         run: echo "link=${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)"
              >> $GITHUB_OUTPUT
 
-      - uses: softprops/action-gh-release@v1
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
         with:
           name: ${{ steps.tag.outputs.group2 }} ${{ steps.tag.outputs.group3 }}
           body: |
@@ -419,13 +397,13 @@ jobs:
   ##########
 
   deploy-book:
-    name: deploy Book
-    needs: ["test", "test-book"]
+    name: deploy (Book)
     if: ${{ github.ref == 'refs/heads/master'
          || startsWith(github.ref, 'refs/tags/juniper@') }}
+    needs: ["test", "test-book"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: peaceiris/actions-mdbook@v1
 
       - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'

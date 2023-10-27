@@ -1,14 +1,13 @@
-//! This example demonstrates asynchronous subscriptions with warp and tokio 0.2
+//! This example demonstrates asynchronous subscriptions with [`warp`].
 
 use std::{env, pin::Pin, sync::Arc, time::Duration};
 
-use futures::{FutureExt as _, Stream};
+use futures::Stream;
 use juniper::{
     graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLEnum,
     RootNode,
 };
 use juniper_graphql_ws::ConnectionConfig;
-use juniper_warp::{playground_filter, subscriptions::serve_graphql_ws};
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
@@ -108,13 +107,13 @@ struct Subscription;
 #[graphql_subscription(context = Context)]
 impl Subscription {
     async fn users() -> UsersStream {
-        let mut counter = 0;
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         let stream = async_stream::stream! {
-            counter += 1;
+            let mut counter = 0;
             loop {
+                counter += 1;
                 interval.tick().await;
-                if counter == 2 {
+                if counter == 5 {
                     yield Err(FieldError::new(
                         "some field error from handler",
                         graphql_value!("some additional string"),
@@ -141,51 +140,49 @@ fn schema() -> Schema {
 
 #[tokio::main]
 async fn main() {
-    env::set_var("RUST_LOG", "warp_subscriptions");
+    env::set_var("RUST_LOG", "subscription");
     env_logger::init();
 
-    let log = warp::log("warp_subscriptions");
-
+    let log = warp::log("subscription");
     let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body("<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>")
+            .body(
+                "<html><h1>juniper_warp/subscription example</h1>\
+                       <div>visit <a href=\"/graphiql\">GraphiQL</a></div>\
+                       <div>visit <a href=\"/playground\">GraphQL Playground</a></div>\
+                 </html>",
+            )
     });
+    let schema = Arc::new(schema());
 
-    let qm_schema = schema();
-    let qm_state = warp::any().map(|| Context);
-    let qm_graphql_filter = juniper_warp::make_graphql_filter(qm_schema, qm_state.boxed());
-
-    let root_node = Arc::new(schema());
-
-    log::info!("Listening on 127.0.0.1:8080");
-
-    let routes = (warp::path("subscriptions")
-        .and(warp::ws())
-        .map(move |ws: warp::ws::Ws| {
-            let root_node = root_node.clone();
-            ws.on_upgrade(move |websocket| async move {
-                serve_graphql_ws(websocket, root_node, ConnectionConfig::new(Context))
-                    .map(|r| {
-                        if let Err(e) = r {
-                            println!("Websocket error: {e}");
-                        }
-                    })
-                    .await
-            })
-        }))
-    .map(|reply| {
-        // TODO#584: remove this workaround
-        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-    })
-    .or(warp::post()
+    let routes = (warp::post()
         .and(warp::path("graphql"))
-        .and(qm_graphql_filter))
+        .and(juniper_warp::make_graphql_filter(
+            schema.clone(),
+            warp::any().map(|| Context).boxed(),
+        )))
+    .or(
+        warp::path("subscriptions").and(juniper_warp::subscriptions::make_ws_filter(
+            schema,
+            ConnectionConfig::new(Context),
+        )),
+    )
     .or(warp::get()
         .and(warp::path("playground"))
-        .and(playground_filter("/graphql", Some("/subscriptions"))))
+        .and(juniper_warp::playground_filter(
+            "/graphql",
+            Some("/subscriptions"),
+        )))
+    .or(warp::get()
+        .and(warp::path("graphiql"))
+        .and(juniper_warp::graphiql_filter(
+            "/graphql",
+            Some("/subscriptions"),
+        )))
     .or(homepage)
     .with(log);
 
+    log::info!("Listening on 127.0.0.1:8080");
     warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
 }

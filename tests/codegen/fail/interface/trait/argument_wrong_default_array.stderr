@@ -1,20 +1,18 @@
 error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
- --> fail/interface/trait/argument_wrong_default_array.rs:5:41
+ --> fail/interface/trait/argument_wrong_default_array.rs:3:1
   |
 3 | #[graphql_interface]
-  | -------------------- required by a bound introduced by this call
-4 | trait Character {
-5 |     fn wrong(&self, #[graphql(default = [true, false, false])] input: [bool; 2]) -> bool;
-  |                                         ^^^^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`
+  | ^^^^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`
   |
   = help: the following other types implement trait `From<T>`:
-            <&'a [ascii::ascii_char::AsciiChar] as From<&'a ascii::ascii_str::AsciiStr>>
-            <&'a [u32; 4] as From<&'a ppv_lite86::x86_64::vec128_storage>>
-            <&'a [u8] as From<&'a ascii::ascii_str::AsciiStr>>
-            <&'a mut [ascii::ascii_char::AsciiChar] as From<&'a mut ascii::ascii_str::AsciiStr>>
-            <[T; LANES] as From<Simd<T, LANES>>>
             <[bool; LANES] as From<Mask<T, LANES>>>
+            <[u32; 4] as From<ppv_lite86::x86_64::vec128_storage>>
+            <[u32; 8] as From<ppv_lite86::x86_64::vec256_storage>>
+            <[u32; 16] as From<ppv_lite86::x86_64::vec512_storage>>
+            <[u64; 2] as From<ppv_lite86::x86_64::vec128_storage>>
+            <[u64; 4] as From<ppv_lite86::x86_64::vec256_storage>>
+            <[u64; 8] as From<ppv_lite86::x86_64::vec512_storage>>
             <[u128; 1] as From<ppv_lite86::x86_64::vec128_storage>>
-            <[u128; 2] as From<ppv_lite86::x86_64::vec256_storage>>
-          and 7 others
+          and $N others
   = note: required for `[bool; 3]` to implement `Into<[bool; 2]>`
+  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)

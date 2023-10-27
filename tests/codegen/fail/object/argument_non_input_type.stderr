@@ -5,38 +5,43 @@ error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
    |                       ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
    |
    = help: the following other types implement trait `IsInputType<S>`:
-             <&T as IsInputType<S>>
-             <Arc<T> as IsInputType<S>>
+             <bool as IsInputType<__S>>
+             <i32 as IsInputType<__S>>
+             <f64 as IsInputType<__S>>
              <Box<T> as IsInputType<S>>
-             <ID as IsInputType<__S>>
-             <TypeKind as IsInputType<__S>>
-             <Vec<T> as IsInputType<S>>
-             <[T; N] as IsInputType<S>>
-             <[T] as IsInputType<S>>
-           and 12 others
+             <uuid::Uuid as IsInputType<__S>>
+             <url::Url as IsInputType<__S>>
+             <bson::datetime::DateTime as IsInputType<__S>>
+             <juniper::schema::model::DirectiveLocation as IsInputType<__S>>
+           and $N others
 
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
-    --> fail/object/argument_non_input_type.rs:10:1
-     |
-10   | #[graphql_object]
-     | ^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
-     |
-     = help: the following other types implement trait `FromInputValue<S>`:
-               <Arc<T> as FromInputValue<S>>
-               <Box<T> as FromInputValue<S>>
-               <ID as FromInputValue<__S>>
-               <TypeKind as FromInputValue<__S>>
-               <Vec<T> as FromInputValue<S>>
-               <[T; N] as FromInputValue<S>>
-               <bool as FromInputValue<__S>>
-               <bson::datetime::DateTime as FromInputValue<__S>>
-             and 9 others
+  --> fail/object/argument_non_input_type.rs:12:23
+   |
+10 | #[graphql_object]
+   | ----------------- required by a bound introduced by this call
+11 | impl ObjB {
+12 |     fn id(&self, obj: ObjA) -> &str {
+   |                       ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   |
+   = help: the following other types implement trait `FromInputValue<S>`:
+             <bool as FromInputValue<__S>>
+             <i32 as FromInputValue<__S>>
+             <f64 as FromInputValue<__S>>
+             <Box<T> as FromInputValue<S>>
+             <uuid::Uuid as FromInputValue<__S>>
+             <url::Url as FromInputValue<__S>>
+             <bson::datetime::DateTime as FromInputValue<__S>>
+             <juniper::schema::model::DirectiveLocation as FromInputValue<__S>>
+           and $N others
 note: required by a bound in `Registry::<'r, S>::arg`
-    --> $WORKSPACE/juniper/src/executor/mod.rs
-     |
-     |         T: GraphQLType<S> + FromInputValue<S>,
-     |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<'r, S>::arg`
-     = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> $WORKSPACE/juniper/src/executor/mod.rs
+   |
+   |     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
+   |            --- required by a bound in this associated function
+   |     where
+   |         T: GraphQLType<S> + FromInputValue<S>,
+   |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<'r, S>::arg`
 
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> fail/object/argument_non_input_type.rs:10:1
@@ -45,13 +50,30 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
    | ^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
    |
    = help: the following other types implement trait `FromInputValue<S>`:
-             <Arc<T> as FromInputValue<S>>
-             <Box<T> as FromInputValue<S>>
-             <ID as FromInputValue<__S>>
-             <TypeKind as FromInputValue<__S>>
-             <Vec<T> as FromInputValue<S>>
-             <[T; N] as FromInputValue<S>>
              <bool as FromInputValue<__S>>
+             <i32 as FromInputValue<__S>>
+             <f64 as FromInputValue<__S>>
+             <Box<T> as FromInputValue<S>>
+             <uuid::Uuid as FromInputValue<__S>>
+             <url::Url as FromInputValue<__S>>
              <bson::datetime::DateTime as FromInputValue<__S>>
-           and 9 others
+             <juniper::schema::model::DirectiveLocation as FromInputValue<__S>>
+           and $N others
    = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
+  --> fail/object/argument_non_input_type.rs:12:23
+   |
+12 |     fn id(&self, obj: ObjA) -> &str {
+   |                       ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   |
+   = help: the following other types implement trait `FromInputValue<S>`:
+             <bool as FromInputValue<__S>>
+             <i32 as FromInputValue<__S>>
+             <f64 as FromInputValue<__S>>
+             <Box<T> as FromInputValue<S>>
+             <uuid::Uuid as FromInputValue<__S>>
+             <url::Url as FromInputValue<__S>>
+             <bson::datetime::DateTime as FromInputValue<__S>>
+             <juniper::schema::model::DirectiveLocation as FromInputValue<__S>>
+           and $N others

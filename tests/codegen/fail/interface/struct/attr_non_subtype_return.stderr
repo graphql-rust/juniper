@@ -5,11 +5,3 @@ error[E0080]: evaluation of constant value failed
    |     ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id`: implementor is expected to return a subtype of interface's return object: `[String!]!` is not a subtype of `String!`.', $DIR/fail/interface/struct/attr_non_subtype_return.rs:11:5
    |
    = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/struct/attr_non_subtype_return.rs:11:5
-   |
-11 |     id: String,
-   |     ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id`: implementor is expected to return a subtype of interface's return object: `[String!]!` is not a subtype of `String!`.', $DIR/fail/interface/struct/attr_non_subtype_return.rs:11:5
-   |
-   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)

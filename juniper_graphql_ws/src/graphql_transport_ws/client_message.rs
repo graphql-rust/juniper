@@ -1,14 +1,14 @@
 use juniper::Variables;
 use serde::Deserialize;
 
-use crate::utils::default_for_null;
+use crate::util::default_for_null;
 
 /// The payload for a client's "start" message. This triggers execution of a query, mutation, or
 /// subscription.
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(bound(deserialize = "S: Deserialize<'de>"))]
 #[serde(rename_all = "camelCase")]
-pub struct StartPayload<S> {
+pub struct SubscribePayload<S> {
     /// The document body.
     pub query: String,
 
@@ -18,6 +18,10 @@ pub struct StartPayload<S> {
 
     /// The optional operation name (required if the document contains multiple operations).
     pub operation_name: Option<String>,
+
+    /// The optional extension data.
+    #[serde(default, deserialize_with = "default_for_null")]
+    pub extensions: Variables<S>,
 }
 
 /// ClientMessage defines the message types that clients can send.
@@ -33,22 +37,32 @@ pub enum ClientMessage<S> {
         #[serde(default, deserialize_with = "default_for_null")]
         payload: Variables<S>,
     },
-    /// Start messages are used to execute a GraphQL operation.
-    Start {
+    /// Ping is used for detecting failed connections, displaying latency metrics or other types of network probing.
+    Ping {
+        /// Optional parameters of any type used to transfer additional details about the ping.
+        #[serde(default, deserialize_with = "default_for_null")]
+        payload: Variables<S>,
+    },
+    /// The response to the `Ping` message.
+    Pong {
+        /// Optional parameters of any type used to transfer additional details about the pong.
+        #[serde(default, deserialize_with = "default_for_null")]
+        payload: Variables<S>,
+    },
+    /// Requests an operation specified in the message payload.
+    Subscribe {
         /// The id of the operation. This can be anything, but must be unique. If there are other
-        /// in-flight operations with the same id, the message will be ignored or cause an error.
+        /// in-flight operations with the same id, the message will cause an error.
         id: String,
 
         /// The query, variables, and operation name.
-        payload: StartPayload<S>,
+        payload: SubscribePayload<S>,
     },
-    /// Stop messages are used to unsubscribe from a subscription.
-    Stop {
+    /// Indicates that the client has stopped listening and wants to complete the subscription.
+    Complete {
         /// The id of the operation to stop.
         id: String,
     },
-    /// ConnectionTerminate is used to terminate the connection.
-    ConnectionTerminate,
 }
 
 #[cfg(test)]
@@ -65,7 +79,7 @@ mod test {
             ClientMessage::ConnectionInit {
                 payload: graphql_vars! {"foo": "bar"},
             },
-            serde_json::from_str(r##"{"type": "connection_init", "payload": {"foo": "bar"}}"##)
+            serde_json::from_str(r#"{"type": "connection_init", "payload": {"foo": "bar"}}"#)
                 .unwrap(),
         );
 
@@ -73,67 +87,65 @@ mod test {
             ClientMessage::ConnectionInit {
                 payload: graphql_vars! {},
             },
-            serde_json::from_str(r##"{"type": "connection_init"}"##).unwrap(),
+            serde_json::from_str(r#"{"type": "connection_init"}"#).unwrap(),
         );
 
         assert_eq!(
-            ClientMessage::Start {
+            ClientMessage::Subscribe {
                 id: "foo".into(),
-                payload: StartPayload {
+                payload: SubscribePayload {
                     query: "query MyQuery { __typename }".into(),
                     variables: graphql_vars! {"foo": "bar"},
                     operation_name: Some("MyQuery".into()),
+                    extensions: Default::default(),
                 },
             },
             serde_json::from_str(
-                r##"{"type": "start", "id": "foo", "payload": {
+                r#"{"type": "subscribe", "id": "foo", "payload": {
                 "query": "query MyQuery { __typename }",
                 "variables": {
                     "foo": "bar"
                 },
                 "operationName": "MyQuery"
-            }}"##
+            }}"#
             )
             .unwrap(),
         );
 
         assert_eq!(
-            ClientMessage::Start {
+            ClientMessage::Subscribe {
                 id: "foo".into(),
-                payload: StartPayload {
+                payload: SubscribePayload {
                     query: "query MyQuery { __typename }".into(),
                     variables: graphql_vars! {},
                     operation_name: None,
+                    extensions: Default::default(),
                 },
             },
             serde_json::from_str(
-                r##"{"type": "start", "id": "foo", "payload": {
+                r#"{"type": "subscribe", "id": "foo", "payload": {
                 "query": "query MyQuery { __typename }"
-            }}"##
+            }}"#
             )
             .unwrap(),
         );
 
         assert_eq!(
-            ClientMessage::Stop { id: "foo".into() },
-            serde_json::from_str(r##"{"type": "stop", "id": "foo"}"##).unwrap(),
-        );
-
-        assert_eq!(
-            ClientMessage::ConnectionTerminate,
-            serde_json::from_str(r##"{"type": "connection_terminate"}"##).unwrap(),
+            ClientMessage::Complete { id: "foo".into() },
+            serde_json::from_str(r#"{"type": "complete", "id": "foo"}"#).unwrap(),
         );
     }
 
     #[test]
     fn test_deserialization_of_null() -> serde_json::Result<()> {
         let payload = r#"{"query":"query","variables":null}"#;
-        let payload: StartPayload<DefaultScalarValue> = serde_json::from_str(payload)?;
+        let payload: SubscribePayload<DefaultScalarValue> = serde_json::from_str(payload)?;
 
-        let expected = StartPayload {
+        let expected = SubscribePayload {
             query: "query".into(),
             variables: graphql_vars! {},
             operation_name: None,
+            extensions: Default::default(),
         };
 
         assert_eq!(expected, payload);

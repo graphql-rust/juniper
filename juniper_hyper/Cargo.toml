@@ -2,7 +2,7 @@
 name = "juniper_hyper"
 version = "0.9.0-dev"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 description = "`juniper` GraphQL integration with `hyper`."
 license = "BSD-2-Clause"
 authors = ["Damir Vandic <info@dvic.io>"]
@@ -28,6 +28,6 @@ http-body = "0.4.5"
 
 [dev-dependencies]
 juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
-pretty_env_logger = "0.4"
-reqwest = { version = "0.11", features = ["blocking", "rustls-tls"] }
+pretty_env_logger = "0.5"
+reqwest = { version = "0.11", features = ["blocking", "rustls-tls"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }

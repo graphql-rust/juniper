@@ -2,7 +2,7 @@
 name = "juniper_iron"
 version = "0.8.0-dev"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.65"
 description = "`juniper` GraphQL integration with `iron`."
 license = "BSD-2-Clause"
 authors = [

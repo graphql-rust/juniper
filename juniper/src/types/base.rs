@@ -472,7 +472,7 @@ where
                         f.arguments.as_ref().map(|m| {
                             m.item
                                 .iter()
-                                .filter_map(|&(ref k, ref v)| {
+                                .filter_map(|(k, v)| {
                                     v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
                                 })
                                 .collect()
@@ -596,10 +596,9 @@ pub(super) fn is_excluded<S>(
 where
     S: ScalarValue,
 {
-    if let Some(ref directives) = *directives {
-        for &Spanning {
-            item: ref directive,
-            ..
+    if let Some(directives) = directives {
+        for Spanning {
+            item: directive, ..
         } in directives
         {
             let condition: bool = directive
@@ -631,16 +630,13 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
             }
             Value::List(dest_list) => {
                 if let Value::List(src_list) = value {
-                    dest_list
-                        .iter_mut()
-                        .zip(src_list.into_iter())
-                        .for_each(|(d, s)| {
-                            if let Value::Object(d_obj) = d {
-                                if let Value::Object(s_obj) = s {
-                                    merge_maps(d_obj, s_obj);
-                                }
+                    dest_list.iter_mut().zip(src_list).for_each(|(d, s)| {
+                        if let Value::Object(d_obj) = d {
+                            if let Value::Object(s_obj) = s {
+                                merge_maps(d_obj, s_obj);
                             }
-                        });
+                        }
+                    });
                 }
             }
             _ => {}

@@ -4,7 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/v/juniper_subscriptions.svg?maxAge=2592000)](https://crates.io/crates/juniper_subscriptions)
 [![Documentation](https://docs.rs/juniper_subscriptions/badge.svg)](https://docs.rs/juniper_subscriptions)
 [![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
-[![Rust 1.62+](https://img.shields.io/badge/rustc-1.62+-lightgray.svg "Rust 1.62+")](https://blog.rust-lang.org/2022/06/30/Rust-1.62.0.html)
+[![Rust 1.65+](https://img.shields.io/badge/rustc-1.65+-lightgray.svg "Rust 1.65+")](https://blog.rust-lang.org/2022/11/03/Rust-1.65.0.html)
 
 - [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_subscriptions/CHANGELOG.md)
 
@@ -27,7 +27,7 @@ For `SubscriptionCoordinator` and `SubscriptionConnection` documentation, check 
 
 ## Examples
 
-Check [`examples/warp_subscriptions/`][1] for example code of a working [`warp`] server with [GraphQL] subscription handlers.
+Check [`juniper_warp/examples/subscription.rs`][1] for example code of a working [`warp`] server with [GraphQL] subscription handlers.
 
 
 
@@ -43,4 +43,4 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`warp`]: https://docs.rs/warp
 [GraphQL]: http://graphql.org
 
-[1]: https://github.com/graphql-rust/juniper/blob/master/examples/warp_subscriptions/src/main.rs
+[1]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/subscription.rs

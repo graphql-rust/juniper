@@ -479,8 +479,10 @@ impl Definition {
                 for #ident #ty_generics
                 #where_clause
             {
-                fn name(_: &Self::TypeInfo) -> Option<&'static str> {
-                    Some(#name)
+                fn name(
+                    _: &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
+                    ::core::option::Option::Some(#name)
                 }
 
                 fn meta<'r>(
@@ -524,7 +526,10 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
             }
@@ -594,11 +599,11 @@ impl Definition {
 
                 quote! {
                     match obj.get(#name) {
-                        Some(v) => {
+                        ::core::option::Option::Some(v) => {
                             ::juniper::FromInputValue::<#scalar>::from_input_value(v)
                                 .map_err(::juniper::IntoFieldError::into_field_error)?
                         }
-                        None => { #fallback }
+                        ::core::option::Option::None => { #fallback }
                     }
                 }
             };
@@ -616,14 +621,14 @@ impl Definition {
 
                 fn from_input_value(
                     value: &::juniper::InputValue<#scalar>,
-                ) -> Result<Self, Self::Error> {
+                ) -> ::core::result::Result<Self, Self::Error> {
                     let obj = value
                         .to_object_value()
                         .ok_or_else(|| ::juniper::FieldError::<#scalar>::from(
                             ::std::format!("Expected input object, found: {}", value))
                         )?;
 
-                    Ok(#ident {
+                    ::core::result::Result::Ok(#ident {
                         #( #fields )*
                     })
                 }
@@ -763,13 +768,13 @@ impl Definition {
             generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote! { #self_ty: Sync });
+                .push(parse_quote! { #self_ty: ::core::marker::Sync });
 
             if scalar.is_generic() {
                 generics
                     .make_where_clause()
                     .predicates
-                    .push(parse_quote! { #scalar: Send + Sync });
+                    .push(parse_quote! { #scalar: ::core::marker::Send + ::core::marker::Sync });
             }
         }
 

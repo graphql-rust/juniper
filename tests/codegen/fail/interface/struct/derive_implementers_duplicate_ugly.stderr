@@ -1,4 +1,4 @@
-error[E0119]: conflicting implementations of trait `std::convert::From<ObjA>` for type `CharacterValueEnum<ObjA, ObjA>`
+error[E0119]: conflicting implementations of trait `From<ObjA>` for type `CharacterValueEnum<ObjA, ObjA>`
   --> fail/interface/struct/derive_implementers_duplicate_ugly.rs:11:10
    |
 11 | #[derive(GraphQLInterface)]
@@ -9,7 +9,7 @@ error[E0119]: conflicting implementations of trait `std::convert::From<ObjA>` fo
    |
    = note: this error originates in the derive macro `GraphQLInterface` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0119]: conflicting implementations of trait `<CharacterValueEnum<ObjA, ObjA> as juniper::GraphQLInterface<__S>>::mark::_::{closure#0}::MutuallyExclusive` for type `ObjA`
+error[E0119]: conflicting implementations of trait `MutuallyExclusive` for type `ObjA`
   --> fail/interface/struct/derive_implementers_duplicate_ugly.rs:11:10
    |
 11 | #[derive(GraphQLInterface)]

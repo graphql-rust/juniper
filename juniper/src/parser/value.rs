@@ -38,7 +38,7 @@ where
                 item: Token::CurlyOpen,
                 ..
             },
-            Some(&MetaType::InputObject(ref o)),
+            Some(MetaType::InputObject(o)),
         ) => parse_object_literal(parser, is_const, schema, Some(o)),
         (
             &Spanning {
@@ -52,7 +52,7 @@ where
                 item: Token::Scalar(_),
                 ..
             },
-            Some(&MetaType::Scalar(ref s)),
+            Some(MetaType::Scalar(s)),
         ) => {
             if let Spanning {
                 item: Token::Scalar(scalar),
@@ -210,7 +210,7 @@ where
 {
     let result = match token {
         ScalarToken::String(_) => {
-            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("String") {
+            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("String") {
                 (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
                 Err(ParseError::ExpectedScalarError(
@@ -219,7 +219,7 @@ where
             }
         }
         ScalarToken::Int(_) => {
-            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Int") {
+            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("Int") {
                 (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
                 Err(ParseError::ExpectedScalarError(
@@ -228,7 +228,7 @@ where
             }
         }
         ScalarToken::Float(_) => {
-            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Float") {
+            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("Float") {
                 (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
                 Err(ParseError::ExpectedScalarError(

@@ -122,15 +122,9 @@ impl<'a> PairSet<'a> {
     }
 
     fn insert(&mut self, a: &'a str, b: &'a str, mutex: bool) {
-        self.data
-            .entry(a)
-            .or_insert_with(HashMap::new)
-            .insert(b, mutex);
+        self.data.entry(a).or_default().insert(b, mutex);
 
-        self.data
-            .entry(b)
-            .or_insert_with(HashMap::new)
-            .insert(a, mutex);
+        self.data.entry(b).or_default().insert(a, mutex);
     }
 }
 
@@ -447,8 +441,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             }
         }
 
-        if let (&Some(ref s1), &Some(ref s2)) = (&ast1.item.selection_set, &ast2.item.selection_set)
-        {
+        if let (Some(s1), Some(s2)) = (&ast1.item.selection_set, &ast2.item.selection_set) {
             let conflicts = self.find_conflicts_between_sub_selection_sets(
                 mutually_exclusive,
                 t1.map(Type::innermost_name),
@@ -547,19 +540,11 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             ),
             vec![*pos1]
                 .into_iter()
-                .chain(
-                    conflicts
-                        .iter()
-                        .flat_map(|&Conflict(_, ref fs1, _)| fs1.clone()),
-                )
+                .chain(conflicts.iter().flat_map(|Conflict(_, fs1, _)| fs1.clone()))
                 .collect(),
             vec![*pos2]
                 .into_iter()
-                .chain(
-                    conflicts
-                        .iter()
-                        .flat_map(|&Conflict(_, _, ref fs2)| fs2.clone()),
-                )
+                .chain(conflicts.iter().flat_map(|Conflict(_, _, fs2)| fs2.clone()))
                 .collect(),
         ))
     }
@@ -615,10 +600,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                     return false;
                 }
 
-                args1.iter().all(|&(ref n1, ref v1)| {
-                    if let Some(&(_, ref v2)) =
-                        args2.iter().find(|&&(ref n2, _)| n1.item == n2.item)
-                    {
+                args1.iter().all(|(n1, v1)| {
+                    if let Some((_, v2)) = args2.iter().find(|&(n2, _)| n1.item == n2.item) {
                         v1.item.unlocated_eq(&v2.item)
                     } else {
                         false
@@ -756,11 +739,11 @@ fn error_message(reason_name: &str, reason: &ConflictReasonMessage) -> String {
 }
 
 fn format_reason(reason: &ConflictReasonMessage) -> String {
-    match *reason {
-        ConflictReasonMessage::Message(ref name) => name.clone(),
-        ConflictReasonMessage::Nested(ref nested) => nested
+    match reason {
+        ConflictReasonMessage::Message(name) => name.clone(),
+        ConflictReasonMessage::Nested(nested) => nested
             .iter()
-            .map(|&ConflictReason(ref name, ref subreason)| {
+            .map(|ConflictReason(name, subreason)| {
                 format!(
                     r#"subfields "{name}" conflict because {}"#,
                     format_reason(subreason),

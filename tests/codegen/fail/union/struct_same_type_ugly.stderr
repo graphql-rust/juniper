@@ -1,4 +1,4 @@
-error[E0119]: conflicting implementations of trait `<Character as juniper::GraphQLUnion<__S>>::mark::_::{closure#0}::MutuallyExclusive` for type `std::string::String`
+error[E0119]: conflicting implementations of trait `MutuallyExclusive` for type `std::string::String`
  --> fail/union/struct_same_type_ugly.rs:3:10
   |
 3 | #[derive(GraphQLUnion)]
