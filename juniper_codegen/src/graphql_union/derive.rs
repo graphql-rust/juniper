@@ -151,12 +151,15 @@ fn parse_variant_from_enum_variant(
         }
     } else {
         parse_quote! {
-            match self { #enum_ident::#var_ident(ref v) => Some(v), _ => None, }
+            match self {
+                #enum_ident::#var_ident(ref v) => ::core::option::Option::Some(v),
+                _ => ::core::option::Option::None,
+            }
         }
     };
 
     let resolver_check = parse_quote! {
-        matches!(self, #enum_path(_))
+        ::core::matches!(self, #enum_path(_))
     };
 
     Some(VariantDefinition {

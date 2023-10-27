@@ -2,8 +2,6 @@
 
 pub mod common;
 
-use std::marker::PhantomData;
-
 use juniper::{
     execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, GraphQLObject,
     GraphQLUnion, ScalarValue,
@@ -11,21 +9,25 @@ use juniper::{
 
 use self::common::util::{schema, schema_with_scalar};
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 #[derive(GraphQLObject)]
 struct Human {
-    id: String,
-    home_planet: String,
+    id: prelude::String,
+    home_planet: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 struct Droid {
-    id: String,
-    primary_function: String,
+    id: prelude::String,
+    primary_function: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 struct Ewok {
-    id: String,
+    id: prelude::String,
     funny: bool,
 }
 
@@ -39,21 +41,21 @@ impl juniper::Context for CustomContext {}
 #[derive(GraphQLObject)]
 #[graphql(context = CustomContext)]
 pub struct HumanCustomContext {
-    id: String,
-    home_planet: String,
+    id: prelude::String,
+    home_planet: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 #[graphql(context = CustomContext)]
 pub struct DroidCustomContext {
-    id: String,
-    primary_function: String,
+    id: prelude::String,
+    primary_function: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 #[graphql(context = CustomContext)]
 struct EwokCustomContext {
-    id: String,
+    id: prelude::String,
     funny: bool,
 }
 
@@ -274,9 +276,9 @@ mod generic_lifetime_enum {
 
     #[derive(GraphQLObject)]
     struct GenericDroid<B = ()> {
-        id: String,
+        id: prelude::String,
         #[graphql(ignore)]
-        _t: PhantomData<B>,
+        _t: std::marker::PhantomData<B>,
     }
 
     #[derive(GraphQLUnion)]
@@ -297,7 +299,7 @@ mod generic_lifetime_enum {
                 Self::Human => Character::A(LifetimeHuman { id: "human-32" }),
                 Self::Droid => Character::B(GenericDroid {
                     id: "droid-99".into(),
-                    _t: PhantomData,
+                    _t: std::marker::PhantomData,
                 }),
             }
         }
@@ -654,7 +656,7 @@ mod explicit_generic_scalar {
         A(Human),
         B(Droid),
         #[graphql(ignore)]
-        _P(PhantomData<S>),
+        _P(std::marker::PhantomData<S>),
     }
 
     enum QueryRoot {
@@ -722,7 +724,7 @@ mod bounded_generic_scalar {
     use super::*;
 
     #[derive(GraphQLUnion)]
-    #[graphql(scalar = S: ScalarValue + Clone)]
+    #[graphql(scalar = S: ScalarValue + prelude::Clone)]
     enum Character {
         A(Human),
         B(Droid),
@@ -1008,7 +1010,7 @@ mod external_resolver_enum {
     }
 
     impl Character {
-        fn as_droid<'db>(&self, db: &'db Database) -> Option<&'db Droid> {
+        fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             if let Self::B = self {
                 db.droid.as_ref()
             } else {
@@ -1018,7 +1020,7 @@ mod external_resolver_enum {
     }
 
     struct Database {
-        droid: Option<Droid>,
+        droid: prelude::Option<Droid>,
     }
     impl juniper::Context for Database {}
 
@@ -1099,7 +1101,7 @@ mod external_resolver_enum_variant {
     }
 
     impl Character {
-        fn as_droid<'db>(&self, db: &'db Database) -> Option<&'db Droid> {
+        fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             if let Self::B(_) = self {
                 db.droid.as_ref()
             } else {
@@ -1109,7 +1111,7 @@ mod external_resolver_enum_variant {
     }
 
     struct Database {
-        droid: Option<Droid>,
+        droid: prelude::Option<Droid>,
     }
     impl juniper::Context for Database {}
 
@@ -1201,7 +1203,7 @@ mod full_featured_enum {
     }
 
     impl<T> Character<T> {
-        fn as_droid(&self, ctx: &CustomContext) -> Option<&DroidCustomContext> {
+        fn as_droid(&self, ctx: &CustomContext) -> prelude::Option<&DroidCustomContext> {
             if let CustomContext::Droid = ctx {
                 if let Self::B(droid) = self {
                     return Some(droid);
@@ -1214,7 +1216,7 @@ mod full_featured_enum {
     fn resolve_ewok<'a, T>(
         ewok: &'a Character<T>,
         _: &CustomContext,
-    ) -> Option<&'a EwokCustomContext> {
+    ) -> prelude::Option<&'a EwokCustomContext> {
         if let Character::C(ewok) = ewok {
             Some(ewok)
         } else {
@@ -1346,11 +1348,11 @@ mod trivial_struct {
         on Droid = Character::as_droid,
     )]
     struct Character {
-        id: String,
+        id: prelude::String,
     }
 
     impl Character {
-        fn as_human<'db>(&self, db: &'db Database) -> Option<&'db Human> {
+        fn as_human<'db>(&self, db: &'db Database) -> prelude::Option<&'db Human> {
             if let Some(human) = &db.human {
                 if human.id == self.id {
                     return Some(human);
@@ -1359,7 +1361,7 @@ mod trivial_struct {
             None
         }
 
-        fn as_droid<'db>(&self, db: &'db Database) -> Option<&'db Droid> {
+        fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             if let Some(droid) = &db.droid {
                 if droid.id == self.id {
                     return Some(droid);
@@ -1370,8 +1372,8 @@ mod trivial_struct {
     }
 
     struct Database {
-        human: Option<Human>,
-        droid: Option<Droid>,
+        human: prelude::Option<Human>,
+        droid: prelude::Option<Droid>,
     }
     impl juniper::Context for Database {}
 
@@ -1523,12 +1525,12 @@ mod generic_struct {
     #[graphql(context = Database)]
     #[graphql(on Human = Character::as_human)]
     struct Character<A, B> {
-        id: String,
-        _s: PhantomData<(A, B)>,
+        id: prelude::String,
+        _s: std::marker::PhantomData<(A, B)>,
     }
 
     impl<A, B> Character<A, B> {
-        fn as_human<'db>(&self, db: &'db Database) -> Option<&'db Human> {
+        fn as_human<'db>(&self, db: &'db Database) -> prelude::Option<&'db Human> {
             if let Some(human) = &db.human {
                 if human.id == self.id {
                     return Some(human);
@@ -1539,7 +1541,7 @@ mod generic_struct {
     }
 
     struct Database {
-        human: Option<Human>,
+        human: prelude::Option<Human>,
     }
     impl juniper::Context for Database {}
 
@@ -1550,7 +1552,7 @@ mod generic_struct {
         fn character(&self) -> Character<u8, ()> {
             Character {
                 id: "human-32".into(),
-                _s: PhantomData,
+                _s: std::marker::PhantomData,
             }
         }
     }
@@ -1612,12 +1614,12 @@ mod full_featured_struct {
     #[graphql(on Human = Character::as_human)]
     #[graphql(on Droid = Character::as_droid)]
     struct Character<T> {
-        id: String,
-        _s: PhantomData<T>,
+        id: prelude::String,
+        _s: std::marker::PhantomData<T>,
     }
 
     impl<T> Character<T> {
-        fn as_human<'db>(&self, db: &'db Database) -> Option<&'db Human> {
+        fn as_human<'db>(&self, db: &'db Database) -> prelude::Option<&'db Human> {
             if let Some(human) = &db.human {
                 if human.id == self.id {
                     return Some(human);
@@ -1628,7 +1630,7 @@ mod full_featured_struct {
     }
 
     impl<T> Character<T> {
-        fn as_droid<'db>(&self, db: &'db Database) -> Option<&'db Droid> {
+        fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             if let Some(droid) = &db.droid {
                 if droid.id == self.id {
                     return Some(droid);
@@ -1639,8 +1641,8 @@ mod full_featured_struct {
     }
 
     struct Database {
-        human: Option<Human>,
-        droid: Option<Droid>,
+        human: prelude::Option<Human>,
+        droid: prelude::Option<Droid>,
     }
     impl juniper::Context for Database {}
 
@@ -1658,7 +1660,7 @@ mod full_featured_struct {
                     Self::Droid => "droid-99",
                 }
                 .into(),
-                _s: PhantomData,
+                _s: std::marker::PhantomData,
             }
         }
     }
@@ -1769,7 +1771,7 @@ mod issue_845 {
 
     #[derive(GraphQLUnion)]
     enum Character {
-        A(Box<Human>),
+        A(prelude::Box<Human>),
         B(Arc<Droid>),
     }
 
@@ -1782,7 +1784,7 @@ mod issue_845 {
     impl QueryRoot {
         fn character(&self) -> Character {
             match self {
-                Self::Human => Character::A(Box::new(Human {
+                Self::Human => Character::A(prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 })),

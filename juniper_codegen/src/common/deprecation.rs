@@ -111,7 +111,7 @@ impl ToTokens for Directive {
             .as_ref()
             .map_or_else(|| quote! { None }, |text| quote! { Some(#text) });
         quote! {
-            .deprecated(::std::option::Option::#reason)
+            .deprecated(::core::option::Option::#reason)
         }
         .to_tokens(into);
     }

@@ -1,43 +1,47 @@
 error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
- --> fail/input-object/derive_incompatible_field_type.rs:8:10
-  |
-8 | #[derive(GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
-  |
-  = help: the following other types implement trait `IsInputType<S>`:
-            <&T as IsInputType<S>>
-            <Arc<T> as IsInputType<S>>
-            <Box<T> as IsInputType<S>>
-            <ID as IsInputType<__S>>
-            <Object as IsInputType<__S>>
-            <TypeKind as IsInputType<__S>>
-            <Vec<T> as IsInputType<S>>
-            <[T; N] as IsInputType<S>>
-          and 13 others
-  = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> fail/input-object/derive_incompatible_field_type.rs:10:12
+   |
+10 |     field: ObjectA,
+   |            ^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
+   |
+   = help: the following other types implement trait `IsInputType<S>`:
+             <bool as IsInputType<__S>>
+             <i32 as IsInputType<__S>>
+             <f64 as IsInputType<__S>>
+             <Object as IsInputType<__S>>
+             <Box<T> as IsInputType<S>>
+             <uuid::Uuid as IsInputType<__S>>
+             <url::Url as IsInputType<__S>>
+             <bson::datetime::DateTime as IsInputType<__S>>
+           and $N others
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
-    --> fail/input-object/derive_incompatible_field_type.rs:8:10
-     |
-8    | #[derive(GraphQLInputObject)]
-     |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
-     |
-     = help: the following other types implement trait `FromInputValue<S>`:
-               <Arc<T> as FromInputValue<S>>
-               <Box<T> as FromInputValue<S>>
-               <ID as FromInputValue<__S>>
-               <Object as FromInputValue<__S>>
-               <TypeKind as FromInputValue<__S>>
-               <Vec<T> as FromInputValue<S>>
-               <[T; N] as FromInputValue<S>>
-               <bool as FromInputValue<__S>>
-             and 10 others
+  --> fail/input-object/derive_incompatible_field_type.rs:10:12
+   |
+8  | #[derive(GraphQLInputObject)]
+   |          ------------------ required by a bound introduced by this call
+9  | struct Object {
+10 |     field: ObjectA,
+   |            ^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
+   |
+   = help: the following other types implement trait `FromInputValue<S>`:
+             <bool as FromInputValue<__S>>
+             <i32 as FromInputValue<__S>>
+             <f64 as FromInputValue<__S>>
+             <Object as FromInputValue<__S>>
+             <Box<T> as FromInputValue<S>>
+             <uuid::Uuid as FromInputValue<__S>>
+             <url::Url as FromInputValue<__S>>
+             <bson::datetime::DateTime as FromInputValue<__S>>
+           and $N others
 note: required by a bound in `Registry::<'r, S>::arg`
-    --> $WORKSPACE/juniper/src/executor/mod.rs
-     |
-     |         T: GraphQLType<S> + FromInputValue<S>,
-     |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<'r, S>::arg`
-     = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> $WORKSPACE/juniper/src/executor/mod.rs
+   |
+   |     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
+   |            --- required by a bound in this associated function
+   |     where
+   |         T: GraphQLType<S> + FromInputValue<S>,
+   |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<'r, S>::arg`
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> fail/input-object/derive_incompatible_field_type.rs:8:10
@@ -46,15 +50,15 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
   |
   = help: the following other types implement trait `FromInputValue<S>`:
-            <Arc<T> as FromInputValue<S>>
-            <Box<T> as FromInputValue<S>>
-            <ID as FromInputValue<__S>>
-            <Object as FromInputValue<__S>>
-            <TypeKind as FromInputValue<__S>>
-            <Vec<T> as FromInputValue<S>>
-            <[T; N] as FromInputValue<S>>
             <bool as FromInputValue<__S>>
-          and 10 others
+            <i32 as FromInputValue<__S>>
+            <f64 as FromInputValue<__S>>
+            <Object as FromInputValue<__S>>
+            <Box<T> as FromInputValue<S>>
+            <uuid::Uuid as FromInputValue<__S>>
+            <url::Url as FromInputValue<__S>>
+            <bson::datetime::DateTime as FromInputValue<__S>>
+          and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
@@ -64,13 +68,13 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^ the trait `ToInputValue<_>` is not implemented for `ObjectA`
   |
   = help: the following other types implement trait `ToInputValue<S>`:
-            <&'a T as ToInputValue<S>>
-            <&'a [T] as ToInputValue<S>>
-            <&'a str as ToInputValue<S>>
-            <Arc<T> as ToInputValue<S>>
-            <Box<T> as ToInputValue<S>>
-            <ID as ToInputValue<__S>>
+            <bool as ToInputValue<__S>>
+            <i32 as ToInputValue<__S>>
+            <f64 as ToInputValue<__S>>
             <Object as ToInputValue<__S>>
-            <TypeKind as ToInputValue<__S>>
-          and 14 others
+            <Box<T> as ToInputValue<S>>
+            <uuid::Uuid as ToInputValue<__S>>
+            <url::Url as ToInputValue<__S>>
+            <bson::datetime::DateTime as ToInputValue<__S>>
+          and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

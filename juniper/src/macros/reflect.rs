@@ -516,7 +516,7 @@ macro_rules! assert_implemented_for {
                         <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`: missing implementer reference in interface's `for` attribute.",
                     );
-                    ::std::panic!("{}", MSG);
+                    ::core::panic!("{}", MSG);
                 }
             })*
         };
@@ -544,7 +544,7 @@ macro_rules! assert_interfaces_impls {
                         <$implementers as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`: missing interface reference in implementer's `impl` attribute.",
                     );
-                    ::std::panic!("{}", MSG);
+                    ::core::panic!("{}", MSG);
                 }
             })*
         };
@@ -576,7 +576,7 @@ macro_rules! assert_transitive_impls {
                         <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "`."
                     );
-                    ::std::panic!("{}", MSG);
+                    ::core::panic!("{}", MSG);
                 }
             })*
         };
@@ -674,7 +674,7 @@ macro_rules! assert_subtype {
                     $crate::format_type!(BASE_RETURN_TY, BASE_RETURN_WRAPPED_VAL),
                     "`.",
                 );
-                ::std::panic!("{}", MSG);
+                ::core::panic!("{}", MSG);
             }
         };
     };
@@ -693,9 +693,11 @@ macro_rules! assert_field_args {
         $field_name: expr $(,)?
     ) => {
         const _: () = {
-            const BASE_NAME: &str = <$base_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
-            const IMPL_NAME: &str = <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
-            const ERR_PREFIX: &str = $crate::const_concat!(
+            const BASE_NAME: &::core::primitive::str =
+                <$base_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
+            const IMPL_NAME: &::core::primitive::str =
+                <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
+            const ERR_PREFIX: &::core::primitive::str = $crate::const_concat!(
                 "Failed to implement interface `",
                 BASE_NAME,
                 "` on `",
@@ -703,7 +705,7 @@ macro_rules! assert_field_args {
                 "`: ",
             );
 
-            const FIELD_NAME: &str = $field_name;
+            const FIELD_NAME: &::core::primitive::str = $field_name;
 
             const BASE_ARGS: ::juniper::macros::reflect::Arguments =
                 <$base_ty as $crate::macros::reflect::FieldMeta<
@@ -728,20 +730,20 @@ macro_rules! assert_field_args {
                 TypeMismatch,
             }
 
-            const fn unwrap_error(v: ::std::result::Result<(), Error>) -> Error {
+            const fn unwrap_error(v: ::core::result::Result<(), Error>) -> Error {
                 match v {
                     // Unfortunately we can't use `unreachable!()` here, as this
                     // branch will be executed either way.
-                    Ok(()) => Error {
+                    ::core::result::Result::Ok(()) => Error {
                         cause: Cause::RequiredField,
                         base: ("unreachable", "unreachable", 1),
                         implementation: ("unreachable", "unreachable", 1),
                     },
-                    Err(err) => err,
+                    ::core::result::Result::Err(err) => err,
                 }
             }
 
-            const fn check() -> Result<(), Error> {
+            const fn check() -> ::core::result::Result<(), Error> {
                 let mut base_i = 0;
                 while base_i < BASE_ARGS.len() {
                     let (base_name, base_type, base_wrap_val) = BASE_ARGS[base_i];
@@ -800,7 +802,7 @@ macro_rules! assert_field_args {
                         base_i += 1;
                     }
                     if !was_found {
-                        return Err(Error {
+                        return ::core::result::Result::Err(Error {
                             cause: Cause::AdditionalNonNullableField,
                             base: (impl_name, impl_type, impl_wrapped_val),
                             implementation: (impl_name, impl_type, impl_wrapped_val),
@@ -808,10 +810,10 @@ macro_rules! assert_field_args {
                     }
                 }
 
-                Ok(())
+                ::core::result::Result::Ok(())
             }
 
-            const RES: ::std::result::Result<(), Error> = check();
+            const RES: ::core::result::Result<(), Error> = check();
             if RES.is_err() {
                 const ERROR: Error = unwrap_error(RES);
 
@@ -822,7 +824,7 @@ macro_rules! assert_field_args {
                 const IMPL_TYPE_FORMATTED: &str =
                     $crate::format_type!(ERROR.implementation.1, ERROR.implementation.2);
 
-                const MSG: &str = match ERROR.cause {
+                const MSG: &::core::primitive::str = match ERROR.cause {
                     Cause::TypeMismatch => {
                         $crate::const_concat!(
                             "Argument `",
@@ -855,7 +857,7 @@ macro_rules! assert_field_args {
                 };
                 const ERROR_MSG: &str =
                     $crate::const_concat!(ERR_PREFIX, "Field `", FIELD_NAME, "`: ", MSG);
-                ::std::panic!("{}", ERROR_MSG);
+                ::core::panic!("{}", ERROR_MSG);
             }
         };
     };
@@ -865,9 +867,9 @@ macro_rules! assert_field_args {
 #[macro_export]
 macro_rules! const_concat {
     ($($s:expr),* $(,)?) => {{
-        const LEN: usize = 0 $(+ $s.as_bytes().len())*;
-        const CNT: usize = [$($s),*].len();
-        const fn concat(input: [&str; CNT]) -> [u8; LEN] {
+        const LEN: ::core::primitive::usize = 0 $(+ $s.as_bytes().len())*;
+        const CNT: ::core::primitive::usize = [$($s),*].len();
+        const fn concat(input: [&::core::primitive::str; CNT]) -> [::core::primitive::u8; LEN] {
             let mut bytes = [0; LEN];
             let (mut i, mut byte) = (0, 0);
             while i < CNT {
@@ -881,12 +883,12 @@ macro_rules! const_concat {
             }
             bytes
         }
-        const CON: [u8; LEN] = concat([$($s),*]);
+        const CON: [::core::primitive::u8; LEN] = concat([$($s),*]);
 
         // TODO: Use `.unwrap()` once it becomes `const`.
-        match ::std::str::from_utf8(&CON) {
-            ::std::result::Result::Ok(s) => s,
-            _ => unreachable!(),
+        match ::core::str::from_utf8(&CON) {
+            ::core::result::Result::Ok(s) => s,
+            _ => ::core::unreachable!(),
         }
     }};
 }
@@ -911,7 +913,7 @@ macro_rules! checked_hash {
                 <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                 "`."
             );
-            ::std::panic!("{}", MSG)
+            ::core::panic!("{}", MSG)
         }
     }};
 }
@@ -936,13 +938,13 @@ macro_rules! format_type {
         ) = ($ty, $wrapped_value);
         const RES_LEN: usize = $crate::macros::reflect::type_len_with_wrapped_val(TYPE.0, TYPE.1);
 
-        const OPENING_BRACKET: &str = "[";
-        const CLOSING_BRACKET: &str = "]";
-        const BANG: &str = "!";
+        const OPENING_BRACKET: &::core::primitive::str = "[";
+        const CLOSING_BRACKET: &::core::primitive::str = "]";
+        const BANG: &::core::primitive::str = "!";
 
-        const fn format_type_arr() -> [u8; RES_LEN] {
+        const fn format_type_arr() -> [::core::primitive::u8; RES_LEN] {
             let (ty, wrap_val) = TYPE;
-            let mut type_arr: [u8; RES_LEN] = [0; RES_LEN];
+            let mut type_arr: [::core::primitive::u8; RES_LEN] = [0; RES_LEN];
 
             let mut current_start = 0;
             let mut current_end = RES_LEN - 1;
@@ -1003,13 +1005,14 @@ macro_rules! format_type {
             type_arr
         }
 
-        const TYPE_ARR: [u8; RES_LEN] = format_type_arr();
+        const TYPE_ARR: [::core::primitive::u8; RES_LEN] = format_type_arr();
 
         // TODO: Use `.unwrap()` once it becomes `const`.
-        const TYPE_FORMATTED: &str = match ::std::str::from_utf8(TYPE_ARR.as_slice()) {
-            ::std::result::Result::Ok(s) => s,
-            _ => unreachable!(),
-        };
+        const TYPE_FORMATTED: &::core::primitive::str =
+            match ::core::str::from_utf8(TYPE_ARR.as_slice()) {
+                ::core::result::Result::Ok(s) => s,
+                _ => unreachable!(),
+            };
 
         TYPE_FORMATTED
     }};

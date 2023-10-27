@@ -335,13 +335,15 @@ impl OnMethod {
                                 ::juniper::IntoFieldError::<#scalar>::into_field_error(e)
                                     .map_message(|m| format!(#err_text, m))
                             })
-                    }, Ok))
+                    }, ::core::result::Result::Ok))
                 };
                 if for_async {
                     quote! {
                         match #arg {
-                            Ok(v) => v,
-                            Err(e) => return Box::pin(async { Err(e) }),
+                            ::core::result::Result::Ok(v) => v,
+                            ::core::result::Result::Err(e) => return ::std::boxed::Box::pin(async {
+                                ::core::result::Result::Err(e)
+                            }),
                         }
                     }
                 } else {

@@ -338,7 +338,8 @@ impl Definition {
 
         let mut ty_full = quote! { #ty #ty_generics };
         if self.is_trait_object {
-            ty_full = quote! { dyn #ty_full + '__obj + Send + Sync };
+            ty_full =
+                quote! { dyn #ty_full + '__obj + ::core::marker::Send + ::core::marker::Sync };
         }
 
         let mut generics = self.generics.clone();
@@ -382,13 +383,13 @@ impl Definition {
             generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote! { #self_ty: Sync });
+                .push(parse_quote! { #self_ty: ::core::marker::Sync });
 
             if scalar.is_generic() {
                 generics
                     .make_where_clause()
                     .predicates
-                    .push(parse_quote! { #scalar: Send + Sync });
+                    .push(parse_quote! { #scalar: ::core::marker::Send + ::core::marker::Sync });
             }
         }
 
@@ -472,8 +473,10 @@ impl Definition {
             #[automatically_derived]
             impl #impl_generics ::juniper::GraphQLType<#scalar> for #ty_full #where_clause
             {
-                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
-                    Some(#name)
+                fn name(
+                    _ : &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
+                    ::core::option::Option::Some(#name)
                 }
 
                 fn meta<'r>(
@@ -524,7 +527,10 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
@@ -532,9 +538,9 @@ impl Definition {
                     &self,
                     context: &Self::Context,
                     info: &Self::TypeInfo,
-                ) -> String {
+                ) -> ::std::string::String {
                     #( #match_variant_names )*
-                    ::std::panic!(
+                    ::core::panic!(
                         "GraphQL union `{}` cannot be resolved into any of its \
                          variants in its current state",
                         #name,
@@ -544,13 +550,13 @@ impl Definition {
                 fn resolve_into_type(
                     &self,
                     info: &Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    type_name: &::core::primitive::str,
+                    _: ::core::option::Option<&[::juniper::Selection<'_, #scalar>]>,
                     executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     let context = executor.context();
                     #( #variant_resolvers )*
-                    return Err(::juniper::FieldError::from(::std::format!(
+                    return ::core::result::Result::Err(::juniper::FieldError::from(::std::format!(
                         "Concrete type `{}` is not handled by instance \
                          resolvers on GraphQL union `{}`",
                         type_name, #name,
@@ -586,8 +592,8 @@ impl Definition {
                 fn resolve_into_type_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&'b [::juniper::Selection<'b, #scalar>]>,
+                    type_name: &::core::primitive::str,
+                    _: ::core::option::Option<&'b [::juniper::Selection<'b, #scalar>]>,
                     executor: &'b ::juniper::Executor<'b, 'b, Self::Context, #scalar>
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     let context = executor.context();
@@ -735,13 +741,15 @@ impl VariantDefinition {
 
         quote! {
             match <#ty as ::juniper::GraphQLType<#scalar>>::name(info) {
-                Some(name) => {
+                ::core::option::Option::Some(name) => {
                     if type_name == name {
                         let fut = ::juniper::futures::future::ready({ #expr });
                         return #resolving_code;
                     }
                 }
-                None => return ::juniper::macros::helper::err_unnamed_type_fut(#ty_name),
+                ::core::option::Option::None => {
+                    return ::juniper::macros::helper::err_unnamed_type_fut(#ty_name);
+                }
             }
         }
     }
@@ -772,7 +780,7 @@ fn emerge_union_variants_from_attr(
         // we have no other options here, until the `juniper::GraphQLType`
         // itself will allow to do it in some cleverer way.
         let resolver_check = parse_quote! {
-            ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
+            ({ #resolver_code } as ::core::option::Option<&#ty>).is_some()
         };
 
         if let Some(var) = variants.iter_mut().find(|v| v.ty == ty) {

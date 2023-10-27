@@ -49,18 +49,21 @@ impl Definition<Subscription> {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
                 fn resolve_field(
                     &self,
                     _: &Self::TypeInfo,
-                    _: &str,
+                    _: &::core::primitive::str,
                     _: &::juniper::Arguments<'_, #scalar>,
                     _: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
-                    Err(::juniper::FieldError::from(
+                    ::core::result::Result::Err(::juniper::FieldError::from(
                         "Called `resolve_field` on subscription object",
                     ))
                 }
@@ -69,7 +72,7 @@ impl Definition<Subscription> {
                     &self,
                     _: &Self::Context,
                     _: &Self::TypeInfo,
-                ) -> String {
+                ) -> ::std::string::String {
                     #name.into()
                 }
             }
@@ -94,7 +97,7 @@ impl Definition<Subscription> {
                 .as_mut()
                 .unwrap()
                 .predicates
-                .push(parse_quote! { #scalar: Send + Sync });
+                .push(parse_quote! { #scalar: ::core::marker::Send + ::core::marker::Sync });
         }
         let ty = &self.ty;
         let ty_name = ty.to_token_stream().to_string();
@@ -116,7 +119,7 @@ impl Definition<Subscription> {
                 >(
                     &'s self,
                     info: &'i Self::TypeInfo,
-                    field: &'fi str,
+                    field: &'fi ::core::primitive::str,
                     args: ::juniper::Arguments<'args, #scalar>,
                     executor: &'ref_e ::juniper::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'f, std::result::Result<
@@ -134,7 +137,7 @@ impl Definition<Subscription> {
                 {
                     match field {
                         #( #fields_resolvers )*
-                        _ => Box::pin(async move { #no_field_err }),
+                        _ => ::std::boxed::Box::pin(async move { #no_field_err }),
                     }
                 }
             }

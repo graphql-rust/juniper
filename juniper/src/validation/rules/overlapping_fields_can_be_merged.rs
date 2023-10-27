@@ -122,15 +122,9 @@ impl<'a> PairSet<'a> {
     }
 
     fn insert(&mut self, a: &'a str, b: &'a str, mutex: bool) {
-        self.data
-            .entry(a)
-            .or_insert_with(HashMap::new)
-            .insert(b, mutex);
+        self.data.entry(a).or_default().insert(b, mutex);
 
-        self.data
-            .entry(b)
-            .or_insert_with(HashMap::new)
-            .insert(a, mutex);
+        self.data.entry(b).or_default().insert(a, mutex);
     }
 }
 

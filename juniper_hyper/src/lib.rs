@@ -212,7 +212,7 @@ where
     S: ScalarValue,
 {
     let mut query = None;
-    let operation_name = None;
+    let mut operation_name = None;
     let mut variables = None;
     for (key, value) in form_urlencoded::parse(input.as_bytes()).into_owned() {
         match key.as_ref() {
@@ -226,6 +226,7 @@ where
                 if operation_name.is_some() {
                     return Err(invalid_err("operationName"));
                 }
+                operation_name = Some(value)
             }
             "variables" => {
                 if variables.is_some() {
@@ -325,7 +326,9 @@ mod tests {
     impl http_tests::HttpIntegration for TestHyperIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             let url = format!("http://127.0.0.1:{}/graphql{url}", self.port);
-            make_test_response(reqwest::blocking::get(&url).expect(&format!("failed GET {url}")))
+            make_test_response(
+                reqwest::blocking::get(&url).unwrap_or_else(|_| panic!("failed GET {url}")),
+            )
         }
 
         fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
@@ -336,7 +339,7 @@ mod tests {
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .body(body.to_owned())
                 .send()
-                .expect(&format!("failed POST {url}"));
+                .unwrap_or_else(|_| panic!("failed POST {url}"));
             make_test_response(res)
         }
 
@@ -348,7 +351,7 @@ mod tests {
                 .header(reqwest::header::CONTENT_TYPE, "application/graphql")
                 .body(body.to_owned())
                 .send()
-                .expect(&format!("failed POST {url}"));
+                .unwrap_or_else(|_| panic!("failed POST {url}"));
             make_test_response(res)
         }
     }

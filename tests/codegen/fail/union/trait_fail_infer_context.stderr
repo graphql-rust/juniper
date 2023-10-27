@@ -5,8 +5,8 @@ error[E0277]: the trait bound `CustomContext: FromContext<SubContext>` is not sa
   | ^^^^^^^^^^^^^^^^ the trait `FromContext<SubContext>` is not implemented for `CustomContext`
   |
   = help: the following other types implement trait `FromContext<T>`:
-            <() as FromContext<T>>
             <SubContext as FromContext<CustomContext>>
+            <() as FromContext<T>>
   = note: this error originates in the attribute macro `graphql_union` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0308]: mismatched types

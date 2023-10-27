@@ -25,7 +25,6 @@ jobs:
     needs:
       - bench
       - clippy
-      - example
       - feature
       - msrv
       - release-check
@@ -47,7 +46,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -58,7 +57,7 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -76,39 +75,13 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
 
       - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
       - run: cargo bench -p juniper_benchmarks
-
-  example:
-    strategy:
-      fail-fast: false
-      matrix:
-        example:
-          - actix_subscriptions
-          - basic_subscriptions
-          - warp_async
-          - warp_subscriptions
-        os:
-          - ubuntu
-          - macOS
-          - windows
-        toolchain:
-          - stable
-          - beta
-          - nightly
-    runs-on: ${{ matrix.os }}-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain }}
-
-      - run: cargo check -p example_${{ matrix.example }}
 
   feature:
     strategy:
@@ -128,13 +101,15 @@ jobs:
           - { feature: time, crate: juniper }
           - { feature: url, crate: juniper }
           - { feature: uuid, crate: juniper }
+          - { feature: graphql-transport-ws, crate: juniper_graphql_ws }
+          - { feature: graphql-ws, crate: juniper_graphql_ws }
           - { feature: <none>, crate: juniper_actix }
           - { feature: subscriptions, crate: juniper_actix }
           - { feature: <none>, crate: juniper_warp }
           - { feature: subscriptions, crate: juniper_warp }
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -162,7 +137,7 @@ jobs:
           - juniper
           - juniper_subscriptions
           - juniper_graphql_ws
-          - juniper_actix
+          #- juniper_actix
           - juniper_hyper
           #- juniper_iron
           - juniper_rocket
@@ -171,9 +146,13 @@ jobs:
           - ubuntu
           - macOS
           - windows
+        include:
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "ubuntu" }
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "macOS" }
+          - { msrv: "1.68.0", crate: "juniper_actix", os: "windows" }
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -189,7 +168,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -238,7 +217,7 @@ jobs:
             os: windows
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
@@ -266,7 +245,7 @@ jobs:
           - nightly
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
@@ -289,7 +268,7 @@ jobs:
           - nightly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
@@ -313,7 +292,7 @@ jobs:
     needs: ["release-github"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -347,7 +326,7 @@ jobs:
           - juniper_warp
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -363,7 +342,6 @@ jobs:
     needs:
       - bench
       - clippy
-      - example
       - feature
       - msrv
       - package
@@ -373,7 +351,7 @@ jobs:
       - wasm
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Parse crate name and version from Git tag
         id: tag
@@ -416,7 +394,7 @@ jobs:
     needs: ["test", "test-book"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: peaceiris/actions-mdbook@v1
 
       - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'

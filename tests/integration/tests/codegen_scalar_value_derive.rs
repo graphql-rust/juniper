@@ -1,7 +1,13 @@
 //! Tests for `#[derive(ScalarValue)]` macro.
 
+pub mod common;
+
 use juniper::{DefaultScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
+
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
 
 mod trivial {
     use super::*;
@@ -14,7 +20,7 @@ mod trivial {
         #[value(as_float)]
         Float(f64),
         #[value(as_str, as_string, into_string)]
-        String(String),
+        String(prelude::String),
         #[value(as_bool)]
         Boolean(bool),
     }
@@ -29,7 +35,7 @@ mod trivial {
             .is_type::<f64>());
         assert!(CustomScalarValue::from("str".to_owned())
             .into_another::<DefaultScalarValue>()
-            .is_type::<String>());
+            .is_type::<prelude::String>());
         assert!(CustomScalarValue::from(true)
             .into_another::<DefaultScalarValue>()
             .is_type::<bool>());
@@ -47,7 +53,7 @@ mod named_fields {
         #[value(as_float)]
         Float(f64),
         #[value(as_str, as_string, into_string)]
-        String(String),
+        String(prelude::String),
         #[value(as_bool)]
         Boolean { v: bool },
     }
@@ -62,7 +68,7 @@ mod named_fields {
             .is_type::<f64>());
         assert!(CustomScalarValue::from("str".to_owned())
             .into_another::<DefaultScalarValue>()
-            .is_type::<String>());
+            .is_type::<prelude::String>());
         assert!(CustomScalarValue::from(true)
             .into_another::<DefaultScalarValue>()
             .is_type::<bool>());
@@ -84,7 +90,7 @@ mod custom_fn {
             as_string = str::to_owned,
             into_string = std::convert::identity,
         )]
-        String(String),
+        String(prelude::String),
         #[value(as_bool)]
         Boolean(bool),
     }
@@ -99,7 +105,7 @@ mod custom_fn {
             .is_type::<f64>());
         assert!(CustomScalarValue::from("str".to_owned())
             .into_another::<DefaultScalarValue>()
-            .is_type::<String>());
+            .is_type::<prelude::String>());
         assert!(CustomScalarValue::from(true)
             .into_another::<DefaultScalarValue>()
             .is_type::<bool>());
@@ -117,7 +123,7 @@ mod allow_missing_attributes {
         #[value(as_float)]
         Float(f64),
         #[value(as_str, as_string, into_string)]
-        String(String),
+        String(prelude::String),
         #[value(as_bool)]
         Boolean(bool),
     }
@@ -130,7 +136,7 @@ mod allow_missing_attributes {
             .is_type::<f64>());
         assert!(CustomScalarValue::from("str".to_owned())
             .into_another::<DefaultScalarValue>()
-            .is_type::<String>());
+            .is_type::<prelude::String>());
         assert!(CustomScalarValue::from(true)
             .into_another::<DefaultScalarValue>()
             .is_type::<bool>());

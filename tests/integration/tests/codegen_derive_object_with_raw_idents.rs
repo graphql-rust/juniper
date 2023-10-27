@@ -33,7 +33,7 @@ async fn supports_raw_idents_in_types_and_args() {
     }
     "#;
 
-    let value = run_type_info_query(&doc).await;
+    let value = run_type_info_query(doc).await;
 
     assert_eq!(
         value,
@@ -68,7 +68,7 @@ async fn supports_raw_idents_in_fields_of_input_types() {
     }
     "#;
 
-    let value = run_type_info_query(&doc).await;
+    let value = run_type_info_query(doc).await;
 
     assert_eq!(
         value,

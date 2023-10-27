@@ -450,8 +450,10 @@ impl Definition {
                 for #ident #ty_generics
                 #where_clause
             {
-                fn name(_ : &Self::TypeInfo) -> Option<&'static str> {
-                    Some(#name)
+                fn name(
+                    _ : &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
+                    ::core::option::Option::Some(#name)
                 }
 
                 fn meta<'r>(
@@ -489,13 +491,15 @@ impl Definition {
             let name = &v.name;
 
             quote! {
-                Self::#ident => Ok(::juniper::Value::scalar(String::from(#name))),
+                Self::#ident => ::core::result::Result::Ok(::juniper::Value::scalar(
+                    ::std::string::String::from(#name),
+                )),
             }
         });
 
         let ignored = self.has_ignored_variants.then(|| {
             quote! {
-                _ => Err(::juniper::FieldError::<#scalar>::from(
+                _ => ::core::result::Result::Err(::juniper::FieldError::<#scalar>::from(
                     "Cannot resolve ignored enum variant",
                 )),
             }
@@ -509,14 +513,17 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(&self, info: &'__i Self::TypeInfo) -> Option<&'__i str> {
+                fn type_name<'__i>(
+                    &self,
+                    info: &'__i Self::TypeInfo,
+                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
                 fn resolve(
                     &self,
                     _: &(),
-                    _: Option<&[::juniper::Selection<#scalar>]>,
+                    _: ::core::option::Option<&[::juniper::Selection<#scalar>]>,
                     _: &::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     match self {
@@ -549,11 +556,11 @@ impl Definition {
                 fn resolve_async<'__a>(
                     &'__a self,
                     info: &'__a Self::TypeInfo,
-                    selection_set: Option<&'__a [::juniper::Selection<#scalar>]>,
+                    selection_set: ::core::option::Option<&'__a [::juniper::Selection<#scalar>]>,
                     executor: &'__a ::juniper::Executor<Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'__a, ::juniper::ExecutionResult<#scalar>> {
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
-                    Box::pin(::juniper::futures::future::ready(v))
+                    ::std::boxed::Box::pin(::juniper::futures::future::ready(v))
                 }
             }
         }
@@ -577,7 +584,7 @@ impl Definition {
             let name = &v.name;
 
             quote! {
-                Some(#name) => Ok(Self::#ident),
+                ::core::option::Option::Some(#name) => ::core::result::Result::Ok(Self::#ident),
             }
         });
 
@@ -588,10 +595,14 @@ impl Definition {
             {
                 type Error = ::std::string::String;
 
-                fn from_input_value(v: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
+                fn from_input_value(
+                    v: &::juniper::InputValue<#scalar>,
+                ) -> ::core::result::Result<Self, Self::Error> {
                     match v.as_enum_value().or_else(|| v.as_string_value()) {
                         #( #variants )*
-                        _ => Err(::std::format!("Unknown enum value: {}", v)),
+                        _ => ::core::result::Result::Err(
+                            ::std::format!("Unknown enum value: {}", v),
+                        ),
                     }
                 }
             }
@@ -617,14 +628,14 @@ impl Definition {
 
             quote! {
                 #ident::#var_ident => ::juniper::InputValue::<#scalar>::scalar(
-                    String::from(#name),
+                    ::std::string::String::from(#name),
                 ),
             }
         });
 
         let ignored = self.has_ignored_variants.then(|| {
             quote! {
-                _ => panic!("Cannot resolve ignored enum variant"),
+                _ => ::core::panic!("Cannot resolve ignored enum variant"),
             }
         });
 
@@ -730,13 +741,13 @@ impl Definition {
             generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote! { #self_ty: Sync });
+                .push(parse_quote! { #self_ty: ::core::marker::Sync });
 
             if scalar.is_generic() {
                 generics
                     .make_where_clause()
                     .predicates
-                    .push(parse_quote! { #scalar: Send + Sync });
+                    .push(parse_quote! { #scalar: ::core::marker::Send + ::core::marker::Sync });
             }
         }
 

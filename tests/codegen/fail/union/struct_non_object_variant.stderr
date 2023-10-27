@@ -1,17 +1,16 @@
 error[E0277]: the trait bound `Test: GraphQLObject<__S>` is not satisfied
- --> fail/union/struct_non_object_variant.rs:9:10
-  |
-9 | #[derive(GraphQLUnion)]
-  |          ^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `Test`
-  |
-  = help: the following other types implement trait `GraphQLObject<S>`:
-            <&T as GraphQLObject<S>>
-            <Arc<T> as GraphQLObject<S>>
-            <Box<T> as GraphQLObject<S>>
-            <EnumValue as GraphQLObject<__S>>
-            <SchemaType<'a, S> as GraphQLObject<S>>
-            <juniper::meta::Argument<'a, S> as GraphQLObject<S>>
-            <juniper::meta::Field<'a, S> as GraphQLObject<S>>
-            <juniper::schema::model::DirectiveType<'a, S> as GraphQLObject<S>>
-            <juniper::schema::model::TypeType<'a, S> as GraphQLObject<S>>
-  = note: this error originates in the derive macro `GraphQLUnion` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> fail/union/struct_non_object_variant.rs:10:14
+   |
+10 | #[graphql(on Test = Character::a)]
+   |              ^^^^ the trait `GraphQLObject<__S>` is not implemented for `Test`
+   |
+   = help: the following other types implement trait `GraphQLObject<S>`:
+             <Box<T> as GraphQLObject<S>>
+             <juniper::meta::Field<'a, S> as GraphQLObject<S>>
+             <Argument<'a, S> as GraphQLObject<S>>
+             <EnumValue as GraphQLObject<__S>>
+             <SchemaType<'a, S> as GraphQLObject<S>>
+             <juniper::schema::model::TypeType<'a, S> as GraphQLObject<S>>
+             <juniper::schema::model::DirectiveType<'a, S> as GraphQLObject<S>>
+             <Arc<T> as GraphQLObject<S>>
+             <&T as GraphQLObject<S>>

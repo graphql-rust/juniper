@@ -54,7 +54,7 @@ async fn explicit_null() {
     };
 
     assert_eq!(
-        juniper::execute(query, None, &schema, &vars, &Context).await,
+        juniper::execute(query, None, schema, &vars, &Context).await,
         Ok((
             graphql_value!({
                 "literalOneIsExplicitNull": false,

@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "postinstall": "make graphiql graphql-playground"
+  },
+  "dependencies": {
+    "graphiql": "3.0.6",
+    "graphql-playground-react": "1.7.28"
+  }
+}

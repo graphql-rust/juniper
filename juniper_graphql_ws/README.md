@@ -8,7 +8,11 @@
 
 - [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_graphql_ws/CHANGELOG.md)
 
-This crate contains an implementation of the [GraphQL over WebSocket Protocol][1], as used by [Apollo].
+This crate contains implementations of 2 protocols:
+
+1. (`graphql-transport-ws` feature) The [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], as now used by [Apollo] and [`graphql-ws` npm package].
+
+2. (`graphql-ws` feature) The [legacy `graphql-ws` GraphQL over WebSocket Protocol][old], as formerly used by [Apollo] and [`subscriptions-transport-ws` npm package] (deprecated in favor of the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new] mentioned above).
 
 
 
@@ -20,6 +24,8 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 
 
 
+[`graphql-ws` npm package]: https://npmjs.com/package/graphql-ws
+[`subscriptions-transport-ws` npm package]: https://npmjs.com/package/subscriptions-transport-ws
 [Apollo]: https://www.apollographql.com
-
-[1]: https://github.com/apollographql/subscriptions-transport-ws/blob/0ce7a1e1eb687fe51214483e4735f50a2f2d5c79/PROTOCOL.md
+[new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+[old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md

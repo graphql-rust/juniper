@@ -490,8 +490,6 @@ mod fromform_tests {
 #[cfg(test)]
 mod tests {
 
-    use futures;
-
     use juniper::{
         http::tests as http_tests,
         tests::fixtures::starwars::schema::{Database, Query},
@@ -512,7 +510,7 @@ mod tests {
         request: super::GraphQLRequest,
         schema: &State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute_sync(&*schema, &*context)
+        request.execute_sync(schema, context)
     }
 
     #[post("/", data = "<request>")]
@@ -521,7 +519,7 @@ mod tests {
         request: super::GraphQLRequest,
         schema: &State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute_sync(&*schema, &*context)
+        request.execute_sync(schema, context)
     }
 
     struct TestRocketIntegration {
@@ -570,7 +568,7 @@ mod tests {
             schema: &State<Schema>,
         ) -> super::GraphQLResponse {
             assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-            request.execute_sync(&*schema, &*context)
+            request.execute_sync(schema, context)
         }
 
         let rocket = make_rocket_without_routes()
