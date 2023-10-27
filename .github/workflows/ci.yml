@@ -44,14 +44,6 @@ jobs:
   # Linting and formatting #
   ##########################
 
-  codespell:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: codespell-project/actions-codespell@master
-        with:
-          path: book
-
   clippy:
     runs-on: ubuntu-latest
     steps:
@@ -62,6 +54,15 @@ jobs:
           components: clippy
 
       - run: make cargo.lint
+
+  codespell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: codespell-project/actions-codespell@v2
+        with:
+          path: book/
+          check_filenames: true
 
   rustfmt:
     runs-on: ubuntu-latest
@@ -351,6 +352,7 @@ jobs:
     needs:
       - bench
       - clippy
+      - codespell
       - feature
       - msrv
       - package
@@ -400,7 +402,7 @@ jobs:
     name: deploy (Book)
     if: ${{ github.ref == 'refs/heads/master'
          || startsWith(github.ref, 'refs/tags/juniper@') }}
-    needs: ["test", "test-book"]
+    needs: ["codespell", "test", "test-book"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
