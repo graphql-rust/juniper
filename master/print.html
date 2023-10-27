@@ -880,7 +880,7 @@ impl User {
         let DatabaseContext(context) = context;
         // If context is immutable use .read() on RwLock.
         let mut context = context.write().await;
-        // Preform a mutable operation.
+        // Perform a mutable operation.
         context.requested_count.entry(self.id).and_modify(|e| { *e += 1 }).or_insert(1).clone()
     }
 
@@ -1295,7 +1295,7 @@ explore this approach in a real world application.</p>
 <p>The first approach discussed above--where every error is a critical error defined by <code>FieldResult</code> --is easier to implement. However, the client does not know what errors may occur and must instead infer what happened from the error string. This is brittle and could change over time due to either the client or server changing. Therefore, extensive integration testing between the client and server is required to maintain the implicit contract between the two.</p>
 <p>Encoding non-critical errors in the GraphQL schema makes the contract between the client and the server explicit. This allows the client to understand and handle these errors correctly and the server to know when changes are potentially breaking clients. However, encoding this error information into the GraphQL schema requires additional code and up-front definition of non-critical errors.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="other-types"><a class="header" href="#other-types">Other Types</a></h1>
-<p>The GraphQL type system provides several types in additon to objects.</p>
+<p>The GraphQL type system provides several types in addition to objects.</p>
 <p>Find out more about each type below:</p>
 <ul>
 <li><a href="types/enums.html">Enums</a></li>
@@ -1404,13 +1404,13 @@ struct Droid {
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, GraphQLObject};
 
-#[graphql_interface(enum = CharaterInterface, for = Human)] 
+#[graphql_interface(enum = CharacterInterface, for = Human)] 
 trait Character {
     fn id(&amp;self) -&gt; &amp;str;
 }
 
 #[derive(GraphQLObject)]
-#[graphql(impl = CharaterInterface)]
+#[graphql(impl = CharacterInterface)]
 struct Human {
     id: String,
     home_planet: String,
@@ -1577,7 +1577,7 @@ use juniper::{graphql_interface, GraphQLObject};
 pub struct ObjA {
     id: Vec&lt;String&gt;,
 //  ^^ the evaluated program panicked at 
-//     'Failed to implement interface `Character` on `ObjA`: Field `id`: implementor is expected to return a subtype of 
+//     'Failed to implement interface `Character` on `ObjA`: Field `id`: implementer is expected to return a subtype of 
 //      interface's return object: `[String!]!` is not a subtype of `String!`.'    
 }
 
@@ -3136,7 +3136,7 @@ sources.</p>
 instantiated types. Even if Juniper <em>could</em> figure out the name,
 <code>MutationResult&lt;User&gt;</code> wouldn't be a valid GraphQL type name.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="multiple-operations-per-request"><a class="header" href="#multiple-operations-per-request">Multiple operations per request</a></h1>
-<p>The GraphQL standard generally assumes there will be one server request for each client operation you want to perform (such as a query or mutation). This is conceptually simple but has the potential to be inefficent.</p>
+<p>The GraphQL standard generally assumes there will be one server request for each client operation you want to perform (such as a query or mutation). This is conceptually simple but has the potential to be inefficient.</p>
 <p>Some client libraries such as <a href="https://www.apollographql.com/docs/link/links/batch-http.html">apollo-link-batch-http</a> have added the ability to batch operations in a single HTTP request to save network round-trips and potentially increase performance. There are some <a href="https://blog.apollographql.com/batching-client-graphql-queries-a685f5bcd41b">tradeoffs</a> that should be considered before batching requests.</p>
 <p>Juniper's server integration crates support multiple operations in a single HTTP request using JSON arrays. This makes them compatible with client libraries that support batch operations without any special configuration.</p>
 <p>Server integration crates maintained by others are <strong>not required</strong> to support batch requests. Batch requests aren't part of the official GraphQL specification.</p>
@@ -3191,7 +3191,7 @@ instantiated types. Even if Juniper <em>could</em> figure out the name,
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="avoiding-the-n1-problem-with-dataloaders"><a class="header" href="#avoiding-the-n1-problem-with-dataloaders">Avoiding the N+1 Problem With Dataloaders</a></h1>
 <p>A common issue with graphql servers is how the resolvers query their datasource.
-This issue results in a large number of unneccessary database queries or http requests.
+This issue results in a large number of unnecessary database queries or http requests.
 Say you were wanting to list a bunch of cults people were in</p>
 <pre><code class="language-graphql">query {
   persons {

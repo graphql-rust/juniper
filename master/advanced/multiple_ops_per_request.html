@@ -172,7 +172,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="multiple-operations-per-request"><a class="header" href="#multiple-operations-per-request">Multiple operations per request</a></h1>
-<p>The GraphQL standard generally assumes there will be one server request for each client operation you want to perform (such as a query or mutation). This is conceptually simple but has the potential to be inefficent.</p>
+<p>The GraphQL standard generally assumes there will be one server request for each client operation you want to perform (such as a query or mutation). This is conceptually simple but has the potential to be inefficient.</p>
 <p>Some client libraries such as <a href="https://www.apollographql.com/docs/link/links/batch-http.html">apollo-link-batch-http</a> have added the ability to batch operations in a single HTTP request to save network round-trips and potentially increase performance. There are some <a href="https://blog.apollographql.com/batching-client-graphql-queries-a685f5bcd41b">tradeoffs</a> that should be considered before batching requests.</p>
 <p>Juniper's server integration crates support multiple operations in a single HTTP request using JSON arrays. This makes them compatible with client libraries that support batch operations without any special configuration.</p>
 <p>Server integration crates maintained by others are <strong>not required</strong> to support batch requests. Batch requests aren't part of the official GraphQL specification.</p>
