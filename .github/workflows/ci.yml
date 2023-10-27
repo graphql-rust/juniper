@@ -24,6 +24,7 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     needs:
       - bench
+      - codespell
       - clippy
       - feature
       - msrv
@@ -53,6 +54,15 @@ jobs:
           components: clippy
 
       - run: make cargo.lint
+
+  codespell:
+    name: codespell (Book)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: codespell-project/actions-codespell@v2
+        with:
+          path: book/
 
   rustfmt:
     runs-on: ubuntu-latest
@@ -342,6 +352,7 @@ jobs:
     needs:
       - bench
       - clippy
+      - codespell
       - feature
       - msrv
       - package
@@ -391,7 +402,7 @@ jobs:
     name: deploy (Book)
     if: ${{ github.ref == 'refs/heads/master'
          || startsWith(github.ref, 'refs/tags/juniper@') }}
-    needs: ["test", "test-book"]
+    needs: ["codespell", "test", "test-book"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

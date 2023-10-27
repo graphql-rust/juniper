@@ -1,6 +1,6 @@
 # Other Types
 
-The GraphQL type system provides several types in additon to objects.
+The GraphQL type system provides several types in addition to objects.
 
 Find out more about each type below:
 
