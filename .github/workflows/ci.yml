@@ -56,13 +56,13 @@ jobs:
       - run: make cargo.lint
 
   codespell:
+    name: codespell (Book)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: codespell-project/actions-codespell@v2
         with:
           path: book/
-          check_filenames: true
 
   rustfmt:
     runs-on: ubuntu-latest

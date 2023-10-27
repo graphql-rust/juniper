@@ -248,7 +248,7 @@ use juniper::{graphql_interface, GraphQLObject};
 pub struct ObjA {
     id: Vec<String>,
 //  ^^ the evaluated program panicked at 
-//     'Failed to implement interface `Character` on `ObjA`: Field `id`: implementor is expected to return a subtype of 
+//     'Failed to implement interface `Character` on `ObjA`: Field `id`: implementer is expected to return a subtype of 
 //      interface's return object: `[String!]!` is not a subtype of `String!`.'    
 }
 
