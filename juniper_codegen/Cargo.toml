@@ -22,7 +22,6 @@ exclude = ["/release.toml"]
 proc-macro = true
 
 [dependencies]
-proc-macro-error = "1.0.2"
 proc-macro2 = "1.0.4"
 quote = "1.0.9"
 syn = { version = "2.0", features = ["extra-traits", "full", "parsing", "visit", "visit-mut"], default-features = false }

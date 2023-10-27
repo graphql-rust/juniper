@@ -397,7 +397,7 @@ impl OnMethod {
             };
             if arg.is_some() {
                 attr.ensure_no_regular_arguments()
-                    .map_err(|e| scope.error(e).emit())
+                    .map_err(|e| scope.error(&e).emit())
                     .ok()?;
                 return arg;
             }

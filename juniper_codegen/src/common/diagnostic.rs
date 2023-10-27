@@ -1,7 +1,8 @@
 use std::fmt;
 
 use proc_macro2::Span;
-use proc_macro_error::{Diagnostic, Level};
+
+use self::polyfill::Diagnostic;
 
 /// URL of the GraphQL specification (October 2021 Edition).
 pub(crate) const SPEC_URL: &str = "https://spec.graphql.org/October2021";
@@ -55,12 +56,12 @@ impl Scope {
     }
 
     pub(crate) fn custom<S: AsRef<str>>(&self, span: Span, msg: S) -> Diagnostic {
-        Diagnostic::spanned(span, Level::Error, format!("{self} {}", msg.as_ref()))
+        Diagnostic::spanned(span, format!("{self} {}", msg.as_ref()))
             .note(self.spec_link())
     }
 
-    pub(crate) fn error(&self, err: syn::Error) -> Diagnostic {
-        Diagnostic::spanned(err.span(), Level::Error, format!("{self} {err}"))
+    pub(crate) fn error(&self, err: &syn::Error) -> Diagnostic {
+        Diagnostic::spanned(err.span(), format!("{self} {err}"))
             .note(self.spec_link())
     }
 
@@ -75,13 +76,63 @@ impl Scope {
     pub(crate) fn no_double_underscore(&self, field: Span) {
         Diagnostic::spanned(
             field,
-            Level::Error,
             "All types and directives defined within a schema must not have a name which begins \
              with `__` (two underscores), as this is used exclusively by GraphQL’s introspection \
-             system."
-                .into(),
+             system.",
         )
         .note(format!("{SPEC_URL}#sec-Schema"))
         .emit();
     }
 }
+
+mod polyfill {
+    //! Simplified version of [`proc_macro_error`] machinery for this crate purposes.
+    //!
+    //! [`proc_macro_error`]: https://docs.rs/proc-macro-error/1
+
+    use proc_macro2::Span;
+
+    /// Representation of a single diagnostic message.
+    #[derive(Debug)]
+    pub(crate) struct Diagnostic {
+        span_range: SpanRange,
+        msg: String,
+        suggestions: Vec<String>,
+    }
+
+    impl Diagnostic {
+        /// Create a new [`Diagnostic`] message that points to the provided [`Span`].
+        pub(crate) fn spanned(span: Span, message: impl Into<String>) -> Self {
+            Self {
+                span_range: SpanRange {
+                    first: span,
+                    last: span,
+                },
+                msg: message.into(),
+                suggestions: vec![],
+            }
+        }
+
+        /// Attaches a note to the main message of this [`Diagnostic`].
+        pub(crate) fn note(mut self, msg: impl Into<String>) -> Self {
+            self.suggestions.push(msg.into());
+            self
+        }
+
+        /// Display this [`Diagnostic`] while not aborting macro execution.
+        pub fn emit(self) {
+            check_correctness();
+            crate::imp::emit_diagnostic(self);
+        }
+
+    }
+
+    /// Range of [`Span`]s.
+    #[derive(Clone, Copy, Debug)]
+    struct SpanRange {
+        first: Span,
+        last: Span,
+    }
+}
+
+
