@@ -1,7 +1,7 @@
 # Avoiding the N+1 Problem With Dataloaders
 
 A common issue with graphql servers is how the resolvers query their datasource.
-This issue results in a large number of unneccessary database queries or http requests.
+This issue results in a large number of unnecessary database queries or http requests.
 Say you were wanting to list a bunch of cults people were in
 
 ```graphql
