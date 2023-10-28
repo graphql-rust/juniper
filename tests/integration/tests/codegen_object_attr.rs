@@ -1937,7 +1937,7 @@ mod executor {
         where
             S: ScalarValue,
         {
-            executor.look_ahead().field_name()
+            executor.look_ahead().field_unique_name()
         }
 
         fn info<S>(

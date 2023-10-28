@@ -1710,7 +1710,7 @@ mod executor {
             S: ScalarValue,
         {
             prelude::Box::pin(stream::once(future::ready(
-                executor.look_ahead().field_name().into(),
+                executor.look_ahead().field_unique_name().into(),
             )))
         }
 

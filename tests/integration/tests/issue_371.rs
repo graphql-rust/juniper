@@ -1,4 +1,4 @@
-//! Checks that `executor.look_ahead().field_name()` is correct in presence of
+//! Checks that `executor.look_ahead().field_unique_name()` is correct in presence of
 //! multiple query fields.
 //! See [#371](https://github.com/graphql-rust/juniper/issues/371) for details.
 //!
@@ -19,13 +19,13 @@ pub struct Query;
 impl Query {
     fn users<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<User> {
         let lh = executor.look_ahead();
-        assert_eq!(lh.field_name(), "users");
+        assert_eq!(lh.field_unique_name(), "users");
         vec![User]
     }
 
     fn countries<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<Country> {
         let lh = executor.look_ahead();
-        assert_eq!(lh.field_name(), "countries");
+        assert_eq!(lh.field_unique_name(), "countries");
         vec![Country]
     }
 }
