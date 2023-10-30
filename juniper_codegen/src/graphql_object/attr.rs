@@ -63,7 +63,7 @@ where
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let renaming = attr
         .rename_fields
@@ -84,7 +84,7 @@ where
         })
         .collect();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if fields.is_empty() {
         ERR.emit_custom(type_span, "must have at least one field");
@@ -93,7 +93,7 @@ where
         ERR.emit_custom(type_span, "must have a different name for each field");
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let context = attr
         .context
@@ -150,7 +150,7 @@ fn parse_field(
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &method_attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {

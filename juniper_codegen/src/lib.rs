@@ -107,8 +107,8 @@ mod graphql_subscription;
 mod graphql_union;
 mod scalar_value;
 
+use self::common::diagnostic::{self, ResultExt as _};
 use proc_macro::TokenStream;
-use proc_macro_error::{proc_macro_error, ResultExt as _};
 
 /// `#[derive(GraphQLInputObject)]` macro for deriving a
 /// [GraphQL input object][0] implementation for a Rust struct. Each
@@ -213,12 +213,13 @@ use proc_macro_error::{proc_macro_error, ResultExt as _};
 /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
 /// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
 /// [2]: https://spec.graphql.org/October2021#sec-Scalars
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
-    graphql_input_object::derive::expand(input.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        graphql_input_object::derive::expand(input.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[derive(GraphQLEnum)]` macro for deriving a [GraphQL enum][0]
@@ -342,12 +343,13 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [0]: https://spec.graphql.org/October2021#sec-Enums
 /// [1]: https://spec.graphql.org/October2021#sec-Enum-Value
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
-    graphql_enum::derive::expand(input.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        graphql_enum::derive::expand(input.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[derive(GraphQLScalar)]` macro for deriving a [GraphQL scalar][0]
@@ -654,12 +656,13 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// [0]: https://spec.graphql.org/October2021#sec-Scalars
 /// [1]: https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html
 /// [`ScalarValue`]: juniper::ScalarValue
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLScalar, attributes(graphql))]
 pub fn derive_scalar(input: TokenStream) -> TokenStream {
-    graphql_scalar::derive::expand(input.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        graphql_scalar::derive::expand(input.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[graphql_scalar]` macro.is interchangeable with
@@ -748,12 +751,13 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// [orphan rules]: https://bit.ly/3glAGC2
 /// [`GraphQLScalar`]: juniper::GraphQLScalar
 /// [`ScalarValue`]: juniper::ScalarValue
-#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
-    graphql_scalar::attr::expand(attr.into(), body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        graphql_scalar::attr::expand(attr.into(), body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[derive(ScalarValue)]` macro for deriving a [`ScalarValue`]
@@ -856,12 +860,13 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// ```
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
-#[proc_macro_error]
 #[proc_macro_derive(ScalarValue, attributes(value))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
-    scalar_value::expand_derive(input.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        scalar_value::expand_derive(input.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[graphql_interface]` macro for generating a [GraphQL interface][1]
@@ -1289,12 +1294,13 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
 /// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
-#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_interface::attr::expand(attr.into(), body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        self::graphql_interface::attr::expand(attr.into(), body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[derive(GraphQLInterface)]` macro for generating a [GraphQL interface][1]
@@ -1326,12 +1332,13 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// [`#[graphql_interface]`]: crate::graphql_interface
 /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLInterface, attributes(graphql))]
 pub fn derive_interface(body: TokenStream) -> TokenStream {
-    self::graphql_interface::derive::expand(body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        self::graphql_interface::derive::expand(body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[derive(GraphQLObject)]` macro for deriving a [GraphQL object][1]
@@ -1463,12 +1470,13 @@ pub fn derive_interface(body: TokenStream) -> TokenStream {
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [1]: https://spec.graphql.org/October2021#sec-Objects
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(body: TokenStream) -> TokenStream {
-    self::graphql_object::derive::expand(body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        self::graphql_object::derive::expand(body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[graphql_object]` macro for generating a [GraphQL object][1]
@@ -1788,12 +1796,13 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [0]: https://spec.graphql.org/October2021
 /// [1]: https://spec.graphql.org/October2021#sec-Objects
-#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_object::attr::expand(attr.into(), body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        self::graphql_object::attr::expand(attr.into(), body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[graphql_subscription]` macro for generating a [GraphQL subscription][1]
@@ -1841,12 +1850,13 @@ pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [`GraphQLSubscriptionValue`]: juniper::GraphQLSubscriptionValue
 /// [`Stream`]: futures::Stream
 /// [1]: https://spec.graphql.org/October2021#sec-Subscription
-#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_subscription::attr::expand(attr.into(), body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        self::graphql_subscription::attr::expand(attr.into(), body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[derive(GraphQLUnion)]` macro for deriving a [GraphQL union][1] implementation for enums and
@@ -2149,12 +2159,13 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [1]: https://spec.graphql.org/October2021#sec-Unions
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
-#[proc_macro_error]
 #[proc_macro_derive(GraphQLUnion, attributes(graphql))]
 pub fn derive_union(body: TokenStream) -> TokenStream {
-    self::graphql_union::derive::expand(body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        self::graphql_union::derive::expand(body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }
 
 /// `#[graphql_union]` macro for deriving a [GraphQL union][1] implementation for traits.
@@ -2441,10 +2452,11 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
 /// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
-#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_union(attr: TokenStream, body: TokenStream) -> TokenStream {
-    self::graphql_union::attr::expand(attr.into(), body.into())
-        .unwrap_or_abort()
-        .into()
+    diagnostic::entry_point(|| {
+        self::graphql_union::attr::expand(attr.into(), body.into())
+            .unwrap_or_abort()
+            .into()
+    })
 }

@@ -64,7 +64,7 @@ fn expand_on_trait(
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let renaming = attr
         .rename_fields
@@ -83,7 +83,7 @@ fn expand_on_trait(
         })
         .collect::<Vec<_>>();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if fields.is_empty() {
         ERR.emit_custom(trait_span, "must have at least one field");
@@ -92,7 +92,7 @@ fn expand_on_trait(
         ERR.emit_custom(trait_span, "must have a different name for each field");
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let context = attr
         .context
@@ -159,7 +159,7 @@ fn parse_trait_method(
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &method_attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {
@@ -251,7 +251,7 @@ fn expand_on_derive_input(
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let renaming = attr
         .rename_fields
@@ -265,7 +265,7 @@ fn expand_on_derive_input(
         .filter_map(|f| parse_struct_field(f, &renaming))
         .collect::<Vec<_>>();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if fields.is_empty() {
         ERR.emit_custom(struct_span, "must have at least one field");
@@ -274,7 +274,7 @@ fn expand_on_derive_input(
         ERR.emit_custom(struct_span, "must have a different name for each field");
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let context = attr
         .context
@@ -341,7 +341,7 @@ fn parse_struct_field(
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &field_attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {

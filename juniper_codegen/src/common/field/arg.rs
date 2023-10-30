@@ -378,7 +378,7 @@ impl OnMethod {
             .collect();
 
         let attr = Attr::from_attrs("graphql", &orig_attrs)
-            .map_err(|e| proc_macro_error::emit_error!(e))
+            .map_err(diagnostic::emit_error)
             .ok()?;
 
         if attr.context.is_some() {
