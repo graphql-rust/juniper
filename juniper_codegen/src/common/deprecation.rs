@@ -7,6 +7,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
+    punctuated::Punctuated,
     spanned::Spanned as _,
     token,
 };
@@ -52,7 +53,7 @@ impl Directive {
         attrs: &[syn::Attribute],
     ) -> syn::Result<Option<SpanContainer<Self>>> {
         for attr in attrs {
-            return Ok(match attr.parse_meta() {
+            return Ok(match attr.parse_args::<syn::Meta>() {
                 Ok(syn::Meta::List(ref list)) if list.path.is_ident("deprecated") => {
                     let directive = Self::parse_from_deprecated_meta_list(list)?;
                     Some(SpanContainer::new(
@@ -77,7 +78,7 @@ impl Directive {
     ///
     /// If the `#[deprecated(note = ...)]` attribute has incorrect format.
     fn parse_from_deprecated_meta_list(list: &syn::MetaList) -> syn::Result<Self> {
-        for meta in syn::parse2::<syn::Meta>(&list.tokens)? {
+        for meta in list.parse_args_with(Punctuated::<syn::Meta, token::Comma>::parse_terminated)? {
             if let syn::Meta::NameValue(nv) = meta {
                 return if !nv.path.is_ident("note") {
                     Err(syn::Error::new(

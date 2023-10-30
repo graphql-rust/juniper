@@ -230,13 +230,12 @@ mod polyfill {
             let mut ts = err.to_compile_error().into_iter();
 
             let (span_range, msg) = gut_error(&mut ts).unwrap();
-            let mut res = Diagnostic {
+
+            Self {
                 span_range,
                 msg,
                 suggestions: vec![],
-            };
-
-            res
+            }
         }
     }
 
@@ -279,8 +278,8 @@ mod polyfill {
                 }
             }
 
-            Err(boxed) => match boxed.downcast::<str>() {
-                Ok(p) if *p == "diagnostic::polyfill::abort_now" => gen_error().into(),
+            Err(boxed) => match boxed.downcast_ref::<&str>() {
+                Some(p) if *p == "diagnostic::polyfill::abort_now" => gen_error().into(),
                 _ => resume_unwind(boxed),
             },
         }

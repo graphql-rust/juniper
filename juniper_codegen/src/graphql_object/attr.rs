@@ -239,7 +239,7 @@ fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
 #[must_use]
 fn err_no_sync_resolvers<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.custom(span.span(), "synchronous resolvers are not supported")
-        .note("Specify that this function is async: `async fn foo()`".into())
+        .note("Specify that this function is async: `async fn foo()`")
         .emit();
     None
 }

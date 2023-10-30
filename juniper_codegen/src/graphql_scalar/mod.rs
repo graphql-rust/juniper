@@ -186,7 +186,7 @@ impl Parse for Attr {
                         let predicates;
                         let _ = syn::parenthesized!(predicates in input);
                         let parsed_predicates = predicates
-                            .parse_terminated::<_, token::Comma>(syn::WherePredicate::parse)?;
+                            .parse_terminated(syn::WherePredicate::parse, token::Comma)?;
 
                         if parsed_predicates.is_empty() {
                             return Err(syn::Error::new(
