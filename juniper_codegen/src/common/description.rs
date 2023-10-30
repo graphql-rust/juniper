@@ -39,8 +39,8 @@ impl Description {
     ) -> syn::Result<Option<SpanContainer<Self>>> {
         let (mut first_span, mut descriptions) = (None, Vec::new());
         for attr in attrs {
-            match attr.parse_args::<syn::Meta>() {
-                Ok(syn::Meta::NameValue(ref nv)) if nv.path.is_ident("doc") => {
+            match attr.meta {
+                syn::Meta::NameValue(ref nv) if nv.path.is_ident("doc") => {
                     if let syn::Expr::Lit(syn::ExprLit {
                         lit: syn::Lit::Str(strlit),
                         ..
