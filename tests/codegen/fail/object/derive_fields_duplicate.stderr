@@ -1,4 +1,5 @@
 error: GraphQL object must have a different name for each field
+       · note: https://spec.graphql.org/October2021#sec-Objects
  --> fail/object/derive_fields_duplicate.rs:4:1
   |
 4 | / struct ObjA {
@@ -7,5 +8,3 @@ error: GraphQL object must have a different name for each field
 7 | |     id2: String,
 8 | | }
   | |_^
-  |
-  = note: https://spec.graphql.org/October2021#sec-Objects

@@ -1,4 +1,5 @@
 error: GraphQL interface must have a different name for each field
+       · note: https://spec.graphql.org/October2021#sec-Interfaces
  --> fail/interface/trait/fields_duplicate.rs:4:1
   |
 4 | / trait Character {
@@ -8,5 +9,3 @@ error: GraphQL interface must have a different name for each field
 8 | |     fn id2(&self) -> &str;
 9 | | }
   | |_^
-  |
-  = note: https://spec.graphql.org/October2021#sec-Interfaces

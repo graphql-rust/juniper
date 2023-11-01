@@ -159,14 +159,10 @@ mod polyfill {
                 } else {
                     let mut message = String::new();
                     ensure_lf(&mut message, msg);
-                    message.push('\n');
-
                     for note in suggestions {
-                        message.push_str("  = note: ");
+                        message.push_str("· note: ");
                         ensure_lf(&mut message, note);
                     }
-                    message.push('\n');
-
                     Cow::Owned(message)
                 };
 
