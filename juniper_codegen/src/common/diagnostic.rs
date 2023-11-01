@@ -162,7 +162,7 @@ mod polyfill {
                     message.push('\n');
 
                     for note in suggestions {
-                        message.push_str("  = error: ");
+                        message.push_str("  = note: ");
                         ensure_lf(&mut message, note);
                     }
                     message.push('\n');
