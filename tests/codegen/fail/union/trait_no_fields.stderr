@@ -3,4 +3,4 @@ error: GraphQL union expects at least one union variant
  --> fail/union/trait_no_fields.rs:4:1
   |
 4 | trait Character {}
-  | ^^^^^^^^^^^^^^^^^^
+  | ^^^^^

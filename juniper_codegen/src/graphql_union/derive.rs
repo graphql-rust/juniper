@@ -54,7 +54,7 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<Definition> {
 
     let mut variants: Vec<_> = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => unreachable!(),
+        data => unreachable!("graphql_union::derive::expand_enum({data:?})"),
     }
     .into_iter()
     .filter_map(|var| parse_variant_from_enum_variant(var, &enum_ident, &attr))

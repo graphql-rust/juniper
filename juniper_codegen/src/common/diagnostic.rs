@@ -185,8 +185,13 @@ mod polyfill {
             use proc_macro2::{Delimiter, TokenTree};
 
             fn gut_error(ts: &mut impl Iterator<Item = TokenTree>) -> Option<(SpanRange, String)> {
-                let first = ts.next()?.span();
-                ts.next().unwrap(); // !
+                let first = ts.next()?.span(); // :
+                assert_eq!(ts.next().unwrap().to_string(), ":");
+                assert_eq!(ts.next().unwrap().to_string(), "core");
+                assert_eq!(ts.next().unwrap().to_string(), ":");
+                assert_eq!(ts.next().unwrap().to_string(), ":");
+                assert_eq!(ts.next().unwrap().to_string(), "compile_error");
+                assert_eq!(ts.next().unwrap().to_string(), "!");
 
                 let lit = match ts.next().unwrap() {
                     TokenTree::Group(group) => {
@@ -207,10 +212,10 @@ mod polyfill {
 
                         match group.stream().into_iter().next().unwrap() {
                             TokenTree::Literal(lit) => lit,
-                            _ => unreachable!(),
+                            tt => unreachable!("Diagnostic::gut_error(): TokenTree::Group: {tt}"),
                         }
                     }
-                    _ => unreachable!(),
+                    tt => unreachable!("Diagnostic::gut_error(): {tt}"),
                 };
 
                 let last = lit.span();

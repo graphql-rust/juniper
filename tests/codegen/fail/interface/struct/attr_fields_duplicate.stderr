@@ -2,10 +2,5 @@ error: GraphQL interface must have a different name for each field
        · note: https://spec.graphql.org/October2021#sec-Interfaces
  --> fail/interface/struct/attr_fields_duplicate.rs:4:1
   |
-4 | / struct Character {
-5 | |     id: String,
-6 | |
-7 | |     #[graphql(name = "id")]
-8 | |     id2: String,
-9 | | }
-  | |_^
+4 | struct Character {
+  | ^^^^^^
