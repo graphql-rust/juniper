@@ -107,8 +107,9 @@ mod graphql_subscription;
 mod graphql_union;
 mod scalar_value;
 
-use self::common::diagnostic::{self, ResultExt as _};
 use proc_macro::TokenStream;
+
+use self::common::diagnostic::{self, ResultExt as _};
 
 /// `#[derive(GraphQLInputObject)]` macro for deriving a
 /// [GraphQL input object][0] implementation for a Rust struct. Each

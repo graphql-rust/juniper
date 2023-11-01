@@ -214,9 +214,9 @@ jobs:
           - nightly
         exclude:
           - crate: juniper_codegen_tests
-            toolchain: stable
-          - crate: juniper_codegen_tests
             toolchain: beta
+          - crate: juniper_codegen_tests
+            toolchain: nightly
           - crate: juniper_codegen_tests
             os: macOS
           - crate: juniper_codegen_tests
