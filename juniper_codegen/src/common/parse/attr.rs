@@ -28,7 +28,7 @@ pub(crate) fn unite(
 pub(crate) fn strip(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
     attrs
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, attr_path))
+        .filter(|attr| !path_eq_single(attr.path(), attr_path))
         .collect()
 }
 

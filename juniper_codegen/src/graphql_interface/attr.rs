@@ -64,7 +64,7 @@ fn expand_on_trait(
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let renaming = attr
         .rename_fields
@@ -76,14 +76,14 @@ fn expand_on_trait(
         .items
         .iter_mut()
         .filter_map(|item| {
-            if let syn::TraitItem::Method(m) = item {
+            if let syn::TraitItem::Fn(m) = item {
                 return parse_trait_method(m, &renaming);
             }
             None
         })
         .collect::<Vec<_>>();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if fields.is_empty() {
         ERR.emit_custom(trait_span, "must have at least one field");
@@ -92,7 +92,7 @@ fn expand_on_trait(
         ERR.emit_custom(trait_span, "must have a different name for each field");
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let context = attr
         .context
@@ -146,7 +146,7 @@ fn expand_on_trait(
 /// Returns [`None`] if the parsing fails, or the method field is ignored.
 #[must_use]
 fn parse_trait_method(
-    method: &mut syn::TraitItemMethod,
+    method: &mut syn::TraitItemFn,
     renaming: &rename::Policy,
 ) -> Option<field::Definition> {
     let method_ident = &method.sig.ident;
@@ -155,11 +155,11 @@ fn parse_trait_method(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &method_attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {
@@ -251,7 +251,7 @@ fn expand_on_derive_input(
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let renaming = attr
         .rename_fields
@@ -265,7 +265,7 @@ fn expand_on_derive_input(
         .filter_map(|f| parse_struct_field(f, &renaming))
         .collect::<Vec<_>>();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if fields.is_empty() {
         ERR.emit_custom(struct_span, "must have at least one field");
@@ -274,7 +274,7 @@ fn expand_on_derive_input(
         ERR.emit_custom(struct_span, "must have a different name for each field");
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let context = attr
         .context
@@ -337,11 +337,11 @@ fn parse_struct_field(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     field.attrs = mem::take(&mut field.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &field_attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {

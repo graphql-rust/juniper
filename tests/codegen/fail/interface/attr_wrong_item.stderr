@@ -2,4 +2,4 @@ error: GraphQL interface #[graphql_interface] attribute is applicable to trait a
  --> fail/interface/attr_wrong_item.rs:9:1
   |
 9 | enum Character {}
-  | ^^^^^^^^^^^^^^^^^
+  | ^^^^

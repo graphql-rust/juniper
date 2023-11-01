@@ -2,4 +2,4 @@ error: GraphQL scalar all the resolvers have to be provided via `with` attribute
  --> fail/scalar/type_alias/attr_with_not_all_resolvers.rs:6:1
   |
 6 | type CustomScalar = Scalar;
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  | ^^^^

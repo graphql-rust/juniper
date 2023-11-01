@@ -1,9 +1,5 @@
 error: GraphQL scalar `transparent` attribute argument requires exactly 1 field
  --> fail/scalar/derive_input/derive_transparent_multiple_named_fields.rs:4:1
   |
-4 | / #[graphql(transparent)]
-5 | | struct Scalar {
-6 | |     id: i32,
-7 | |     another: i32,
-8 | | }
-  | |_^
+4 | #[graphql(transparent)]
+  | ^
