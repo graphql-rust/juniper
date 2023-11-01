@@ -51,7 +51,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
 - Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
-- Upgraded [GraphiQL] to 3.0.6 version (requires new [`graphql-transport-ws` GraphQL over WebSocket Protocol] integration on server, see `juniper_warp/examples/subscription.rs`). ([#1188], [#1193])
+- Upgraded [GraphiQL] to 3.0.7 version (requires new [`graphql-transport-ws` GraphQL over WebSocket Protocol] integration on server, see `juniper_warp/examples/subscription.rs`). ([#1188], [#1193], [#1201])
 
 ### Added
 
@@ -126,6 +126,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1188]: /../../pull/1188
 [#1190]: /../../pull/1190
 [#1193]: /../../pull/1193
+[#1201]: /../../pull/1201
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
