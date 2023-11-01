@@ -120,8 +120,7 @@ ifeq ($(shell rustup component list --toolchain=nightly \
 	rustup component add --toolchain=nightly rust-src
 endif
 endif
-	cargo $(if $(call eq,$(careful),yes),+nightly careful,\
-	      $(if $(call eq,$(crate),juniper_codegen_tests),+nightly,)) \
+	cargo $(if $(call eq,$(careful),yes),+nightly careful,) \
 		test $(if $(call eq,$(crate),),--workspace,-p $(crate)) --all-features
 
 

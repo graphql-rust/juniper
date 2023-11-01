@@ -3,7 +3,7 @@
 //!
 //! [`ScalarValue`]: juniper::ScalarValue
 
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{
     parse::{Parse, ParseStream},
@@ -44,11 +44,11 @@ impl Parse for AttrValue {
     }
 }
 
-impl Spanned for AttrValue {
-    fn span(&self) -> Span {
+impl ToTokens for AttrValue {
+    fn to_tokens(&self, into: &mut TokenStream) {
         match self {
-            Self::Concrete(ty) => ty.span(),
-            Self::Generic(pred) => pred.span(),
+            Self::Concrete(ty) => ty.to_tokens(into),
+            Self::Generic(pred) => pred.to_tokens(into),
         }
     }
 }

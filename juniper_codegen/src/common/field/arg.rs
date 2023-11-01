@@ -374,11 +374,11 @@ impl OnMethod {
         // Remove repeated attributes from the method, to omit incorrect expansion.
         argument.attrs = mem::take(&mut argument.attrs)
             .into_iter()
-            .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+            .filter(|attr| !path_eq_single(attr.path(), "graphql"))
             .collect();
 
         let attr = Attr::from_attrs("graphql", &orig_attrs)
-            .map_err(|e| proc_macro_error::emit_error!(e))
+            .map_err(diagnostic::emit_error)
             .ok()?;
 
         if attr.context.is_some() {
@@ -397,7 +397,7 @@ impl OnMethod {
             };
             if arg.is_some() {
                 attr.ensure_no_regular_arguments()
-                    .map_err(|e| scope.error(e).emit())
+                    .map_err(|e| scope.error(&e).emit())
                     .ok()?;
                 return arg;
             }
