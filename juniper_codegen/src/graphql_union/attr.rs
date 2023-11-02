@@ -58,12 +58,12 @@ fn expand_on_trait(
         .items
         .iter_mut()
         .filter_map(|i| match i {
-            syn::TraitItem::Method(m) => parse_variant_from_trait_method(m, trait_ident, &attr),
+            syn::TraitItem::Fn(m) => parse_variant_from_trait_method(m, trait_ident, &attr),
             _ => None,
         })
         .collect();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     emerge_union_variants_from_attr(&mut variants, attr.external_resolvers);
 
@@ -78,7 +78,7 @@ fn expand_on_trait(
         );
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let context = attr
         .context
@@ -105,12 +105,12 @@ fn expand_on_trait(
 
 /// Parses given Rust trait `method` as [GraphQL union][1] variant.
 ///
-/// On failure returns [`None`] and internally fills up [`proc_macro_error`]
+/// On failure returns [`None`] and internally fills up [`diagnostic`]
 /// with the corresponding errors.
 ///
 /// [1]: https://spec.graphql.org/October2021#sec-Unions
 fn parse_variant_from_trait_method(
-    method: &mut syn::TraitItemMethod,
+    method: &mut syn::TraitItemFn,
     trait_ident: &syn::Ident,
     trait_attr: &Attr,
 ) -> Option<VariantDefinition> {
@@ -119,11 +119,11 @@ fn parse_variant_from_trait_method(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = VariantAttr::from_attrs("graphql", &method_attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if let Some(rslvr) = attr.external_resolver {

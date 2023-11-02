@@ -40,7 +40,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         })
         .collect::<Vec<_>>();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if values.is_empty() {
         return Err(ERR.custom_error(
@@ -78,7 +78,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let definition = Definition {
         ident: ast.ident,
@@ -99,7 +99,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 /// Returns [`None`] if the parsing fails, or the enum variant is ignored.
 fn parse_value(v: &syn::Variant, renaming: rename::Policy) -> Option<ValueDefinition> {
     let attr = VariantAttr::from_attrs("graphql", &v.attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {
