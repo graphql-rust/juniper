@@ -3,11 +3,15 @@
 use std::marker::PhantomData;
 
 use proc_macro2::TokenStream;
-use proc_macro_error::ResultExt as _;
 use quote::ToTokens;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
-use crate::common::{diagnostic, field, parse::TypeExt as _, rename, scalar, SpanContainer};
+use crate::common::{
+    diagnostic::{self, ResultExt as _},
+    field,
+    parse::TypeExt as _,
+    rename, scalar, SpanContainer,
+};
 
 use super::{Attr, Definition, Query};
 
@@ -52,7 +56,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let renaming = attr
         .rename_fields
@@ -73,7 +77,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
         }
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if fields.is_empty() {
         ERR.emit_custom(struct_span, "must have at least one field");
@@ -82,7 +86,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
         ERR.emit_custom(struct_span, "must have a different name for each field");
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     Ok(Definition {
         name,
@@ -110,7 +114,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition<Query>> {
 #[must_use]
 fn parse_field(field: &syn::Field, renaming: &rename::Policy) -> Option<field::Definition> {
     let attr = field::Attr::from_attrs("graphql", &field.attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {

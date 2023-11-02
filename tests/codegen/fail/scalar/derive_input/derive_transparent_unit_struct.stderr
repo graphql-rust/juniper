@@ -1,6 +1,5 @@
 error: GraphQL scalar `transparent` attribute argument requires exactly 1 field
  --> fail/scalar/derive_input/derive_transparent_unit_struct.rs:4:1
   |
-4 | / #[graphql(transparent)]
-5 | | struct ScalarSpecifiedByUrl;
-  | |____________________________^
+4 | #[graphql(transparent)]
+  | ^

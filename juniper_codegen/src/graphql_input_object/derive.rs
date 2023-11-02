@@ -36,7 +36,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         .filter_map(|f| parse_field(f, renaming, is_internal))
         .collect::<Vec<_>>();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if !fields.iter().any(|f| !f.ignored) {
         return Err(ERR.custom_error(data.fields.span(), "expected at least 1 non-ignored field"));
@@ -71,7 +71,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let definition = Definition {
         ident: ast.ident,
@@ -95,7 +95,7 @@ fn parse_field(
     is_internal: bool,
 ) -> Option<FieldDefinition> {
     let field_attr = FieldAttr::from_attrs("graphql", &f.attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     let ident = f.ident.as_ref().or_else(|| err_unnamed_field(f))?;

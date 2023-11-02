@@ -1,4 +1,5 @@
 error: GraphQL interface trait method can't have default implementation
+       · note: https://spec.graphql.org/October2021#sec-Interfaces
  --> fail/interface/trait/method_default_impl.rs:5:26
   |
 5 |       fn id(&self) -> &str {
@@ -6,5 +7,3 @@ error: GraphQL interface trait method can't have default implementation
 6 | |         "default"
 7 | |     }
   | |_____^
-  |
-  = note: https://spec.graphql.org/October2021#sec-Interfaces

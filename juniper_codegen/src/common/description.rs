@@ -5,7 +5,10 @@
 
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::parse::{Parse, ParseStream};
+use syn::{
+    parse::{Parse, ParseStream},
+    spanned::Spanned as _,
+};
 
 use crate::common::SpanContainer;
 
@@ -36,16 +39,20 @@ impl Description {
     ) -> syn::Result<Option<SpanContainer<Self>>> {
         let (mut first_span, mut descriptions) = (None, Vec::new());
         for attr in attrs {
-            match attr.parse_meta() {
-                Ok(syn::Meta::NameValue(ref nv)) if nv.path.is_ident("doc") => {
-                    if let syn::Lit::Str(strlit) = &nv.lit {
+            match attr.meta {
+                syn::Meta::NameValue(ref nv) if nv.path.is_ident("doc") => {
+                    if let syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(strlit),
+                        ..
+                    }) = &nv.value
+                    {
                         if first_span.is_none() {
                             first_span = Some(strlit.span());
                         }
                         descriptions.push(strlit.value());
                     } else {
                         return Err(syn::Error::new(
-                            nv.lit.span(),
+                            nv.value.span(),
                             "#[doc] attributes may only have a string literal",
                         ));
                     }
