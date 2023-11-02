@@ -372,7 +372,9 @@ pub trait LookAheadMethods<'sel, S> {
     fn child_names(&self) -> Vec<&'sel str>;
 
     /// Returns an [`Iterator`] over the children from the current selection.
-    fn children(&self) -> Vec<&Self>;
+    fn children(&self) -> &[Self]
+    where
+        Self: Sized;
 
     /// Returns the parent type, in case there is any for the current selection.
     fn applies_for(&self) -> Option<&str>;
@@ -411,8 +413,8 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
         !self.children.is_empty()
     }
 
-    fn children(&self) -> Vec<&Self> {
-        self.children.iter().collect()
+    fn children(&self) -> &[Self] {
+        &self.children
     }
 
     fn applies_for(&self) -> Option<&str> {
@@ -456,8 +458,8 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
         !self.children.is_empty()
     }
 
-    fn children(&self) -> Vec<&Self> {
-        self.children.iter().collect()
+    fn children(&self) -> &[Self] {
+        &self.children
     }
 
     fn applies_for(&self) -> Option<&str> {
