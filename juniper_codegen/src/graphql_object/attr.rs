@@ -63,7 +63,7 @@ where
 
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let renaming = attr
         .rename_fields
@@ -76,7 +76,7 @@ where
         .items
         .iter_mut()
         .filter_map(|item| {
-            if let syn::ImplItem::Method(m) = item {
+            if let syn::ImplItem::Fn(m) = item {
                 parse_field(m, async_only, &renaming)
             } else {
                 None
@@ -84,7 +84,7 @@ where
         })
         .collect();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     if fields.is_empty() {
         ERR.emit_custom(type_span, "must have at least one field");
@@ -93,7 +93,7 @@ where
         ERR.emit_custom(type_span, "must have a different name for each field");
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
     let context = attr
         .context
@@ -132,12 +132,12 @@ where
     })
 }
 
-/// Parses a [`field::Definition`] from the given Rust [`syn::ImplItemMethod`].
+/// Parses a [`field::Definition`] from the given Rust [`syn::ImplItemFn`].
 ///
 /// Returns [`None`] if parsing fails, or the method field is ignored.
 #[must_use]
 fn parse_field(
-    method: &mut syn::ImplItemMethod,
+    method: &mut syn::ImplItemFn,
     async_only: bool,
     renaming: &rename::Policy,
 ) -> Option<field::Definition> {
@@ -146,11 +146,11 @@ fn parse_field(
     // Remove repeated attributes from the method, to omit incorrect expansion.
     method.attrs = mem::take(&mut method.attrs)
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+        .filter(|attr| !path_eq_single(attr.path(), "graphql"))
         .collect();
 
     let attr = field::Attr::from_attrs("graphql", &method_attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+        .map_err(diagnostic::emit_error)
         .ok()?;
 
     if attr.ignore.is_some() {
@@ -239,7 +239,7 @@ fn err_invalid_method_receiver<T, S: Spanned>(span: &S) -> Option<T> {
 #[must_use]
 fn err_no_sync_resolvers<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.custom(span.span(), "synchronous resolvers are not supported")
-        .note("Specify that this function is async: `async fn foo()`".into())
+        .note("Specify that this function is async: `async fn foo()`")
         .emit();
     None
 }

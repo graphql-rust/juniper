@@ -61,13 +61,13 @@ Also, enum name can be specified explicitly, if desired.
 # extern crate juniper;
 use juniper::{graphql_interface, GraphQLObject};
 
-#[graphql_interface(enum = CharaterInterface, for = Human)] 
+#[graphql_interface(enum = CharacterInterface, for = Human)] 
 trait Character {
     fn id(&self) -> &str;
 }
 
 #[derive(GraphQLObject)]
-#[graphql(impl = CharaterInterface)]
+#[graphql(impl = CharacterInterface)]
 struct Human {
     id: String,
     home_planet: String,
@@ -248,7 +248,7 @@ use juniper::{graphql_interface, GraphQLObject};
 pub struct ObjA {
     id: Vec<String>,
 //  ^^ the evaluated program panicked at 
-//     'Failed to implement interface `Character` on `ObjA`: Field `id`: implementor is expected to return a subtype of 
+//     'Failed to implement interface `Character` on `ObjA`: Field `id`: implementer is expected to return a subtype of 
 //      interface's return object: `[String!]!` is not a subtype of `String!`.'    
 }
 

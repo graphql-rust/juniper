@@ -18,6 +18,9 @@ eq = $(if $(or $(1),$(2)),$(and $(findstring $(1),$(2)),\
 book: book.build
 
 
+codespell: book.codespell
+
+
 fmt: cargo.fmt
 
 
@@ -117,8 +120,7 @@ ifeq ($(shell rustup component list --toolchain=nightly \
 	rustup component add --toolchain=nightly rust-src
 endif
 endif
-	cargo $(if $(call eq,$(careful),yes),+nightly careful,\
-	      $(if $(call eq,$(crate),juniper_codegen_tests),+nightly,)) \
+	cargo $(if $(call eq,$(careful),yes),+nightly careful,) \
 		test $(if $(call eq,$(crate),),--workspace,-p $(crate)) --all-features
 
 
@@ -135,6 +137,15 @@ endif
 
 book.build:
 	mdbook build book/ $(if $(call eq,$(out),),,-d $(out))
+
+
+# Spellcheck Book.
+#
+# Usage:
+#	make book.codespell [fix=(no|yes)]
+
+book.codespell:
+	codespell book/ $(if $(call eq,$(fix),yes),--write-changes,)
 
 
 # Serve Book on some port.
@@ -180,8 +191,8 @@ graphql-playground:
 # .PHONY section #
 ##################
 
-.PHONY: book fmt lint release test \
-        book.build book.serve \
+.PHONY: book codespell fmt lint release test \
+        book.build book.codespell book.serve \
         cargo.fmt cargo.lint cargo.release cargo.test \
         graphiql graphql-playground \
         test.book test.cargo
