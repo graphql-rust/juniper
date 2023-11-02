@@ -2671,7 +2671,7 @@ mod executor {
     #[graphql_object(scalar = S: ScalarValue, impl = CharacterValue<S>)]
     impl Human {
         async fn id<'a, S: ScalarValue>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str {
-            executor.look_ahead().field_unique_name()
+            executor.look_ahead().field_name()
         }
 
         fn home_planet(&self) -> &str {
@@ -2690,7 +2690,7 @@ mod executor {
     #[graphql_object(impl = CharacterValue<__S>)]
     impl Droid {
         fn id<'a, S: ScalarValue>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str {
-            executor.look_ahead().field_unique_name()
+            executor.look_ahead().field_name()
         }
 
         fn primary_function(&self) -> &str {

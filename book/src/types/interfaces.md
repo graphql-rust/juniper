@@ -419,7 +419,7 @@ impl Human {
     where
         S: ScalarValue,
     {
-        executor.look_ahead().field_unique_name()
+        executor.look_ahead().field_name()
     }
 
     async fn name<'b, S>(&'b self, #[graphql(executor)] _: &Executor<'_, '_, (), S>) -> &'b str {

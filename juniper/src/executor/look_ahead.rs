@@ -333,51 +333,53 @@ pub struct ConcreteLookAheadSelection<'a, S: 'a> {
 /// `'sel` lifetime is intended to point to the data that this `LookAheadSelection` (or
 /// `ConcreteLookAheadSelection`) points to.
 pub trait LookAheadMethods<'sel, S> {
-    /// Get the name of the field represented by the current selection
-    fn field_name(&self) -> &'sel str;
+    /// Returns the original name of the field, represented by the current selection.
+    fn field_original_name(&self) -> &'sel str;
 
-    /// Get the alias of the field represented by the current selection if any
+    /// Returns the alias of the field, represented by the current selection, if any.
     fn field_alias(&self) -> Option<&'sel str>;
 
-    /// Get the (potentially aliased) name of the field represented by the current selection
-    fn field_unique_name(&self) -> &'sel str;
+    /// Returns the (potentially aliased) name of the field, represented by the current selection.
+    fn field_name(&self) -> &'sel str;
 
-    /// Get the the child selection for a given field
-    /// If a child has an alias, it will only match if the alias matches `name`
+    /// Returns the child selection for the specified field.
+    ///
+    /// If a child has an alias, it will only match if the alias matches the specified `name`.
     fn select_child(&self, name: &str) -> Option<&Self>;
 
-    /// Check if a given child selection with a name exists
-    /// If a child has an alias, it will only match if the alias matches `name`
+    /// Checks if a child selection with the specified `name` exists.
+    ///
+    /// If a child has an alias, it will only match if the alias matches the specified `name`.
     fn has_child(&self, name: &str) -> bool {
         self.select_child(name).is_some()
     }
 
-    /// Does the current node have any arguments?
+    /// Indicates whether the current node has any arguments.
     fn has_arguments(&self) -> bool;
 
-    /// Does the current node have any children?
+    /// Indicates whether the current node has any children.
     fn has_children(&self) -> bool;
 
-    /// Get the top level arguments for the current selection
+    /// Returns the top level arguments from the current selection.
     fn arguments(&self) -> &[LookAheadArgument<S>];
 
-    /// Get the top level argument with a given name from the current selection
+    /// Returns the top level argument with the specified `name` from the current selection.
     fn argument(&self, name: &str) -> Option<&LookAheadArgument<S>> {
         self.arguments().iter().find(|a| a.name == name)
     }
 
-    /// Get the (possibly aliased) names of the top level children for the current selection
+    /// Returns the (possibly aliased) names of the top level children from the current selection.
     fn child_names(&self) -> Vec<&'sel str>;
 
-    /// Get an iterator over the children for the current selection
+    /// Returns an [`Iterator`] over the children from the current selection.
     fn children(&self) -> Vec<&Self>;
 
-    /// Get the parent type in case there is any for this selection
+    /// Returns the parent type, in case there is any for the current selection.
     fn applies_for(&self) -> Option<&str>;
 }
 
 impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
-    fn field_name(&self) -> &'a str {
+    fn field_original_name(&self) -> &'a str {
         self.name
     }
 
@@ -385,12 +387,12 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
         self.alias
     }
 
-    fn field_unique_name(&self) -> &'a str {
+    fn field_name(&self) -> &'a str {
         self.alias.unwrap_or(self.name)
     }
 
     fn select_child(&self, name: &str) -> Option<&Self> {
-        self.children.iter().find(|c| c.field_unique_name() == name)
+        self.children.iter().find(|c| c.field_name() == name)
     }
 
     fn arguments(&self) -> &[LookAheadArgument<S>] {
@@ -398,10 +400,7 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
     }
 
     fn child_names(&self) -> Vec<&'a str> {
-        self.children
-            .iter()
-            .map(|c| c.field_unique_name())
-            .collect()
+        self.children.iter().map(|c| c.field_name()).collect()
     }
 
     fn has_arguments(&self) -> bool {
@@ -425,7 +424,7 @@ impl<'a, S> LookAheadMethods<'a, S> for ConcreteLookAheadSelection<'a, S> {
 }
 
 impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
-    fn field_name(&self) -> &'a str {
+    fn field_original_name(&self) -> &'a str {
         self.name
     }
 
@@ -433,12 +432,12 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
         self.alias
     }
 
-    fn field_unique_name(&self) -> &'a str {
+    fn field_name(&self) -> &'a str {
         self.alias.unwrap_or(self.name)
     }
 
     fn select_child(&self, name: &str) -> Option<&Self> {
-        self.children.iter().find(|c| c.field_unique_name() == name)
+        self.children.iter().find(|c| c.field_name() == name)
     }
 
     fn arguments(&self) -> &[LookAheadArgument<S>] {
@@ -446,10 +445,7 @@ impl<'a, S> LookAheadMethods<'a, S> for LookAheadSelection<'a, S> {
     }
 
     fn child_names(&self) -> Vec<&'a str> {
-        self.children
-            .iter()
-            .map(|c| c.field_unique_name())
-            .collect()
+        self.children.iter().map(|c| c.field_name()).collect()
     }
 
     fn has_arguments(&self) -> bool {
@@ -1447,9 +1443,9 @@ query Hero {
             )
             .unwrap();
 
-            assert_eq!(look_ahead.field_name(), "hero");
+            assert_eq!(look_ahead.field_original_name(), "hero");
             assert!(look_ahead.field_alias().is_none());
-            assert_eq!(look_ahead.field_unique_name(), "hero");
+            assert_eq!(look_ahead.field_name(), "hero");
 
             assert!(look_ahead.has_arguments());
             let args = look_ahead.arguments();
@@ -1466,9 +1462,9 @@ query Hero {
             let name_child = children.next().unwrap();
             assert!(look_ahead.has_child("name"));
             assert_eq!(name_child, look_ahead.select_child("name").unwrap());
-            assert_eq!(name_child.field_name(), "name");
+            assert_eq!(name_child.field_original_name(), "name");
             assert_eq!(name_child.field_alias(), None);
-            assert_eq!(name_child.field_unique_name(), "name");
+            assert_eq!(name_child.field_name(), "name");
             assert!(!name_child.has_arguments());
             assert!(!name_child.has_children());
 
@@ -1478,18 +1474,18 @@ query Hero {
                 aliased_name_child,
                 look_ahead.select_child("aliasedName").unwrap()
             );
-            assert_eq!(aliased_name_child.field_name(), "name");
+            assert_eq!(aliased_name_child.field_original_name(), "name");
             assert_eq!(aliased_name_child.field_alias(), Some("aliasedName"));
-            assert_eq!(aliased_name_child.field_unique_name(), "aliasedName");
+            assert_eq!(aliased_name_child.field_name(), "aliasedName");
             assert!(!aliased_name_child.has_arguments());
             assert!(!aliased_name_child.has_children());
 
             let friends_child = children.next().unwrap();
             assert!(look_ahead.has_child("friends"));
             assert_eq!(friends_child, look_ahead.select_child("friends").unwrap());
-            assert_eq!(friends_child.field_name(), "friends");
+            assert_eq!(friends_child.field_original_name(), "friends");
             assert_eq!(friends_child.field_alias(), None);
-            assert_eq!(friends_child.field_unique_name(), "friends");
+            assert_eq!(friends_child.field_name(), "friends");
             assert!(!friends_child.has_arguments());
             assert!(friends_child.has_children());
             assert_eq!(friends_child.child_names(), vec!["name"]);
@@ -1500,9 +1496,9 @@ query Hero {
             let child = friends_children.next().unwrap();
             assert!(friends_child.has_child("name"));
             assert_eq!(child, friends_child.select_child("name").unwrap());
-            assert_eq!(child.field_name(), "name");
+            assert_eq!(child.field_original_name(), "name");
             assert_eq!(child.field_alias(), None);
-            assert_eq!(child.field_unique_name(), "name");
+            assert_eq!(child.field_name(), "name");
             assert!(!child.has_arguments());
             assert!(!child.has_children());
 
