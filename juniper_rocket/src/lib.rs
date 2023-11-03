@@ -6,7 +6,7 @@ use rocket::{
     data::{self, FromData, ToByteUnit},
     form::{error::ErrorKind, DataField, Error, Errors, FromForm, Options, ValueField},
     http::{ContentType, Status},
-    outcome::Outcome::{Failure, Forward, Success},
+    outcome::Outcome,
     response::{self, content, Responder, Response},
     Data, Request,
 };
@@ -307,7 +307,7 @@ where
         let is_json = match content_type {
             Some(("application", "json")) => true,
             Some(("application", "graphql")) => false,
-            _ => return Box::pin(async move { Forward(data) }).await,
+            _ => return Outcome::Forward((data, Status::UnsupportedMediaType)),
         };
 
         Box::pin(async move {
@@ -318,13 +318,13 @@ where
             let mut reader = data.open(limit);
             let mut body = String::new();
             if let Err(e) = reader.read_to_string(&mut body).await {
-                return Failure((Status::InternalServerError, format!("{e:?}")));
+                return Outcome::Error((Status::InternalServerError, format!("{e:?}")));
             }
 
-            Success(GraphQLRequest(if is_json {
+            Outcome::Success(GraphQLRequest(if is_json {
                 match serde_json::from_str(&body) {
                     Ok(req) => req,
-                    Err(e) => return Failure((Status::BadRequest, e.to_string())),
+                    Err(e) => return Outcome::Error((Status::BadRequest, e.to_string())),
                 }
             } else {
                 GraphQLBatchRequest::Single(http::GraphQLRequest::new(body, None, None))
