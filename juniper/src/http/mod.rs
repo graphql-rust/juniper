@@ -37,6 +37,7 @@ where
     pub operation_name: Option<String>,
 
     /// Optional variables to execute the GraphQL operation with.
+    // TODO: Use `Variables` instead of `InputValue`?
     #[serde(bound(
         deserialize = "InputValue<S>: Deserialize<'de>",
         serialize = "InputValue<S>: Serialize",
@@ -238,11 +239,11 @@ where
     /// A batch operation request.
     ///
     /// Empty batch is considered as invalid value, so cannot be deserialized.
-    #[serde(deserialize_with = "deserialize_non_empty_vec")]
+    #[serde(deserialize_with = "deserialize_non_empty_batch")]
     Batch(Vec<GraphQLRequest<S>>),
 }
 
-fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+fn deserialize_non_empty_batch<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
     D: de::Deserializer<'de>,
     T: Deserialize<'de>,
@@ -251,7 +252,10 @@ where
 
     let v = Vec::<T>::deserialize(deserializer)?;
     if v.is_empty() {
-        Err(D::Error::invalid_length(0, &"a positive integer"))
+        Err(D::Error::invalid_length(
+            0,
+            &"non-empty batch of GraphQL requests",
+        ))
     } else {
         Ok(v)
     }

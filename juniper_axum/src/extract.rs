@@ -10,39 +10,7 @@ use axum::{
     response::{IntoResponse as _, Response},
     Json, RequestExt as _,
 };
-use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest},
-    InputValue,
-};
-use serde::Deserialize;
-use serde_json::{Map, Value};
-
-/// Request body of a JSON POST request.
-#[derive(Debug, Deserialize)]
-#[serde(untagged)]
-enum JsonRequestBody {
-    Single(SingleRequestBody),
-    Batch(Vec<SingleRequestBody>),
-}
-
-/// Request body of a single JSON POST request.
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct SingleRequestBody {
-    query: String,
-    operation_name: Option<String>,
-    variables: Option<Map<String, Value>>,
-}
-
-impl JsonRequestBody {
-    /// Indicates whether the request body represents an empty array.
-    fn is_empty_batch(&self) -> bool {
-        match self {
-            JsonRequestBody::Batch(r) => r.is_empty(),
-            JsonRequestBody::Single(_) => false,
-        }
-    }
-}
+use juniper::http::{GraphQLBatchRequest, GraphQLRequest};
 
 /// Extractor for [`axum`] to extract a [`JuniperRequest`].
 ///
@@ -104,70 +72,13 @@ impl JsonRequestBody {
 #[derive(Debug, PartialEq)]
 pub struct JuniperRequest(pub GraphQLBatchRequest);
 
-impl TryFrom<SingleRequestBody> for JuniperRequest {
-    type Error = serde_json::Error;
-
-    fn try_from(value: SingleRequestBody) -> Result<JuniperRequest, Self::Error> {
-        Ok(JuniperRequest(GraphQLBatchRequest::Single(
-            GraphQLRequest::try_from(value)?,
-        )))
-    }
-}
-
-impl TryFrom<SingleRequestBody> for GraphQLRequest {
-    type Error = serde_json::Error;
-
-    fn try_from(value: SingleRequestBody) -> Result<GraphQLRequest, Self::Error> {
-        // Convert Map<String, Value> to InputValue with the help of serde_json
-        let variables: Option<InputValue> = value
-            .variables
-            .map(|vars| serde_json::to_string(&vars))
-            .transpose()?
-            .map(|s| serde_json::from_str(&s))
-            .transpose()?;
-
-        Ok(GraphQLRequest::new(
-            value.query,
-            value.operation_name,
-            variables,
-        ))
-    }
-}
-
-impl TryFrom<JsonRequestBody> for JuniperRequest {
-    type Error = serde_json::Error;
-
-    fn try_from(value: JsonRequestBody) -> Result<JuniperRequest, Self::Error> {
-        match value {
-            JsonRequestBody::Single(req) => req.try_into(),
-            JsonRequestBody::Batch(requests) => {
-                let mut graphql_requests: Vec<GraphQLRequest> = Vec::new();
-
-                for req in requests {
-                    graphql_requests.push(GraphQLRequest::try_from(req)?);
-                }
-
-                Ok(JuniperRequest(GraphQLBatchRequest::Batch(graphql_requests)))
-            }
-        }
-    }
-}
-
-impl From<String> for JuniperRequest {
-    fn from(query: String) -> Self {
-        JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            query, None, None,
-        )))
-    }
-}
-
 #[async_trait]
 impl<S> FromRequest<S, Body> for JuniperRequest
 where
     S: Sync,
     Query<GraphQLRequest>: FromRequestParts<S>,
-    Json<JsonRequestBody>: FromRequest<S, Body>,
-    <Json<JsonRequestBody> as FromRequest<S, Body>>::Rejection: fmt::Display,
+    Json<GraphQLBatchRequest>: FromRequest<S, Body>,
+    <Json<GraphQLBatchRequest> as FromRequest<S, Body>>::Rejection: fmt::Display,
     String: FromRequest<S, Body>,
 {
     type Rejection = Response;
@@ -181,49 +92,39 @@ where
             .map_err(|_| {
                 (
                     StatusCode::BAD_REQUEST,
-                    "`Content-Type` header is not a valid header string",
+                    "`Content-Type` header is not a valid HTTP header string",
                 )
                     .into_response()
             })?;
 
         match (req.method(), content_type) {
-            (&Method::GET, _) => {
-                let query = req
-                    .extract_parts::<Query<GraphQLRequest>>()
-                    .await
-                    .map(|q| q.0)
-                    .map_err(|e| {
-                        (StatusCode::BAD_REQUEST, format!("Invalid request: {e}")).into_response()
-                    })?;
-
-                Ok(Self(GraphQLBatchRequest::Single(query)))
-            }
-            (&Method::POST, Some("application/json")) => {
-                let json_body = Json::<JsonRequestBody>::from_request(req, state)
-                    .await
-                    .map(|result| result.0)
-                    .map_err(|e| {
-                        (StatusCode::BAD_REQUEST, format!("Invalid JSON: {e}")).into_response()
-                    })?;
-
-                if json_body.is_empty_batch() {
-                    return Err(
-                        (StatusCode::BAD_REQUEST, "Batch request cannot be empty").into_response()
-                    );
-                }
-
-                Self::try_from(json_body).map_err(|e| {
+            (&Method::GET, _) => req
+                .extract_parts::<Query<GraphQLRequest>>()
+                .await
+                .map(|query| Self(GraphQLBatchRequest::Single(query.0)))
+                .map_err(|e| {
                     (
                         StatusCode::BAD_REQUEST,
-                        format!("Could not convert variables: {e}"),
+                        format!("Invalid request query string: {e}"),
                     )
                         .into_response()
-                })
+                }),
+            (&Method::POST, Some("application/json")) => {
+                Json::<GraphQLBatchRequest>::from_request(req, state)
+                    .await
+                    .map(|req| Self(req.0))
+                    .map_err(|e| {
+                        (StatusCode::BAD_REQUEST, format!("Invalid JSON body: {e}")).into_response()
+                    })
             }
             (&Method::POST, Some("application/graphql")) => String::from_request(req, state)
                 .await
-                .map(Into::into)
-                .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8").into_response()),
+                .map(|body| {
+                    Self(GraphQLBatchRequest::Single(GraphQLRequest::new(
+                        body, None, None,
+                    )))
+                })
+                .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8 body").into_response()),
             (&Method::POST, _) => Err((
                 StatusCode::UNSUPPORTED_MEDIA_TYPE,
                 "`Content-Type` header is expected to be either `application/json` or \
