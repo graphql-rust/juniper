@@ -1,10 +1,8 @@
 //! Definitions for handling GraphQL subscriptions.
 
 use axum::extract::ws::{Message, WebSocket};
-use juniper::{
-    futures::{SinkExt, StreamExt, TryStreamExt},
-    ScalarValue,
-};
+use futures::{SinkExt as _, StreamExt as _, TryStreamExt as _};
+use juniper::ScalarValue;
 use juniper_graphql_ws::{ClientMessage, Connection, ConnectionConfig, Schema, WebsocketError};
 
 #[derive(Debug)]

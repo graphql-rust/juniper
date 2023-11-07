@@ -7,8 +7,8 @@ use axum::{
 };
 use juniper::http::GraphQLBatchResponse;
 
-/// A wrapper around [`GraphQLBatchResponse`] that implements [`IntoResponse`]
-/// so it can be returned from axum handlers.
+/// Wrapper around a [`GraphQLBatchResponse`], implementing [`IntoResponse`], so it can be returned
+/// from [`axum`] handlers.
 pub struct JuniperResponse(pub GraphQLBatchResponse);
 
 impl IntoResponse for JuniperResponse {

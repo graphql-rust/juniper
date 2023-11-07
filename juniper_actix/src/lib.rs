@@ -143,7 +143,6 @@ where
 /// let app = App::new()
 ///          .route("/", web::get().to(|| graphiql_handler("/graphql", Some("/graphql/subscriptions"))));
 /// ```
-#[allow(dead_code)]
 pub async fn graphiql_handler(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&'static str>,
