@@ -17,15 +17,6 @@ use juniper::{
 use serde::Deserialize;
 use serde_json::{Map, Value};
 
-/// Query variables of a GET request.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct GetQueryVariables {
-    query: String,
-    operation_name: Option<String>,
-    variables: Option<String>,
-}
-
 /// Request body of a JSON POST request.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -170,26 +161,11 @@ impl From<String> for JuniperRequest {
     }
 }
 
-impl TryFrom<GetQueryVariables> for JuniperRequest {
-    type Error = serde_json::Error;
-
-    fn try_from(value: GetQueryVariables) -> Result<JuniperRequest, Self::Error> {
-        let variables: Option<InputValue> = value
-            .variables
-            .map(|var| serde_json::from_str(&var))
-            .transpose()?;
-
-        Ok(JuniperRequest(GraphQLBatchRequest::Single(
-            GraphQLRequest::new(value.query, value.operation_name, variables),
-        )))
-    }
-}
-
 #[async_trait]
 impl<S> FromRequest<S, Body> for JuniperRequest
 where
     S: Sync,
-    Query<GetQueryVariables>: FromRequestParts<S>,
+    Query<GraphQLRequest>: FromRequestParts<S>,
     Json<JsonRequestBody>: FromRequest<S, Body>,
     <Json<JsonRequestBody> as FromRequest<S, Body>>::Rejection: fmt::Display,
     String: FromRequest<S, Body>,
@@ -212,21 +188,15 @@ where
 
         match (req.method(), content_type) {
             (&Method::GET, _) => {
-                let query_vars = req
-                    .extract_parts::<Query<GetQueryVariables>>()
+                let query = req
+                    .extract_parts::<Query<GraphQLRequest>>()
                     .await
-                    .map(|result| result.0)
+                    .map(|q| q.0)
                     .map_err(|e| {
                         (StatusCode::BAD_REQUEST, format!("Invalid request: {e}")).into_response()
                     })?;
 
-                Self::try_from(query_vars).map_err(|e| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!("Could not convert variables: {e}"),
-                    )
-                        .into_response()
-                })
+                Ok(Self(GraphQLBatchRequest::Single(query)))
             }
             (&Method::POST, Some("application/json")) => {
                 let json_body = Json::<JsonRequestBody>::from_request(req, state)
