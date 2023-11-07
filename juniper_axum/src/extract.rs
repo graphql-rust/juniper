@@ -1,11 +1,14 @@
 //! Types and traits for extracting data from requests.
 
+use std::fmt;
+
 use axum::{
     async_trait,
     body::Body,
-    extract::{FromRequest, Query, RequestParts},
-    http::{Method, StatusCode},
-    Json,
+    extract::{FromRequest, FromRequestParts, Query},
+    http::{HeaderValue, Method, Request, StatusCode},
+    response::{IntoResponse as _, Response},
+    Json, RequestExt as _,
 };
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
@@ -14,8 +17,8 @@ use juniper::{
 use serde::Deserialize;
 use serde_json::{Map, Value};
 
-/// The query variables for a GET request
-#[derive(Deserialize, Debug)]
+/// Query variables of a GET request.
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GetQueryVariables {
     query: String,
@@ -23,15 +26,15 @@ struct GetQueryVariables {
     variables: Option<String>,
 }
 
-/// The request body for JSON POST
-#[derive(Deserialize, Debug)]
+/// Request body of a JSON POST request.
+#[derive(Debug, Deserialize)]
 #[serde(untagged)]
 enum JsonRequestBody {
     Single(SingleRequestBody),
     Batch(Vec<SingleRequestBody>),
 }
 
-/// The request body for a single JSON POST request
+/// Request body of a single JSON POST request.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct SingleRequestBody {
@@ -41,7 +44,7 @@ struct SingleRequestBody {
 }
 
 impl JsonRequestBody {
-    /// Returns true if the request body is an empty array
+    /// Indicates whether the request body represents an empty array.
     fn is_empty_batch(&self) -> bool {
         match self {
             JsonRequestBody::Batch(r) => r.is_empty(),
@@ -50,7 +53,7 @@ impl JsonRequestBody {
     }
 }
 
-/// An extractor for Axum to Extract a JuniperRequest
+/// Extractor for [`axum`] to extract a [`JuniperRequest`].
 ///
 /// # Example
 ///
@@ -145,12 +148,12 @@ impl TryFrom<JsonRequestBody> for JuniperRequest {
 
     fn try_from(value: JsonRequestBody) -> Result<JuniperRequest, Self::Error> {
         match value {
-            JsonRequestBody::Single(r) => JuniperRequest::try_from(r),
+            JsonRequestBody::Single(req) => req.try_into(),
             JsonRequestBody::Batch(requests) => {
                 let mut graphql_requests: Vec<GraphQLRequest> = Vec::new();
 
-                for request in requests {
-                    graphql_requests.push(GraphQLRequest::try_from(request)?);
+                for req in requests {
+                    graphql_requests.push(GraphQLRequest::try_from(req)?);
                 }
 
                 Ok(JuniperRequest(GraphQLBatchRequest::Batch(graphql_requests)))
@@ -182,92 +185,86 @@ impl TryFrom<GetQueryVariables> for JuniperRequest {
     }
 }
 
-/// Helper trait to get some nice clean code
 #[async_trait]
-trait TryFromRequest {
-    type Rejection;
+impl<S> FromRequest<S, Body> for JuniperRequest
+where
+    S: Sync,
+    Query<GetQueryVariables>: FromRequestParts<S>,
+    Json<JsonRequestBody>: FromRequest<S, Body>,
+    <Json<JsonRequestBody> as FromRequest<S, Body>>::Rejection: fmt::Display,
+    String: FromRequest<S, Body>,
+{
+    type Rejection = Response;
 
-    /// Get `content-type` header from request
-    fn try_get_content_type_header(&self) -> Result<Option<&str>, Self::Rejection>;
-
-    /// Try to convert GET request to RequestBody
-    async fn try_from_get_request(&mut self) -> Result<JuniperRequest, Self::Rejection>;
-
-    /// Try to convert POST json request to RequestBody
-    async fn try_from_json_post_request(&mut self) -> Result<JuniperRequest, Self::Rejection>;
-
-    /// Try to convert POST graphql request to RequestBody
-    async fn try_from_graphql_post_request(&mut self) -> Result<JuniperRequest, Self::Rejection>;
-}
-
-#[async_trait]
-impl TryFromRequest for RequestParts<Body> {
-    type Rejection = (StatusCode, &'static str);
-
-    fn try_get_content_type_header(&self) -> Result<Option<&str>, Self::Rejection> {
-        self.headers()
-            .get("content-Type")
-            .map(|header| header.to_str())
+    async fn from_request(mut req: Request<Body>, state: &S) -> Result<Self, Self::Rejection> {
+        let content_type = req
+            .headers()
+            .get("content-type")
+            .map(HeaderValue::to_str)
             .transpose()
-            .map_err(|_e| {
+            .map_err(|_| {
                 (
                     StatusCode::BAD_REQUEST,
-                    "content-type header not a valid string",
+                    "`Content-Type` header is not a valid header string",
                 )
-            })
-    }
+                    .into_response()
+            })?;
 
-    async fn try_from_get_request(&mut self) -> Result<JuniperRequest, Self::Rejection> {
-        let query_vars = Query::<GetQueryVariables>::from_request(self)
-            .await
-            .map(|result| result.0)
-            .map_err(|_err| (StatusCode::BAD_REQUEST, "Request not valid"))?;
-
-        JuniperRequest::try_from(query_vars)
-            .map_err(|_err| (StatusCode::BAD_REQUEST, "Could not convert variables"))
-    }
-
-    async fn try_from_json_post_request(&mut self) -> Result<JuniperRequest, Self::Rejection> {
-        let json_body = Json::<JsonRequestBody>::from_request(self)
-            .await
-            .map_err(|_err| (StatusCode::BAD_REQUEST, "JSON invalid"))
-            .map(|result| result.0)?;
-
-        if json_body.is_empty_batch() {
-            return Err((StatusCode::BAD_REQUEST, "Batch request can not be empty"));
-        }
-
-        JuniperRequest::try_from(json_body)
-            .map_err(|_err| (StatusCode::BAD_REQUEST, "Could not convert variables"))
-    }
-
-    async fn try_from_graphql_post_request(&mut self) -> Result<JuniperRequest, Self::Rejection> {
-        String::from_request(self)
-            .await
-            .map(|s| s.into())
-            .map_err(|_err| (StatusCode::BAD_REQUEST, "Not valid utf-8"))
-    }
-}
-
-#[async_trait]
-impl FromRequest<Body> for JuniperRequest {
-    type Rejection = (StatusCode, &'static str);
-
-    async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
-        let content_type = req.try_get_content_type_header()?;
-
-        // Convert `req` to JuniperRequest based on request method and content-type header
         match (req.method(), content_type) {
-            (&Method::GET, _) => req.try_from_get_request().await,
-            (&Method::POST, Some("application/json")) => req.try_from_json_post_request().await,
-            (&Method::POST, Some("application/graphql")) => {
-                req.try_from_graphql_post_request().await
+            (&Method::GET, _) => {
+                let query_vars = req
+                    .extract_parts::<Query<GetQueryVariables>>()
+                    .await
+                    .map(|result| result.0)
+                    .map_err(|e| {
+                        (StatusCode::BAD_REQUEST, format!("Invalid request: {e}")).into_response()
+                    })?;
+
+                Self::try_from(query_vars).map_err(|e| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!("Could not convert variables: {e}"),
+                    )
+                        .into_response()
+                })
             }
+            (&Method::POST, Some("application/json")) => {
+                let json_body = Json::<JsonRequestBody>::from_request(req, state)
+                    .await
+                    .map(|result| result.0)
+                    .map_err(|e| {
+                        (StatusCode::BAD_REQUEST, format!("Invalid JSON: {e}")).into_response()
+                    })?;
+
+                if json_body.is_empty_batch() {
+                    return Err(
+                        (StatusCode::BAD_REQUEST, "Batch request cannot be empty").into_response()
+                    );
+                }
+
+                Self::try_from(json_body).map_err(|e| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!("Could not convert variables: {e}"),
+                    )
+                        .into_response()
+                })
+            }
+            (&Method::POST, Some("application/graphql")) => String::from_request(req, state)
+                .await
+                .map(Into::into)
+                .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8").into_response()),
             (&Method::POST, _) => Err((
-                StatusCode::BAD_REQUEST,
-                "Header content-type is not application/json or application/graphql",
-            )),
-            _ => Err((StatusCode::METHOD_NOT_ALLOWED, "Method not supported")),
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                "`Content-Type` header is expected to be either `application/json` or \
+                 `application/graphql`",
+            )
+                .into_response()),
+            _ => Err((
+                StatusCode::METHOD_NOT_ALLOWED,
+                "HTTP method is expected to be either GET or POST",
+            )
+                .into_response()),
         }
     }
 }
