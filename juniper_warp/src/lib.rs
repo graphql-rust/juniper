@@ -6,7 +6,7 @@
 use std::{collections::HashMap, str, sync::Arc};
 
 use anyhow::anyhow;
-use futures::{FutureExt as _, TryFutureExt};
+use futures::{FutureExt as _, TryFutureExt as _};
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
@@ -339,17 +339,14 @@ fn playground_response(
 #[cfg(feature = "subscriptions")]
 /// `juniper_warp` subscriptions handler implementation.
 pub mod subscriptions {
-    use std::{fmt, sync::Arc};
+    use std::{convert::Infallible, fmt, sync::Arc};
 
-    use futures::TryStreamExt as _;
-    use juniper::{
-        futures::{
-            future::{self, Either},
-            sink::SinkExt,
-            stream::StreamExt,
-        },
-        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+    use futures::{
+        future::{self, Either},
+        sink::SinkExt as _,
+        stream::StreamExt as _,
     };
+    use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{graphql_transport_ws, graphql_ws};
     use warp::{filters::BoxedFilter, reply::Reply, Filter as _};
 
@@ -388,9 +385,6 @@ pub mod subscriptions {
         /// Errors that can happen while serializing outgoing messages. Note that errors that occur
         /// while deserializing incoming messages are handled internally by the protocol.
         Serde(serde_json::Error),
-
-        /// Errors that can happen while communicating with Juniper
-        Juniper(WebsocketError),
     }
 
     impl fmt::Display for Error {
@@ -410,9 +404,9 @@ pub mod subscriptions {
         }
     }
 
-    impl From<WebsocketError> for Error {
-        fn from(err: WebsocketError) -> Self {
-            Self::Juniper(err)
+    impl From<Infallible> for Error {
+        fn from(_err: Infallible) -> Self {
+            unreachable!()
         }
     }
 
@@ -602,7 +596,7 @@ pub mod subscriptions {
         let (s_tx, s_rx) =
             graphql_ws::Connection::new(juniper_graphql_ws::ArcSchema(root_node), init).split();
 
-        let ws_rx = ws_rx.map(|r| r.map(Message)).map_err(Error::Warp);
+        let ws_rx = ws_rx.map(|r| r.map(Message));
         let s_rx = s_rx.map(|msg| {
             serde_json::to_string(&msg)
                 .map(warp::ws::Message::text)
@@ -666,7 +660,7 @@ pub mod subscriptions {
         )
         .await
         {
-            Either::Left((r, _)) => r,
+            Either::Left((r, _)) => r.map_err(|e| e.into()),
             Either::Right((r, _)) => r,
         }
     }

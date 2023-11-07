@@ -504,13 +504,13 @@ pub mod tests {
                                 "NEW_HOPE",
                                 "EMPIRE",
                                 "JEDI"
-                                ],
-                                "homePlanet": "Tatooine",
-                                "name": "Luke Skywalker",
-                                "id": "1000"
-                            }
+                            ],
+                            "homePlanet": "Tatooine",
+                            "name": "Luke Skywalker",
+                            "id": "1000"
                         }
-                    }"#
+                    }
+                }"#
             )
             .expect("Invalid JSON constant in test")
         );
@@ -520,9 +520,10 @@ pub mod tests {
         let response = integration.post_json(
             "/",
             r#"{
-            "query": "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }",
-            "variables": { "id": "1000" }
-        }"#,
+                "query":
+                    "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }",
+                "variables": {"id": "1000"}
+            }"#,
         );
 
         assert_eq!(response.status_code, 200);
@@ -538,13 +539,13 @@ pub mod tests {
                                 "NEW_HOPE",
                                 "EMPIRE",
                                 "JEDI"
-                                ],
-                                "homePlanet": "Tatooine",
-                                "name": "Luke Skywalker",
-                                "id": "1000"
-                            }
+                            ],
+                            "homePlanet": "Tatooine",
+                            "name": "Luke Skywalker",
+                            "id": "1000"
                         }
-                    }"#
+                    }
+                }"#
             )
             .expect("Invalid JSON constant in test")
         );

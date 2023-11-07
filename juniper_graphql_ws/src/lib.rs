@@ -26,18 +26,6 @@ use juniper::{ScalarValue, Variables};
 
 pub use self::schema::{ArcSchema, Schema};
 
-/// Errors
-#[derive(Clone, Copy, Debug, Display)]
-pub enum WebsocketError {
-    /// The connection was already closed.
-    #[display(fmt = "Websocket connection was already closed.")]
-    ConnectionAlreadyClosed,
-
-    /// The connection is not ready to accept messages yet.
-    #[display(fmt = "The Websocket connection is not ready to accept messages yet.")]
-    ConnectionNotReady,
-}
-
 /// ConnectionConfig is used to configure the connection once the client sends the ConnectionInit
 /// message.
 #[derive(Clone, Copy, Debug)]

@@ -43,7 +43,6 @@ impl DeprecationStatus {
 }
 
 /// Scalar type metadata
-#[derive(Clone)]
 pub struct ScalarMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -62,7 +61,7 @@ pub type InputValueParseFn<S> = for<'b> fn(&'b InputValue<S>) -> Result<(), Fiel
 pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError>;
 
 /// List type metadata
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ListMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
@@ -72,14 +71,14 @@ pub struct ListMeta<'a> {
 }
 
 /// Nullable type metadata
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct NullableMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
 }
 
 /// Object type metadata
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -92,7 +91,6 @@ pub struct ObjectMeta<'a, S> {
 }
 
 /// Enum type metadata
-#[derive(Clone)]
 pub struct EnumMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -104,7 +102,7 @@ pub struct EnumMeta<'a, S> {
 }
 
 /// Interface type metadata
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct InterfaceMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -117,7 +115,7 @@ pub struct InterfaceMeta<'a, S> {
 }
 
 /// Union type metadata
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct UnionMeta<'a> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -128,7 +126,6 @@ pub struct UnionMeta<'a> {
 }
 
 /// Input object metadata
-#[derive(Clone)]
 pub struct InputObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
@@ -143,14 +140,14 @@ pub struct InputObjectMeta<'a, S> {
 ///
 /// After a type's `meta` method has been called but before it has returned, a placeholder type
 /// is inserted into a registry to indicate existence.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct PlaceholderMeta<'a> {
     #[doc(hidden)]
     pub of_type: Type<'a>,
 }
 
 /// Generic type metadata
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum MetaType<'a, S = DefaultScalarValue> {
     #[doc(hidden)]
     Scalar(ScalarMeta<'a, S>),
