@@ -2,7 +2,7 @@
 name = "juniper_axum"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.73"
 description = "`juniper` GraphQL integration with `axum`."
 license = "BSD-2-Clause"
 authors = ["Benno Tielen <Benno@tielen.nl>"]
@@ -11,22 +11,29 @@ homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_axum"
 repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]
-keywords = ["graphql", "juniper", "axum", "websocket"]
-exclude = ["/release.toml"]
+keywords = ["apollo", "axum", "graphql", "juniper", "websocket"]
+exclude = ["/examples/", "/release.toml"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+subscriptions = ["axum/ws", "dep:juniper_graphql_ws"]
 
 [dependencies]
-axum = { version = "0.5.11", features = ["ws"] }
-juniper = { path = "../juniper" }
-serde = "1.0"
-serde_json = "1.0"
-juniper_graphql_ws = { path = "../juniper_graphql_ws" }
-futures = "0.3"
+axum = "0.6"
+futures = "0.3.22"
+juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
+juniper_graphql_ws = { version = "0.4.0-dev", path = "../juniper_graphql_ws", features = ["graphql-transport-ws", "graphql-ws"], optional = true }
+serde = { version = "1.0.122", features = ["derive"] }
+serde_json = "1.0.18"
 
 [dev-dependencies]
-tokio = { version = "1.20", features = ["full"] }
-tokio-tungstenite = "0.17.2"
-tokio-stream = "0.1.9"
-tower = "0.4.13"
-hyper = "0.14.20"
-juniper = { path = "../juniper", features = ["expose-test-schema"] }
 anyhow = "1.0"
+hyper = "0.14"
+juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
+tokio = { version = "1.20", features = ["full"] }
+tokio-stream = "0.1"
+tokio-tungstenite = "0.20"
+tower = "0.4"
