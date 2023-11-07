@@ -9,6 +9,10 @@ use juniper::{
 
 use self::common::util::schema;
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 mod trivial {
     use super::*;
 
@@ -267,16 +271,16 @@ mod default_nullable_value {
     #[derive(GraphQLInputObject)]
     struct Point2D {
         #[graphql(default = 10.0)]
-        x: Option<f64>,
+        x: prelude::Option<f64>,
         #[graphql(default = 10.0)]
-        y: Option<f64>,
+        y: prelude::Option<f64>,
     }
 
     struct QueryRoot;
 
     #[graphql_object]
     impl QueryRoot {
-        fn x(point: Point2D) -> Option<f64> {
+        fn x(point: Point2D) -> prelude::Option<f64> {
             point.x
         }
     }

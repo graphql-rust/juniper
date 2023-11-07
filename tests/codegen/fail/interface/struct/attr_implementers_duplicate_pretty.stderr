@@ -9,27 +9,3 @@ error[E0412]: cannot find type `CharacterValue` in this scope
   |
 4 | #[graphql(impl = CharacterValue)]
   |                  ^^^^^^^^^^^^^^ not found in this scope
-
-error[E0080]: evaluation of constant value failed
- --> fail/interface/struct/attr_implementers_duplicate_pretty.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^ referenced constant has errors
-  |
-  = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
- --> fail/interface/struct/attr_implementers_duplicate_pretty.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^ referenced constant has errors
-  |
-  = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
- --> fail/interface/struct/attr_implementers_duplicate_pretty.rs:3:10
-  |
-3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^ referenced constant has errors
-  |
-  = note: this error originates in the macro `$crate::const_concat` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)

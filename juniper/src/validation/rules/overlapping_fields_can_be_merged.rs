@@ -122,15 +122,9 @@ impl<'a> PairSet<'a> {
     }
 
     fn insert(&mut self, a: &'a str, b: &'a str, mutex: bool) {
-        self.data
-            .entry(a)
-            .or_insert_with(HashMap::new)
-            .insert(b, mutex);
+        self.data.entry(a).or_default().insert(b, mutex);
 
-        self.data
-            .entry(b)
-            .or_insert_with(HashMap::new)
-            .insert(a, mutex);
+        self.data.entry(b).or_default().insert(a, mutex);
     }
 }
 
@@ -433,7 +427,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         let t2 = def2.as_ref().map(|def| &def.field_type);
 
         if let (Some(t1), Some(t2)) = (t1, t2) {
-            if self.is_type_conflict(ctx, t1, t2) {
+            if Self::is_type_conflict(ctx, t1, t2) {
                 return Some(Conflict(
                     ConflictReason(
                         response_name.into(),
@@ -447,8 +441,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             }
         }
 
-        if let (&Some(ref s1), &Some(ref s2)) = (&ast1.item.selection_set, &ast2.item.selection_set)
-        {
+        if let (Some(s1), Some(s2)) = (&ast1.item.selection_set, &ast2.item.selection_set) {
             let conflicts = self.find_conflicts_between_sub_selection_sets(
                 mutually_exclusive,
                 t1.map(Type::innermost_name),
@@ -547,24 +540,16 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             ),
             vec![*pos1]
                 .into_iter()
-                .chain(
-                    conflicts
-                        .iter()
-                        .flat_map(|&Conflict(_, ref fs1, _)| fs1.clone()),
-                )
+                .chain(conflicts.iter().flat_map(|Conflict(_, fs1, _)| fs1.clone()))
                 .collect(),
             vec![*pos2]
                 .into_iter()
-                .chain(
-                    conflicts
-                        .iter()
-                        .flat_map(|&Conflict(_, _, ref fs2)| fs2.clone()),
-                )
+                .chain(conflicts.iter().flat_map(|Conflict(_, _, fs2)| fs2.clone()))
                 .collect(),
         ))
     }
 
-    fn is_type_conflict(&self, ctx: &ValidatorContext<'a, S>, t1: &Type, t2: &Type) -> bool {
+    fn is_type_conflict(ctx: &ValidatorContext<'a, S>, t1: &Type, t2: &Type) -> bool {
         match (t1, t2) {
             (&Type::List(ref inner1, expected_size1), &Type::List(ref inner2, expected_size2))
             | (
@@ -574,7 +559,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                 if expected_size1 != expected_size2 {
                     return false;
                 }
-                self.is_type_conflict(ctx, inner1, inner2)
+                Self::is_type_conflict(ctx, inner1, inner2)
             }
             (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2))
             | (&Type::Named(ref n1), &Type::Named(ref n2)) => {
@@ -615,10 +600,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                     return false;
                 }
 
-                args1.iter().all(|&(ref n1, ref v1)| {
-                    if let Some(&(_, ref v2)) =
-                        args2.iter().find(|&&(ref n2, _)| n1.item == n2.item)
-                    {
+                args1.iter().all(|(n1, v1)| {
+                    if let Some((_, v2)) = args2.iter().find(|&(n2, _)| n1.item == n2.item) {
                         v1.item.unlocated_eq(&v2.item)
                     } else {
                         false
@@ -655,7 +638,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         let mut ast_and_defs = OrderedMap::new();
         let mut fragment_names = Vec::new();
 
-        self.collect_fields_and_fragment_names(
+        Self::collect_fields_and_fragment_names(
             parent_type,
             selection_set,
             ctx,
@@ -667,7 +650,6 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     }
 
     fn collect_fields_and_fragment_names(
-        &self,
         parent_type: Option<&'a MetaType<S>>,
         selection_set: &'a [Selection<S>],
         ctx: &ValidatorContext<'a, S>,
@@ -709,7 +691,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                         .and_then(|cond| ctx.schema.concrete_type_by_name(cond.item))
                         .or(parent_type);
 
-                    self.collect_fields_and_fragment_names(
+                    Self::collect_fields_and_fragment_names(
                         parent_type,
                         &inline.selection_set,
                         ctx,
@@ -757,11 +739,11 @@ fn error_message(reason_name: &str, reason: &ConflictReasonMessage) -> String {
 }
 
 fn format_reason(reason: &ConflictReasonMessage) -> String {
-    match *reason {
-        ConflictReasonMessage::Message(ref name) => name.clone(),
-        ConflictReasonMessage::Nested(ref nested) => nested
+    match reason {
+        ConflictReasonMessage::Message(name) => name.clone(),
+        ConflictReasonMessage::Nested(nested) => nested
             .iter()
-            .map(|&ConflictReason(ref name, ref subreason)| {
+            .map(|ConflictReason(name, subreason)| {
                 format!(
                     r#"subfields "{name}" conflict because {}"#,
                     format_reason(subreason),

@@ -70,7 +70,7 @@ async fn query_document_can_be_pre_parsed() {
             .await
             .unwrap();
 
-    assert!(errors.len() == 0);
+    assert!(errors.is_empty());
 }
 
 #[tokio::test]
@@ -85,8 +85,8 @@ async fn subscription_document_can_be_pre_parsed() {
 
     let mut stream = resolve_validated_subscription(
         &document,
-        &operation,
-        &root_node,
+        operation,
+        root_node,
         &graphql_vars! {},
         &Context,
     )

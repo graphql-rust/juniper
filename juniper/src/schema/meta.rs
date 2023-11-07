@@ -16,7 +16,7 @@ use crate::{
 };
 
 /// Whether an item is deprecated, with context.
-#[derive(Debug, PartialEq, Hash, Clone)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum DeprecationStatus {
     /// The field/variant is not deprecated.
     Current,

@@ -2,4 +2,4 @@ error: GraphQL enum can only be derived on enums
  --> fail/enum/derive_wrong_item.rs:4:1
   |
 4 | struct Test {}
-  | ^^^^^^^^^^^^^^
+  | ^^^^^^

@@ -5,11 +5,3 @@ error[E0080]: evaluation of constant value failed
    |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` isn't present on the interface and so has to be nullable.', $DIR/fail/interface/trait/additional_non_nullable_argument.rs:16:8
    |
    = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0080]: evaluation of constant value failed
-  --> fail/interface/trait/additional_non_nullable_argument.rs:16:8
-   |
-16 |     fn id(&self) -> &str;
-   |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` isn't present on the interface and so has to be nullable.', $DIR/fail/interface/trait/additional_non_nullable_argument.rs:16:8
-   |
-   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)

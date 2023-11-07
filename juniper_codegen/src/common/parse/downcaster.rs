@@ -17,7 +17,7 @@ use crate::common::parse::TypeExt as _;
 /// corresponding error at.
 pub(crate) fn output_type(ret_ty: &syn::ReturnType) -> Result<syn::Type, Span> {
     let ret_ty = match &ret_ty {
-        syn::ReturnType::Type(_, ty) => &*ty,
+        syn::ReturnType::Type(_, ty) => &**ty,
         _ => return Err(ret_ty.span()),
     };
 
@@ -65,7 +65,7 @@ pub(crate) fn output_type(ret_ty: &syn::ReturnType) -> Result<syn::Type, Span> {
 /// If input arguments are invalid, then returns the [`Span`] to display the corresponding error at.
 pub(crate) fn context_ty(sig: &syn::Signature) -> Result<Option<syn::Type>, Span> {
     match sig.receiver() {
-        Some(syn::FnArg::Receiver(rcv)) => {
+        Some(rcv) => {
             if rcv.reference.is_none() || rcv.mutability.is_some() {
                 return Err(rcv.span());
             }

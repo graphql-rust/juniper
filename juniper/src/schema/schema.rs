@@ -234,7 +234,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn of_type(&self) -> Option<&TypeType<S>> {
         match self {
             TypeType::Concrete(_) => None,
-            TypeType::List(l, _) | TypeType::NonNull(l) => Some(&*l),
+            TypeType::List(l, _) | TypeType::NonNull(l) => Some(&**l),
         }
     }
 

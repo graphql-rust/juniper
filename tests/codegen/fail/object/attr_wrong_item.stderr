@@ -1,5 +1,5 @@
 error: #[graphql_object] attribute is applicable to non-trait `impl` blocks only
- --> $DIR/attr_wrong_item.rs:3:1
+ --> fail/object/attr_wrong_item.rs:3:1
   |
 3 | #[graphql_object]
   | ^^^^^^^^^^^^^^^^^

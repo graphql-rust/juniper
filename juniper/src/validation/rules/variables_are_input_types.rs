@@ -20,7 +20,7 @@ where
     fn enter_variable_definition(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (var_name, var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         if let Some(var_type) = ctx
             .schema

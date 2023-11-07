@@ -1,3 +1,5 @@
+//! This example demonstrates asynchronous subscriptions with [`actix_web`].
+
 use std::{env, pin::Pin, time::Duration};
 
 use actix_cors::Cors;
@@ -5,7 +7,7 @@ use actix_web::{
     http::header,
     middleware,
     web::{self, Data},
-    App, Error, HttpRequest, HttpResponse, HttpServer,
+    App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 
 use juniper::{
@@ -13,7 +15,7 @@ use juniper::{
     tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, FieldError, GraphQLObject, RootNode,
 };
-use juniper_actix::{graphql_handler, playground_handler, subscriptions::subscriptions_handler};
+use juniper_actix::{graphiql_handler, graphql_handler, playground_handler, subscriptions};
 use juniper_graphql_ws::ConnectionConfig;
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
@@ -26,13 +28,43 @@ async fn playground() -> Result<HttpResponse, Error> {
     playground_handler("/graphql", Some("/subscriptions")).await
 }
 
+async fn graphiql() -> Result<HttpResponse, Error> {
+    graphiql_handler("/graphql", Some("/subscriptions")).await
+}
+
 async fn graphql(
-    req: actix_web::HttpRequest,
-    payload: actix_web::web::Payload,
-    schema: web::Data<Schema>,
+    req: HttpRequest,
+    payload: web::Payload,
+    schema: Data<Schema>,
 ) -> Result<HttpResponse, Error> {
     let context = Database::new();
     graphql_handler(&schema, &context, req, payload).await
+}
+
+async fn homepage() -> impl Responder {
+    HttpResponse::Ok()
+        .insert_header(("content-type", "text/html"))
+        .message_body(
+            "<html><h1>juniper_actix/subscription example</h1>\
+                   <div>visit <a href=\"/graphiql\">GraphiQL</a></div>\
+                   <div>visit <a href=\"/playground\">GraphQL Playground</a></div>\
+             </html>",
+        )
+}
+
+async fn subscriptions(
+    req: HttpRequest,
+    stream: web::Payload,
+    schema: web::Data<Schema>,
+) -> Result<HttpResponse, Error> {
+    let context = Database::new();
+    let schema = schema.into_inner();
+    let config = ConnectionConfig::new(context);
+    // set the keep alive interval to 15 secs so that it doesn't timeout in playground
+    // playground has a hard-coded timeout set to 20 secs
+    let config = config.with_keep_alive_interval(Duration::from_secs(15));
+
+    subscriptions::ws_handler(req, stream, schema, config).await
 }
 
 struct Subscription;
@@ -49,7 +81,8 @@ type RandomHumanStream =
 #[graphql_subscription(context = Database)]
 impl Subscription {
     #[graphql(
-        description = "A random humanoid creature in the Star Wars universe every 3 seconds. Second result will be an error."
+        description = "A random humanoid creature in the Star Wars universe every 3 seconds. \
+                       Second result will be an error."
     )]
     async fn random_human(context: &Database) -> RandomHumanStream {
         let mut counter = 0;
@@ -84,21 +117,6 @@ impl Subscription {
     }
 }
 
-async fn subscriptions(
-    req: HttpRequest,
-    stream: web::Payload,
-    schema: web::Data<Schema>,
-) -> Result<HttpResponse, Error> {
-    let context = Database::new();
-    let schema = schema.into_inner();
-    let config = ConnectionConfig::new(context);
-    // set the keep alive interval to 15 secs so that it doesn't timeout in playground
-    // playground has a hard-coded timeout set to 20 secs
-    let config = config.with_keep_alive_interval(Duration::from_secs(15));
-
-    subscriptions_handler(req, stream, schema, config).await
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "info");
@@ -125,11 +143,8 @@ async fn main() -> std::io::Result<()> {
                     .route(web::get().to(graphql)),
             )
             .service(web::resource("/playground").route(web::get().to(playground)))
-            .default_service(web::to(|| async {
-                HttpResponse::Found()
-                    .append_header((header::LOCATION, "/playground"))
-                    .finish()
-            }))
+            .service(web::resource("/graphiql").route(web::get().to(graphiql)))
+            .default_service(web::to(homepage))
     })
     .bind("127.0.0.1:8080")?
     .run()

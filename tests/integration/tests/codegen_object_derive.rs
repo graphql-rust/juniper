@@ -9,6 +9,10 @@ use juniper::{
 
 use self::common::util::{schema, schema_with_scalar};
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 mod trivial {
     use super::*;
 
@@ -280,7 +284,7 @@ mod generic_lifetime {
         _home_planet: B,
     }
 
-    struct QueryRoot(String);
+    struct QueryRoot(prelude::String);
 
     #[graphql_object]
     impl QueryRoot {
@@ -336,12 +340,12 @@ mod nested_generic_lifetime_async {
     }
 
     #[derive(GraphQLObject)]
-    struct Human<'d, A: Sync = ()> {
+    struct Human<'d, A: prelude::Sync = ()> {
         id: i32,
         droid: Droid<'d, A>,
     }
 
-    struct QueryRoot(String);
+    struct QueryRoot(prelude::String);
 
     #[graphql_object]
     impl QueryRoot {
@@ -413,7 +417,7 @@ mod description_from_doc_comment {
     struct Human {
         /// Rust `id` docs.
         /// Here.
-        id: String,
+        id: prelude::String,
     }
 
     struct QueryRoot;
@@ -458,7 +462,7 @@ mod deprecation_from_attr {
 
     #[derive(GraphQLObject)]
     struct Human {
-        id: String,
+        id: prelude::String,
         #[deprecated]
         a: &'static str,
         #[deprecated(note = "Use `id`.")]
@@ -575,7 +579,7 @@ mod explicit_name_description_and_deprecation {
         /// Rust `id` docs.
         #[graphql(name = "myId", desc = "My human ID.", deprecated = "Not used.")]
         #[deprecated(note = "Should be omitted.")]
-        id: String,
+        id: prelude::String,
         #[graphql(deprecated)]
         #[deprecated(note = "Should be omitted.")]
         a: &'static str,
@@ -726,7 +730,7 @@ mod renamed_all_fields {
     #[graphql(rename_all = "none")]
     struct Human {
         id: &'static str,
-        home_planet: String,
+        home_planet: prelude::String,
         r#async_info: i32,
     }
 
@@ -873,7 +877,7 @@ mod explicit_generic_scalar {
 
     #[derive(GraphQLObject)]
     #[graphql(scalar = S)]
-    struct Human<S: Clone> {
+    struct Human<S: prelude::Clone> {
         id: &'static str,
         #[graphql(ignore)]
         _scalar: PhantomData<S>,
@@ -883,7 +887,7 @@ mod explicit_generic_scalar {
 
     #[graphql_object]
     impl QueryRoot {
-        fn human<__S: Clone>() -> Human<__S> {
+        fn human<__S: prelude::Clone>() -> Human<__S> {
             Human {
                 id: "human-32",
                 _scalar: PhantomData,
@@ -912,7 +916,7 @@ mod bounded_generic_scalar {
     use super::*;
 
     #[derive(GraphQLObject)]
-    #[graphql(scalar = S: ScalarValue + Clone)]
+    #[graphql(scalar = S: ScalarValue + prelude::Clone)]
     struct Human {
         id: &'static str,
     }
@@ -946,7 +950,7 @@ mod bounded_generic_scalar {
 mod explicit_custom_context {
     use super::*;
 
-    struct CustomContext(String);
+    struct CustomContext(prelude::String);
 
     impl juniper::Context for CustomContext {}
 

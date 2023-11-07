@@ -1,6 +1,6 @@
 use crate::parser::{Lexer, LexerError, ScalarToken, SourcePosition, Spanning, Token};
 
-fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
+fn tokenize_to_vec(s: &str) -> Vec<Spanning<Token<'_>>> {
     let mut tokens = Vec::new();
     let mut lexer = Lexer::new(s);
 
@@ -21,7 +21,7 @@ fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
     tokens
 }
 
-fn tokenize_single<'a>(s: &'a str) -> Spanning<Token<'a>> {
+fn tokenize_single(s: &str) -> Spanning<Token<'_>> {
     let mut tokens = tokenize_to_vec(s);
 
     assert_eq!(tokens.len(), 2);
@@ -178,7 +178,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(20, 0, 20),
-            Token::Scalar(ScalarToken::String(r#"escaped \n\r\b\t\f"#))
+            Token::Scalar(ScalarToken::String(r"escaped \n\r\b\t\f"))
         )
     );
 
@@ -187,7 +187,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::Scalar(ScalarToken::String(r#"slashes \\ \/"#))
+            Token::Scalar(ScalarToken::String(r"slashes \\ \/"))
         )
     );
 
@@ -196,7 +196,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(34, 0, 34),
-            Token::Scalar(ScalarToken::String(r#"unicode \u1234\u5678\u90AB\uCDEF"#)),
+            Token::Scalar(ScalarToken::String(r"unicode \u1234\u5678\u90AB\uCDEF")),
         )
     );
 }

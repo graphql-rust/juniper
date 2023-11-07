@@ -27,5 +27,5 @@ pub(crate) fn filter_attrs<'a>(
 ) -> impl Iterator<Item = &'a syn::Attribute> + 'a {
     attrs
         .iter()
-        .filter(move |attr| path_eq_single(&attr.path, name))
+        .filter(move |attr| path_eq_single(attr.path(), name))
 }

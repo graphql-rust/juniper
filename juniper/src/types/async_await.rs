@@ -1,3 +1,5 @@
+use std::future;
+
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
@@ -242,7 +244,7 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .filter_map(|&(ref k, ref v)| {
+                            .filter_map(|(k, v)| {
                                 v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
                             })
                             .collect()
@@ -254,7 +256,7 @@ where
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                async_values.push(AsyncValueFuture::Field(async move {
+                async_values.push_back(AsyncValueFuture::Field(async move {
                     // TODO: implement custom future type instead of
                     //       two-level boxing.
                     let res = instance
@@ -317,12 +319,12 @@ where
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
-                            async_values.push(AsyncValueFuture::FragmentSpread(async move {
-                                AsyncValue::Field(AsyncField {
+                            async_values.push_back(AsyncValueFuture::FragmentSpread(
+                                future::ready(AsyncValue::Field(AsyncField {
                                     name: k,
                                     value: Some(v),
-                                })
-                            }));
+                                })),
+                            ));
                         }
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, *start_pos);
@@ -362,19 +364,19 @@ where
 
                         if let Ok(Value::Object(obj)) = sub_result {
                             for (k, v) in obj {
-                                async_values.push(AsyncValueFuture::InlineFragment1(async move {
-                                    AsyncValue::Field(AsyncField {
+                                async_values.push_back(AsyncValueFuture::InlineFragment1(
+                                    future::ready(AsyncValue::Field(AsyncField {
                                         name: k,
                                         value: Some(v),
-                                    })
-                                }));
+                                    })),
+                                ));
                             }
                         } else if let Err(e) = sub_result {
                             sub_exec.push_error_at(e, *start_pos);
                         }
                     }
                 } else {
-                    async_values.push(AsyncValueFuture::InlineFragment2(async move {
+                    async_values.push_back(AsyncValueFuture::InlineFragment2(async move {
                         let value = resolve_selection_set_into_async(
                             instance,
                             info,

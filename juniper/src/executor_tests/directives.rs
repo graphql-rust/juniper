@@ -21,7 +21,7 @@ impl TestType {
 
 async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultScalarValue>),
 {
     let schema = RootNode::new(
         TestType,
@@ -44,7 +44,7 @@ where
 
 async fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultScalarValue>),
 {
     run_variable_query(query, Variables::new(), f).await;
 }

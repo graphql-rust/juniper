@@ -52,8 +52,8 @@ where
     ) {
         let directive_name = &directive.item.name.item;
 
-        if let Some(&DirectiveType {
-            arguments: ref meta_args,
+        if let Some(DirectiveType {
+            arguments: meta_args,
             ..
         }) = ctx.schema.directive_by_name(directive_name)
         {

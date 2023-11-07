@@ -2,7 +2,7 @@
 name = "juniper_subscriptions"
 version = "0.17.0-dev"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.73"
 description = "Juniper `SubscriptionCoordinator` and `SubscriptionConnection` implementations."
 license = "BSD-2-Clause"
 authors = ["nWacky <gosha.evtushenko@gmail.com>"]
@@ -15,9 +15,9 @@ keywords = ["graphql", "server", "subscription", "web", "websocket"]
 exclude = ["/release.toml"]
 
 [dependencies]
-futures = "0.3.1"
+futures = "0.3.22"
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
 
 [dev-dependencies]
-serde_json = "1.0"
-tokio = { version = "1.0", features = ["macros", "rt"] }
+serde_json = "1.0.18"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }

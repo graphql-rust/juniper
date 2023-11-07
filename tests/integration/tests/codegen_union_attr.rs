@@ -9,21 +9,25 @@ use juniper::{
 
 use self::common::util::{schema, schema_with_scalar};
 
+// Override `std::prelude` items to check whether macros expand hygienically.
+#[allow(unused_imports)]
+use self::common::hygiene::*;
+
 #[derive(GraphQLObject)]
 struct Human {
-    id: String,
-    home_planet: String,
+    id: prelude::String,
+    home_planet: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 struct Droid {
-    id: String,
-    primary_function: String,
+    id: prelude::String,
+    primary_function: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 struct Ewok {
-    id: String,
+    id: prelude::String,
     funny: bool,
 }
 
@@ -37,21 +41,21 @@ impl juniper::Context for CustomContext {}
 #[derive(GraphQLObject)]
 #[graphql(context = CustomContext)]
 pub struct HumanCustomContext {
-    id: String,
-    home_planet: String,
+    id: prelude::String,
+    home_planet: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 #[graphql(context = CustomContext)]
 pub struct DroidCustomContext {
-    id: String,
-    primary_function: String,
+    id: prelude::String,
+    primary_function: prelude::String,
 }
 
 #[derive(GraphQLObject)]
 #[graphql(context = CustomContext)]
 struct EwokCustomContext {
-    id: String,
+    id: prelude::String,
     funny: bool,
 }
 
@@ -60,27 +64,27 @@ mod trivial {
 
     #[graphql_union]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
-        fn as_droid(&self) -> Option<&Droid> {
+        fn as_droid(&self) -> prelude::Option<&Droid> {
             None
         }
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
     impl Character for Droid {
-        fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&Droid> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     enum QueryRoot {
         Human,
@@ -89,13 +93,13 @@ mod trivial {
 
     #[graphql_object]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match self {
-                Self::Human => Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            let ch: prelude::Box<DynCharacter<'_>> = match self {
+                Self::Human => prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                Self::Droid => Box::new(Droid {
+                Self::Droid => prelude::Box::new(Droid {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -197,27 +201,27 @@ mod generic {
 
     #[graphql_union]
     trait Character<A, B> {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
-        fn as_droid(&self) -> Option<&Droid> {
+        fn as_droid(&self) -> prelude::Option<&Droid> {
             None
         }
     }
 
     impl<A, B> Character<A, B> for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
     impl<A, B> Character<A, B> for Droid {
-        fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&Droid> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a, A, B> = dyn Character<A, B> + Send + Sync + 'a;
+    type DynCharacter<'a, A, B> = dyn Character<A, B> + prelude::Send + prelude::Sync + 'a;
 
     enum QueryRoot {
         Human,
@@ -226,13 +230,13 @@ mod generic {
 
     #[graphql_object]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_, u8, ()>> {
-            let ch: Box<DynCharacter<'_, u8, ()>> = match self {
-                Self::Human => Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_, u8, ()>> {
+            let ch: prelude::Box<DynCharacter<'_, u8, ()>> = match self {
+                Self::Human => prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                Self::Droid => Box::new(Droid {
+                Self::Droid => prelude::Box::new(Droid {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -303,25 +307,25 @@ mod description_from_doc_comment {
     /// Rust docs.
     #[graphql_union]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     struct QueryRoot;
 
     #[graphql_object]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            prelude::Box::new(Human {
                 id: "human-32".into(),
                 home_planet: "earth".into(),
             })
@@ -376,25 +380,25 @@ mod explicit_name_and_description {
     /// Rust docs.
     #[graphql_union(name = "MyChar", desc = "My character.")]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     struct QueryRoot;
 
     #[graphql_object]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            prelude::Box::new(Human {
                 id: "human-32".into(),
                 home_planet: "earth".into(),
             })
@@ -464,27 +468,27 @@ mod explicit_scalar {
 
     #[graphql_union(scalar = DefaultScalarValue)]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
-        fn as_droid(&self) -> Option<&Droid> {
+        fn as_droid(&self) -> prelude::Option<&Droid> {
             None
         }
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
     impl Character for Droid {
-        fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&Droid> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     enum QueryRoot {
         Human,
@@ -493,13 +497,13 @@ mod explicit_scalar {
 
     #[graphql_object(scalar = DefaultScalarValue)]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match self {
-                Self::Human => Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            let ch: prelude::Box<DynCharacter<'_>> = match self {
+                Self::Human => prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                Self::Droid => Box::new(Droid {
+                Self::Droid => prelude::Box::new(Droid {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -555,27 +559,27 @@ mod custom_scalar {
 
     #[graphql_union(scalar = MyScalarValue)]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
-        fn as_droid(&self) -> Option<&Droid> {
+        fn as_droid(&self) -> prelude::Option<&Droid> {
             None
         }
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
     impl Character for Droid {
-        fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&Droid> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     enum QueryRoot {
         Human,
@@ -584,13 +588,13 @@ mod custom_scalar {
 
     #[graphql_object(scalar = MyScalarValue)]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match self {
-                Self::Human => Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            let ch: prelude::Box<DynCharacter<'_>> = match self {
+                Self::Human => prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                Self::Droid => Box::new(Droid {
+                Self::Droid => prelude::Box::new(Droid {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -644,27 +648,27 @@ mod explicit_generic_scalar {
 
     #[graphql_union(scalar = S)]
     trait Character<S: ScalarValue> {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
-        fn as_droid(&self) -> Option<&Droid> {
+        fn as_droid(&self) -> prelude::Option<&Droid> {
             None
         }
     }
 
     impl<S: ScalarValue> Character<S> for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
     impl<S: ScalarValue> Character<S> for Droid {
-        fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&Droid> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a, S> = dyn Character<S> + Send + Sync + 'a;
+    type DynCharacter<'a, S> = dyn Character<S> + prelude::Send + prelude::Sync + 'a;
 
     enum QueryRoot {
         Human,
@@ -673,13 +677,13 @@ mod explicit_generic_scalar {
 
     #[graphql_object]
     impl QueryRoot {
-        fn character<__S: ScalarValue>(&self) -> Box<DynCharacter<'_, __S>> {
-            let ch: Box<DynCharacter<'_, _>> = match self {
-                Self::Human => Box::new(Human {
+        fn character<__S: ScalarValue>(&self) -> prelude::Box<DynCharacter<'_, __S>> {
+            let ch: prelude::Box<DynCharacter<'_, _>> = match self {
+                Self::Human => prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                Self::Droid => Box::new(Droid {
+                Self::Droid => prelude::Box::new(Droid {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -731,29 +735,29 @@ mod explicit_generic_scalar {
 mod bounded_generic_scalar {
     use super::*;
 
-    #[graphql_union(scalar = S: ScalarValue + Clone)]
+    #[graphql_union(scalar = S: ScalarValue + prelude::Clone)]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
-        fn as_droid(&self) -> Option<&Droid> {
+        fn as_droid(&self) -> prelude::Option<&Droid> {
             None
         }
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
     impl Character for Droid {
-        fn as_droid(&self) -> Option<&Droid> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&Droid> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     enum QueryRoot {
         Human,
@@ -762,13 +766,13 @@ mod bounded_generic_scalar {
 
     #[graphql_object]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match self {
-                Self::Human => Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            let ch: prelude::Box<DynCharacter<'_>> = match self {
+                Self::Human => prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                Self::Droid => Box::new(Droid {
+                Self::Droid => prelude::Box::new(Droid {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -822,39 +826,39 @@ mod explicit_custom_context {
 
     #[graphql_union(context = CustomContext)]
     trait Character {
-        fn as_human(&self) -> Option<&HumanCustomContext> {
+        fn as_human(&self) -> prelude::Option<&HumanCustomContext> {
             None
         }
-        fn as_droid(&self) -> Option<&DroidCustomContext> {
+        fn as_droid(&self) -> prelude::Option<&DroidCustomContext> {
             None
         }
     }
 
     impl Character for HumanCustomContext {
-        fn as_human(&self) -> Option<&HumanCustomContext> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&HumanCustomContext> {
+            Some(self)
         }
     }
 
     impl Character for DroidCustomContext {
-        fn as_droid(&self) -> Option<&DroidCustomContext> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&DroidCustomContext> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     struct QueryRoot;
 
     #[graphql_object(context = CustomContext)]
     impl QueryRoot {
-        fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match ctx {
-                CustomContext::Human => Box::new(HumanCustomContext {
+        fn character(&self, ctx: &CustomContext) -> prelude::Box<DynCharacter<'_>> {
+            let ch: prelude::Box<DynCharacter<'_>> = match ctx {
+                CustomContext::Human => prelude::Box::new(HumanCustomContext {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                CustomContext::Droid => Box::new(DroidCustomContext {
+                CustomContext::Droid => prelude::Box::new(DroidCustomContext {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -909,39 +913,39 @@ mod inferred_custom_context {
 
     #[graphql_union]
     trait Character {
-        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
+        fn as_human(&self, _: &CustomContext) -> prelude::Option<&HumanCustomContext> {
             None
         }
-        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
+        fn as_droid(&self, _: &()) -> prelude::Option<&DroidCustomContext> {
             None
         }
     }
 
     impl Character for HumanCustomContext {
-        fn as_human(&self, _: &CustomContext) -> Option<&HumanCustomContext> {
-            Some(&self)
+        fn as_human(&self, _: &CustomContext) -> prelude::Option<&HumanCustomContext> {
+            Some(self)
         }
     }
 
     impl Character for DroidCustomContext {
-        fn as_droid(&self, _: &()) -> Option<&DroidCustomContext> {
-            Some(&self)
+        fn as_droid(&self, _: &()) -> prelude::Option<&DroidCustomContext> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     struct QueryRoot;
 
     #[graphql_object(context = CustomContext)]
     impl QueryRoot {
-        fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match ctx {
-                CustomContext::Human => Box::new(HumanCustomContext {
+        fn character(&self, ctx: &CustomContext) -> prelude::Box<DynCharacter<'_>> {
+            let ch: prelude::Box<DynCharacter<'_>> = match ctx {
+                CustomContext::Human => prelude::Box::new(HumanCustomContext {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                CustomContext::Droid => Box::new(DroidCustomContext {
+                CustomContext::Droid => prelude::Box::new(DroidCustomContext {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
@@ -996,11 +1000,11 @@ mod ignored_method {
 
     #[graphql_union]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
         #[graphql(ignore)]
-        fn ignored(&self) -> Option<&Ewok> {
+        fn ignored(&self) -> prelude::Option<&Ewok> {
             None
         }
         #[graphql(skip)]
@@ -1008,19 +1012,19 @@ mod ignored_method {
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     struct QueryRoot;
 
     #[graphql_object]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            prelude::Box::new(Human {
                 id: "human-32".into(),
                 home_planet: "earth".into(),
             })
@@ -1077,29 +1081,29 @@ mod external_resolver {
     #[graphql_union(context = Database)]
     #[graphql_union(on Droid = DynCharacter::as_droid)]
     trait Character {
-        fn as_human(&self) -> Option<&Human> {
+        fn as_human(&self) -> prelude::Option<&Human> {
             None
         }
     }
 
     impl Character for Human {
-        fn as_human(&self) -> Option<&Human> {
-            Some(&self)
+        fn as_human(&self) -> prelude::Option<&Human> {
+            Some(self)
         }
     }
 
     impl Character for Droid {}
 
-    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+    type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
     impl<'a> DynCharacter<'a> {
-        fn as_droid<'db>(&self, db: &'db Database) -> Option<&'db Droid> {
+        fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             db.droid.as_ref()
         }
     }
 
     struct Database {
-        droid: Option<Droid>,
+        droid: prelude::Option<Droid>,
     }
     impl juniper::Context for Database {}
 
@@ -1110,13 +1114,13 @@ mod external_resolver {
 
     #[graphql_object(context = Database)]
     impl QueryRoot {
-        fn character(&self) -> Box<DynCharacter<'_>> {
-            let ch: Box<DynCharacter<'_>> = match self {
-                Self::Human => Box::new(Human {
+        fn character(&self) -> prelude::Box<DynCharacter<'_>> {
+            let ch: prelude::Box<DynCharacter<'_>> = match self {
+                Self::Human => prelude::Box::new(Human {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                Self::Droid => Box::new(Droid {
+                Self::Droid => prelude::Box::new(Droid {
                     id: "?????".into(),
                     primary_function: "???".into(),
                 }),
@@ -1181,14 +1185,14 @@ mod full_featured {
     #[graphql_union(context = CustomContext, scalar = DefaultScalarValue)]
     #[graphql_union(on EwokCustomContext = resolve_ewok)]
     trait Character<T> {
-        fn as_human(&self, _: &()) -> Option<&HumanCustomContext> {
+        fn as_human(&self, _: &()) -> prelude::Option<&HumanCustomContext> {
             None
         }
-        fn as_droid(&self) -> Option<&DroidCustomContext> {
+        fn as_droid(&self) -> prelude::Option<&DroidCustomContext> {
             None
         }
         #[graphql(ignore)]
-        fn as_ewok(&self) -> Option<&EwokCustomContext> {
+        fn as_ewok(&self) -> prelude::Option<&EwokCustomContext> {
             None
         }
         #[graphql(ignore)]
@@ -1196,29 +1200,29 @@ mod full_featured {
     }
 
     impl<T> Character<T> for HumanCustomContext {
-        fn as_human(&self, _: &()) -> Option<&HumanCustomContext> {
-            Some(&self)
+        fn as_human(&self, _: &()) -> prelude::Option<&HumanCustomContext> {
+            Some(self)
         }
     }
 
     impl<T> Character<T> for DroidCustomContext {
-        fn as_droid(&self) -> Option<&DroidCustomContext> {
-            Some(&self)
+        fn as_droid(&self) -> prelude::Option<&DroidCustomContext> {
+            Some(self)
         }
     }
 
     impl<T> Character<T> for EwokCustomContext {
-        fn as_ewok(&self) -> Option<&EwokCustomContext> {
-            Some(&self)
+        fn as_ewok(&self) -> prelude::Option<&EwokCustomContext> {
+            Some(self)
         }
     }
 
-    type DynCharacter<'a, T> = dyn Character<T> + Send + Sync + 'a;
+    type DynCharacter<'a, T> = dyn Character<T> + prelude::Send + prelude::Sync + 'a;
 
     fn resolve_ewok<'a, T>(
         ewok: &'a DynCharacter<'a, T>,
         _: &CustomContext,
-    ) -> Option<&'a EwokCustomContext> {
+    ) -> prelude::Option<&'a EwokCustomContext> {
         ewok.as_ewok()
     }
 
@@ -1226,17 +1230,17 @@ mod full_featured {
 
     #[graphql_object(context = CustomContext, scalar = DefaultScalarValue)]
     impl QueryRoot {
-        fn character(&self, ctx: &CustomContext) -> Box<DynCharacter<'_, ()>> {
-            let ch: Box<DynCharacter<'_, ()>> = match ctx {
-                CustomContext::Human => Box::new(HumanCustomContext {
+        fn character(&self, ctx: &CustomContext) -> prelude::Box<DynCharacter<'_, ()>> {
+            let ch: prelude::Box<DynCharacter<'_, ()>> = match ctx {
+                CustomContext::Human => prelude::Box::new(HumanCustomContext {
                     id: "human-32".into(),
                     home_planet: "earth".into(),
                 }),
-                CustomContext::Droid => Box::new(DroidCustomContext {
+                CustomContext::Droid => prelude::Box::new(DroidCustomContext {
                     id: "droid-99".into(),
                     primary_function: "run".into(),
                 }),
-                CustomContext::Ewok => Box::new(EwokCustomContext {
+                CustomContext::Ewok => prelude::Box::new(EwokCustomContext {
                     id: "ewok-1".into(),
                     funny: true,
                 }),

@@ -1,10 +1,7 @@
 [workspace]
+resolver = "1" # unifying Cargo features asap for Book tests
 members = [
     "benches",
-    "examples/basic_subscriptions",
-    "examples/warp_async",
-    "examples/warp_subscriptions",
-    "examples/actix_subscriptions",
     "juniper_codegen",
     "juniper",
     "juniper_hyper",

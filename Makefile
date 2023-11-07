@@ -18,6 +18,9 @@ eq = $(if $(or $(1),$(2)),$(and $(findstring $(1),$(2)),\
 book: book.build
 
 
+codespell: book.codespell
+
+
 fmt: cargo.fmt
 
 
@@ -93,18 +96,32 @@ test.book:
 ifeq ($(clean),yes)
 	cargo clean
 endif
-	cargo build
-	mdbook test book -L target/debug/deps
+	$(eval target := $(strip $(shell cargo -vV | sed -n 's/host: //p')))
+	cargo build --all-features
+	mdbook test book -L target/debug/deps $(strip \
+		$(if $(call eq,$(findstring windows,$(target)),),,\
+			$(shell cargo metadata -q \
+			        | jq -r '.packages[] | select(.name == "windows_$(word 1,$(subst -, ,$(target)))_$(word 4,$(subst -, ,$(target)))") | .manifest_path' \
+			        | sed -e "s/^/-L '/" -e 's/Cargo.toml/lib/' -e "s/$$/'/" )))
 
 
 # Run Rust tests of project crates.
 #
 # Usage:
-#	make test.cargo [crate=<crate-name>]
+#	make test.cargo [crate=<crate-name>] [careful=(no|yes)]
 
 test.cargo:
-	cargo $(if $(call eq,$(crate),juniper_codegen_tests),+nightly,) test \
-		$(if $(call eq,$(crate),),--workspace,-p $(crate)) --all-features
+ifeq ($(careful),yes)
+ifeq ($(shell cargo install --list | grep cargo-careful),)
+	cargo install cargo-careful
+endif
+ifeq ($(shell rustup component list --toolchain=nightly \
+              | grep 'rust-src (installed)'),)
+	rustup component add --toolchain=nightly rust-src
+endif
+endif
+	cargo $(if $(call eq,$(careful),yes),+nightly careful,) \
+		test $(if $(call eq,$(crate),),--workspace,-p $(crate)) --all-features
 
 
 
@@ -122,6 +139,15 @@ book.build:
 	mdbook build book/ $(if $(call eq,$(out),),,-d $(out))
 
 
+# Spellcheck Book.
+#
+# Usage:
+#	make book.codespell [fix=(no|yes)]
+
+book.codespell:
+	codespell book/ $(if $(call eq,$(fix),yes),--write-changes,)
+
+
 # Serve Book on some port.
 #
 # Usage:
@@ -133,11 +159,40 @@ book.serve:
 
 
 
+######################
+# Forwarded commands #
+######################
+
+# Download and prepare actual version of GraphiQL static files, used for
+# integrating it.
+#
+# Usage:
+#	make graphiql
+
+graphiql:
+	@cd juniper/ && \
+	make graphiql
+
+
+# Download and prepare actual version of GraphQL Playground static files, used
+# for integrating it.
+#
+# Usage:
+#	make graphql-playground
+
+graphql-playground:
+	@cd juniper/ && \
+	make graphql-playground
+
+
+
+
 ##################
 # .PHONY section #
 ##################
 
-.PHONY: book fmt lint release test \
-        book.build book.serve \
+.PHONY: book codespell fmt lint release test \
+        book.build book.codespell book.serve \
         cargo.fmt cargo.lint cargo.release cargo.test \
+        graphiql graphql-playground \
         test.book test.cargo

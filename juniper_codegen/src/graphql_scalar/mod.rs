@@ -160,8 +160,7 @@ impl Parse for Attr {
                 "parse_token" => {
                     let types;
                     let _ = syn::parenthesized!(types in input);
-                    let parsed_types =
-                        types.parse_terminated::<_, token::Comma>(syn::Type::parse)?;
+                    let parsed_types = types.parse_terminated(syn::Type::parse, token::Comma)?;
 
                     if parsed_types.is_empty() {
                         return Err(syn::Error::new(ident.span(), "expected at least 1 type."));
@@ -187,7 +186,7 @@ impl Parse for Attr {
                         let predicates;
                         let _ = syn::parenthesized!(predicates in input);
                         let parsed_predicates = predicates
-                            .parse_terminated::<_, token::Comma>(syn::WherePredicate::parse)?;
+                            .parse_terminated(syn::WherePredicate::parse, token::Comma)?;
 
                         if parsed_predicates.is_empty() {
                             return Err(syn::Error::new(
@@ -375,8 +374,10 @@ impl Definition {
             impl #impl_gens ::juniper::GraphQLType<#scalar> for #ty
                 #where_clause
             {
-                fn name(_: &Self::TypeInfo) -> Option<&'static str> {
-                    Some(#name)
+                fn name(
+                    _: &Self::TypeInfo,
+                ) -> ::core::option::Option<&'static ::core::primitive::str> {
+                    ::core::option::Option::Some(#name)
                 }
 
                 fn meta<'r>(
@@ -416,14 +417,17 @@ impl Definition {
                 type Context = ();
                 type TypeInfo = ();
 
-                fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+                fn type_name<'i>(
+                    &self,
+                    info: &'i Self::TypeInfo,
+                ) -> ::core::option::Option<&'i ::core::primitive::str> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 
                 fn resolve(
                     &self,
                     info: &(),
-                    selection: Option<&[::juniper::Selection<'_, #scalar>]>,
+                    selection: ::core::option::Option<&[::juniper::Selection<'_, #scalar>]>,
                     executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
                     #resolve
@@ -451,12 +455,11 @@ impl Definition {
                 fn resolve_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
-                    selection_set: Option<&'b [::juniper::Selection<'_, #scalar>]>,
+                    selection_set: ::core::option::Option<&'b [::juniper::Selection<'_, #scalar>]>,
                     executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
-                    use ::juniper::futures::future;
                     let v = ::juniper::GraphQLValue::resolve(self, info, selection_set, executor);
-                    Box::pin(future::ready(v))
+                    ::std::boxed::Box::pin(::juniper::futures::future::ready(v))
                 }
             }
         }
@@ -507,7 +510,9 @@ impl Definition {
             {
                 type Error = ::juniper::executor::FieldError<#scalar>;
 
-                fn from_input_value(input: &::juniper::InputValue<#scalar>) -> Result<Self, Self::Error> {
+                fn from_input_value(
+                    input: &::juniper::InputValue<#scalar>,
+                ) -> ::core::result::Result<Self, Self::Error> {
                     #from_input_value
                         .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
                 }
@@ -646,13 +651,13 @@ impl Definition {
             generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote! { #self_ty: Sync });
+                .push(parse_quote! { #self_ty: ::core::marker::Sync });
 
             if scalar.is_generic() {
                 generics
                     .make_where_clause()
                     .predicates
-                    .push(parse_quote! { #scalar: Send + Sync });
+                    .push(parse_quote! { #scalar: ::core::marker::Send + ::core::marker::Sync });
             }
         }
 
@@ -720,7 +725,7 @@ impl Methods {
                 to_output: Some(to_output),
                 ..
             } => {
-                quote! { Ok(#to_output(self)) }
+                quote! { ::core::result::Result::Ok(#to_output(self)) }
             }
             Self::Delegated { field, .. } => {
                 quote! {

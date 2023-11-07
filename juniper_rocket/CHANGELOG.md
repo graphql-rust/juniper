@@ -11,6 +11,7 @@ All user visible changes to `juniper_rocket` crate will be documented in this fi
 ### BC Breaks
 
 - Switched to 0.16 version of [`juniper` crate].
+- Switched to 0.5.0-rc.4 version of [`rocket` crate]. ([#1205])
 
 ### Added
 
@@ -18,6 +19,7 @@ All user visible changes to `juniper_rocket` crate will be documented in this fi
 
 [#930]: /../../issues/930
 [#968]: /../../pull/968
+[#1205]: /../../pull/1205
 
 
 

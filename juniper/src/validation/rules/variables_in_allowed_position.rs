@@ -79,18 +79,15 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
         visited.insert(from.clone());
 
         if let Some(usages) = self.variable_usages.get(from) {
-            for &(ref var_name, ref var_type) in usages {
-                if let Some(&&(ref var_def_name, ref var_def)) = var_defs
-                    .iter()
-                    .find(|&&&(ref n, _)| n.item == var_name.item)
+            for (var_name, var_type) in usages {
+                if let Some(&(var_def_name, var_def)) =
+                    var_defs.iter().find(|&&(n, _)| n.item == var_name.item)
                 {
                     let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
-                        (&Some(_), &Type::List(ref inner, expected_size)) => {
-                            Type::NonNullList(inner.clone(), expected_size)
+                        (&Some(_), Type::List(inner, expected_size)) => {
+                            Type::NonNullList(inner.clone(), *expected_size)
                         }
-                        (&Some(_), &Type::Named(ref inner)) => {
-                            Type::NonNullNamed(Cow::Borrowed(inner))
-                        }
+                        (&Some(_), Type::Named(inner)) => Type::NonNullNamed(Cow::Borrowed(inner)),
                         (_, t) => t.clone(),
                     };
 
@@ -142,7 +139,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
-                .or_insert_with(HashSet::new)
+                .or_default()
                 .insert(spread.item.name.item);
         }
     }
@@ -155,7 +152,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(def);
         }
     }
@@ -165,12 +162,12 @@ where
         ctx: &mut ValidatorContext<'a, S>,
         var_name: Spanning<&'a String>,
     ) {
-        if let (&Some(ref scope), Some(input_type)) =
+        if let (Some(scope), Some(input_type)) =
             (&self.current_scope, ctx.current_input_type_literal())
         {
             self.variable_usages
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((
                     Spanning::start_end(&var_name.start, &var_name.end, var_name.item),
                     input_type.clone(),

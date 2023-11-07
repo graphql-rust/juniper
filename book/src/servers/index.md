@@ -12,6 +12,6 @@ third-party integration crates that will get you there.
     - [Iron](iron.md)
     - [Hyper](hyper.md)
 - [Third Party Integrations](third-party.md)
-    - [Actix-Web](https://github.com/actix/examples/tree/master/juniper)
+    - [Actix-Web](https://github.com/actix/examples/tree/master/graphql/juniper)
     - [Finchers](https://github.com/finchers-rs/finchers-juniper)
     - [Tsukuyomi](https://github.com/tsukuyomi-rs/tsukuyomi/tree/master/examples/juniper)

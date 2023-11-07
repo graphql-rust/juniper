@@ -257,7 +257,7 @@ impl OnMethod {
     #[must_use]
     pub(crate) fn as_regular(&self) -> Option<&OnField> {
         if let Self::Regular(arg) = self {
-            Some(&*arg)
+            Some(&**arg)
         } else {
             None
         }
@@ -268,7 +268,7 @@ impl OnMethod {
     #[must_use]
     pub(crate) fn context_ty(&self) -> Option<&syn::Type> {
         if let Self::Context(ty) = self {
-            Some(&*ty)
+            Some(&**ty)
         } else {
             None
         }
@@ -335,13 +335,15 @@ impl OnMethod {
                                 ::juniper::IntoFieldError::<#scalar>::into_field_error(e)
                                     .map_message(|m| format!(#err_text, m))
                             })
-                    }, Ok))
+                    }, ::core::result::Result::Ok))
                 };
                 if for_async {
                     quote! {
                         match #arg {
-                            Ok(v) => v,
-                            Err(e) => return Box::pin(async { Err(e) }),
+                            ::core::result::Result::Ok(v) => v,
+                            ::core::result::Result::Err(e) => return ::std::boxed::Box::pin(async {
+                                ::core::result::Result::Err(e)
+                            }),
                         }
                     }
                 } else {
@@ -372,11 +374,11 @@ impl OnMethod {
         // Remove repeated attributes from the method, to omit incorrect expansion.
         argument.attrs = mem::take(&mut argument.attrs)
             .into_iter()
-            .filter(|attr| !path_eq_single(&attr.path, "graphql"))
+            .filter(|attr| !path_eq_single(attr.path(), "graphql"))
             .collect();
 
         let attr = Attr::from_attrs("graphql", &orig_attrs)
-            .map_err(|e| proc_macro_error::emit_error!(e))
+            .map_err(diagnostic::emit_error)
             .ok()?;
 
         if attr.context.is_some() {
@@ -395,7 +397,7 @@ impl OnMethod {
             };
             if arg.is_some() {
                 attr.ensure_no_regular_arguments()
-                    .map_err(|e| scope.error(e).emit())
+                    .map_err(|e| scope.error(&e).emit())
                     .ok()?;
                 return arg;
             }

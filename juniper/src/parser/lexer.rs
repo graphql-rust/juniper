@@ -20,8 +20,8 @@ pub struct Lexer<'a> {
 /// A single scalar value literal
 ///
 /// This is only used for tagging how the lexer has interpreted a value literal
-#[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(missing_docs)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScalarToken<'a> {
     String(&'a str),
     Float(&'a str),
@@ -29,8 +29,8 @@ pub enum ScalarToken<'a> {
 }
 
 /// A single token in the input source
-#[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(missing_docs)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Token<'a> {
     Name(&'a str),
     Scalar(ScalarToken<'a>),
@@ -515,15 +515,15 @@ fn is_source_char(c: char) -> bool {
 }
 
 fn is_name_start(c: char) -> bool {
-    c == '_' || ('A'..='Z').contains(&c) || ('a'..='z').contains(&c)
+    c == '_' || c.is_ascii_alphabetic()
 }
 
 fn is_name_cont(c: char) -> bool {
-    is_name_start(c) || ('0'..='9').contains(&c)
+    is_name_start(c) || c.is_ascii_digit()
 }
 
 fn is_number_start(c: char) -> bool {
-    c == '-' || ('0'..='9').contains(&c)
+    c == '-' || c.is_ascii_digit()
 }
 
 impl fmt::Display for LexerError {

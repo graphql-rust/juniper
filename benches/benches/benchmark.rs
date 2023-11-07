@@ -1,10 +1,11 @@
-use criterion::{criterion_group, criterion_main, Criterion, ParameterizedBenchmark};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use juniper::InputValue;
 use juniper_benchmarks as j;
 
 fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
-    const ASYNC_QUERY: &'static str = r#"
+    // language=GraphQL
+    const ASYNC_QUERY: &str = r#"
         query Query($id: Int) {
             users_async_instant(ids: [$id]!) {
                 id
@@ -15,74 +16,64 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
         }
     "#;
 
-    const SYNC_QUERY: &'static str = r#"
-    query Query($id: Int) {
-        users_sync_instant(ids: [$id]!) {
-            id
-            kind
-            username
-            email
+    // language=GraphQL
+    const SYNC_QUERY: &str = r#"
+        query Query($id: Int) {
+            users_sync_instant(ids: [$id]!) {
+                id
+                kind
+                username
+                email
+            }
         }
+    "#;
+
+    let mut group = c.benchmark_group("Sync vs Async - Users Flat - Instant");
+    for count in [1, 10] {
+        group.bench_function(BenchmarkId::new("Sync", count), |b| {
+            let ids = (0..count).map(InputValue::scalar).collect::<Vec<_>>();
+            let ids = InputValue::list(ids);
+            b.iter(|| {
+                j::execute_sync(
+                    SYNC_QUERY,
+                    vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
+                )
+            })
+        });
+
+        group.bench_function(BenchmarkId::new("Async - Single Thread", count), |b| {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .build()
+                .unwrap();
+
+            let ids = (0..count).map(InputValue::scalar).collect::<Vec<_>>();
+            let ids = InputValue::list(ids);
+
+            b.iter(|| {
+                let f = j::execute(
+                    ASYNC_QUERY,
+                    vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
+                );
+                rt.block_on(f)
+            })
+        });
+
+        group.bench_function(BenchmarkId::new("Async - Threadpool", count), |b| {
+            let rt = tokio::runtime::Builder::new_multi_thread().build().unwrap();
+
+            let ids = (0..count).map(InputValue::scalar).collect::<Vec<_>>();
+            let ids = InputValue::list(ids);
+
+            b.iter(|| {
+                let f = j::execute(
+                    ASYNC_QUERY,
+                    vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
+                );
+                rt.block_on(f)
+            })
+        });
     }
-"#;
-
-    c.bench(
-        "Sync vs Async - Users Flat - Instant",
-        ParameterizedBenchmark::new(
-            "Sync",
-            |b, count| {
-                let ids = (0..*count)
-                    .map(|x| InputValue::scalar(x as i32))
-                    .collect::<Vec<_>>();
-                let ids = InputValue::list(ids);
-                b.iter(|| {
-                    j::execute_sync(
-                        SYNC_QUERY,
-                        vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
-                    )
-                })
-            },
-            vec![1, 10],
-        )
-        .with_function("Async - Single Thread", |b, count| {
-            let mut rt = tokio::runtime::Builder::new()
-                .basic_scheduler()
-                .build()
-                .unwrap();
-
-            let ids = (0..*count)
-                .map(|x| InputValue::scalar(x as i32))
-                .collect::<Vec<_>>();
-            let ids = InputValue::list(ids);
-
-            b.iter(|| {
-                let f = j::execute(
-                    ASYNC_QUERY,
-                    vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
-                );
-                rt.block_on(f)
-            })
-        })
-        .with_function("Async - Threadpool", |b, count| {
-            let mut rt = tokio::runtime::Builder::new()
-                .threaded_scheduler()
-                .build()
-                .unwrap();
-
-            let ids = (0..*count)
-                .map(|x| InputValue::scalar(x as i32))
-                .collect::<Vec<_>>();
-            let ids = InputValue::list(ids);
-
-            b.iter(|| {
-                let f = j::execute(
-                    ASYNC_QUERY,
-                    vec![("ids".to_owned(), ids.clone())].into_iter().collect(),
-                );
-                rt.block_on(f)
-            })
-        }),
-    );
+    group.finish();
 }
 
 criterion_group!(benches, bench_sync_vs_async_users_flat_instant);
