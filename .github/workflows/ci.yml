@@ -115,6 +115,8 @@ jobs:
           - { feature: graphql-ws, crate: juniper_graphql_ws }
           - { feature: <none>, crate: juniper_actix }
           - { feature: subscriptions, crate: juniper_actix }
+          - { feature: <none>, crate: juniper_axum }
+          - { feature: subscriptions, crate: juniper_axum }
           - { feature: <none>, crate: juniper_warp }
           - { feature: subscriptions, crate: juniper_warp }
     runs-on: ubuntu-latest
@@ -148,6 +150,7 @@ jobs:
           - juniper_subscriptions
           - juniper_graphql_ws
           - juniper_actix
+          - juniper_axum
           - juniper_hyper
           #- juniper_iron
           - juniper_rocket
@@ -200,6 +203,7 @@ jobs:
           - juniper_integration_tests
           - juniper_codegen_tests
           - juniper_actix
+          - juniper_axum
           - juniper_hyper
           - juniper_iron
           - juniper_rocket
@@ -326,6 +330,7 @@ jobs:
           - juniper_subscriptions
           - juniper_graphql_ws
           - juniper_actix
+          - juniper_axum
           - juniper_hyper
           - juniper_iron
           - juniper_rocket
