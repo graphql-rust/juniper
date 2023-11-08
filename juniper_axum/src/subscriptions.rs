@@ -2,10 +2,284 @@
 
 use std::fmt;
 
-use axum::extract::ws::{self, WebSocket};
+use axum::{
+    extract::{
+        ws::{self, WebSocket, WebSocketUpgrade},
+        Extension,
+    },
+    response::Response,
+};
 use futures::{future, SinkExt as _, StreamExt as _};
 use juniper::ScalarValue;
 use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
+
+/// Creates a [`Handler`] with the specified [`Schema`], which will serve either the
+/// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] or the
+/// [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], by auto-selecting between
+/// them, based on the `Sec-Websocket-Protocol` HTTP header value.
+///
+/// > __NOTE__: This is a ready-to-go default [`Handler`] for serving GraphQL over WebSocket
+/// >           Protocol. If you need to customize it (for example, configure [`WebSocketUpgrade`]
+/// >           parameters), create your own [`Handler`] invoking the [`serve_ws()`] function (see
+/// >           its documentation for examples).
+///
+/// [`Schema`] is [`extract`]ed from [`Extension`]s.
+///
+/// The `init` argument is used to provide the custom [`juniper::Context`] and additional
+/// configuration for connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the
+/// context and configuration are already known, or it can be a closure that gets executed
+/// asynchronously whenever a client sends the subscription initialization message. Using a
+/// closure allows to perform an authentication based on the parameters provided by a client.
+///
+/// # Example
+///
+/// ```rust
+/// use std::{sync::Arc, time::Duration};
+///
+/// use axum::{routing::get, Extension, Router};
+/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use juniper::{
+///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
+///     RootNode,
+/// };
+/// use juniper_axum::{playground, subscriptions};
+/// use juniper_graphql_ws::ConnectionConfig;
+/// use tokio::time::interval;
+/// use tokio_stream::wrappers::IntervalStream;
+///
+/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Query;
+///
+/// #[graphql_object]
+/// impl Query {
+///     /// Adds two `a` and `b` numbers.
+///     fn add(a: i32, b: i32) -> i32 {
+///         a + b
+///     }
+/// }
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Subscription;
+///
+/// type NumberStream = BoxStream<'static, Result<i32, FieldError>>;
+///
+/// #[graphql_subscription]
+/// impl Subscription {
+///     /// Counts seconds.
+///     async fn count() -> NumberStream {
+///         let mut value = 0;
+///         let stream = IntervalStream::new(interval(Duration::from_secs(1))).map(move |_| {
+///             value += 1;
+///             Ok(value)
+///         });
+///         Box::pin(stream)
+///     }
+/// }
+///
+/// let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
+///
+/// let app: Router = Router::new()
+///     .route("/subscriptions", get(subscriptions::ws::<Arc<Schema>>(ConnectionConfig::new(()))))
+///     .layer(Extension(Arc::new(schema)));
+/// ```
+///
+/// [`extract`]: axum::extract
+/// [`Handler`]: axum::handler::Handler
+/// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+/// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+pub fn ws<S: Schema>(
+    init: impl Init<S::ScalarValue, S::Context> + Clone + Send,
+) -> impl FnOnce(Extension<S>, WebSocketUpgrade) -> future::Ready<Response> + Clone + Send {
+    move |Extension(schema), ws| {
+        future::ready(
+            ws.protocols(["graphql-transport-ws", "graphql-ws"])
+                .on_upgrade(move |socket| serve_ws(socket, schema, init)),
+        )
+    }
+}
+
+/// Creates a [`Handler`] with the specified [`Schema`], which will serve the
+/// [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new].
+///
+/// > __NOTE__: This is a ready-to-go default [`Handler`] for serving the
+/// >           [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new]. If you need to
+/// >           customize it (for example, configure [`WebSocketUpgrade`] parameters), create your
+/// >           own [`Handler`] invoking the [`serve_graphql_transport_ws()`] function (see its
+/// >           documentation for examples).
+///
+/// [`Schema`] is [`extract`]ed from [`Extension`]s.
+///
+/// The `init` argument is used to provide the context and additional configuration for
+/// connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the context and
+/// configuration are already known, or it can be a closure that gets executed asynchronously
+/// when the client sends the `ConnectionInit` message. Using a closure allows to perform an
+/// authentication based on the parameters provided by a client.
+///
+/// # Example
+///
+/// ```rust
+/// use std::{sync::Arc, time::Duration};
+///
+/// use axum::{routing::get, Extension, Router};
+/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use juniper::{
+///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
+///     RootNode,
+/// };
+/// use juniper_axum::{playground, subscriptions};
+/// use juniper_graphql_ws::ConnectionConfig;
+/// use tokio::time::interval;
+/// use tokio_stream::wrappers::IntervalStream;
+///
+/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Query;
+///
+/// #[graphql_object]
+/// impl Query {
+///     /// Adds two `a` and `b` numbers.
+///     fn add(a: i32, b: i32) -> i32 {
+///         a + b
+///     }
+/// }
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Subscription;
+///
+/// type NumberStream = BoxStream<'static, Result<i32, FieldError>>;
+///
+/// #[graphql_subscription]
+/// impl Subscription {
+///     /// Counts seconds.
+///     async fn count() -> NumberStream {
+///         let mut value = 0;
+///         let stream = IntervalStream::new(interval(Duration::from_secs(1))).map(move |_| {
+///             value += 1;
+///             Ok(value)
+///         });
+///         Box::pin(stream)
+///     }
+/// }
+///
+/// let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
+///
+/// let app: Router = Router::new()
+///     .route(
+///         "/subscriptions",
+///         get(subscriptions::graphql_transport_ws::<Arc<Schema>>(ConnectionConfig::new(()))),
+///     )
+///     .layer(Extension(Arc::new(schema)));
+/// ```
+///
+/// [`extract`]: axum::extract
+/// [`Handler`]: axum::handler::Handler
+/// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+pub fn graphql_transport_ws<S: Schema>(
+    init: impl Init<S::ScalarValue, S::Context> + Clone + Send,
+) -> impl FnOnce(Extension<S>, WebSocketUpgrade) -> future::Ready<Response> + Clone + Send {
+    move |Extension(schema), ws| {
+        future::ready(
+            ws.protocols(["graphql-transport-ws"])
+                .on_upgrade(move |socket| serve_graphql_transport_ws(socket, schema, init)),
+        )
+    }
+}
+
+/// Creates a [`Handler`] with the specified [`Schema`], which will serve the
+/// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
+///
+/// > __NOTE__: This is a ready-to-go default [`Handler`] for serving the
+/// >           [legacy `graphql-ws` GraphQL over WebSocket Protocol][old]. If you need to customize
+/// >           it (for example, configure [`WebSocketUpgrade`] parameters), create your own
+/// >           [`Handler`] invoking the [`serve_graphql_ws()`] function (see its documentation for
+/// >           examples).
+///
+/// [`Schema`] is [`extract`]ed from [`Extension`]s.
+///
+/// The `init` argument is used to provide the context and additional configuration for
+/// connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the context and
+/// configuration are already known, or it can be a closure that gets executed asynchronously
+/// when the client sends the `GQL_CONNECTION_INIT` message. Using a closure allows to perform
+/// an authentication based on the parameters provided by a client.
+///
+/// > __WARNING__: This protocol has been deprecated in favor of the
+/// >              [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
+/// >              provided by the [`graphql_transport_ws()`] function.
+///
+/// # Example
+///
+/// ```rust
+/// use std::{sync::Arc, time::Duration};
+///
+/// use axum::{routing::get, Extension, Router};
+/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use juniper::{
+///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
+///     RootNode,
+/// };
+/// use juniper_axum::{playground, subscriptions};
+/// use juniper_graphql_ws::ConnectionConfig;
+/// use tokio::time::interval;
+/// use tokio_stream::wrappers::IntervalStream;
+///
+/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Query;
+///
+/// #[graphql_object]
+/// impl Query {
+///     /// Adds two `a` and `b` numbers.
+///     fn add(a: i32, b: i32) -> i32 {
+///         a + b
+///     }
+/// }
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Subscription;
+///
+/// type NumberStream = BoxStream<'static, Result<i32, FieldError>>;
+///
+/// #[graphql_subscription]
+/// impl Subscription {
+///     /// Counts seconds.
+///     async fn count() -> NumberStream {
+///         let mut value = 0;
+///         let stream = IntervalStream::new(interval(Duration::from_secs(1))).map(move |_| {
+///             value += 1;
+///             Ok(value)
+///         });
+///         Box::pin(stream)
+///     }
+/// }
+///
+/// let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
+///
+/// let app: Router = Router::new()
+///     .route(
+///         "/subscriptions",
+///         get(subscriptions::graphql_ws::<Arc<Schema>>(ConnectionConfig::new(()))),
+///     )
+///     .layer(Extension(Arc::new(schema)));
+/// ```
+///
+/// [`extract`]: axum::extract
+/// [`Handler`]: axum::handler::Handler
+/// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+/// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+pub fn graphql_ws<S: Schema>(
+    init: impl Init<S::ScalarValue, S::Context> + Clone + Send,
+) -> impl FnOnce(Extension<S>, WebSocketUpgrade) -> future::Ready<Response> + Clone + Send {
+    move |Extension(schema), ws| {
+        future::ready(
+            ws.protocols(["graphql-ws"])
+                .on_upgrade(move |socket| serve_graphql_ws(socket, schema, init)),
+        )
+    }
+}
 
 /// Serves on the provided [`WebSocket`] by auto-selecting between the
 /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
@@ -252,8 +526,8 @@ where
 /// an authentication based on the parameters provided by a client.
 ///
 /// > __WARNING__: This protocol has been deprecated in favor of the
-///                [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
-///                provided by the [`serve_graphql_transport_ws()`] function.
+/// >              [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
+/// >              provided by the [`serve_graphql_transport_ws()`] function.
 ///
 /// # Example
 ///

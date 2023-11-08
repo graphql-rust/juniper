@@ -17,9 +17,9 @@ use self::{extract::JuniperRequest, response::JuniperResponse};
 /// Handles a [`JuniperRequest`] with the specified [`Schema`], by [`extract`]ing it from
 /// [`Extension`]s and initializing its fresh [`Schema::Context`] as a [`Default`] one.
 ///
-/// > __NOTE__: This is a ready-to-go default [`axum`] handler for serving GraphQL requests. If you
-/// >           need to customize it (for example, extract [`Schema::Context`] from [`Extension`]s
-/// >           instead initializing a [`Default`] one), create your own handler accepting a
+/// > __NOTE__: This is a ready-to-go default [`Handler`] for serving GraphQL requests. If you need
+/// >           to customize it (for example, extract [`Schema::Context`] from [`Extension`]s
+/// >           instead initializing a [`Default`] one), create your own [`Handler`] accepting a
 /// >           [`JuniperRequest`] (see its documentation for examples).
 ///
 /// # Example
@@ -62,6 +62,7 @@ use self::{extract::JuniperRequest, response::JuniperResponse};
 /// ```
 ///
 /// [`extract`]: axum::extract
+/// [`Handler`]: axum::handler::Handler
 #[cfg_attr(text, axum::debug_handler)]
 pub async fn graphql<S>(
     Extension(schema): Extension<S>,
