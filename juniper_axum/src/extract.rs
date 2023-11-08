@@ -14,6 +14,7 @@ use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     DefaultScalarValue, ScalarValue,
 };
+use serde::Deserialize;
 
 /// Extractor for [`axum`] to extract a [`JuniperRequest`].
 ///
@@ -74,7 +75,7 @@ impl<S, State> FromRequest<State, Body> for JuniperRequest<S>
 where
     S: ScalarValue,
     State: Sync,
-    Query<GraphQLRequest<S>>: FromRequestParts<State>,
+    Query<GetRequest>: FromRequestParts<State>,
     Json<GraphQLBatchRequest<S>>: FromRequest<State, Body>,
     <Json<GraphQLBatchRequest<S>> as FromRequest<State, Body>>::Rejection: fmt::Display,
     String: FromRequest<State, Body>,
@@ -97,15 +98,27 @@ where
 
         match (req.method(), content_type) {
             (&Method::GET, _) => req
-                .extract_parts::<Query<GraphQLRequest<S>>>()
+                .extract_parts::<Query<GetRequest>>()
                 .await
-                .map(|query| Self(GraphQLBatchRequest::Single(query.0)))
                 .map_err(|e| {
                     (
                         StatusCode::BAD_REQUEST,
                         format!("Invalid request query string: {e}"),
                     )
                         .into_response()
+                })
+                .and_then(|query| {
+                    query
+                        .0
+                        .try_into()
+                        .map(|q| Self(GraphQLBatchRequest::Single(q)))
+                        .map_err(|e| {
+                            (
+                                StatusCode::BAD_REQUEST,
+                                format!("Invalid request query `variables`: {e}"),
+                            )
+                                .into_response()
+                        })
                 }),
             (&Method::POST, Some("application/json")) => {
                 Json::<GraphQLBatchRequest<S>>::from_request(req, state)
@@ -138,6 +151,33 @@ where
     }
 }
 
+/// Workaround for a [`GraphQLRequest`] not being [`Deserialize`]d properly from a GET query string,
+/// containing `variables` in JSON format.
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+struct GetRequest {
+    query: String,
+    #[serde(rename = "operationName")]
+    operation_name: Option<String>,
+    variables: Option<String>,
+}
+
+impl<S: ScalarValue> TryFrom<GetRequest> for GraphQLRequest<S> {
+    type Error = serde_json::Error;
+    fn try_from(req: GetRequest) -> Result<Self, Self::Error> {
+        let GetRequest {
+            query,
+            operation_name,
+            variables,
+        } = req;
+        Ok(Self::new(
+            query,
+            operation_name,
+            variables.map(|v| serde_json::from_str(&v)).transpose()?,
+        ))
+    }
+}
+
 #[cfg(test)]
 mod juniper_request_tests {
     use std::fmt;
@@ -147,7 +187,10 @@ mod juniper_request_tests {
         extract::FromRequest as _,
         http::Request,
     };
-    use juniper::http::{GraphQLBatchRequest, GraphQLRequest};
+    use juniper::{
+        graphql_input_value,
+        http::{GraphQLBatchRequest, GraphQLRequest},
+    };
 
     use super::JuniperRequest;
 
@@ -164,6 +207,27 @@ mod juniper_request_tests {
             "{ add(a: 2, b: 3) }".into(),
             None,
             None,
+        )));
+
+        assert_eq!(do_from_request(req).await, expected);
+    }
+
+    #[tokio::test]
+    async fn from_get_request_with_variables() {
+        let req = Request::get(&format!(
+            "/?query={}&variables={}",
+            urlencoding::encode(
+                "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }",
+            ),
+            urlencoding::encode(r#"{"id": "1000"}"#),
+        ))
+        .body(Body::empty())
+        .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
+
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
+            "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }".into(),
+            None,
+            Some(graphql_input_value!({"id": "1000"})),
         )));
 
         assert_eq!(do_from_request(req).await, expected);

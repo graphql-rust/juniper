@@ -73,7 +73,7 @@ pub async fn graphql<S>(
     JuniperRequest(req): JuniperRequest<S::ScalarValue>,
 ) -> JuniperResponse<S::ScalarValue>
 where
-    S: Schema,
+    S: Schema, // TODO: Refactor in the way we don't depend on `juniper_graphql_ws::Schema` here.
     S::Context: Default,
 {
     JuniperResponse(
