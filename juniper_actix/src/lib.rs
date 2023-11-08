@@ -418,7 +418,7 @@ pub mod subscriptions {
     /// Possible errors of serving an [`actix_ws`] connection.
     #[derive(Debug)]
     enum Error {
-        /// Deserializing of a client or server message failed.
+        /// Deserializing of a client [`actix_ws::Message`] failed.
         Serde(serde_json::Error),
 
         /// Unexpected client [`actix_ws::Message`].
