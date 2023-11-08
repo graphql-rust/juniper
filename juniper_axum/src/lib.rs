@@ -14,8 +14,12 @@ use juniper_graphql_ws::Schema;
 
 use self::{extract::JuniperRequest, response::JuniperResponse};
 
-/// Handles a [`JuniperRequest`] with the specified [`Schema`], by [`extract`]ing it from
-/// [`Extension`]s and initializing its fresh [`Schema::Context`] as a [`Default`] one.
+#[cfg(feature = "subscriptions")]
+#[doc(inline)]
+pub use self::subscriptions::{graphql_transport_ws, graphql_ws, ws};
+
+/// [`Handler`], which handles a [`JuniperRequest`] with the specified [`Schema`], by [`extract`]ing
+/// it from [`Extension`]s and initializing its fresh [`Schema::Context`] as a [`Default`] one.
 ///
 /// > __NOTE__: This is a ready-to-go default [`Handler`] for serving GraphQL requests. If you need
 /// >           to customize it (for example, extract [`Schema::Context`] from [`Extension`]s
@@ -78,7 +82,7 @@ where
     )
 }
 
-/// Creates a handler that replies with an HTML page containing [GraphiQL].
+/// Creates a [`Handler`] that replies with an HTML page containing [GraphiQL].
 ///
 /// This does not handle routing, so you can mount it on any endpoint.
 ///
@@ -92,6 +96,7 @@ where
 ///     .route("/", get(graphiql("/graphql", "/subscriptions")));
 /// ```
 ///
+/// [`Handler`]: axum::handler::Handler
 /// [GraphiQL]: https://github.com/graphql/graphiql
 pub fn graphiql<'a>(
     graphql_endpoint_url: &str,
@@ -105,7 +110,7 @@ pub fn graphiql<'a>(
     || future::ready(html)
 }
 
-/// Creates a handler that replies with an HTML page containing [GraphQL Playground].
+/// Creates a [`Handler`] that replies with an HTML page containing [GraphQL Playground].
 ///
 /// This does not handle routing, so you can mount it on any endpoint.
 ///
@@ -119,6 +124,7 @@ pub fn graphiql<'a>(
 ///     .route("/", get(playground("/graphql", "/subscriptions")));
 /// ```
 ///
+/// [`Handler`]: axum::handler::Handler
 /// [GraphQL Playground]: https://github.com/prisma/graphql-playground
 pub fn playground<'a>(
     graphql_endpoint_url: &str,

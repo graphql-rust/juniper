@@ -5,14 +5,17 @@ edition = "2021"
 rust-version = "1.73"
 description = "`juniper` GraphQL integration with `axum`."
 license = "BSD-2-Clause"
-authors = ["Benno Tielen <Benno@tielen.nl>"]
+authors = [
+    "Benno Tielen <Benno@tielen.nl>",
+    "Kai Ren <tyranron@gmail.com>",
+]
 documentation = "https://docs.rs/juniper_axum"
 homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_axum"
 repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]
 keywords = ["apollo", "axum", "graphql", "juniper", "websocket"]
-exclude = ["/examples/", "/release.toml"]
+exclude = ["/examples/", "/tests/", "/release.toml"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -37,7 +40,7 @@ tokio-stream = "0.1"
 urlencoding = "2.1"
 
 
-
+# TODO
 anyhow = "1.0"
 tokio-tungstenite = "0.20"
 tower = "0.4"
