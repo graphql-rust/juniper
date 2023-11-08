@@ -11,8 +11,8 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 /// [`WebSocket`].
 ///
 /// > __WARNING__: This function doesn't check or set the `Sec-Websocket-Protocol` HTTP header value
-/// >              as `graphql-ws`, this should be done manually outside.
-/// >              For fully baked [`axum`] handler for
+/// >              as `graphql-ws`, so this should be done manually outside (see the example below).
+/// >              To have fully baked [`axum`] handler for
 /// >              [legacy `graphql-ws` GraphQL over WebSocket Protocol][old], use [`graphql_ws()`]
 /// >              handler instead.
 ///
@@ -29,16 +29,15 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 /// # Example
 ///
 /// ```rust
-/// use std::{pin::Pin, time::Duration};
+/// use std::{sync::Arc, time::Duration};
 ///
 /// use axum::{
 ///     extract::WebSocketUpgrade,
-///     body::Body,
 ///     response::Response,
 ///     routing::get,
 ///     Extension, Router,
 /// };
-/// use futures::{Stream, StreamExt as _};
+/// use futures::stream::{BoxStream, Stream, StreamExt as _};
 /// use juniper::{
 ///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
 ///     RootNode,
@@ -55,7 +54,7 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 ///
 /// #[graphql_object]
 /// impl Query {
-///     /// Add two numbers a and b
+///     /// Adds two `a` and `b` numbers.
 ///     fn add(a: i32, b: i32) -> i32 {
 ///         a + b
 ///     }
@@ -64,11 +63,11 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 /// #[derive(Clone, Copy, Debug)]
 /// pub struct Subscription;
 ///
-/// type NumberStream = Pin<Box<dyn Stream<Item = Result<i32, FieldError>> + Send>>;
+/// type NumberStream = BoxStream<'static, Result<i32, FieldError>>;
 ///
 /// #[graphql_subscription]
 /// impl Subscription {
-///     /// Count seconds
+///     /// Counts seconds.
 ///     async fn count() -> NumberStream {
 ///         let mut value = 0;
 ///         let stream = IntervalStream::new(interval(Duration::from_secs(1))).map(move |_| {
@@ -80,7 +79,7 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 /// }
 ///
 /// async fn juniper_subscriptions(
-///     Extension(schema): Extension<Schema>,
+///     Extension(schema): Extension<Arc<Schema>>,
 ///     ws: WebSocketUpgrade,
 /// ) -> Response {
 ///     ws.protocols(["graphql-ws"])
@@ -94,9 +93,9 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 ///
 /// let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
 ///
-/// let app: Router<Body> = Router::new()
+/// let app: Router = Router::new()
 ///     .route("/subscriptions", get(juniper_subscriptions))
-///     .layer(Extension(schema));
+///     .layer(Extension(Arc::new(schema)));
 /// ```
 ///
 /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md

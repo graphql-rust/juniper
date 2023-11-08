@@ -1,4 +1,4 @@
-//! Types and traits for extracting data from requests.
+//! Types and traits for extracting data from [`Request`]s.
 
 use std::fmt;
 
@@ -22,15 +22,8 @@ use juniper::{
 /// ```rust
 /// use std::sync::Arc;
 ///
-/// use axum::{
-///     body::Body,
-///     Json,
-///     routing::post,
-///     Router,
-///     Extension,
-/// };
+/// use axum::{routing::post, Extension, Json, Router};
 /// use juniper::{
-///     http::GraphQLBatchResponse,
 ///     RootNode, EmptySubscription, EmptyMutation, graphql_object,
 /// };
 /// use juniper_axum::{extract::JuniperRequest, response::JuniperResponse};
@@ -60,17 +53,18 @@ use juniper::{
 ///
 /// let context = Context;
 ///
-/// let app: Router<Body> = Router::new()
+/// let app: Router = Router::new()
 ///     .route("/graphql", post(graphql))
-///     .layer(Extension(schema))
+///     .layer(Extension(Arc::new(schema)))
 ///     .layer(Extension(context));
 ///
+/// # #[axum::debug_handler]
 /// async fn graphql(
-///     JuniperRequest(request): JuniperRequest,
-///     Extension(schema): Extension<Schema>,
-///     Extension(context): Extension<Context>
+///     Extension(schema): Extension<Arc<Schema>>,
+///     Extension(context): Extension<Context>,
+///     JuniperRequest(req): JuniperRequest, // should be the last argument as consumes `Request`
 /// ) -> JuniperResponse {
-///     JuniperResponse(request.execute(&schema, &context).await)
+///     JuniperResponse(req.execute(&*schema, &context).await)
 /// }
 #[derive(Debug, PartialEq)]
 pub struct JuniperRequest<S = DefaultScalarValue>(pub GraphQLBatchRequest<S>)

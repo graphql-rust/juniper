@@ -18,14 +18,11 @@ use axum::response::Html;
 /// # Example
 ///
 /// ```rust
-/// use axum::{
-///     routing::get,
-///     Router
-/// };
-/// use axum::body::Body;
+/// use axum::{routing::get, Router};
 /// use juniper_axum::graphiql;
 ///
-/// let app: Router<Body> = Router::new().route("/", get(graphiql("/graphql", "/subscriptions")));
+/// let app: Router = Router::new()
+///     .route("/", get(graphiql("/graphql", "/subscriptions")));
 /// ```
 ///
 /// [GraphiQL]: https://github.com/graphql/graphiql
@@ -48,14 +45,11 @@ pub fn graphiql<'a>(
 /// # Example
 ///
 /// ```rust
-/// use axum::{
-///     routing::get,
-///     Router
-/// };
-/// use axum::body::Body;
+/// use axum::{routing::get, Router};
 /// use juniper_axum::playground;
 ///
-/// let app: Router<Body> = Router::new().route("/", get(playground("/graphql", "/subscriptions")));
+/// let app: Router = Router::new()
+///     .route("/", get(playground("/graphql", "/subscriptions")));
 /// ```
 ///
 /// [GraphQL Playground]: https://github.com/prisma/graphql-playground
