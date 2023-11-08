@@ -377,16 +377,15 @@ fn enter_input_value<'a, S, V>(
 {
     use crate::InputValue::*;
 
-    let start = &input_value.start;
-    let end = &input_value.end;
+    let span = input_value.span;
 
     match input_value.item {
-        Null => v.enter_null_value(ctx, Spanning::start_end(start, end, ())),
-        Scalar(ref s) => v.enter_scalar_value(ctx, Spanning::start_end(start, end, s)),
-        Enum(ref s) => v.enter_enum_value(ctx, Spanning::start_end(start, end, s)),
-        Variable(ref s) => v.enter_variable_value(ctx, Spanning::start_end(start, end, s)),
-        List(ref l) => v.enter_list_value(ctx, Spanning::start_end(start, end, l)),
-        Object(ref o) => v.enter_object_value(ctx, Spanning::start_end(start, end, o)),
+        Null => v.enter_null_value(ctx, Spanning::new(span, ())),
+        Scalar(ref s) => v.enter_scalar_value(ctx, Spanning::new(span, s)),
+        Enum(ref s) => v.enter_enum_value(ctx, Spanning::new(span, s)),
+        Variable(ref s) => v.enter_variable_value(ctx, Spanning::new(span, s)),
+        List(ref l) => v.enter_list_value(ctx, Spanning::new(span, l)),
+        Object(ref o) => v.enter_object_value(ctx, Spanning::new(span, o)),
     }
 }
 
@@ -400,15 +399,14 @@ fn exit_input_value<'a, S, V>(
 {
     use crate::InputValue::*;
 
-    let start = &input_value.start;
-    let end = &input_value.end;
+    let span = input_value.span;
 
     match input_value.item {
-        Null => v.exit_null_value(ctx, Spanning::start_end(start, end, ())),
-        Scalar(ref s) => v.exit_scalar_value(ctx, Spanning::start_end(start, end, s)),
-        Enum(ref s) => v.exit_enum_value(ctx, Spanning::start_end(start, end, s)),
-        Variable(ref s) => v.exit_variable_value(ctx, Spanning::start_end(start, end, s)),
-        List(ref l) => v.exit_list_value(ctx, Spanning::start_end(start, end, l)),
-        Object(ref o) => v.exit_object_value(ctx, Spanning::start_end(start, end, o)),
+        Null => v.exit_null_value(ctx, Spanning::new(span, ())),
+        Scalar(ref s) => v.exit_scalar_value(ctx, Spanning::new(span, s)),
+        Enum(ref s) => v.exit_enum_value(ctx, Spanning::new(span, s)),
+        Variable(ref s) => v.exit_variable_value(ctx, Spanning::new(span, s)),
+        List(ref l) => v.exit_list_value(ctx, Spanning::new(span, l)),
+        Object(ref o) => v.exit_object_value(ctx, Spanning::new(span, o)),
     }
 }

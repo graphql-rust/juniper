@@ -39,11 +39,11 @@ where
                 Entry::Occupied(e) => {
                     ctx.report_error(
                         &error_message(&field_name.item),
-                        &[*e.get(), field_name.start],
+                        &[*e.get(), field_name.span.start],
                     );
                 }
                 Entry::Vacant(e) => {
-                    e.insert(field_name.start);
+                    e.insert(field_name.span.start);
                 }
             }
         }

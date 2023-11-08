@@ -94,7 +94,7 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
                     if !ctx.schema.is_subtype(&expected_type, var_type) {
                         ctx.report_error(
                             &error_message(var_name.item, expected_type, var_type),
-                            &[var_def_name.start, var_name.start],
+                            &[var_def_name.span.start, var_name.span.start],
                         );
                     }
                 }
@@ -169,7 +169,7 @@ where
                 .entry(scope.clone())
                 .or_default()
                 .push((
-                    Spanning::start_end(&var_name.start, &var_name.end, var_name.item),
+                    Spanning::new(var_name.span, var_name.item),
                     input_type.clone(),
                 ));
         }

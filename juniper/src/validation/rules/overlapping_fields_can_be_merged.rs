@@ -406,8 +406,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                             "{name1} and {name2} are different fields",
                         )),
                     ),
-                    vec![ast1.start],
-                    vec![ast2.start],
+                    vec![ast1.span.start],
+                    vec![ast2.span.start],
                 ));
             }
 
@@ -417,8 +417,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                         response_name.into(),
                         ConflictReasonMessage::Message("they have differing arguments".into()),
                     ),
-                    vec![ast1.start],
-                    vec![ast2.start],
+                    vec![ast1.span.start],
+                    vec![ast2.span.start],
                 ));
             }
         }
@@ -435,8 +435,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                             "they return conflicting types {t1} and {t2}",
                         )),
                     ),
-                    vec![ast1.start],
-                    vec![ast2.start],
+                    vec![ast1.span.start],
+                    vec![ast2.span.start],
                 ));
             }
         }
@@ -451,7 +451,12 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                 ctx,
             );
 
-            return self.subfield_conflicts(&conflicts, response_name, &ast1.start, &ast2.start);
+            return self.subfield_conflicts(
+                &conflicts,
+                response_name,
+                &ast1.span.start,
+                &ast2.span.start,
+            );
         }
 
         None

@@ -70,7 +70,7 @@ where
                         parent_type.name().unwrap_or("<unknown>"),
                         frag_type.name().unwrap_or("<unknown>"),
                     ),
-                    &[frag.start],
+                    &[frag.span.start],
                 );
             }
         }
@@ -109,7 +109,7 @@ where
                         parent_type.name().unwrap_or("<unknown>"),
                         frag_type.name().unwrap_or("<unknown>"),
                     ),
-                    &[spread.start],
+                    &[spread.span.start],
                 );
             }
         }

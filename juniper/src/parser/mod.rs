@@ -15,5 +15,5 @@ pub use self::document::parse_document_source;
 pub use self::{
     lexer::{Lexer, LexerError, ScalarToken, Token},
     parser::{OptionParseResult, ParseError, ParseResult, Parser, UnlocatedParseResult},
-    utils::{SourcePosition, Spanning},
+    utils::{SourcePosition, Span, Spanning},
 };

@@ -97,9 +97,8 @@ impl<'a> Parser<'a> {
     #[doc(hidden)]
     pub fn next_token(&mut self) -> ParseResult<Token<'a>> {
         if self.tokens.len() == 1 {
-            Err(Spanning::start_end(
-                &self.peek().start,
-                &self.peek().end,
+            Err(Spanning::new(
+                self.peek().span,
                 ParseError::UnexpectedEndOfFile,
             ))
         } else {
@@ -125,7 +124,7 @@ impl<'a> Parser<'a> {
             Ok(Some(self.next_token()?))
         } else if self.peek().item == Token::EndOfFile {
             Err(Spanning::zero_width(
-                &self.peek().start,
+                self.peek().start(),
                 ParseError::UnexpectedEndOfFile,
             ))
         } else {
@@ -144,14 +143,12 @@ impl<'a> Parser<'a> {
         T: fmt::Debug,
         F: Fn(&mut Parser<'a>) -> ParseResult<T>,
     {
-        let Spanning {
-            start: start_pos, ..
-        } = self.expect(opening)?;
+        let start_pos = &self.expect(opening)?.span.start;
         let mut items = Vec::new();
 
         loop {
-            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
-                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
+            if let Some(Spanning { span, .. }) = self.skip(closing)? {
+                return Ok(Spanning::start_end(start_pos, &span.end, items));
             }
 
             items.push(parser(self)?);
@@ -169,16 +166,14 @@ impl<'a> Parser<'a> {
         T: fmt::Debug,
         F: Fn(&mut Parser<'a>) -> ParseResult<T>,
     {
-        let Spanning {
-            start: start_pos, ..
-        } = self.expect(opening)?;
+        let start_pos = &self.expect(opening)?.span.start;
         let mut items = Vec::new();
 
         loop {
             items.push(parser(self)?);
 
-            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
-                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
+            if let Some(end_spanning) = self.skip(closing)? {
+                return Ok(Spanning::start_end(start_pos, end_spanning.end(), items));
             }
         }
     }
@@ -194,16 +189,14 @@ impl<'a> Parser<'a> {
         T: fmt::Debug,
         F: Fn(&mut Parser<'a>) -> UnlocatedParseResult<T>,
     {
-        let Spanning {
-            start: start_pos, ..
-        } = self.expect(opening)?;
+        let start_pos = &self.expect(opening)?.span.start;
         let mut items = Vec::new();
 
         loop {
             items.push(parser(self)?);
 
-            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
-                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
+            if let Some(end_spanning) = self.skip(closing)? {
+                return Ok(Spanning::start_end(start_pos, end_spanning.end(), items));
             }
         }
     }
@@ -224,9 +217,8 @@ impl<'a> Parser<'a> {
             Spanning {
                 item: Token::EndOfFile,
                 ..
-            } => Err(Spanning::start_end(
-                &self.peek().start,
-                &self.peek().end,
+            } => Err(Spanning::new(
+                self.peek().span,
                 ParseError::UnexpectedEndOfFile,
             )),
             _ => Err(self.next_token()?.map(ParseError::unexpected_token)),
