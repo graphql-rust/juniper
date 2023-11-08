@@ -794,7 +794,7 @@ pub mod tests {
 
         #[allow(missing_docs)]
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
-            println!("Running `graphql-ws` test suite for integration");
+            println!("Running `graphql-transport-ws` test suite for integration");
 
             println!("  - graphql_ws::test_simple_subscription");
             test_simple_subscription(integration).await;

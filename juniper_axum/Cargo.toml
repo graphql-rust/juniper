@@ -37,7 +37,7 @@ anyhow = "1.0"
 axum = { version = "0.6", features = ["macros"] }
 hyper = "0.14"
 juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
-tokio = { version = "1.20", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.20", features = ["macros", "rt-multi-thread", "time"] }
 tokio-stream = "0.1"
 tokio-tungstenite = "0.20"
 tracing = "0.1"
