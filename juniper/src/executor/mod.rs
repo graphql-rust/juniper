@@ -885,7 +885,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.start)),
+            field_path: Arc::new(FieldPath::Root(operation.span.start)),
         };
 
         value = match operation.item.operation_type {
@@ -983,7 +983,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.start)),
+            field_path: Arc::new(FieldPath::Root(operation.span.start)),
         };
 
         value = match operation.item.operation_type {
@@ -1129,7 +1129,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.start)),
+            field_path: Arc::new(FieldPath::Root(operation.span.start)),
         };
 
         value = match operation.item.operation_type {

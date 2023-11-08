@@ -61,7 +61,7 @@ where
             if !is_valid_literal_value(ctx.schema, &meta_type, &arg_value.item) {
                 ctx.report_error(
                     &error_message(arg_name.item, &argument_meta.arg_type),
-                    &[arg_value.start],
+                    &[arg_value.span.start],
                 );
             }
         }

@@ -26,11 +26,11 @@ where
             match (field_type.is_leaf(), &field.item.selection_set) {
                 (true, &Some(_)) => Some(RuleError::new(
                     &no_allowed_error_message(field_name, field_type_literal),
-                    &[field.start],
+                    &[field.span.start],
                 )),
                 (false, &None) => Some(RuleError::new(
                     &required_error_message(field_name, field_type_literal),
-                    &[field.start],
+                    &[field.span.start],
                 )),
                 _ => None,
             }

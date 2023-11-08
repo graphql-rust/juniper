@@ -143,12 +143,15 @@ where
                 {
                     ctx.report_error(
                         &misplaced_error_message(directive_name, current_location),
-                        &[directive.start],
+                        &[directive.span.start],
                     );
                 }
             }
         } else {
-            ctx.report_error(&unknown_error_message(directive_name), &[directive.start]);
+            ctx.report_error(
+                &unknown_error_message(directive_name),
+                &[directive.span.start],
+            );
         }
     }
 }

@@ -99,7 +99,9 @@ where
                 def_vars
                     .iter()
                     .filter(|var| !used.contains(var.item))
-                    .map(|var| RuleError::new(&error_message(var.item, *op_name), &[var.start]))
+                    .map(|var| {
+                        RuleError::new(&error_message(var.item, *op_name), &[var.span.start])
+                    })
                     .collect(),
             );
         }

@@ -99,7 +99,7 @@ where
                 unused
                     .into_iter()
                     .map(|var| {
-                        RuleError::new(&error_message(var.item, *op_name), &[var.start, *pos])
+                        RuleError::new(&error_message(var.item, *op_name), &[var.span.start, *pos])
                     })
                     .collect(),
             );
@@ -114,7 +114,7 @@ where
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables
-            .insert(op_name, (op.start, HashSet::new()));
+            .insert(op_name, (op.span.start, HashSet::new()));
     }
 
     fn enter_fragment_definition(
@@ -164,7 +164,7 @@ where
                         .item
                         .referenced_variables()
                         .iter()
-                        .map(|&var_name| Spanning::start_end(&value.start, &value.end, var_name))
+                        .map(|&var_name| Spanning::new(value.span, var_name))
                         .collect(),
                 );
         }

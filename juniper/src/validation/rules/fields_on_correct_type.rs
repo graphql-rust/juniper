@@ -30,7 +30,7 @@ where
                         context.report_error(
                             "`__typename` may not be included as a root \
                              field in a subscription operation",
-                            &[field.item.name.start],
+                            &[field.item.name.span.start],
                         );
                     }
                 }
@@ -60,7 +60,7 @@ where
 
                     context.report_error(
                         &error_message(field_name.item, type_name),
-                        &[field_name.start],
+                        &[field_name.span.start],
                     );
                 }
             }

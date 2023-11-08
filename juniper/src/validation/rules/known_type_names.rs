@@ -22,7 +22,7 @@ where
         fragment: &'a Spanning<InlineFragment<S>>,
     ) {
         if let Some(ref type_cond) = fragment.item.type_condition {
-            validate_type(ctx, type_cond.item, &type_cond.start);
+            validate_type(ctx, type_cond.item, &type_cond.span.start);
         }
     }
 
@@ -32,7 +32,7 @@ where
         fragment: &'a Spanning<Fragment<S>>,
     ) {
         let type_cond = &fragment.item.type_condition;
-        validate_type(ctx, type_cond.item, &type_cond.start);
+        validate_type(ctx, type_cond.item, &type_cond.span.start);
     }
 
     fn enter_variable_definition(
@@ -41,7 +41,7 @@ where
         (_, var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         let type_name = var_def.var_type.item.innermost_name();
-        validate_type(ctx, type_name, &var_def.var_type.start);
+        validate_type(ctx, type_name, &var_def.var_type.span.start);
     }
 }
 

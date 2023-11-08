@@ -29,7 +29,7 @@ where
             if !var_type.is_input() {
                 ctx.report_error(
                     &error_message(var_name.item, &var_def.var_type.item),
-                    &[var_def.var_type.start],
+                    &[var_def.var_type.span.start],
                 );
             }
         }

@@ -8,65 +8,87 @@ pub struct SourcePosition {
     col: usize,
 }
 
-/// Data structure used to wrap items with start and end markers in the input source
-///
 /// A "span" is a range of characters in the input source, starting at the
 /// character pointed by the `start` field and ending just before the `end`
 /// marker.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
-pub struct Spanning<T> {
-    /// The wrapped item
-    pub item: T,
-
-    /// Start position of the item
+pub struct Span {
+    /// Start position of the span
     pub start: SourcePosition,
 
-    /// End position of the item
+    /// End position of the span
     ///
-    /// This points to the first source position _after_ the wrapped item.
+    /// This points to the first source position _after_ the span.
     pub end: SourcePosition,
 }
 
-impl<T> Spanning<T> {
+impl Span {
     #[doc(hidden)]
-    pub fn zero_width(pos: &SourcePosition, item: T) -> Spanning<T> {
-        Spanning {
-            item,
-            start: *pos,
-            end: *pos,
-        }
-    }
-
-    #[doc(hidden)]
-    pub fn single_width(pos: &SourcePosition, item: T) -> Spanning<T> {
-        let mut end = *pos;
-        end.advance_col();
-
-        Spanning {
-            item,
-            start: *pos,
-            end,
-        }
-    }
-
-    #[doc(hidden)]
-    pub fn start_end(start: &SourcePosition, end: &SourcePosition, item: T) -> Spanning<T> {
-        Spanning {
-            item,
+    pub fn new(start: &SourcePosition, end: &SourcePosition) -> Span {
+        Self {
             start: *start,
             end: *end,
         }
     }
 
     #[doc(hidden)]
+    pub fn zero_width(pos: &SourcePosition) -> Span {
+        Self::new(pos, pos)
+    }
+
+    #[doc(hidden)]
+    pub fn single_width(pos: &SourcePosition) -> Span {
+        let mut end = *pos;
+        end.advance_col();
+
+        Self { start: *pos, end }
+    }
+
+    #[doc(hidden)]
+    pub fn unlocated() -> Span {
+        Self {
+            start: SourcePosition::new_origin(),
+            end: SourcePosition::new_origin(),
+        }
+    }
+}
+
+/// Data structure used to wrap items with start and end markers in the input source
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+pub struct Spanning<T> {
+    /// The wrapped item
+    pub item: T,
+
+    /// The span
+    pub span: Span,
+}
+
+impl<T> Spanning<T> {
+    #[doc(hidden)]
+    pub fn new(span: Span, item: T) -> Spanning<T> {
+        Self { item, span }
+    }
+
+    #[doc(hidden)]
+    pub fn zero_width(pos: &SourcePosition, item: T) -> Spanning<T> {
+        Self::new(Span::zero_width(pos), item)
+    }
+
+    #[doc(hidden)]
+    pub fn single_width(pos: &SourcePosition, item: T) -> Spanning<T> {
+        Self::new(Span::single_width(pos), item)
+    }
+
+    #[doc(hidden)]
+    pub fn start_end(start: &SourcePosition, end: &SourcePosition, item: T) -> Spanning<T> {
+        Self::new(Span::new(start, end), item)
+    }
+
+    #[doc(hidden)]
     #[allow(clippy::self_named_constructors)]
     pub fn spanning(v: Vec<Spanning<T>>) -> Option<Spanning<Vec<Spanning<T>>>> {
-        if let (Some(start), Some(end)) = (v.first().map(|s| s.start), v.last().map(|s| s.end)) {
-            Some(Spanning {
-                item: v,
-                start,
-                end,
-            })
+        if let (Some(start), Some(end)) = (v.first().map(|s| s.span), v.last().map(|s| s.span)) {
+            Some(Spanning::new(Span::new(&start.start, &end.end), v))
         } else {
             None
         }
@@ -74,33 +96,34 @@ impl<T> Spanning<T> {
 
     #[doc(hidden)]
     pub fn unlocated(item: T) -> Spanning<T> {
-        Spanning {
-            item,
-            start: SourcePosition::new_origin(),
-            end: SourcePosition::new_origin(),
-        }
+        Self::new(Span::unlocated(), item)
+    }
+
+    #[doc(hidden)]
+    pub fn start(&self) -> &SourcePosition {
+        &self.span.start
+    }
+
+    #[doc(hidden)]
+    pub fn end(&self) -> &SourcePosition {
+        &self.span.end
     }
 
     /// Modify the contents of the spanned item.
     pub fn map<O, F: Fn(T) -> O>(self, f: F) -> Spanning<O> {
-        Spanning {
-            item: f(self.item),
-            start: self.start,
-            end: self.end,
-        }
+        Spanning::new(self.span, f(self.item))
     }
 
     /// Modifies the contents of the spanned item in case `f` returns [`Some`],
     /// or returns [`None`] otherwise.
     pub fn and_then<O, F: Fn(T) -> Option<O>>(self, f: F) -> Option<Spanning<O>> {
-        let (start, end) = (self.start, self.end);
-        f(self.item).map(|item| Spanning { item, start, end })
+        f(self.item).map(|item| Spanning::new(self.span, item))
     }
 }
 
 impl<T: fmt::Display> fmt::Display for Spanning<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}. At {}", self.item, self.start)
+        write!(f, "{}. At {}", self.item, self.span.start)
     }
 }
 

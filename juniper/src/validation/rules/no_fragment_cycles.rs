@@ -73,11 +73,7 @@ where
             self.spreads
                 .entry(current_fragment)
                 .or_default()
-                .push(Spanning::start_end(
-                    &spread.start,
-                    &spread.end,
-                    spread.item.name.item,
-                ));
+                .push(Spanning::new(spread.span, spread.item.name.item));
         }
     }
 }
@@ -131,7 +127,7 @@ impl<'a> CycleDetector<'a> {
                 };
 
                 self.errors
-                    .push(RuleError::new(&error_message(name), &[err_pos.start]));
+                    .push(RuleError::new(&error_message(name), &[err_pos.span.start]));
             } else {
                 let mut path = path.clone();
                 path.push(node);
