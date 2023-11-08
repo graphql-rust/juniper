@@ -51,12 +51,10 @@ use juniper::{
 ///    EmptySubscription::<Context>::new()
 /// );
 ///
-/// let context = Context;
-///
 /// let app: Router = Router::new()
 ///     .route("/graphql", post(graphql))
 ///     .layer(Extension(Arc::new(schema)))
-///     .layer(Extension(context));
+///     .layer(Extension(Context));
 ///
 /// # #[axum::debug_handler]
 /// async fn graphql(

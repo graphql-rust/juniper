@@ -396,9 +396,9 @@ impl<S: ScalarValue> TryFrom<Message> for graphql_ws::ClientMessage<S> {
     }
 }
 
+/// Possible errors of serving a [`WebSocket`] connection.
 #[derive(Debug)]
 enum Error {
-    //Axum(axum::Error),
     /// Deserializing of a client [`ws::Message`] failed.
     Serde(serde_json::Error),
 

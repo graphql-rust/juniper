@@ -9,7 +9,73 @@ pub mod subscriptions;
 
 use std::future;
 
-use axum::response::Html;
+use axum::{extract::Extension, response::Html};
+use juniper_graphql_ws::Schema;
+
+use self::{extract::JuniperRequest, response::JuniperResponse};
+
+/// Handles a [`JuniperRequest`] with the specified [`Schema`], by [`extract`]ing it from
+/// [`Extension`]s and initializing its fresh [`Schema::Context`] as a [`Default`] one.
+///
+/// > __NOTE__: This is a ready-to-go default [`axum`] handler for serving GraphQL requests. If you
+/// >           need to customize it (for example, extract [`Schema::Context`] from [`Extension`]s
+/// >           instead initializing a [`Default`] one), create your own handler accepting a
+/// >           [`JuniperRequest`] (see its documentation for examples).
+///
+/// # Example
+///
+/// ```rust
+/// use std::sync::Arc;
+///
+/// use axum::{routing::post, Extension, Json, Router};
+/// use juniper::{
+///     RootNode, EmptySubscription, EmptyMutation, graphql_object,
+/// };
+/// use juniper_axum::graphql;
+///
+/// #[derive(Clone, Copy, Debug, Default)]
+/// pub struct Context;
+///
+/// impl juniper::Context for Context {}
+///
+/// #[derive(Clone, Copy, Debug)]
+/// pub struct Query;
+///
+/// #[graphql_object(context = Context)]
+/// impl Query {
+///     fn add(a: i32, b: i32) -> i32 {
+///         a + b
+///     }
+/// }
+///
+/// type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
+///
+/// let schema = Schema::new(
+///    Query,
+///    EmptyMutation::<Context>::new(),
+///    EmptySubscription::<Context>::new()
+/// );
+///
+/// let app: Router = Router::new()
+///     .route("/graphql", post(graphql::<Arc<Schema>>))
+///     .layer(Extension(Arc::new(schema)));
+/// ```
+///
+/// [`extract`]: axum::extract
+#[cfg_attr(text, axum::debug_handler)]
+pub async fn graphql<S>(
+    Extension(schema): Extension<S>,
+    JuniperRequest(req): JuniperRequest<S::ScalarValue>,
+) -> JuniperResponse<S::ScalarValue>
+where
+    S: Schema,
+    S::Context: Default,
+{
+    JuniperResponse(
+        req.execute(schema.root_node(), &S::Context::default())
+            .await,
+    )
+}
 
 /// Creates a handler that replies with an HTML page containing [GraphiQL].
 ///
