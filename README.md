@@ -79,6 +79,7 @@ your Schemas automatically.
 ### Web Frameworks
 
 - [actix][actix]
+- [axum][axum]
 - [hyper][hyper]
 - [rocket][rocket]
 - [iron][iron]
@@ -93,6 +94,7 @@ your Schemas automatically.
 Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 [actix]: https://actix.rs/
+[axum]: https://docs.rs/axum
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
 [playground]: https://github.com/prisma/graphql-playground
