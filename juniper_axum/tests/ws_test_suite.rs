@@ -1,3 +1,5 @@
+#![cfg(not(windows))]
+
 use std::{
     net::{SocketAddr, TcpListener},
     sync::Arc,
