@@ -147,55 +147,42 @@ where
 }
 
 #[cfg(test)]
-mod tests {
-    use axum::http::Request;
-    use juniper::http::GraphQLRequest;
+mod juniper_request_tests {
+    use std::fmt;
 
-    use super::*;
+    use axum::{
+        body::{Body, Bytes, HttpBody},
+        extract::FromRequest as _,
+        http::Request,
+    };
+    use juniper::http::{GraphQLBatchRequest, GraphQLRequest};
 
-    #[test]
-    fn convert_simple_request_body_to_juniper_request() {
-        let request_body = SingleRequestBody {
-            query: "{ add(a: 2, b: 3) }".to_string(),
-            operation_name: None,
-            variables: None,
-        };
+    use super::JuniperRequest;
+
+    #[tokio::test]
+    async fn from_get_request() {
+        let req = Request::get(&format!(
+            "/?query={}",
+            urlencoding::encode("{ add(a: 2, b: 3) }")
+        ))
+        .body(Body::empty())
+        .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
         let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "{ add(a: 2, b: 3) }".to_string(),
+            "{ add(a: 2, b: 3) }".into(),
             None,
             None,
         )));
 
-        assert_eq!(JuniperRequest::try_from(request_body).unwrap(), expected);
+        assert_eq!(do_from_request(req).await, expected);
     }
 
     #[tokio::test]
-    async fn convert_get_request_to_juniper_request() {
-        // /?query={ add(a: 2, b: 3) }
-        let request = Request::get("/?query=%7B%20add%28a%3A%202%2C%20b%3A%203%29%20%7D")
-            .body(Body::empty())
-            .unwrap();
-        let mut parts = RequestParts::new(request);
-
-        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "{ add(a: 2, b: 3) }".to_string(),
-            None,
-            None,
-        )));
-
-        let result = JuniperRequest::from_request(&mut parts).await.unwrap();
-        assert_eq!(result, expected)
-    }
-
-    #[tokio::test]
-    async fn convert_simple_post_request_to_juniper_request() {
-        let json = String::from(r#"{ "query": "{ add(a: 2, b: 3) }"}"#);
-        let request = Request::post("/")
+    async fn from_json_post_request() {
+        let req = Request::post("/")
             .header("content-type", "application/json")
-            .body(Body::from(json))
-            .unwrap();
-        let mut parts = RequestParts::new(request);
+            .body(Body::from(r#"{"query": "{ add(a: 2, b: 3) }"}"#))
+            .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
         let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
             "{ add(a: 2, b: 3) }".to_string(),
@@ -203,18 +190,15 @@ mod tests {
             None,
         )));
 
-        let result = JuniperRequest::from_request(&mut parts).await.unwrap();
-        assert_eq!(result, expected)
+        assert_eq!(do_from_request(req).await, expected);
     }
 
     #[tokio::test]
-    async fn convert_simple_post_request_to_juniper_request_2() {
-        let body = String::from(r#"{ add(a: 2, b: 3) }"#);
-        let request = Request::post("/")
+    async fn from_graphql_post_request() {
+        let req = Request::post("/")
             .header("content-type", "application/graphql")
-            .body(Body::from(body))
-            .unwrap();
-        let mut parts = RequestParts::new(request);
+            .body(Body::from(r#"{ add(a: 2, b: 3) }"#))
+            .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
         let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
             "{ add(a: 2, b: 3) }".to_string(),
@@ -222,7 +206,32 @@ mod tests {
             None,
         )));
 
-        let result = JuniperRequest::from_request(&mut parts).await.unwrap();
-        assert_eq!(result, expected)
+        assert_eq!(do_from_request(req).await, expected);
+    }
+
+    /// Performs [`JuniperRequest::from_request()`].
+    async fn do_from_request(req: Request<Body>) -> JuniperRequest {
+        match JuniperRequest::from_request(req, &()).await {
+            Ok(resp) => resp,
+            Err(resp) => {
+                panic!(
+                    "`JuniperRequest::from_request()` failed with `{}` status and body:\n{}",
+                    resp.status(),
+                    display_body(resp.into_body()).await,
+                )
+            }
+        }
+    }
+
+    /// Converts the provided [`HttpBody`] into a [`String`].
+    async fn display_body<B>(body: B) -> String
+    where
+        B: HttpBody<Data = Bytes>,
+        B::Error: fmt::Display,
+    {
+        let bytes = hyper::body::to_bytes(body)
+            .await
+            .unwrap_or_else(|e| panic!("failed to represent `Body` as `Bytes`: {e}"));
+        String::from_utf8(bytes.into()).unwrap_or_else(|e| panic!("not UTF-8 body: {e}"))
     }
 }
