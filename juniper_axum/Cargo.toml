@@ -48,5 +48,9 @@ tokio-tungstenite = "0.20"
 tower = "0.4"
 
 [[example]]
+name = "custom"
+required-features = ["subscriptions"]
+
+[[example]]
 name = "simple"
 required-features = ["subscriptions"]
