@@ -10,7 +10,10 @@ use axum::{
     response::{IntoResponse as _, Response},
     Json, RequestExt as _,
 };
-use juniper::http::{GraphQLBatchRequest, GraphQLRequest};
+use juniper::{
+    http::{GraphQLBatchRequest, GraphQLRequest},
+    DefaultScalarValue, ScalarValue,
+};
 
 /// Extractor for [`axum`] to extract a [`JuniperRequest`].
 ///
@@ -70,20 +73,23 @@ use juniper::http::{GraphQLBatchRequest, GraphQLRequest};
 ///     JuniperResponse(request.execute(&schema, &context).await)
 /// }
 #[derive(Debug, PartialEq)]
-pub struct JuniperRequest(pub GraphQLBatchRequest);
+pub struct JuniperRequest<S = DefaultScalarValue>(pub GraphQLBatchRequest<S>)
+where
+    S: ScalarValue;
 
 #[async_trait]
-impl<S> FromRequest<S, Body> for JuniperRequest
+impl<S, State> FromRequest<State, Body> for JuniperRequest<S>
 where
-    S: Sync,
-    Query<GraphQLRequest>: FromRequestParts<S>,
-    Json<GraphQLBatchRequest>: FromRequest<S, Body>,
-    <Json<GraphQLBatchRequest> as FromRequest<S, Body>>::Rejection: fmt::Display,
-    String: FromRequest<S, Body>,
+    S: ScalarValue,
+    State: Sync,
+    Query<GraphQLRequest<S>>: FromRequestParts<State>,
+    Json<GraphQLBatchRequest<S>>: FromRequest<State, Body>,
+    <Json<GraphQLBatchRequest<S>> as FromRequest<State, Body>>::Rejection: fmt::Display,
+    String: FromRequest<State, Body>,
 {
     type Rejection = Response;
 
-    async fn from_request(mut req: Request<Body>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(mut req: Request<Body>, state: &State) -> Result<Self, Self::Rejection> {
         let content_type = req
             .headers()
             .get("content-type")
@@ -99,7 +105,7 @@ where
 
         match (req.method(), content_type) {
             (&Method::GET, _) => req
-                .extract_parts::<Query<GraphQLRequest>>()
+                .extract_parts::<Query<GraphQLRequest<S>>>()
                 .await
                 .map(|query| Self(GraphQLBatchRequest::Single(query.0)))
                 .map_err(|e| {
@@ -110,7 +116,7 @@ where
                         .into_response()
                 }),
             (&Method::POST, Some("application/json")) => {
-                Json::<GraphQLBatchRequest>::from_request(req, state)
+                Json::<GraphQLBatchRequest<S>>::from_request(req, state)
                     .await
                     .map(|req| Self(req.0))
                     .map_err(|e| {
