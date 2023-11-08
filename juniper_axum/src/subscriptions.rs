@@ -37,7 +37,7 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 /// use std::{sync::Arc, time::Duration};
 ///
 /// use axum::{routing::get, Extension, Router};
-/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use futures::stream::{BoxStream, StreamExt as _};
 /// use juniper::{
 ///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
 ///     RootNode,
@@ -123,7 +123,7 @@ pub fn ws<S: Schema>(
 /// use std::{sync::Arc, time::Duration};
 ///
 /// use axum::{routing::get, Extension, Router};
-/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use futures::stream::{BoxStream, StreamExt as _};
 /// use juniper::{
 ///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
 ///     RootNode,
@@ -215,7 +215,7 @@ pub fn graphql_transport_ws<S: Schema>(
 /// use std::{sync::Arc, time::Duration};
 ///
 /// use axum::{routing::get, Extension, Router};
-/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use futures::stream::{BoxStream, StreamExt as _};
 /// use juniper::{
 ///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
 ///     RootNode,
@@ -307,7 +307,7 @@ pub fn graphql_ws<S: Schema>(
 ///     routing::get,
 ///     Extension, Router,
 /// };
-/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use futures::stream::{BoxStream, StreamExt as _};
 /// use juniper::{
 ///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
 ///     RootNode,
@@ -409,7 +409,7 @@ where
 ///     routing::get,
 ///     Extension, Router,
 /// };
-/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use futures::stream::{BoxStream, StreamExt as _};
 /// use juniper::{
 ///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
 ///     RootNode,
@@ -540,7 +540,7 @@ where
 ///     routing::get,
 ///     Extension, Router,
 /// };
-/// use futures::stream::{BoxStream, Stream, StreamExt as _};
+/// use futures::stream::{BoxStream, StreamExt as _};
 /// use juniper::{
 ///     graphql_object, graphql_subscription, EmptyMutation, FieldError,
 ///     RootNode,

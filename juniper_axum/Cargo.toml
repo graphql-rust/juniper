@@ -15,7 +15,7 @@ repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]
 keywords = ["apollo", "axum", "graphql", "juniper", "websocket"]
-exclude = ["/examples/", "/tests/", "/release.toml"]
+exclude = ["/tests/", "/release.toml"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -35,8 +35,10 @@ serde_json = { version = "1.0.18", optional = true }
 axum = { version = "0.6", features = ["macros"] }
 hyper = "0.14"
 juniper = { version = "0.16.0-dev", path = "../juniper", features = ["expose-test-schema"] }
-tokio = { version = "1.20", features = ["macros"] }
+tokio = { version = "1.20", features = ["macros", "rt-multi-thread"] }
 tokio-stream = "0.1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
 urlencoding = "2.1"
 
 
@@ -45,3 +47,6 @@ anyhow = "1.0"
 tokio-tungstenite = "0.20"
 tower = "0.4"
 
+[[example]]
+name = "simple"
+required-features = ["subscriptions"]

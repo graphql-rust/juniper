@@ -1,31 +1,25 @@
-use std::{net::SocketAddr, pin::Pin, time::Duration};
+//! This example demonstrates simple default integration with [`axum`].
+
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use axum::{
-    extract::WebSocketUpgrade,
-    response::Response,
-    routing::{get, post},
+    response::Html,
+    routing::{get, on, MethodFilter},
     Extension, Router,
 };
-use futures::{Stream, StreamExt};
+use futures::stream::{BoxStream, StreamExt as _};
 use juniper::{graphql_object, graphql_subscription, EmptyMutation, FieldError, RootNode};
-use juniper_axum::{
-    extract::JuniperRequest, playground, response::JuniperResponse,
-    subscriptions::handle_graphql_socket,
-};
+use juniper_axum::{graphiql, graphql, playground, ws};
+use juniper_graphql_ws::ConnectionConfig;
 use tokio::time::interval;
 use tokio_stream::wrappers::IntervalStream;
 
 #[derive(Clone, Copy, Debug)]
-pub struct Context;
-
-impl juniper::Context for Context {}
-
-#[derive(Clone, Copy, Debug)]
 pub struct Query;
 
-#[graphql_object(context = Context)]
+#[graphql_object]
 impl Query {
-    /// Add two numbers a and b
+    /// Adds two `a` and `b` numbers.
     fn add(a: i32, b: i32) -> i32 {
         a + b
     }
@@ -34,11 +28,11 @@ impl Query {
 #[derive(Clone, Copy, Debug)]
 pub struct Subscription;
 
-type NumberStream = Pin<Box<dyn Stream<Item = Result<i32, FieldError>> + Send>>;
+type NumberStream = BoxStream<'static, Result<i32, FieldError>>;
 
-#[graphql_subscription(context = Context)]
+#[graphql_subscription]
 impl Subscription {
-    /// Count seconds
+    /// Counts seconds.
     async fn count() -> NumberStream {
         let mut value = 0;
         let stream = IntervalStream::new(interval(Duration::from_secs(1))).map(move |_| {
@@ -49,46 +43,45 @@ impl Subscription {
     }
 }
 
-type AppSchema = RootNode<'static, Query, EmptyMutation<Context>, Subscription>;
+type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+
+async fn homepage() -> Html<&'static str> {
+    "<html><h1>juniper_axum/simple example</h1>\
+           <div>visit <a href=\"/graphiql\">GraphiQL</a></div>\
+           <div>visit <a href=\"/playground\">GraphQL Playground</a></div>\
+    </html>"
+        .into()
+}
 
 #[tokio::main]
 async fn main() {
-    let schema = AppSchema::new(Query, EmptyMutation::new(), Subscription);
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
 
-    let context = Context;
+    let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
 
     let app = Router::new()
-        .route("/", get(playground("/graphql", "/subscriptions")))
-        .route("/graphql", post(graphql))
-        .route("/subscriptions", get(juniper_subscriptions))
-        .layer(Extension(schema))
-        .layer(Extension(context));
+        .route(
+            "/graphql",
+            on(
+                MethodFilter::GET | MethodFilter::POST,
+                graphql::<Arc<Schema>>,
+            ),
+        )
+        .route(
+            "/subscriptions",
+            get(ws::<Arc<Schema>>(ConnectionConfig::new(()))),
+        )
+        .route("/graphiql", get(graphiql("/graphql", "/subscriptions")))
+        .route("/playground", get(playground("/graphql", "/subscriptions")))
+        .route("/", get(homepage))
+        .layer(Extension(Arc::new(schema)));
 
-    // run it
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("listening on {}", addr);
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    tracing::info!("listening on {addr}");
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
-        .unwrap();
-}
-
-pub async fn juniper_subscriptions(
-    Extension(schema): Extension<AppSchema>,
-    Extension(context): Extension<Context>,
-    ws: WebSocketUpgrade,
-) -> Response {
-    ws.protocols(["graphql-ws"])
-        .max_frame_size(1024)
-        .max_message_size(1024)
-        .max_send_queue(100)
-        .on_upgrade(move |socket| handle_graphql_socket(socket, schema, context))
-}
-
-async fn graphql(
-    JuniperRequest(request): JuniperRequest,
-    Extension(schema): Extension<AppSchema>,
-    Extension(context): Extension<Context>,
-) -> JuniperResponse {
-    JuniperResponse(request.execute(&schema, &context).await)
+        .unwrap_or_else(|e| panic!("failed to run `axum::Server`: {e}"));
 }
