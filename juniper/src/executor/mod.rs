@@ -626,7 +626,7 @@ where
     /// Access the current context
     ///
     /// You usually provide the context when calling the top-level `execute`
-    /// function, or using the context factory in the Iron integration.
+    /// function, or using the context factory.
     pub fn context(&self) -> &'r CtxT {
         self.context
     }

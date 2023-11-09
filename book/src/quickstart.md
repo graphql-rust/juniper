@@ -205,6 +205,5 @@ fn main() {
 [hyper]: servers/hyper.md
 [warp]: servers/warp.md
 [rocket]: servers/rocket.md
-[iron]: servers/iron.md
 [tutorial]: ./tutorial.html
 [graphql_object]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html

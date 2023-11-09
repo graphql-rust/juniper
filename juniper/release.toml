@@ -19,11 +19,6 @@ exactly = 1
 search = "juniper = \"[^\"]+\""
 replace = "juniper = \"{{version}}\""
 [[pre-release-replacements]]
-file = "../book/src/servers/iron.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
 file = "../book/src/servers/rocket.md"
 exactly = 1
 search = "juniper = \"[^\"]+\""

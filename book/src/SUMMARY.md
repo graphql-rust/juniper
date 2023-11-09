@@ -21,7 +21,6 @@
   - [Official Server Integrations](servers/official.md) - [Hyper](servers/hyper.md)
     - [Warp](servers/warp.md)
     - [Rocket](servers/rocket.md)
-    - [Iron](servers/iron.md)
     - [Hyper](servers/hyper.md)
   - [Third Party Integrations](servers/third-party.md)
 

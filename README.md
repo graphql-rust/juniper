@@ -18,7 +18,7 @@ GraphQL schemas as convenient as Rust will allow.
 
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the [Actix][actix], [Hyper][hyper], [Iron][iron], [Rocket], and [Warp][warp] frameworks, including
+pre-built integration for the [Actix][actix], [Hyper][hyper], [Rocket], and [Warp][warp] frameworks, including
 embedded [Graphiql][graphiql] and [GraphQL Playground][playground] for easy debugging.
 
 - [Cargo crate](https://crates.io/crates/juniper)
