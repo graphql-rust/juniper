@@ -12,7 +12,7 @@ use crate::{
     schema::model::SchemaType,
     types::base::TypeKind,
     value::{DefaultScalarValue, ParseScalarValue},
-    FieldError, Spanning,
+    FieldError,
 };
 
 /// Whether an item is deprecated, with context.
@@ -202,7 +202,7 @@ pub struct Argument<'a, S> {
     #[doc(hidden)]
     pub arg_type: Type<'a>,
     #[doc(hidden)]
-    pub default_value: Option<Spanning<InputValue<S>>>,
+    pub default_value: Option<InputValue<S>>,
 }
 
 impl<'a, S> Argument<'a, S> {
@@ -739,7 +739,7 @@ impl<'a, S> Argument<'a, S> {
     /// Overwrites any previously set default value.
     #[must_use]
     pub fn default_value(mut self, val: InputValue<S>) -> Self {
-        self.default_value = Some(Spanning::unlocated(val));
+        self.default_value = Some(val);
         self
     }
 }

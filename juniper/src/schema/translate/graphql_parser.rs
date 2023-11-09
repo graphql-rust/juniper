@@ -89,7 +89,7 @@ impl GraphQLParserTranslator {
             default_value: input
                 .default_value
                 .as_ref()
-                .map(|x| GraphQLParserTranslator::translate_value(&x.item)),
+                .map(|x| GraphQLParserTranslator::translate_value(x)),
             directives: vec![],
         }
     }

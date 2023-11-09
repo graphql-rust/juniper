@@ -89,7 +89,7 @@ impl<'a, S> Arguments<'a, S> {
                 let arg_name = arg.name.as_str();
                 if args.get(arg_name).is_none() {
                     if let Some(val) = arg.default_value.as_ref() {
-                        args.insert(arg_name, val.clone());
+                        args.insert(arg_name, Spanning::unlocated(val.clone()));
                     }
                 }
             }
