@@ -50,19 +50,19 @@ impl Span {
     }
 }
 
-/// Data structure used to wrap items with start and end markers in the input source
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+/// Data structure used to wrap items into a [`Span`].
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Spanning<T> {
-    /// The wrapped item
+    /// Wrapped item.
     pub item: T,
 
-    /// The span
+    /// [`Span`] of the wrapped item.
     pub span: Span,
 }
 
 impl<T> Spanning<T> {
     #[doc(hidden)]
-    pub fn new(span: Span, item: T) -> Spanning<T> {
+    pub fn new(span: Span, item: T) -> Self {
         Self { item, span }
     }
 
