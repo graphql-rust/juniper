@@ -59,12 +59,6 @@ search = "juniper = \\{ version = \"[^\"]+\""
 replace = "juniper = { version = \"{{version}}\""
 
 [[pre-release-replacements]]
-file = "../juniper_iron/Cargo.toml"
-exactly = 2
-search = "juniper = \\{ version = \"[^\"]+\""
-replace = "juniper = { version = \"{{version}}\""
-
-[[pre-release-replacements]]
 file = "../juniper_rocket/Cargo.toml"
 exactly = 2
 search = "juniper = \\{ version = \"[^\"]+\""

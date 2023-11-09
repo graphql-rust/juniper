@@ -5,7 +5,6 @@ members = [
     "juniper_codegen",
     "juniper",
     "juniper_hyper",
-    "juniper_iron",
     "juniper_rocket",
     "juniper_subscriptions",
     "juniper_graphql_ws",

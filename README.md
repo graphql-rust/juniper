@@ -42,7 +42,7 @@ For specific information about macros, types and the Juniper api, the
 You can also check out the [Star Wars schema][test_schema_rs] to see a complex
 example including polymorphism with traits and interfaces.
 For an example of web framework integration,
-see the [actix][actix_examples], [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples], and [warp][warp_examples] examples folders.
+see the [actix][actix_examples], [axum][axum_examples], [hyper][hyper_examples], [rocket][rocket_examples], and [warp][warp_examples] examples folders.
 
 ## Features
 
@@ -82,7 +82,6 @@ your Schemas automatically.
 - [axum][axum]
 - [hyper][hyper]
 - [rocket][rocket]
-- [iron][iron]
 - [warp][warp]
 
 ## Guides & Examples
@@ -98,16 +97,15 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
 [playground]: https://github.com/prisma/graphql-playground
-[iron]: https://github.com/iron/iron
 [graphql_spec]: https://spec.graphql.org/October2021
 [schema_language]: https://graphql.org/learn/schema/#type-language
 [schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/fixtures/starwars/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
 [actix_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_actix/examples
+[axum_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_axum/examples
 [hyper_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_hyper/examples
 [rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
-[iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [hyper]: https://hyper.rs
 [rocket]: https://rocket.rs
 [book]: https://graphql-rust.github.io
