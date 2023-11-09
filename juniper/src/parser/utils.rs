@@ -127,7 +127,7 @@ impl<T> Spanning<T, Span> {
         f(self.item).map(|item| Spanning::new(self.span, item))
     }
 
-    /// Make a Spanning that contains a borrowed item and a borrowed span.
+    /// Converts into a [`Spanning`] containing a borrowed item and a borrowed [`Span`].
     pub(crate) fn as_ref(&self) -> Spanning<&'_ T, &'_ Span> {
         Spanning {
             item: &self.item,

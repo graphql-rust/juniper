@@ -18,13 +18,14 @@ pub enum Applies<'a> {
     OnlyType(&'a str),
 }
 
+/// Shortcut for a [`Spanning`] containing a borrowed [`Span`].
 type BorrowedSpanning<'a, T> = Spanning<T, &'a Span>;
 
-/// A JSON-like value that can is used as argument in the query execution
+/// JSON-like value that can be used as an argument in the query execution.
 ///
-/// In contrast to `InputValue` these values do only contain constants,
+/// In contrast to an [`InputValue`], these values do only contain constants,
 /// meaning that variables are already resolved.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum LookAheadValue<'a, S: 'a> {
     Null,
@@ -47,41 +48,41 @@ where
         input_value: BorrowedSpanning<'a, &'a InputValue<S>>,
         vars: &'a Variables<S>,
     ) -> BorrowedSpanning<'a, Self> {
-        fn borrow_spanning<T>(span: &Span, item: T) -> BorrowedSpanning<'_, T> {
-            Spanning { item, span }
-        }
-
-        let span = &input_value.span;
-
-        match input_value.item {
-            InputValue::Null => borrow_spanning(span, LookAheadValue::Null),
-            InputValue::Scalar(ref s) => borrow_spanning(span, LookAheadValue::Scalar(s)),
-            InputValue::Enum(ref e) => borrow_spanning(span, LookAheadValue::Enum(e)),
-            InputValue::Variable(ref name) => vars
-                .get(name)
-                .map(|v| Self::from_input_value(borrow_spanning(span, v), vars))
-                .unwrap_or(borrow_spanning(span, LookAheadValue::Null)),
-            InputValue::List(ref l) => borrow_spanning(
-                span,
-                LookAheadValue::List(
+        Spanning {
+            span: input_value.span,
+            item: match input_value.item {
+                InputValue::Null => Self::Null,
+                InputValue::Scalar(s) => Self::Scalar(s),
+                InputValue::Enum(e) => Self::Enum(e),
+                InputValue::Variable(name) => vars
+                    .get(name)
+                    .map(|item| {
+                        let input_value = Spanning {
+                            span: input_value.span,
+                            item,
+                        };
+                        Self::from_input_value(input_value, vars).item
+                    })
+                    .unwrap_or(Self::Null),
+                InputValue::List(l) => Self::List(
                     l.iter()
-                        .map(|i| LookAheadValue::from_input_value(i.as_ref(), vars))
+                        .map(|i| Self::from_input_value(i.as_ref(), vars))
                         .collect(),
                 ),
-            ),
-            InputValue::Object(ref o) => borrow_spanning(
-                span,
-                LookAheadValue::Object(
+                InputValue::Object(o) => Self::Object(
                     o.iter()
                         .map(|(n, i)| {
                             (
-                                borrow_spanning(&n.span, n.item.as_str()),
-                                LookAheadValue::from_input_value(i.as_ref(), vars),
+                                Spanning {
+                                    span: &n.span,
+                                    item: n.item.as_str(),
+                                },
+                                Self::from_input_value(i.as_ref(), vars),
                             )
                         })
                         .collect(),
                 ),
-            ),
+            },
         }
     }
 }
