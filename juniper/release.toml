@@ -41,6 +41,12 @@ search = "juniper = \\{ version = \"[^\"]+\""
 replace = "juniper = { version = \"{{version}}\""
 
 [[pre-release-replacements]]
+file = "../juniper_axum/Cargo.toml"
+exactly = 2
+search = "juniper = \\{ version = \"[^\"]+\""
+replace = "juniper = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
 file = "../juniper_graphql_ws/Cargo.toml"
 exactly = 1
 search = "juniper = \\{ version = \"[^\"]+\""
