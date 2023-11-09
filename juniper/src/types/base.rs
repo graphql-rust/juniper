@@ -431,8 +431,7 @@ where
         match *selection {
             Selection::Field(Spanning {
                 item: ref f,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
@@ -461,7 +460,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     response_name,
                     f.name.item,
-                    *start_pos,
+                    span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
 
@@ -486,7 +485,7 @@ where
                     Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
 
                         if meta_field.field_type.is_non_null() {
                             return false;
@@ -498,8 +497,7 @@ where
             }
             Selection::FragmentSpread(Spanning {
                 item: ref spread,
-                start: ref start_pos,
-                ..
+                span,
             }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
@@ -533,14 +531,13 @@ where
                             merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
                     }
                 }
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
@@ -570,7 +567,7 @@ where
                                 merge_key_into(result, &k, v);
                             }
                         } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, *start_pos);
+                            sub_exec.push_error_at(e, span.start);
                         }
                     }
                 } else if !resolve_selection_set_into(

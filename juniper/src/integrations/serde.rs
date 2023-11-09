@@ -252,8 +252,8 @@ impl Serialize for Spanning<ParseError> {
         map.serialize_value(&msg)?;
 
         let mut loc = IndexMap::new();
-        loc.insert("line".to_owned(), self.start.line() + 1);
-        loc.insert("column".to_owned(), self.start.column() + 1);
+        loc.insert("line".to_owned(), self.start().line() + 1);
+        loc.insert("column".to_owned(), self.start().column() + 1);
 
         let locations = vec![loc];
         map.serialize_key("locations")?;

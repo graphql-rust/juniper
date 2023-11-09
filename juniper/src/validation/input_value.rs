@@ -58,12 +58,12 @@ fn validate_var_defs<S>(
                             r#"Variable "${}" of required type "{}" was not provided."#,
                             name.item, def.var_type.item,
                         ),
-                        &[name.start],
+                        &[name.span.start],
                     ));
                 } else if let Some(v) = values.get(name.item) {
                     errors.append(&mut unify_value(
                         name.item,
-                        &name.start,
+                        &name.span.start,
                         v,
                         &ct,
                         schema,

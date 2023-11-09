@@ -1,13 +1,15 @@
 use crate::ast::InputValue;
 
 use crate::{
-    parser::{ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token},
+    parser::{ParseError, ParseResult, Parser, ScalarToken, Spanning, Token},
     schema::{
         meta::{InputObjectMeta, MetaType},
         model::SchemaType,
     },
     value::ScalarValue,
 };
+
+use super::utils::Span;
 
 pub fn parse_value_literal<'b, S>(
     parser: &mut Parser<'_>,
@@ -56,13 +58,12 @@ where
         ) => {
             if let Spanning {
                 item: Token::Scalar(scalar),
-                start,
-                end,
+                span,
             } = parser.next_token()?
             {
                 (s.parse_fn)(scalar)
-                    .map(|s| Spanning::start_end(&start, &end, InputValue::Scalar(s)))
-                    .or_else(|_| parse_scalar_literal_by_infered_type(scalar, &start, &end, schema))
+                    .map(|s| Spanning::new(span, InputValue::Scalar(s)))
+                    .or_else(|_| parse_scalar_literal_by_infered_type(scalar, span, schema))
             } else {
                 unreachable!()
             }
@@ -76,11 +77,10 @@ where
         ) => {
             if let Spanning {
                 item: Token::Scalar(token),
-                start,
-                end,
+                span,
             } = parser.next_token()?
             {
-                parse_scalar_literal_by_infered_type(token, &start, &end, schema)
+                parse_scalar_literal_by_infered_type(token, span, schema)
             } else {
                 unreachable!()
             }
@@ -173,8 +173,8 @@ where
     let value = parse_value_literal(parser, is_const, schema, tpe)?;
 
     Ok(Spanning::start_end(
-        &key.start,
-        &value.end.clone(),
+        &key.span.start,
+        &value.span.end.clone(),
         (key.map(|s| s.to_owned()), value),
     ))
 }
@@ -183,26 +183,23 @@ fn parse_variable_literal<S>(parser: &mut Parser<'_>) -> ParseResult<InputValue<
 where
     S: ScalarValue,
 {
-    let Spanning {
-        start: start_pos, ..
-    } = parser.expect(&Token::Dollar)?;
+    let start_pos = &parser.expect(&Token::Dollar)?.span.start;
     let Spanning {
         item: name,
-        end: end_pos,
+        span: end_span,
         ..
     } = parser.expect_name()?;
 
     Ok(Spanning::start_end(
-        &start_pos,
-        &end_pos,
+        start_pos,
+        &end_span.end,
         InputValue::variable(name),
     ))
 }
 
 fn parse_scalar_literal_by_infered_type<'b, S>(
     token: ScalarToken<'_>,
-    start: &SourcePosition,
-    end: &SourcePosition,
+    span: Span,
     schema: &'b SchemaType<'b, S>,
 ) -> ParseResult<InputValue<S>>
 where
@@ -238,6 +235,6 @@ where
         }
     };
     result
-        .map(|s| Spanning::start_end(start, end, s))
-        .map_err(|e| Spanning::start_end(start, end, e))
+        .map(|s| Spanning::new(span, s))
+        .map_err(|e| Spanning::new(span, e))
 }

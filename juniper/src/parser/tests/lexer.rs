@@ -342,8 +342,8 @@ fn numbers() {
         expected: &str,
     ) {
         let parsed = tokenize_single(source);
-        assert_eq!(parsed.start, start);
-        assert_eq!(parsed.end, end);
+        assert_eq!(parsed.span.start, start);
+        assert_eq!(parsed.span.end, end);
 
         match parsed.item {
             Token::Scalar(ScalarToken::Float(actual)) => {

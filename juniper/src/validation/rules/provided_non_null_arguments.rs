@@ -38,7 +38,7 @@ where
                 {
                     ctx.report_error(
                         &field_error_message(field_name, &meta_arg.name, &meta_arg.arg_type),
-                        &[field.start],
+                        &[field.span.start],
                     );
                 }
             }
@@ -72,7 +72,7 @@ where
                             &meta_arg.name,
                             &meta_arg.arg_type,
                         ),
-                        &[directive.start],
+                        &[directive.span.start],
                     );
                 }
             }

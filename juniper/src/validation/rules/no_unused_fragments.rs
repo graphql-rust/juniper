@@ -80,7 +80,7 @@ where
 
         for fragment in &self.defined_fragments {
             if !reachable.contains(&fragment.item) {
-                ctx.report_error(&error_message(fragment.item), &[fragment.start]);
+                ctx.report_error(&error_message(fragment.item), &[fragment.span.start]);
             }
         }
     }
@@ -101,7 +101,7 @@ where
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
         self.defined_fragments
-            .insert(Spanning::start_end(&f.start, &f.end, f.item.name.item));
+            .insert(Spanning::new(f.span, f.item.name.item));
     }
 
     fn enter_fragment_spread(

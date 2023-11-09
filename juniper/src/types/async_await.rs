@@ -207,8 +207,7 @@ where
         match *selection {
             Selection::Field(Spanning {
                 item: ref f,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
@@ -237,7 +236,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     response_name,
                     f.name.item,
-                    *start_pos,
+                    span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
                 let args = Arguments::new(
@@ -252,7 +251,7 @@ where
                     &meta_field.arguments,
                 );
 
-                let pos = *start_pos;
+                let pos = span.start;
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
@@ -285,8 +284,7 @@ where
 
             Selection::FragmentSpread(Spanning {
                 item: ref spread,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
@@ -327,15 +325,14 @@ where
                             ));
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
                     }
                 }
             }
 
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
@@ -372,7 +369,7 @@ where
                                 ));
                             }
                         } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, *start_pos);
+                            sub_exec.push_error_at(e, span.start);
                         }
                     }
                 } else {
