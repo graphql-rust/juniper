@@ -244,7 +244,8 @@ where
                         m.item
                             .iter()
                             .filter_map(|(k, v)| {
-                                v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
+                                let val = v.item.clone().into_const(exec_vars)?;
+                                Some((k.item, Spanning::new(v.span, val)))
                             })
                             .collect()
                     }),

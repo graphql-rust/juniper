@@ -68,13 +68,13 @@ pub enum TypeKind {
 /// Field argument container
 #[derive(Debug)]
 pub struct Arguments<'a, S = DefaultScalarValue> {
-    args: Option<IndexMap<&'a str, InputValue<S>>>,
+    args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
 }
 
 impl<'a, S> Arguments<'a, S> {
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<IndexMap<&'a str, InputValue<S>>>,
+        mut args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
         meta_args: &'a Option<Vec<Argument<S>>>,
     ) -> Self
     where
@@ -89,7 +89,7 @@ impl<'a, S> Arguments<'a, S> {
                 let arg_name = arg.name.as_str();
                 if args.get(arg_name).is_none() {
                     if let Some(val) = arg.default_value.as_ref() {
-                        args.insert(arg_name, val.clone());
+                        args.insert(arg_name, Spanning::unlocated(val.clone()));
                     }
                 }
             }
@@ -117,9 +117,15 @@ impl<'a, S> Arguments<'a, S> {
         self.args
             .as_ref()
             .and_then(|args| args.get(name))
+            .map(|spanning| &spanning.item)
             .map(InputValue::convert)
             .transpose()
             .map_err(IntoFieldError::into_field_error)
+    }
+
+    /// Gets a direct reference to the [`Spanning`] argument [`InputValue`].
+    pub fn get_input_value(&self, name: &str) -> Option<&Spanning<InputValue<S>>> {
+        self.args.as_ref().and_then(|args| args.get(name))
     }
 }
 
@@ -472,7 +478,8 @@ where
                             m.item
                                 .iter()
                                 .filter_map(|(k, v)| {
-                                    v.item.clone().into_const(exec_vars).map(|v| (k.item, v))
+                                    let val = v.item.clone().into_const(exec_vars)?;
+                                    Some((k.item, Spanning::new(v.span, val)))
                                 })
                                 .collect()
                         }),
