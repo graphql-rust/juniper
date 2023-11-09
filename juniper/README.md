@@ -58,6 +58,7 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 ### Web servers
 
 - [`actix-web`] ([`juniper_actix`] crate)
+- [`axum`] ([`juniper_axum`] crate)
 - [`hyper`] ([`juniper_hyper`] crate)
 - [`iron`] ([`juniper_iron`] crate)
 - [`rocket`] ([`juniper_rocket`] crate)
@@ -81,11 +82,13 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 
 
 [`actix-web`]: https://docs.rs/actix-web
+[`axum`]: https://docs.rs/axum
 [`bigdecimal`]: https://docs.rs/bigdecimal
 [`bson`]: https://docs.rs/bson
 [`chrono`]: https://docs.rs/chrono
 [`chrono-tz`]: https://docs.rs/chrono-tz
 [`juniper_actix`]: https://docs.rs/juniper_actix
+[`juniper_axum`]: https://docs.rs/juniper_axum
 [`juniper_hyper`]: https://docs.rs/juniper_hyper
 [`juniper_iron`]: https://docs.rs/juniper_iron
 [`juniper_rocket`]: https://docs.rs/juniper_rocket

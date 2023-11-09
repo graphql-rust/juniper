@@ -37,6 +37,7 @@ where
     pub operation_name: Option<String>,
 
     /// Optional variables to execute the GraphQL operation with.
+    // TODO: Use `Variables` instead of `InputValue`?
     #[serde(bound(
         deserialize = "InputValue<S>: Deserialize<'de>",
         serialize = "InputValue<S>: Serialize",
@@ -238,11 +239,11 @@ where
     /// A batch operation request.
     ///
     /// Empty batch is considered as invalid value, so cannot be deserialized.
-    #[serde(deserialize_with = "deserialize_non_empty_vec")]
+    #[serde(deserialize_with = "deserialize_non_empty_batch")]
     Batch(Vec<GraphQLRequest<S>>),
 }
 
-fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+fn deserialize_non_empty_batch<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
     D: de::Deserializer<'de>,
     T: Deserialize<'de>,
@@ -251,7 +252,10 @@ where
 
     let v = Vec::<T>::deserialize(deserializer)?;
     if v.is_empty() {
-        Err(D::Error::invalid_length(0, &"a positive integer"))
+        Err(D::Error::invalid_length(
+            0,
+            &"non-empty batch of GraphQL requests",
+        ))
     } else {
         Ok(v)
     }
@@ -403,6 +407,9 @@ pub mod tests {
         println!("  - test_get_with_variables");
         test_get_with_variables(integration);
 
+        println!("  - test_post_with_variables");
+        test_post_with_variables(integration);
+
         println!("  - test_simple_post");
         test_simple_post(integration);
 
@@ -501,13 +508,48 @@ pub mod tests {
                                 "NEW_HOPE",
                                 "EMPIRE",
                                 "JEDI"
-                                ],
-                                "homePlanet": "Tatooine",
-                                "name": "Luke Skywalker",
-                                "id": "1000"
-                            }
+                            ],
+                            "homePlanet": "Tatooine",
+                            "name": "Luke Skywalker",
+                            "id": "1000"
                         }
-                    }"#
+                    }
+                }"#
+            )
+            .expect("Invalid JSON constant in test")
+        );
+    }
+
+    fn test_post_with_variables<T: HttpIntegration>(integration: &T) {
+        let response = integration.post_json(
+            "/",
+            r#"{
+                "query":
+                    "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }",
+                "variables": {"id": "1000"}
+            }"#,
+        );
+
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.content_type, "application/json");
+
+        assert_eq!(
+            unwrap_json_response(&response),
+            serde_json::from_str::<Json>(
+                r#"{
+                    "data": {
+                        "human": {
+                            "appearsIn": [
+                                "NEW_HOPE",
+                                "EMPIRE",
+                                "JEDI"
+                            ],
+                            "homePlanet": "Tatooine",
+                            "name": "Luke Skywalker",
+                            "id": "1000"
+                        }
+                    }
+                }"#
             )
             .expect("Invalid JSON constant in test")
         );
@@ -752,7 +794,7 @@ pub mod tests {
 
         #[allow(missing_docs)]
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
-            println!("Running `graphql-ws` test suite for integration");
+            println!("Running `graphql-transport-ws` test suite for integration");
 
             println!("  - graphql_ws::test_simple_subscription");
             test_simple_subscription(integration).await;

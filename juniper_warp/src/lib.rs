@@ -6,7 +6,7 @@
 use std::{collections::HashMap, str, sync::Arc};
 
 use anyhow::anyhow;
-use futures::{FutureExt as _, TryFutureExt};
+use futures::{FutureExt as _, TryFutureExt as _};
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
@@ -341,14 +341,12 @@ fn playground_response(
 pub mod subscriptions {
     use std::{convert::Infallible, fmt, sync::Arc};
 
-    use juniper::{
-        futures::{
-            future::{self, Either},
-            sink::SinkExt,
-            stream::StreamExt,
-        },
-        GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
+    use futures::{
+        future::{self, Either},
+        sink::SinkExt as _,
+        stream::StreamExt as _,
     };
+    use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{graphql_transport_ws, graphql_ws};
     use warp::{filters::BoxedFilter, reply::Reply, Filter as _};
 
