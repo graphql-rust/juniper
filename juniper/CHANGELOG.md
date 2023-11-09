@@ -53,7 +53,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
 - Upgraded [GraphiQL] to 3.0.9 version (requires new [`graphql-transport-ws` GraphQL over WebSocket Protocol] integration on server, see `juniper_warp/examples/subscription.rs`). ([#1188], [#1193], [#1204])
 - Made `LookAheadMethods::children()` method to return slice instead of `Vec`. ([#1200])
-- Abstract `(start, end)` from the `Spanning<T>` struct into separate struct `Span`. ([#1207])
+- Abstracted `Spanning::start` and `Spanning::end` fields into separate struct `Span`. ([#1207])
 
 ### Added
 

@@ -8,44 +8,41 @@ pub struct SourcePosition {
     col: usize,
 }
 
-/// A "span" is a range of characters in the input source, starting at the
-/// character pointed by the `start` field and ending just before the `end`
-/// marker.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+/// Range of characters in the input source, starting at the character pointed by the `start` field
+/// and ending just before the `end` marker.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Span {
-    /// Start position of the span
+    /// Start position of this [`Span`].
     pub start: SourcePosition,
 
-    /// End position of the span
+    /// End position of this [`Span`].
     ///
-    /// This points to the first source position _after_ the span.
+    /// > __NOTE__: This points to the first source position __after__ this [`Span`].
     pub end: SourcePosition,
 }
 
 impl Span {
     #[doc(hidden)]
-    pub fn new(start: &SourcePosition, end: &SourcePosition) -> Span {
+    #[inline]
+    pub fn zero_width(pos: SourcePosition) -> Self {
         Self {
-            start: *start,
-            end: *end,
+            start: pos,
+            end: pos,
         }
     }
 
     #[doc(hidden)]
-    pub fn zero_width(pos: &SourcePosition) -> Span {
-        Self::new(pos, pos)
-    }
-
-    #[doc(hidden)]
-    pub fn single_width(pos: &SourcePosition) -> Span {
-        let mut end = *pos;
+    #[inline]
+    pub fn single_width(pos: SourcePosition) -> Self {
+        let mut end = pos;
         end.advance_col();
 
-        Self { start: *pos, end }
+        Self { start: pos, end }
     }
 
     #[doc(hidden)]
-    pub fn unlocated() -> Span {
+    #[inline]
+    pub fn unlocated() -> Self {
         Self {
             start: SourcePosition::new_origin(),
             end: SourcePosition::new_origin(),
@@ -70,25 +67,31 @@ impl<T> Spanning<T> {
     }
 
     #[doc(hidden)]
-    pub fn zero_width(pos: &SourcePosition, item: T) -> Spanning<T> {
+    pub fn zero_width(&pos: &SourcePosition, item: T) -> Spanning<T> {
         Self::new(Span::zero_width(pos), item)
     }
 
     #[doc(hidden)]
-    pub fn single_width(pos: &SourcePosition, item: T) -> Spanning<T> {
+    pub fn single_width(&pos: &SourcePosition, item: T) -> Spanning<T> {
         Self::new(Span::single_width(pos), item)
     }
 
     #[doc(hidden)]
-    pub fn start_end(start: &SourcePosition, end: &SourcePosition, item: T) -> Spanning<T> {
-        Self::new(Span::new(start, end), item)
+    pub fn start_end(&start: &SourcePosition, &end: &SourcePosition, item: T) -> Spanning<T> {
+        Self::new(Span { start, end }, item)
     }
 
     #[doc(hidden)]
     #[allow(clippy::self_named_constructors)]
     pub fn spanning(v: Vec<Spanning<T>>) -> Option<Spanning<Vec<Spanning<T>>>> {
         if let (Some(start), Some(end)) = (v.first().map(|s| s.span), v.last().map(|s| s.span)) {
-            Some(Spanning::new(Span::new(&start.start, &end.end), v))
+            Some(Spanning::new(
+                Span {
+                    start: start.start,
+                    end: end.end,
+                },
+                v,
+            ))
         } else {
             None
         }
@@ -99,14 +102,18 @@ impl<T> Spanning<T> {
         Self::new(Span::unlocated(), item)
     }
 
-    #[doc(hidden)]
-    pub fn start(&self) -> &SourcePosition {
-        &self.span.start
+    /// Returns start position of the item.
+    #[inline]
+    pub fn start(&self) -> SourcePosition {
+        self.span.start
     }
 
-    #[doc(hidden)]
-    pub fn end(&self) -> &SourcePosition {
-        &self.span.end
+    /// Returns end position of the item.
+    ///
+    /// > __NOTE__: This points to the first source position __after__ the item.
+    #[inline]
+    pub fn end(&self) -> SourcePosition {
+        self.span.end
     }
 
     /// Modify the contents of the spanned item.

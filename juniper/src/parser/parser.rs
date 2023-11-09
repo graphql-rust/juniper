@@ -124,7 +124,7 @@ impl<'a> Parser<'a> {
             Ok(Some(self.next_token()?))
         } else if self.peek().item == Token::EndOfFile {
             Err(Spanning::zero_width(
-                self.peek().start(),
+                &self.peek().span.start,
                 ParseError::UnexpectedEndOfFile,
             ))
         } else {
@@ -173,7 +173,7 @@ impl<'a> Parser<'a> {
             items.push(parser(self)?);
 
             if let Some(end_spanning) = self.skip(closing)? {
-                return Ok(Spanning::start_end(start_pos, end_spanning.end(), items));
+                return Ok(Spanning::start_end(start_pos, &end_spanning.end(), items));
             }
         }
     }
@@ -196,7 +196,7 @@ impl<'a> Parser<'a> {
             items.push(parser(self)?);
 
             if let Some(end_spanning) = self.skip(closing)? {
-                return Ok(Spanning::start_end(start_pos, end_spanning.end(), items));
+                return Ok(Spanning::start_end(start_pos, &end_spanning.end(), items));
             }
         }
     }

@@ -264,7 +264,7 @@ where
                 &start_pos.clone(),
                 &directives
                     .as_ref()
-                    .map_or(frag_name.end(), Spanning::end)
+                    .map_or(&frag_name.span.end, |s| &s.span.end)
                     .clone(),
                 FragmentSpread {
                     name: frag_name,
@@ -326,10 +326,10 @@ where
         &alias.as_ref().unwrap_or(&name).span.start,
         &selection_set
             .as_ref()
-            .map(Spanning::end)
-            .or_else(|| directives.as_ref().map(Spanning::end))
-            .or_else(|| arguments.as_ref().map(Spanning::end))
-            .unwrap_or(name.end())
+            .map(|s| &s.span.end)
+            .or_else(|| directives.as_ref().map(|s| &s.span.end))
+            .or_else(|| arguments.as_ref().map(|s| &s.span.end))
+            .unwrap_or(&name.span.end)
             .clone(),
         Field {
             alias,
@@ -449,10 +449,10 @@ where
         &start_pos,
         &default_value
             .as_ref()
-            .map_or(var_type.end(), Spanning::end)
+            .map_or(&var_type.span.end, |s| &s.span.end)
             .clone(),
         (
-            Spanning::start_end(&start_pos, var_name.end(), var_name.item),
+            Spanning::start_end(&start_pos, &var_name.span.end, var_name.item),
             VariableDefinition {
                 var_type,
                 default_value,
@@ -501,7 +501,10 @@ where
 
     Ok(Spanning::start_end(
         &start_pos,
-        &arguments.as_ref().map_or(name.end(), Spanning::end).clone(),
+        &arguments
+            .as_ref()
+            .map_or(&name.span.end, |s| &s.span.end)
+            .clone(),
         Directive { name, arguments },
     ))
 }
