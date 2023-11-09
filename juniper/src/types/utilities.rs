@@ -72,11 +72,8 @@ where
                         let mut remaining_required_fields = input_fields
                             .iter()
                             .filter_map(|f| {
-                                if f.arg_type.is_non_null() && f.default_value.is_none() {
-                                    Some(&f.name)
-                                } else {
-                                    None
-                                }
+                                (f.arg_type.is_non_null() && f.default_value.is_none())
+                                    .then_some(&f.name)
                             })
                             .collect::<HashSet<_>>();
 
