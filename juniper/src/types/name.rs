@@ -6,6 +6,7 @@ use std::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary1", derive(arbitrary::Arbitrary))]
 pub struct Name(String);
 
 impl Name {
