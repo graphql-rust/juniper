@@ -12,7 +12,7 @@ GraphQL schemas as convenient as possible as Rust will allow.
 
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the [Hyper][hyper], [Iron][iron], [Rocket], and [Warp][warp] frameworks, including
+pre-built integration for the [Hyper][hyper], [Rocket], and [Warp][warp] frameworks, including
 embedded [Graphiql][graphiql] for easy debugging.
 
 - [Cargo crate](https://crates.io/crates/juniper)
@@ -47,7 +47,6 @@ your Schemas automatically.
 
 - [hyper][hyper]
 - [rocket][rocket]
-- [iron][iron]
 - [warp][warp]
 
 ## API Stability
@@ -56,13 +55,11 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
-[iron]: https://github.com/iron/iron
 [graphql_spec]: https://spec.graphql.org/October2021
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
 [hyper_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_hyper/examples
 [rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
-[iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [hyper]: https://hyper.rs
 [rocket]: https://rocket.rs
 [book]: https://graphql-rust.github.io

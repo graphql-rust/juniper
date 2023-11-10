@@ -152,7 +152,6 @@ jobs:
           - juniper_actix
           - juniper_axum
           - juniper_hyper
-          #- juniper_iron
           - juniper_rocket
           - juniper_warp
         os:
@@ -205,7 +204,6 @@ jobs:
           - juniper_actix
           - juniper_axum
           - juniper_hyper
-          - juniper_iron
           - juniper_rocket
           - juniper_warp
         os:
@@ -332,7 +330,6 @@ jobs:
           - juniper_actix
           - juniper_axum
           - juniper_hyper
-          - juniper_iron
           - juniper_rocket
           - juniper_warp
     runs-on: ubuntu-latest
