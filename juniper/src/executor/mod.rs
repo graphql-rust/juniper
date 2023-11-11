@@ -43,6 +43,9 @@ pub use self::{
     owned_executor::OwnedExecutor,
 };
 
+/// TODO: Flatten re-export
+pub mod look_ahead_lazy;
+
 mod look_ahead;
 mod owned_executor;
 
@@ -740,6 +743,57 @@ where
                     }
                 }
                 ret
+            })
+    }
+
+    /// Construct a lookahead selection for the current selection.
+    ///
+    /// This allows seeing the whole selection and perform operations
+    /// affecting the children.
+    pub fn look_ahead_lazy(&'a self) -> look_ahead_lazy::LookAheadSelection<'a, S> {
+        let field_name = match *self.field_path {
+            FieldPath::Field(x, ..) => x,
+            FieldPath::Root(_) => unreachable!(),
+        };
+        self.parent_selection_set
+            .and_then(|p| {
+                // Search the parent's fields to find this field within the set
+                p.iter().find_map(|x| {
+                    match x {
+                        Selection::Field(ref field) => {
+                            let field = &field.item;
+                            // TODO: support excludes.
+                            let name = field.name.item;
+                            let alias = field.alias.as_ref().map(|a| a.item);
+
+                            if alias.unwrap_or(name) == field_name {
+                                Some(look_ahead_lazy::LookAheadSelection {
+                                    source: look_ahead_lazy::SelectionSource::Field(field),
+                                    applies_for: look_ahead_lazy::Applies::All,
+                                    vars: self.variables,
+                                    fragments: self.fragments,
+                                })
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    }
+                })
+            })
+            .unwrap_or({
+                // We didn't find a field in the parent's selection matching
+                // this field, which means we're inside a FragmentSpread
+
+                look_ahead_lazy::LookAheadSelection {
+                    source: look_ahead_lazy::SelectionSource::Spread {
+                        field_name,
+                        set: self.current_selection_set,
+                    },
+                    applies_for: look_ahead_lazy::Applies::All,
+                    vars: self.variables,
+                    fragments: self.fragments,
+                }
             })
     }
 
