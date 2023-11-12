@@ -205,7 +205,7 @@ impl<'a, S: ScalarValue> Default for LookAheadChildren<'a, S> {
 }
 
 impl<'a, S: ScalarValue> LookAheadChildren<'a, S> {
-    /// Returns the number children.
+    /// Returns the number of children present.
     pub fn len(&self) -> usize {
         self.children.len()
     }
@@ -306,7 +306,7 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
             .unwrap_or_else(|| self.field_original_name())
     }
 
-    /// Returns the top level arguments from the current selection.
+    /// Returns the top level arguments from the current selection, if present.
     pub fn arguments(&self) -> Option<LookAheadArguments<'a, S>> {
         match self.source {
             SelectionSource::Field(field) => {
