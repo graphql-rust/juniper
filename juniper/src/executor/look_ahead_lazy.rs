@@ -341,14 +341,14 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
         };
         match &self.source {
             SelectionSource::Field(field) => {
-                builder.visit_field_children(field, Applies::All);
+                builder.visit_parent_field(field, Applies::All);
             }
             SelectionSource::Spread {
                 set: Some(selections),
                 ..
             } => {
                 for selection in selections.iter() {
-                    builder.visit_selection_children(selection, Applies::All);
+                    builder.visit_parent_selection(selection, Applies::All);
                 }
             }
             SelectionSource::Spread { set: None, .. } => {}
@@ -375,24 +375,14 @@ struct ChildrenBuilder<'a, 'f, S: ScalarValue> {
 }
 
 impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
-    /// Add the children of the given field
-    fn visit_field_children(&mut self, field: &'a Field<'a, S>, applies_for: Applies<'a>) {
-        if let Some(selection_set) = &field.selection_set {
-            for child in selection_set {
-                self.visit_child(child, applies_for);
-            }
-        }
-    }
-
-    /// Add the children of a given selection
-    fn visit_selection_children(
+    fn visit_parent_selection(
         &mut self,
         selection: &'a Selection<'a, S>,
         applies_for: Applies<'a>,
     ) {
         match selection {
             Selection::Field(field) => {
-                self.visit_field_children(&field.item, applies_for);
+                self.visit_parent_field(&field.item, applies_for);
             }
             Selection::FragmentSpread(fragment) => {
                 let f = self
@@ -400,13 +390,21 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
                     .get(&fragment.item.name.item)
                     .expect("a fragment");
                 for c in f.selection_set.iter() {
-                    self.visit_selection_children(c, applies_for);
+                    self.visit_parent_selection(c, applies_for);
                 }
             }
             Selection::InlineFragment(inline) => {
                 for c in inline.item.selection_set.iter() {
-                    self.visit_selection_children(c, applies_for);
+                    self.visit_parent_selection(c, applies_for);
                 }
+            }
+        }
+    }
+
+    fn visit_parent_field(&mut self, field: &'a Field<'a, S>, applies_for: Applies<'a>) {
+        if let Some(selection_set) = &field.selection_set {
+            for child in selection_set {
+                self.visit_child(child, applies_for);
             }
         }
     }
