@@ -50,12 +50,9 @@ impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
                     .and_then(|vars| vars.get(name))
                     .map(|item| Self::from_input_value(item, span, vars).item)
                     .unwrap_or(Self::Null),
-                InputValue::List(input_list) => Self::List(LookAheadList {
-                    input_list: Some(input_list),
-                    vars,
-                }),
+                InputValue::List(input_list) => Self::List(LookAheadList { input_list, vars }),
                 InputValue::Object(input_object) => Self::Object(LookAheadObject {
-                    input_object: Some(input_object.as_slice()),
+                    input_object: input_object.as_slice(),
                     vars,
                 }),
             },
@@ -66,25 +63,24 @@ impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
 
 /// A JSON-like list that can be used as an argument in the query execution.
 #[derive(Clone, Copy, Debug)]
-pub struct LookAheadList<'a, S: 'a> {
-    input_list: Option<&'a [Spanning<InputValue<S>>]>,
+pub struct LookAheadList<'a, S> {
+    input_list: &'a [Spanning<InputValue<S>>],
     vars: Option<&'a Variables<S>>,
 }
 
-impl<'a, S: ScalarValue + 'a> LookAheadList<'a, S> {
+impl<'a, S: ScalarValue> LookAheadList<'a, S> {
     /// Returns an iterator over the list's elements.
     pub fn iter(&self) -> impl Iterator<Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>> + '_ {
         self.input_list
             .iter()
-            .flat_map(|list| list.iter())
             .map(|val| LookAheadValue::from_input_value(&val.item, &val.span, self.vars))
     }
 }
 
-impl<'a, S: 'a> Default for LookAheadList<'a, S> {
+impl<'a, S> Default for LookAheadList<'a, S> {
     fn default() -> Self {
         Self {
-            input_list: None,
+            input_list: &[],
             vars: None,
         }
     }
@@ -98,9 +94,8 @@ impl<'a, S: ScalarValue> PartialEq for LookAheadList<'a, S> {
 
 /// A JSON-like object that can be used as an argument in the query execution.
 #[derive(Clone, Copy, Debug)]
-pub struct LookAheadObject<'a, S: 'a> {
-    #[allow(clippy::type_complexity)]
-    input_object: Option<&'a [(Spanning<String>, Spanning<InputValue<S>>)]>,
+pub struct LookAheadObject<'a, S> {
+    input_object: &'a [(Spanning<String>, Spanning<InputValue<S>>)],
     vars: Option<&'a Variables<S>>,
 }
 
@@ -114,25 +109,22 @@ impl<'a, S: ScalarValue + 'a> LookAheadObject<'a, S> {
             BorrowedSpanning<'a, LookAheadValue<'a, S>>,
         ),
     > + '_ {
-        self.input_object
-            .iter()
-            .flat_map(|object| object.iter())
-            .map(|(key, val)| {
-                (
-                    Spanning {
-                        span: &key.span,
-                        item: key.item.as_str(),
-                    },
-                    LookAheadValue::from_input_value(&val.item, &val.span, self.vars),
-                )
-            })
+        self.input_object.iter().map(|(key, val)| {
+            (
+                Spanning {
+                    span: &key.span,
+                    item: key.item.as_str(),
+                },
+                LookAheadValue::from_input_value(&val.item, &val.span, self.vars),
+            )
+        })
     }
 }
 
-impl<'a, S: 'a> Default for LookAheadObject<'a, S> {
+impl<'a, S> Default for LookAheadObject<'a, S> {
     fn default() -> Self {
         Self {
-            input_object: None,
+            input_object: &[],
             vars: None,
         }
     }
@@ -146,7 +138,7 @@ impl<'a, S: ScalarValue> PartialEq for LookAheadObject<'a, S> {
 
 /// An argument passed into the query
 #[derive(Clone, Copy, Debug)]
-pub struct LookAheadArgument<'a, S: 'a> {
+pub struct LookAheadArgument<'a, S> {
     name: &'a Spanning<&'a str>,
     input_value: &'a Spanning<InputValue<S>>,
     vars: &'a Variables<S>,
@@ -181,7 +173,7 @@ impl<'a, S: ScalarValue> LookAheadArgument<'a, S> {
 
 /// The arguments passed into a query.
 #[derive(Copy, Clone, Debug)]
-pub struct LookAheadArguments<'a, S: 'a> {
+pub struct LookAheadArguments<'a, S> {
     arguments: &'a Arguments<'a, S>,
     vars: &'a Variables<S>,
 }
@@ -272,13 +264,26 @@ pub(super) enum SelectionSource<'a, S: ScalarValue> {
 /// A selection performed by a query
 #[derive(Clone, Copy, Debug)]
 pub struct LookAheadSelection<'a, S: ScalarValue + 'a> {
-    pub(super) source: SelectionSource<'a, S>,
-    pub(super) applies_for: Applies<'a>,
-    pub(super) vars: &'a Variables<S>,
-    pub(super) fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+    source: SelectionSource<'a, S>,
+    applies_for: Applies<'a>,
+    vars: &'a Variables<S>,
+    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
 }
 
 impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
+    pub(super) fn new(
+        source: SelectionSource<'a, S>,
+        vars: &'a Variables<S>,
+        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+    ) -> Self {
+        Self {
+            source,
+            applies_for: Applies::All,
+            vars,
+            fragments,
+        }
+    }
+
     /// Returns the original name of the field, represented by the current selection.
     pub fn field_original_name(&self) -> &'a str {
         match self.source {
@@ -371,11 +376,7 @@ struct ChildrenBuilder<'a, 'f, S: ScalarValue> {
 
 impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
     /// Add the children of the given field
-    pub(super) fn visit_field_children(
-        &mut self,
-        field: &'a Field<'a, S>,
-        applies_for: Applies<'a>,
-    ) {
+    fn visit_field_children(&mut self, field: &'a Field<'a, S>, applies_for: Applies<'a>) {
         if let Some(selection_set) = &field.selection_set {
             for child in selection_set {
                 self.visit_child(child, applies_for);
@@ -384,7 +385,7 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
     }
 
     /// Add the children of a given selection
-    pub(super) fn visit_selection_children(
+    fn visit_selection_children(
         &mut self,
         selection: &'a Selection<'a, S>,
         applies_for: Applies<'a>,
@@ -410,11 +411,7 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
         }
     }
 
-    pub(super) fn visit_child(
-        &mut self,
-        selection: &'a Selection<'a, S>,
-        applies_for: Applies<'a>,
-    ) {
+    fn visit_child(&mut self, selection: &'a Selection<'a, S>, applies_for: Applies<'a>) {
         match selection {
             Selection::Field(field) => {
                 let field = &field.item;
