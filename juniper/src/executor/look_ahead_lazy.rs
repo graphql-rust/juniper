@@ -70,10 +70,11 @@ pub struct LookAheadList<'a, S> {
 
 impl<'a, S: ScalarValue> LookAheadList<'a, S> {
     /// Returns an iterator over the list's elements.
-    pub fn iter(&self) -> impl Iterator<Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>> {
+        let vars = self.vars;
         self.input_list
             .iter()
-            .map(|val| LookAheadValue::from_input_value(&val.item, &val.span, self.vars))
+            .map(move |val| LookAheadValue::from_input_value(&val.item, &val.span, vars))
     }
 }
 
@@ -108,14 +109,15 @@ impl<'a, S: ScalarValue + 'a> LookAheadObject<'a, S> {
             BorrowedSpanning<'a, &'a str>,
             BorrowedSpanning<'a, LookAheadValue<'a, S>>,
         ),
-    > + '_ {
-        self.input_object.iter().map(|(key, val)| {
+    > {
+        let vars = self.vars;
+        self.input_object.iter().map(move |(key, val)| {
             (
                 Spanning {
                     span: &key.span,
                     item: key.item.as_str(),
                 },
-                LookAheadValue::from_input_value(&val.item, &val.span, self.vars),
+                LookAheadValue::from_input_value(&val.item, &val.span, vars),
             )
         })
     }
@@ -180,14 +182,15 @@ pub struct LookAheadArguments<'a, S> {
 
 impl<'a, S> LookAheadArguments<'a, S> {
     /// Returns an iterator over the arguments.
-    pub fn iter(&self) -> impl Iterator<Item = LookAheadArgument<'a, S>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = LookAheadArgument<'a, S>> {
+        let vars = self.vars;
         self.arguments
             .items
             .iter()
             .map(|(name, input_value)| LookAheadArgument {
                 name,
                 input_value,
-                vars: self.vars,
+                vars,
             })
     }
 }
@@ -323,7 +326,7 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
     }
 
     /// Get the top level argument with a given name from the current selection
-    pub fn argument(&self, name: &str) -> Option<LookAheadArgument<'_, S>> {
+    pub fn argument(&self, name: &str) -> Option<LookAheadArgument<'a, S>> {
         self.arguments()?.iter().find(|arg| arg.name() == name)
     }
 
