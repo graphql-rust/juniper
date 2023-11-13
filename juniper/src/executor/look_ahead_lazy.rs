@@ -322,6 +322,11 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
         }
     }
 
+    /// Get the top level argument with a given name from the current selection
+    pub fn argument(&self, name: &str) -> Option<LookAheadArgument<'_, S>> {
+        self.arguments()?.iter().find(|arg| arg.name() == name)
+    }
+
     /// Returns the children from the current selection.
     pub fn children(&self) -> LookAheadChildren<'a, S> {
         self.build_children(Applies::All)
