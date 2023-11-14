@@ -1247,7 +1247,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// However, this requires to explicitly parametrize over [`ScalarValue`], as [`Executor`] does so.
 ///
 /// ```rust
-/// # use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _, ScalarValue};
+/// # use juniper::{graphql_interface, graphql_object, Executor, ScalarValue};
 /// #
 /// #[graphql_interface]
 /// // NOTICE: Specifying `ScalarValue` as existing type parameter.
@@ -1754,7 +1754,7 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// [`Executor`] does so.
 ///
 /// ```
-/// # use juniper::{graphql_object, Executor, GraphQLObject, LookAheadMethods as _, ScalarValue};
+/// # use juniper::{graphql_object, Executor, GraphQLObject, ScalarValue};
 /// #
 /// struct Human {
 ///     name: String,

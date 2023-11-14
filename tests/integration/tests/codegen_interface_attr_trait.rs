@@ -2655,8 +2655,6 @@ mod inferred_custom_context_from_field {
 }
 
 mod executor {
-    use juniper::LookAheadMethods as _;
-
     use super::*;
 
     #[graphql_interface(for = [Human, Droid], scalar = S)]
