@@ -1,5 +1,7 @@
 //! Provides GraphQLType implementations for some external types
 
+#[cfg(feature = "anyhow")]
+pub mod anyhow;
 #[cfg(feature = "bigdecimal")]
 pub mod bigdecimal;
 #[cfg(feature = "bson")]

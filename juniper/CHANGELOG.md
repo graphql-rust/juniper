@@ -69,6 +69,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `js` [Cargo feature] enabling `js-sys` and `wasm-bindgen` support for `wasm32-unknown-unknown` target. ([#1118], [#1147])
 - `LookAheadMethods::applies_for()` method. ([#1138], [#1145])
 - `LookAheadMethods::field_original_name()` and `LookAheadMethods::field_alias()` methods. ([#1199])
+- [`anyhow` crate] integration behind `anyhow` and `backtrace` [Cargo feature]s. ([#1215], [#988])
 
 ### Changed
 
@@ -98,6 +99,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#979]: /../../pull/979
 [#985]: /../../pull/985
 [#987]: /../../pull/987
+[#988]: /../../issues/988
 [#996]: /../../pull/996
 [#1000]: /../../issues/1000
 [#1001]: /../../pull/1001
@@ -137,6 +139,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1207]: /../../pull/1207
 [#1208]: /../../pull/1208
 [#1209]: /../../pull/1209
+[#1215]: /../../pull/1215
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
@@ -150,6 +153,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
 
 
 
+[`anyhow` crate]: https://docs.rs/anyhow
 [`bigdecimal` crate]: https://docs.rs/bigdecimal
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
