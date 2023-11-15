@@ -99,6 +99,8 @@ jobs:
       matrix:
         include:
           - { feature: <none>, crate: juniper }
+          - { feature: anyhow, crate: juniper }
+          - { feature: anyhow,backtrace, crate: juniper }
           - { feature: bigdecimal, crate: juniper }
           - { feature: bson, crate: juniper }
           - { feature: chrono, crate: juniper }
