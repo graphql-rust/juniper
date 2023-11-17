@@ -127,6 +127,8 @@ where
     };
 
     Ok(quote! {
+        // Omit enforcing `# Errors` and `# Panics` sections in GraphQL descriptions.
+        #[allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
         #ast
         #generated_code
     })

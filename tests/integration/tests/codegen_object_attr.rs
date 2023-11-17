@@ -1,5 +1,9 @@
 //! Tests for `#[graphql_object]` macro.
 
+// Assert that `#[graphql_object]` macro placed on a `impl` stops Clippy from enforcing `# Errors`
+// and `# Panics` sections in GraphQL descriptions.
+#![deny(clippy::missing_errors_doc, clippy::missing_panics_doc)]
+
 pub mod common;
 
 use juniper::{

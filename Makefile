@@ -55,6 +55,7 @@ cargo.fmt:
 
 cargo.lint:
 	cargo clippy --workspace --all-features -- -D warnings
+	cargo clippy -p juniper_integration_tests --tests --all-features -- -D warnings
 
 
 # Release Rust crate.

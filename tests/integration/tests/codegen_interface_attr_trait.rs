@@ -1,5 +1,9 @@
 //! Tests for `#[graphql_interface]` macro placed on a trait.
 
+// Assert that `#[graphql_interface]` macro placed on a trait stops Clippy from enforcing `# Errors`
+// and `# Panics` sections in GraphQL descriptions.
+#![deny(clippy::missing_errors_doc, clippy::missing_panics_doc)]
+
 pub mod common;
 
 use juniper::{
@@ -2370,6 +2374,7 @@ mod explicit_custom_context {
 
     #[graphql_object(impl = CharacterValue, context = CustomContext)]
     impl Droid {
+        #[allow(clippy::needless_lifetimes)] // intentionally
         async fn id<'a>(&'a self) -> &'a str {
             &self.id
         }
@@ -2378,6 +2383,7 @@ mod explicit_custom_context {
             &self.primary_function
         }
 
+        #[allow(clippy::needless_lifetimes)] // intentionally
         async fn info<'b>(&'b self) -> &'b str {
             &self.primary_function
         }
@@ -2678,6 +2684,7 @@ mod executor {
             &self.home_planet
         }
 
+        #[allow(clippy::needless_lifetimes)] // intentionally
         async fn info<'b>(&'b self, _arg: prelude::Option<i32>) -> &'b str {
             &self.home_planet
         }

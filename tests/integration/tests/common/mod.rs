@@ -41,6 +41,17 @@ pub mod util {
     /// Extracts a single next value from the result returned by
     /// [`juniper::resolve_into_stream()`] and transforms it into a regular
     /// [`Value`].
+    ///
+    /// # Errors
+    ///
+    /// Propagates the `input` [`GraphQLError`], if any.
+    ///
+    /// # Panics
+    ///
+    /// If the `input` [`Value`] doesn't represent a [`Value::Object`] containing a [`Stream`].
+    ///
+    /// [`Stream`]: futures::Stream
+    #[allow(clippy::type_complexity)]
     pub async fn extract_next<S: ScalarValue>(
         input: Result<(Value<ValuesStream<'_, S>>, Vec<ExecutionError<S>>), GraphQLError>,
     ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError> {
