@@ -20,7 +20,7 @@ exclude = ["/examples/", "/tests/", "/release.toml"]
 [dependencies]
 futures = "0.3.22"
 juniper = { version = "0.16.0-dev", path = "../juniper", default-features = false }
-rocket = { version = "=0.5.0-rc.4", default-features = false }
+rocket = { version = "=0.5.0", default-features = false }
 serde_json = "1.0.18"
 
 # Fixes for `minimal-versions` check.
