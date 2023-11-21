@@ -668,200 +668,218 @@ pub mod subscriptions {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use warp::{http, test::request};
+    mod graphql {
+        use juniper::{
+            http::GraphQLBatchRequest,
+            tests::fixtures::starwars::schema::{Database, Query},
+            EmptyMutation, EmptySubscription, RootNode,
+        };
+        use warp::{http, test::request, Filter as _};
 
-    #[test]
-    fn graphiql_response_does_not_panic() {
-        graphiql_response("/abcd", None);
+        use super::super::make_graphql_filter;
+
+        #[tokio::test]
+        async fn post_json() {
+            type Schema = juniper::RootNode<
+                'static,
+                Query,
+                EmptyMutation<Database>,
+                EmptySubscription<Database>,
+            >;
+
+            let schema: Schema = RootNode::new(
+                Query,
+                EmptyMutation::<Database>::new(),
+                EmptySubscription::<Database>::new(),
+            );
+
+            let state = warp::any().map(Database::new);
+            let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
+
+            let response = request()
+                .method("POST")
+                .path("/graphql2")
+                .header("accept", "application/json")
+                .header("content-type", "application/json")
+                .body(r#"{"variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }"}"#)
+                .reply(&filter)
+                .await;
+
+            assert_eq!(response.status(), http::StatusCode::OK);
+            assert_eq!(
+                response.headers().get("content-type").unwrap(),
+                "application/json",
+            );
+            assert_eq!(
+                String::from_utf8(response.body().to_vec()).unwrap(),
+                r#"{"data":{"hero":{"name":"R2-D2"}}}"#,
+            );
+        }
+
+        #[tokio::test]
+        async fn batch_requests() {
+            type Schema = juniper::RootNode<
+                'static,
+                Query,
+                EmptyMutation<Database>,
+                EmptySubscription<Database>,
+            >;
+
+            let schema: Schema = RootNode::new(
+                Query,
+                EmptyMutation::<Database>::new(),
+                EmptySubscription::<Database>::new(),
+            );
+
+            let state = warp::any().map(Database::new);
+            let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
+
+            let response = request()
+                .method("POST")
+                .path("/graphql2")
+                .header("accept", "application/json")
+                .header("content-type", "application/json")
+                .body(
+                    r#"[
+                        {"variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }"},
+                        {"variables": null, "query": "{ hero(episode: EMPIRE) { id name } }"}
+                    ]"#,
+                )
+                .reply(&filter)
+                .await;
+
+            assert_eq!(response.status(), http::StatusCode::OK);
+            assert_eq!(
+                String::from_utf8(response.body().to_vec()).unwrap(),
+                r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#,
+            );
+            assert_eq!(
+                response.headers().get("content-type").unwrap(),
+                "application/json",
+            );
+        }
+
+        #[test]
+        fn batch_request_deserialization_can_fail() {
+            let json = r#"blah"#;
+            let result: Result<GraphQLBatchRequest, _> = serde_json::from_str(json);
+
+            assert!(result.is_err());
+        }
     }
 
-    #[tokio::test]
-    async fn graphiql_endpoint_matches() {
-        let filter = warp::get()
-            .and(warp::path("graphiql"))
-            .and(graphiql_filter("/graphql", None));
-        let result = request()
-            .method("GET")
-            .path("/graphiql")
-            .header("accept", "text/html")
-            .filter(&filter)
-            .await;
+    mod graphiql {
+        use warp::{http, test::request, Filter as _};
 
-        assert!(result.is_ok());
-    }
+        use super::super::{graphiql_filter, graphiql_response};
 
-    #[tokio::test]
-    async fn graphiql_endpoint_returns_graphiql_source() {
-        let filter = warp::get()
-            .and(warp::path("dogs-api"))
-            .and(warp::path("graphiql"))
-            .and(graphiql_filter("/dogs-api/graphql", None));
-        let response = request()
-            .method("GET")
-            .path("/dogs-api/graphiql")
-            .header("accept", "text/html")
-            .reply(&filter)
-            .await;
+        #[test]
+        fn response_does_not_panic() {
+            graphiql_response("/abcd", None);
+        }
 
-        assert_eq!(response.status(), http::StatusCode::OK);
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html;charset=utf-8"
-        );
-        let body = String::from_utf8(response.body().to_vec()).unwrap();
+        #[tokio::test]
+        async fn endpoint_matches() {
+            let filter = warp::get()
+                .and(warp::path("graphiql"))
+                .and(graphiql_filter("/graphql", None));
+            let result = request()
+                .method("GET")
+                .path("/graphiql")
+                .header("accept", "text/html")
+                .filter(&filter)
+                .await;
 
-        assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
-    }
+            assert!(result.is_ok());
+        }
 
-    #[tokio::test]
-    async fn graphiql_endpoint_with_subscription_matches() {
-        let filter = warp::get().and(warp::path("graphiql")).and(graphiql_filter(
-            "/graphql",
-            Some("ws:://localhost:8080/subscriptions"),
-        ));
-        let result = request()
-            .method("GET")
-            .path("/graphiql")
-            .header("accept", "text/html")
-            .filter(&filter)
-            .await;
+        #[tokio::test]
+        async fn endpoint_returns_graphiql_source() {
+            let filter = warp::get()
+                .and(warp::path("dogs-api"))
+                .and(warp::path("graphiql"))
+                .and(graphiql_filter("/dogs-api/graphql", None));
+            let response = request()
+                .method("GET")
+                .path("/dogs-api/graphiql")
+                .header("accept", "text/html")
+                .reply(&filter)
+                .await;
 
-        assert!(result.is_ok());
-    }
+            assert_eq!(response.status(), http::StatusCode::OK);
+            assert_eq!(
+                response.headers().get("content-type").unwrap(),
+                "text/html;charset=utf-8"
+            );
+            let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-    #[tokio::test]
-    async fn playground_endpoint_matches() {
-        let filter = warp::get()
-            .and(warp::path("playground"))
-            .and(playground_filter("/graphql", Some("/subscripitons")));
+            assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
+        }
 
-        let result = request()
-            .method("GET")
-            .path("/playground")
-            .header("accept", "text/html")
-            .filter(&filter)
-            .await;
-
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn playground_endpoint_returns_playground_source() {
-        let filter = warp::get()
-            .and(warp::path("dogs-api"))
-            .and(warp::path("playground"))
-            .and(playground_filter(
-                "/dogs-api/graphql",
-                Some("/dogs-api/subscriptions"),
+        #[tokio::test]
+        async fn endpoint_with_subscription_matches() {
+            let filter = warp::get().and(warp::path("graphiql")).and(graphiql_filter(
+                "/graphql",
+                Some("ws:://localhost:8080/subscriptions"),
             ));
-        let response = request()
-            .method("GET")
-            .path("/dogs-api/playground")
-            .header("accept", "text/html")
-            .reply(&filter)
-            .await;
+            let result = request()
+                .method("GET")
+                .path("/graphiql")
+                .header("accept", "text/html")
+                .filter(&filter)
+                .await;
 
-        assert_eq!(response.status(), http::StatusCode::OK);
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html;charset=utf-8"
-        );
-        let body = String::from_utf8(response.body().to_vec()).unwrap();
-
-        assert!(body.contains(
-            "endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions'",
-        ));
+            assert!(result.is_ok());
+        }
     }
 
-    #[tokio::test]
-    async fn graphql_handler_works_json_post() {
-        use juniper::{
-            tests::fixtures::starwars::schema::{Database, Query},
-            EmptyMutation, EmptySubscription, RootNode,
-        };
+    mod playground {
+        use warp::{http, test::request, Filter as _};
 
-        type Schema =
-            juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+        use super::super::playground_filter;
 
-        let schema: Schema = RootNode::new(
-            Query,
-            EmptyMutation::<Database>::new(),
-            EmptySubscription::<Database>::new(),
-        );
+        #[tokio::test]
+        async fn endpoint_matches() {
+            let filter = warp::get()
+                .and(warp::path("playground"))
+                .and(playground_filter("/graphql", Some("/subscripitons")));
 
-        let state = warp::any().map(Database::new);
-        let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
+            let result = request()
+                .method("GET")
+                .path("/playground")
+                .header("accept", "text/html")
+                .filter(&filter)
+                .await;
 
-        let response = request()
-            .method("POST")
-            .path("/graphql2")
-            .header("accept", "application/json")
-            .header("content-type", "application/json")
-            .body(r#"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"#)
-            .reply(&filter)
-            .await;
+            assert!(result.is_ok());
+        }
 
-        assert_eq!(response.status(), http::StatusCode::OK);
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "application/json",
-        );
-        assert_eq!(
-            String::from_utf8(response.body().to_vec()).unwrap(),
-            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
-        );
-    }
+        #[tokio::test]
+        async fn endpoint_returns_playground_source() {
+            let filter = warp::get()
+                .and(warp::path("dogs-api"))
+                .and(warp::path("playground"))
+                .and(playground_filter(
+                    "/dogs-api/graphql",
+                    Some("/dogs-api/subscriptions"),
+                ));
+            let response = request()
+                .method("GET")
+                .path("/dogs-api/playground")
+                .header("accept", "text/html")
+                .reply(&filter)
+                .await;
 
-    #[tokio::test]
-    async fn batch_requests_work() {
-        use juniper::{
-            tests::fixtures::starwars::schema::{Database, Query},
-            EmptyMutation, EmptySubscription, RootNode,
-        };
+            assert_eq!(response.status(), http::StatusCode::OK);
+            assert_eq!(
+                response.headers().get("content-type").unwrap(),
+                "text/html;charset=utf-8"
+            );
+            let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-        type Schema =
-            juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
-
-        let schema: Schema = RootNode::new(
-            Query,
-            EmptyMutation::<Database>::new(),
-            EmptySubscription::<Database>::new(),
-        );
-
-        let state = warp::any().map(Database::new);
-        let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
-
-        let response = request()
-            .method("POST")
-            .path("/graphql2")
-            .header("accept", "application/json")
-            .header("content-type", "application/json")
-            .body(
-                r#"[
-                     { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
-                     { "variables": null, "query": "{ hero(episode: EMPIRE) { id name } }" }
-                 ]"#,
-            )
-            .reply(&filter)
-            .await;
-
-        assert_eq!(response.status(), http::StatusCode::OK);
-        assert_eq!(
-            String::from_utf8(response.body().to_vec()).unwrap(),
-            r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#
-        );
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "application/json",
-        );
-    }
-
-    #[test]
-    fn batch_request_deserialization_can_fail() {
-        let json = r#"blah"#;
-        let result: Result<GraphQLBatchRequest, _> = serde_json::from_str(json);
-
-        assert!(result.is_err());
+            assert!(body.contains(
+                "endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions'",
+            ));
+        }
     }
 }
