@@ -2,24 +2,29 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
-use std::{collections::HashMap, convert::Infallible, fmt, future, str, sync::Arc};
+mod response;
+
+use std::{collections::HashMap, fmt, str, sync::Arc};
 
 use anyhow::anyhow;
-use futures::{FutureExt as _, TryFutureExt as _, TryStreamExt};
+use futures::TryFutureExt as _;
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
 };
 use tokio::task;
 use warp::{
-    body,
+    body::{self, BodyDeserializeError},
     filters::BoxedFilter,
-    http,
+    http::{self, StatusCode},
     hyper::body::Bytes,
     query,
-    reject::{self, Rejection},
+    reject::{self, Reject, Rejection},
+    reply::{self, Reply as _},
     Filter,
 };
+
+use self::response::JuniperResponse;
 
 /// Makes a filter for GraphQL queries/mutations.
 ///
@@ -79,7 +84,7 @@ use warp::{
 pub fn make_graphql_filter<Query, Mutation, Subscription, CtxT, S>(
     schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: BoxedFilter<(CtxT,)>,
-) -> BoxedFilter<(http::Response<Vec<u8>>,)>
+) -> impl Filter<Extract = (reply::Response,), Error = Rejection> + Clone + Send
 where
     Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
     Query::TypeInfo: Send + Sync,
@@ -91,84 +96,17 @@ where
     S: ScalarValue + Send + Sync + 'static,
 {
     let schema = schema.into();
-    /*let post_json_schema = schema.clone();
-    let post_graphql_schema = schema.clone();
-
-    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest<S>| {
-        let schema = post_json_schema.clone();
-        async move {
-            let resp = req.execute(&schema, &context).await;
-
-            Ok::<_, Infallible>(build_response(
-                serde_json::to_vec(&resp)
-                    .map(|json| (json, resp.is_ok()))
-                    .map_err(Into::into),
-            ))
-        }
-    };
-    let post_json_filter = warp::post()
-        .and(context_extractor.clone())
-        .and(body::json())
-        .and_then(handle_post_json_request);
-
-    let handle_post_graphql_request = move |context: CtxT, body: Bytes| {
-        let schema = post_graphql_schema.clone();
-        async move {
-            let query = str::from_utf8(body.as_ref())
-                .map_err(|e| anyhow!("Request body query is not a valid UTF-8 string: {e}"))?;
-            let req = GraphQLRequest::new(query.into(), None, None);
-
-            let resp = req.execute(&schema, &context).await;
-
-            Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-        }
-        .then(|res| future::ready(Ok::<_, Infallible>(build_response(res))))
-    };
-    let post_graphql_filter = warp::post()
-        .and(context_extractor.clone())
-        .and(body::bytes())
-        .and_then(handle_post_graphql_request);
-
-    let handle_get_request = move |context: CtxT, mut qry: HashMap<String, String>| {
-        let schema = schema.clone();
-        async move {
-            let req = GraphQLRequest::new(
-                qry.remove("query")
-                    .ok_or_else(|| anyhow!("Missing GraphQL query string in query parameters"))?,
-                qry.remove("operation_name"),
-                qry.remove("variables")
-                    .map(|vs| serde_json::from_str(&vs))
-                    .transpose()?,
-            );
-
-            let resp = req.execute(&schema, &context).await;
-
-            Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-        }
-        .then(|res| future::ready(Ok::<_, Infallible>(build_response(res))))
-    };
-    let get_filter = warp::get()
-        .and(context_extractor)
-        .and(query::query())
-        .and_then(handle_get_request);*/
 
     get_query_extractor::<S>()
-        .or(post_json_extractor::<S>().boxed())
+        .or(post_json_extractor::<S>())
         .unify()
-        .or(post_graphql_extractor::<S>().boxed())
+        .or(post_graphql_extractor::<S>())
         .unify()
         .and(warp::any().map(move || schema.clone()))
         .and(context_extractor)
         .then(graphql_handler::<Query, Mutation, Subscription, CtxT, S>)
-        .boxed()
-
-    /*
-    get_filter
-        .or(post_json_filter)
+        .recover(handle_rejects)
         .unify()
-        .or(post_graphql_filter)
-        .unify()
-        .boxed()*/
 }
 
 /// Make a synchronous filter for graphql endpoint.
@@ -267,7 +205,7 @@ async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
     req: GraphQLBatchRequest<S>,
     schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
     context: CtxT,
-) -> http::Response<Vec<u8>>
+) -> reply::Response
 where
     Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
     Query::TypeInfo: Send + Sync,
@@ -279,40 +217,34 @@ where
     S: ScalarValue + Send + Sync + 'static,
 {
     let resp = req.execute(&*schema, &context).await;
-    build_response(
-        serde_json::to_vec(&resp)
-            .map(|json| (json, resp.is_ok()))
-            .map_err(Into::into),
-    )
+    JuniperResponse(resp).into_response()
 }
 
 fn post_json_extractor<S>(
-) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Send
+) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
     S: ScalarValue + Send,
 {
     warp::post().and(body::json())
 }
+
 fn post_graphql_extractor<S>(
-) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Send
+) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
     S: ScalarValue + Send,
 {
     warp::post()
         .and(body::bytes())
         .and_then(|body: Bytes| async move {
-            let query = str::from_utf8(body.as_ref()).map_err(|e| {
-                reject::custom(Utf8Error(anyhow!(
-                    "Request body query is not a valid UTF-8 string: {e}",
-                )))
-            })?;
+            let query = str::from_utf8(body.as_ref())
+                .map_err(|e| reject::custom(FilterError::NonUtf8Body(e)))?;
             let req = GraphQLRequest::new(query.into(), None, None);
-            Ok::<GraphQLBatchRequest<S>, warp::reject::Rejection>(GraphQLBatchRequest::Single(req))
+            Ok::<GraphQLBatchRequest<S>, Rejection>(GraphQLBatchRequest::Single(req))
         })
 }
 
 fn get_query_extractor<S>(
-) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Send
+) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
     S: ScalarValue + Send,
 {
@@ -320,19 +252,56 @@ where
         .and(query::query())
         .and_then(|mut qry: HashMap<String, String>| async move {
             let req = GraphQLRequest::new(
-                qry.remove("query").ok_or_else(|| {
-                    reject::custom(Utf8Error(anyhow!(
-                        "Missing GraphQL query string in query parameters"
-                    )))
-                })?,
+                qry.remove("query")
+                    .ok_or_else(|| reject::custom(FilterError::MissingPathQuery))?,
                 qry.remove("operation_name"),
                 qry.remove("variables")
                     .map(|vs| serde_json::from_str(&vs))
                     .transpose()
-                    .map_err(|e| reject::custom(Utf8Error(e)))?,
+                    .map_err(|e| reject::custom(FilterError::InvalidPathVariables(e)))?,
             );
-            Ok::<GraphQLBatchRequest<S>, warp::reject::Rejection>(GraphQLBatchRequest::Single(req))
+            Ok::<GraphQLBatchRequest<S>, Rejection>(GraphQLBatchRequest::Single(req))
         })
+}
+
+async fn handle_rejects(rej: Rejection) -> Result<reply::Response, Rejection> {
+    let (status, msg) = if let Some(e) = rej.find::<FilterError>() {
+        (StatusCode::BAD_REQUEST, e.to_string())
+    } else if let Some(e) = rej.find::<warp::reject::InvalidQuery>() {
+        (StatusCode::BAD_REQUEST, e.to_string())
+    } else if let Some(e) = rej.find::<BodyDeserializeError>() {
+        (StatusCode::BAD_REQUEST, e.to_string())
+    } else {
+        return Err(rej);
+    };
+
+    Ok(http::Response::builder()
+        .status(status)
+        .body(msg.into())
+        .unwrap())
+}
+
+#[derive(Debug)]
+enum FilterError {
+    MissingPathQuery,
+    InvalidPathVariables(serde_json::Error),
+    NonUtf8Body(str::Utf8Error),
+}
+impl Reject for FilterError {}
+
+impl fmt::Display for FilterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingPathQuery => {
+                write!(f, "Missing GraphQL `query` string in query parameters")
+            }
+            Self::InvalidPathVariables(e) => write!(
+                f,
+                "Failed to deserialize GraphQL `variables` from JSON: {e}",
+            ),
+            Self::NonUtf8Body(e) => write!(f, "Request body is not a valid UTF-8 string: {e}"),
+        }
+    }
 }
 
 /// Error raised by `tokio_threadpool` if the thread pool has been shutdown.
@@ -341,12 +310,7 @@ where
 #[derive(Debug)]
 pub struct JoinError(task::JoinError);
 
-impl warp::reject::Reject for JoinError {}
-
-#[derive(Debug)]
-struct Utf8Error<E>(E);
-
-impl<E: fmt::Debug + Send + Sync + 'static> warp::reject::Reject for Utf8Error<E> {}
+impl Reject for JoinError {}
 
 fn build_response(response: Result<(Vec<u8>, bool), anyhow::Error>) -> http::Response<Vec<u8>> {
     match response {
@@ -771,7 +735,12 @@ mod tests {
             tests::fixtures::starwars::schema::{Database, Query},
             EmptyMutation, EmptySubscription,
         };
-        use warp::{http, reject::{self, Reject}, test::request, Filter as _, Reply};
+        use warp::{
+            http,
+            reject::{self, Reject},
+            test::request,
+            Filter as _, Reply,
+        };
 
         use super::super::make_graphql_filter;
 
