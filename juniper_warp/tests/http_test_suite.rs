@@ -7,11 +7,11 @@ use juniper_warp::{make_graphql_filter, make_graphql_filter_sync};
 use warp::{
     body,
     filters::{path, BoxedFilter},
-    http, Filter,
+    http, reply, Filter,
 };
 
 struct TestWarpIntegration {
-    filter: BoxedFilter<(http::Response<Vec<u8>>,)>,
+    filter: BoxedFilter<(reply::Response,)>,
 }
 
 impl TestWarpIntegration {
@@ -21,20 +21,22 @@ impl TestWarpIntegration {
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),
         );
-        let state = warp::any().map(Database::new);
+        let db = warp::any().map(Database::new);
 
-        let filter = path::end().and(if is_sync {
-            make_graphql_filter_sync(schema, state.boxed())
-        } else {
-            make_graphql_filter(schema, state.boxed())
-        });
         Self {
-            filter: filter.boxed(),
+            filter: path::end()
+                .and(if is_sync {
+                    make_graphql_filter_sync(schema, db).boxed()
+                } else {
+                    make_graphql_filter(schema, db).boxed()
+                })
+                .boxed(),
         }
     }
 
     fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
-        let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
+        let rt = tokio::runtime::Runtime::new()
+            .unwrap_or_else(|e| panic!("failed to create `tokio::Runtime`"));
         make_test_response(rt.block_on(async move {
             req.filter(&self.filter).await.unwrap_or_else(|rejection| {
                 let code = if rejection.is_not_found() {
@@ -47,7 +49,7 @@ impl TestWarpIntegration {
                 http::Response::builder()
                     .status(code)
                     .header("content-type", "application/json")
-                    .body(Vec::new())
+                    .body(Vec::new().into())
                     .unwrap()
             })
         }))
@@ -97,7 +99,7 @@ impl HttpIntegration for TestWarpIntegration {
     }
 }
 
-fn make_test_response(resp: http::Response<Vec<u8>>) -> TestResponse {
+fn make_test_response(resp: reply::Response) -> TestResponse {
     TestResponse {
         status_code: resp.status().as_u16() as i32,
         body: Some(String::from_utf8(resp.body().to_owned()).unwrap()),
