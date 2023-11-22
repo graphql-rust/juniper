@@ -6,8 +6,6 @@ mod response;
 
 use std::{collections::HashMap, fmt, str, sync::Arc};
 
-use anyhow::anyhow;
-use futures::TryFutureExt as _;
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
@@ -20,7 +18,7 @@ use warp::{
     hyper::body::Bytes,
     query,
     reject::{self, Reject, Rejection},
-    reply::{self, Reply as _},
+    reply::{self, Reply},
     Filter,
 };
 
@@ -113,92 +111,29 @@ where
 pub fn make_graphql_filter_sync<Query, Mutation, Subscription, CtxT, S>(
     schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: BoxedFilter<(CtxT,)>,
-) -> BoxedFilter<(http::Response<Vec<u8>>,)>
+) -> impl Filter<Extract = (reply::Response,), Error = Rejection> + Clone + Send
 where
-    Query: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: juniper::GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Query: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Query::TypeInfo: Send + Sync,
+    Mutation: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Mutation::TypeInfo: Send + Sync,
+    Subscription: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Subscription::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
     let schema = schema.into();
-    let post_json_schema = schema.clone();
-    let post_graphql_schema = schema.clone();
 
-    let handle_post_json_request = move |context: CtxT, req: GraphQLBatchRequest<S>| {
-        let schema = post_json_schema.clone();
-        async move {
-            let res = task::spawn_blocking(move || {
-                let resp = req.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-            })
-            .await?;
-
-            Ok(build_response(res))
-        }
-        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
-    };
-    let post_json_filter = warp::post()
-        .and(context_extractor.clone())
-        .and(body::json())
-        .and_then(handle_post_json_request);
-
-    let handle_post_graphql_request = move |context: CtxT, body: Bytes| {
-        let schema = post_graphql_schema.clone();
-        async move {
-            let res = task::spawn_blocking(move || {
-                let query = str::from_utf8(body.as_ref())
-                    .map_err(|e| anyhow!("Request body is not a valid UTF-8 string: {e}"))?;
-                let req = GraphQLRequest::new(query.into(), None, None);
-
-                let resp = req.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-            })
-            .await?;
-
-            Ok(build_response(res))
-        }
-        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
-    };
-    let post_graphql_filter = warp::post()
-        .and(context_extractor.clone())
-        .and(body::bytes())
-        .and_then(handle_post_graphql_request);
-
-    let handle_get_request = move |context: CtxT, mut qry: HashMap<String, String>| {
-        let schema = schema.clone();
-        async move {
-            let res = task::spawn_blocking(move || {
-                let req = GraphQLRequest::new(
-                    qry.remove("query").ok_or_else(|| {
-                        anyhow!("Missing GraphQL query string in query parameters")
-                    })?,
-                    qry.remove("operation_name"),
-                    qry.remove("variables")
-                        .map(|vs| serde_json::from_str(&vs))
-                        .transpose()?,
-                );
-
-                let resp = req.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-            })
-            .await?;
-
-            Ok(build_response(res))
-        }
-        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
-    };
-    let get_filter = warp::get()
+    get_query_extractor::<S>()
+        .or(post_json_extractor::<S>())
+        .unify()
+        .or(post_graphql_extractor::<S>())
+        .unify()
+        .and(warp::any().map(move || schema.clone()))
         .and(context_extractor)
-        .and(query::query())
-        .and_then(handle_get_request);
-
-    get_filter
-        .or(post_json_filter)
+        .then(graphql_handler_sync::<Query, Mutation, Subscription, CtxT, S>)
+        .recover(handle_rejects)
         .unify()
-        .or(post_graphql_filter)
-        .unify()
-        .boxed()
 }
 
 async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
@@ -218,6 +153,27 @@ where
 {
     let resp = req.execute(&*schema, &context).await;
     JuniperResponse(resp).into_response()
+}
+
+async fn graphql_handler_sync<Query, Mutation, Subscription, CtxT, S>(
+    req: GraphQLBatchRequest<S>,
+    schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
+    context: CtxT,
+) -> reply::Response
+where
+    Query: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Query::TypeInfo: Send + Sync,
+    Mutation: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Mutation::TypeInfo: Send + Sync,
+    Subscription: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Subscription::TypeInfo: Send + Sync,
+    CtxT: Send + Sync + 'static,
+    S: ScalarValue + Send + Sync + 'static,
+{
+    task::spawn_blocking(move || req.execute_sync(&*schema, &context))
+        .await
+        .map(|resp| JuniperResponse(resp).into_response())
+        .unwrap_or_else(|e| BlockingError(e).into_response())
 }
 
 fn post_json_extractor<S>(
@@ -304,25 +260,18 @@ impl fmt::Display for FilterError {
     }
 }
 
-/// Error raised by `tokio_threadpool` if the thread pool has been shutdown.
-///
-/// Wrapper type is needed as inner type does not implement `warp::reject::Reject`.
+/// Error raised by [`tokio::task::spawn_blocking()`] if the thread pool has been shutdown.
 #[derive(Debug)]
-pub struct JoinError(task::JoinError);
+struct BlockingError(task::JoinError);
 
-impl Reject for JoinError {}
-
-fn build_response(response: Result<(Vec<u8>, bool), anyhow::Error>) -> http::Response<Vec<u8>> {
-    match response {
-        Ok((body, is_ok)) => http::Response::builder()
-            .status(if is_ok { 200 } else { 400 })
-            .header("content-type", "application/json")
-            .body(body)
-            .expect("response is valid"),
-        Err(_) => http::Response::builder()
-            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-            .body(Vec::new())
-            .expect("status code is valid"),
+impl Reply for BlockingError {
+    fn into_response(self) -> reply::Response {
+        http::Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(format!("Failed to execute synchronous GraphQL request: {}", self.0).into())
+            .unwrap_or_else(|e| {
+                unreachable!("cannot build `reply::Response` out of `BlockingError`: {e}")
+            })
     }
 }
 

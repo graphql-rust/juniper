@@ -30,6 +30,8 @@ where
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(e.to_string().into()),
         }
-        .unwrap_or_else(|e| unreachable!("cannot build `reply::Response`: {e}"))
+        .unwrap_or_else(|e| {
+            unreachable!("cannot build `reply::Response` out of `JuniperResponse`: {e}")
+        })
     }
 }
