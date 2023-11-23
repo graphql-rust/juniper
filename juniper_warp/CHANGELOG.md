@@ -21,7 +21,7 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 ### Changed
 
 - Made `schema` argument of `make_graphql_filter()` and `make_graphql_filter_sync()` polymorphic, allowing to specify external `Arc`ed `schema`. ([#1136], [#1135])
-- Relaxed requirement for `context_extractor` to be `BoxedFilter`. ([#1222], [#1177])
+- Relaxed requirement for `context_extractor` to be a `BoxedFilter` only. ([#1222], [#1177])
 
 ### Fixed
 
