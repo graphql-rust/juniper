@@ -25,21 +25,21 @@ use warp::{
 
 use self::response::JuniperResponse;
 
-/// Makes a filter for GraphQL queries/mutations.
+/// Makes a [`Filter`] for handling GraphQL queries/mutations.
 ///
 /// The `schema` argument is your [`juniper`] schema.
 ///
-/// The `context_extractor` argument should be a filter that provides the GraphQL context required by the schema.
-///
-/// In order to avoid blocking, this helper will use the `tokio_threadpool` threadpool created by hyper to resolve GraphQL requests.
+/// The `context_extractor` argument should be a [`Filter`] that provides the GraphQL context,
+/// required by the `schema`.
 ///
 /// # Example
 ///
 /// ```rust
 /// # use std::sync::Arc;
-/// # use warp::Filter;
+/// #
 /// # use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 /// # use juniper_warp::make_graphql_filter;
+/// # use warp::Filter as _;
 /// #
 /// type UserId = String;
 /// # #[derive(Debug)]
@@ -71,15 +71,83 @@ use self::response::JuniperResponse;
 ///     .map(|auth_header: String, app_state: Arc<AppState>| {
 ///         let user_id = auth_header; // we believe them
 ///         ExampleContext(app_state, user_id)
-///     })
-///     .boxed();
-///
-/// let graphql_filter = make_graphql_filter(schema, context_extractor);
+///     });
 ///
 /// let graphql_endpoint = warp::path("graphql")
-///     .and(warp::post())
-///     .and(graphql_filter);
+///     .and(make_graphql_filter(schema, context_extractor));
 /// ```
+///
+/// # Fallible `context_extractor`
+///
+/// > __WARNING__: In case the `context_extractor` is fallible (e.g. implements
+/// >              [`Filter`]`<Error = `[`Rejection`]`>`), it's error should be handled via
+/// >              [`Filter::recover()`] to fails fast and avoid switching to other [`Filter`]s
+/// >              branches, because [`Rejection` doesn't mean to abort the whole request, but
+/// >              rather to say that a `Filter` couldn't fulfill its preconditions][1].
+/// ```rust
+/// # use std::sync::Arc;
+/// #
+/// # use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
+/// # use juniper_warp::make_graphql_filter;
+/// # use warp::{http, Filter as _, Reply as _};
+/// #
+/// # type UserId = String;
+/// # #[derive(Debug)]
+/// # struct AppState(Vec<i64>);
+/// # struct ExampleContext(Arc<AppState>, UserId);
+/// # impl juniper::Context for ExampleContext {}
+/// #
+/// # struct QueryRoot;
+/// #
+/// # #[graphql_object(context = ExampleContext)]
+/// # impl QueryRoot {
+/// #     fn say_hello(context: &ExampleContext) -> String {
+/// #         format!(
+/// #             "good morning {}, the app state is {:?}",
+/// #             context.1,
+/// #             context.0,
+/// #         )
+/// #     }
+/// # }
+/// #
+/// #[derive(Clone, Copy, Debug)]
+/// struct NotAuthorized;
+///
+/// impl warp::reject::Reject for NotAuthorized {}
+///
+/// impl warp::Reply for NotAuthorized {
+///     fn into_response(self) -> warp::reply::Response {
+///         http::StatusCode::FORBIDDEN.into_response()
+///     }
+/// }
+///
+/// let schema = RootNode::new(QueryRoot, EmptyMutation::new(), EmptySubscription::new());
+///
+/// let app_state = Arc::new(AppState(vec![3, 4, 5]));
+/// let app_state = warp::any().map(move || app_state.clone());
+///
+/// let context_extractor = warp::any()
+///     .and(warp::header::<String>("authorization"))
+///     .and(app_state)
+///     .and_then(|auth_header: String, app_state: Arc<AppState>| async move {
+///         if auth_header == "correct" {
+///             Ok(ExampleContext(app_state, auth_header))
+///         } else {
+///             Err(warp::reject::custom(NotAuthorized))
+///         }
+///     });
+///
+/// let graphql_endpoint = warp::path("graphql")
+///     .and(make_graphql_filter(schema, context_extractor))
+///     .recover(|rejection: warp::reject::Rejection| async move {
+///         rejection
+///             .find::<NotAuthorized>()
+///             .map(|e| e.into_response())
+///             .ok_or(rejection)
+///     });
+/// ```
+///
+/// [1]: https://github.com/seanmonstar/warp/issues/388#issuecomment-576453485
 pub fn make_graphql_filter<S, Query, Mutation, Subscription, CtxT, CtxErr>(
     schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: impl Filter<Extract = (CtxT,), Error = CtxErr> + Send + Sync + 'static,
@@ -117,7 +185,12 @@ where
         .unify()
 }
 
-/// Make a synchronous filter for graphql endpoint.
+/// Same as [`make_graphql_filter()`], but for [executing synchronously][1].
+///
+/// > __NOTE__: In order to avoid blocking, this handler will use [`tokio::task::spawn_blocking()`]
+/// >           on the runtime [`warp`] is running on.
+///
+/// [1]: GraphQLBatchRequest::execute_sync
 pub fn make_graphql_filter_sync<S, Query, Mutation, Subscription, CtxT, CtxErr>(
     schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
     context_extractor: impl Filter<Extract = (CtxT,), Error = CtxErr> + Send + Sync + 'static,
@@ -155,6 +228,8 @@ where
         .unify()
 }
 
+/// Executes the provided [`GraphQLBatchRequest`] against the provided `schema` in the provided
+/// `context`.
 async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
     req: GraphQLBatchRequest<S>,
     schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
@@ -174,6 +249,9 @@ where
     JuniperResponse(resp).into_response()
 }
 
+/// Same as [`graphql_handler()`], but for [executing synchronously][1].
+///
+/// [1]: GraphQLBatchRequest::execute_sync
 async fn graphql_handler_sync<Query, Mutation, Subscription, CtxT, S>(
     req: GraphQLBatchRequest<S>,
     schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
@@ -195,6 +273,7 @@ where
         .unwrap_or_else(|e| BlockingError(e).into_response())
 }
 
+/// Extracts a [`GraphQLBatchRequest`] from a POST `application/json` HTTP request.
 fn post_json_extractor<S>(
 ) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
@@ -203,6 +282,7 @@ where
     warp::post().and(body::json())
 }
 
+/// Extracts a [`GraphQLBatchRequest`] from a POST `application/graphql` HTTP request.
 fn post_graphql_extractor<S>(
 ) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
@@ -218,6 +298,7 @@ where
         })
 }
 
+/// Extracts a [`GraphQLBatchRequest`] from a GET HTTP request.
 fn get_query_extractor<S>(
 ) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
@@ -239,6 +320,7 @@ where
         })
 }
 
+/// Handles all the [`Rejection`]s happening in [`make_graphql_filter()`] to fail fast, if required.
 async fn handle_rejects(rej: Rejection) -> Result<reply::Response, Rejection> {
     let (status, msg) = if let Some(e) = rej.find::<FilterError>() {
         (StatusCode::BAD_REQUEST, e.to_string())
@@ -256,10 +338,16 @@ async fn handle_rejects(rej: Rejection) -> Result<reply::Response, Rejection> {
         .unwrap())
 }
 
+/// Possible errors happening in [`Filter`]s during [`GraphQLBatchRequest`] extraction.
 #[derive(Debug)]
 enum FilterError {
+    /// GET HTTP request misses query parameters.
     MissingPathQuery,
+
+    /// GET HTTP request contains ivalid `path` query parameter.
     InvalidPathVariables(serde_json::Error),
+
+    /// POST HTTP request contains non-UTF-8 body.
     NonUtf8Body(str::Utf8Error),
 }
 impl Reject for FilterError {}
