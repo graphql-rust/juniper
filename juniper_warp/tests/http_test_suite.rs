@@ -1,3 +1,4 @@
+use futures::TryStreamExt as _;
 use juniper::{
     http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
     tests::fixtures::starwars::schema::{Database, Query},
@@ -7,7 +8,7 @@ use juniper_warp::{make_graphql_filter, make_graphql_filter_sync};
 use warp::{
     body,
     filters::{path, BoxedFilter},
-    http, reply, Filter,
+    http, reply, Filter as _,
 };
 
 struct TestWarpIntegration {
@@ -36,9 +37,9 @@ impl TestWarpIntegration {
 
     fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
         let rt = tokio::runtime::Runtime::new()
-            .unwrap_or_else(|e| panic!("failed to create `tokio::Runtime`"));
-        make_test_response(rt.block_on(async move {
-            req.filter(&self.filter).await.unwrap_or_else(|rejection| {
+            .unwrap_or_else(|e| panic!("failed to create `tokio::Runtime`: {e}"));
+        rt.block_on(async move {
+            make_test_response(req.filter(&self.filter).await.unwrap_or_else(|rejection| {
                 let code = if rejection.is_not_found() {
                     http::StatusCode::NOT_FOUND
                 } else if let Some(body::BodyDeserializeError { .. }) = rejection.find() {
@@ -51,8 +52,9 @@ impl TestWarpIntegration {
                     .header("content-type", "application/json")
                     .body(Vec::new().into())
                     .unwrap()
-            })
-        }))
+            }))
+            .await
+        })
     }
 }
 
@@ -99,17 +101,34 @@ impl HttpIntegration for TestWarpIntegration {
     }
 }
 
-fn make_test_response(resp: reply::Response) -> TestResponse {
+async fn make_test_response(resp: reply::Response) -> TestResponse {
+    let (parts, body) = resp.into_parts();
+
+    let status_code = parts.status.as_u16().into();
+
+    let content_type = parts
+        .headers
+        .get("content-type")
+        .map(|header| {
+            header
+                .to_str()
+                .unwrap_or_else(|e| panic!("not UTF-8 header: {e}"))
+                .to_owned()
+        })
+        .unwrap_or_default();
+
+    let body = String::from_utf8(
+        body.map_ok(|bytes| bytes.to_vec())
+            .try_concat()
+            .await
+            .unwrap(),
+    )
+    .unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
+
     TestResponse {
-        status_code: resp.status().as_u16() as i32,
-        body: Some(String::from_utf8(resp.body().to_owned()).unwrap()),
-        content_type: resp
-            .headers()
-            .get("content-type")
-            .expect("missing content-type header in warp response")
-            .to_str()
-            .expect("invalid content-type string")
-            .into(),
+        status_code,
+        content_type,
+        body: Some(body),
     }
 }
 
