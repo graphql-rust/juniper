@@ -5,7 +5,10 @@ edition = "2021"
 rust-version = "1.73"
 description = "`juniper` GraphQL integration with `warp`."
 license = "BSD-2-Clause"
-authors = ["Tom Houlé <tom@tomhoule.com>"]
+authors = [
+    "Tom Houlé <tom@tomhoule.com>",
+    "Kai Ren <tyranron@gmail.com>",
+]
 documentation = "https://docs.rs/juniper_warp"
 homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_warp"
 repository = "https://github.com/graphql-rust/juniper"
