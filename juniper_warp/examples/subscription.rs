@@ -160,7 +160,7 @@ async fn main() {
         .and(warp::path("graphql"))
         .and(juniper_warp::make_graphql_filter(
             schema.clone(),
-            warp::any().map(|| Context).boxed(),
+            warp::any().map(|| Context),
         )))
     .or(
         warp::path("subscriptions").and(juniper_warp::subscriptions::make_ws_filter(
