@@ -280,14 +280,17 @@ mod juniper_request_tests {
     }
 
     /// Converts the provided [`HttpBody`] into a [`String`].
-    async fn display_body<B>(body: B) -> String
+    async fn display_body<B>(mut body: B) -> String
     where
-        B: HttpBody<Data = Bytes>,
+        B: HttpBody<Data = Bytes> + Unpin,
         B::Error: fmt::Display,
     {
-        let bytes = hyper::body::to_bytes(body)
-            .await
-            .unwrap_or_else(|e| panic!("failed to represent `Body` as `Bytes`: {e}"));
-        String::from_utf8(bytes.into()).unwrap_or_else(|e| panic!("not UTF-8 body: {e}"))
+        let mut body_bytes = vec![];
+        while let Some(bytes) = body.data().await {
+            body_bytes.extend(
+                bytes.unwrap_or_else(|e| panic!("failed to represent `Body` as `Bytes`: {e}")),
+            );
+        }
+        String::from_utf8(body_bytes).unwrap_or_else(|e| panic!("not UTF-8 body: {e}"))
     }
 }
