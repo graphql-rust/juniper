@@ -11,6 +11,7 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 ### BC Breaks
 
 - Switched to 0.16 version of [`juniper` crate].
+- Removed `JoinError` from public API. ([#1222], [#1177])
 
 ### Added
 
@@ -20,11 +21,18 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 ### Changed
 
 - Made `schema` argument of `make_graphql_filter()` and `make_graphql_filter_sync()` polymorphic, allowing to specify external `Arc`ed `schema`. ([#1136], [#1135])
+- Relaxed requirement for `context_extractor` to be `BoxedFilter`. ([#1222], [#1177])
+
+### Fixed
+
+- Excessive `context_extractor` execution in `make_graphql_filter()` and `make_graphql_filter_sync()`. ([#1222], [#1177])
 
 [#1135]: /../../issues/1136
 [#1136]: /../../pull/1136
 [#1158]: /../../pull/1158
+[#1177]: /../../issues/1177
 [#1191]: /../../pull/1191
+[#1222]: /../../pull/1222
 
 
 
