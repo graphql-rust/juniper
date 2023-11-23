@@ -1,18 +1,19 @@
 use std::sync::Arc;
 
 use axum::{
+    body::{Body, HttpBody as _},
     http::Request,
     response::Response,
     routing::{get, post},
     Extension, Router,
 };
-use hyper::{service::Service, Body};
 use juniper::{
     http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
     tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
 };
 use juniper_axum::{extract::JuniperRequest, response::JuniperResponse};
+use tower_service::Service as _;
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
@@ -89,15 +90,19 @@ async fn into_test_response(resp: Response) -> TestResponse {
         .headers()
         .get("content-type")
         .map(|header| {
-            String::from_utf8(header.as_bytes().into())
+            header
+                .to_str()
                 .unwrap_or_else(|e| panic!("not UTF-8 header: {e}"))
+                .to_owned()
         })
         .unwrap_or_default();
 
-    let body = hyper::body::to_bytes(resp.into_body())
-        .await
-        .unwrap_or_else(|e| panic!("failed to represent `Body` as `Bytes`: {e}"));
-    let body = String::from_utf8(body.into()).unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
+    let mut body = resp.into_body();
+    let mut body_bytes = vec![];
+    while let Some(bytes) = body.data().await {
+        body_bytes.extend(bytes.unwrap());
+    }
+    let body = String::from_utf8(body_bytes).unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
 
     TestResponse {
         status_code,
