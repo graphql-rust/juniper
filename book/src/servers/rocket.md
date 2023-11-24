@@ -19,4 +19,4 @@ Included in the source is a [small example][example] which sets up a basic Graph
 [graphiql]: https://github.com/graphql/graphiql
 [rocket]: https://rocket.rs/
 [juniper_rocket]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket
-[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_rocket/examples/rocket_server.rs
+[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_rocket/examples/simple.rs

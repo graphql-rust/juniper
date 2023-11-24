@@ -24,7 +24,7 @@ A basic usage example can also be found in the [API docs][`juniper_rocket`].
 
 ## Examples
 
-Check [`examples/rocket_server.rs`][1] for example code of a working [`rocket`] server with [GraphQL] handlers.
+Check [`examples/simple.rs`][1] for example code of a working [`rocket`] server with [GraphQL] handlers.
 
 
 
@@ -43,4 +43,4 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [Juniper Book]: https://graphql-rust.github.io
 [Rust]: https://www.rust-lang.org
 
-[1]: https://github.com/graphql-rust/juniper/blob/master/juniper_rocket/examples/rocket_server.rs
+[1]: https://github.com/graphql-rust/juniper/blob/master/juniper_rocket/examples/simple.rs
