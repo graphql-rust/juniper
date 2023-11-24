@@ -17,10 +17,15 @@ All user visible changes to `juniper_rocket` crate will be documented in this fi
 
 - `AsRef` and `AsMut` implementation for `GraphQLRequest` to its inner type. ([#968], [#930])
 
+### Changed
+
+- Made `subscriptions_endpoint_url` argument polymorphic in `graphiql_source()` and `playground_source()`. ([#1223])
+
 [#930]: /../../issues/930
 [#968]: /../../pull/968
 [#1205]: /../../pull/1205
 [#1220]: /../../pull/1220
+[#1223]: /../../pull/1223
 
 
 

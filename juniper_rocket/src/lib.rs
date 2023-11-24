@@ -7,7 +7,7 @@ use rocket::{
     form::{error::ErrorKind, DataField, Error, Errors, FromForm, Options, ValueField},
     http::{ContentType, Status},
     outcome::Outcome,
-    response::{self, content, Responder, Response},
+    response::{self, content::RawHtml, Responder, Response},
     Data, Request,
 };
 
@@ -42,25 +42,59 @@ impl<S: ScalarValue> AsMut<GraphQLBatchRequest<S>> for GraphQLRequest<S> {
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);
 
-/// Generate an HTML page containing GraphiQL
-pub fn graphiql_source(
+/// Generates a [`RawHtml`] page containing [GraphiQL].
+///
+/// This does not handle routing, so you can mount it on any endpoint.
+///
+/// # Example
+///
+/// ```rust
+/// use rocket::{response::content::RawHtml, routes};
+///
+/// #[rocket::get("/graphiql")]
+/// fn graphiql() -> RawHtml<String> {
+///     juniper_rocket::graphiql_source("/graphql", "/subscriptions")
+/// }
+///
+/// let rocket = rocket::build().mount("/", routes![graphiql]);
+/// ```
+///
+/// [GraphiQL]: https://github.com/graphql/graphiql
+pub fn graphiql_source<'a>(
     graphql_endpoint_url: &str,
-    subscriptions_endpoint_url: Option<&str>,
-) -> content::RawHtml<String> {
-    content::RawHtml(juniper::http::graphiql::graphiql_source(
+    subscriptions_endpoint_url: impl Into<Option<&'a str>>,
+) -> RawHtml<String> {
+    RawHtml(http::graphiql::graphiql_source(
         graphql_endpoint_url,
-        subscriptions_endpoint_url,
+        subscriptions_endpoint_url.into(),
     ))
 }
 
-/// Generate an HTML page containing GraphQL Playground
-pub fn playground_source(
+/// Generates a [`RawHtml`] page containing [GraphQL Playground].
+///
+/// This does not handle routing, so you can mount it on any endpoint.
+///
+/// # Example
+///
+/// ```rust
+/// use rocket::{response::content::RawHtml, routes};
+///
+/// #[rocket::get("/playground")]
+/// fn playground() -> RawHtml<String> {
+///     juniper_rocket::playground_source("/graphql", "/subscriptions")
+/// }
+///
+/// let rocket = rocket::build().mount("/", routes![playground]);
+/// ```
+///
+/// [GraphQL Playground]: https://github.com/prisma/graphql-playground
+pub fn playground_source<'a>(
     graphql_endpoint_url: &str,
-    subscriptions_endpoint_url: Option<&str>,
-) -> content::RawHtml<String> {
-    content::RawHtml(juniper::http::playground::playground_source(
+    subscriptions_endpoint_url: impl Into<Option<&'a str>>,
+) -> RawHtml<String> {
+    RawHtml(http::playground::playground_source(
         graphql_endpoint_url,
-        subscriptions_endpoint_url,
+        subscriptions_endpoint_url.into(),
     ))
 }
 
