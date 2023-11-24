@@ -11,7 +11,7 @@ fn graphiql() -> content::RawHtml<String> {
     juniper_rocket::graphiql_source("/graphql", None)
 }
 
-#[rocket::get("/graphql?<request>")]
+#[rocket::get("/graphql?<request..>")]
 fn get_graphql_handler(
     context: &State<Database>,
     request: juniper_rocket::GraphQLRequest,
