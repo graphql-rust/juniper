@@ -267,7 +267,7 @@ impl<'f, S: ScalarValue> GraphQLContext<'f, S> {
 
     fn operation_name(&mut self, value: String) {
         if self.operation_name.is_some() {
-            let error = Error::from(ErrorKind::Duplicate).with_name("operation_name");
+            let error = Error::from(ErrorKind::Duplicate).with_name("operationName");
 
             self.errors.push(error)
         } else {
@@ -316,7 +316,7 @@ where
     fn push_value(ctx: &mut Self::Context, field: ValueField<'f>) {
         match field.name.key().map(|key| key.as_str()) {
             Some("query") => ctx.query(field.value.into()),
-            Some("operation_name") => ctx.operation_name(field.value.into()),
+            Some("operation_name" | "operationName") => ctx.operation_name(field.value.into()),
             Some("variables") => ctx.variables(field.value.into()),
             Some(key) => {
                 if ctx.opts.strict {
@@ -499,8 +499,8 @@ mod fromform_tests {
     #[test]
     fn duplicate_operation_name() {
         check_error(
-            "query=test&operation_name=op1&operation_name=op2",
-            vec![Error::from(ErrorKind::Duplicate).with_name("operation_name")],
+            "query=test&operationName=op1&operationName=op2",
+            vec![Error::from(ErrorKind::Duplicate).with_name("operationName")],
             false,
         );
     }
@@ -557,7 +557,7 @@ mod fromform_tests {
     #[test]
     fn url_decode() {
         let result: Result<GraphQLRequest, Errors> = Form::parse_encoded(RawStr::new(
-            "query=%25foo%20bar+baz%26%3F&operation_name=test",
+            "query=%25foo%20bar+baz%26%3F&operationName=test",
         ));
 
         assert!(result.is_ok());
