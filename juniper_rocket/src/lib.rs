@@ -17,11 +17,50 @@ use juniper::{
     InputValue, RootNode, ScalarValue,
 };
 
-/// Simple wrapper around an incoming GraphQL request
+/// Simple wrapper around an incoming GraphQL request.
 ///
-/// See the `http` module for more information. This type can be constructed
-/// automatically from both GET and POST routes by implementing the `FromForm`
-/// and `FromData` traits.
+/// See the [`http`] module for more information. This type can be constructed automatically from
+/// both GET and POST routes, as implements [`FromForm`] and [`FromData`] traits.
+///
+/// # Example
+///
+/// ```rust
+/// use juniper::{
+///     tests::fixtures::starwars::schema::{Database, Query},
+///     EmptyMutation, EmptySubscription, RootNode,
+/// };
+/// use rocket::{routes, State};
+///
+/// type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+///
+/// // GET request accepts query parameters like these:
+/// // ?query=<urlencoded-graphql-query-string>
+/// // &operationName=<optional-name>
+/// // &variables=<optional-json-encoded-variables>
+/// // See details here: https://graphql.org/learn/serving-over-http#get-request
+/// #[rocket::get("/graphql?<request..>")]
+/// async fn get_graphql_handler(
+///     db: &State<Database>,
+///     request: juniper_rocket::GraphQLRequest,
+///     schema: &State<Schema>,
+/// ) -> juniper_rocket::GraphQLResponse {
+///     request.execute(schema, db).await
+/// }
+///
+/// #[rocket::post("/graphql", data = "<request>")]
+/// async fn post_graphql_handler(
+///     db: &State<Database>,
+///     request: juniper_rocket::GraphQLRequest,
+///     schema: &State<Schema>,
+/// ) -> juniper_rocket::GraphQLResponse {
+///     request.execute(schema, db).await
+/// }
+///
+/// let rocket = rocket::build()
+///     .manage(Database::new())
+///     .manage(Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()))
+///     .mount("/", routes![get_graphql_handler, post_graphql_handler]);
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
 where
@@ -160,7 +199,7 @@ where
 }
 
 impl GraphQLResponse {
-    /// Constructs an error response outside of the normal execution flow
+    /// Constructs an error response outside of the normal execution flow.
     ///
     /// # Examples
     ///
