@@ -348,30 +348,39 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for GraphQLResponse {
 
 #[cfg(test)]
 mod fromform_tests {
-    use super::*;
-    use juniper::InputValue;
+    use std::borrow::Cow;
+
+    use juniper::{http, InputValue};
     use rocket::{
-        form::{error::ErrorKind, Error, Form, Strict},
+        form::{error::ErrorKind, Error, Errors, Form, Strict},
         http::RawStr,
     };
-    use std::borrow::Cow;
+
+    use super::GraphQLRequest;
 
     fn check_error(input: &str, expected_errors: Vec<Error>, strict: bool) {
         let errors = if strict {
-            let result = Form::<Strict<GraphQLRequest>>::parse_encoded(RawStr::new(input));
-            assert!(result.is_err());
-            result.unwrap_err()
+            let res = Form::<Strict<GraphQLRequest>>::parse_encoded(RawStr::new(input));
+
+            assert!(res.is_err(), "result: {:#?}", res.unwrap());
+
+            res.unwrap_err()
         } else {
-            let result = Form::<GraphQLRequest>::parse_encoded(RawStr::new(input));
-            assert!(result.is_err());
-            result.unwrap_err()
+            let res = Form::<GraphQLRequest>::parse_encoded(RawStr::new(input));
+
+            assert!(res.is_err(), "result: {:#?}", res.unwrap());
+
+            res.unwrap_err()
         };
+
         assert_eq!(errors.len(), expected_errors.len());
+
         for (error, expected) in errors.iter().zip(&expected_errors) {
             match (&error.kind, &expected.kind) {
                 (ErrorKind::Unknown, ErrorKind::Unknown) => (),
                 (kind_a, kind_b) => assert_eq!(kind_a, kind_b),
             };
+
             assert_eq!(error.name, expected.name);
             assert_eq!(error.value, expected.value);
             assert_eq!(error.entity, expected.entity);
@@ -379,7 +388,7 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_empty_form() {
+    fn empty_form() {
         check_error(
             "",
             vec![Error::from(ErrorKind::Missing).with_name("query")],
@@ -388,7 +397,7 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_no_query() {
+    fn no_query() {
         check_error(
             "operation_name=foo&variables={}",
             vec![Error::from(ErrorKind::Missing).with_name("query")],
@@ -397,7 +406,7 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_strict() {
+    fn strict() {
         check_error(
             "query=test&foo=bar",
             vec![Error::from(ErrorKind::Unknown).with_name("foo")],
@@ -406,7 +415,7 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_duplicate_query() {
+    fn duplicate_query() {
         check_error(
             "query=foo&query=bar",
             vec![Error::from(ErrorKind::Duplicate).with_name("query")],
@@ -415,7 +424,7 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_duplicate_operation_name() {
+    fn duplicate_operation_name() {
         check_error(
             "query=test&operation_name=op1&operation_name=op2",
             vec![Error::from(ErrorKind::Duplicate).with_name("operation_name")],
@@ -424,7 +433,7 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_duplicate_variables() {
+    fn duplicate_variables() {
         check_error(
             "query=test&variables={}&variables={}",
             vec![Error::from(ErrorKind::Duplicate).with_name("variables")],
@@ -433,7 +442,7 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_variables_invalid_json() {
+    fn variables_invalid_json() {
         check_error(
             "query=test&variables=NOT_JSON",
             vec![Error::from(ErrorKind::Validation(Cow::Owned(
@@ -445,207 +454,45 @@ mod fromform_tests {
     }
 
     #[test]
-    fn test_variables_valid_json() {
+    fn variables_valid_json() {
         let result: Result<GraphQLRequest, Errors> =
             Form::parse_encoded(RawStr::new(r#"query=test&variables={"foo":"bar"}"#));
+
         assert!(result.is_ok());
+
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"bar"}"#).unwrap();
-        let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-            "test".into(),
-            None,
-            Some(variables),
-        )));
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(
+            http::GraphQLRequest::new("test".into(), None, Some(variables)),
+        ));
+
         assert_eq!(result.unwrap(), expected);
     }
 
     #[test]
-    fn test_variables_encoded_json() {
+    fn variables_encoded_json() {
         let result: Result<GraphQLRequest, Errors> = Form::parse_encoded(RawStr::new(
             r#"query=test&variables={"foo":"x%20y%26%3F+z"}"#,
         ));
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"x y&? z"}"#).unwrap();
-        let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-            "test".into(),
-            None,
-            Some(variables),
-        )));
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(
+            http::GraphQLRequest::new("test".into(), None, Some(variables)),
+        ));
+
         assert_eq!(result.unwrap(), expected);
     }
 
     #[test]
-    fn test_url_decode() {
+    fn url_decode() {
         let result: Result<GraphQLRequest, Errors> = Form::parse_encoded(RawStr::new(
             "query=%25foo%20bar+baz%26%3F&operation_name=test",
         ));
+
         assert!(result.is_ok());
-        let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-            "%foo bar baz&?".into(),
-            Some("test".into()),
-            None,
-        )));
+
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(
+            http::GraphQLRequest::new("%foo bar baz&?".into(), Some("test".into()), None),
+        ));
+
         assert_eq!(result.unwrap(), expected);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use juniper::{
-        http::tests as http_tests,
-        tests::fixtures::starwars::schema::{Database, Query},
-        EmptyMutation, EmptySubscription, RootNode,
-    };
-    use rocket::{
-        get,
-        http::ContentType,
-        local::asynchronous::{Client, LocalResponse},
-        post, routes, Build, Rocket, State,
-    };
-
-    type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
-
-    #[get("/?<request..>")]
-    async fn get_graphql_handler(
-        context: &State<Database>,
-        request: super::GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> super::GraphQLResponse {
-        request.execute(schema, context).await
-    }
-
-    #[post("/", data = "<request>")]
-    async fn post_graphql_handler(
-        context: &State<Database>,
-        request: super::GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> super::GraphQLResponse {
-        request.execute(schema, context).await
-    }
-
-    #[get("/?<request..>")]
-    fn get_graphql_handler_sync(
-        context: &State<Database>,
-        request: super::GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> super::GraphQLResponse {
-        request.execute_sync(schema, context)
-    }
-
-    #[post("/", data = "<request>")]
-    fn post_graphql_handler_sync(
-        context: &State<Database>,
-        request: super::GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> super::GraphQLResponse {
-        request.execute_sync(schema, context)
-    }
-
-    struct TestRocketIntegration {
-        client: Client,
-    }
-
-    impl http_tests::HttpIntegration for TestRocketIntegration {
-        fn get(&self, url: &str) -> http_tests::TestResponse {
-            let req = self.client.get(url);
-            let req = futures::executor::block_on(req.dispatch());
-            futures::executor::block_on(make_test_response(req))
-        }
-
-        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let req = self.client.post(url).header(ContentType::JSON).body(body);
-            let req = futures::executor::block_on(req.dispatch());
-            futures::executor::block_on(make_test_response(req))
-        }
-
-        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let req = self
-                .client
-                .post(url)
-                .header(ContentType::new("application", "graphql"))
-                .body(body);
-            let req = futures::executor::block_on(req.dispatch());
-            futures::executor::block_on(make_test_response(req))
-        }
-    }
-
-    #[rocket::async_test]
-    async fn test_rocket_integration() {
-        let rocket = make_rocket();
-        let client = Client::untracked(rocket).await.expect("valid rocket");
-        let integration = TestRocketIntegration { client };
-
-        http_tests::run_http_test_suite(&integration);
-    }
-
-    #[rocket::async_test]
-    async fn test_rocket_sync_integration() {
-        let rocket = make_sync_rocket();
-        let client = Client::untracked(rocket).await.expect("valid rocket");
-        let integration = TestRocketIntegration { client };
-
-        http_tests::run_http_test_suite(&integration);
-    }
-
-    #[rocket::async_test]
-    async fn test_operation_names() {
-        #[post("/", data = "<request>")]
-        async fn post_graphql_assert_operation_name_handler(
-            context: &State<Database>,
-            request: super::GraphQLRequest,
-            schema: &State<Schema>,
-        ) -> super::GraphQLResponse {
-            assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-            request.execute(schema, context).await
-        }
-
-        let rocket = make_rocket_without_routes()
-            .mount("/", routes![post_graphql_assert_operation_name_handler]);
-        let client = Client::untracked(rocket).await.expect("valid rocket");
-
-        let resp = client
-            .post("/")
-            .header(ContentType::JSON)
-            .body(r#"{"query": "query TestQuery {hero{name}}", "operationName": "TestQuery"}"#)
-            .dispatch()
-            .await;
-        let resp = make_test_response(resp);
-
-        assert_eq!(resp.await.status_code, 200);
-    }
-
-    fn make_rocket() -> Rocket<Build> {
-        make_rocket_without_routes().mount("/", routes![post_graphql_handler, get_graphql_handler])
-    }
-
-    fn make_sync_rocket() -> Rocket<Build> {
-        make_rocket_without_routes().mount(
-            "/",
-            routes![post_graphql_handler_sync, get_graphql_handler_sync],
-        )
-    }
-
-    fn make_rocket_without_routes() -> Rocket<Build> {
-        Rocket::build().manage(Database::new()).manage(Schema::new(
-            Query,
-            EmptyMutation::<Database>::new(),
-            EmptySubscription::<Database>::new(),
-        ))
-    }
-
-    async fn make_test_response(response: LocalResponse<'_>) -> http_tests::TestResponse {
-        let status_code = response.status().code as i32;
-        let content_type = response
-            .content_type()
-            .expect("No content type header from handler")
-            .to_string();
-        let body = response
-            .into_string()
-            .await
-            .expect("No body returned from GraphQL handler");
-
-        http_tests::TestResponse {
-            status_code,
-            body: Some(body),
-            content_type,
-        }
     }
 }
