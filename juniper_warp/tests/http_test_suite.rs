@@ -39,7 +39,7 @@ impl TestWarpIntegration {
         let rt = tokio::runtime::Runtime::new()
             .unwrap_or_else(|e| panic!("failed to create `tokio::Runtime`: {e}"));
         rt.block_on(async move {
-            make_test_response(req.filter(&self.filter).await.unwrap_or_else(|rejection| {
+            into_test_response(req.filter(&self.filter).await.unwrap_or_else(|rejection| {
                 let code = if rejection.is_not_found() {
                     http::StatusCode::NOT_FOUND
                 } else if let Some(body::BodyDeserializeError { .. }) = rejection.find() {
@@ -101,7 +101,7 @@ impl HttpIntegration for TestWarpIntegration {
     }
 }
 
-async fn make_test_response(resp: reply::Response) -> TestResponse {
+async fn into_test_response(resp: reply::Response) -> TestResponse {
     let (parts, body) = resp.into_parts();
 
     let status_code = parts.status.as_u16().into();

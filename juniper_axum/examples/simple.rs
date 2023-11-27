@@ -11,7 +11,7 @@ use futures::stream::{BoxStream, StreamExt as _};
 use juniper::{graphql_object, graphql_subscription, EmptyMutation, FieldError, RootNode};
 use juniper_axum::{graphiql, graphql, playground, ws};
 use juniper_graphql_ws::ConnectionConfig;
-use tokio::time::interval;
+use tokio::{net::TcpListener, time::interval};
 use tokio_stream::wrappers::IntervalStream;
 
 #[derive(Clone, Copy, Debug)]
@@ -65,7 +65,7 @@ async fn main() {
         .route(
             "/graphql",
             on(
-                MethodFilter::GET | MethodFilter::POST,
+                MethodFilter::GET.or(MethodFilter::POST),
                 graphql::<Arc<Schema>>,
             ),
         )
@@ -79,9 +79,11 @@ async fn main() {
         .layer(Extension(Arc::new(schema)));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
-    tracing::info!("listening on {addr}");
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = TcpListener::bind(addr)
         .await
-        .unwrap_or_else(|e| panic!("failed to run `axum::Server`: {e}"));
+        .unwrap_or_else(|e| panic!("failed to listen on {addr}: {e}"));
+    tracing::info!("listening on {addr}");
+    axum::serve(listener, app)
+        .await
+        .unwrap_or_else(|e| panic!("failed to run `axum::serve`: {e}"));
 }

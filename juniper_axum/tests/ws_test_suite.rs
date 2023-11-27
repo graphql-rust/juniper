@@ -1,9 +1,6 @@
 #![cfg(not(windows))]
 
-use std::{
-    net::{SocketAddr, TcpListener},
-    sync::Arc,
-};
+use std::{net::SocketAddr, sync::Arc};
 
 use anyhow::anyhow;
 use axum::{routing::get, Extension, Router};
@@ -15,7 +12,10 @@ use juniper::{
 };
 use juniper_axum::subscriptions;
 use juniper_graphql_ws::ConnectionConfig;
-use tokio::{net::TcpStream, time::timeout};
+use tokio::{
+    net::{TcpListener, TcpStream},
+    time::timeout,
+};
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
@@ -49,15 +49,13 @@ impl TestApp {
     }
 
     async fn run(self, messages: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error> {
-        let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
+        let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())
+            .await
+            .unwrap();
         let addr = listener.local_addr().unwrap();
 
         tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(self.0.into_make_service())
-                .await
-                .unwrap();
+            axum::serve(listener, self.0).await.unwrap();
         });
 
         let (mut websocket, _) = connect_async(format!("ws://{}/subscriptions", addr))

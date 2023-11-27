@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use axum::{
-    body::{Body, HttpBody as _},
+    body::Body,
     http::Request,
     response::Response,
     routing::{get, post},
     Extension, Router,
 };
+use futures::TryStreamExt as _;
 use juniper::{
     http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
     tests::fixtures::starwars::schema::{Database, Query},
@@ -97,12 +98,15 @@ async fn into_test_response(resp: Response) -> TestResponse {
         })
         .unwrap_or_default();
 
-    let mut body = resp.into_body();
-    let mut body_bytes = vec![];
-    while let Some(bytes) = body.data().await {
-        body_bytes.extend(bytes.unwrap());
-    }
-    let body = String::from_utf8(body_bytes).unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
+    let body = String::from_utf8(
+        resp.into_body()
+            .into_data_stream()
+            .map_ok(|bytes| bytes.to_vec())
+            .try_concat()
+            .await
+            .unwrap(),
+    )
+    .unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
 
     TestResponse {
         status_code,
