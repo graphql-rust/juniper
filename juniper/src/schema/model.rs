@@ -44,6 +44,8 @@ pub struct RootNode<
     pub subscription_info: SubscriptionT::TypeInfo,
     #[doc(hidden)]
     pub schema: SchemaType<'a, S>,
+    #[doc(hidden)]
+    pub introspection_disabled: bool,
 }
 
 /// Metadata for a schema
@@ -147,7 +149,7 @@ where
         mutation_info: MutationT::TypeInfo,
         subscription_info: SubscriptionT::TypeInfo,
     ) -> Self {
-        RootNode {
+        Self {
             query_type: query_obj,
             mutation_type: mutation_obj,
             subscription_type: subscription_obj,
@@ -159,7 +161,27 @@ where
             query_info,
             mutation_info,
             subscription_info,
+            introspection_disabled: false,
         }
+    }
+
+    /// Disables introspection for this [`RootNode`], making it to return a [`FieldError`] whenever
+    /// its `__schema` or `__type` field is resolved.
+    ///
+    /// By default, all introspection queries are allowed.
+    pub fn disable_introspection(mut self) -> Self {
+        self.introspection_disabled = true;
+        self
+    }
+
+    /// Enables introspection for this [`RootNode`], if it was previously [disabled][1].
+    ///
+    /// By default, all introspection queries are allowed.
+    ///
+    /// [1]: RootNode::disable_introspection
+    pub fn enable_introspection(mut self) -> Self {
+        self.introspection_disabled = false;
+        self
     }
 
     #[cfg(feature = "schema-language")]
