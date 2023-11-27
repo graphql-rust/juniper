@@ -1,5 +1,6 @@
 mod arguments_of_correct_type;
 mod default_values_of_correct_type;
+mod disable_introspection;
 mod fields_on_correct_type;
 mod fragments_on_composite_types;
 mod known_argument_names;
