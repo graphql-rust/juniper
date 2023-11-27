@@ -96,7 +96,9 @@ where
                     .into_response()
             })?;
 
-        match (req.method(), content_type) {
+        // TODO: Move into `match` expression directly once MSRV is bumped higher than 1.74.
+        let method = req.method();
+        match (method, content_type) {
             (&Method::GET, _) => req
                 .extract_parts::<Query<GetRequest>>()
                 .await
