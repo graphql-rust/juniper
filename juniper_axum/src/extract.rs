@@ -71,14 +71,14 @@ where
     S: ScalarValue;
 
 #[async_trait]
-impl<S, State> FromRequest<State, Body> for JuniperRequest<S>
+impl<S, State> FromRequest<State> for JuniperRequest<S>
 where
     S: ScalarValue,
     State: Sync,
     Query<GetRequest>: FromRequestParts<State>,
-    Json<GraphQLBatchRequest<S>>: FromRequest<State, Body>,
-    <Json<GraphQLBatchRequest<S>> as FromRequest<State, Body>>::Rejection: fmt::Display,
-    String: FromRequest<State, Body>,
+    Json<GraphQLBatchRequest<S>>: FromRequest<State>,
+    <Json<GraphQLBatchRequest<S>> as FromRequest<State>>::Rejection: fmt::Display,
+    String: FromRequest<State>,
 {
     type Rejection = Response;
 
@@ -96,7 +96,9 @@ where
                     .into_response()
             })?;
 
-        match (req.method(), content_type) {
+        // TODO: Move into `match` expression directly once MSRV is bumped higher than 1.74.
+        let method = req.method();
+        match (method, content_type) {
             (&Method::GET, _) => req
                 .extract_parts::<Query<GetRequest>>()
                 .await
@@ -180,13 +182,8 @@ impl<S: ScalarValue> TryFrom<GetRequest> for GraphQLRequest<S> {
 
 #[cfg(test)]
 mod juniper_request_tests {
-    use std::fmt;
-
-    use axum::{
-        body::{Body, Bytes, HttpBody},
-        extract::FromRequest as _,
-        http::Request,
-    };
+    use axum::{body::Body, extract::FromRequest as _, http::Request};
+    use futures::TryStreamExt as _;
     use juniper::{
         graphql_input_value,
         http::{GraphQLBatchRequest, GraphQLRequest},
@@ -279,18 +276,15 @@ mod juniper_request_tests {
         }
     }
 
-    /// Converts the provided [`HttpBody`] into a [`String`].
-    async fn display_body<B>(mut body: B) -> String
-    where
-        B: HttpBody<Data = Bytes> + Unpin,
-        B::Error: fmt::Display,
-    {
-        let mut body_bytes = vec![];
-        while let Some(bytes) = body.data().await {
-            body_bytes.extend(
-                bytes.unwrap_or_else(|e| panic!("failed to represent `Body` as `Bytes`: {e}")),
-            );
-        }
-        String::from_utf8(body_bytes).unwrap_or_else(|e| panic!("not UTF-8 body: {e}"))
+    /// Converts the provided [`Body`] into a [`String`].
+    async fn display_body(body: Body) -> String {
+        String::from_utf8(
+            body.into_data_stream()
+                .map_ok(|bytes| bytes.to_vec())
+                .try_concat()
+                .await
+                .unwrap(),
+        )
+        .unwrap_or_else(|e| panic!("not UTF-8 body: {e}"))
     }
 }

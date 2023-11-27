@@ -10,7 +10,7 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 ### Initialized
 
-- Dependent on 0.6 version of [`axum` crate]. ([#1088])
+- Dependent on 0.7 version of [`axum` crate]. ([#1088], [#1224])
 - Dependent on 0.16 version of [`juniper` crate]. ([#1088])
 - Dependent on 0.4 version of [`juniper_graphql_ws` crate]. ([#1088])
 
@@ -28,6 +28,7 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 [#986]: /../../issues/986
 [#1088]: /../../pull/1088
 [#1184]: /../../issues/1184
+[#1224]: /../../pull/1224
 
 
 
