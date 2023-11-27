@@ -1,6 +1,6 @@
 use crate::{
     ast::Selection,
-    executor::{ExecutionResult, Executor, FieldError, Registry},
+    executor::{ExecutionResult, Executor, Registry},
     graphql_object,
     types::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},
@@ -9,7 +9,7 @@ use crate::{
     value::{ScalarValue, Value},
 };
 
-use super::{
+use crate::schema::{
     meta::{
         Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType, ObjectMeta,
         UnionMeta,
@@ -64,9 +64,6 @@ where
         executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         match field {
-            "__schema" | "__type" if self.introspection_disabled => {
-                Err(FieldError::disabled_introspection())
-            }
             "__schema" => executor
                 .replaced_context(&self.schema)
                 .resolve(&(), &self.schema),
@@ -87,7 +84,6 @@ where
         executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         use crate::{types::base::resolve_selection_set_into, value::Object};
-
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
@@ -123,9 +119,6 @@ where
     ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
         use futures::future::ready;
         match field_name {
-            "__schema" | "__type" if self.introspection_disabled => {
-                Box::pin(ready(Err(FieldError::disabled_introspection())))
-            }
             "__schema" | "__type" => {
                 let v = self.resolve_field(info, field_name, arguments, executor);
                 Box::pin(ready(v))

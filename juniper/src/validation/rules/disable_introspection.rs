@@ -1,3 +1,6 @@
+//! Validation rule checking whether a GraphQL operation contains introspection (`__schema` or
+//! `__type` fields).
+
 use crate::{
     ast::Field,
     parser::Spanning,
@@ -5,8 +8,13 @@ use crate::{
     value::ScalarValue,
 };
 
+/// Validation rule checking whether a GraphQL operation contains introspection (`__schema` or
+/// `__type` fields).
 pub struct DisableIntrospection;
 
+/// Produces a new [`DisableIntrospection`] validation rule.
+#[inline]
+#[must_use]
 pub fn factory() -> DisableIntrospection {
     DisableIntrospection
 }
@@ -22,13 +30,7 @@ where
     ) {
         let field_name = field.item.name.item;
         if matches!(field_name, "__schema" | "__type") {
-            context.report_error(
-                &format!(
-                    "GraphQL introspection is not allowed, but the operation contained \
-                     `{field_name}`",
-                ),
-                &[field.item.name.span.start],
-            );
+            context.report_error(&error_message(field_name), &[field.item.name.span.start]);
         }
     }
 }

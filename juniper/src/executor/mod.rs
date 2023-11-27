@@ -235,11 +235,6 @@ impl<S> FieldError<S> {
             extensions: self.extensions,
         }
     }
-
-    /// Creates a new [`FieldError`] informing about disable introspection.
-    pub(crate) fn disabled_introspection() -> Self {
-        Self::new("Introspection queries are disabled", Value::null())
-    }
 }
 
 /// The result of resolving the value of a field of type `T`

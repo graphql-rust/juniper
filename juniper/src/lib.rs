@@ -58,7 +58,10 @@ use crate::{
     executor::{execute_validated_query, get_operation},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::parse_document_source,
-    validation::{validate_input_values, visit_all_rules, ValidatorContext},
+    validation::{
+        rules, validate_input_values, visit as visit_rule, visit_all_rules, MultiVisitorNil,
+        ValidatorContext,
+    },
 };
 
 pub use crate::{
@@ -158,6 +161,13 @@ where
     {
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
+        if root_node.introspection_disabled {
+            visit_rule(
+                &mut MultiVisitorNil.with(rules::disable_introspection::factory()),
+                &mut ctx,
+                &document,
+            );
+        }
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
@@ -201,6 +211,13 @@ where
     {
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
+        if root_node.introspection_disabled {
+            visit_rule(
+                &mut MultiVisitorNil.with(rules::disable_introspection::factory()),
+                &mut ctx,
+                &document,
+            );
+        }
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
@@ -246,6 +263,13 @@ where
     {
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
         visit_all_rules(&mut ctx, &document);
+        if root_node.introspection_disabled {
+            visit_rule(
+                &mut MultiVisitorNil.with(rules::disable_introspection::factory()),
+                &mut ctx,
+                &document,
+            );
+        }
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {

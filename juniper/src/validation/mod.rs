@@ -3,7 +3,7 @@
 mod context;
 mod input_value;
 mod multi_visitor;
-mod rules;
+pub mod rules;
 mod traits;
 mod visitor;
 
