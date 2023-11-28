@@ -71,6 +71,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `LookAheadMethods::field_original_name()` and `LookAheadMethods::field_alias()` methods. ([#1199])
 - [`anyhow` crate] integration behind `anyhow` and `backtrace` [Cargo feature]s. ([#1215], [#988])
 - `RootNode::disable_introspection()` applying additional `validation::rules::disable_introspection`, and `RootNode::enable_introspection()` reverting it. ([#1227], [#456])
+- `Clone` and `PartialEq` implementations for `GraphQLResponse`. ([#1228], [#103])
 
 ### Changed
 
@@ -88,6 +89,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Incorrect error when explicit `null` provided for `null`able list input parameter. ([#1086], [#1085])
 - Stack overflow on nested GraphQL fragments. ([CVE-2022-31173])
 
+[#103]: /../../issues/103
 [#113]: /../../issues/113
 [#456]: /../../issues/456
 [#503]: /../../issues/503
@@ -143,6 +145,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1215]: /../../pull/1215
 [#1221]: /../../pull/1221
 [#1227]: /../../pull/1227
+[#1228]: /../../pull/1228
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
