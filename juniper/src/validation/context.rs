@@ -10,7 +10,7 @@ use crate::schema::{meta::MetaType, model::SchemaType};
 use crate::parser::SourcePosition;
 
 /// Query validation error
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RuleError {
     locations: Vec<SourcePosition>,
     message: String,
