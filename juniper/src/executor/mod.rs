@@ -87,7 +87,7 @@ where
 ///
 /// All execution errors contain the source position in the query of the field
 /// that failed to resolve. It also contains the field stack.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ExecutionError<S> {
     location: SourcePosition,
     path: Vec<String>,

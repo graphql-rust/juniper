@@ -51,7 +51,7 @@ pub enum Token<'a> {
 }
 
 /// Error when tokenizing the input source
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LexerError {
     /// An unknown character was found
     ///
