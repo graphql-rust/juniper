@@ -44,6 +44,8 @@ pub struct RootNode<
     pub subscription_info: SubscriptionT::TypeInfo,
     #[doc(hidden)]
     pub schema: SchemaType<'a, S>,
+    #[doc(hidden)]
+    pub introspection_disabled: bool,
 }
 
 /// Metadata for a schema
@@ -147,7 +149,7 @@ where
         mutation_info: MutationT::TypeInfo,
         subscription_info: SubscriptionT::TypeInfo,
     ) -> Self {
-        RootNode {
+        Self {
             query_type: query_obj,
             mutation_type: mutation_obj,
             subscription_type: subscription_obj,
@@ -159,7 +161,63 @@ where
             query_info,
             mutation_info,
             subscription_info,
+            introspection_disabled: false,
         }
+    }
+
+    /// Disables introspection for this [`RootNode`], making it to return a [`FieldError`] whenever
+    /// its `__schema` or `__type` field is resolved.
+    ///
+    /// By default, all introspection queries are allowed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{
+    /// #     graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
+    /// #     RootNode,
+    /// # };
+    /// #
+    /// pub struct Query;
+    ///
+    /// #[graphql_object]
+    /// impl Query {
+    ///     fn some() -> bool {
+    ///         true
+    ///     }
+    /// }
+    ///
+    /// type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+    ///
+    /// let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())
+    ///     .disable_introspection();
+    ///
+    /// # // language=GraphQL
+    /// let query = "query { __schema { queryType { name } } }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => {
+    ///         assert_eq!(
+    ///             errs.first().unwrap().message(),
+    ///             "GraphQL introspection is not allowed, but the operation contained `__schema`",
+    ///         );
+    ///     }
+    ///     res => panic!("expected `ValidationError`, returned: {res:#?}"),
+    /// }
+    /// ```
+    pub fn disable_introspection(mut self) -> Self {
+        self.introspection_disabled = true;
+        self
+    }
+
+    /// Enables introspection for this [`RootNode`], if it was previously [disabled][1].
+    ///
+    /// By default, all introspection queries are allowed.
+    ///
+    /// [1]: RootNode::disable_introspection
+    pub fn enable_introspection(mut self) -> Self {
+        self.introspection_disabled = false;
+        self
     }
 
     #[cfg(feature = "schema-language")]

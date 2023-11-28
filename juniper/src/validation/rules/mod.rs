@@ -1,5 +1,8 @@
+//! Definitions of rules for validation.
+
 mod arguments_of_correct_type;
 mod default_values_of_correct_type;
+pub mod disable_introspection;
 mod fields_on_correct_type;
 mod fragments_on_composite_types;
 mod known_argument_names;
@@ -23,12 +26,13 @@ mod unique_variable_names;
 mod variables_are_input_types;
 mod variables_in_allowed_position;
 
+use std::fmt::Debug;
+
 use crate::{
     ast::Document,
     validation::{visit, MultiVisitorNil, ValidatorContext},
     value::ScalarValue,
 };
-use std::fmt::Debug;
 
 #[doc(hidden)]
 pub fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
