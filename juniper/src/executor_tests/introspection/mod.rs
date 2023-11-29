@@ -6,12 +6,10 @@ mod input_object;
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    executor::Variables,
-    graphql_interface, graphql_object, graphql_scalar,
+    graphql_interface, graphql_object, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{ParseScalarResult, ParseScalarValue, ScalarValue, Value},
-    GraphQLEnum,
+    GraphQLEnum, GraphQLScalar,
 };
 
 #[derive(GraphQLEnum)]
@@ -21,30 +19,15 @@ enum Sample {
     Two,
 }
 
+#[derive(GraphQLScalar)]
+#[graphql(name = "SampleScalar", transparent)]
 struct Scalar(i32);
-
-#[graphql_scalar(name = "SampleScalar")]
-impl<S: ScalarValue> GraphQLScalar for Scalar {
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0)
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Scalar> {
-        v.as_scalar().and_then(ScalarValue::as_int).map(Scalar)
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
-    }
-}
 
 /// A sample interface
 #[graphql_interface(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface
-    fn sample_enum(&self) -> Sample {
-        Sample::One
-    }
+    fn sample_enum(&self) -> Sample;
 }
 
 struct Root;
@@ -56,19 +39,14 @@ impl Root {
         Sample::One
     }
 
-    #[graphql(arguments(
-        first(description = "The first number",),
-        second(description = "The second number", default = 123),
-    ))]
-
     /// A sample scalar field on the object
-    fn sample_scalar(first: i32, second: i32) -> Scalar {
+    fn sample_scalar(
+        #[graphql(description = "The first number")] first: i32,
+        #[graphql(description = "The second number", default = 123)] second: i32,
+    ) -> Scalar {
         Scalar(first + second)
     }
 }
-
-#[graphql_interface(scalar = DefaultScalarValue)]
-impl Interface for Root {}
 
 #[tokio::test]
 async fn test_execution() {
@@ -85,25 +63,21 @@ async fn test_execution() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     assert_eq!(
         result,
-        Value::object(
-            vec![
-                ("sampleEnum", Value::scalar("ONE")),
-                ("first", Value::scalar(123)),
-                ("second", Value::scalar(30)),
-            ]
-            .into_iter()
-            .collect()
-        )
+        graphql_value!({
+            "sampleEnum": "ONE",
+            "first": 123,
+            "second": 30,
+        }),
     );
 }
 
@@ -134,13 +108,13 @@ async fn enum_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -152,29 +126,32 @@ async fn enum_introspection() {
 
     assert_eq!(
         type_info.get_field_value("name"),
-        Some(&Value::scalar("SampleEnum"))
+        Some(&graphql_value!("SampleEnum")),
     );
     assert_eq!(
         type_info.get_field_value("kind"),
-        Some(&Value::scalar("ENUM"))
+        Some(&graphql_value!("ENUM")),
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
-    assert_eq!(type_info.get_field_value("ofType"), Some(&Value::null()));
+    assert_eq!(
+        type_info.get_field_value("ofType"),
+        Some(&graphql_value!(null))
+    );
 
     let values = type_info
         .get_field_value("enumValues")
@@ -184,27 +161,19 @@ async fn enum_introspection() {
 
     assert_eq!(values.len(), 2);
 
-    assert!(values.contains(&Value::object(
-        vec![
-            ("name", Value::scalar("ONE")),
-            ("description", Value::null()),
-            ("isDeprecated", Value::scalar(false)),
-            ("deprecationReason", Value::null()),
-        ]
-        .into_iter()
-        .collect(),
-    )));
+    assert!(values.contains(&graphql_value!({
+        "name": "ONE",
+        "description": null,
+        "isDeprecated": false,
+        "deprecationReason": null,
+    })));
 
-    assert!(values.contains(&Value::object(
-        vec![
-            ("name", Value::scalar("TWO")),
-            ("description", Value::null()),
-            ("isDeprecated", Value::scalar(false)),
-            ("deprecationReason", Value::null()),
-        ]
-        .into_iter()
-        .collect(),
-    )));
+    assert!(values.contains(&graphql_value!({
+        "name": "TWO",
+        "description": null,
+        "isDeprecated": false,
+        "deprecationReason": null,
+    })));
 }
 
 #[tokio::test]
@@ -248,13 +217,13 @@ async fn interface_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -266,29 +235,32 @@ async fn interface_introspection() {
 
     assert_eq!(
         type_info.get_field_value("name"),
-        Some(&Value::scalar("SampleInterface"))
+        Some(&graphql_value!("SampleInterface")),
     );
     assert_eq!(
         type_info.get_field_value("kind"),
-        Some(&Value::scalar("INTERFACE"))
+        Some(&graphql_value!("INTERFACE")),
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&Value::scalar("A sample interface"))
+        Some(&graphql_value!("A sample interface")),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&Value::null())
+        Some(&graphql_value!([])),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
-    assert_eq!(type_info.get_field_value("ofType"), Some(&Value::null()));
+    assert_eq!(
+        type_info.get_field_value("ofType"),
+        Some(&graphql_value!(null))
+    );
 
     let possible_types = type_info
         .get_field_value("possibleTypes")
@@ -298,9 +270,7 @@ async fn interface_introspection() {
 
     assert_eq!(possible_types.len(), 1);
 
-    assert!(possible_types.contains(&Value::object(
-        vec![("name", Value::scalar("Root"))].into_iter().collect()
-    )));
+    assert!(possible_types.contains(&graphql_value!({"name": "Root"})));
 
     let fields = type_info
         .get_field_value("fields")
@@ -310,42 +280,21 @@ async fn interface_introspection() {
 
     assert_eq!(fields.len(), 1);
 
-    assert!(fields.contains(&Value::object(
-        vec![
-            ("name", Value::scalar("sampleEnum")),
-            (
-                "description",
-                Value::scalar("A sample field in the interface"),
-            ),
-            ("args", Value::list(vec![])),
-            (
-                "type",
-                Value::object(
-                    vec![
-                        ("name", Value::null()),
-                        ("kind", Value::scalar("NON_NULL")),
-                        (
-                            "ofType",
-                            Value::object(
-                                vec![
-                                    ("name", Value::scalar("SampleEnum")),
-                                    ("kind", Value::scalar("ENUM")),
-                                ]
-                                .into_iter()
-                                .collect(),
-                            ),
-                        ),
-                    ]
-                    .into_iter()
-                    .collect(),
-                ),
-            ),
-            ("isDeprecated", Value::scalar(false)),
-            ("deprecationReason", Value::null()),
-        ]
-        .into_iter()
-        .collect(),
-    )));
+    assert!(fields.contains(&graphql_value!({
+        "name": "sampleEnum",
+        "description": "A sample field in the interface",
+        "args": [],
+        "type": {
+            "name": null,
+            "kind": "NON_NULL",
+            "ofType": {
+               "name": "SampleEnum",
+               "kind": "ENUM",
+            },
+        },
+        "isDeprecated": false,
+        "deprecationReason": null,
+    })));
 }
 
 #[tokio::test]
@@ -400,13 +349,13 @@ async fn object_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -418,36 +367,35 @@ async fn object_introspection() {
 
     assert_eq!(
         type_info.get_field_value("name"),
-        Some(&Value::scalar("Root"))
+        Some(&graphql_value!("Root")),
     );
     assert_eq!(
         type_info.get_field_value("kind"),
-        Some(&Value::scalar("OBJECT"))
+        Some(&graphql_value!("OBJECT")),
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&Value::scalar("The root query object in the schema"))
+        Some(&graphql_value!("The root query object in the schema")),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&Value::list(vec![Value::object(
-            vec![("name", Value::scalar("SampleInterface"))]
-                .into_iter()
-                .collect(),
-        )]))
+        Some(&graphql_value!([{"name": "SampleInterface"}])),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
-    assert_eq!(type_info.get_field_value("ofType"), Some(&Value::null()));
+    assert_eq!(
+        type_info.get_field_value("ofType"),
+        Some(&graphql_value!(null))
+    );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&Value::null())
+        Some(&graphql_value!(null)),
     );
 
     let fields = type_info
@@ -458,135 +406,65 @@ async fn object_introspection() {
 
     assert_eq!(fields.len(), 2);
 
-    println!("Fields: {:#?}", fields);
+    println!("Fields: {fields:#?}");
 
-    assert!(fields.contains(&Value::object(
-        vec![
-            ("name", Value::scalar("sampleEnum")),
-            ("description", Value::null()),
-            ("args", Value::list(vec![])),
-            (
-                "type",
-                Value::object(
-                    vec![
-                        ("name", Value::null()),
-                        ("kind", Value::scalar("NON_NULL")),
-                        (
-                            "ofType",
-                            Value::object(
-                                vec![
-                                    ("name", Value::scalar("SampleEnum")),
-                                    ("kind", Value::scalar("ENUM")),
-                                ]
-                                .into_iter()
-                                .collect(),
-                            ),
-                        ),
-                    ]
-                    .into_iter()
-                    .collect(),
-                ),
-            ),
-            ("isDeprecated", Value::scalar(false)),
-            ("deprecationReason", Value::null()),
-        ]
-        .into_iter()
-        .collect(),
-    )));
+    assert!(fields.contains(&graphql_value!({
+        "name": "sampleEnum",
+        "description": null,
+        "args": [],
+        "type": {
+            "name": null,
+            "kind": "NON_NULL",
+            "ofType": {
+               "name": "SampleEnum",
+               "kind": "ENUM",
+            },
+        },
+        "isDeprecated": false,
+        "deprecationReason": null,
+    })));
 
-    assert!(fields.contains(&Value::object(
-        vec![
-            ("name", Value::scalar("sampleScalar")),
-            (
-                "description",
-                Value::scalar("A sample scalar field on the object"),
-            ),
-            (
-                "args",
-                Value::list(vec![
-                    Value::object(
-                        vec![
-                            ("name", Value::scalar("first")),
-                            ("description", Value::scalar("The first number")),
-                            (
-                                "type",
-                                Value::object(
-                                    vec![
-                                        ("name", Value::null()),
-                                        ("kind", Value::scalar("NON_NULL")),
-                                        (
-                                            "ofType",
-                                            Value::object(
-                                                vec![
-                                                    ("name", Value::scalar("Int")),
-                                                    ("kind", Value::scalar("SCALAR")),
-                                                    ("ofType", Value::null()),
-                                                ]
-                                                .into_iter()
-                                                .collect(),
-                                            ),
-                                        ),
-                                    ]
-                                    .into_iter()
-                                    .collect(),
-                                ),
-                            ),
-                            ("defaultValue", Value::null()),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                    Value::object(
-                        vec![
-                            ("name", Value::scalar("second")),
-                            ("description", Value::scalar("The second number")),
-                            (
-                                "type",
-                                Value::object(
-                                    vec![
-                                        ("name", Value::scalar("Int")),
-                                        ("kind", Value::scalar("SCALAR")),
-                                        ("ofType", Value::null()),
-                                    ]
-                                    .into_iter()
-                                    .collect(),
-                                ),
-                            ),
-                            ("defaultValue", Value::scalar("123")),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ]),
-            ),
-            (
-                "type",
-                Value::object(
-                    vec![
-                        ("name", Value::null()),
-                        ("kind", Value::scalar("NON_NULL")),
-                        (
-                            "ofType",
-                            Value::object(
-                                vec![
-                                    ("name", Value::scalar("SampleScalar")),
-                                    ("kind", Value::scalar("SCALAR")),
-                                ]
-                                .into_iter()
-                                .collect(),
-                            ),
-                        ),
-                    ]
-                    .into_iter()
-                    .collect(),
-                ),
-            ),
-            ("isDeprecated", Value::scalar(false)),
-            ("deprecationReason", Value::null()),
-        ]
-        .into_iter()
-        .collect(),
-    )));
+    assert!(fields.contains(&graphql_value!({
+        "name": "sampleScalar",
+        "description": "A sample scalar field on the object",
+        "args": [{
+            "name": "first",
+            "description": "The first number",
+            "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                    "name": "Int",
+                    "kind": "SCALAR",
+                    "ofType": null,
+                },
+            },
+            "defaultValue": null,
+        }, {
+            "name": "second",
+            "description": "The second number",
+            "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                    "name": "Int",
+                    "kind": "SCALAR",
+                    "ofType": null,
+                },
+            },
+            "defaultValue": "123",
+        }],
+        "type": {
+            "name": null,
+            "kind": "NON_NULL",
+            "ofType": {
+               "name": "SampleScalar",
+               "kind": "SCALAR",
+            },
+        },
+        "isDeprecated": false,
+        "deprecationReason": null,
+    })));
 }
 
 #[tokio::test]
@@ -597,6 +475,7 @@ async fn scalar_introspection() {
             name
             kind
             description
+            specifiedByUrl
             fields { name }
             interfaces { name }
             possibleTypes { name }
@@ -612,13 +491,13 @@ async fn scalar_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .expect("Execution failed");
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let type_info = result
         .as_object_value()
@@ -628,20 +507,17 @@ async fn scalar_introspection() {
 
     assert_eq!(
         type_info,
-        &Value::object(
-            vec![
-                ("name", Value::scalar("SampleScalar")),
-                ("kind", Value::scalar("SCALAR")),
-                ("description", Value::null()),
-                ("fields", Value::null()),
-                ("interfaces", Value::null()),
-                ("possibleTypes", Value::null()),
-                ("enumValues", Value::null()),
-                ("inputFields", Value::null()),
-                ("ofType", Value::null()),
-            ]
-            .into_iter()
-            .collect()
-        )
+        &graphql_value!({
+            "name": "SampleScalar",
+            "kind": "SCALAR",
+            "description": null,
+            "specifiedByUrl": null,
+            "fields": null,
+            "interfaces": null,
+            "possibleTypes": null,
+            "enumValues": null,
+            "inputFields": null,
+            "ofType": null,
+        }),
     );
 }

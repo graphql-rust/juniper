@@ -1,9 +1,30 @@
-no-dev-version = true
-pre-release-commit-message = "Release {{crate_name}} {{version}}"
-pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
-tag-message = "Release {{crate_name}} {{version}}"
-pre-release-replacements = [
-  {file="src/lib.rs", min=0, search="docs.rs/juniper_graphql_ws/[a-z0-9\\.-]+", replace="docs.rs/juniper_graphql_ws/{{version}}"},
-{file="../juniper_warp/Cargo.toml", min=0, search="juniper_graphql_ws = \\{ version = \"[^\"]+\"", replace="juniper_graphql_ws = { version = \"{{version}}\""},
-{file="../juniper_actix/Cargo.toml", min=0, search="juniper_graphql_ws = \\{ version = \"[^\"]+\"", replace="juniper_graphql_ws = { version = \"{{version}}\""},
-]
+[[pre-release-replacements]]
+file = "../juniper_actix/Cargo.toml"
+exactly = 1
+search = "juniper_graphql_ws = \\{ version = \"[^\"]+\""
+replace = "juniper_graphql_ws = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_axum/Cargo.toml"
+exactly = 1
+search = "juniper_graphql_ws = \\{ version = \"[^\"]+\""
+replace = "juniper_graphql_ws = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "../juniper_warp/Cargo.toml"
+exactly = 1
+search = "juniper_graphql_ws = \\{ version = \"[^\"]+\""
+replace = "juniper_graphql_ws = { version = \"{{version}}\""
+
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+max = 1
+min = 0
+search = "## master"
+replace = "## [{{version}}] · {{date}}\n[{{version}}]: /../../tree/{{crate_name}}-v{{version}}/{{crate_name}}"
+
+[[pre-release-replacements]]
+file = "README.md"
+exactly = 2
+search = "graphql-rust/juniper/blob/[^/]+/"
+replace = "graphql-rust/juniper/blob/{{crate_name}}-v{{version}}/"

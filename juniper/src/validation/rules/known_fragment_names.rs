@@ -22,13 +22,13 @@ where
     ) {
         let spread_name = &spread.item.name;
         if !context.is_known_fragment(spread_name.item) {
-            context.report_error(&error_message(spread_name.item), &[spread_name.start]);
+            context.report_error(&error_message(spread_name.item), &[spread_name.span.start]);
         }
     }
 }
 
 fn error_message(frag_name: &str) -> String {
-    format!(r#"Unknown fragment: "{}""#, frag_name)
+    format!(r#"Unknown fragment: "{frag_name}""#)
 }
 
 #[cfg(test)]

@@ -12,13 +12,6 @@ pub enum Scope<'a> {
     Fragment(&'a str),
 }
 
-pub struct NoUndefinedVariables<'a> {
-    defined_variables: HashMap<Option<&'a str>, (SourcePosition, HashSet<&'a str>)>,
-    used_variables: HashMap<Scope<'a>, Vec<Spanning<&'a str>>>,
-    current_scope: Option<Scope<'a>>,
-    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
-}
-
 pub fn factory<'a>() -> NoUndefinedVariables<'a> {
     NoUndefinedVariables {
         defined_variables: HashMap::new(),
@@ -26,6 +19,13 @@ pub fn factory<'a>() -> NoUndefinedVariables<'a> {
         current_scope: None,
         spreads: HashMap::new(),
     }
+}
+
+pub struct NoUndefinedVariables<'a> {
+    defined_variables: HashMap<Option<&'a str>, (SourcePosition, HashSet<&'a str>)>,
+    used_variables: HashMap<Scope<'a>, Vec<Spanning<&'a str>>>,
+    current_scope: Option<Scope<'a>>,
+    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
 }
 
 impl<'a> NoUndefinedVariables<'a> {
@@ -36,8 +36,34 @@ impl<'a> NoUndefinedVariables<'a> {
         unused: &mut Vec<&'a Spanning<&'a str>>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
+        let mut to_visit = Vec::new();
+        if let Some(spreads) = self.find_undef_vars_inner(scope, defined, unused, visited) {
+            to_visit.push(spreads);
+        }
+        while let Some(spreads) = to_visit.pop() {
+            for spread in spreads {
+                if let Some(spreads) =
+                    self.find_undef_vars_inner(&Scope::Fragment(spread), defined, unused, visited)
+                {
+                    to_visit.push(spreads);
+                }
+            }
+        }
+    }
+
+    /// This function should be called only inside [`Self::find_undef_vars()`],
+    /// as it's a recursive function using heap instead of a stack. So, instead
+    /// of the recursive call, we return a [`Vec`] that is visited inside
+    /// [`Self::find_undef_vars()`].
+    fn find_undef_vars_inner(
+        &'a self,
+        scope: &Scope<'a>,
+        defined: &HashSet<&'a str>,
+        unused: &mut Vec<&'a Spanning<&'a str>>,
+        visited: &mut HashSet<Scope<'a>>,
+    ) -> Option<&'a Vec<&'a str>> {
         if visited.contains(scope) {
-            return;
+            return None;
         }
 
         visited.insert(scope.clone());
@@ -50,11 +76,7 @@ impl<'a> NoUndefinedVariables<'a> {
             }
         }
 
-        if let Some(spreads) = self.spreads.get(scope) {
-            for spread in spreads {
-                self.find_undef_vars(&Scope::Fragment(spread), defined, unused, visited);
-            }
-        }
+        self.spreads.get(scope)
     }
 }
 
@@ -63,7 +85,7 @@ where
     S: ScalarValue,
 {
     fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
-        for (op_name, &(ref pos, ref def_vars)) in &self.defined_variables {
+        for (op_name, (pos, def_vars)) in &self.defined_variables {
             let mut unused = Vec::new();
             let mut visited = HashSet::new();
             self.find_undef_vars(
@@ -77,7 +99,7 @@ where
                 unused
                     .into_iter()
                     .map(|var| {
-                        RuleError::new(&error_message(var.item, *op_name), &[var.start, *pos])
+                        RuleError::new(&error_message(var.item, *op_name), &[var.span.start, *pos])
                     })
                     .collect(),
             );
@@ -92,7 +114,7 @@ where
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables
-            .insert(op_name, (op.start, HashSet::new()));
+            .insert(op_name, (op.span.start, HashSet::new()));
     }
 
     fn enter_fragment_definition(
@@ -111,7 +133,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(spread.item.name.item);
         }
     }
@@ -119,7 +141,7 @@ where
     fn enter_variable_definition(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(&mut (_, ref mut vars)) = self.defined_variables.get_mut(name) {
@@ -131,18 +153,18 @@ where
     fn enter_argument(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (_, value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .append(
                     &mut value
                         .item
                         .referenced_variables()
                         .iter()
-                        .map(|&var_name| Spanning::start_end(&value.start, &value.end, var_name))
+                        .map(|&var_name| Spanning::new(value.span, var_name))
                         .collect(),
                 );
         }
@@ -151,12 +173,9 @@ where
 
 fn error_message(var_name: &str, op_name: Option<&str>) -> String {
     if let Some(op_name) = op_name {
-        format!(
-            r#"Variable "${}" is not defined by operation "{}""#,
-            var_name, op_name
-        )
+        format!(r#"Variable "${var_name}" is not defined by operation "{op_name}""#)
     } else {
-        format!(r#"Variable "${}" is not defined"#, var_name)
+        format!(r#"Variable "${var_name}" is not defined"#)
     }
 }
 

@@ -1,11 +1,11 @@
 use crate::{
-    ast::InputValue,
     executor::Variables,
+    graphql_value, graphql_vars,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
-    value::{DefaultScalarValue, Object, Value},
+    value::{DefaultScalarValue, Object},
     GraphQLEnum,
     GraphQLError::ValidationError,
 };
@@ -16,12 +16,13 @@ enum Color {
     Green,
     Blue,
 }
+
 struct TestType;
 
 #[crate::graphql_object]
 impl TestType {
     fn to_string(color: Color) -> String {
-        format!("Color::{:?}", color)
+        format!("Color::{color:?}")
     }
 
     fn a_color() -> Color {
@@ -31,7 +32,7 @@ impl TestType {
 
 async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultScalarValue>),
 {
     let schema = RootNode::new(
         TestType,
@@ -45,7 +46,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {result:#?}");
 
     let obj = result.as_object_value().expect("Result is not an object");
 
@@ -54,7 +55,7 @@ where
 
 async fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultScalarValue>),
 {
     run_variable_query(query, Variables::new(), f).await;
 }
@@ -64,7 +65,7 @@ async fn accepts_enum_literal() {
     run_query("{ toString(color: RED) }", |result| {
         assert_eq!(
             result.get_field_value("toString"),
-            Some(&Value::scalar("Color::Red"))
+            Some(&graphql_value!("Color::Red")),
         );
     })
     .await;
@@ -75,7 +76,7 @@ async fn serializes_as_output() {
     run_query("{ aColor }", |result| {
         assert_eq!(
             result.get_field_value("aColor"),
-            Some(&Value::scalar("RED"))
+            Some(&graphql_value!("RED")),
         );
     })
     .await;
@@ -90,7 +91,7 @@ async fn does_not_accept_string_literals() {
     );
 
     let query = r#"{ toString(color: "RED") }"#;
-    let vars = vec![].into_iter().collect();
+    let vars = graphql_vars! {};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -109,13 +110,11 @@ async fn does_not_accept_string_literals() {
 async fn accepts_strings_in_variables() {
     run_variable_query(
         "query q($color: Color!) { toString(color: $color) }",
-        vec![("color".to_owned(), InputValue::scalar("RED"))]
-            .into_iter()
-            .collect(),
+        graphql_vars! {"color": "RED"},
         |result| {
             assert_eq!(
                 result.get_field_value("toString"),
-                Some(&Value::scalar("Color::Red"))
+                Some(&graphql_value!("Color::Red")),
             );
         },
     )
@@ -131,9 +130,7 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), InputValue::scalar("BLURPLE"))]
-        .into_iter()
-        .collect();
+    let vars = graphql_vars! {"color": "BLURPLE"};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -144,7 +141,7 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
         ValidationError(vec![RuleError::new(
             r#"Variable "$color" got invalid value. Invalid value for enum "Color"."#,
             &[SourcePosition::new(8, 0, 8)],
-        )])
+        )]),
     );
 }
 
@@ -157,9 +154,7 @@ async fn does_not_accept_incorrect_type_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), InputValue::scalar(123))]
-        .into_iter()
-        .collect();
+    let vars = graphql_vars! {"color": 123};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -170,6 +165,6 @@ async fn does_not_accept_incorrect_type_in_variables() {
         ValidationError(vec![RuleError::new(
             r#"Variable "$color" got invalid value. Expected "Color", found not a string or enum."#,
             &[SourcePosition::new(8, 0, 8)],
-        )])
+        )]),
     );
 }

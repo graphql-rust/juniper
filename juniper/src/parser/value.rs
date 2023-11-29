@@ -1,7 +1,7 @@
 use crate::ast::InputValue;
 
 use crate::{
-    parser::{ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token},
+    parser::{ParseError, ParseResult, Parser, ScalarToken, Spanning, Token},
     schema::{
         meta::{InputObjectMeta, MetaType},
         model::SchemaType,
@@ -9,12 +9,14 @@ use crate::{
     value::ScalarValue,
 };
 
-pub fn parse_value_literal<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+use super::utils::Span;
+
+pub fn parse_value_literal<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     tpe: Option<&MetaType<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
@@ -38,7 +40,7 @@ where
                 item: Token::CurlyOpen,
                 ..
             },
-            Some(&MetaType::InputObject(ref o)),
+            Some(MetaType::InputObject(o)),
         ) => parse_object_literal(parser, is_const, schema, Some(o)),
         (
             &Spanning {
@@ -52,17 +54,16 @@ where
                 item: Token::Scalar(_),
                 ..
             },
-            Some(&MetaType::Scalar(ref s)),
+            Some(MetaType::Scalar(s)),
         ) => {
             if let Spanning {
                 item: Token::Scalar(scalar),
-                start,
-                end,
+                span,
             } = parser.next_token()?
             {
                 (s.parse_fn)(scalar)
-                    .map(|s| Spanning::start_end(&start, &end, InputValue::Scalar(s)))
-                    .or_else(|_| parse_scalar_literal_by_infered_type(scalar, &start, &end, schema))
+                    .map(|s| Spanning::new(span, InputValue::Scalar(s)))
+                    .or_else(|_| parse_scalar_literal_by_infered_type(scalar, span, schema))
             } else {
                 unreachable!()
             }
@@ -76,11 +77,10 @@ where
         ) => {
             if let Spanning {
                 item: Token::Scalar(token),
-                start,
-                end,
+                span,
             } = parser.next_token()?
             {
-                parse_scalar_literal_by_infered_type(token, &start, &end, schema)
+                parse_scalar_literal_by_infered_type(token, span, schema)
             } else {
                 unreachable!()
             }
@@ -112,19 +112,17 @@ where
                 ..
             },
             _,
-        ) => Ok(parser
-            .next_token()?
-            .map(|_| InputValue::enum_value(name.to_owned()))),
-        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::enum_value(name))),
+        _ => Err(parser.next_token()?.map(ParseError::unexpected_token)),
     }
 }
 
-fn parse_list_literal<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+fn parse_list_literal<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     tpe: Option<&MetaType<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
@@ -137,12 +135,12 @@ where
         .map(InputValue::parsed_list))
 }
 
-fn parse_object_literal<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+fn parse_object_literal<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     object_tpe: Option<&InputObjectMeta<'b, S>>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
@@ -155,12 +153,12 @@ where
         .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
-fn parse_object_field<'a, 'b, S>(
-    parser: &mut Parser<'a>,
+fn parse_object_field<'b, S>(
+    parser: &mut Parser<'_>,
     is_const: bool,
     schema: &'b SchemaType<'b, S>,
     object_meta: Option<&InputObjectMeta<'b, S>>,
-) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue<S>>)>
+) -> ParseResult<(Spanning<String>, Spanning<InputValue<S>>)>
 where
     S: ScalarValue,
 {
@@ -175,44 +173,41 @@ where
     let value = parse_value_literal(parser, is_const, schema, tpe)?;
 
     Ok(Spanning::start_end(
-        &key.start,
-        &value.end.clone(),
+        &key.span.start,
+        &value.span.end.clone(),
         (key.map(|s| s.to_owned()), value),
     ))
 }
 
-fn parse_variable_literal<'a, S>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue<S>>
+fn parse_variable_literal<S>(parser: &mut Parser<'_>) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
-    let Spanning {
-        start: start_pos, ..
-    } = parser.expect(&Token::Dollar)?;
+    let start_pos = &parser.expect(&Token::Dollar)?.span.start;
     let Spanning {
         item: name,
-        end: end_pos,
+        span: end_span,
         ..
     } = parser.expect_name()?;
 
     Ok(Spanning::start_end(
-        &start_pos,
-        &end_pos,
+        start_pos,
+        &end_span.end,
         InputValue::variable(name),
     ))
 }
 
-fn parse_scalar_literal_by_infered_type<'a, 'b, S>(
-    token: ScalarToken<'a>,
-    start: &SourcePosition,
-    end: &SourcePosition,
+fn parse_scalar_literal_by_infered_type<'b, S>(
+    token: ScalarToken<'_>,
+    span: Span,
     schema: &'b SchemaType<'b, S>,
-) -> ParseResult<'a, InputValue<S>>
+) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
 {
     let result = match token {
         ScalarToken::String(_) => {
-            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("String") {
+            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("String") {
                 (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
                 Err(ParseError::ExpectedScalarError(
@@ -221,7 +216,7 @@ where
             }
         }
         ScalarToken::Int(_) => {
-            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Int") {
+            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("Int") {
                 (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
                 Err(ParseError::ExpectedScalarError(
@@ -230,7 +225,7 @@ where
             }
         }
         ScalarToken::Float(_) => {
-            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Float") {
+            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("Float") {
                 (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
                 Err(ParseError::ExpectedScalarError(
@@ -240,6 +235,6 @@ where
         }
     };
     result
-        .map(|s| Spanning::start_end(start, end, s))
-        .map_err(|e| Spanning::start_end(start, end, e))
+        .map(|s| Spanning::new(span, s))
+        .map_err(|e| Spanning::new(span, e))
 }

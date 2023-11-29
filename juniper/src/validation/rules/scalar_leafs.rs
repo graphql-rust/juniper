@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     ast::Field,
     parser::Spanning,
@@ -23,12 +25,12 @@ where
         {
             match (field_type.is_leaf(), &field.item.selection_set) {
                 (true, &Some(_)) => Some(RuleError::new(
-                    &no_allowed_error_message(field_name, &format!("{}", field_type_literal)),
-                    &[field.start],
+                    &no_allowed_error_message(field_name, field_type_literal),
+                    &[field.span.start],
                 )),
                 (false, &None) => Some(RuleError::new(
-                    &required_error_message(field_name, &format!("{}", field_type_literal)),
-                    &[field.start],
+                    &required_error_message(field_name, field_type_literal),
+                    &[field.span.start],
                 )),
                 _ => None,
             }
@@ -42,17 +44,15 @@ where
     }
 }
 
-fn no_allowed_error_message(field_name: &str, type_name: &str) -> String {
+fn no_allowed_error_message(field_name: impl fmt::Display, type_name: impl fmt::Display) -> String {
     format!(
-        r#"Field "{}" must not have a selection since type {} has no subfields"#,
-        field_name, type_name
+        r#"Field "{field_name}" must not have a selection since type {type_name} has no subfields"#,
     )
 }
 
-fn required_error_message(field_name: &str, type_name: &str) -> String {
+fn required_error_message(field_name: impl fmt::Display, type_name: impl fmt::Display) -> String {
     format!(
-        r#"Field "{}" of type "{}" must have a selection of subfields. Did you mean "{} {{ ... }}"?"#,
-        field_name, type_name, field_name
+        r#"Field "{field_name}" of type "{type_name}" must have a selection of subfields. Did you mean "{field_name} {{ ... }}"?"#,
     )
 }
 

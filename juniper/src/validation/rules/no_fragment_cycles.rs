@@ -7,25 +7,18 @@ use crate::{
     value::ScalarValue,
 };
 
-pub struct NoFragmentCycles<'a> {
-    current_fragment: Option<&'a str>,
-    spreads: HashMap<&'a str, Vec<Spanning<&'a str>>>,
-    fragment_order: Vec<&'a str>,
-}
-
-struct CycleDetector<'a> {
-    visited: HashSet<&'a str>,
-    spreads: &'a HashMap<&'a str, Vec<Spanning<&'a str>>>,
-    path_indices: HashMap<&'a str, usize>,
-    errors: Vec<RuleError>,
-}
-
 pub fn factory<'a>() -> NoFragmentCycles<'a> {
     NoFragmentCycles {
         current_fragment: None,
         spreads: HashMap::new(),
         fragment_order: Vec::new(),
     }
+}
+
+pub struct NoFragmentCycles<'a> {
+    current_fragment: Option<&'a str>,
+    spreads: HashMap<&'a str, Vec<Spanning<&'a str>>>,
+    fragment_order: Vec<&'a str>,
 }
 
 impl<'a, S> Visitor<'a, S> for NoFragmentCycles<'a>
@@ -38,14 +31,12 @@ where
         let mut detector = CycleDetector {
             visited: HashSet::new(),
             spreads: &self.spreads,
-            path_indices: HashMap::new(),
             errors: Vec::new(),
         };
 
         for frag in &self.fragment_order {
             if !detector.visited.contains(frag) {
-                let mut path = Vec::new();
-                detector.detect_from(frag, &mut path);
+                detector.detect_from(frag);
             }
         }
 
@@ -81,29 +72,52 @@ where
         if let Some(current_fragment) = self.current_fragment {
             self.spreads
                 .entry(current_fragment)
-                .or_insert_with(Vec::new)
-                .push(Spanning::start_end(
-                    &spread.start,
-                    &spread.end,
-                    spread.item.name.item,
-                ));
+                .or_default()
+                .push(Spanning::new(spread.span, spread.item.name.item));
         }
     }
 }
 
+type CycleDetectorState<'a> = (&'a str, Vec<&'a Spanning<&'a str>>, HashMap<&'a str, usize>);
+
+struct CycleDetector<'a> {
+    visited: HashSet<&'a str>,
+    spreads: &'a HashMap<&'a str, Vec<Spanning<&'a str>>>,
+    errors: Vec<RuleError>,
+}
+
 impl<'a> CycleDetector<'a> {
-    fn detect_from(&mut self, from: &'a str, path: &mut Vec<&'a Spanning<&'a str>>) {
+    fn detect_from(&mut self, from: &'a str) {
+        let mut to_visit = Vec::new();
+        to_visit.push((from, Vec::new(), HashMap::new()));
+
+        while let Some((from, path, path_indices)) = to_visit.pop() {
+            to_visit.extend(self.detect_from_inner(from, path, path_indices));
+        }
+    }
+
+    /// This function should be called only inside [`Self::detect_from()`], as
+    /// it's a recursive function using heap instead of a stack. So, instead of
+    /// the recursive call, we return a [`Vec`] that is visited inside
+    /// [`Self::detect_from()`].
+    fn detect_from_inner(
+        &mut self,
+        from: &'a str,
+        path: Vec<&'a Spanning<&'a str>>,
+        mut path_indices: HashMap<&'a str, usize>,
+    ) -> Vec<CycleDetectorState<'a>> {
         self.visited.insert(from);
 
         if !self.spreads.contains_key(from) {
-            return;
+            return Vec::new();
         }
 
-        self.path_indices.insert(from, path.len());
+        path_indices.insert(from, path.len());
 
+        let mut to_visit = Vec::new();
         for node in &self.spreads[from] {
-            let name = &node.item;
-            let index = self.path_indices.get(name).cloned();
+            let name = node.item;
+            let index = path_indices.get(name).cloned();
 
             if let Some(index) = index {
                 let err_pos = if index < path.len() {
@@ -113,20 +127,20 @@ impl<'a> CycleDetector<'a> {
                 };
 
                 self.errors
-                    .push(RuleError::new(&error_message(name), &[err_pos.start]));
-            } else if !self.visited.contains(name) {
+                    .push(RuleError::new(&error_message(name), &[err_pos.span.start]));
+            } else {
+                let mut path = path.clone();
                 path.push(node);
-                self.detect_from(name, path);
-                path.pop();
+                to_visit.push((name, path, path_indices.clone()));
             }
         }
 
-        self.path_indices.remove(from);
+        to_visit
     }
 }
 
 fn error_message(frag_name: &str) -> String {
-    format!(r#"Cannot spread fragment "{}""#, frag_name)
+    format!(r#"Cannot spread fragment "{frag_name}""#)
 }
 
 #[cfg(test)]

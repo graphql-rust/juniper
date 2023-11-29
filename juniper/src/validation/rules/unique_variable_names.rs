@@ -32,21 +32,24 @@ where
     fn enter_variable_definition(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         match self.names.entry(var_name.item) {
             Entry::Occupied(e) => {
-                ctx.report_error(&error_message(var_name.item), &[*e.get(), var_name.start]);
+                ctx.report_error(
+                    &error_message(var_name.item),
+                    &[*e.get(), var_name.span.start],
+                );
             }
             Entry::Vacant(e) => {
-                e.insert(var_name.start);
+                e.insert(var_name.span.start);
             }
         }
     }
 }
 
 fn error_message(var_name: &str) -> String {
-    format!("There can only be one variable named {}", var_name)
+    format!("There can only be one variable named {var_name}")
 }
 
 #[cfg(test)]

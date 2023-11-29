@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     ast::{Directive, Field, InputValue},
     parser::Spanning,
@@ -6,13 +8,12 @@ use crate::{
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
-use std::fmt::Debug;
 
-pub struct ArgumentsOfCorrectType<'a, S: Debug + 'a> {
+pub struct ArgumentsOfCorrectType<'a, S: fmt::Debug + 'a> {
     current_args: Option<&'a Vec<Argument<'a, S>>>,
 }
 
-pub fn factory<'a, S: Debug>() -> ArgumentsOfCorrectType<'a, S> {
+pub fn factory<'a, S: fmt::Debug>() -> ArgumentsOfCorrectType<'a, S> {
     ArgumentsOfCorrectType { current_args: None }
 }
 
@@ -49,27 +50,23 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref arg_name, ref arg_value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (arg_name, arg_value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some(argument_meta) = self
             .current_args
             .and_then(|args| args.iter().find(|a| a.name == arg_name.item))
         {
             let meta_type = ctx.schema.make_type(&argument_meta.arg_type);
-            let validity_error = validate_literal_value(ctx.schema, &meta_type, &arg_value.item);
 
-            if let Some(validity_error) = validity_error {
-                ctx.report_error(
-                    &error_message(arg_name.item, &validity_error),
-                    &[arg_value.start],
-                );
+            if let Some(err) = validate_literal_value(ctx.schema, &meta_type, &arg_value.item) {
+                ctx.report_error(&error_message(arg_name.item, err), &[arg_value.span.start]);
             }
         }
     }
 }
 
-fn error_message(arg_name: &str, error_message: &str) -> String {
-    format!("Error for argument \"{}\": {}", arg_name, error_message)
+fn error_message(arg_name: impl fmt::Display, msg: impl fmt::Display) -> String {
+    format!("Invalid value for argument \"{arg_name}\": {msg}")
 }
 
 #[cfg(test)]
@@ -87,13 +84,27 @@ mod tests {
     };
 
     #[test]
-    fn good_null_value() {
+    fn null_into_nullable_int() {
         expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
             {
               complicatedArgs {
                 intArgField(intArg: null)
+              }
+            }
+        "#,
+        );
+    }
+
+    #[test]
+    fn null_into_nullable_list() {
+        expect_passes_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"
+            {
+              complicatedArgs {
+                stringListArgField(stringListArg: null)
               }
             }
         "#,
@@ -114,6 +125,24 @@ mod tests {
             &[RuleError::new(
                 &error_message("nonNullIntArg", &non_null_error_message("Int!")),
                 &[SourcePosition::new(97, 3, 50)],
+            )],
+        );
+    }
+
+    #[test]
+    fn null_into_list() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"
+            {
+              complicatedArgs {
+                nonNullStringListArgField(nonNullStringListArg: null)
+              }
+            }
+        "#,
+            &[RuleError::new(
+                &error_message("nonNullStringListArg", "[String!]!"),
+                &[SourcePosition::new(111, 3, 64)],
             )],
         );
     }

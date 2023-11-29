@@ -1,75 +1,50 @@
-# master
+`juniper_warp` changelog
+========================
 
-- Compatibility with the latest `juniper`.
+All user visible changes to `juniper_warp` crate will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
-# [[0.6.4] 2021-06-07](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.4)
 
-- Compatibility with the latest `juniper`.
 
-# [[0.6.3] 2021-04-03](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.3)
 
-- Compatibility with the latest `juniper`.
+## master
 
-# [[0.6.2] 2021-01-27](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.2)
+### BC Breaks
 
-- Compatibility with the latest `juniper`.
+- Switched to 0.16 version of [`juniper` crate].
+- Removed `JoinError` from public API. ([#1222], [#1177])
 
-# [[0.6.1] 2021-01-15](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.1)
+### Added
 
-- Compatibility with the latest `juniper`.
+- `subscriptions::serve_graphql_transport_ws()` function allowing to process the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][graphql-transport-ws]. ([#1158])
+- `subscriptions::make_ws_filter()` function providing endpoint with auto-selection between the [legacy `graphql-ws` GraphQL over WebSocket Protocol][graphql-ws] and the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][graphql-transport-ws], based on the `Sec-Websocket-Protocol` HTTP header value. ([#1191])
 
-# [[0.6.0] 2020-12-09](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.6.0)
+### Changed
 
-- Compatibility with the latest `juniper`.
-- Changed the implementation place of GraphQLBatchRequest and GraphQLBatchResponse in `juniper_warp`
-to `juniper` to be reused in other http integrations, since this implementation was private.
+- Made `schema` argument of `make_graphql_filter()` and `make_graphql_filter_sync()` polymorphic, allowing to specify external `Arc`ed `schema`. ([#1136], [#1135])
+- Relaxed requirement for `context_extractor` to be a `BoxedFilter` only. ([#1222], [#1177])
 
-## Breaking Changes
+### Fixed
 
-- Update `playground_filter` to support subscription endpoint URLs.
-- Update `warp` to 0.2.
-- Rename synchronous `execute` to `execute_sync`, add asynchronous `execute`
-- `juniper_warp::graphiql_filter` now requires a second parameter for subscriptions.
-- `make_graphql_filter` and `make_graphql_filter_sync` now ignore POST HTTP requests with no or invalid `Content-Type` header.
+- Excessive `context_extractor` execution in `make_graphql_filter()` and `make_graphql_filter_sync()`. ([#1222], [#1177])
 
-# [[0.5.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.5.2)
+[#1135]: /../../issues/1136
+[#1136]: /../../pull/1136
+[#1158]: /../../pull/1158
+[#1177]: /../../issues/1177
+[#1191]: /../../pull/1191
+[#1222]: /../../pull/1222
 
-- Compatibility with the latest `juniper`.
 
-# [[0.5.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.5.1)
 
-- Compatibility with the latest `juniper`.
 
-# [[0.5.0] 2019-09-29](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.5.0)
+## Previous releases
 
-- Compatibility with the latest `juniper`.
+See [old CHANGELOG](/../../blob/juniper_warp-v0.7.0/juniper_warp/CHANGELOG.md).
 
-# [[0.4.1] 2019-07-29](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.4.1)
 
-- Compatibility with the latest `juniper`.
 
-# [[0.4.0] 2019-07-19](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.4.0)
 
-- Compatibility with the latest `juniper`.
-
-# [[0.3.0] 2019-05-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.3.0)
-
-- Compatibility with the latest `juniper`.
-
-# [0.2.0] 2018-12-17
-
-- **[Breaking Change]** The minimum required `warp` version is now `0.1.8`.
-
-  [#271](https://github.com/graphql-rust/juniper/pull/271)
-
-- **[Breaking Change]** The `graphql_handler` and `graphiql_handler` functions have been renamed to`graphql_filter` and `graphiql_filter` respectively.
-
-  [#267](https://github.com/graphql-rust/juniper/pull/267)
-
-- **[Breaking Change]** A `CpuPool` from `futures_cpupool` is no longer used. Instead, `warp`'s underlying `tokio_threadpool` is leveraged. Because of this, `make_graphql_filter_with_thread_pool` is no longer necessary and has been removed.
-
-  [#258](https://github.com/graphql-rust/juniper/pull/258)
-
-# juniper_warp [0.1] 2018-09-13
-
-- Initial Release
+[`juniper` crate]: https://docs.rs/juniper
+[Semantic Versioning 2.0.0]: https://semver.org
+[graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+[graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md

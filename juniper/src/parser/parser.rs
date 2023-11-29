@@ -1,12 +1,16 @@
-use std::{fmt, result::Result};
+use std::{error::Error, fmt, result::Result};
+
+use smartstring::alias::String;
 
 use crate::parser::{Lexer, LexerError, Spanning, Token};
 
 /// Error while parsing a GraphQL query
-#[derive(Debug, PartialEq)]
-pub enum ParseError<'a> {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ParseError {
     /// An unexpected token occurred in the source
-    UnexpectedToken(Token<'a>),
+    // TODO: Previously was `Token<'a>`.
+    //       Revisit on `graphql-parser` integration.
+    UnexpectedToken(String),
 
     /// The input source abruptly ended
     UnexpectedEndOfFile,
@@ -18,14 +22,51 @@ pub enum ParseError<'a> {
     ExpectedScalarError(&'static str),
 }
 
-#[doc(hidden)]
-pub type ParseResult<'a, T> = Result<Spanning<T>, Spanning<ParseError<'a>>>;
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnexpectedToken(token) => write!(f, "Unexpected \"{token}\""),
+            Self::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
+            Self::LexerError(e) => e.fmt(f),
+            Self::ExpectedScalarError(e) => e.fmt(f),
+        }
+    }
+}
+
+impl Error for ParseError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::LexerError(e) => Some(e),
+            Self::ExpectedScalarError(_) | Self::UnexpectedToken(_) | Self::UnexpectedEndOfFile => {
+                None
+            }
+        }
+    }
+}
+
+impl ParseError {
+    /// Creates a [`ParseError::UnexpectedToken`] out of the provided [`Token`].
+    #[must_use]
+    pub fn unexpected_token(token: Token<'_>) -> Self {
+        use std::fmt::Write as _;
+
+        let mut s = String::new();
+        // PANIC: Unwrapping is OK here, as it may panic only on allocation
+        //        error.
+        write!(s, "{token}").unwrap();
+
+        Self::UnexpectedToken(s)
+    }
+}
 
 #[doc(hidden)]
-pub type UnlocatedParseResult<'a, T> = Result<T, Spanning<ParseError<'a>>>;
+pub type ParseResult<T> = Result<Spanning<T>, Spanning<ParseError>>;
 
 #[doc(hidden)]
-pub type OptionParseResult<'a, T> = Result<Option<Spanning<T>>, Spanning<ParseError<'a>>>;
+pub type UnlocatedParseResult<T> = Result<T, Spanning<ParseError>>;
+
+#[doc(hidden)]
+pub type OptionParseResult<T> = Result<Option<Spanning<T>>, Spanning<ParseError>>;
 
 #[doc(hidden)]
 #[derive(Debug)]
@@ -54,11 +95,10 @@ impl<'a> Parser<'a> {
     }
 
     #[doc(hidden)]
-    pub fn next_token(&mut self) -> ParseResult<'a, Token<'a>> {
+    pub fn next_token(&mut self) -> ParseResult<Token<'a>> {
         if self.tokens.len() == 1 {
-            Err(Spanning::start_end(
-                &self.peek().start,
-                &self.peek().end,
+            Err(Spanning::new(
+                self.peek().span,
                 ParseError::UnexpectedEndOfFile,
             ))
         } else {
@@ -67,9 +107,9 @@ impl<'a> Parser<'a> {
     }
 
     #[doc(hidden)]
-    pub fn expect(&mut self, expected: &Token) -> ParseResult<'a, Token<'a>> {
+    pub fn expect(&mut self, expected: &Token) -> ParseResult<Token<'a>> {
         if &self.peek().item != expected {
-            Err(self.next_token()?.map(ParseError::UnexpectedToken))
+            Err(self.next_token()?.map(ParseError::unexpected_token))
         } else {
             self.next_token()
         }
@@ -79,12 +119,12 @@ impl<'a> Parser<'a> {
     pub fn skip(
         &mut self,
         expected: &Token,
-    ) -> Result<Option<Spanning<Token<'a>>>, Spanning<ParseError<'a>>> {
+    ) -> Result<Option<Spanning<Token<'a>>>, Spanning<ParseError>> {
         if &self.peek().item == expected {
             Ok(Some(self.next_token()?))
         } else if self.peek().item == Token::EndOfFile {
             Err(Spanning::zero_width(
-                &self.peek().start,
+                &self.peek().span.start,
                 ParseError::UnexpectedEndOfFile,
             ))
         } else {
@@ -98,19 +138,17 @@ impl<'a> Parser<'a> {
         opening: &Token,
         parser: F,
         closing: &Token,
-    ) -> ParseResult<'a, Vec<Spanning<T>>>
+    ) -> ParseResult<Vec<Spanning<T>>>
     where
         T: fmt::Debug,
-        F: Fn(&mut Parser<'a>) -> ParseResult<'a, T>,
+        F: Fn(&mut Parser<'a>) -> ParseResult<T>,
     {
-        let Spanning {
-            start: start_pos, ..
-        } = self.expect(opening)?;
+        let start_pos = &self.expect(opening)?.span.start;
         let mut items = Vec::new();
 
         loop {
-            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
-                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
+            if let Some(Spanning { span, .. }) = self.skip(closing)? {
+                return Ok(Spanning::start_end(start_pos, &span.end, items));
             }
 
             items.push(parser(self)?);
@@ -123,21 +161,19 @@ impl<'a> Parser<'a> {
         opening: &Token,
         parser: F,
         closing: &Token,
-    ) -> ParseResult<'a, Vec<Spanning<T>>>
+    ) -> ParseResult<Vec<Spanning<T>>>
     where
         T: fmt::Debug,
-        F: Fn(&mut Parser<'a>) -> ParseResult<'a, T>,
+        F: Fn(&mut Parser<'a>) -> ParseResult<T>,
     {
-        let Spanning {
-            start: start_pos, ..
-        } = self.expect(opening)?;
+        let start_pos = &self.expect(opening)?.span.start;
         let mut items = Vec::new();
 
         loop {
             items.push(parser(self)?);
 
-            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
-                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
+            if let Some(end_spanning) = self.skip(closing)? {
+                return Ok(Spanning::start_end(start_pos, &end_spanning.end(), items));
             }
         }
     }
@@ -148,27 +184,25 @@ impl<'a> Parser<'a> {
         opening: &Token,
         parser: F,
         closing: &Token,
-    ) -> ParseResult<'a, Vec<T>>
+    ) -> ParseResult<Vec<T>>
     where
         T: fmt::Debug,
-        F: Fn(&mut Parser<'a>) -> UnlocatedParseResult<'a, T>,
+        F: Fn(&mut Parser<'a>) -> UnlocatedParseResult<T>,
     {
-        let Spanning {
-            start: start_pos, ..
-        } = self.expect(opening)?;
+        let start_pos = &self.expect(opening)?.span.start;
         let mut items = Vec::new();
 
         loop {
             items.push(parser(self)?);
 
-            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
-                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
+            if let Some(end_spanning) = self.skip(closing)? {
+                return Ok(Spanning::start_end(start_pos, &end_spanning.end(), items));
             }
         }
     }
 
     #[doc(hidden)]
-    pub fn expect_name(&mut self) -> ParseResult<'a, &'a str> {
+    pub fn expect_name(&mut self) -> ParseResult<&'a str> {
         match *self.peek() {
             Spanning {
                 item: Token::Name(_),
@@ -183,25 +217,11 @@ impl<'a> Parser<'a> {
             Spanning {
                 item: Token::EndOfFile,
                 ..
-            } => Err(Spanning::start_end(
-                &self.peek().start,
-                &self.peek().end,
+            } => Err(Spanning::new(
+                self.peek().span,
                 ParseError::UnexpectedEndOfFile,
             )),
-            _ => Err(self.next_token()?.map(ParseError::UnexpectedToken)),
+            _ => Err(self.next_token()?.map(ParseError::unexpected_token)),
         }
     }
 }
-
-impl<'a> fmt::Display for ParseError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ParseError::UnexpectedToken(ref token) => write!(f, "Unexpected \"{}\"", token),
-            ParseError::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
-            ParseError::LexerError(ref err) => err.fmt(f),
-            ParseError::ExpectedScalarError(err) => err.fmt(f),
-        }
-    }
-}
-
-impl<'a> std::error::Error for ParseError<'a> {}

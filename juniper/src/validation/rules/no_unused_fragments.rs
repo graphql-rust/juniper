@@ -7,16 +7,10 @@ use crate::{
     value::ScalarValue,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
     Operation(Option<&'a str>),
     Fragment(&'a str),
-}
-
-pub struct NoUnusedFragments<'a> {
-    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
-    defined_fragments: HashSet<Spanning<&'a str>>,
-    current_scope: Option<Scope<'a>>,
 }
 
 pub fn factory<'a>() -> NoUnusedFragments<'a> {
@@ -27,21 +21,42 @@ pub fn factory<'a>() -> NoUnusedFragments<'a> {
     }
 }
 
+pub struct NoUnusedFragments<'a> {
+    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
+    defined_fragments: HashSet<Spanning<&'a str>>,
+    current_scope: Option<Scope<'a>>,
+}
+
 impl<'a> NoUnusedFragments<'a> {
-    fn find_reachable_fragments(&self, from: &Scope<'a>, result: &mut HashSet<&'a str>) {
-        if let Scope::Fragment(name) = *from {
+    fn find_reachable_fragments(&'a self, from: Scope<'a>, result: &mut HashSet<&'a str>) {
+        let mut to_visit = Vec::new();
+        to_visit.push(from);
+
+        while let Some(from) = to_visit.pop() {
+            if let Some(next) = self.find_reachable_fragments_inner(from, result) {
+                to_visit.extend(next.iter().map(|s| Scope::Fragment(s)));
+            }
+        }
+    }
+
+    /// This function should be called only inside
+    /// [`Self::find_reachable_fragments()`], as it's a recursive function using
+    /// heap instead of a stack. So, instead of the recursive call, we return a
+    /// [`Vec`] that is visited inside [`Self::find_reachable_fragments()`].
+    fn find_reachable_fragments_inner(
+        &'a self,
+        from: Scope<'a>,
+        result: &mut HashSet<&'a str>,
+    ) -> Option<&'a Vec<&'a str>> {
+        if let Scope::Fragment(name) = from {
             if result.contains(name) {
-                return;
+                return None;
             } else {
                 result.insert(name);
             }
         }
 
-        if let Some(spreads) = self.spreads.get(from) {
-            for spread in spreads {
-                self.find_reachable_fragments(&Scope::Fragment(spread), result)
-            }
-        }
+        self.spreads.get(&from)
     }
 }
 
@@ -59,13 +74,13 @@ where
             }) = *def
             {
                 let op_name = name.as_ref().map(|s| s.item);
-                self.find_reachable_fragments(&Scope::Operation(op_name), &mut reachable);
+                self.find_reachable_fragments(Scope::Operation(op_name), &mut reachable);
             }
         }
 
         for fragment in &self.defined_fragments {
             if !reachable.contains(&fragment.item) {
-                ctx.report_error(&error_message(fragment.item), &[fragment.start]);
+                ctx.report_error(&error_message(fragment.item), &[fragment.span.start]);
             }
         }
     }
@@ -86,7 +101,7 @@ where
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
         self.defined_fragments
-            .insert(Spanning::start_end(&f.start, &f.end, f.item.name.item));
+            .insert(Spanning::new(f.span, f.item.name.item));
     }
 
     fn enter_fragment_spread(
@@ -96,15 +111,15 @@ where
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
-                .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .entry(*scope)
+                .or_default()
                 .push(spread.item.name.item);
         }
     }
 }
 
 fn error_message(frag_name: &str) -> String {
-    format!(r#"Fragment "{}" is never used"#, frag_name)
+    format!(r#"Fragment "{frag_name}" is never used"#)
 }
 
 #[cfg(test)]

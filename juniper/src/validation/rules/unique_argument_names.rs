@@ -32,21 +32,24 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         match self.known_names.entry(arg_name.item) {
             Entry::Occupied(e) => {
-                ctx.report_error(&error_message(arg_name.item), &[*e.get(), arg_name.start]);
+                ctx.report_error(
+                    &error_message(arg_name.item),
+                    &[*e.get(), arg_name.span.start],
+                );
             }
             Entry::Vacant(e) => {
-                e.insert(arg_name.start);
+                e.insert(arg_name.span.start);
             }
         }
     }
 }
 
 fn error_message(arg_name: &str) -> String {
-    format!("There can only be one argument named \"{}\"", arg_name)
+    format!("There can only be one argument named \"{arg_name}\"")
 }
 
 #[cfg(test)]

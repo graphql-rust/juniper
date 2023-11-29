@@ -1,10 +1,11 @@
-use std::{iter, iter::FromIterator as _, pin::Pin};
+use std::{iter, pin::Pin};
 
-use futures::{self, StreamExt as _};
+use futures::{stream, StreamExt as _};
 
 use crate::{
-    http::GraphQLRequest, Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError,
-    GraphQLObject, Object, RootNode, Value,
+    graphql_object, graphql_subscription, graphql_value, http::GraphQLRequest, Context,
+    DefaultScalarValue, EmptyMutation, ExecutionError, FieldError, GraphQLObject, Object, RootNode,
+    Value,
 };
 
 #[derive(Debug, Clone)]
@@ -22,7 +23,7 @@ struct Human {
 
 struct MyQuery;
 
-#[crate::graphql_object(context = MyContext)]
+#[graphql_object(context = MyContext)]
 impl MyQuery {
     fn test(&self) -> i32 {
         0 // NOTICE: does not serve a purpose
@@ -33,7 +34,7 @@ type Schema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {
-    let mut rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = tokio::runtime::Runtime::new().unwrap();
 
     rt.block_on(f)
 }
@@ -42,14 +43,14 @@ type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
 struct MySubscription;
 
-#[crate::graphql_subscription(context = MyContext)]
+#[graphql_subscription(context = MyContext)]
 impl MySubscription {
     async fn async_human() -> HumanStream {
-        Box::pin(futures::stream::once(async {
+        Box::pin(stream::once(async {
             Human {
-                id: "stream id".to_string(),
-                name: "stream name".to_string(),
-                home_planet: "stream home planet".to_string(),
+                id: "stream id".into(),
+                name: "stream name".into(),
+                home_planet: "stream home planet".into(),
             }
         }))
     }
@@ -57,13 +58,13 @@ impl MySubscription {
     async fn error_human() -> Result<HumanStream, FieldError> {
         Err(FieldError::new(
             "handler error",
-            Value::Scalar(DefaultScalarValue::String("more details".to_string())),
+            graphql_value!("more details"),
         ))
     }
 
-    async fn human_with_context(ctxt: &MyContext) -> HumanStream {
-        let context_val = ctxt.0.clone();
-        Box::pin(futures::stream::once(async move {
+    async fn human_with_context(context: &MyContext) -> HumanStream {
+        let context_val = context.0;
+        Box::pin(stream::once(async move {
             Human {
                 id: context_val.to_string(),
                 name: context_val.to_string(),
@@ -73,11 +74,11 @@ impl MySubscription {
     }
 
     async fn human_with_args(id: String, name: String) -> HumanStream {
-        Box::pin(futures::stream::once(async {
+        Box::pin(stream::once(async {
             Human {
                 id,
                 name,
-                home_planet: "default home planet".to_string(),
+                home_planet: "default home planet".into(),
             }
         }))
     }
@@ -109,7 +110,7 @@ fn create_and_execute(
 
     let (values, errors) = response.unwrap();
 
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         return Err(errors);
     }
 
@@ -153,24 +154,18 @@ fn returns_requested_object() {
             id
             name
         }
-    }"#
-    .to_string();
+    }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(
         std::iter::from_fn(move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
-                2 => Some((
-                    "name",
-                    Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
+                2 => Some(("name", graphql_value!("stream name"))),
                 _ => None,
             }
         }),
@@ -187,10 +182,9 @@ fn returns_error() {
             id
             name
         }
-    }"#
-    .to_string();
+    }"#;
 
-    let response = create_and_execute(query);
+    let response = create_and_execute(query.into());
 
     assert!(response.is_err());
 
@@ -198,11 +192,8 @@ fn returns_error() {
 
     let expected_error = ExecutionError::new(
         crate::parser::SourcePosition::new(23, 1, 8),
-        &vec!["errorHuman"],
-        FieldError::new(
-            "handler error",
-            Value::Scalar(DefaultScalarValue::String("more details".to_string())),
-        ),
+        &["errorHuman"],
+        FieldError::new("handler error", graphql_value!("more details")),
     );
 
     assert_eq!(returned_errors, vec![expected_error]);
@@ -214,20 +205,17 @@ fn can_access_context() {
             humanWithContext {
                 id
               }
-        }"#
-    .to_string();
+        }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("2".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("2"))),
                 _ => None,
             }
         },
@@ -245,20 +233,17 @@ fn resolves_typed_inline_fragments() {
                   id
                 }
              }
-           }"#
-    .to_string();
+           }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
                 _ => None,
             }
         },
@@ -276,20 +261,17 @@ fn resolves_nontyped_inline_fragments() {
                   id
                 }
              }
-           }"#
-    .to_string();
+           }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
                 _ => None,
             }
         },
@@ -306,24 +288,18 @@ fn can_access_arguments() {
                 id
                 name
               }
-        }"#
-    .to_string();
+        }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("123".to_string())),
-                )),
-                2 => Some((
-                    "name",
-                    Value::Scalar(DefaultScalarValue::String("args name".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("123"))),
+                2 => Some(("name", graphql_value!("args name"))),
                 _ => None,
             }
         },
@@ -340,24 +316,18 @@ fn type_alias() {
             id
             name
         }
-    }"#
-    .to_string();
+    }"#;
 
-    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+    let (names, collected_values) =
+        create_and_execute(query.into()).expect("Got error from stream");
 
     let mut iterator_count = 0;
     let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some((
-                    "id",
-                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                )),
-                2 => Some((
-                    "name",
-                    Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
-                )),
+                1 => Some(("id", graphql_value!("stream id"))),
+                2 => Some(("name", graphql_value!("stream name"))),
                 _ => None,
             }
         },

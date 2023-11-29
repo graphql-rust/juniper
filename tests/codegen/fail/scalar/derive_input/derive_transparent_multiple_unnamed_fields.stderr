@@ -1,0 +1,5 @@
+error: GraphQL scalar `transparent` attribute argument requires exactly 1 field
+ --> fail/scalar/derive_input/derive_transparent_multiple_unnamed_fields.rs:4:1
+  |
+4 | #[graphql(transparent)]
+  | ^

@@ -1,6 +1,6 @@
 use crate::parser::{Lexer, LexerError, ScalarToken, SourcePosition, Spanning, Token};
 
-fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
+fn tokenize_to_vec(s: &str) -> Vec<Spanning<Token<'_>>> {
     let mut tokens = Vec::new();
     let mut lexer = Lexer::new(s);
 
@@ -13,15 +13,15 @@ fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
                     break;
                 }
             }
-            Some(Err(e)) => panic!("Error in input stream: {:#?} for {:#?}", e, s),
-            None => panic!("EOF before EndOfFile token in {:#?}", s),
+            Some(Err(e)) => panic!("Error in input stream: {e:#?} for {s:#?}"),
+            None => panic!("EOF before EndOfFile token in {s:#?}"),
         }
     }
 
     tokens
 }
 
-fn tokenize_single<'a>(s: &'a str) -> Spanning<Token<'a>> {
+fn tokenize_single(s: &str) -> Spanning<Token<'_>> {
     let mut tokens = tokenize_to_vec(s);
 
     assert_eq!(tokens.len(), 2);
@@ -37,13 +37,13 @@ fn tokenize_error(s: &str) -> Spanning<LexerError> {
         match lexer.next() {
             Some(Ok(t)) => {
                 if t.item == Token::EndOfFile {
-                    panic!("Tokenizer did not return error for {:#?}", s);
+                    panic!("Tokenizer did not return error for {s:#?}");
                 }
             }
             Some(Err(e)) => {
                 return e;
             }
-            None => panic!("Tokenizer did not return error for {:#?}", s),
+            None => panic!("Tokenizer did not return error for {s:#?}"),
         }
     }
 }
@@ -178,7 +178,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(20, 0, 20),
-            Token::Scalar(ScalarToken::String(r#"escaped \n\r\b\t\f"#))
+            Token::Scalar(ScalarToken::String(r"escaped \n\r\b\t\f"))
         )
     );
 
@@ -187,7 +187,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::Scalar(ScalarToken::String(r#"slashes \\ \/"#))
+            Token::Scalar(ScalarToken::String(r"slashes \\ \/"))
         )
     );
 
@@ -196,7 +196,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(34, 0, 34),
-            Token::Scalar(ScalarToken::String(r#"unicode \u1234\u5678\u90AB\uCDEF"#))
+            Token::Scalar(ScalarToken::String(r"unicode \u1234\u5678\u90AB\uCDEF")),
         )
     );
 }
@@ -207,7 +207,7 @@ fn string_errors() {
         tokenize_error("\""),
         Spanning::zero_width(
             &SourcePosition::new(1, 0, 1),
-            LexerError::UnterminatedString
+            LexerError::UnterminatedString,
         )
     );
 
@@ -215,7 +215,7 @@ fn string_errors() {
         tokenize_error("\"no end quote"),
         Spanning::zero_width(
             &SourcePosition::new(13, 0, 13),
-            LexerError::UnterminatedString
+            LexerError::UnterminatedString,
         )
     );
 
@@ -223,7 +223,7 @@ fn string_errors() {
         tokenize_error("\"contains unescaped \u{0007} control char\""),
         Spanning::zero_width(
             &SourcePosition::new(20, 0, 20),
-            LexerError::UnknownCharacterInString('\u{0007}')
+            LexerError::UnknownCharacterInString('\u{0007}'),
         )
     );
 
@@ -231,7 +231,7 @@ fn string_errors() {
         tokenize_error("\"null-byte is not \u{0000} end of file\""),
         Spanning::zero_width(
             &SourcePosition::new(18, 0, 18),
-            LexerError::UnknownCharacterInString('\u{0000}')
+            LexerError::UnknownCharacterInString('\u{0000}'),
         )
     );
 
@@ -239,7 +239,7 @@ fn string_errors() {
         tokenize_error("\"multi\nline\""),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnterminatedString
+            LexerError::UnterminatedString,
         )
     );
 
@@ -247,7 +247,7 @@ fn string_errors() {
         tokenize_error("\"multi\rline\""),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnterminatedString
+            LexerError::UnterminatedString,
         )
     );
 
@@ -255,7 +255,7 @@ fn string_errors() {
         tokenize_error(r#""bad \z esc""#),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnknownEscapeSequence("\\z".to_owned())
+            LexerError::UnknownEscapeSequence("\\z".into()),
         )
     );
 
@@ -263,7 +263,7 @@ fn string_errors() {
         tokenize_error(r#""bad \x esc""#),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnknownEscapeSequence("\\x".to_owned())
+            LexerError::UnknownEscapeSequence("\\x".into()),
         )
     );
 
@@ -271,7 +271,7 @@ fn string_errors() {
         tokenize_error(r#""bad \u1 esc""#),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnknownEscapeSequence("\\u1".to_owned())
+            LexerError::UnknownEscapeSequence("\\u1".into()),
         )
     );
 
@@ -279,7 +279,7 @@ fn string_errors() {
         tokenize_error(r#""bad \u0XX1 esc""#),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnknownEscapeSequence("\\u0XX1".to_owned())
+            LexerError::UnknownEscapeSequence("\\u0XX1".into()),
         )
     );
 
@@ -287,7 +287,7 @@ fn string_errors() {
         tokenize_error(r#""bad \uXXXX esc""#),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnknownEscapeSequence("\\uXXXX".to_owned())
+            LexerError::UnknownEscapeSequence("\\uXXXX".into()),
         )
     );
 
@@ -295,7 +295,7 @@ fn string_errors() {
         tokenize_error(r#""bad \uFXXX esc""#),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnknownEscapeSequence("\\uFXXX".to_owned())
+            LexerError::UnknownEscapeSequence("\\uFXXX".into()),
         )
     );
 
@@ -303,7 +303,7 @@ fn string_errors() {
         tokenize_error(r#""bad \uXXXF esc""#),
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
-            LexerError::UnknownEscapeSequence("\\uXXXF".to_owned())
+            LexerError::UnknownEscapeSequence("\\uXXXF".into()),
         )
     );
 
@@ -342,16 +342,14 @@ fn numbers() {
         expected: &str,
     ) {
         let parsed = tokenize_single(source);
-        assert_eq!(parsed.start, start);
-        assert_eq!(parsed.end, end);
+        assert_eq!(parsed.span.start, start);
+        assert_eq!(parsed.span.end, end);
 
         match parsed.item {
             Token::Scalar(ScalarToken::Float(actual)) => {
                 assert!(
                     expected == actual,
-                    "[expected] {} != {} [actual]",
-                    expected,
-                    actual
+                    "[expected] {expected} != {actual} [actual]",
                 );
             }
             _ => assert!(false),
@@ -662,39 +660,32 @@ fn punctuation_error() {
 
 #[test]
 fn display() {
-    assert_eq!(format!("{}", Token::Name("identifier")), "identifier");
-
-    assert_eq!(format!("{}", Token::Scalar(ScalarToken::Int("123"))), "123");
-
-    assert_eq!(
-        format!("{}", Token::Scalar(ScalarToken::Float("4.5"))),
-        "4.5"
-    );
-
-    assert_eq!(
-        format!("{}", Token::Scalar(ScalarToken::String("some string"))),
-        "\"some string\""
-    );
-
-    assert_eq!(
-        format!(
-            "{}",
-            Token::Scalar(ScalarToken::String("string with \\ escape and \" quote"))
+    for (input, expected) in [
+        (Token::Name("identifier"), "identifier"),
+        (Token::Scalar(ScalarToken::Int("123")), "123"),
+        (Token::Scalar(ScalarToken::Float("4.5")), "4.5"),
+        (
+            Token::Scalar(ScalarToken::String("some string")),
+            "\"some string\"",
         ),
-        "\"string with \\\\ escape and \\\" quote\""
-    );
-
-    assert_eq!(format!("{}", Token::ExclamationMark), "!");
-    assert_eq!(format!("{}", Token::Dollar), "$");
-    assert_eq!(format!("{}", Token::ParenOpen), "(");
-    assert_eq!(format!("{}", Token::ParenClose), ")");
-    assert_eq!(format!("{}", Token::BracketOpen), "[");
-    assert_eq!(format!("{}", Token::BracketClose), "]");
-    assert_eq!(format!("{}", Token::CurlyOpen), "{");
-    assert_eq!(format!("{}", Token::CurlyClose), "}");
-    assert_eq!(format!("{}", Token::Ellipsis), "...");
-    assert_eq!(format!("{}", Token::Colon), ":");
-    assert_eq!(format!("{}", Token::Equals), "=");
-    assert_eq!(format!("{}", Token::At), "@");
-    assert_eq!(format!("{}", Token::Pipe), "|");
+        (
+            Token::Scalar(ScalarToken::String("string with \\ escape and \" quote")),
+            "\"string with \\\\ escape and \\\" quote\"",
+        ),
+        (Token::ExclamationMark, "!"),
+        (Token::Dollar, "$"),
+        (Token::ParenOpen, "("),
+        (Token::ParenClose, ")"),
+        (Token::BracketOpen, "["),
+        (Token::BracketClose, "]"),
+        (Token::CurlyOpen, "{"),
+        (Token::CurlyClose, "}"),
+        (Token::Ellipsis, "..."),
+        (Token::Colon, ":"),
+        (Token::Equals, "="),
+        (Token::At, "@"),
+        (Token::Pipe, "|"),
+    ] {
+        assert_eq!(input.to_string(), expected);
+    }
 }

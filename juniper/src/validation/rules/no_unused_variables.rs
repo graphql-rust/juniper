@@ -12,13 +12,6 @@ pub enum Scope<'a> {
     Fragment(&'a str),
 }
 
-pub struct NoUnusedVariables<'a> {
-    defined_variables: HashMap<Option<&'a str>, HashSet<&'a Spanning<&'a str>>>,
-    used_variables: HashMap<Scope<'a>, Vec<&'a str>>,
-    current_scope: Option<Scope<'a>>,
-    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
-}
-
 pub fn factory<'a>() -> NoUnusedVariables<'a> {
     NoUnusedVariables {
         defined_variables: HashMap::new(),
@@ -28,16 +21,49 @@ pub fn factory<'a>() -> NoUnusedVariables<'a> {
     }
 }
 
+pub struct NoUnusedVariables<'a> {
+    defined_variables: HashMap<Option<&'a str>, HashSet<&'a Spanning<&'a str>>>,
+    used_variables: HashMap<Scope<'a>, Vec<&'a str>>,
+    current_scope: Option<Scope<'a>>,
+    spreads: HashMap<Scope<'a>, Vec<&'a str>>,
+}
+
 impl<'a> NoUnusedVariables<'a> {
     fn find_used_vars(
-        &self,
+        &'a self,
         from: &Scope<'a>,
         defined: &HashSet<&'a str>,
         used: &mut HashSet<&'a str>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
+        let mut to_visit = Vec::new();
+        if let Some(spreads) = self.find_used_vars_inner(from, defined, used, visited) {
+            to_visit.push(spreads);
+        }
+        while let Some(spreads) = to_visit.pop() {
+            for spread in spreads {
+                if let Some(spreads) =
+                    self.find_used_vars_inner(&Scope::Fragment(spread), defined, used, visited)
+                {
+                    to_visit.push(spreads);
+                }
+            }
+        }
+    }
+
+    /// This function should be called only inside [`Self::find_used_vars()`],
+    /// as it's a recursive function using heap instead of a stack. So, instead
+    /// of the recursive call, we return a [`Vec`] that is visited inside
+    /// [`Self::find_used_vars()`].
+    fn find_used_vars_inner(
+        &'a self,
+        from: &Scope<'a>,
+        defined: &HashSet<&'a str>,
+        used: &mut HashSet<&'a str>,
+        visited: &mut HashSet<Scope<'a>>,
+    ) -> Option<&'a Vec<&'a str>> {
         if visited.contains(from) {
-            return;
+            return None;
         }
 
         visited.insert(from.clone());
@@ -50,11 +76,7 @@ impl<'a> NoUnusedVariables<'a> {
             }
         }
 
-        if let Some(spreads) = self.spreads.get(from) {
-            for spread in spreads {
-                self.find_used_vars(&Scope::Fragment(spread), defined, used, visited);
-            }
-        }
+        self.spreads.get(from)
     }
 }
 
@@ -77,7 +99,9 @@ where
                 def_vars
                     .iter()
                     .filter(|var| !used.contains(var.item))
-                    .map(|var| RuleError::new(&error_message(var.item, *op_name), &[var.start]))
+                    .map(|var| {
+                        RuleError::new(&error_message(var.item, *op_name), &[var.span.start])
+                    })
                     .collect(),
             );
         }
@@ -109,7 +133,7 @@ where
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(spread.item.name.item);
         }
     }
@@ -117,7 +141,7 @@ where
     fn enter_variable_definition(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
@@ -129,12 +153,12 @@ where
     fn enter_argument(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (_, value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .append(&mut value.item.referenced_variables());
         }
     }
@@ -142,12 +166,9 @@ where
 
 fn error_message(var_name: &str, op_name: Option<&str>) -> String {
     if let Some(op_name) = op_name {
-        format!(
-            r#"Variable "${}" is not used by operation "{}""#,
-            var_name, op_name
-        )
+        format!(r#"Variable "${var_name}" is not used by operation "{op_name}""#)
     } else {
-        format!(r#"Variable "${}" is not used"#, var_name)
+        format!(r#"Variable "${var_name}" is not used"#)
     }
 }
 

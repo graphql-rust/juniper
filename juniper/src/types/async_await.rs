@@ -1,3 +1,5 @@
+use std::future;
+
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
@@ -30,7 +32,7 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_field_async<'a>(
         &'a self,
         _info: &'a Self::TypeInfo,
@@ -54,9 +56,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -91,8 +93,8 @@ where
     ///
     /// The default implementation panics, if `selection_set` is [`None`].
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [0]: https://spec.graphql.org/October2021#sec-Handling-Field-Errors
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -110,14 +112,6 @@ where
         }
     }
 }
-
-crate::sa::assert_obj_safe!(GraphQLValueAsync<Context = (), TypeInfo = ()>);
-
-/// Helper alias for naming [trait objects][1] of [`GraphQLValueAsync`].
-///
-/// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
-pub type DynGraphQLValueAsync<S, C, TI> =
-    dyn GraphQLValueAsync<S, Context = C, TypeInfo = TI> + Send + 'static;
 
 /// Extension of [`GraphQLType`] trait with asynchronous queries/mutations resolvers.
 ///
@@ -213,8 +207,7 @@ where
         match *selection {
             Selection::Field(Spanning {
                 item: ref f,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
@@ -234,33 +227,36 @@ where
                     panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
-                        meta_type.name()
+                        meta_type.name(),
                     )
                 });
 
                 let exec_vars = executor.variables();
 
                 let sub_exec = executor.field_sub_executor(
-                    &response_name,
+                    response_name,
                     f.name.item,
-                    *start_pos,
+                    span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
                 let args = Arguments::new(
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
+                            .filter_map(|(k, v)| {
+                                let val = v.item.clone().into_const(exec_vars)?;
+                                Some((k.item, Spanning::new(v.span, val)))
+                            })
                             .collect()
                     }),
                     &meta_field.arguments,
                 );
 
-                let pos = *start_pos;
+                let pos = span.start;
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                async_values.push(AsyncValueFuture::Field(async move {
+                async_values.push_back(AsyncValueFuture::Field(async move {
                     // TODO: implement custom future type instead of
                     //       two-level boxing.
                     let res = instance
@@ -289,8 +285,7 @@ where
 
             Selection::FragmentSpread(Spanning {
                 item: ref spread,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
@@ -307,7 +302,9 @@ where
 
                 let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
                 let type_name = instance.type_name(info);
-                if fragment.type_condition.item == concrete_type_name
+                if executor
+                    .schema()
+                    .is_named_subtype(&concrete_type_name, fragment.type_condition.item)
                     || Some(fragment.type_condition.item) == type_name
                 {
                     let sub_result = instance
@@ -321,23 +318,22 @@ where
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
-                            async_values.push(AsyncValueFuture::FragmentSpread(async move {
-                                AsyncValue::Field(AsyncField {
+                            async_values.push_back(AsyncValueFuture::FragmentSpread(
+                                future::ready(AsyncValue::Field(AsyncField {
                                     name: k,
                                     value: Some(v),
-                                })
-                            }));
+                                })),
+                            ));
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
                     }
                 }
             }
 
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
@@ -351,11 +347,14 @@ where
                 if let Some(ref type_condition) = fragment.type_condition {
                     // Check whether the type matches the type condition.
                     let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
-                    if type_condition.item == concrete_type_name {
+                    if executor
+                        .schema()
+                        .is_named_subtype(&concrete_type_name, type_condition.item)
+                    {
                         let sub_result = instance
                             .resolve_into_type_async(
                                 info,
-                                type_condition.item,
+                                &concrete_type_name,
                                 Some(&fragment.selection_set[..]),
                                 &sub_exec,
                             )
@@ -363,19 +362,19 @@ where
 
                         if let Ok(Value::Object(obj)) = sub_result {
                             for (k, v) in obj {
-                                async_values.push(AsyncValueFuture::InlineFragment1(async move {
-                                    AsyncValue::Field(AsyncField {
+                                async_values.push_back(AsyncValueFuture::InlineFragment1(
+                                    future::ready(AsyncValue::Field(AsyncField {
                                         name: k,
                                         value: Some(v),
-                                    })
-                                }));
+                                    })),
+                                ));
                             }
                         } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, *start_pos);
+                            sub_exec.push_error_at(e, span.start);
                         }
                     }
                 } else {
-                    async_values.push(AsyncValueFuture::InlineFragment2(async move {
+                    async_values.push_back(AsyncValueFuture::InlineFragment2(async move {
                         let value = resolve_selection_set_into_async(
                             instance,
                             info,

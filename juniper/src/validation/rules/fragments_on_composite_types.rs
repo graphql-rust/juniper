@@ -28,7 +28,7 @@ where
 
                     context.report_error(
                         &error_message(Some(f.item.name.item), type_name),
-                        &[type_cond.start],
+                        &[type_cond.span.start],
                     );
                 }
             }
@@ -50,7 +50,7 @@ where
                     .next();
 
                 if let Some(name) = invalid_type_name {
-                    context.report_error(&error_message(None, name), &[type_cond.start]);
+                    context.report_error(&error_message(None, name), &[type_cond.span.start]);
                 }
             }
         }
@@ -59,15 +59,9 @@ where
 
 fn error_message(fragment_name: Option<&str>, on_type: &str) -> String {
     if let Some(name) = fragment_name {
-        format!(
-            r#"Fragment "{}" cannot condition non composite type "{}"#,
-            name, on_type
-        )
+        format!(r#"Fragment "{name}" cannot condition non composite type "{on_type}"#)
     } else {
-        format!(
-            r#"Fragment cannot condition on non composite type "{}""#,
-            on_type
-        )
+        format!(r#"Fragment cannot condition on non composite type "{on_type}""#)
     }
 }
 

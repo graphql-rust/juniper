@@ -1,0 +1,21 @@
+error[E0119]: conflicting implementations of trait `From<ObjA>` for type `CharacterValueEnum<ObjA, ObjA>`
+  --> fail/interface/trait/implementers_duplicate_ugly.rs:11:1
+   |
+11 | #[graphql_interface(for = [ObjA, ObjAlias])]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   | |
+   | first implementation here
+   | conflicting implementation for `CharacterValueEnum<ObjA, ObjA>`
+   |
+   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0119]: conflicting implementations of trait `MutuallyExclusive` for type `ObjA`
+  --> fail/interface/trait/implementers_duplicate_ugly.rs:11:1
+   |
+11 | #[graphql_interface(for = [ObjA, ObjAlias])]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   | |
+   | first implementation here
+   | conflicting implementation for `ObjA`
+   |
+   = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` which comes from the expansion of the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)

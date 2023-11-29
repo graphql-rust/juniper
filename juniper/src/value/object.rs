@@ -1,9 +1,9 @@
-use std::{iter::FromIterator, mem};
+use std::mem;
 
 use super::Value;
 use indexmap::map::{IndexMap, IntoIter};
 
-/// A Object value
+/// An Object value
 #[derive(Debug, Clone, PartialEq)]
 pub struct Object<S> {
     key_value_list: IndexMap<String, Value<S>>,
@@ -78,7 +78,7 @@ impl<S> IntoIterator for Object<S> {
 
 impl<S> From<Object<S>> for Value<S> {
     fn from(o: Object<S>) -> Self {
-        Value::Object(o)
+        Self::Object(o)
     }
 }
 

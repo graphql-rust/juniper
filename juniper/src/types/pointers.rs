@@ -93,7 +93,9 @@ where
     S: ScalarValue,
     T: FromInputValue<S>,
 {
-    fn from_input_value(v: &InputValue<S>) -> Option<Box<T>> {
+    type Error = T::Error;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Box<T>, Self::Error> {
         <T as FromInputValue<S>>::from_input_value(v).map(Box::new)
     }
 }
@@ -263,7 +265,7 @@ where
     }
 }
 
-impl<'e, S, T> GraphQLValueAsync<S> for Arc<T>
+impl<S, T> GraphQLValueAsync<S> for Arc<T>
 where
     T: GraphQLValueAsync<S> + Send + ?Sized,
     T::TypeInfo: Sync,
@@ -285,7 +287,9 @@ where
     S: ScalarValue,
     T: FromInputValue<S>,
 {
-    fn from_input_value(v: &InputValue<S>) -> Option<Arc<T>> {
+    type Error = T::Error;
+
+    fn from_input_value(v: &InputValue<S>) -> Result<Arc<T>, Self::Error> {
         <T as FromInputValue<S>>::from_input_value(v).map(Arc::new)
     }
 }

@@ -1,7 +1,7 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use fnv::FnvHashMap;
-#[cfg(feature = "graphql-parser-integration")]
+#[cfg(feature = "graphql-parser")]
 use graphql_parser::schema::Document;
 
 use crate::{
@@ -13,7 +13,7 @@ use crate::{
     GraphQLEnum,
 };
 
-#[cfg(feature = "graphql-parser-integration")]
+#[cfg(feature = "graphql-parser")]
 use crate::schema::translate::{graphql_parser::GraphQLParserTranslator, SchemaTranslator};
 
 /// Root query node of a schema
@@ -44,11 +44,14 @@ pub struct RootNode<
     pub subscription_info: SubscriptionT::TypeInfo,
     #[doc(hidden)]
     pub schema: SchemaType<'a, S>,
+    #[doc(hidden)]
+    pub introspection_disabled: bool,
 }
 
 /// Metadata for a schema
 #[derive(Debug)]
 pub struct SchemaType<'a, S> {
+    pub(crate) description: Option<Cow<'a, str>>,
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
     pub(crate) query_type_name: String,
     pub(crate) mutation_type_name: Option<String>,
@@ -62,7 +65,7 @@ impl<'a, S> Context for SchemaType<'a, S> {}
 pub enum TypeType<'a, S: 'a> {
     Concrete(&'a MetaType<'a, S>),
     NonNull(Box<TypeType<'a, S>>),
-    List(Box<TypeType<'a, S>>),
+    List(Box<TypeType<'a, S>>, Option<usize>),
 }
 
 #[derive(Debug)]
@@ -71,6 +74,7 @@ pub struct DirectiveType<'a, S> {
     pub description: Option<String>,
     pub locations: Vec<DirectiveLocation>,
     pub arguments: Vec<Argument<'a, S>>,
+    pub is_repeatable: bool,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
@@ -80,12 +84,19 @@ pub enum DirectiveLocation {
     Mutation,
     Subscription,
     Field,
+    Scalar,
     #[graphql(name = "FRAGMENT_DEFINITION")]
     FragmentDefinition,
+    #[graphql(name = "FIELD_DEFINITION")]
+    FieldDefinition,
+    #[graphql(name = "VARIABLE_DEFINITION")]
+    VariableDefinition,
     #[graphql(name = "FRAGMENT_SPREAD")]
     FragmentSpread,
     #[graphql(name = "INLINE_FRAGMENT")]
     InlineFragment,
+    #[graphql(name = "ENUM_VALUE")]
+    EnumValue,
 }
 
 impl<'a, QueryT, MutationT, SubscriptionT>
@@ -138,7 +149,7 @@ where
         mutation_info: MutationT::TypeInfo,
         subscription_info: SubscriptionT::TypeInfo,
     ) -> Self {
-        RootNode {
+        Self {
             query_type: query_obj,
             mutation_type: mutation_obj,
             subscription_type: subscription_obj,
@@ -150,7 +161,63 @@ where
             query_info,
             mutation_info,
             subscription_info,
+            introspection_disabled: false,
         }
+    }
+
+    /// Disables introspection for this [`RootNode`], making it to return a [`FieldError`] whenever
+    /// its `__schema` or `__type` field is resolved.
+    ///
+    /// By default, all introspection queries are allowed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{
+    /// #     graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
+    /// #     RootNode,
+    /// # };
+    /// #
+    /// pub struct Query;
+    ///
+    /// #[graphql_object]
+    /// impl Query {
+    ///     fn some() -> bool {
+    ///         true
+    ///     }
+    /// }
+    ///
+    /// type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+    ///
+    /// let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())
+    ///     .disable_introspection();
+    ///
+    /// # // language=GraphQL
+    /// let query = "query { __schema { queryType { name } } }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => {
+    ///         assert_eq!(
+    ///             errs.first().unwrap().message(),
+    ///             "GraphQL introspection is not allowed, but the operation contained `__schema`",
+    ///         );
+    ///     }
+    ///     res => panic!("expected `ValidationError`, returned: {res:#?}"),
+    /// }
+    /// ```
+    pub fn disable_introspection(mut self) -> Self {
+        self.introspection_disabled = true;
+        self
+    }
+
+    /// Enables introspection for this [`RootNode`], if it was previously [disabled][1].
+    ///
+    /// By default, all introspection queries are allowed.
+    ///
+    /// [1]: RootNode::disable_introspection
+    pub fn enable_introspection(mut self) -> Self {
+        self.introspection_disabled = false;
+        self
     }
 
     #[cfg(feature = "schema-language")]
@@ -158,11 +225,10 @@ where
     /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
     /// format.
     pub fn as_schema_language(&self) -> String {
-        let doc = self.as_parser_document();
-        format!("{}", doc)
+        self.as_parser_document().to_string()
     }
 
-    #[cfg(feature = "graphql-parser-integration")]
+    #[cfg(feature = "graphql-parser")]
     /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
     /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
     pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
@@ -184,32 +250,32 @@ impl<'a, S> SchemaType<'a, S> {
         SubscriptionT: GraphQLType<S>,
     {
         let mut directives = FnvHashMap::default();
-        let query_type_name: String;
-        let mutation_type_name: String;
-        let subscription_type_name: String;
-
         let mut registry = Registry::new(FnvHashMap::default());
-        query_type_name = registry
+
+        let query_type_name = registry
             .get_type::<QueryT>(query_info)
             .innermost_name()
             .to_owned();
-
-        mutation_type_name = registry
+        let mutation_type_name = registry
             .get_type::<MutationT>(mutation_info)
             .innermost_name()
             .to_owned();
-
-        subscription_type_name = registry
+        let subscription_type_name = registry
             .get_type::<SubscriptionT>(subscription_info)
             .innermost_name()
             .to_owned();
 
         registry.get_type::<SchemaType<S>>(&());
 
-        directives.insert("skip".to_owned(), DirectiveType::new_skip(&mut registry));
+        directives.insert("skip".into(), DirectiveType::new_skip(&mut registry));
+        directives.insert("include".into(), DirectiveType::new_include(&mut registry));
         directives.insert(
-            "include".to_owned(),
-            DirectiveType::new_include(&mut registry),
+            "deprecated".into(),
+            DirectiveType::new_deprecated(&mut registry),
+        );
+        directives.insert(
+            "specifiedBy".into(),
+            DirectiveType::new_specified_by(&mut registry),
         );
 
         let mut meta_fields = vec![
@@ -231,10 +297,11 @@ impl<'a, S> SchemaType<'a, S> {
 
         for meta_type in registry.types.values() {
             if let MetaType::Placeholder(PlaceholderMeta { ref of_type }) = *meta_type {
-                panic!("Type {:?} is still a placeholder type", of_type);
+                panic!("Type {of_type:?} is still a placeholder type");
             }
         }
         SchemaType {
+            description: None,
             types: registry.types,
             query_type_name,
             mutation_type_name: if &mutation_type_name != "_EmptyMutation" {
@@ -249,6 +316,11 @@ impl<'a, S> SchemaType<'a, S> {
             },
             directives,
         }
+    }
+
+    /// Add a description.
+    pub fn set_description(&mut self, description: impl Into<Cow<'a, str>>) {
+        self.description = Some(description.into());
     }
 
     /// Add a directive like `skip` or `include`.
@@ -271,7 +343,7 @@ impl<'a, S> SchemaType<'a, S> {
             Type::NonNullNamed(ref name) | Type::Named(ref name) => {
                 self.concrete_type_by_name(name)
             }
-            Type::List(ref inner) | Type::NonNullList(ref inner) => self.lookup_type(inner),
+            Type::List(ref inner, _) | Type::NonNullList(ref inner, _) => self.lookup_type(inner),
         }
     }
 
@@ -339,11 +411,13 @@ impl<'a, S> SchemaType<'a, S> {
             Type::NonNullNamed(ref n) => TypeType::NonNull(Box::new(
                 self.type_by_name(n).expect("Type not found in schema"),
             )),
-            Type::NonNullList(ref inner) => {
-                TypeType::NonNull(Box::new(TypeType::List(Box::new(self.make_type(inner)))))
-            }
+            Type::NonNullList(ref inner, expected_size) => TypeType::NonNull(Box::new(
+                TypeType::List(Box::new(self.make_type(inner)), expected_size),
+            )),
             Type::Named(ref n) => self.type_by_name(n).expect("Type not found in schema"),
-            Type::List(ref inner) => TypeType::List(Box::new(self.make_type(inner))),
+            Type::List(ref inner, expected_size) => {
+                TypeType::List(Box::new(self.make_type(inner)), expected_size)
+            }
         }
     }
 
@@ -423,9 +497,9 @@ impl<'a, S> SchemaType<'a, S> {
             | (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
                 self.is_named_subtype(sub_name, super_name)
             }
-            (&NonNullList(ref super_inner), &NonNullList(ref sub_inner))
-            | (&List(ref super_inner), &List(ref sub_inner))
-            | (&List(ref super_inner), &NonNullList(ref sub_inner)) => {
+            (&NonNullList(ref super_inner, _), &NonNullList(ref sub_inner, _))
+            | (&List(ref super_inner, _), &List(ref sub_inner, _))
+            | (&List(ref super_inner, _), &NonNullList(ref sub_inner, _)) => {
                 self.is_subtype(sub_inner, super_inner)
             }
             _ => false,
@@ -460,14 +534,14 @@ impl<'a, S> TypeType<'a, S> {
     pub fn innermost_concrete(&self) -> &'a MetaType<S> {
         match *self {
             TypeType::Concrete(t) => t,
-            TypeType::NonNull(ref n) | TypeType::List(ref n) => n.innermost_concrete(),
+            TypeType::NonNull(ref n) | TypeType::List(ref n, _) => n.innermost_concrete(),
         }
     }
 
     #[inline]
     pub fn list_contents(&self) -> Option<&TypeType<'a, S>> {
         match *self {
-            TypeType::List(ref n) => Some(n),
+            TypeType::List(ref n, _) => Some(n),
             TypeType::NonNull(ref n) => n.list_contents(),
             _ => None,
         }
@@ -487,12 +561,14 @@ where
         name: &str,
         locations: &[DirectiveLocation],
         arguments: &[Argument<'a, S>],
-    ) -> DirectiveType<'a, S> {
-        DirectiveType {
-            name: name.to_owned(),
+        is_repeatable: bool,
+    ) -> Self {
+        Self {
+            name: name.into(),
             description: None,
             locations: locations.to_vec(),
             arguments: arguments.to_vec(),
+            is_repeatable,
         }
     }
 
@@ -508,6 +584,7 @@ where
                 DirectiveLocation::InlineFragment,
             ],
             &[registry.arg::<bool>("if", &())],
+            false,
         )
     }
 
@@ -523,35 +600,67 @@ where
                 DirectiveLocation::InlineFragment,
             ],
             &[registry.arg::<bool>("if", &())],
+            false,
+        )
+    }
+
+    fn new_deprecated(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            "deprecated",
+            &[
+                DirectiveLocation::FieldDefinition,
+                DirectiveLocation::EnumValue,
+            ],
+            &[registry.arg::<String>("reason", &())],
+            false,
+        )
+    }
+
+    fn new_specified_by(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            "specifiedBy",
+            &[DirectiveLocation::Scalar],
+            &[registry.arg::<String>("url", &())],
+            false,
         )
     }
 
     pub fn description(mut self, description: &str) -> DirectiveType<'a, S> {
-        self.description = Some(description.to_owned());
+        self.description = Some(description.into());
         self
     }
 }
 
 impl fmt::Display for DirectiveLocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match *self {
-            DirectiveLocation::Query => "query",
-            DirectiveLocation::Mutation => "mutation",
-            DirectiveLocation::Subscription => "subscription",
-            DirectiveLocation::Field => "field",
-            DirectiveLocation::FragmentDefinition => "fragment definition",
-            DirectiveLocation::FragmentSpread => "fragment spread",
-            DirectiveLocation::InlineFragment => "inline fragment",
+        f.write_str(match self {
+            Self::Query => "query",
+            Self::Mutation => "mutation",
+            Self::Subscription => "subscription",
+            Self::Field => "field",
+            Self::FieldDefinition => "field definition",
+            Self::FragmentDefinition => "fragment definition",
+            Self::FragmentSpread => "fragment spread",
+            Self::InlineFragment => "inline fragment",
+            Self::VariableDefinition => "variable definition",
+            Self::Scalar => "scalar",
+            Self::EnumValue => "enum value",
         })
     }
 }
 
 impl<'a, S> fmt::Display for TypeType<'a, S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            TypeType::Concrete(t) => f.write_str(t.name().unwrap()),
-            TypeType::List(ref i) => write!(f, "[{}]", i),
-            TypeType::NonNull(ref i) => write!(f, "{}!", i),
+        match self {
+            Self::Concrete(t) => f.write_str(t.name().unwrap()),
+            Self::List(i, _) => write!(f, "[{i}]"),
+            Self::NonNull(i) => write!(f, "{i}!"),
         }
     }
 }
@@ -559,7 +668,7 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
 #[cfg(test)]
 mod test {
 
-    #[cfg(feature = "graphql-parser-integration")]
+    #[cfg(feature = "graphql-parser")]
     mod graphql_parser_integration {
         use crate::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 
@@ -589,10 +698,7 @@ mod test {
             "#,
             )
             .unwrap();
-            assert_eq!(
-                format!("{}", ast),
-                format!("{}", schema.as_parser_document()),
-            );
+            assert_eq!(ast.to_string(), schema.as_parser_document().to_string());
         }
     }
 
@@ -636,14 +742,10 @@ mod test {
                 }
                 /// This is whatever's description.
                 fn whatever() -> String {
-                    "foo".to_string()
+                    "foo".into()
                 }
-                fn arr(stuff: Vec<Coordinate>) -> Option<&str> {
-                    if stuff.is_empty() {
-                        None
-                    } else {
-                        Some("stuff")
-                    }
+                fn arr(stuff: Vec<Coordinate>) -> Option<&'static str> {
+                    (!stuff.is_empty()).then_some("stuff")
                 }
                 fn fruit() -> Fruit {
                     Fruit::Apple
@@ -703,7 +805,7 @@ mod test {
             "#,
             )
             .unwrap();
-            assert_eq!(format!("{}", ast), schema.as_schema_language());
+            assert_eq!(ast.to_string(), schema.as_schema_language());
         }
     }
 }

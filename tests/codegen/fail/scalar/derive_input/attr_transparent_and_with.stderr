@@ -1,0 +1,5 @@
+error: GraphQL scalar `with = <path>` attribute argument cannot be combined with `transparent`. You can specify custom resolvers with `to_output_with`, `from_input_with`, `parse_token`/`parse_token_with` attribute arguments and still use `transparent` for unspecified ones.
+ --> fail/scalar/derive_input/attr_transparent_and_with.rs:3:25
+  |
+3 | #[graphql_scalar(with = Self, transparent)]
+  |                         ^^^^

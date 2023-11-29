@@ -4,6 +4,7 @@ use crate::{
     schema::meta::MetaType,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
+    Operation, OperationType, Selection,
 };
 
 pub struct FieldsOnCorrectType;
@@ -16,6 +17,27 @@ impl<'a, S> Visitor<'a, S> for FieldsOnCorrectType
 where
     S: ScalarValue,
 {
+    fn enter_operation_definition(
+        &mut self,
+        context: &mut ValidatorContext<'a, S>,
+        operation: &'a Spanning<Operation<S>>,
+    ) {
+        // https://spec.graphql.org/October2021/#note-bc213
+        if let OperationType::Subscription = operation.item.operation_type {
+            for selection in &operation.item.selection_set {
+                if let Selection::Field(field) = selection {
+                    if field.item.name.item == "__typename" {
+                        context.report_error(
+                            "`__typename` may not be included as a root \
+                             field in a subscription operation",
+                            &[field.item.name.span.start],
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     fn enter_field(
         &mut self,
         context: &mut ValidatorContext<'a, S>,
@@ -38,7 +60,7 @@ where
 
                     context.report_error(
                         &error_message(field_name.item, type_name),
-                        &[field_name.start],
+                        &[field_name.span.start],
                     );
                 }
             }
@@ -47,7 +69,7 @@ where
 }
 
 fn error_message(field: &str, type_name: &str) -> String {
-    format!(r#"Unknown field "{}" on type "{}""#, field, type_name)
+    format!(r#"Unknown field "{field}" on type "{type_name}""#)
 }
 
 #[cfg(test)]
@@ -355,6 +377,32 @@ mod tests {
             }
           }
         "#,
+        );
+    }
+
+    #[test]
+    fn forbids_typename_on_subscription() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"subscription { __typename }"#,
+            &[RuleError::new(
+                "`__typename` may not be included as a root field in a \
+                 subscription operation",
+                &[SourcePosition::new(15, 0, 15)],
+            )],
+        );
+    }
+
+    #[test]
+    fn forbids_typename_on_explicit_subscription() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"subscription SubscriptionRoot { __typename }"#,
+            &[RuleError::new(
+                "`__typename` may not be included as a root field in a \
+                 subscription operation",
+                &[SourcePosition::new(32, 0, 32)],
+            )],
         );
     }
 }

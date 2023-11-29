@@ -141,6 +141,19 @@ fn visit_variable_definitions<'a, S, V>(
                     visit_input_value(v, ctx, default_value);
                 }
 
+                if let Some(dirs) = &def.1.directives {
+                    for directive in dirs {
+                        let directive_arguments = ctx
+                            .schema
+                            .directive_by_name(directive.item.name.item)
+                            .map(|d| &d.arguments);
+
+                        v.enter_directive(ctx, directive);
+                        visit_arguments(v, ctx, directive_arguments, &directive.item.arguments);
+                        v.exit_directive(ctx, directive);
+                    }
+                }
+
                 v.exit_variable_definition(ctx, def);
             })
         }
@@ -336,7 +349,7 @@ fn visit_input_value<'a, S, V>(
         }
         InputValue::List(ref ls) => {
             let inner_type = ctx.current_input_type_literal().and_then(|t| match *t {
-                Type::List(ref inner) | Type::NonNullList(ref inner) => {
+                Type::List(ref inner, _) | Type::NonNullList(ref inner, _) => {
                     Some(inner.as_ref().clone())
                 }
                 _ => None,
@@ -364,16 +377,15 @@ fn enter_input_value<'a, S, V>(
 {
     use crate::InputValue::*;
 
-    let start = &input_value.start;
-    let end = &input_value.end;
+    let span = input_value.span;
 
     match input_value.item {
-        Null => v.enter_null_value(ctx, Spanning::start_end(start, end, ())),
-        Scalar(ref s) => v.enter_scalar_value(ctx, Spanning::start_end(start, end, s)),
-        Enum(ref s) => v.enter_enum_value(ctx, Spanning::start_end(start, end, s)),
-        Variable(ref s) => v.enter_variable_value(ctx, Spanning::start_end(start, end, s)),
-        List(ref l) => v.enter_list_value(ctx, Spanning::start_end(start, end, l)),
-        Object(ref o) => v.enter_object_value(ctx, Spanning::start_end(start, end, o)),
+        Null => v.enter_null_value(ctx, Spanning::new(span, ())),
+        Scalar(ref s) => v.enter_scalar_value(ctx, Spanning::new(span, s)),
+        Enum(ref s) => v.enter_enum_value(ctx, Spanning::new(span, s)),
+        Variable(ref s) => v.enter_variable_value(ctx, Spanning::new(span, s)),
+        List(ref l) => v.enter_list_value(ctx, Spanning::new(span, l)),
+        Object(ref o) => v.enter_object_value(ctx, Spanning::new(span, o)),
     }
 }
 
@@ -387,15 +399,14 @@ fn exit_input_value<'a, S, V>(
 {
     use crate::InputValue::*;
 
-    let start = &input_value.start;
-    let end = &input_value.end;
+    let span = input_value.span;
 
     match input_value.item {
-        Null => v.exit_null_value(ctx, Spanning::start_end(start, end, ())),
-        Scalar(ref s) => v.exit_scalar_value(ctx, Spanning::start_end(start, end, s)),
-        Enum(ref s) => v.exit_enum_value(ctx, Spanning::start_end(start, end, s)),
-        Variable(ref s) => v.exit_variable_value(ctx, Spanning::start_end(start, end, s)),
-        List(ref l) => v.exit_list_value(ctx, Spanning::start_end(start, end, l)),
-        Object(ref o) => v.exit_object_value(ctx, Spanning::start_end(start, end, o)),
+        Null => v.exit_null_value(ctx, Spanning::new(span, ())),
+        Scalar(ref s) => v.exit_scalar_value(ctx, Spanning::new(span, s)),
+        Enum(ref s) => v.exit_enum_value(ctx, Spanning::new(span, s)),
+        Variable(ref s) => v.exit_variable_value(ctx, Spanning::new(span, s)),
+        List(ref l) => v.exit_list_value(ctx, Spanning::new(span, l)),
+        Object(ref o) => v.exit_object_value(ctx, Spanning::new(span, o)),
     }
 }

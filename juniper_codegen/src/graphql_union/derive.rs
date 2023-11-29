@@ -1,21 +1,22 @@
 //! Code generation for `#[derive(GraphQLUnion)]` macro.
 
 use proc_macro2::TokenStream;
-use proc_macro_error::ResultExt as _;
 use quote::{quote, ToTokens};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
-use crate::{
-    common::parse::TypeExt as _, result::GraphQLScope, util::span_container::SpanContainer,
+use crate::common::{
+    diagnostic::{self, ResultExt as _},
+    parse::TypeExt as _,
+    scalar, SpanContainer,
 };
 
 use super::{
-    all_variants_different, emerge_union_variants_from_meta, UnionDefinition, UnionMeta,
-    UnionVariantDefinition, UnionVariantMeta,
+    all_variants_different, emerge_union_variants_from_attr, Attr, Definition, VariantAttr,
+    VariantDefinition,
 };
 
-/// [`GraphQLScope`] of errors for `#[derive(GraphQLUnion)]` macro.
-const ERR: GraphQLScope = GraphQLScope::UnionDerive;
+/// [`diagnostic::Scope`] of errors for `#[derive(GraphQLUnion)]` macro.
+const ERR: diagnostic::Scope = diagnostic::Scope::UnionDerive;
 
 /// Expands `#[derive(GraphQLUnion)]` macro into generated code.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -29,21 +30,22 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     .map(ToTokens::into_token_stream)
 }
 
-/// Expands into generated code a `#[derive(GraphQLUnion)]` macro placed on a Rust enum.
-fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
-    let meta = UnionMeta::from_attrs("graphql", &ast.attrs)?;
+/// Expands into generated code a `#[derive(GraphQLUnion)]` macro placed on a
+/// Rust enum.
+fn expand_enum(ast: syn::DeriveInput) -> syn::Result<Definition> {
+    let attr = Attr::from_attrs("graphql", &ast.attrs)?;
 
     let enum_span = ast.span();
     let enum_ident = ast.ident;
 
-    let name = meta
+    let name = attr
         .name
         .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| enum_ident.unraw().to_string());
-    if !meta.is_internal && name.starts_with("__") {
+    if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
-            meta.name
+            attr.name
                 .as_ref()
                 .map(SpanContainer::span_ident)
                 .unwrap_or_else(|| enum_ident.span()),
@@ -52,15 +54,15 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
 
     let mut variants: Vec<_> = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => unreachable!(),
+        data => unreachable!("graphql_union::derive::expand_enum({data:?})"),
     }
     .into_iter()
-    .filter_map(|var| parse_variant_from_enum_variant(var, &enum_ident, &meta))
+    .filter_map(|var| parse_variant_from_enum_variant(var, &enum_ident, &attr))
     .collect();
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
-    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers);
+    emerge_union_variants_from_attr(&mut variants, attr.external_resolvers);
 
     if variants.is_empty() {
         ERR.emit_custom(enum_span, "expects at least one union variant");
@@ -73,15 +75,18 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         );
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
-    Ok(UnionDefinition {
+    Ok(Definition {
         name,
         ty: parse_quote! { #enum_ident },
         is_trait_object: false,
-        description: meta.description.map(SpanContainer::into_inner),
-        context: meta.context.map(SpanContainer::into_inner),
-        scalar: meta.scalar.map(SpanContainer::into_inner),
+        description: attr.description.map(SpanContainer::into_inner),
+        context: attr
+            .context
+            .map(SpanContainer::into_inner)
+            .unwrap_or_else(|| parse_quote! { () }),
+        scalar: scalar::Type::parse(attr.scalar.as_deref(), &ast.generics),
         generics: ast.generics,
         variants,
     })
@@ -89,23 +94,22 @@ fn expand_enum(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
 
 /// Parses given Rust enum `var`iant as [GraphQL union][1] variant.
 ///
-/// On failure returns [`None`] and internally fills up [`proc_macro_error`] with the corresponding
-/// errors.
+/// On failure returns [`None`] and internally fills up [`diagnostic`]
+/// with the corresponding errors.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
 fn parse_variant_from_enum_variant(
     var: syn::Variant,
     enum_ident: &syn::Ident,
-    enum_meta: &UnionMeta,
-) -> Option<UnionVariantDefinition> {
-    let meta = UnionVariantMeta::from_attrs("graphql", &var.attrs)
-        .map_err(|e| proc_macro_error::emit_error!(e))
+    enum_attr: &Attr,
+) -> Option<VariantDefinition> {
+    let attr = VariantAttr::from_attrs("graphql", &var.attrs)
+        .map_err(diagnostic::emit_error)
         .ok()?;
-    if meta.ignore.is_some() {
+    if attr.ignore.is_some() {
         return None;
     }
 
-    let var_span = var.span();
     let var_ident = var.ident;
 
     let ty = match var.fields {
@@ -130,12 +134,13 @@ fn parse_variant_from_enum_variant(
 
     let enum_path = quote! { #enum_ident::#var_ident };
 
-    let resolver_code = if let Some(rslvr) = meta.external_resolver {
-        if let Some(other) = enum_meta.external_resolvers.get(&ty) {
+    let resolver_code = if let Some(rslvr) = attr.external_resolver {
+        if let Some(other) = enum_attr.external_resolvers.get(&ty) {
             ERR.emit_custom(
                 rslvr.span_ident(),
                 format!(
-                    "variant `{}` already has external resolver function `{}` declared on the enum",
+                    "variant `{}` already has external resolver function `{}` \
+                     declared on the enum",
                     ty.to_token_stream(),
                     other.to_token_stream(),
                 ),
@@ -149,39 +154,41 @@ fn parse_variant_from_enum_variant(
         }
     } else {
         parse_quote! {
-            match self { #enum_ident::#var_ident(ref v) => Some(v), _ => None, }
+            match self {
+                #enum_ident::#var_ident(ref v) => ::core::option::Option::Some(v),
+                _ => ::core::option::Option::None,
+            }
         }
     };
 
     let resolver_check = parse_quote! {
-        matches!(self, #enum_path(_))
+        ::core::matches!(self, #enum_path(_))
     };
 
-    Some(UnionVariantDefinition {
+    Some(VariantDefinition {
         ty,
         resolver_code,
         resolver_check,
-        enum_path: Some(enum_path),
-        context_ty: None,
-        span: var_span,
+        context: None,
     })
 }
 
-/// Expands into generated code a `#[derive(GraphQLUnion)]` macro placed on a Rust struct.
-fn expand_struct(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
-    let meta = UnionMeta::from_attrs("graphql", &ast.attrs)?;
+/// Expands into generated code a `#[derive(GraphQLUnion)]` macro placed on a
+/// Rust struct.
+fn expand_struct(ast: syn::DeriveInput) -> syn::Result<Definition> {
+    let attr = Attr::from_attrs("graphql", &ast.attrs)?;
 
     let struct_span = ast.span();
     let struct_ident = ast.ident;
 
-    let name = meta
+    let name = attr
         .name
         .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| struct_ident.unraw().to_string());
-    if !meta.is_internal && name.starts_with("__") {
+    if !attr.is_internal && name.starts_with("__") {
         ERR.no_double_underscore(
-            meta.name
+            attr.name
                 .as_ref()
                 .map(SpanContainer::span_ident)
                 .unwrap_or_else(|| struct_ident.span()),
@@ -189,7 +196,7 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
     }
 
     let mut variants = vec![];
-    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers);
+    emerge_union_variants_from_attr(&mut variants, attr.external_resolvers);
     if variants.is_empty() {
         ERR.emit_custom(struct_span, "expects at least one union variant");
     }
@@ -201,15 +208,18 @@ fn expand_struct(ast: syn::DeriveInput) -> syn::Result<UnionDefinition> {
         );
     }
 
-    proc_macro_error::abort_if_dirty();
+    diagnostic::abort_if_dirty();
 
-    Ok(UnionDefinition {
+    Ok(Definition {
         name,
         ty: parse_quote! { #struct_ident },
         is_trait_object: false,
-        description: meta.description.map(SpanContainer::into_inner),
-        context: meta.context.map(SpanContainer::into_inner),
-        scalar: meta.scalar.map(SpanContainer::into_inner),
+        description: attr.description.map(SpanContainer::into_inner),
+        context: attr
+            .context
+            .map(SpanContainer::into_inner)
+            .unwrap_or_else(|| parse_quote! { () }),
+        scalar: scalar::Type::parse(attr.scalar.as_deref(), &ast.generics),
         generics: ast.generics,
         variants,
     })

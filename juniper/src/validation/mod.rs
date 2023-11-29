@@ -3,7 +3,7 @@
 mod context;
 mod input_value;
 mod multi_visitor;
-mod rules;
+pub mod rules;
 mod traits;
 mod visitor;
 
@@ -21,6 +21,7 @@ pub use self::{
 
 #[cfg(test)]
 pub use self::test_harness::{
-    expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+    expect_fails_fn, expect_fails_fn_with_schema, expect_fails_rule, expect_fails_rule_with_schema,
+    expect_passes_fn, expect_passes_fn_with_schema, expect_passes_rule,
     expect_passes_rule_with_schema,
 };

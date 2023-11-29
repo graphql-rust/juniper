@@ -3,71 +3,26 @@ mod interface {
         graphql_interface, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
+        GraphQLObject,
     };
 
     #[graphql_interface(for = [Cat, Dog])]
     trait Pet {
         fn name(&self) -> &str;
-
-        #[graphql(downcast)]
-        fn as_dog(&self) -> Option<&Dog> {
-            None
-        }
-        #[graphql(downcast)]
-        fn as_cat(&self) -> Option<&Cat> {
-            None
-        }
     }
 
+    #[derive(GraphQLObject)]
+    #[graphql(impl = PetValue)]
     struct Dog {
         name: String,
         woofs: bool,
     }
 
-    #[graphql_interface]
-    impl Pet for Dog {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn as_dog(&self) -> Option<&Dog> {
-            Some(self)
-        }
-    }
-
-    #[graphql_object(impl = PetValue)]
-    impl Dog {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn woofs(&self) -> bool {
-            self.woofs
-        }
-    }
-
+    #[derive(GraphQLObject)]
+    #[graphql(impl = PetValue)]
     struct Cat {
         name: String,
         meows: bool,
-    }
-
-    #[graphql_interface]
-    impl Pet for Cat {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn as_cat(&self) -> Option<&Cat> {
-            Some(self)
-        }
-    }
-
-    #[graphql_object(impl = PetValue)]
-    impl Cat {
-        fn name(&self) -> &str {
-            &self.name
-        }
-        fn meows(&self) -> bool {
-            self.meows
-        }
     }
 
     struct Schema {
@@ -87,12 +42,12 @@ mod interface {
             Schema {
                 pets: vec![
                     Dog {
-                        name: "Odie".to_owned(),
+                        name: "Odie".into(),
                         woofs: true,
                     }
                     .into(),
                     Cat {
-                        name: "Garfield".to_owned(),
+                        name: "Garfield".into(),
                         meows: false,
                     }
                     .into(),
@@ -122,35 +77,19 @@ mod interface {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
-            Value::object(
-                vec![(
-                    "pets",
-                    Value::list(vec![
-                        Value::object(
-                            vec![
-                                ("name", Value::scalar("Odie")),
-                                ("woofs", Value::scalar(true)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                        Value::object(
-                            vec![
-                                ("name", Value::scalar("Garfield")),
-                                ("meows", Value::scalar(false)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ]),
-                )]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "pets": [{
+                    "name": "Odie",
+                    "woofs": true,
+                }, {
+                    "name": "Garfield",
+                    "meows": false,
+                }],
+            }),
         );
     }
 }
@@ -160,7 +99,6 @@ mod union {
         graphql_object, graphql_union,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        value::Value,
     };
 
     #[graphql_union]
@@ -232,11 +170,11 @@ mod union {
             Schema {
                 pets: vec![
                     Box::new(Dog {
-                        name: "Odie".to_owned(),
+                        name: "Odie".into(),
                         woofs: true,
                     }),
                     Box::new(Cat {
-                        name: "Garfield".to_owned(),
+                        name: "Garfield".into(),
                         meows: false,
                     }),
                 ],
@@ -267,37 +205,21 @@ mod union {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:#?}", result);
+        println!("Result: {result:#?}");
 
         assert_eq!(
             result,
-            Value::object(
-                vec![(
-                    "pets",
-                    Value::list(vec![
-                        Value::object(
-                            vec![
-                                ("__typename", Value::scalar("Dog")),
-                                ("name", Value::scalar("Odie")),
-                                ("woofs", Value::scalar(true)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                        Value::object(
-                            vec![
-                                ("__typename", Value::scalar("Cat")),
-                                ("name", Value::scalar("Garfield")),
-                                ("meows", Value::scalar(false)),
-                            ]
-                            .into_iter()
-                            .collect(),
-                        ),
-                    ]),
-                )]
-                .into_iter()
-                .collect()
-            )
+            graphql_value!({
+                "pets": [{
+                    "__typename": "Dog",
+                    "name": "Odie",
+                    "woofs": true,
+                }, {
+                    "__typename": "Cat",
+                    "name": "Garfield",
+                    "meows": false,
+                }],
+            }),
         );
     }
 }

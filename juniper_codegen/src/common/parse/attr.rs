@@ -4,7 +4,7 @@
 use proc_macro2::{Span, TokenStream};
 use syn::parse_quote;
 
-use crate::util::path_eq_single;
+use crate::common::path_eq_single;
 
 /// Prepends the given `attrs` collection with a new [`syn::Attribute`] generated from the given
 /// `attr_path` and `attr_args`.
@@ -28,7 +28,7 @@ pub(crate) fn unite(
 pub(crate) fn strip(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
     attrs
         .into_iter()
-        .filter(|attr| !path_eq_single(&attr.path, attr_path))
+        .filter(|attr| !path_eq_single(attr.path(), attr_path))
         .collect()
 }
 
@@ -49,7 +49,7 @@ pub(crate) mod err {
     pub(crate) fn unknown_arg<S: AsSpan>(span: S, name: &str) -> syn::Error {
         syn::Error::new(
             span.as_span(),
-            format!("unknown `{}` attribute argument", name),
+            format!("unknown `{name}` attribute argument"),
         )
     }
 

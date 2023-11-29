@@ -30,18 +30,18 @@ where
             Entry::Occupied(e) => {
                 context.report_error(
                     &duplicate_message(f.item.name.item),
-                    &[*e.get(), f.item.name.start],
+                    &[*e.get(), f.item.name.span.start],
                 );
             }
             Entry::Vacant(e) => {
-                e.insert(f.item.name.start);
+                e.insert(f.item.name.span.start);
             }
         }
     }
 }
 
 fn duplicate_message(frag_name: &str) -> String {
-    format!("There can only be one fragment named {}", frag_name)
+    format!("There can only be one fragment named {frag_name}")
 }
 
 #[cfg(test)]

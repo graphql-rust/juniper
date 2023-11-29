@@ -22,7 +22,7 @@ where
         fragment: &'a Spanning<InlineFragment<S>>,
     ) {
         if let Some(ref type_cond) = fragment.item.type_condition {
-            validate_type(ctx, type_cond.item, &type_cond.start);
+            validate_type(ctx, type_cond.item, &type_cond.span.start);
         }
     }
 
@@ -32,21 +32,21 @@ where
         fragment: &'a Spanning<Fragment<S>>,
     ) {
         let type_cond = &fragment.item.type_condition;
-        validate_type(ctx, type_cond.item, &type_cond.start);
+        validate_type(ctx, type_cond.item, &type_cond.span.start);
     }
 
     fn enter_variable_definition(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
+        (_, var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         let type_name = var_def.var_type.item.innermost_name();
-        validate_type(ctx, type_name, &var_def.var_type.start);
+        validate_type(ctx, type_name, &var_def.var_type.span.start);
     }
 }
 
-fn validate_type<'a, S: Debug>(
-    ctx: &mut ValidatorContext<'a, S>,
+fn validate_type<S: Debug>(
+    ctx: &mut ValidatorContext<'_, S>,
     type_name: &str,
     location: &SourcePosition,
 ) {
@@ -56,7 +56,7 @@ fn validate_type<'a, S: Debug>(
 }
 
 fn error_message(type_name: &str) -> String {
-    format!(r#"Unknown type "{}""#, type_name)
+    format!(r#"Unknown type "{type_name}""#)
 }
 
 #[cfg(test)]

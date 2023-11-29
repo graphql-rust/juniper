@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
+    graphql_scalar,
+    macros::reflect,
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::{
@@ -15,13 +17,29 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{ParseScalarResult, ScalarValue, Value},
+    GraphQLScalar,
 };
 
 /// An ID as defined by the GraphQL specification
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GraphQLScalar, PartialEq, Serialize)]
+#[graphql(parse_token(String, i32))]
 pub struct ID(String);
+
+impl ID {
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        Value::scalar(self.0.clone())
+    }
+
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        v.as_string_value()
+            .map(str::to_owned)
+            .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
+            .map(Self)
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    }
+}
 
 impl From<String> for ID {
     fn from(s: String) -> ID {
@@ -50,50 +68,23 @@ impl fmt::Display for ID {
     }
 }
 
-#[crate::graphql_scalar(name = "ID")]
-impl<S> GraphQLScalar for ID
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.clone())
+#[graphql_scalar(with = impl_string_scalar)]
+type String = std::string::String;
+
+mod impl_string_scalar {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &str) -> Value<S> {
+        Value::scalar(v.to_owned())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<ID> {
-        match *v {
-            InputValue::Scalar(ref s) => s
-                .as_string()
-                .or_else(|| s.as_int().map(|i| i.to_string()))
-                .map(ID),
-            _ => None,
-        }
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<String, String> {
+        v.as_string_value()
+            .map(str::to_owned)
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        match value {
-            ScalarToken::String(value) | ScalarToken::Int(value) => Ok(S::from(value.to_owned())),
-            _ => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
-        }
-    }
-}
-
-#[crate::graphql_scalar(name = "String")]
-impl<S> GraphQLScalar for String
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.clone())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<String> {
-        match *v {
-            InputValue::Scalar(ref s) => s.as_string(),
-            _ => None,
-        }
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         if let ScalarToken::String(value) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
@@ -129,7 +120,7 @@ where
                         }
                         Some(s) => {
                             return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
-                                format!("\\{}", s),
+                                format!("\\{s}"),
                             )))
                         }
                         None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
@@ -141,12 +132,12 @@ where
             }
             Ok(ret.into())
         } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+            Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
 }
 
-fn parse_unicode_codepoint<'a, I>(char_iter: &mut I) -> Result<char, ParseError<'a>>
+fn parse_unicode_codepoint<I>(char_iter: &mut I) -> Result<char, ParseError>
 where
     I: Iterator<Item = char>,
 {
@@ -158,19 +149,16 @@ where
         .and_then(|c1| {
             char_iter
                 .next()
-                .map(|c2| format!("{}{}", c1, c2))
+                .map(|c2| format!("{c1}{c2}"))
                 .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{}", c1)))
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{c1}")))
                 })
         })
         .and_then(|mut s| {
             char_iter
                 .next()
                 .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-                        "\\u{}",
-                        s.clone()
-                    )))
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{s}")))
                 })
                 .map(|c2| {
                     s.push(c2);
@@ -181,10 +169,7 @@ where
             char_iter
                 .next()
                 .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-                        "\\u{}",
-                        s.clone()
-                    )))
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{s}")))
                 })
                 .map(|c2| {
                     s.push(c2);
@@ -193,16 +178,26 @@ where
         })?;
     let code_point = u32::from_str_radix(&escaped_code_point, 16).map_err(|_| {
         ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-            "\\u{}",
-            escaped_code_point
+            "\\u{escaped_code_point}",
         )))
     })?;
     char::from_u32(code_point).ok_or_else(|| {
         ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-            "\\u{}",
-            escaped_code_point
+            "\\u{escaped_code_point}",
         )))
     })
+}
+
+impl<S> reflect::WrappedType<S> for str {
+    const VALUE: reflect::WrappedValue = 1;
+}
+
+impl<S> reflect::BaseType<S> for str {
+    const NAME: reflect::Type = "String";
+}
+
+impl<S> reflect::BaseSubTypes<S> for str {
+    const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
 }
 
 impl<S> GraphQLType<S> for str
@@ -266,82 +261,80 @@ where
     }
 }
 
-#[crate::graphql_scalar(name = "Boolean")]
-impl<S> GraphQLScalar for bool
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(*self)
+#[graphql_scalar(with = impl_boolean_scalar)]
+type Boolean = bool;
+
+mod impl_boolean_scalar {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> Value<S> {
+        Value::scalar(*v)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<bool> {
-        match *v {
-            InputValue::Scalar(ref b) => b.as_boolean(),
-            _ => None,
-        }
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Boolean, String> {
+        v.as_scalar_value()
+            .and_then(ScalarValue::as_bool)
+            .ok_or_else(|| format!("Expected `Boolean`, found: {v}"))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        // Bools are parsed separately - they shouldn't reach this code path
-        Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
+        // `Boolean`s are parsed separately, they shouldn't reach this code path.
+        Err(ParseError::unexpected_token(Token::Scalar(value)))
     }
 }
 
-#[crate::graphql_scalar(name = "Int")]
-impl<S> GraphQLScalar for i32
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(*self)
+#[graphql_scalar(with = impl_int_scalar)]
+type Int = i32;
+
+mod impl_int_scalar {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Int) -> Value<S> {
+        Value::scalar(*v)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<i32> {
-        match *v {
-            InputValue::Scalar(ref i) => i.as_int(),
-            _ => None,
-        }
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Int, String> {
+        v.as_int_value()
+            .ok_or_else(|| format!("Expected `Int`, found: {v}"))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         if let ScalarToken::Int(v) = value {
             v.parse()
-                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map_err(|_| ParseError::unexpected_token(Token::Scalar(value)))
                 .map(|s: i32| s.into())
         } else {
-            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+            Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
 }
 
-#[crate::graphql_scalar(name = "Float")]
-impl<S> GraphQLScalar for f64
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(*self)
+#[graphql_scalar(with = impl_float_scalar)]
+type Float = f64;
+
+mod impl_float_scalar {
+    use super::*;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &Float) -> Value<S> {
+        Value::scalar(*v)
     }
 
-    fn from_input_value(v: &InputValue) -> Option<f64> {
-        match *v {
-            InputValue::Scalar(ref s) => s.as_float(),
-            _ => None,
-        }
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Float, String> {
+        v.as_float_value()
+            .ok_or_else(|| format!("Expected `Float`, found: {v}"))
     }
 
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         match value {
             ScalarToken::Int(v) => v
                 .parse()
-                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map_err(|_| ParseError::unexpected_token(Token::Scalar(value)))
                 .map(|s: i32| f64::from(s).into()),
             ScalarToken::Float(v) => v
                 .parse()
-                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map_err(|_| ParseError::unexpected_token(Token::Scalar(value)))
                 .map(|s: f64| s.into()),
-            ScalarToken::String(_) => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
+            ScalarToken::String(_) => Err(ParseError::unexpected_token(Token::Scalar(value))),
         }
     }
 }
@@ -400,8 +393,9 @@ where
 {
 }
 
+// Implemented manually to omit redundant `T: Default` trait bound, imposed by
+// `#[derive(Default)]`.
 impl<T> Default for EmptyMutation<T> {
-    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -460,8 +454,9 @@ where
 {
 }
 
+// Implemented manually to omit redundant `T: Default` trait bound, imposed by
+// `#[derive(Default)]`.
 impl<T> Default for EmptySubscription<T> {
-    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -498,8 +493,8 @@ mod tests {
 
     #[test]
     fn test_id_display() {
-        let id = ID(String::from("foo"));
-        assert_eq!(format!("{}", id), "foo");
+        let id = ID("foo".into());
+        assert_eq!(id.to_string(), "foo");
     }
 
     #[test]
@@ -507,7 +502,7 @@ mod tests {
         fn parse_string(s: &str, expected: &str) {
             let s =
                 <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
-            assert!(s.is_ok(), "A parsing error occurred: {:?}", s);
+            assert!(s.is_ok(), "A parsing error occurred: {s:?}");
             let s: Option<String> = s.unwrap().into();
             assert!(s.is_some(), "No string returned");
             assert_eq!(s.unwrap(), expected);
@@ -516,17 +511,17 @@ mod tests {
         parse_string("simple", "simple");
         parse_string(" white space ", " white space ");
         parse_string(r#"quote \""#, "quote \"");
-        parse_string(r#"escaped \n\r\b\t\f"#, "escaped \n\r\u{0008}\t\u{000c}");
-        parse_string(r#"slashes \\ \/"#, "slashes \\ /");
+        parse_string(r"escaped \n\r\b\t\f", "escaped \n\r\u{0008}\t\u{000c}");
+        parse_string(r"slashes \\ \/", "slashes \\ /");
         parse_string(
-            r#"unicode \u1234\u5678\u90AB\uCDEF"#,
+            r"unicode \u1234\u5678\u90AB\uCDEF",
             "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
         );
     }
 
     #[test]
     fn parse_f64_from_int() {
-        for (v, expected) in &[
+        for (v, expected) in [
             ("0", 0),
             ("128", 128),
             ("1601942400", 1601942400),
@@ -537,14 +532,14 @@ mod tests {
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
             let n: Option<f64> = n.unwrap().into();
-            assert!(n.is_some(), "No f64 returned");
-            assert_eq!(n.unwrap(), f64::from(*expected));
+            assert!(n.is_some(), "No `f64` returned");
+            assert_eq!(n.unwrap(), f64::from(expected));
         }
     }
 
     #[test]
     fn parse_f64_from_float() {
-        for (v, expected) in &[
+        for (v, expected) in [
             ("0.", 0.),
             ("1.2", 1.2),
             ("1601942400.", 1601942400.),
@@ -555,8 +550,8 @@ mod tests {
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
             let n: Option<f64> = n.unwrap().into();
-            assert!(n.is_some(), "No f64 returned");
-            assert_eq!(n.unwrap(), *expected);
+            assert!(n.is_some(), "No `f64` returned");
+            assert_eq!(n.unwrap(), expected);
         }
     }
 

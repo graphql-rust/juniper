@@ -71,10 +71,10 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        (arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some((ref pos, args)) = self.current_args {
-            if args.iter().find(|a| a.name == arg_name.item).is_none() {
+            if !args.iter().any(|a| a.name == arg_name.item) {
                 let message = match *pos {
                     ArgumentPosition::Field(field_name, type_name) => {
                         field_error_message(arg_name.item, field_name, type_name)
@@ -84,24 +84,18 @@ where
                     }
                 };
 
-                ctx.report_error(&message, &[arg_name.start]);
+                ctx.report_error(&message, &[arg_name.span.start]);
             }
         }
     }
 }
 
 fn field_error_message(arg_name: &str, field_name: &str, type_name: &str) -> String {
-    format!(
-        r#"Unknown argument "{}" on field "{}" of type "{}""#,
-        arg_name, field_name, type_name
-    )
+    format!(r#"Unknown argument "{arg_name}" on field "{field_name}" of type "{type_name}""#)
 }
 
 fn directive_error_message(arg_name: &str, directive_name: &str) -> String {
-    format!(
-        r#"Unknown argument "{}" on directive "{}""#,
-        arg_name, directive_name
-    )
+    format!(r#"Unknown argument "{arg_name}" on directive "{directive_name}""#)
 }
 
 #[cfg(test)]

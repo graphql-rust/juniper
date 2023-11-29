@@ -10,7 +10,7 @@ use crate::schema::{meta::MetaType, model::SchemaType};
 use crate::parser::SourcePosition;
 
 /// Query validation error
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RuleError {
     locations: Vec<SourcePosition>,
     message: String,
@@ -30,9 +30,9 @@ pub struct ValidatorContext<'a, S: Debug + 'a> {
 
 impl RuleError {
     #[doc(hidden)]
-    pub fn new(message: &str, locations: &[SourcePosition]) -> RuleError {
-        RuleError {
-            message: message.to_owned(),
+    pub fn new(message: &str, locations: &[SourcePosition]) -> Self {
+        Self {
+            message: message.into(),
             locations: locations.to_vec(),
         }
     }
@@ -53,14 +53,15 @@ impl RuleError {
 
 impl fmt::Display for RuleError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // this is fine since all `RuleError`s should have at least one source position
+        // This is fine since all `RuleError`s should have at least one source
+        // position.
         let locations = self
             .locations
             .iter()
-            .map(|location| format!("{}", location))
+            .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join(", ");
-        write!(f, "{}. At {}", self.message, locations)
+        write!(f, "{}. At {locations}", self.message)
     }
 }
 
@@ -95,6 +96,10 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn report_error(&mut self, message: &str, locations: &[SourcePosition]) {
         self.errors.push(RuleError::new(message, locations))
+    }
+
+    pub(crate) fn has_errors(&self) -> bool {
+        !self.errors.is_empty()
     }
 
     #[doc(hidden)]
@@ -168,7 +173,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn current_type_literal(&self) -> Option<&Type<'a>> {
         match self.type_literal_stack.last() {
-            Some(&Some(ref t)) => Some(t),
+            Some(Some(t)) => Some(t),
             _ => None,
         }
     }
@@ -181,7 +186,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
     pub fn current_input_type_literal(&self) -> Option<&Type<'a>> {
         match self.input_type_literal_stack.last() {
-            Some(&Some(ref t)) => Some(t),
+            Some(Some(t)) => Some(t),
             _ => None,
         }
     }

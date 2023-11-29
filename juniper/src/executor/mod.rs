@@ -37,7 +37,7 @@ use crate::{
 
 pub use self::{
     look_ahead::{
-        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+        Applies, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
     owned_executor::OwnedExecutor,
@@ -87,7 +87,7 @@ where
 ///
 /// All execution errors contain the source position in the query of the field
 /// that failed to resolve. It also contains the field stack.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ExecutionError<S> {
     location: SourcePosition,
     path: Vec<String>,
@@ -112,11 +112,7 @@ where
     Self: PartialEq,
 {
     fn partial_cmp(&self, other: &ExecutionError<S>) -> Option<Ordering> {
-        (&self.location, &self.path, &self.error.message).partial_cmp(&(
-            &other.location,
-            &other.path,
-            &other.error.message,
-        ))
+        Some(self.cmp(other))
     }
 }
 
@@ -149,47 +145,37 @@ where
 ///     Ok(s)
 /// }
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FieldError<S = DefaultScalarValue> {
     message: String,
     extensions: Value<S>,
 }
 
-impl<T: Display, S> From<T> for FieldError<S>
-where
-    S: crate::value::ScalarValue,
-{
-    fn from(e: T) -> FieldError<S> {
-        FieldError {
-            message: format!("{}", e),
-            extensions: Value::null(),
+impl<T: Display, S> From<T> for FieldError<S> {
+    fn from(e: T) -> Self {
+        Self {
+            message: e.to_string(),
+            extensions: Value::Null,
         }
     }
 }
 
 impl<S> FieldError<S> {
-    /// Construct a new error with additional data
+    /// Construct a new [`FieldError`] with additional data.
     ///
-    /// You can use the `graphql_value!` macro to construct an error:
-    ///
+    /// You can use the [`graphql_value!`] macro for construction:
     /// ```rust
-    /// use juniper::FieldError;
-    /// # use juniper::DefaultScalarValue;
-    /// use juniper::graphql_value;
+    /// use juniper::{graphql_value, FieldError};
     ///
-    /// # fn sample() {
-    /// # let _: FieldError<DefaultScalarValue> =
+    /// # let _: FieldError =
     /// FieldError::new(
     ///     "Could not open connection to the database",
-    ///     graphql_value!({ "internal_error": "Connection refused" })
+    ///     graphql_value!({"internal_error": "Connection refused"}),
     /// );
-    /// # }
-    /// # fn main() { }
     /// ```
     ///
-    /// The `extensions` parameter will be added to the `"extensions"` field of the error
-    /// object in the JSON response:
-    ///
+    /// The `extensions` parameter will be added to the `"extensions"` field of
+    /// the `"errors"` object in response:
     /// ```json
     /// {
     ///   "errors": [
@@ -202,25 +188,34 @@ impl<S> FieldError<S> {
     /// }
     /// ```
     ///
-    /// If the argument is `Value::null()`, no extra data will be included.
-    pub fn new<T: Display>(e: T, extensions: Value<S>) -> FieldError<S> {
-        FieldError {
-            message: format!("{}", e),
+    /// If the argument is [`Value::Null`], then no extra data will be included.
+    ///
+    /// [`graphql_value!`]: macro@crate::graphql_value
+    #[must_use]
+    pub fn new<T: Display>(e: T, extensions: Value<S>) -> Self {
+        Self {
+            message: e.to_string(),
             extensions,
         }
     }
 
-    #[doc(hidden)]
+    /// Returns `"message"` field of this [`FieldError`].
+    #[must_use]
     pub fn message(&self) -> &str {
         &self.message
     }
 
-    #[doc(hidden)]
+    /// Returns `"extensions"` field of this [`FieldError`].
+    ///
+    /// If there is no `"extensions"`, then [`Value::Null`] will be returned.
+    #[must_use]
     pub fn extensions(&self) -> &Value<S> {
         &self.extensions
     }
 
-    /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified one.
+    /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified
+    /// one.
+    #[must_use]
     pub fn map_scalar_value<Into>(self) -> FieldError<Into>
     where
         S: ScalarValue,
@@ -229,6 +224,15 @@ impl<S> FieldError<S> {
         FieldError {
             message: self.message,
             extensions: self.extensions.map_scalar_value(),
+        }
+    }
+
+    /// Maps the [`FieldError::message`] with the given function.
+    #[must_use]
+    pub fn map_message(self, f: impl FnOnce(String) -> String) -> Self {
+        Self {
+            message: f(self.message),
+            extensions: self.extensions,
         }
     }
 }
@@ -246,17 +250,18 @@ pub type ValuesStream<'a, S = DefaultScalarValue> =
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
 
-/// Custom error handling trait to enable Error types other than `FieldError` to be specified
-/// as return value.
+/// Custom error handling trait to enable error types other than [`FieldError`]
+/// to be specified as return value.
 ///
-/// Any custom error type should implement this trait to convert it to `FieldError`.
+/// Any custom error type should implement this trait to convert itself into a
+/// [`FieldError`].
 pub trait IntoFieldError<S = DefaultScalarValue> {
-    #[doc(hidden)]
+    /// Performs the custom conversion into a [`FieldError`].
+    #[must_use]
     fn into_field_error(self) -> FieldError<S>;
 }
 
 impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
-    #[inline]
     fn into_field_error(self) -> FieldError<S2> {
         self.map_scalar_value()
     }
@@ -265,6 +270,24 @@ impl<S1: ScalarValue, S2: ScalarValue> IntoFieldError<S2> for FieldError<S1> {
 impl<S> IntoFieldError<S> for std::convert::Infallible {
     fn into_field_error(self) -> FieldError<S> {
         match self {}
+    }
+}
+
+impl<'a, S> IntoFieldError<S> for &'a str {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+impl<S> IntoFieldError<S> for String {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+impl<'a, S> IntoFieldError<S> for Cow<'a, str> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
     }
 }
 
@@ -277,7 +300,7 @@ where
     type Type;
 
     #[doc(hidden)]
-    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
+    fn into_resolvable(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
 }
 
 impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for T
@@ -288,7 +311,7 @@ where
 {
     type Type = T;
 
-    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
+    fn into_resolvable(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some((FromContext::from(ctx), self)))
     }
 }
@@ -301,7 +324,7 @@ where
 {
     type Type = T;
 
-    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
+    fn into_resolvable(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(|v: T| Some((<T::Context as FromContext<C>>::from(ctx), v)))
             .map_err(IntoFieldError::into_field_error)
     }
@@ -314,7 +337,7 @@ where
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
+    fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some(self))
     }
 }
@@ -327,7 +350,7 @@ where
     type Type = T;
 
     #[allow(clippy::type_complexity)]
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
+    fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
     }
 }
@@ -340,7 +363,7 @@ where
 {
     type Type = T;
 
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S2> {
+    fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S2> {
         self.map(Some).map_err(FieldError::map_scalar_value)
     }
 }
@@ -355,7 +378,7 @@ where
     type Type = T;
 
     #[allow(clippy::type_complexity)]
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
+    fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
             .map_err(FieldError::map_scalar_value)
     }
@@ -603,7 +626,7 @@ where
     /// Access the current context
     ///
     /// You usually provide the context when calling the top-level `execute`
-    /// function, or using the context factory in the Iron integration.
+    /// function, or using the context factory.
     pub fn context(&self) -> &'r CtxT {
         self.context
     }
@@ -674,7 +697,7 @@ where
             FieldPath::Root(_) => unreachable!(),
         };
         self.parent_selection_set
-            .map(|p| {
+            .and_then(|p| {
                 // Search the parent's fields to find this field within the set
                 let found_field = p.iter().find(|&x| {
                     match *x {
@@ -689,12 +712,11 @@ where
                     }
                 });
                 if let Some(p) = found_field {
-                    LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
+                    LookAheadSelection::build_from_selection(p, self.variables, self.fragments)
                 } else {
                     None
                 }
             })
-            .flatten()
             .unwrap_or_else(|| {
                 // We didn't find a field in the parent's selection matching
                 // this field, which means we're inside a FragmentSpread
@@ -703,6 +725,7 @@ where
                     alias: None,
                     arguments: Vec::new(),
                     children: Vec::new(),
+                    applies_for: Applies::All,
                 };
 
                 // Add in all the children - this will mutate `ret`
@@ -748,7 +771,7 @@ impl<'a> FieldPath<'a> {
             FieldPath::Root(_) => (),
             FieldPath::Field(name, _, parent) => {
                 parent.construct_path(acc);
-                acc.push((*name).to_owned());
+                acc.push((*name).into());
             }
         }
     }
@@ -765,7 +788,7 @@ impl<S> ExecutionError<S> {
     pub fn new(location: SourcePosition, path: &[&str], error: FieldError<S>) -> ExecutionError<S> {
         ExecutionError {
             location,
-            path: path.iter().map(|s| (*s).to_owned()).collect(),
+            path: path.iter().map(|s| (*s).into()).collect(),
             error,
         }
     }
@@ -788,13 +811,13 @@ impl<S> ExecutionError<S> {
 
 /// Create new `Executor` and start query/mutation execution.
 /// Returns `IsSubscription` error if subscription is passed.
-pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, S>(
+pub fn execute_validated_query<'b, QueryT, MutationT, SubscriptionT, S>(
     document: &'b Document<S>,
     operation: &'b Spanning<Operation<S>>,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,
@@ -816,10 +839,10 @@ where
         defs.item
             .items
             .iter()
-            .filter_map(|&(ref name, ref def)| {
+            .filter_map(|(name, def)| {
                 def.default_value
                     .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
+                    .map(|i| (name.item.into(), i.item.clone()))
             })
             .collect::<HashMap<String, InputValue<S>>>()
     });
@@ -862,7 +885,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.start)),
+            field_path: Arc::new(FieldPath::Root(operation.span.start)),
         };
 
         value = match operation.item.operation_type {
@@ -888,7 +911,7 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
 where
     QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
@@ -914,10 +937,10 @@ where
         defs.item
             .items
             .iter()
-            .filter_map(|&(ref name, ref def)| {
+            .filter_map(|(name, def)| {
                 def.default_value
                     .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
+                    .map(|i| (name.item.into(), i.item.clone()))
             })
             .collect::<HashMap<String, InputValue<S>>>()
     });
@@ -960,7 +983,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.start)),
+            field_path: Arc::new(FieldPath::Root(operation.span.start)),
         };
 
         value = match operation.item.operation_type {
@@ -985,10 +1008,10 @@ where
 }
 
 #[doc(hidden)]
-pub fn get_operation<'b, 'd, 'e, S>(
+pub fn get_operation<'b, 'd, S>(
     document: &'b Document<'d, S>,
     operation_name: Option<&str>,
-) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError<'e>>
+) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError>
 where
     S: ScalarValue,
 {
@@ -1032,7 +1055,7 @@ pub async fn resolve_validated_subscription<
     root_node: &'r RootNode<'r, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'r QueryT::Context,
-) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError<'r>>
+) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError>
 where
     'r: 'exec_ref,
     'd: 'r,
@@ -1061,10 +1084,10 @@ where
         defs.item
             .items
             .iter()
-            .filter_map(|&(ref name, ref def)| {
+            .filter_map(|(name, def)| {
                 def.default_value
                     .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
+                    .map(|i| (name.item.into(), i.item.clone()))
             })
             .collect::<HashMap<String, InputValue<S>>>()
     });
@@ -1106,7 +1129,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.start)),
+            field_path: Arc::new(FieldPath::Root(operation.span.start)),
         };
 
         value = match operation.item.operation_type {
@@ -1125,29 +1148,28 @@ where
     Ok((value, errors))
 }
 
-impl<'r, S> Registry<'r, S>
-where
-    S: ScalarValue + 'r,
-{
-    /// Construct a new registry
-    pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Registry<'r, S> {
-        Registry { types }
+impl<'r, S: 'r> Registry<'r, S> {
+    /// Constructs a new [`Registry`] out of the given `types`.
+    pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Self {
+        Self { types }
     }
 
-    /// Get the `Type` instance for a given GraphQL type
+    /// Returns a [`Type`] instance for the given [`GraphQLType`], registered in
+    /// this [`Registry`].
     ///
-    /// If the registry hasn't seen a type with this name before, it will
-    /// construct its metadata and store it.
+    /// If this [`Registry`] hasn't seen a [`Type`] with such
+    /// [`GraphQLType::name`] before, it will construct the one and store it.
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         if let Some(name) = T::name(info) {
             let validated_name = name.parse::<Name>().unwrap();
             if !self.types.contains_key(name) {
                 self.insert_placeholder(
                     validated_name.clone(),
-                    Type::NonNullNamed(Cow::Owned(name.to_string())),
+                    Type::NonNullNamed(Cow::Owned(name.into())),
                 );
                 let meta = T::meta(info, self);
                 self.types.insert(validated_name, meta);
@@ -1158,10 +1180,11 @@ where
         }
     }
 
-    /// Create a field with the provided name
+    /// Creates a [`Field`] with the provided `name`.
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         Field {
             name: smartstring::SmartString::from(name),
@@ -1180,9 +1203,10 @@ where
     ) -> Field<'r, S>
     where
         I: GraphQLType<S>,
+        S: ScalarValue,
     {
         Field {
-            name: smartstring::SmartString::from(name),
+            name: name.into(),
             description: None,
             arguments: None,
             field_type: self.get_type::<I>(info),
@@ -1190,18 +1214,16 @@ where
         }
     }
 
-    /// Create an argument with the provided name
+    /// Creates an [`Argument`] with the provided `name`.
     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
     where
-        T: GraphQLType<S> + FromInputValue<S> + ?Sized,
+        T: GraphQLType<S> + FromInputValue<S>,
+        S: ScalarValue,
     {
         Argument::new(name, self.get_type::<T>(info))
     }
 
-    /// Create an argument with a default value
-    ///
-    /// When called with type `T`, the actual argument will be given the type
-    /// `Option<T>`.
+    /// Creates an [`Argument`] with the provided default `value`.
     pub fn arg_with_default<T>(
         &mut self,
         name: &str,
@@ -1209,9 +1231,10 @@ where
         info: &T::TypeInfo,
     ) -> Argument<'r, S>
     where
-        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S> + ?Sized,
+        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
+        S: ScalarValue,
     {
-        Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
+        Argument::new(name, self.get_type::<T>(info)).default_value(value.to_input_value())
     }
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
@@ -1220,39 +1243,46 @@ where
             .or_insert(MetaType::Placeholder(PlaceholderMeta { of_type }));
     }
 
-    /// Create a scalar meta type
-    ///
-    /// This expects the type to implement `FromInputValue`.
+    /// Creates a [`ScalarMeta`] type.
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + ?Sized + 'r,
+        T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S>,
+        T::Error: IntoFieldError<S>,
+        S: ScalarValue,
     {
-        let name = T::name(info).expect("Scalar types must be named. Implement name()");
-        ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
+        let name = T::name(info).expect("Scalar types must be named. Implement `name()`");
+
+        ScalarMeta::new::<T>(Cow::Owned(name.into()))
     }
 
-    /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType<S> + ?Sized>(
+    /// Creates a [`ListMeta`] type.
+    ///
+    /// Specifying `expected_size` will be used to ensure that values of this
+    /// type will always match it.
+    pub fn build_list_type<T>(
         &mut self,
         info: &T::TypeInfo,
-    ) -> ListMeta<'r> {
+        expected_size: Option<usize>,
+    ) -> ListMeta<'r>
+    where
+        T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
+    {
         let of_type = self.get_type::<T>(info);
-        ListMeta::new(of_type)
+        ListMeta::new(of_type, expected_size)
     }
 
-    /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType<S> + ?Sized>(
-        &mut self,
-        info: &T::TypeInfo,
-    ) -> NullableMeta<'r> {
+    /// Creates a [`NullableMeta`] type.
+    pub fn build_nullable_type<T>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
+    where
+        T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
+    {
         let of_type = self.get_type::<T>(info);
         NullableMeta::new(of_type)
     }
 
-    /// Create an object meta type
-    ///
-    /// To prevent infinite recursion by enforcing ordering, this returns a
-    /// function that needs to be called with the list of fields on the object.
+    /// Creates an [`ObjectMeta`] type with the given `fields`.
     pub fn build_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
@@ -1260,30 +1290,32 @@ where
     ) -> ObjectMeta<'r, S>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
         let mut v = fields.to_vec();
         v.push(self.field::<String>("__typename", &()));
-        ObjectMeta::new(Cow::Owned(name.to_string()), &v)
+        ObjectMeta::new(Cow::Owned(name.into()), &v)
     }
 
-    /// Create an enum meta type
+    /// Creates an [`EnumMeta`] type out of the provided `values`.
     pub fn build_enum_type<T>(
         &mut self,
         info: &T::TypeInfo,
         values: &[EnumValue],
     ) -> EnumMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
+        T: GraphQLType<S> + FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
+        S: ScalarValue,
     {
-        let name = T::name(info).expect("Enum types must be named. Implement name()");
+        let name = T::name(info).expect("Enum types must be named. Implement `name()`");
 
-        EnumMeta::new::<T>(Cow::Owned(name.to_string()), values)
+        EnumMeta::new::<T>(Cow::Owned(name.into()), values)
     }
 
-    /// Create an interface meta type,
-    /// by providing a type info object.
+    /// Creates an [`InterfaceMeta`] type with the given `fields`.
     pub fn build_interface_type<T>(
         &mut self,
         info: &T::TypeInfo,
@@ -1291,35 +1323,39 @@ where
     ) -> InterfaceMeta<'r, S>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
         let mut v = fields.to_vec();
         v.push(self.field::<String>("__typename", &()));
-        InterfaceMeta::new(Cow::Owned(name.to_string()), &v)
+        InterfaceMeta::new(Cow::Owned(name.into()), &v)
     }
 
-    /// Create a union meta type
+    /// Creates an [`UnionMeta`] type of the given `types`.
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
         T: GraphQLType<S> + ?Sized,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
-        UnionMeta::new(Cow::Owned(name.to_string()), types)
+        UnionMeta::new(Cow::Owned(name.into()), types)
     }
 
-    /// Create an input object meta type
+    /// Creates an [`InputObjectMeta`] type with the given `args`.
     pub fn build_input_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
         args: &[Argument<'r, S>],
     ) -> InputObjectMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
+        T: GraphQLType<S> + FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
+        S: ScalarValue,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 
-        InputObjectMeta::new::<T>(Cow::Owned(name.to_string()), args)
+        InputObjectMeta::new::<T>(Cow::Owned(name.into()), args)
     }
 }

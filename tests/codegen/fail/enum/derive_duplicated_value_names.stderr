@@ -1,0 +1,5 @@
+error: GraphQL enum expected all GraphQL enum values to have unique names
+ --> fail/enum/derive_duplicated_value_names.rs:5:5
+  |
+5 |     Test,
+  |     ^^^^

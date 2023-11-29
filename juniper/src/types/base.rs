@@ -6,7 +6,7 @@ use crate::{
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
-    GraphQLEnum,
+    FieldResult, GraphQLEnum, IntoFieldError,
 };
 
 /// GraphQL type kind
@@ -49,7 +49,6 @@ pub enum TypeKind {
     /// ## Input objects
     ///
     /// Represents complex values provided in queries _into_ the system.
-    #[graphql(name = "INPUT_OBJECT")]
     InputObject,
 
     /// ## List types
@@ -63,57 +62,70 @@ pub enum TypeKind {
     ///
     /// In GraphQL, nullable types are the default. By putting a `!` after a\
     /// type, it becomes non-nullable.
-    #[graphql(name = "NON_NULL")]
     NonNull,
 }
 
 /// Field argument container
 #[derive(Debug)]
 pub struct Arguments<'a, S = DefaultScalarValue> {
-    args: Option<IndexMap<&'a str, InputValue<S>>>,
+    args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
 }
 
-impl<'a, S> Arguments<'a, S>
-where
-    S: ScalarValue,
-{
+impl<'a, S> Arguments<'a, S> {
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<IndexMap<&'a str, InputValue<S>>>,
+        mut args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
         meta_args: &'a Option<Vec<Argument<S>>>,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Clone,
+    {
         if meta_args.is_some() && args.is_none() {
             args = Some(IndexMap::new());
         }
 
-        if let (&mut Some(ref mut args), &Some(ref meta_args)) = (&mut args, meta_args) {
+        if let (Some(args), Some(meta_args)) = (&mut args, meta_args) {
             for arg in meta_args {
-                if !args.contains_key(arg.name.as_str()) || args[arg.name.as_str()].is_null() {
-                    if let Some(ref default_value) = arg.default_value {
-                        args.insert(arg.name.as_str(), default_value.clone());
+                let arg_name = arg.name.as_str();
+                if args.get(arg_name).is_none() {
+                    if let Some(val) = arg.default_value.as_ref() {
+                        args.insert(arg_name, Spanning::unlocated(val.clone()));
                     }
                 }
             }
         }
 
-        Arguments { args }
+        Self { args }
     }
 
-    /// Get and convert an argument into the desired type.
+    /// Gets an argument by the given `name` and converts it into the desired
+    /// type.
     ///
-    /// If the argument is found, or a default argument has been provided,
-    /// the `InputValue` will be converted into the type `T`.
+    /// If the argument is found, or a default argument has been provided, the
+    /// given [`InputValue`] will be converted into the type `T`.
     ///
-    /// Returns `Some` if the argument is present _and_ type conversion
-    /// succeeeds.
-    pub fn get<T>(&self, key: &str) -> Option<T>
+    /// Returns [`None`] if an argument with such `name` is not present.
+    ///
+    /// # Errors
+    ///
+    /// If the [`FromInputValue`] conversion fails.
+    pub fn get<T>(&self, name: &str) -> FieldResult<Option<T>, S>
     where
         T: FromInputValue<S>,
+        T::Error: IntoFieldError<S>,
     {
         self.args
             .as_ref()
-            .and_then(|args| args.get(key))
-            .and_then(InputValue::convert)
+            .and_then(|args| args.get(name))
+            .map(|spanning| &spanning.item)
+            .map(InputValue::convert)
+            .transpose()
+            .map_err(IntoFieldError::into_field_error)
+    }
+
+    /// Gets a direct reference to the [`Spanning`] argument [`InputValue`].
+    pub fn get_input_value(&self, name: &str) -> Option<&Spanning<InputValue<S>>> {
+        self.args.as_ref().and_then(|args| args.get(name))
     }
 }
 
@@ -142,14 +154,14 @@ where
 /// This trait is intended to be used in a conjunction with a [`GraphQLType`] trait. See the example
 /// in the documentation of a [`GraphQLType`] trait.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-/// [2]: https://spec.graphql.org/June2018/#sec-Unions
-/// [3]: https://spec.graphql.org/June2018/#sec-Objects
-/// [4]: https://spec.graphql.org/June2018/#sec-Scalars
-/// [5]: https://spec.graphql.org/June2018/#sec-Enums
-/// [6]: https://spec.graphql.org/June2018/#sec-Type-System.List
-/// [7]: https://spec.graphql.org/June2018/#sec-Type-System.Non-Null
-/// [8]: https://spec.graphql.org/June2018/#sec-Input-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+/// [2]: https://spec.graphql.org/October2021#sec-Unions
+/// [3]: https://spec.graphql.org/October2021#sec-Objects
+/// [4]: https://spec.graphql.org/October2021#sec-Scalars
+/// [5]: https://spec.graphql.org/October2021#sec-Enums
+/// [6]: https://spec.graphql.org/October2021#sec-List
+/// [7]: https://spec.graphql.org/October2021#sec-Non-Null
+/// [8]: https://spec.graphql.org/October2021#sec-Input-Objects
 /// [11]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 /// [12]: https://doc.rust-lang.org/reference/types/trait-object.html
 pub trait GraphQLValue<S = DefaultScalarValue>
@@ -188,7 +200,7 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_field(
         &self,
         _info: &Self::TypeInfo,
@@ -209,9 +221,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve_into_type(
         &self,
         info: &Self::TypeInfo,
@@ -235,9 +247,9 @@ where
     ///
     /// The default implementation panics.
     ///
-    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+    /// [2]: https://spec.graphql.org/October2021#sec-Unions
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     #[allow(unused_variables)]
     fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
         panic!(
@@ -263,8 +275,8 @@ where
     ///
     /// The default implementation panics, if `selection_set` is [`None`].
     ///
-    /// [0]: https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability
-    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    /// [0]: https://spec.graphql.org/October2021#sec-Errors-and-Non-Nullability
+    /// [3]: https://spec.graphql.org/October2021#sec-Objects
     fn resolve(
         &self,
         info: &Self::TypeInfo,
@@ -285,14 +297,6 @@ where
         }
     }
 }
-
-crate::sa::assert_obj_safe!(GraphQLValue<Context = (), TypeInfo = ()>);
-
-/// Helper alias for naming [trait objects][1] of [`GraphQLValue`].
-///
-/// [1]: https://doc.rust-lang.org/reference/types/trait-object.html
-pub type DynGraphQLValue<S, C, TI> =
-    dyn GraphQLValue<S, Context = C, TypeInfo = TI> + Send + Sync + 'static;
 
 /// Primary trait used to expose Rust types in a GraphQL schema.
 ///
@@ -379,11 +383,13 @@ pub type DynGraphQLValue<S, C, TI> =
 ///             // schema in `meta()` above, or a validation failed because of a this library bug.
 ///             //
 ///             // In either of those two cases, the only reasonable way out is to panic the thread.
-///             _ => panic!("Field {} not found on type User", field_name),
+///             _ => panic!("Field {field_name} not found on type User"),
 ///         }
 ///     }
 /// }
 /// ```
+///
+/// [3]: https://spec.graphql.org/October2021#sec-Objects
 pub trait GraphQLType<S = DefaultScalarValue>: GraphQLValue<S>
 where
     S: ScalarValue,
@@ -431,8 +437,7 @@ where
         match *selection {
             Selection::Field(Spanning {
                 item: ref f,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
@@ -452,7 +457,7 @@ where
                     panic!(
                         "Field {} not found on type {:?}",
                         f.name.item,
-                        meta_type.name()
+                        meta_type.name(),
                     )
                 });
 
@@ -461,7 +466,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     response_name,
                     f.name.item,
-                    *start_pos,
+                    span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
 
@@ -472,8 +477,9 @@ where
                         f.arguments.as_ref().map(|m| {
                             m.item
                                 .iter()
-                                .map(|&(ref k, ref v)| {
-                                    (k.item, v.item.clone().into_const(exec_vars))
+                                .filter_map(|(k, v)| {
+                                    let val = v.item.clone().into_const(exec_vars)?;
+                                    Some((k.item, Spanning::new(v.span, val)))
                                 })
                                 .collect()
                         }),
@@ -486,7 +492,7 @@ where
                     Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
 
                         if meta_field.field_type.is_non_null() {
                             return false;
@@ -498,8 +504,7 @@ where
             }
             Selection::FragmentSpread(Spanning {
                 item: ref spread,
-                start: ref start_pos,
-                ..
+                span,
             }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
@@ -516,7 +521,9 @@ where
 
                 let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
                 let type_name = instance.type_name(info);
-                if fragment.type_condition.item == concrete_type_name
+                if executor
+                    .schema()
+                    .is_named_subtype(&concrete_type_name, fragment.type_condition.item)
                     || Some(fragment.type_condition.item) == type_name
                 {
                     let sub_result = instance.resolve_into_type(
@@ -531,14 +538,13 @@ where
                             merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
                     }
                 }
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
@@ -552,10 +558,13 @@ where
                 if let Some(ref type_condition) = fragment.type_condition {
                     // Check whether the type matches the type condition.
                     let concrete_type_name = instance.concrete_type_name(sub_exec.context(), info);
-                    if type_condition.item == concrete_type_name {
+                    if executor
+                        .schema()
+                        .is_named_subtype(&concrete_type_name, type_condition.item)
+                    {
                         let sub_result = instance.resolve_into_type(
                             info,
-                            type_condition.item,
+                            &concrete_type_name,
                             Some(&fragment.selection_set[..]),
                             &sub_exec,
                         );
@@ -565,7 +574,7 @@ where
                                 merge_key_into(result, &k, v);
                             }
                         } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, *start_pos);
+                            sub_exec.push_error_at(e, span.start);
                         }
                     }
                 } else if !resolve_selection_set_into(
@@ -591,17 +600,16 @@ pub(super) fn is_excluded<S>(
 where
     S: ScalarValue,
 {
-    if let Some(ref directives) = *directives {
-        for &Spanning {
-            item: ref directive,
-            ..
+    if let Some(directives) = directives {
+        for Spanning {
+            item: directive, ..
         } in directives
         {
             let condition: bool = directive
                 .arguments
                 .iter()
                 .flat_map(|m| m.item.get("if"))
-                .flat_map(|v| v.item.clone().into_const(vars).convert())
+                .filter_map(|v| v.item.clone().into_const(vars)?.convert().ok())
                 .next()
                 .unwrap();
 
@@ -626,16 +634,13 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
             }
             Value::List(dest_list) => {
                 if let Value::List(src_list) = value {
-                    dest_list
-                        .iter_mut()
-                        .zip(src_list.into_iter())
-                        .for_each(|(d, s)| {
-                            if let Value::Object(d_obj) = d {
-                                if let Value::Object(s_obj) = s {
-                                    merge_maps(d_obj, s_obj);
-                                }
+                    dest_list.iter_mut().zip(src_list).for_each(|(d, s)| {
+                        if let Value::Object(d_obj) = d {
+                            if let Value::Object(s_obj) = s {
+                                merge_maps(d_obj, s_obj);
                             }
-                        });
+                        }
+                    });
                 }
             }
             _ => {}

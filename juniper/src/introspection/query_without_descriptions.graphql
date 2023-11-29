@@ -14,6 +14,7 @@ query IntrospectionQuery {
     }
     directives {
       name
+      isRepeatable
       locations
       args {
         ...InputValue
@@ -24,6 +25,7 @@ query IntrospectionQuery {
 fragment FullType on __Type {
   kind
   name
+  specifiedByUrl
   fields(includeDeprecated: true) {
     name
     args {

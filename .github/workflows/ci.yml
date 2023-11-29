@@ -1,151 +1,420 @@
 name: CI
 
-on: [pull_request, push]
+on:
+  push:
+    branches: ["master"]
+    tags: ["juniper*"]
+  pull_request:
+    branches: ["master"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: 1
 
 jobs:
-  ###################################################
-  # Formatting
-  ###################################################
 
-  format:
-    name: Check formatting
+  ################
+  # Pull Request #
+  ################
 
+  pr:
+    if: ${{ github.event_name == 'pull_request' }}
+    needs:
+      - bench
+      - codespell
+      - clippy
+      - feature
+      - msrv
+      - release-check
+      - rustfmt
+      - test
+      - test-book
+      - wasm
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - run: true
 
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
+
+
+
+  ##########################
+  # Linting and formatting #
+  ##########################
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-          components: rustfmt
-          profile: minimal
-          override: true
+          components: clippy
 
-      - name: Run rustfmt
-        uses: actions-rs/cargo@v1
+      - run: make cargo.lint
+
+  codespell:
+    name: codespell (Book)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: codespell-project/actions-codespell@v2
         with:
-          command: fmt
-          args: -- --check
+          path: book/
 
-  ###################################################
-  # Main Builds
-  ###################################################
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+          components: rustfmt
 
-  build:
-    runs-on: ${{ matrix.os }}
+      - run: make cargo.fmt check=yes
 
+
+
+
+  ###########
+  # Testing #
+  ###########
+
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
+      - run: cargo bench -p juniper_benchmarks
+
+  feature:
     strategy:
       fail-fast: false
       matrix:
-        rust: [stable, beta, nightly]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-
+        include:
+          - { feature: <none>, crate: juniper }
+          - { feature: anyhow, crate: juniper }
+          - { feature: "anyhow,backtrace", crate: juniper }
+          - { feature: bigdecimal, crate: juniper }
+          - { feature: bson, crate: juniper }
+          - { feature: chrono, crate: juniper }
+          - { feature: chrono-clock, crate: juniper }
+          - { feature: chrono-tz, crate: juniper }
+          - { feature: expose-test-schema, crate: juniper }
+          - { feature: graphql-parser, crate: juniper }
+          - { feature: rust_decimal, crate: juniper }
+          - { feature: schema-language, crate: juniper }
+          - { feature: time, crate: juniper }
+          - { feature: url, crate: juniper }
+          - { feature: uuid, crate: juniper }
+          - { feature: graphql-transport-ws, crate: juniper_graphql_ws }
+          - { feature: graphql-ws, crate: juniper_graphql_ws }
+          - { feature: <none>, crate: juniper_actix }
+          - { feature: subscriptions, crate: juniper_actix }
+          - { feature: <none>, crate: juniper_axum }
+          - { feature: subscriptions, crate: juniper_axum }
+          - { feature: <none>, crate: juniper_warp }
+          - { feature: subscriptions, crate: juniper_warp }
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: ${{ matrix.rust }}
-          profile: minimal
-          override: true
-
-      - uses: davidB/rust-cargo-make@v1
+          toolchain: nightly
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          version: '0.20.0'
+          toolchain: stable
 
-      - name: Build and run tests
+      - run: cargo +nightly update -Z minimal-versions
+
+      - run: cargo check -p ${{ matrix.crate }} --no-default-features
+                   ${{ matrix.feature != '<none>'
+                       && format('--features {0}', matrix.feature)
+                       || '' }}
         env:
-          CARGO_MAKE_RUN_CODECOV: true
-        run: |
-          cargo make workspace-ci-flow --no-workspace
+          RUSTFLAGS: -D warnings
 
-  ###################################################
-  # WASM Builds
-  ###################################################
+  msrv:
+    name: MSRV
+    strategy:
+      fail-fast: false
+      matrix:
+        msrv: ["1.73.0"]
+        crate:
+          - juniper_codegen
+          - juniper
+          - juniper_subscriptions
+          - juniper_graphql_ws
+          - juniper_actix
+          - juniper_axum
+          - juniper_hyper
+          - juniper_rocket
+          - juniper_warp
+        os:
+          - ubuntu
+          - macOS
+          - windows
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.msrv }}
+
+      - run: cargo +nightly update -Z minimal-versions
+
+      - run: make test.cargo crate=${{ matrix.crate }}
+
+  package:
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
+
+      - run: cargo package -p ${{ steps.tag.outputs.group2 }}
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - juniper_codegen
+          - juniper
+          - juniper_subscriptions
+          - juniper_graphql_ws
+          - juniper_integration_tests
+          - juniper_codegen_tests
+          - juniper_actix
+          - juniper_axum
+          - juniper_hyper
+          - juniper_rocket
+          - juniper_warp
+        os:
+          - ubuntu
+          - macOS
+          - windows
+        toolchain:
+          - stable
+          - beta
+          - nightly
+        exclude:
+          - crate: juniper_codegen_tests
+            toolchain: beta
+          - crate: juniper_codegen_tests
+            toolchain: nightly
+          - crate: juniper_codegen_tests
+            os: macOS
+          - crate: juniper_codegen_tests
+            os: windows
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rust-src
+
+      - run: cargo install cargo-careful
+        if: ${{ matrix.toolchain == 'nightly' }}
+
+      - run: make test.cargo crate=${{ matrix.crate }}
+                  careful=${{ (matrix.toolchain == 'nightly' && 'yes')
+                           ||                                   'no' }}
+
+  test-book:
+    name: test (Book)
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu
+          - macOS
+          - windows
+        toolchain:
+          - stable
+          - beta
+          - nightly
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - uses: peaceiris/actions-mdbook@v1
+
+      - run: make test.book
 
   wasm:
-    runs-on: ${{ matrix.os }}
-
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          profile: minimal
-          override: true
-
-      - name: Check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --target wasm32-unknown-unknown --package juniper --package juniper_codegen
-
-  ###################################################
-  # Releases
-  ###################################################
-
-  release:
-    name: Check release automation
-
+        crate:
+          - juniper
+        target:
+          - wasm32-unknown-unknown
+          - wasm32-wasi
+        toolchain:
+          - stable
+          - beta
+          - nightly
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          fetch-depth: 20
+          toolchain: ${{ matrix.toolchain }}
+          target: ${{ matrix.target }}
 
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
+      - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
+                   ${{ matrix.target == 'wasm32-unknown-unknown'
+                       && '--features js'
+                       || '' }}
+
+
+
+
+  #############
+  # Releasing #
+  #############
+
+  publish:
+    name: publish (crates.io)
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
+    needs: ["release-github"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-          profile: minimal
-          override: true
 
-      - uses: davidB/rust-cargo-make@v1
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
         with:
-          version: '0.20.0'
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
 
-      - name: Install cargo-release
-        uses: actions-rs/cargo@v1
+      - run: cargo publish -p ${{ steps.tag.outputs.group2 }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATESIO_TOKEN }}
+
+  release-check:
+    name: check release
+    if: ${{ !startsWith(github.ref, 'refs/tags/juniper') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - juniper_codegen
+          - juniper
+          - juniper_subscriptions
+          - juniper_graphql_ws
+          - juniper_actix
+          - juniper_axum
+          - juniper_hyper
+          - juniper_rocket
+          - juniper_warp
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          command: install
-          args: --version=0.11.2 cargo-release
+          toolchain: stable
 
-      - name: Setup git
-        run: |
-          git config --global user.email "juniper@example.com"
-          git config --global user.name "Release Test Bot"
+      - run: cargo install cargo-release
 
-      - name: Dry run mode
-        env:
-          RELEASE_LEVEL: minor
-        run: |
-          cargo make release-dry-run
+      - run: make cargo.release crate=${{ matrix.crate }} ver=minor
+                                exec=no install=no
 
-      - name: Local test mode
-        env:
-          RELEASE_LEVEL: minor
-        run: |
-          cargo make release-local-test
+  release-github:
+    name: release (GitHub)
+    if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
+    needs:
+      - bench
+      - clippy
+      - codespell
+      - feature
+      - msrv
+      - package
+      - rustfmt
+      - test
+      - test-book
+      - wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Echo local changes
+      - name: Parse crate name and version from Git tag
+        id: tag
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
+      - name: Verify release version matches crate's Cargo manifest
         run: |
-          git --no-pager log -p HEAD...HEAD~20
+          test "${{ steps.tag.outputs.group3 }}" \
+            == "$(grep -m1 'version = "' \
+                       ${{ steps.tag.outputs.group2 }}/Cargo.toml \
+                  | cut -d '"' -f2)"
 
-      - name: Run tests
-        run: |
-          cargo make workspace-ci-flow --no-workspace
+      - name: Parse CHANGELOG link
+        id: changelog
+        run: echo "link=${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)"
+             >> $GITHUB_OUTPUT
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.tag.outputs.group2 }} ${{ steps.tag.outputs.group3 }}
+          body: |
+            [API docs](https://docs.rs/${{ steps.tag.outputs.group2 }}/${{ steps.tag.outputs.group3 }})
+            [Changelog](${{ steps.changelog.outputs.link }})
+          prerelease: ${{ contains(steps.tag.outputs.group3, '-') }}
+
+
+
+
+  ##########
+  # Deploy #
+  ##########
+
+  deploy-book:
+    name: deploy (Book)
+    if: ${{ github.ref == 'refs/heads/master'
+         || startsWith(github.ref, 'refs/tags/juniper@') }}
+    needs: ["codespell", "test", "test-book"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: peaceiris/actions-mdbook@v1
+
+      - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'
+                                              && '/master')
+                                          ||     '' }}
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          keep_files: true
+          publish_dir: book/gh-pages

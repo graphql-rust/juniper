@@ -1,4 +1,3 @@
-use futures::{future, stream};
 use serde::Serialize;
 
 use crate::{
@@ -82,6 +81,8 @@ where
 ///
 /// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
 /// server integration crates.
+///
+/// [`GraphQLResponse`]: crate::http::GraphQLResponse
 pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> {}
 
 /// Extension of [`GraphQLValue`] trait with asynchronous [subscription][1] execution logic.
@@ -93,8 +94,8 @@ pub trait SubscriptionConnection<S>: futures::Stream<Item = ExecutionOutput<S>> 
 ///
 /// See trait methods for more detailed explanation on how this trait works.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
-/// [2]: https://spec.graphql.org/June2018/#sec-Objects
+/// [1]: https://spec.graphql.org/October2021#sec-Subscription
+/// [2]: https://spec.graphql.org/October2021#sec-Objects
 pub trait GraphQLSubscriptionValue<S = DefaultScalarValue>: GraphQLValue<S> + Sync
 where
     Self::TypeInfo: Sync,
@@ -203,7 +204,7 @@ crate::sa::assert_obj_safe!(GraphQLSubscriptionValue<Context = (), TypeInfo = ()
 /// It's automatically implemented for [`GraphQLSubscriptionValue`] and [`GraphQLType`]
 /// implementers, so doesn't require manual or code-generated implementation.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Subscription
+/// [1]: https://spec.graphql.org/October2021#sec-Subscription
 pub trait GraphQLSubscriptionType<S = DefaultScalarValue>:
     GraphQLSubscriptionValue<S> + GraphQLType<S>
 where
@@ -282,24 +283,13 @@ where
         match selection {
             Selection::Field(Spanning {
                 item: ref f,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
-                if is_excluded(&f.directives, &executor.variables()) {
+                if is_excluded(&f.directives, executor.variables()) {
                     continue;
                 }
 
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
-
-                if f.name.item == "__typename" {
-                    let typename =
-                        Value::scalar(instance.concrete_type_name(executor.context(), info));
-                    object.add_field(
-                        response_name,
-                        Value::Scalar(Box::pin(stream::once(future::ok(typename)))),
-                    );
-                    continue;
-                }
 
                 let meta_field = meta_type
                     .field_by_name(f.name.item)
@@ -317,7 +307,7 @@ where
                 let sub_exec = executor.field_sub_executor(
                     response_name,
                     f.name.item,
-                    *start_pos,
+                    span.start,
                     f.selection_set.as_ref().map(|x| &x[..]),
                 );
 
@@ -325,7 +315,10 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(&exec_vars)))
+                            .filter_map(|(k, v)| {
+                                let val = v.item.clone().into_const(exec_vars)?;
+                                Some((k.item, Spanning::new(v.span, val)))
+                            })
                             .collect()
                     }),
                     &meta_field.arguments,
@@ -343,7 +336,7 @@ where
                     }
                     Ok(v) => merge_key_into(&mut object, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
 
                         if meta_field.field_type.is_non_null() {
                             return Value::Null;
@@ -356,10 +349,9 @@ where
 
             Selection::FragmentSpread(Spanning {
                 item: ref spread,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
-                if is_excluded(&spread.directives, &executor.variables()) {
+                if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
 
@@ -389,16 +381,15 @@ where
                             _ => unreachable!(),
                         }
                     }
-                    Err(e) => sub_exec.push_error_at(e, *start_pos),
+                    Err(e) => sub_exec.push_error_at(e, span.start),
                 }
             }
 
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
-                start: ref start_pos,
-                ..
+                ref span,
             }) => {
-                if is_excluded(&fragment.directives, &executor.variables()) {
+                if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
                 }
 
@@ -417,7 +408,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
                     }
                 } else if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
@@ -429,7 +420,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, *start_pos);
+                        sub_exec.push_error_at(e, span.start);
                     }
                 } else {
                     return Value::Null;

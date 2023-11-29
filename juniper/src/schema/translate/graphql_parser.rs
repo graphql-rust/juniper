@@ -108,7 +108,7 @@ impl GraphQLParserTranslator {
                     ExternalValue::Int(ExternalNumber::from(v))
                 } else if let Some(v) = x.as_float() {
                     ExternalValue::Float(v)
-                } else if let Some(v) = x.as_boolean() {
+                } else if let Some(v) = x.as_bool() {
                     ExternalValue::Boolean(v)
                 } else {
                     panic!("unknown argument type")
@@ -140,13 +140,13 @@ impl GraphQLParserTranslator {
     {
         match input {
             Type::Named(x) => ExternalType::NamedType(From::from(x.as_ref())),
-            Type::List(x) => {
+            Type::List(x, _) => {
                 ExternalType::ListType(GraphQLParserTranslator::translate_type(x).into())
             }
             Type::NonNullNamed(x) => {
                 ExternalType::NonNullType(Box::new(ExternalType::NamedType(From::from(x.as_ref()))))
             }
-            Type::NonNullList(x) => ExternalType::NonNullType(Box::new(ExternalType::ListType(
+            Type::NonNullList(x, _) => ExternalType::NonNullType(Box::new(ExternalType::ListType(
                 Box::new(GraphQLParserTranslator::translate_type(x)),
             ))),
         }
@@ -190,6 +190,11 @@ impl GraphQLParserTranslator {
                 position: Pos::default(),
                 description: x.description.as_ref().map(|s| From::from(s.as_str())),
                 name: From::from(x.name.as_ref()),
+                implements_interfaces: x
+                    .interface_names
+                    .iter()
+                    .map(|s| From::from(s.as_str()))
+                    .collect(),
                 directives: vec![],
                 fields: x
                     .fields
@@ -256,10 +261,10 @@ impl GraphQLParserTranslator {
             .map(|a| {
                 a.iter()
                     .filter(|x| !x.is_builtin())
-                    .map(|x| GraphQLParserTranslator::translate_argument(&x))
+                    .map(|x| GraphQLParserTranslator::translate_argument(x))
                     .collect()
             })
-            .unwrap_or_else(Vec::new);
+            .unwrap_or_default();
 
         ExternalField {
             position: Pos::default(),
@@ -280,27 +285,23 @@ where
         DeprecationStatus::Current => None,
         DeprecationStatus::Deprecated(reason) => Some(ExternalDirective {
             position: Pos::default(),
-            name: From::from("deprecated"),
-            arguments: if let Some(reason) = reason {
-                vec![(
-                    From::from("reason"),
-                    ExternalValue::String(reason.to_string()),
-                )]
-            } else {
-                vec![]
-            },
+            name: "deprecated".into(),
+            arguments: reason
+                .as_ref()
+                .map(|rsn| vec![(From::from("reason"), ExternalValue::String(rsn.into()))])
+                .unwrap_or_default(),
         }),
     }
 }
 
-// Right now the only directive supported is `@deprecated`. `@skip` and `@include`
-// are dealt with elsewhere.
-// <https://facebook.github.io/graphql/draft/#sec-Type-System.Directives>
+// Right now the only directive supported is `@deprecated`.
+// `@skip` and `@include` are dealt with elsewhere.
+// https://spec.graphql.org/October2021#sec-Type-System.Directives.Built-in-Directives
 fn generate_directives<'a, T>(status: &DeprecationStatus) -> Vec<ExternalDirective<'a, T>>
 where
     T: Text<'a>,
 {
-    if let Some(d) = deprecation_to_directive(&status) {
+    if let Some(d) = deprecation_to_directive(status) {
         vec![d]
     } else {
         vec![]

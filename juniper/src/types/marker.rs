@@ -9,25 +9,33 @@ use std::sync::Arc;
 
 use crate::{GraphQLType, ScalarValue};
 
-/// Maker object for GraphQL objects.
+/// Maker trait for [GraphQL objects][1].
 ///
-/// This trait extends the GraphQLType and is only used to mark
-/// object. During compile this addition information is required to
-/// prevent unwanted structure compiling. If an object requires this
-/// trait instead of the GraphQLType, then it explicitly requires an
-/// GraphQL objects. Other types (scalars, enums, and input objects)
-/// are not allowed.
-pub trait GraphQLObjectType<S: ScalarValue>: GraphQLType<S> {
+/// This trait extends the [`GraphQLType`] and is only used to mark an [object][1]. During
+/// compile this addition information is required to prevent unwanted structure compiling. If an
+/// object requires this trait instead of the [`GraphQLType`], then it explicitly requires
+/// [GraphQL objects][1]. Other types ([scalars][2], [enums][3], [interfaces][4], [input objects][5]
+/// and [unions][6]) are not allowed.
+///
+/// [1]: https://spec.graphql.org/October2021#sec-Objects
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
+/// [3]: https://spec.graphql.org/October2021#sec-Enums
+/// [4]: https://spec.graphql.org/October2021#sec-Interfaces
+/// [5]: https://spec.graphql.org/October2021#sec-Input-Objects
+/// [6]: https://spec.graphql.org/October2021#sec-Unions
+pub trait GraphQLObject<S: ScalarValue>: GraphQLType<S> {
     /// An arbitrary function without meaning.
     ///
-    /// May contain compile timed check logic which ensures that types
-    /// are used correctly according to the GraphQL specification.
+    /// May contain compile timed check logic which ensures that types are used correctly according
+    /// to the [GraphQL specification][1].
+    ///
+    /// [1]: https://spec.graphql.org/October2021
     fn mark() {}
 }
 
-impl<'a, S, T> GraphQLObjectType<S> for &T
+impl<S, T> GraphQLObject<S> for &T
 where
-    T: GraphQLObjectType<S> + ?Sized,
+    T: GraphQLObject<S> + ?Sized,
     S: ScalarValue,
 {
     #[inline]
@@ -36,9 +44,9 @@ where
     }
 }
 
-impl<S, T> GraphQLObjectType<S> for Box<T>
+impl<S, T> GraphQLObject<S> for Box<T>
 where
-    T: GraphQLObjectType<S> + ?Sized,
+    T: GraphQLObject<S> + ?Sized,
     S: ScalarValue,
 {
     #[inline]
@@ -47,9 +55,9 @@ where
     }
 }
 
-impl<S, T> GraphQLObjectType<S> for Arc<T>
+impl<S, T> GraphQLObject<S> for Arc<T>
 where
-    T: GraphQLObjectType<S> + ?Sized,
+    T: GraphQLObject<S> + ?Sized,
     S: ScalarValue,
 {
     #[inline]
@@ -66,23 +74,23 @@ where
 /// [GraphQL interfaces][1]. Other types ([scalars][2], [enums][3], [objects][4], [input objects][5]
 /// and [unions][6]) are not allowed.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
-/// [2]: https://spec.graphql.org/June2018/#sec-Scalars
-/// [3]: https://spec.graphql.org/June2018/#sec-Enums
-/// [4]: https://spec.graphql.org/June2018/#sec-Objects
-/// [5]: https://spec.graphql.org/June2018/#sec-Input-Objects
-/// [6]: https://spec.graphql.org/June2018/#sec-Unions
+/// [1]: https://spec.graphql.org/October2021#sec-Interfaces
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
+/// [3]: https://spec.graphql.org/October2021#sec-Enums
+/// [4]: https://spec.graphql.org/October2021#sec-Objects
+/// [5]: https://spec.graphql.org/October2021#sec-Input-Objects
+/// [6]: https://spec.graphql.org/October2021#sec-Unions
 pub trait GraphQLInterface<S: ScalarValue>: GraphQLType<S> {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types are used correctly according
     /// to the [GraphQL specification][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/
+    /// [1]: https://spec.graphql.org/October2021
     fn mark() {}
 }
 
-impl<'a, S, T> GraphQLInterface<S> for &T
+impl<S, T> GraphQLInterface<S> for &T
 where
     T: GraphQLInterface<S> + ?Sized,
     S: ScalarValue,
@@ -123,23 +131,23 @@ where
 /// [GraphQL unions][1]. Other types ([scalars][2], [enums][3], [objects][4], [input objects][5] and
 /// [interfaces][6]) are not allowed.
 ///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
-/// [2]: https://spec.graphql.org/June2018/#sec-Scalars
-/// [3]: https://spec.graphql.org/June2018/#sec-Enums
-/// [4]: https://spec.graphql.org/June2018/#sec-Objects
-/// [5]: https://spec.graphql.org/June2018/#sec-Input-Objects
-/// [6]: https://spec.graphql.org/June2018/#sec-Interfaces
+/// [1]: https://spec.graphql.org/October2021#sec-Unions
+/// [2]: https://spec.graphql.org/October2021#sec-Scalars
+/// [3]: https://spec.graphql.org/October2021#sec-Enums
+/// [4]: https://spec.graphql.org/October2021#sec-Objects
+/// [5]: https://spec.graphql.org/October2021#sec-Input-Objects
+/// [6]: https://spec.graphql.org/October2021#sec-Interfaces
 pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types are used correctly according
     /// to the [GraphQL specification][1].
     ///
-    /// [1]: https://spec.graphql.org/June2018/
+    /// [1]: https://spec.graphql.org/October2021
     fn mark() {}
 }
 
-impl<'a, S, T> GraphQLUnion<S> for &T
+impl<S, T> GraphQLUnion<S> for &T
 where
     T: GraphQLUnion<S> + ?Sized,
     S: ScalarValue,
@@ -178,8 +186,7 @@ where
 /// types. Each type which can be used as an output type should
 /// implement this trait. The specification defines enum, scalar,
 /// object, union, and interface as output types.
-// TODO: Re-enable GraphQLType requirement in #682
-pub trait IsOutputType<S: ScalarValue> /*: GraphQLType<S>*/ {
+pub trait IsOutputType<S: ScalarValue>: GraphQLType<S> {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types
@@ -187,7 +194,7 @@ pub trait IsOutputType<S: ScalarValue> /*: GraphQLType<S>*/ {
     fn mark() {}
 }
 
-impl<'a, S, T> IsOutputType<S> for &T
+impl<S, T> IsOutputType<S> for &T
 where
     T: IsOutputType<S> + ?Sized,
     S: ScalarValue,
@@ -253,7 +260,18 @@ where
     }
 }
 
-impl<'a, S> IsOutputType<S> for str where S: ScalarValue {}
+impl<S, T, const N: usize> IsOutputType<S> for [T; N]
+where
+    T: IsOutputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S> IsOutputType<S> for str where S: ScalarValue {}
 
 /// Marker trait for types which can be used as input types.
 ///
@@ -269,7 +287,7 @@ pub trait IsInputType<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
-impl<'a, S, T> IsInputType<S> for &T
+impl<S, T> IsInputType<S> for &T
 where
     T: IsInputType<S> + ?Sized,
     S: ScalarValue,
@@ -335,4 +353,15 @@ where
     }
 }
 
-impl<'a, S> IsInputType<S> for str where S: ScalarValue {}
+impl<S, T, const N: usize> IsInputType<S> for [T; N]
+where
+    T: IsInputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
+impl<S> IsInputType<S> for str where S: ScalarValue {}

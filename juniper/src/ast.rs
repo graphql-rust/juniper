@@ -19,13 +19,13 @@ pub enum Type<'a> {
     /// A nullable list type, e.g. `[String]`
     ///
     /// The list itself is what's nullable, the containing type might be non-null.
-    List(Box<Type<'a>>),
+    List(Box<Type<'a>>, Option<usize>),
     /// A non-null named type, e.g. `String!`
     NonNullNamed(Cow<'a, str>),
     /// A non-null list type, e.g. `[String]!`.
     ///
     /// The list itself is what's non-null, the containing type might be null.
-    NonNullList(Box<Type<'a>>),
+    NonNullList(Box<Type<'a>>, Option<usize>),
 }
 
 /// A JSON-like value that can be passed into the query execution, either
@@ -34,7 +34,7 @@ pub enum Type<'a> {
 ///
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
@@ -49,6 +49,7 @@ pub enum InputValue<S = DefaultScalarValue> {
 pub struct VariableDefinition<'a, S> {
     pub var_type: Spanning<Type<'a>>,
     pub default_value: Option<Spanning<InputValue<S>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -113,7 +114,7 @@ pub struct Directive<'a, S> {
 }
 
 #[allow(missing_docs)]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OperationType {
     Query,
     Mutation,
@@ -150,22 +151,40 @@ pub type Document<'a, S> = [Definition<'a, S>];
 #[doc(hidden)]
 pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
-/// Parse an unstructured input value into a Rust data type.
+/// Parsing of an unstructured input value into a Rust data type.
 ///
-/// The conversion _can_ fail, and must in that case return None. Implemented
-/// automatically by the convenience proc macro `graphql_scalar` or by deriving GraphQLEnum.
+/// The conversion _can_ fail, and must in that case return [`Err`]. Thus not
+/// restricted in the definition of this trait, the returned [`Err`] should be
+/// convertible with [`IntoFieldError`] to fit well into the library machinery.
+///
+/// Implemented automatically by the convenience proc macro [`graphql_scalar!`]
+/// or by deriving `GraphQLEnum`.
 ///
 /// Must be implemented manually when manually exposing new enums or scalars.
+///
+/// [`graphql_scalar!`]: macro@crate::graphql_scalar
+/// [`IntoFieldError`]: crate::IntoFieldError
 pub trait FromInputValue<S = DefaultScalarValue>: Sized {
-    /// Performs the conversion.
-    fn from_input_value(v: &InputValue<S>) -> Option<Self>;
+    /// Type of this conversion error.
+    ///
+    /// Thus not restricted, it should be convertible with [`IntoFieldError`] to
+    /// fit well into the library machinery.
+    ///
+    /// [`IntoFieldError`]: crate::IntoFieldError
+    type Error;
 
-    /// Performs the conversion from an absent value (e.g. to distinguish between implicit and
-    /// explicit null). The default implementation just uses `from_input_value` as if an explicit
-    /// null were provided. This conversion must not fail.
-    fn from_implicit_null() -> Self {
+    /// Performs the conversion.
+    fn from_input_value(v: &InputValue<S>) -> Result<Self, Self::Error>;
+
+    /// Performs the conversion from an absent value (e.g. to distinguish
+    /// between implicit and explicit `null`).
+    ///
+    /// The default implementation just calls [`from_input_value()`] as if an
+    /// explicit `null` was provided.
+    ///
+    /// [`from_input_value()`]: FromInputValue::from_input_value
+    fn from_implicit_null() -> Result<Self, Self::Error> {
         Self::from_input_value(&InputValue::<S>::Null)
-            .expect("input value conversion from null must not fail")
     }
 }
 
@@ -192,105 +211,78 @@ impl<'a> Type<'a> {
     pub fn innermost_name(&self) -> &str {
         match *self {
             Type::Named(ref n) | Type::NonNullNamed(ref n) => n,
-            Type::List(ref l) | Type::NonNullList(ref l) => l.innermost_name(),
+            Type::List(ref l, _) | Type::NonNullList(ref l, _) => l.innermost_name(),
         }
     }
 
     /// Determines if a type only can represent non-null values.
     pub fn is_non_null(&self) -> bool {
-        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(_))
+        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(..))
     }
 }
 
 impl<'a> fmt::Display for Type<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Type::Named(ref n) => write!(f, "{}", n),
-            Type::NonNullNamed(ref n) => write!(f, "{}!", n),
-            Type::List(ref t) => write!(f, "[{}]", t),
-            Type::NonNullList(ref t) => write!(f, "[{}]!", t),
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Named(n) => write!(f, "{n}"),
+            Self::NonNullNamed(n) => write!(f, "{n}!"),
+            Self::List(t, _) => write!(f, "[{t}]"),
+            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
         }
     }
 }
 
-impl<S> InputValue<S>
-where
-    S: ScalarValue,
-{
-    /// Construct a null value.
+impl<S> InputValue<S> {
+    /// Construct a `null` value.
     pub fn null() -> Self {
-        InputValue::Null
-    }
-
-    /// Construct an integer value.
-    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
-    pub fn int(i: i32) -> Self {
-        Self::scalar(i)
-    }
-
-    /// Construct a floating point value.
-    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
-    pub fn float(f: f64) -> Self {
-        Self::scalar(f)
-    }
-
-    /// Construct a boolean value.
-    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
-    pub fn boolean(b: bool) -> Self {
-        Self::scalar(b)
-    }
-
-    /// Construct a string value.
-    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
-    pub fn string<T: AsRef<str>>(s: T) -> Self {
-        InputValue::scalar(s.as_ref().to_owned())
+        Self::Null
     }
 
     /// Construct a scalar value
     pub fn scalar<T>(v: T) -> Self
     where
-        T: Into<S>,
+        S: From<T>,
     {
-        InputValue::Scalar(v.into())
+        Self::Scalar(v.into())
     }
 
     /// Construct an enum value.
     pub fn enum_value<T: AsRef<str>>(s: T) -> Self {
-        InputValue::Enum(s.as_ref().to_owned())
+        Self::Enum(s.as_ref().into())
     }
 
     /// Construct a variable value.
     pub fn variable<T: AsRef<str>>(v: T) -> Self {
-        InputValue::Variable(v.as_ref().to_owned())
+        Self::Variable(v.as_ref().into())
     }
 
-    /// Construct an unlocated list.
+    /// Construct a [`Spanning::unlocated`] list.
     ///
-    /// Convenience function to make each `InputValue` in the input vector
-    /// not contain any location information. Can be used from `ToInputValue`
+    /// Convenience function to make each [`InputValue`] in the input vector
+    /// not contain any location information. Can be used from [`ToInputValue`]
     /// implementations, where no source code position information is available.
     pub fn list(l: Vec<Self>) -> Self {
-        InputValue::List(l.into_iter().map(Spanning::unlocated).collect())
+        Self::List(l.into_iter().map(Spanning::unlocated).collect())
     }
 
     /// Construct a located list.
     pub fn parsed_list(l: Vec<Spanning<Self>>) -> Self {
-        InputValue::List(l)
+        Self::List(l)
     }
 
-    /// Construct an unlocated object.
+    /// Construct aa [`Spanning::unlocated`] object.
     ///
-    /// Similar to `InputValue::list`, it makes each key and value in the given
-    /// hash map not contain any location information.
+    /// Similarly to [`InputValue::list`] it makes each key and value in the
+    /// given hash map not contain any location information.
     pub fn object<K>(o: IndexMap<K, Self>) -> Self
     where
         K: AsRef<str> + Eq + Hash,
     {
-        InputValue::Object(
+        Self::Object(
             o.into_iter()
                 .map(|(k, v)| {
                     (
-                        Spanning::unlocated(k.as_ref().to_owned()),
+                        Spanning::unlocated(k.as_ref().into()),
                         Spanning::unlocated(v),
                     )
                 })
@@ -300,72 +292,93 @@ where
 
     /// Construct a located object.
     pub fn parsed_object(o: Vec<(Spanning<String>, Spanning<Self>)>) -> Self {
-        InputValue::Object(o)
+        Self::Object(o)
     }
 
-    /// Resolve all variables to their values.
-    pub fn into_const(self, vars: &Variables<S>) -> Self {
+    /// Resolves all variables of this [`InputValue`] to their actual `values`.
+    ///
+    /// If a variable is not present in the `values`:
+    /// - Returns [`None`] in case this is an [`InputValue::Variable`].
+    /// - Skips field in case of an [`InputValue::Object`] field.
+    /// - Replaces with an [`InputValue::Null`] in case of an
+    ///   [`InputValue::List`] element.
+    ///
+    /// This is done, because for an [`InputValue::Variable`] (or an
+    /// [`InputValue::Object`] field) a default value can be used later, if it's
+    /// provided. While on contrary, a single [`InputValue::List`] element
+    /// cannot have a default value.
+    #[must_use]
+    pub fn into_const(self, values: &Variables<S>) -> Option<Self>
+    where
+        S: Clone,
+    {
         match self {
-            InputValue::Variable(v) => vars.get(&v).map_or_else(InputValue::null, Clone::clone),
-            InputValue::List(l) => InputValue::List(
+            Self::Variable(v) => values.get(&v).cloned(),
+            Self::List(l) => Some(Self::List(
                 l.into_iter()
-                    .map(|s| s.map(|v| v.into_const(vars)))
+                    .map(|s| s.map(|v| v.into_const(values).unwrap_or_else(Self::null)))
                     .collect(),
-            ),
-            InputValue::Object(o) => InputValue::Object(
+            )),
+            Self::Object(o) => Some(Self::Object(
                 o.into_iter()
-                    .map(|(sk, sv)| (sk, sv.map(|v| v.into_const(vars))))
+                    .filter_map(|(sk, sv)| sv.and_then(|v| v.into_const(values)).map(|sv| (sk, sv)))
                     .collect(),
-            ),
-            v => v,
+            )),
+            v => Some(v),
         }
     }
 
-    /// Shorthand form of invoking `FromInputValue::from()`.
-    pub fn convert<T>(&self) -> Option<T>
-    where
-        T: FromInputValue<S>,
-    {
-        <T as FromInputValue<S>>::from_input_value(self)
+    /// Shorthand form of invoking [`FromInputValue::from_input_value()`].
+    pub fn convert<T: FromInputValue<S>>(&self) -> Result<T, T::Error> {
+        T::from_input_value(self)
     }
 
-    /// Does the value represent null?
+    /// Does the value represent a `null`?
     pub fn is_null(&self) -> bool {
-        matches!(*self, InputValue::Null)
+        matches!(self, Self::Null)
     }
 
     /// Does the value represent a variable?
     pub fn is_variable(&self) -> bool {
-        matches!(*self, InputValue::Variable(_))
+        matches!(self, Self::Variable(_))
     }
 
     /// View the underlying enum value, if present.
     pub fn as_enum_value(&self) -> Option<&str> {
-        match *self {
-            InputValue::Enum(ref e) => Some(e),
+        match self {
+            Self::Enum(e) => Some(e.as_str()),
             _ => None,
         }
     }
 
     /// View the underlying int value, if present.
-    pub fn as_int_value(&self) -> Option<i32> {
+    pub fn as_int_value(&self) -> Option<i32>
+    where
+        S: ScalarValue,
+    {
         self.as_scalar_value().and_then(|s| s.as_int())
     }
 
     /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64> {
+    pub fn as_float_value(&self) -> Option<f64>
+    where
+        S: ScalarValue,
+    {
         self.as_scalar_value().and_then(|s| s.as_float())
     }
 
     /// View the underlying string value, if present.
-    pub fn as_string_value(&self) -> Option<&str> {
+    pub fn as_string_value(&self) -> Option<&str>
+    where
+        S: ScalarValue,
+    {
         self.as_scalar_value().and_then(|s| s.as_str())
     }
 
     /// View the underlying scalar value, if present.
     pub fn as_scalar(&self) -> Option<&S> {
-        match *self {
-            InputValue::Scalar(ref s) => Some(s),
+        match self {
+            Self::Scalar(s) => Some(s),
             _ => None,
         }
     }
@@ -374,69 +387,71 @@ where
     pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
     where
         T: 'a,
-        &'a S: Into<Option<&'a T>>,
+        Option<&'a T>: From<&'a S>,
     {
         self.as_scalar().and_then(Into::into)
     }
 
-    /// Convert the input value to an unlocated object value.
+    /// Converts this [`InputValue`] to a [`Spanning::unlocated`] object value.
     ///
-    /// This constructs a new IndexMap that contain references to the keys
-    /// and values in `self`.
+    /// This constructs a new [`IndexMap`] containing references to the keys
+    /// and values of `self`.
     pub fn to_object_value(&self) -> Option<IndexMap<&str, &Self>> {
-        match *self {
-            InputValue::Object(ref o) => Some(
+        match self {
+            Self::Object(o) => Some(
                 o.iter()
-                    .map(|&(ref sk, ref sv)| (sk.item.as_str(), &sv.item))
+                    .map(|(sk, sv)| (sk.item.as_str(), &sv.item))
                     .collect(),
             ),
             _ => None,
         }
     }
 
-    /// Convert the input value to an unlocated list value.
+    /// Converts this [`InputValue`] to a [`Spanning::unlocated`] list value.
     ///
-    /// This constructs a new vector that contain references to the values
-    /// in `self`.
+    /// This constructs a new [`Vec`] containing references to the values of
+    /// `self`.
     pub fn to_list_value(&self) -> Option<Vec<&Self>> {
-        match *self {
-            InputValue::List(ref l) => Some(l.iter().map(|s| &s.item).collect()),
+        match self {
+            Self::List(l) => Some(l.iter().map(|s| &s.item).collect()),
             _ => None,
         }
     }
 
-    /// Recursively find all variables
+    /// Recursively finds all variables
     pub fn referenced_variables(&self) -> Vec<&str> {
-        match *self {
-            InputValue::Variable(ref name) => vec![name],
-            InputValue::List(ref l) => l
+        match self {
+            Self::Variable(name) => vec![name.as_str()],
+            Self::List(l) => l
                 .iter()
                 .flat_map(|v| v.item.referenced_variables())
                 .collect(),
-            InputValue::Object(ref obj) => obj
+            Self::Object(o) => o
                 .iter()
-                .flat_map(|&(_, ref v)| v.item.referenced_variables())
+                .flat_map(|(_, v)| v.item.referenced_variables())
                 .collect(),
             _ => vec![],
         }
     }
 
-    /// Compare equality with another `InputValue` ignoring any source position information.
-    pub fn unlocated_eq(&self, other: &Self) -> bool {
-        use crate::InputValue::*;
-
+    /// Compares equality with another [`InputValue``] ignoring any source
+    /// position information.
+    pub fn unlocated_eq(&self, other: &Self) -> bool
+    where
+        S: PartialEq,
+    {
         match (self, other) {
-            (&Null, &Null) => true,
-            (&Scalar(ref s1), &Scalar(ref s2)) => s1 == s2,
-            (&Enum(ref s1), &Enum(ref s2)) | (&Variable(ref s1), &Variable(ref s2)) => s1 == s2,
-            (&List(ref l1), &List(ref l2)) => l1
+            (Self::Null, Self::Null) => true,
+            (Self::Scalar(s1), Self::Scalar(s2)) => s1 == s2,
+            (Self::Enum(s1), Self::Enum(s2)) | (Self::Variable(s1), Self::Variable(s2)) => s1 == s2,
+            (Self::List(l1), Self::List(l2)) => l1
                 .iter()
                 .zip(l2.iter())
                 .all(|(v1, v2)| v1.item.unlocated_eq(&v2.item)),
-            (&Object(ref o1), &Object(ref o2)) => {
+            (Self::Object(o1), Self::Object(o2)) => {
                 o1.len() == o2.len()
-                    && o1.iter().all(|&(ref sk1, ref sv1)| {
-                        o2.iter().any(|&(ref sk2, ref sv2)| {
+                    && o1.iter().all(|(sk1, sv1)| {
+                        o2.iter().any(|(sk2, sv2)| {
                             sk1.item == sk2.item && sv1.item.unlocated_eq(&sv2.item)
                         })
                     })
@@ -446,48 +461,89 @@ where
     }
 }
 
-impl<S> fmt::Display for InputValue<S>
-where
-    S: ScalarValue,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            InputValue::Null => write!(f, "null"),
-            InputValue::Scalar(ref s) => {
+impl<S: ScalarValue> fmt::Display for InputValue<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Null => write!(f, "null"),
+            Self::Scalar(s) => {
                 if let Some(s) = s.as_str() {
-                    write!(f, "\"{}\"", s)
+                    write!(f, "\"{s}\"")
                 } else {
-                    write!(f, "{}", s)
+                    write!(f, "{s}")
                 }
             }
-            InputValue::Enum(ref v) => write!(f, "{}", v),
-            InputValue::Variable(ref v) => write!(f, "${}", v),
-            InputValue::List(ref v) => {
+            Self::Enum(v) => write!(f, "{v}"),
+            Self::Variable(v) => write!(f, "${v}"),
+            Self::List(v) => {
                 write!(f, "[")?;
-
                 for (i, spanning) in v.iter().enumerate() {
                     spanning.item.fmt(f)?;
                     if i < v.len() - 1 {
                         write!(f, ", ")?;
                     }
                 }
-
                 write!(f, "]")
             }
-            InputValue::Object(ref o) => {
+            Self::Object(o) => {
                 write!(f, "{{")?;
-
-                for (i, &(ref k, ref v)) in o.iter().enumerate() {
+                for (i, (k, v)) in o.iter().enumerate() {
                     write!(f, "{}: ", k.item)?;
                     v.item.fmt(f)?;
                     if i < o.len() - 1 {
                         write!(f, ", ")?;
                     }
                 }
-
                 write!(f, "}}")
             }
         }
+    }
+}
+
+impl<S, T> From<Option<T>> for InputValue<S>
+where
+    Self: From<T>,
+{
+    fn from(v: Option<T>) -> Self {
+        match v {
+            Some(v) => v.into(),
+            None => Self::Null,
+        }
+    }
+}
+
+impl<'a, S: From<String>> From<&'a str> for InputValue<S> {
+    fn from(s: &'a str) -> Self {
+        Self::scalar(s.to_owned())
+    }
+}
+
+impl<'a, S: From<String>> From<Cow<'a, str>> for InputValue<S> {
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::scalar(s.into_owned())
+    }
+}
+
+impl<S: From<String>> From<String> for InputValue<S> {
+    fn from(s: String) -> Self {
+        Self::scalar(s)
+    }
+}
+
+impl<S: From<i32>> From<i32> for InputValue<S> {
+    fn from(i: i32) -> Self {
+        Self::scalar(i)
+    }
+}
+
+impl<S: From<f64>> From<f64> for InputValue<S> {
+    fn from(f: f64) -> Self {
+        Self::scalar(f)
+    }
+}
+
+impl<S: From<bool>> From<bool> for InputValue<S> {
+    fn from(b: bool) -> Self {
+        Self::scalar(b)
     }
 }
 
@@ -511,8 +567,8 @@ impl<'a, S> Arguments<'a, S> {
     pub fn get(&self, key: &str) -> Option<&Spanning<InputValue<S>>> {
         self.items
             .iter()
-            .filter(|&&(ref k, _)| k.item == key)
-            .map(|&(_, ref v)| v)
+            .filter(|&(k, _)| k.item == key)
+            .map(|(_, v)| v)
             .next()
     }
 }
@@ -525,47 +581,37 @@ impl<'a, S> VariableDefinitions<'a, S> {
 
 #[cfg(test)]
 mod tests {
+    use crate::graphql_input_value;
+
     use super::InputValue;
-    use crate::parser::Spanning;
 
     #[test]
     fn test_input_value_fmt() {
-        let value: InputValue = InputValue::null();
-        assert_eq!(format!("{}", value), "null");
+        let value: InputValue = graphql_input_value!(null);
+        assert_eq!(value.to_string(), "null");
 
-        let value: InputValue = InputValue::scalar(123);
-        assert_eq!(format!("{}", value), "123");
+        let value: InputValue = graphql_input_value!(123);
+        assert_eq!(value.to_string(), "123");
 
-        let value: InputValue = InputValue::scalar(12.3);
-        assert_eq!(format!("{}", value), "12.3");
+        let value: InputValue = graphql_input_value!(12.3);
+        assert_eq!(value.to_string(), "12.3");
 
-        let value: InputValue = InputValue::scalar("FOO".to_owned());
-        assert_eq!(format!("{}", value), "\"FOO\"");
+        let value: InputValue = graphql_input_value!("FOO");
+        assert_eq!(value.to_string(), "\"FOO\"");
 
-        let value: InputValue = InputValue::scalar(true);
-        assert_eq!(format!("{}", value), "true");
+        let value: InputValue = graphql_input_value!(true);
+        assert_eq!(value.to_string(), "true");
 
-        let value: InputValue = InputValue::enum_value("BAR".to_owned());
-        assert_eq!(format!("{}", value), "BAR");
+        let value: InputValue = graphql_input_value!(BAR);
+        assert_eq!(value.to_string(), "BAR");
 
-        let value: InputValue = InputValue::variable("baz".to_owned());
-        assert_eq!(format!("{}", value), "$baz");
+        let value: InputValue = graphql_input_value!(@baz);
+        assert_eq!(value.to_string(), "$baz");
 
-        let list = vec![InputValue::scalar(1), InputValue::scalar(2)];
-        let value: InputValue = InputValue::list(list);
-        assert_eq!(format!("{}", value), "[1, 2]");
+        let value: InputValue = graphql_input_value!([1, 2]);
+        assert_eq!(value.to_string(), "[1, 2]");
 
-        let object = vec![
-            (
-                Spanning::unlocated("foo".to_owned()),
-                Spanning::unlocated(InputValue::scalar(1)),
-            ),
-            (
-                Spanning::unlocated("bar".to_owned()),
-                Spanning::unlocated(InputValue::scalar(2)),
-            ),
-        ];
-        let value: InputValue = InputValue::parsed_object(object);
-        assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
+        let value: InputValue = graphql_input_value!({"foo": 1,"bar": 2});
+        assert_eq!(value.to_string(), "{foo: 1, bar: 2}");
     }
 }

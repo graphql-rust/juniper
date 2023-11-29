@@ -46,7 +46,7 @@ fn validate_var_defs<S>(
 ) where
     S: ScalarValue,
 {
-    for &(ref name, ref def) in var_defs.iter() {
+    for (name, def) in var_defs.iter() {
         let raw_type_name = def.var_type.item.innermost_name();
         match schema.concrete_type_by_name(raw_type_name) {
             Some(t) if t.is_input() => {
@@ -58,12 +58,12 @@ fn validate_var_defs<S>(
                             r#"Variable "${}" of required type "{}" was not provided."#,
                             name.item, def.var_type.item,
                         ),
-                        &[name.start],
+                        &[name.span.start],
                     ));
                 } else if let Some(v) = values.get(name.item) {
                     errors.append(&mut unify_value(
                         name.item,
-                        &name.start,
+                        &name.span.start,
                         v,
                         &ct,
                         schema,
@@ -99,7 +99,7 @@ where
                     var_name,
                     var_pos,
                     &path,
-                    &format!(r#"Expected "{}", found null"#, meta_type),
+                    format!(r#"Expected "{meta_type}", found null"#),
                 ));
             } else {
                 errors.append(&mut unify_value(
@@ -108,13 +108,27 @@ where
             }
         }
 
-        TypeType::List(ref inner) => {
+        TypeType::List(ref inner, expected_size) => {
             if value.is_null() {
                 return errors;
             }
 
             match value.to_list_value() {
                 Some(l) => {
+                    if let Some(expected) = expected_size {
+                        if l.len() != expected {
+                            errors.push(unification_error(
+                                var_name,
+                                var_pos,
+                                &path,
+                                format!(
+                                    "Expected list of {expected} elements, \
+                                     found {} elements",
+                                    l.len(),
+                                ),
+                            ));
+                        }
+                    }
                     for (i, v) in l.iter().enumerate() {
                         errors.append(&mut unify_value(
                             var_name,
@@ -149,14 +163,17 @@ where
                     if e.is_empty() {
                         // All the fields didn't have errors, see if there is an
                         // overall error when parsing the input value.
-                        if !(iom.try_parse_fn)(value) {
+                        if let Err(e) = (iom.try_parse_fn)(value) {
                             errors.push(unification_error(
                                 var_name,
                                 var_pos,
                                 &path,
-                                &format!(
-                                    r#"Expected input of type "{}". Got: "{}""#,
-                                    iom.name, value
+                                format!(
+                                    "Expected input of type `{}`. \
+                                     Got: `{value}`. \
+                                     Details: {}",
+                                    iom.name,
+                                    e.message(),
                                 ),
                             ));
                         }
@@ -171,24 +188,28 @@ where
     errors
 }
 
-fn unify_scalar<'a, S>(
+fn unify_scalar<S>(
     var_name: &str,
     var_pos: &SourcePosition,
     value: &InputValue<S>,
     meta: &ScalarMeta<S>,
-    path: &Path<'a>,
+    path: &Path<'_>,
 ) -> Vec<RuleError>
 where
-    S: fmt::Debug,
+    S: ScalarValue,
 {
     let mut errors: Vec<RuleError> = vec![];
 
-    if !(meta.try_parse_fn)(value) {
+    if let Err(e) = (meta.try_parse_fn)(value) {
         return vec![unification_error(
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}""#, meta.name),
+            format!(
+                "Expected input scalar `{}`. Got: `{value}`. Details: {}",
+                meta.name,
+                e.message(),
+            ),
         )];
     }
 
@@ -197,52 +218,52 @@ where
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found list"#, meta.name),
+            format!(r#"Expected "{}", found list"#, meta.name),
         )),
         InputValue::Object(_) => errors.push(unification_error(
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found object"#, meta.name),
+            format!(r#"Expected "{}", found object"#, meta.name),
         )),
         _ => (),
     }
     errors
 }
 
-fn unify_enum<'a, S>(
+fn unify_enum<S>(
     var_name: &str,
     var_pos: &SourcePosition,
     value: &InputValue<S>,
     meta: &EnumMeta<S>,
-    path: &Path<'a>,
+    path: &Path<'_>,
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
 {
     let mut errors: Vec<RuleError> = vec![];
 
-    match *value {
+    match value {
         // TODO: avoid this bad duplicate as_str() call. (value system refactor)
-        InputValue::Scalar(ref scalar) if scalar.as_str().is_some() => {
-            if let Some(ref name) = scalar.as_str() {
+        InputValue::Scalar(scalar) if scalar.as_str().is_some() => {
+            if let Some(name) = scalar.as_str() {
                 if !meta.values.iter().any(|ev| ev.name == *name) {
                     errors.push(unification_error(
                         var_name,
                         var_pos,
                         path,
-                        &format!(r#"Invalid value for enum "{}""#, meta.name),
+                        format!(r#"Invalid value for enum "{}""#, meta.name),
                     ))
                 }
             }
         }
-        InputValue::Enum(ref name) => {
+        InputValue::Enum(name) => {
             if !meta.values.iter().any(|ev| &ev.name == name) {
                 errors.push(unification_error(
                     var_name,
                     var_pos,
                     path,
-                    &format!(r#"Invalid value for enum "{}""#, meta.name),
+                    format!(r#"Invalid value for enum "{}""#, meta.name),
                 ))
             }
         }
@@ -250,19 +271,19 @@ where
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found not a string or enum"#, meta.name),
+            format!(r#"Expected "{}", found not a string or enum"#, meta.name),
         )),
     }
     errors
 }
 
-fn unify_input_object<'a, S>(
+fn unify_input_object<S>(
     var_name: &str,
     var_pos: &SourcePosition,
     value: &InputValue<S>,
     meta: &InputObjectMeta<S>,
     schema: &SchemaType<S>,
-    path: &Path<'a>,
+    path: &Path<'_>,
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
@@ -296,7 +317,7 @@ where
                     var_name,
                     var_pos,
                     &Path::ObjectField(&input_field.name, path),
-                    &format!(r#"Expected "{}", found null"#, input_field.arg_type),
+                    format!(r#"Expected "{}", found null"#, input_field.arg_type),
                 ));
             }
         }
@@ -314,7 +335,7 @@ where
             var_name,
             var_pos,
             path,
-            &format!(r#"Expected "{}", found not an object"#, meta.name),
+            format!(r#"Expected "{}", found not an object"#, meta.name),
         ));
     }
     errors
@@ -327,17 +348,14 @@ where
     v.map_or(true, InputValue::is_null)
 }
 
-fn unification_error<'a>(
-    var_name: &str,
+fn unification_error(
+    var_name: impl fmt::Display,
     var_pos: &SourcePosition,
-    path: &Path<'a>,
-    message: &str,
+    path: &Path<'_>,
+    message: impl fmt::Display,
 ) -> RuleError {
     RuleError::new(
-        &format!(
-            r#"Variable "${}" got invalid value. {}{}."#,
-            var_name, path, message,
-        ),
+        &format!(r#"Variable "${var_name}" got invalid value. {path}{message}."#),
         &[*var_pos],
     )
 }
@@ -346,8 +364,8 @@ impl<'a> fmt::Display for Path<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Path::Root => write!(f, ""),
-            Path::ArrayElement(idx, prev) => write!(f, "{}In element #{}: ", prev, idx),
-            Path::ObjectField(name, prev) => write!(f, r#"{}In field "{}": "#, prev, name),
+            Path::ArrayElement(idx, prev) => write!(f, "{prev}In element #{idx}: "),
+            Path::ObjectField(name, prev) => write!(f, r#"{prev}In field "{name}": "#),
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::{collections::HashSet, fmt::Display, iter::Iterator};
+
 use crate::{
     ast::InputValue,
     schema::{
@@ -6,73 +8,47 @@ use crate::{
     },
     value::ScalarValue,
 };
-use std::{collections::HashSet, fmt::Display, iter::Iterator};
 
-pub fn non_null_error_message<T>(arg_type: T) -> String
-where
-    T: Display,
-{
-    format!("Type \"{}\" is not nullable", arg_type)
+pub(crate) fn non_null_error_message(arg_type: impl Display) -> String {
+    format!("Type \"{arg_type}\" is not nullable")
 }
 
-pub fn enum_error_message<T, U>(arg_value: T, arg_type: U) -> String
-where
-    T: Display,
-    U: Display,
-{
-    format!("Invalid value \"{}\" for enum \"{}\"", arg_value, arg_type)
+pub(crate) fn enum_error_message(arg_value: impl Display, arg_type: impl Display) -> String {
+    format!("Invalid value \"{arg_value}\" for enum \"{arg_type}\"")
 }
 
-pub fn type_error_message<T, U>(arg_value: T, arg_type: U) -> String
-where
-    T: Display,
-    U: Display,
-{
-    format!("Invalid value \"{}\" for type \"{}\"", arg_value, arg_type)
+pub(crate) fn type_error_message(arg_value: impl Display, arg_type: impl Display) -> String {
+    format!("Invalid value \"{arg_value}\" for type \"{arg_type}\"")
 }
 
-pub fn parser_error_message<T>(arg_type: T) -> String
-where
-    T: Display,
-{
-    format!("Parser error for \"{}\"", arg_type)
+pub(crate) fn parser_error_message(arg_type: impl Display) -> String {
+    format!("Parser error for \"{arg_type}\"")
 }
 
-pub fn input_object_error_message<T>(arg_type: T) -> String
-where
-    T: Display,
-{
-    format!("\"{}\" is not an input object", arg_type)
+pub(crate) fn input_object_error_message(arg_type: impl Display) -> String {
+    format!("\"{arg_type}\" is not an input object")
 }
 
-pub fn field_error_message<T, U>(arg_type: T, field_name: U, error_message: &str) -> String
-where
-    T: Display,
-    U: Display,
-{
-    format!(
-        "Error on \"{}\" field \"{}\": {}",
-        arg_type, field_name, error_message
-    )
+pub(crate) fn field_error_message(
+    arg_type: impl Display,
+    field_name: impl Display,
+    error_message: impl Display,
+) -> String {
+    format!("Error on \"{arg_type}\" field \"{field_name}\": {error_message}")
 }
 
-pub fn missing_field_error_message<T, U>(arg_type: T, missing_fields: U) -> String
-where
-    T: Display,
-    U: Display,
-{
-    format!("\"{}\" is missing fields: {}", arg_type, missing_fields)
+pub(crate) fn missing_field_error_message(
+    arg_type: impl Display,
+    missing_fields: impl Display,
+) -> String {
+    format!("\"{arg_type}\" is missing fields: {missing_fields}")
 }
 
-pub fn unknown_field_error_message<T, U>(arg_type: T, field_name: U) -> String
-where
-    T: Display,
-    U: Display,
-{
-    format!(
-        "Field \"{}\" does not exist on type \"{}\"",
-        field_name, arg_type
-    )
+pub(crate) fn unknown_field_error_message(
+    arg_type: impl Display,
+    field_name: impl Display,
+) -> String {
+    format!("Field \"{field_name}\" does not exist on type \"{arg_type}\"")
 }
 
 /// Returns an error string if the field is invalid
@@ -122,11 +98,26 @@ where
                 validate_literal_value(schema, inner, arg_value)
             }
         }
-        TypeType::List(ref inner) => match *arg_value {
-            InputValue::List(ref items) => items
-                .iter()
-                .find_map(|i| validate_literal_value(schema, inner, &i.item)),
-            ref v => validate_literal_value(schema, inner, v),
+        TypeType::List(ref inner, expected_size) => match *arg_value {
+            InputValue::Null | InputValue::Variable(_) => None,
+            InputValue::List(ref items) => {
+                if let Some(expected) = expected_size {
+                    if items.len() != expected {
+                        return todo!();
+                    }
+                }
+                items
+                    .iter()
+                    .find_map(|i| validate_literal_value(schema, inner, &i.item))
+            }
+            ref v => {
+                if let Some(expected) = expected_size {
+                    if expected != 1 {
+                        return todo!();
+                    }
+                }
+                validate_literal_value(schema, inner, v)
+            }
         },
         TypeType::Concrete(t) => {
             // Even though InputValue::String can be parsed into an enum, they
@@ -141,7 +132,8 @@ where
                 InputValue::Null | InputValue::Variable(_) => None,
                 ref v @ InputValue::Scalar(_) | ref v @ InputValue::Enum(_) => {
                     if let Some(parse_fn) = t.input_value_parse_fn() {
-                        if parse_fn(v) {
+                        if parse_fn(v).is_ok() {
+                            // TODO: reuse error?
                             None
                         } else {
                             Some(type_error_message(arg_value, arg_type))
@@ -159,15 +151,12 @@ where
                         let mut remaining_required_fields = input_fields
                             .iter()
                             .filter_map(|f| {
-                                if f.arg_type.is_non_null() {
-                                    Some(&f.name)
-                                } else {
-                                    None
-                                }
+                                (f.arg_type.is_non_null() && f.default_value.is_none())
+                                    .then_some(&f.name)
                             })
                             .collect::<HashSet<_>>();
 
-                        let error_message = obj.iter().find_map(|&(ref key, ref value)| {
+                        let error_message = obj.iter().find_map(|(key, value)| {
                             remaining_required_fields.remove(&key.item);
                             validate_object_field(
                                 schema,

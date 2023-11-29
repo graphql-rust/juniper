@@ -1,0 +1,18 @@
+[package]
+name = "juniper_integration_tests"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dev-dependencies]
+async-trait = "0.1.39"
+chrono = { version = "0.4", default-features = false }
+derive_more = "0.99"
+fnv = "1.0"
+futures = "0.3"
+itertools = "0.12"
+juniper = { path = "../../juniper" }
+juniper_subscriptions = { path = "../../juniper_subscriptions" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["rt", "macros", "time"] }

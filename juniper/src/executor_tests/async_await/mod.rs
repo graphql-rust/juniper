@@ -1,4 +1,7 @@
-use crate::{graphql_object, EmptyMutation, EmptySubscription, GraphQLEnum, RootNode, Value};
+use crate::{
+    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription, GraphQLEnum,
+    RootNode, Value,
+};
 
 #[derive(GraphQLEnum)]
 enum UserKind {
@@ -28,7 +31,7 @@ impl User {
         (0..10)
             .map(|index| User {
                 id: index,
-                name: format!("user{}", index),
+                name: format!("user{index}"),
                 kind: UserKind::User,
             })
             .collect()
@@ -53,7 +56,7 @@ impl Query {
     }
 
     async fn field_async_plain() -> String {
-        "field_async_plain".to_string()
+        "field_async_plain".into()
     }
 
     fn user(id: String) -> User {
@@ -74,18 +77,17 @@ impl Query {
 async fn async_simple() {
     let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
     let doc = r#"
-        query { 
+        query {
             fieldSync
-            fieldAsyncPlain 
-            delayed  
+            fieldAsyncPlain
+            delayed
             user(id: "user1") {
                 name
             }
         }
     "#;
 
-    let vars = Default::default();
-    let (res, errs) = crate::execute(doc, None, &schema, &vars, &())
+    let (res, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
         .await
         .unwrap();
 
@@ -96,7 +98,7 @@ async fn async_simple() {
 
     assert_eq!(
         value,
-        crate::graphql_value!({
+        graphql_value!({
             "delayed": true,
             "fieldAsyncPlain": "field_async_plain",
             "fieldSync": "field_sync",

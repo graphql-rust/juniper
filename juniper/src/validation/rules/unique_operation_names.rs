@@ -29,10 +29,10 @@ where
         if let Some(ref op_name) = op.item.name {
             match self.names.entry(op_name.item) {
                 Entry::Occupied(e) => {
-                    ctx.report_error(&error_message(op_name.item), &[*e.get(), op.start]);
+                    ctx.report_error(&error_message(op_name.item), &[*e.get(), op.span.start]);
                 }
                 Entry::Vacant(e) => {
-                    e.insert(op.start);
+                    e.insert(op.span.start);
                 }
             }
         }
@@ -40,7 +40,7 @@ where
 }
 
 fn error_message(op_name: &str) -> String {
-    format!("There can only be one operation named {}", op_name)
+    format!("There can only be one operation named {op_name}")
 }
 
 #[cfg(test)]

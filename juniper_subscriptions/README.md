@@ -1,37 +1,46 @@
-# juniper_subscriptions
+`juniper_subscriptions` crate
+=============================
 
-This repository contains [SubscriptionCoordinator][SubscriptionCoordinator] and 
-[SubscriptionConnection][SubscriptionConnection] implementations for 
-[Juniper][Juniper], a [GraphQL][GraphQL] library for Rust.
+[![Crates.io](https://img.shields.io/crates/v/juniper_subscriptions.svg?maxAge=2592000)](https://crates.io/crates/juniper_subscriptions)
+[![Documentation](https://docs.rs/juniper_subscriptions/badge.svg)](https://docs.rs/juniper_subscriptions)
+[![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
+[![Rust 1.73+](https://img.shields.io/badge/rustc-1.73+-lightgray.svg "Rust 1.73+")](https://blog.rust-lang.org/2023/10/05/Rust-1.73.0.html)
+
+- [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_subscriptions/CHANGELOG.md)
+
+This repository contains `SubscriptionCoordinator` and `SubscriptionConnection` implementations for 
+[`juniper`], a [GraphQL] library for Rust.
+
+You need both this and [`juniper`] crate for usage.
+
+
+
 
 ## Documentation
 
-For this crate's documentation, check out [API documentation][documentation].
+For this crate's documentation, check out [API docs](https://docs.rs/juniper_subscriptions).
 
-For `SubscriptionCoordinator` and `SubscriptionConnection` documentation, check 
-out [Juniper][Juniper]. 
+For `SubscriptionCoordinator` and `SubscriptionConnection` documentation, check out [`juniper` API docs][`juniper`]. 
+
+
+
 
 ## Examples
 
-Check [examples/warp_subscriptions][example] for example code of a working 
-[warp][warp] server with GraphQL subscription handlers.
+Check [`juniper_warp/examples/subscription.rs`][1] for example code of a working [`warp`] server with [GraphQL] subscription handlers.
 
-## Links
 
-* [Juniper][Juniper]
-* [API Reference][documentation]
-* [warp][warp]
+
 
 ## License
 
-This project is under the BSD-2 license.
+This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/master/juniper_subscriptions/LICENSE).
 
-Check the LICENSE file for details.
 
-[warp]: https://github.com/seanmonstar/warp
-[Juniper]: https://github.com/graphql-rust/juniper
-[SubscriptionCoordinator]: https://docs.rs/juniper/latest/juniper/trait.SubscriptionCoordinator.html
-[SubscriptionConnection]: https://docs.rs/juniper/latest/juniper/trait.SubscriptionConnection.html
+
+
+[`juniper`]: https://docs.rs/juniper
+[`warp`]: https://docs.rs/warp
 [GraphQL]: http://graphql.org
-[documentation]: https://docs.rs/juniper_subscriptions
-[example]: https://github.com/graphql-rust/juniper/blob/master/examples/warp_subscriptions/src/main.rs
+
+[1]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/subscription.rs

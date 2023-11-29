@@ -20,8 +20,8 @@ pub struct Lexer<'a> {
 /// A single scalar value literal
 ///
 /// This is only used for tagging how the lexer has interpreted a value literal
-#[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(missing_docs)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScalarToken<'a> {
     String(&'a str),
     Float(&'a str),
@@ -29,8 +29,8 @@ pub enum ScalarToken<'a> {
 }
 
 /// A single token in the input source
-#[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(missing_docs)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Token<'a> {
     Name(&'a str),
     Scalar(ScalarToken<'a>),
@@ -51,7 +51,7 @@ pub enum Token<'a> {
 }
 
 /// Error when tokenizing the input source
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LexerError {
     /// An unknown character was found
     ///
@@ -239,7 +239,7 @@ impl<'a> Lexer<'a> {
                 c if escaped => {
                     return Err(Spanning::zero_width(
                         &old_pos,
-                        LexerError::UnknownEscapeSequence(format!("\\{}", c)),
+                        LexerError::UnknownEscapeSequence(format!("\\{c}")),
                     ));
                 }
                 '\\' => escaped = true,
@@ -305,14 +305,14 @@ impl<'a> Lexer<'a> {
         if len != 4 {
             return Err(Spanning::zero_width(
                 start_pos,
-                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+                LexerError::UnknownEscapeSequence(format!("\\u{escape}")),
             ));
         }
 
         let code_point = u32::from_str_radix(escape, 16).map_err(|_| {
             Spanning::zero_width(
                 start_pos,
-                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+                LexerError::UnknownEscapeSequence(format!("\\u{escape}")),
             )
         })?;
 
@@ -338,7 +338,7 @@ impl<'a> Lexer<'a> {
 
         let mut end_idx = loop {
             if let Some((idx, ch)) = self.peek_char() {
-                if ch.is_digit(10) || (ch == '-' && last_idx == start_idx) {
+                if ch.is_ascii_digit() || (ch == '-' && last_idx == start_idx) {
                     if ch == '0' && last_char == '0' && last_idx == start_idx {
                         return Err(Spanning::zero_width(
                             &self.position,
@@ -367,7 +367,7 @@ impl<'a> Lexer<'a> {
             self.next_char();
             end_idx = loop {
                 if let Some((idx, ch)) = self.peek_char() {
-                    if ch.is_digit(10) {
+                    if ch.is_ascii_digit() {
                         self.next_char();
                     } else if last_idx == start_idx {
                         return Err(Spanning::zero_width(
@@ -396,7 +396,9 @@ impl<'a> Lexer<'a> {
 
                 end_idx = loop {
                     if let Some((idx, ch)) = self.peek_char() {
-                        if ch.is_digit(10) || (last_idx == start_idx && (ch == '-' || ch == '+')) {
+                        if ch.is_ascii_digit()
+                            || (last_idx == start_idx && (ch == '-' || ch == '+'))
+                        {
                             self.next_char();
                         } else if last_idx == start_idx {
                             // 1e is not a valid floating point number
@@ -483,9 +485,9 @@ impl<'a> Iterator for Lexer<'a> {
 impl<'a> fmt::Display for Token<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Token::Name(name) => write!(f, "{}", name),
+            Token::Name(name) => write!(f, "{name}"),
             Token::Scalar(ScalarToken::Int(s)) | Token::Scalar(ScalarToken::Float(s)) => {
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             Token::Scalar(ScalarToken::String(s)) => {
                 write!(f, "\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
@@ -513,29 +515,29 @@ fn is_source_char(c: char) -> bool {
 }
 
 fn is_name_start(c: char) -> bool {
-    c == '_' || ('A'..='Z').contains(&c) || ('a'..='z').contains(&c)
+    c == '_' || c.is_ascii_alphabetic()
 }
 
 fn is_name_cont(c: char) -> bool {
-    is_name_start(c) || ('0'..='9').contains(&c)
+    is_name_start(c) || c.is_ascii_digit()
 }
 
 fn is_number_start(c: char) -> bool {
-    c == '-' || ('0'..='9').contains(&c)
+    c == '-' || c.is_ascii_digit()
 }
 
 impl fmt::Display for LexerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            LexerError::UnknownCharacter(c) => write!(f, "Unknown character \"{}\"", c),
+            LexerError::UnknownCharacter(c) => write!(f, "Unknown character \"{c}\""),
             LexerError::UnterminatedString => write!(f, "Unterminated string literal"),
             LexerError::UnknownCharacterInString(c) => {
-                write!(f, "Unknown character \"{}\" in string literal", c)
+                write!(f, "Unknown character \"{c}\" in string literal")
             }
             LexerError::UnknownEscapeSequence(ref s) => {
-                write!(f, "Unknown escape sequence \"{}\" in string", s)
+                write!(f, "Unknown escape sequence \"{s}\" in string")
             }
-            LexerError::UnexpectedCharacter(c) => write!(f, "Unexpected character \"{}\"", c),
+            LexerError::UnexpectedCharacter(c) => write!(f, "Unexpected character \"{c}\""),
             LexerError::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
             LexerError::InvalidNumber => write!(f, "Invalid number literal"),
         }

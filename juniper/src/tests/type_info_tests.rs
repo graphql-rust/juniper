@@ -1,13 +1,14 @@
 use indexmap::IndexMap;
 
 use crate::{
-    executor::{ExecutionResult, Executor, Registry, Variables},
+    executor::{ExecutionResult, Executor, Registry},
+    graphql_value, graphql_vars,
     schema::{meta::MetaType, model::RootNode},
     types::{
         base::{Arguments, GraphQLType, GraphQLValue},
         scalars::{EmptyMutation, EmptySubscription},
     },
-    value::{ScalarValue, Value},
+    value::ScalarValue,
 };
 
 pub struct NodeTypeInfo {
@@ -74,15 +75,15 @@ fn test_node() {
             baz
         }"#;
     let node_info = NodeTypeInfo {
-        name: "MyNode".to_string(),
-        attribute_names: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
+        name: "MyNode".into(),
+        attribute_names: vec!["foo".into(), "bar".into(), "baz".into()],
     };
     let mut node = Node {
         attributes: IndexMap::new(),
     };
-    node.attributes.insert("foo".to_string(), "1".to_string());
-    node.attributes.insert("bar".to_string(), "2".to_string());
-    node.attributes.insert("baz".to_string(), "3".to_string());
+    node.attributes.insert("foo".into(), "1".into());
+    node.attributes.insert("bar".into(), "2".into());
+    node.attributes.insert("baz".into(), "3".into());
     let schema: RootNode<_, _, _> = RootNode::new_with_info(
         node,
         EmptyMutation::new(),
@@ -93,18 +94,14 @@ fn test_node() {
     );
 
     assert_eq!(
-        crate::execute_sync(doc, None, &schema, &Variables::new(), &()),
+        crate::execute_sync(doc, None, &schema, &graphql_vars! {}, &()),
         Ok((
-            Value::object(
-                vec![
-                    ("foo", Value::scalar("1")),
-                    ("bar", Value::scalar("2")),
-                    ("baz", Value::scalar("3")),
-                ]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
-        ))
+            graphql_value!({
+                "foo": "1",
+                "bar": "2",
+                "baz": "3",
+            }),
+            vec![],
+        )),
     );
 }

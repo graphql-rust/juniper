@@ -4,30 +4,37 @@ use std::{collections::HashMap, pin::Pin};
 
 use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLEnum};
 
+#[derive(Clone, Copy, Debug)]
 pub struct Query;
 
 #[graphql_object(context = Database)]
 /// The root query object of the schema
 impl Query {
-    #[graphql(arguments(id(description = "id of the human")))]
-    fn human(database: &Database, id: String) -> Option<&Human> {
+    fn human(
+        #[graphql(context)] database: &Database,
+        #[graphql(description = "id of the human")] id: String,
+    ) -> Option<&Human> {
         database.get_human(&id)
     }
 
-    #[graphql(arguments(id(description = "id of the droid")))]
-    fn droid(database: &Database, id: String) -> Option<&Droid> {
+    fn droid(
+        #[graphql(context)] database: &Database,
+        #[graphql(description = "id of the droid")] id: String,
+    ) -> Option<&Droid> {
         database.get_droid(&id)
     }
 
-    #[graphql(arguments(episode(
-        description = "If omitted, returns the hero of the whole saga. \
-                       If provided, returns the hero of that particular episode"
-    )))]
-    fn hero(database: &Database, episode: Option<Episode>) -> Option<CharacterValue> {
+    fn hero(
+        #[graphql(context)] database: &Database,
+        #[graphql(description = "If omitted, returns the hero of the whole saga. \
+                                 If provided, returns the hero of that particular episode")]
+        episode: Option<Episode>,
+    ) -> Option<CharacterValue> {
         Some(database.get_hero(episode))
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct Subscription;
 
 type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
@@ -73,6 +80,7 @@ pub struct Human {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
+    #[allow(dead_code)]
     secret_backstory: Option<String>,
     home_planet: Option<String>,
 }
@@ -87,16 +95,12 @@ impl Human {
         home_planet: Option<&str>,
     ) -> Self {
         Self {
-            id: id.to_owned(),
-            name: name.to_owned(),
-            friend_ids: friend_ids
-                .to_owned()
-                .into_iter()
-                .map(ToOwned::to_owned)
-                .collect(),
+            id: id.into(),
+            name: name.into(),
+            friend_ids: friend_ids.iter().copied().map(Into::into).collect(),
             appears_in: appears_in.to_vec(),
-            secret_backstory: secret_backstory.map(ToOwned::to_owned),
-            home_planet: home_planet.map(|p| p.to_owned()),
+            secret_backstory: secret_backstory.map(Into::into),
+            home_planet: home_planet.map(Into::into),
         }
     }
 }
@@ -105,51 +109,28 @@ impl Human {
 #[graphql_object(context = Database, impl = CharacterValue)]
 impl Human {
     /// The id of the human
-    fn id(&self) -> &str {
+    pub fn id(&self) -> &str {
         &self.id
     }
 
     /// The name of the human
-    fn name(&self) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         Some(self.name.as_str())
     }
 
     /// The friends of the human
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
+    pub fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
+        ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
-    fn appears_in(&self) -> &[Episode] {
+    pub fn appears_in(&self) -> &[Episode] {
         &self.appears_in
     }
 
     /// The home planet of the human
-    fn home_planet(&self) -> &Option<String> {
+    pub fn home_planet(&self) -> &Option<String> {
         &self.home_planet
-    }
-}
-
-#[graphql_interface]
-impl Character for Human {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn name(&self) -> Option<&str> {
-        Some(&self.name)
-    }
-
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
-    }
-
-    fn appears_in(&self) -> &[Episode] {
-        &self.appears_in
-    }
-
-    fn friends_ids(&self) -> &[String] {
-        &self.friend_ids
     }
 }
 
@@ -159,6 +140,7 @@ pub struct Droid {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
+    #[allow(dead_code)]
     secret_backstory: Option<String>,
     primary_function: Option<String>,
 }
@@ -173,16 +155,12 @@ impl Droid {
         primary_function: Option<&str>,
     ) -> Self {
         Self {
-            id: id.to_owned(),
-            name: name.to_owned(),
-            friend_ids: friend_ids
-                .to_owned()
-                .into_iter()
-                .map(ToOwned::to_owned)
-                .collect(),
+            id: id.into(),
+            name: name.into(),
+            friend_ids: friend_ids.iter().copied().map(Into::into).collect(),
             appears_in: appears_in.to_vec(),
-            secret_backstory: secret_backstory.map(ToOwned::to_owned),
-            primary_function: primary_function.map(ToOwned::to_owned),
+            secret_backstory: secret_backstory.map(Into::into),
+            primary_function: primary_function.map(Into::into),
         }
     }
 }
@@ -191,55 +169,32 @@ impl Droid {
 #[graphql_object(context = Database, impl = CharacterValue)]
 impl Droid {
     /// The id of the droid
-    fn id(&self) -> &str {
+    pub fn id(&self) -> &str {
         &self.id
     }
 
     /// The name of the droid
-    fn name(&self) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         Some(self.name.as_str())
     }
 
     /// The friends of the droid
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
+    pub fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
+        ctx.get_friends(&self.friend_ids)
     }
 
     /// Which movies they appear in
-    fn appears_in(&self) -> &[Episode] {
+    pub fn appears_in(&self) -> &[Episode] {
         &self.appears_in
     }
 
     /// The primary function of the droid
-    fn primary_function(&self) -> &Option<String> {
+    pub fn primary_function(&self) -> &Option<String> {
         &self.primary_function
     }
 }
 
-#[graphql_interface]
-impl Character for Droid {
-    fn id(&self) -> &str {
-        &self.id
-    }
-
-    fn name(&self) -> Option<&str> {
-        Some(&self.name)
-    }
-
-    fn friends(&self, ctx: &Database) -> Vec<CharacterValue> {
-        ctx.get_friends(self)
-    }
-
-    fn appears_in(&self) -> &[Episode] {
-        &self.appears_in
-    }
-
-    fn friends_ids(&self) -> &[String] {
-        &self.friend_ids
-    }
-}
-
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 pub struct Database {
     humans: HashMap<String, Human>,
     droids: HashMap<String, Droid>,
@@ -253,7 +208,7 @@ impl Database {
         let mut droids = HashMap::new();
 
         humans.insert(
-            "1000".to_owned(),
+            "1000".into(),
             Human::new(
                 "1000",
                 "Luke Skywalker",
@@ -265,7 +220,7 @@ impl Database {
         );
 
         humans.insert(
-            "1001".to_owned(),
+            "1001".into(),
             Human::new(
                 "1001",
                 "Darth Vader",
@@ -277,7 +232,7 @@ impl Database {
         );
 
         humans.insert(
-            "1002".to_owned(),
+            "1002".into(),
             Human::new(
                 "1002",
                 "Han Solo",
@@ -289,7 +244,7 @@ impl Database {
         );
 
         humans.insert(
-            "1003".to_owned(),
+            "1003".into(),
             Human::new(
                 "1003",
                 "Leia Organa",
@@ -301,7 +256,7 @@ impl Database {
         );
 
         humans.insert(
-            "1004".to_owned(),
+            "1004".into(),
             Human::new(
                 "1004",
                 "Wilhuff Tarkin",
@@ -313,7 +268,7 @@ impl Database {
         );
 
         droids.insert(
-            "2000".to_owned(),
+            "2000".into(),
             Droid::new(
                 "2000",
                 "C-3PO",
@@ -325,7 +280,7 @@ impl Database {
         );
 
         droids.insert(
-            "2001".to_owned(),
+            "2001".into(),
             Droid::new(
                 "2001",
                 "R2-D2",
@@ -356,6 +311,7 @@ impl Database {
     }
 
     pub fn get_character(&self, id: &str) -> Option<CharacterValue> {
+        #[allow(clippy::manual_map)]
         if let Some(h) = self.humans.get(id) {
             Some(h.clone().into())
         } else if let Some(d) = self.droids.get(id) {
@@ -365,10 +321,7 @@ impl Database {
         }
     }
 
-    pub fn get_friends(&self, c: &dyn Character) -> Vec<CharacterValue> {
-        c.friends_ids()
-            .iter()
-            .flat_map(|id| self.get_character(id))
-            .collect()
+    pub fn get_friends(&self, ids: &[String]) -> Vec<CharacterValue> {
+        ids.iter().flat_map(|id| self.get_character(id)).collect()
     }
 }

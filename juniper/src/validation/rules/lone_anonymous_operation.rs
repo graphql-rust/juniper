@@ -37,7 +37,7 @@ where
     ) {
         if let Some(operation_count) = self.operation_count {
             if operation_count > 1 && op.item.name.is_none() {
-                ctx.report_error(error_message(), &[op.start]);
+                ctx.report_error(error_message(), &[op.span.start]);
             }
         }
     }
