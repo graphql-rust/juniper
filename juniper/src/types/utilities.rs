@@ -54,7 +54,7 @@ pub(crate) mod error {
         actual: usize,
         expected: usize,
     ) -> String {
-        format!("Expected list of length {actual}, but \"{arg_value}\" has length \"{expected}\"")
+        format!("Expected list of length {expected}, but \"{arg_value}\" has length {actual}")
     }
 }
 

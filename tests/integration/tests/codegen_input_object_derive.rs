@@ -189,7 +189,8 @@ mod default_value {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Err(GraphQLError::ValidationError(vec![RuleError::new(
-                "Invalid value for argument \"point\", expected type \"Point2D!\"",
+                "Invalid value for argument \"point\", reason: Error on \"Point2D\" field \"y\": \
+                 \"null\" specified for not nullable type \"Float!\"",
                 &[SourcePosition::new(11, 0, 11)],
             )]))
         );

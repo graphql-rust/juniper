@@ -87,11 +87,12 @@ mod as_input_field {
         let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
         let res = juniper::execute(query, None, &schema, &graphql_vars! {}, &()).await;
 
-        assert!(res.is_err());
-        assert!(res
-            .unwrap_err()
-            .to_string()
-            .contains(r#"Invalid value for argument "input", expected type "Input!""#));
+        assert!(res.is_err(), "result succeeded: {res:#?}");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Invalid value for argument \"input\", reason: Error on \"Input\" field \"two\": \
+             Expected list of length 2, but \"[true, true, false]\" has length 3. At 2:30\n",
+        );
     }
 
     #[tokio::test]
@@ -105,11 +106,12 @@ mod as_input_field {
         let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
         let res = juniper::execute(query, None, &schema, &graphql_vars! {}, &()).await;
 
-        assert!(res.is_err());
-        assert!(res
-            .unwrap_err()
-            .to_string()
-            .contains(r#"Invalid value for argument "input", expected type "Input!""#));
+        assert!(res.is_err(), "result succeeded: {res:#?}");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Invalid value for argument \"input\", reason: Error on \"Input\" field \"two\": \
+             Expected list of length 2, but \"true\" has length 1. At 2:30\n",
+        );
     }
 
     #[tokio::test]
@@ -178,11 +180,12 @@ mod as_input_argument {
         let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
         let res = juniper::execute(query, None, &schema, &graphql_vars! {}, &()).await;
 
-        assert!(res.is_err());
-        assert!(res
-            .unwrap_err()
-            .to_string()
-            .contains(r#"Invalid value for argument "input", expected type "[Boolean!]!""#));
+        assert!(res.is_err(), "result succeeded: {res:#?}");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Invalid value for argument \"input\", reason: Expected list of length 2, \
+             but \"[true, true, false]\" has length 3. At 2:30\n",
+        );
     }
 
     #[tokio::test]
@@ -196,11 +199,13 @@ mod as_input_argument {
         let schema = RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new());
         let res = juniper::execute(query, None, &schema, &graphql_vars! {}, &()).await;
 
-        assert!(res.is_err());
-        assert!(res
-            .unwrap_err()
-            .to_string()
-            .contains(r#"Invalid value for argument "input", expected type "[Boolean!]!""#));
+        assert!(res.is_err(), "result succeeded: {res:#?}");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Invalid value for argument \"input\", reason: Expected list of length 2, \
+             but \"true\" has length 1. At 2:30\n",
+            "invalid error returned",
+        );
     }
 
     #[tokio::test]
