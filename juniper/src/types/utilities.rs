@@ -63,7 +63,7 @@ pub(crate) mod error {
 fn validate_object_field<S>(
     schema: &SchemaType<S>,
     object_type: &TypeType<S>,
-    object_fields: &Vec<Argument<S>>,
+    object_fields: &[Argument<S>],
     field_value: &InputValue<S>,
     field_key: &str,
 ) -> Option<String>
