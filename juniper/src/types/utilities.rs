@@ -48,9 +48,18 @@ pub(crate) mod error {
     pub(crate) fn unknown_field(arg_type: impl Display, field_name: impl Display) -> String {
         format!("Field \"{field_name}\" does not exist on type \"{arg_type}\"")
     }
+
+    pub(crate) fn invalid_list_length(
+        arg_value: impl Display,
+        actual: usize,
+        expected: usize,
+    ) -> String {
+        format!("Expected list of length {actual}, but \"{arg_value}\" has length \"{expected}\"")
+    }
 }
 
-/// Returns an error string if the field is invalid
+/// Validates the specified field of a GraphQL object and returns an error message if the field is
+/// invalid.
 fn validate_object_field<S>(
     schema: &SchemaType<S>,
     object_type: &TypeType<S>,
@@ -76,7 +85,7 @@ where
     }
 }
 
-/// Returns an error string if the value is invalid
+/// Validates the specified GraphQL literal and returns an error message if the it's invalid.
 pub fn validate_literal_value<S>(
     schema: &SchemaType<S>,
     arg_type: &TypeType<S>,
@@ -98,7 +107,7 @@ where
             InputValue::List(ref items) => {
                 if let Some(expected) = expected_size {
                     if items.len() != expected {
-                        return todo!();
+                        return Some(error::invalid_list_length(arg_value, items.len(), expected));
                     }
                 }
                 items
@@ -108,7 +117,7 @@ where
             ref v => {
                 if let Some(expected) = expected_size {
                     if expected != 1 {
-                        return todo!();
+                        return Some(error::invalid_list_length(arg_value, 1, expected));
                     }
                 }
                 validate_literal_value(schema, inner, v)
@@ -128,13 +137,12 @@ where
                 ref v @ InputValue::Scalar(_) | ref v @ InputValue::Enum(_) => {
                     if let Some(parse_fn) = t.input_value_parse_fn() {
                         if parse_fn(v).is_ok() {
-                            // TODO: reuse error?
                             None
                         } else {
                             Some(error::type_value(arg_value, arg_type))
                         }
                     } else {
-                        Some(error::parser(arg_type, "Not an input type"))
+                        Some(error::parser(arg_type, "no parser present"))
                     }
                 }
                 InputValue::List(_) => Some("Input lists are not literals".to_owned()),
