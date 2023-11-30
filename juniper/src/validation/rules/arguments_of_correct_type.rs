@@ -4,7 +4,7 @@ use crate::{
     ast::{Directive, Field, InputValue},
     parser::Spanning,
     schema::meta::Argument,
-    types::utilities::is_valid_literal_value,
+    types::utilities::validate_literal_value,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
@@ -58,18 +58,15 @@ where
         {
             let meta_type = ctx.schema.make_type(&argument_meta.arg_type);
 
-            if !is_valid_literal_value(ctx.schema, &meta_type, &arg_value.item) {
-                ctx.report_error(
-                    &error_message(arg_name.item, &argument_meta.arg_type),
-                    &[arg_value.span.start],
-                );
+            if let Some(err) = validate_literal_value(ctx.schema, &meta_type, &arg_value.item) {
+                ctx.report_error(&error_message(arg_name.item, err), &[arg_value.span.start]);
             }
         }
     }
 }
 
-fn error_message(arg_name: impl fmt::Display, type_name: impl fmt::Display) -> String {
-    format!("Invalid value for argument \"{arg_name}\", expected type \"{type_name}\"",)
+fn error_message(arg_name: impl fmt::Display, msg: impl fmt::Display) -> String {
+    format!("Invalid value for argument \"{arg_name}\", reason: {msg}")
 }
 
 #[cfg(test)]
@@ -78,6 +75,7 @@ mod tests {
 
     use crate::{
         parser::SourcePosition,
+        types::utilities::error,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
         value::DefaultScalarValue,
     };
@@ -92,7 +90,7 @@ mod tests {
                 intArgField(intArg: null)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -106,7 +104,7 @@ mod tests {
                 stringListArgField(stringListArg: null)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -120,9 +118,9 @@ mod tests {
                 nonNullIntArgField(nonNullIntArg: null)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("nonNullIntArg", "Int!"),
+                &error_message("nonNullIntArg", error::non_null("Int!")),
                 &[SourcePosition::new(97, 3, 50)],
             )],
         );
@@ -138,9 +136,9 @@ mod tests {
                 nonNullStringListArgField(nonNullStringListArg: null)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("nonNullStringListArg", "[String!]!"),
+                &error_message("nonNullStringListArg", error::non_null("[String!]!")),
                 &[SourcePosition::new(111, 3, 64)],
             )],
         );
@@ -156,7 +154,7 @@ mod tests {
                 intArgField(intArg: 2)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -170,7 +168,7 @@ mod tests {
                 booleanArgField(booleanArg: true)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -184,7 +182,7 @@ mod tests {
                 stringArgField(stringArg: "foo")
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -198,7 +196,7 @@ mod tests {
                 floatArgField(floatArg: 1.1)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -212,7 +210,7 @@ mod tests {
                 floatArgField(floatArg: 1)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -226,7 +224,7 @@ mod tests {
                 idArgField(idArg: 1)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -240,7 +238,7 @@ mod tests {
                 idArgField(idArg: "someIdString")
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -254,7 +252,7 @@ mod tests {
                 doesKnowCommand(dogCommand: SIT)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -268,9 +266,9 @@ mod tests {
                 stringArgField(stringArg: 1)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("stringArg", "String"),
+                &error_message("stringArg", error::type_value("1", "String")),
                 &[SourcePosition::new(89, 3, 42)],
             )],
         );
@@ -286,9 +284,9 @@ mod tests {
                 stringArgField(stringArg: 1.0)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("stringArg", "String"),
+                &error_message("stringArg", error::type_value("1", "String")),
                 &[SourcePosition::new(89, 3, 42)],
             )],
         );
@@ -304,9 +302,9 @@ mod tests {
                 stringArgField(stringArg: true)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("stringArg", "String"),
+                &error_message("stringArg", error::type_value("true", "String")),
                 &[SourcePosition::new(89, 3, 42)],
             )],
         );
@@ -322,9 +320,9 @@ mod tests {
                 stringArgField(stringArg: BAR)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("stringArg", "String"),
+                &error_message("stringArg", error::type_value("BAR", "String")),
                 &[SourcePosition::new(89, 3, 42)],
             )],
         );
@@ -340,9 +338,9 @@ mod tests {
                 intArgField(intArg: "3")
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("intArg", "Int"),
+                &error_message("intArg", error::type_value("\"3\"", "Int")),
                 &[SourcePosition::new(83, 3, 36)],
             )],
         );
@@ -358,9 +356,9 @@ mod tests {
                 intArgField(intArg: FOO)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("intArg", "Int"),
+                &error_message("intArg", error::type_value("FOO", "Int")),
                 &[SourcePosition::new(83, 3, 36)],
             )],
         );
@@ -376,9 +374,9 @@ mod tests {
                 intArgField(intArg: 3.0)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("intArg", "Int"),
+                &error_message("intArg", error::type_value("3", "Int")),
                 &[SourcePosition::new(83, 3, 36)],
             )],
         );
@@ -394,9 +392,9 @@ mod tests {
                 intArgField(intArg: 3.333)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("intArg", "Int"),
+                &error_message("intArg", error::type_value("3.333", "Int")),
                 &[SourcePosition::new(83, 3, 36)],
             )],
         );
@@ -412,9 +410,9 @@ mod tests {
                 floatArgField(floatArg: "3.333")
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("floatArg", "Float"),
+                &error_message("floatArg", error::type_value("\"3.333\"", "Float")),
                 &[SourcePosition::new(87, 3, 40)],
             )],
         );
@@ -430,9 +428,9 @@ mod tests {
                 floatArgField(floatArg: true)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("floatArg", "Float"),
+                &error_message("floatArg", error::type_value("true", "Float")),
                 &[SourcePosition::new(87, 3, 40)],
             )],
         );
@@ -448,9 +446,9 @@ mod tests {
                 floatArgField(floatArg: FOO)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("floatArg", "Float"),
+                &error_message("floatArg", error::type_value("FOO", "Float")),
                 &[SourcePosition::new(87, 3, 40)],
             )],
         );
@@ -466,9 +464,9 @@ mod tests {
                 booleanArgField(booleanArg: 2)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("booleanArg", "Boolean"),
+                &error_message("booleanArg", error::type_value("2", "Boolean")),
                 &[SourcePosition::new(91, 3, 44)],
             )],
         );
@@ -484,9 +482,9 @@ mod tests {
                 booleanArgField(booleanArg: 1.0)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("booleanArg", "Boolean"),
+                &error_message("booleanArg", error::type_value("1", "Boolean")),
                 &[SourcePosition::new(91, 3, 44)],
             )],
         );
@@ -502,9 +500,9 @@ mod tests {
                 booleanArgField(booleanArg: "true")
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("booleanArg", "Boolean"),
+                &error_message("booleanArg", error::type_value("\"true\"", "Boolean")),
                 &[SourcePosition::new(91, 3, 44)],
             )],
         );
@@ -520,9 +518,9 @@ mod tests {
                 booleanArgField(booleanArg: TRUE)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("booleanArg", "Boolean"),
+                &error_message("booleanArg", error::type_value("TRUE", "Boolean")),
                 &[SourcePosition::new(91, 3, 44)],
             )],
         );
@@ -538,9 +536,9 @@ mod tests {
                 idArgField(idArg: 1.0)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("idArg", "ID"),
+                &error_message("idArg", error::type_value("1", "ID")),
                 &[SourcePosition::new(81, 3, 34)],
             )],
         );
@@ -556,9 +554,9 @@ mod tests {
                 idArgField(idArg: true)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("idArg", "ID"),
+                &error_message("idArg", error::type_value("true", "ID")),
                 &[SourcePosition::new(81, 3, 34)],
             )],
         );
@@ -574,9 +572,9 @@ mod tests {
                 idArgField(idArg: SOMETHING)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("idArg", "ID"),
+                &error_message("idArg", error::type_value("SOMETHING", "ID")),
                 &[SourcePosition::new(81, 3, 34)],
             )],
         );
@@ -592,9 +590,9 @@ mod tests {
                 doesKnowCommand(dogCommand: 2)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("dogCommand", "DogCommand"),
+                &error_message("dogCommand", error::enum_value("2", "DogCommand")),
                 &[SourcePosition::new(79, 3, 44)],
             )],
         );
@@ -610,9 +608,9 @@ mod tests {
                 doesKnowCommand(dogCommand: 1.0)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("dogCommand", "DogCommand"),
+                &error_message("dogCommand", error::enum_value("1", "DogCommand")),
                 &[SourcePosition::new(79, 3, 44)],
             )],
         );
@@ -628,9 +626,9 @@ mod tests {
                 doesKnowCommand(dogCommand: "SIT")
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("dogCommand", "DogCommand"),
+                &error_message("dogCommand", error::enum_value("\"SIT\"", "DogCommand")),
                 &[SourcePosition::new(79, 3, 44)],
             )],
         );
@@ -646,9 +644,9 @@ mod tests {
                 doesKnowCommand(dogCommand: true)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("dogCommand", "DogCommand"),
+                &error_message("dogCommand", error::enum_value("true", "DogCommand")),
                 &[SourcePosition::new(79, 3, 44)],
             )],
         );
@@ -664,9 +662,9 @@ mod tests {
                 doesKnowCommand(dogCommand: JUGGLE)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("dogCommand", "DogCommand"),
+                &error_message("dogCommand", error::type_value("JUGGLE", "DogCommand")),
                 &[SourcePosition::new(79, 3, 44)],
             )],
         );
@@ -682,9 +680,9 @@ mod tests {
                 doesKnowCommand(dogCommand: sit)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("dogCommand", "DogCommand"),
+                &error_message("dogCommand", error::type_value("sit", "DogCommand")),
                 &[SourcePosition::new(79, 3, 44)],
             )],
         );
@@ -700,7 +698,7 @@ mod tests {
                 stringListArgField(stringListArg: ["one", "two"])
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -714,7 +712,7 @@ mod tests {
                 stringListArgField(stringListArg: [])
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -728,7 +726,7 @@ mod tests {
                 stringListArgField(stringListArg: "one")
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -742,9 +740,9 @@ mod tests {
                 stringListArgField(stringListArg: ["one", 2])
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("stringListArg", "[String]"),
+                &error_message("stringListArg", error::type_value("2", "String")),
                 &[SourcePosition::new(97, 3, 50)],
             )],
         );
@@ -760,9 +758,9 @@ mod tests {
                 stringListArgField(stringListArg: 1)
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("stringListArg", "[String]"),
+                &error_message("stringListArg", error::type_value("1", "String")),
                 &[SourcePosition::new(97, 3, 50)],
             )],
         );
@@ -778,7 +776,7 @@ mod tests {
                 isHousetrained(atOtherHomes: true)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -792,7 +790,7 @@ mod tests {
                 isHousetrained
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -806,7 +804,7 @@ mod tests {
                 multipleReqs(req1: 1, req2: 2)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -820,7 +818,7 @@ mod tests {
                 multipleReqs(req2: 2, req1: 1)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -834,7 +832,7 @@ mod tests {
                 multipleOpts
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -848,7 +846,7 @@ mod tests {
                 multipleOpts(opt1: 1)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -862,7 +860,7 @@ mod tests {
                 multipleOpts(opt2: 1)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -876,7 +874,7 @@ mod tests {
                 multipleOptAndReq(req1: 3, req2: 4)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -890,7 +888,7 @@ mod tests {
                 multipleOptAndReq(req1: 3, req2: 4, opt1: 5)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -904,7 +902,7 @@ mod tests {
                 multipleOptAndReq(req1: 3, req2: 4, opt1: 5, opt2: 6)
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -918,14 +916,14 @@ mod tests {
                 multipleReqs(req2: "two", req1: "one")
               }
             }
-        "#,
+            "#,
             &[
                 RuleError::new(
-                    &error_message("req2", "Int!"),
+                    &error_message("req2", error::type_value("\"two\"", "Int")),
                     &[SourcePosition::new(82, 3, 35)],
                 ),
                 RuleError::new(
-                    &error_message("req1", "Int!"),
+                    &error_message("req1", error::type_value("\"one\"", "Int")),
                     &[SourcePosition::new(95, 3, 48)],
                 ),
             ],
@@ -942,9 +940,9 @@ mod tests {
                 multipleReqs(req1: "one")
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("req1", "Int!"),
+                &error_message("req1", error::type_value("\"one\"", "Int")),
                 &[SourcePosition::new(82, 3, 35)],
             )],
         );
@@ -960,7 +958,7 @@ mod tests {
                 complexArgField
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -974,7 +972,7 @@ mod tests {
                 complexArgField(complexArg: { requiredField: true })
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -988,7 +986,7 @@ mod tests {
                 complexArgField(complexArg: { requiredField: false })
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -1002,7 +1000,7 @@ mod tests {
                 complexArgField(complexArg: { requiredField: true, intField: 4 })
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -1022,7 +1020,7 @@ mod tests {
                 })
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -1042,7 +1040,7 @@ mod tests {
                 })
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -1056,9 +1054,12 @@ mod tests {
                 complexArgField(complexArg: { intField: 4 })
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("complexArg", "ComplexInput"),
+                &error_message(
+                    "complexArg",
+                    error::missing_fields("ComplexInput", "\"requiredField\""),
+                ),
                 &[SourcePosition::new(91, 3, 44)],
             )],
         );
@@ -1077,9 +1078,16 @@ mod tests {
                 })
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("complexArg", "ComplexInput"),
+                &error_message(
+                    "complexArg",
+                    error::field(
+                        "ComplexInput",
+                        "stringListField",
+                        error::type_value("2", "String"),
+                    ),
+                ),
                 &[SourcePosition::new(91, 3, 44)],
             )],
         );
@@ -1098,9 +1106,12 @@ mod tests {
                 })
               }
             }
-        "#,
+            "#,
             &[RuleError::new(
-                &error_message("complexArg", "ComplexInput"),
+                &error_message(
+                    "complexArg",
+                    error::unknown_field("ComplexInput", "unknownField"),
+                ),
                 &[SourcePosition::new(91, 3, 44)],
             )],
         );
@@ -1119,7 +1130,7 @@ mod tests {
                 name
               }
             }
-        "#,
+            "#,
         );
     }
 
@@ -1128,20 +1139,20 @@ mod tests {
         expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-        {
-          dog @include(if: "yes") {
-            name @skip(if: ENUM)
-          }
-        }
-        "#,
+            {
+              dog @include(if: "yes") {
+                name @skip(if: ENUM)
+              }
+            }
+            "#,
             &[
                 RuleError::new(
-                    &error_message("if", "Boolean!"),
-                    &[SourcePosition::new(38, 2, 27)],
+                    &error_message("if", error::type_value("\"yes\"", "Boolean")),
+                    &[SourcePosition::new(46, 2, 31)],
                 ),
                 RuleError::new(
-                    &error_message("if", "Boolean!"),
-                    &[SourcePosition::new(74, 3, 27)],
+                    &error_message("if", error::type_value("ENUM", "Boolean")),
+                    &[SourcePosition::new(86, 3, 31)],
                 ),
             ],
         );

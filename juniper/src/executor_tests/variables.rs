@@ -916,7 +916,8 @@ async fn does_not_allow_missing_required_field() {
     assert_eq!(
         error,
         ValidationError(vec![RuleError::new(
-            r#"Invalid value for argument "arg", expected type "ExampleInputObject!""#,
+            "Invalid value for argument \"arg\", \
+             reason: \"ExampleInputObject\" is missing fields: \"b\"",
             &[SourcePosition::new(20, 0, 20)],
         )]),
     );
@@ -940,7 +941,9 @@ async fn does_not_allow_null_in_required_field() {
     assert_eq!(
         error,
         ValidationError(vec![RuleError::new(
-            r#"Invalid value for argument "arg", expected type "ExampleInputObject!""#,
+            "Invalid value for argument \"arg\", \
+             reason: Error on \"ExampleInputObject\" field \"b\": \
+             \"null\" specified for not nullable type \"Int!\"",
             &[SourcePosition::new(20, 0, 20)],
         )]),
     );

@@ -78,6 +78,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Made `GraphQLRequest` fields public. ([#750])
 - Relaxed [object safety] requirement for `GraphQLValue` and `GraphQLValueAsync` traits. ([ba1ed85b])
 - Updated [GraphQL Playground] to 1.7.28 version. ([#1190])
+- Improve validation errors for input values. ([#811], [#693])
 
 ## Fixed
 
@@ -94,8 +95,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#456]: /../../issues/456
 [#503]: /../../issues/503
 [#528]: /../../issues/528
+[#693]: /../../issues/693
 [#750]: /../../issues/750
 [#798]: /../../issues/798
+[#811]: /../../pull/811
 [#918]: /../../issues/918
 [#965]: /../../pull/965
 [#966]: /../../pull/966
