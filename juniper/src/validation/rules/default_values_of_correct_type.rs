@@ -71,7 +71,7 @@ mod tests {
 
     use crate::{
         parser::SourcePosition,
-        types::utilities,
+        types::utilities::error,
         validation::{expect_fails_rule, expect_passes_rule, RuleError},
         value::DefaultScalarValue,
     };
@@ -81,10 +81,10 @@ mod tests {
         expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          query NullableValues($a: Int, $b: String, $c: ComplexInput) {
-            dog { name }
-          }
-        "#,
+            query NullableValues($a: Int, $b: String, $c: ComplexInput) {
+                dog { name }
+            }
+            "#,
         );
     }
 
@@ -93,10 +93,10 @@ mod tests {
         expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          query RequiredValues($a: Int!, $b: String!) {
-            dog { name }
-          }
-        "#,
+            query RequiredValues($a: Int!, $b: String!) {
+                dog { name }
+            }
+            "#,
         );
     }
 
@@ -105,14 +105,14 @@ mod tests {
         expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          query WithDefaultValues(
-            $a: Int = 1,
-            $b: String = "ok",
-            $c: ComplexInput = { requiredField: true, intField: 3 }
-          ) {
-            dog { name }
-          }
-        "#,
+            query WithDefaultValues(
+                $a: Int = 1,
+                $b: String = "ok",
+                $c: ComplexInput = { requiredField: true, intField: 3 }
+            ) {
+                dog { name }
+            }
+            "#,
         );
     }
 
@@ -121,18 +121,18 @@ mod tests {
         expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          query UnreachableDefaultValues($a: Int! = 3, $b: String! = "default") {
-            dog { name }
-          }
-        "#,
+            query UnreachableDefaultValues($a: Int! = 3, $b: String! = "default") {
+                dog { name }
+            }
+            "#,
             &[
                 RuleError::new(
                     &non_null_error_message("a", "Int!"),
-                    &[SourcePosition::new(53, 1, 52)],
+                    &[SourcePosition::new(55, 1, 54)],
                 ),
                 RuleError::new(
                     &non_null_error_message("b", "String!"),
-                    &[SourcePosition::new(70, 1, 69)],
+                    &[SourcePosition::new(72, 1, 71)],
                 ),
             ],
         );
@@ -143,38 +143,30 @@ mod tests {
         expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          query InvalidDefaultValues(
-            $a: Int = "one",
-            $b: String = 4,
-            $c: ComplexInput = "notverycomplex"
-          ) {
-            dog { name }
-          }
-        "#,
+            query InvalidDefaultValues(
+                $a: Int = "one",
+                $b: String = 4,
+                $c: ComplexInput = "notverycomplex"
+            ) {
+                dog { name }
+            }
+            "#,
             &[
                 RuleError::new(
-                    &type_error_message(
-                        "a",
-                        "Int",
-                        &utilities::type_error_message("\"one\"", "Int"),
-                    ),
-                    &[SourcePosition::new(61, 2, 22)],
+                    &type_error_message("a", "Int", error::type_value("\"one\"", "Int")),
+                    &[SourcePosition::new(67, 2, 26)],
                 ),
                 RuleError::new(
-                    &type_error_message(
-                        "b",
-                        "String",
-                        &utilities::type_error_message("4", "String"),
-                    ),
-                    &[SourcePosition::new(93, 3, 25)],
+                    &type_error_message("b", "String", error::type_value("4", "String")),
+                    &[SourcePosition::new(103, 3, 29)],
                 ),
                 RuleError::new(
                     &type_error_message(
                         "c",
                         "ComplexInput",
-                        &utilities::type_error_message("\"notverycomplex\"", "ComplexInput"),
+                        error::type_value("\"notverycomplex\"", "ComplexInput"),
                     ),
-                    &[SourcePosition::new(127, 4, 31)],
+                    &[SourcePosition::new(141, 4, 35)],
                 ),
             ],
         );
@@ -185,17 +177,17 @@ mod tests {
         expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          query MissingRequiredField($a: ComplexInput = {intField: 3}) {
-            dog { name }
-          }
-        "#,
+            query MissingRequiredField($a: ComplexInput = {intField: 3}) {
+                dog { name }
+            }
+            "#,
             &[RuleError::new(
                 &type_error_message(
                     "a",
                     "ComplexInput",
-                    &utilities::missing_field_error_message("ComplexInput", "\"requiredField\""),
+                    error::missing_fields("ComplexInput", "\"requiredField\""),
                 ),
-                &[SourcePosition::new(57, 1, 56)],
+                &[SourcePosition::new(59, 1, 58)],
             )],
         );
     }
@@ -205,17 +197,13 @@ mod tests {
         expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          query InvalidItem($a: [String] = ["one", 2]) {
-            dog { name }
-          }
-        "#,
+            query InvalidItem($a: [String] = ["one", 2]) {
+                dog { name }
+            }
+            "#,
             &[RuleError::new(
-                &type_error_message(
-                    "a",
-                    "[String]",
-                    &utilities::type_error_message("2", "String"),
-                ),
-                &[SourcePosition::new(44, 1, 43)],
+                &type_error_message("a", "[String]", error::type_value("2", "String")),
+                &[SourcePosition::new(46, 1, 45)],
             )],
         );
     }
