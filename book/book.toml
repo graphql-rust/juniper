@@ -1,5 +1,5 @@
 [book]
-title = "Juniper Book (GraphQL server for Rust)"
+title = "Juniper Book"
 description = "User guide for Juniper (GraphQL server library for Rust)."
 language = "en"
 multilingual = false
