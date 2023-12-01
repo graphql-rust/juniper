@@ -17,7 +17,7 @@ Introduction
 
 [Juniper] supports the full GraphQL query language according to the [specification (October 2021)][GraphQL spec].
 
-> __NOTE__: As an exception to other [GraphQL] libraries for other languages, [Juniper] builds non-`null` types by default. A field of type `Vec<Episode>` will be converted into `[Episode!]!`. The corresponding Rust type for a `null`able `[Episode]` would be `Option<Vec<Option<Episode>>>` instead.
+> **NOTE**: As an exception to other [GraphQL] libraries for other languages, [Juniper] builds non-`null` types by default. A field of type `Vec<Episode>` will be converted into `[Episode!]!`. The corresponding Rust type for a `null`able `[Episode]` would be `Option<Vec<Option<Episode>>>` instead.
 
 
 
