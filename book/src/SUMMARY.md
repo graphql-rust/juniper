@@ -1,4 +1,4 @@
-- [Introduction](README.md)
+- [Introduction](introduction.md)
 - [Quickstart](quickstart.md)
 
 - [Type System](types/index.md)

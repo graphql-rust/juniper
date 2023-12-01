@@ -42,20 +42,19 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 ## Integrations
 
 
-### Data types
+### Types
 
-[Juniper] has automatic integration with some very common [Rust] crates to make building schemas a breeze. The types from these crates will be usable in your schemas automatically:
-- [`bigdecimal`] (feature gated)
+[Juniper] provides out-of-the-box integration for some very common [Rust] crates to make building schemas a breeze. The types from these crates will be usable in your schemas automatically after enabling the correspondent self-titled [Cargo feature]:
+- [`bigdecimal`]
 - [`bson`]
-- [`chrono`] (feature gated)
-- [`chrono-tz`] (feature gated)
-- [`rust_decimal`] (feature gated)
-- [`time`] (feature gated)
+- [`chrono`], [`chrono-tz`]
+- [`rust_decimal`]
+- [`time`]
 - [`url`]
 - [`uuid`]
 
 
-### Web servers
+### Web server frameworks
 
 - [`actix-web`] ([`juniper_actix`] crate)
 - [`axum`] ([`juniper_axum`] crate)
@@ -66,7 +65,7 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 
 
 
-## API Stability
+## API stability
 
 [Juniper] has not reached 1.0 yet, thus some API instability should be expected.
 
@@ -98,6 +97,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`url`]: https://docs.rs/url
 [`uuid`]: https://docs.rs/uuid
 [`warp`]: https://docs.rs/warp
+[Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [Facebook]: https://facebook.com
 [GraphiQL]: https://github.com/graphql/graphiql
 [GraphQL]: http://graphql.org
