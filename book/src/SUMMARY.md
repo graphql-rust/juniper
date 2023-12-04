@@ -6,17 +6,15 @@
 
 
 - [Type System](types/index.md)
-
-  - [Defining objects](types/objects/defining_objects.md)
+  - [Scalars](types/scalars.md)
+  - [Objects](types/objects/index.md)
     - [Complex fields](types/objects/complex_fields.md)
     - [Using contexts](types/objects/using_contexts.md)
     - [Error handling](types/objects/error_handling.md)
-  - [Other types](types/other-index.md)
-    - [Enums](types/enums.md)
-    - [Interfaces](types/interfaces.md)
-    - [Input objects](types/input_objects.md)
-    - [Scalars](types/scalars.md)
-    - [Unions](types/unions.md)
+  - [Interfaces](types/interfaces.md)
+  - [Unions](types/unions.md)
+  - [Enums](types/enums.md)
+  - [Input objects](types/input_objects.md)
 
 - [Schemas and mutations](schema/schemas_and_mutations.md)
 
