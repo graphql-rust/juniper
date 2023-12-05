@@ -8,7 +8,6 @@ as painless as possible.
 
 Find out more in the individual chapters below.
 
-- [Scalars](scalars.md)
 - [Objects](objects/index.md)
   - [Complex fields](objects/complex_fields.md)
   - [Using contexts](objects/using_contexts.md)
@@ -17,3 +16,4 @@ Find out more in the individual chapters below.
 - [Unions](unions.md)
 - [Enums](enums.md)
 - [Input objects](input_objects.md)
+- [Scalars](scalars.md)

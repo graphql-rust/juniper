@@ -6,7 +6,6 @@
 
 
 - [Type System](types/index.md)
-  - [Scalars](types/scalars.md)
   - [Objects](types/objects/index.md)
     - [Complex fields](types/objects/complex_fields.md)
     - [Using contexts](types/objects/using_contexts.md)
@@ -15,6 +14,8 @@
   - [Unions](types/unions.md)
   - [Enums](types/enums.md)
   - [Input objects](types/input_objects.md)
+  - [Scalars](types/scalars.md)
+
 
 - [Schemas and mutations](schema/schemas_and_mutations.md)
 
