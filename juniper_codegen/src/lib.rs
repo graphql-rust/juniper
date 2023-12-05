@@ -358,9 +358,9 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///
 /// # Transparent delegation
 ///
-/// Sometimes, you want to create a custom [GraphQL scalar][0] type by just
+/// Quite often, we want to create a custom [GraphQL scalar][0] type by just
 /// wrapping an existing one, inheriting all its behavior. In Rust, this is
-/// often called as ["`Newtype` pattern"][1]. This may be achieved by providing
+/// often called as ["newtype pattern"][1]. This may be achieved by providing
 /// a `#[graphql(transparent)]` attribute to the definition:
 /// ```rust
 /// # use juniper::{GraphQLObject, GraphQLScalar};
@@ -503,9 +503,9 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 /// > __NOTE:__ Once we provide all 3 custom functions, there is no sense to
-/// >           follow [`Newtype` pattern][1] anymore.
+/// >           follow [newtype pattern][1] anymore.
 ///
-/// # All at once
+/// # Full behavior
 ///
 /// Instead of providing all custom functions separately, it's possible to
 /// provide a module holding the appropriate `to_output()`, `from_input()` and
@@ -692,7 +692,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # Foreign types
 ///
 /// Additionally, `#[graphql_scalar]` can be used directly on foreign types via
-/// type alias, without using [`Newtype` pattern][1].
+/// type alias, without using [newtype pattern][1].
 ///
 /// > __NOTE:__ To satisfy [orphan rules] you should provide local
 /// >           [`ScalarValue`] implementation.
