@@ -32,7 +32,7 @@ This creates a [GraphQL object][0] type called `Person`, with two fields: `name`
 > **TIP**: If a `null`able field is required, one way to go is to use `Option<T>`.
 
 
-### Documenting
+### Documentation
 
 We should take advantage of the fact that [GraphQL] is [self-documenting][5] and add descriptions to the defined [GraphQL object][0] type and its fields. [Juniper] will automatically use associated [Rust doc comments][6] as [GraphQL descriptions][7]:
 ```rust
@@ -164,6 +164,8 @@ struct Person {
 #
 # fn main() {}
 ```
+
+> **TIP**: See more features in API docs of the [`#[derive(GraphQLObject)]`][2] attribute.
 
 
 

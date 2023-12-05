@@ -1,73 +1,145 @@
-# Enums
+Enums
+=====
 
-Enums in GraphQL are string constants grouped together to represent a set of
-possible values. Simple Rust enums can be converted to GraphQL enums by using a
-custom derive attribute:
+> [GraphQL enum][0] types, like [scalar][1] types, also represent leaf values in a GraphQL type system. However [enum][0] types describe the set of possible values.
+>
+> [Enums][0] are not references for a numeric value, but are unique values in their own right. They may serialize as a string: the name of the represented value.
 
+[GraphQL enum][0] in [Juniper] could be defined by using a [`#[derive(GraphQLEnum)]`][2] attribute on a [Rust enum][3] (its variants cannot have any fields, though):
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLEnum)]
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
 enum Episode {
     NewHope,
     Empire,
     Jedi,
 }
-
+#
 # fn main() {}
 ```
 
-Juniper converts all enum variants to uppercase, so the corresponding string
-values for these variants are `NEWHOPE`, `EMPIRE`, and `JEDI`, respectively. If
-you want to override this, you can use the `graphql` attribute, similar to how
-it works when [defining objects](objects/defining_objects.md):
 
+### Renaming
+
+By default, [enum][3] variants are converted from [Rust]'s standard `PascalCase` naming convention into [GraphQL]'s `SCREAMING_SNAKE_CASE` convention:
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLEnum)]
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
 enum Episode {
-    #[graphql(name="NEW_HOPE")]
-    NewHope,
+    NewHope, // exposed as `NEW_HOPE` in GraphQL schema
+    Empire,  // exposed as `EMPIRE` in GraphQL schema
+    Jedi,    // exposed as `JEDI` in GraphQL schema
+}
+#
+# fn main() {}
+```
+
+We can override the name by using the `#[graphql(name = "...")]` attribute:
+```rust
+# extern crate juniper;
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
+#[graphql(name = "WrongEpisode")] // now exposed as `WrongEpisode` in GraphQL schema
+enum Episode {
+    #[graphql(name = "LAST_HOPE")]
+    NewHope, // exposed as `LAST_HOPE` in GraphQL schema
     Empire,
     Jedi,
 }
-
+#
 # fn main() {}
 ```
 
-## Documentation and deprecation
-
-Just like when defining objects, the type itself can be renamed and documented,
-while individual enum variants can be renamed, documented, and deprecated:
-
+Or provide a different renaming policy for all the [enum][3] variants:
 ```rust
 # extern crate juniper;
-#[derive(juniper::GraphQLEnum)]
-#[graphql(name="Episode", description="An episode of Star Wars")]
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
+#[graphql(rename_all = "none")] // disables any renaming
+enum Episode {
+    NewHope, // exposed as `NewHope` in GraphQL schema
+    Empire,  // exposed as `Empire` in GraphQL schema
+    Jedi,    // exposed as `Jedi` in GraphQL schema
+}
+#
+# fn main() {}
+```
+> **TIP**: Supported policies are: `SCREAMING_SNAKE_CASE`, `camelCase` and `none` (disables any renaming).
+
+
+### Documentation and deprecation
+
+Just like when [defining GraphQL objects](objects/index.md), the [GraphQL enum][0] type and its values could be [documented][4] and [deprecated][5] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]` attributes:
+```rust
+# extern crate juniper;
+# use juniper::GraphQLEnum;
+#
+/// This doc comment is visible only in Rust API docs.
+#[derive(GraphQLEnum)]
+#[graphql(description = "An episode of Star Wars")]
 enum StarWarsEpisode {
-    #[graphql(deprecated="We don't really talk about this one")]
-    ThePhantomMenace,
-
-    #[graphql(name="NEW_HOPE")]
+    /// This doc comment is visible only in Rust API docs.
+    #[graphql(description = "This description is visible only in GraphQL schema.")]
     NewHope,
 
-    #[graphql(description="Arguably the best one in the trilogy")]
+    /// This doc comment is visible only in Rust API docs.
+    #[graphql(desc = "Arguably the best one in the trilogy.")]
+    //        ^^^^ shortcut for a `description` argument
+    Empire,
+
+    /// This doc comment is visible in both Rust API docs and GraphQL schema 
+    /// descriptions.
+    Jedi,
+    
+    #[graphql(deprecated = "We don't really talk about this one.")]
+    ThePhantomMenace, // has no description in GraphQL schema
+}
+#
+# fn main() {}
+```
+> **NOTE**: Only [GraphQL object][6]/[interface][7] fields and [GraphQL enum][0] values could be [deprecated][5].
+
+
+### Ignoring
+
+By default, all [enum][3] variants are included into the generated [GraphQL enum][0] type as values. To prevent including a specific variant, it should be annotated with the `#[graphql(ignore)]` attribute:
+```rust
+# #![allow(dead_code)]
+# extern crate juniper;
+# use juniper::GraphQLEnum;
+#
+#[derive(GraphQLEnum)]
+enum Episode<T> {
+    NewHope,
     Empire,
     Jedi,
+    #[graphql(ignore)]
+    Legends(T), // cannot be queried from GraphQL
 }
-
+#
 # fn main() {}
 ```
 
-## Supported Macro Attributes (Derive)
+> **TIP**: See more features in API docs of the [`#[derive(GraphQLEnum)]`][2] attribute.
 
-| Name of Attribute | Container Support | Field Support    |
-|-------------------|:-----------------:|:----------------:|
-| context           | ✔                 | ?                |
-| deprecated        | ✔                 | ✔                |
-| description       | ✔                 | ✔                |
-| interfaces        | ?                 | ✘                |
-| name              | ✔                 | ✔                |
-| noasync           | ✔                 | ?                |
-| scalar            | ✘                 | ?                |
-| skip              | ?                 | ✘                |
-| ✔: supported      | ✘: not supported  | ?: not available |
+
+
+
+[GraphQL]: https://graphql.org
+[Juniper]: https://docs.rs/juniper
+[Rust]: https://www.rust-lang.org
+
+[0]: https://spec.graphql.org/October2021#sec-Enums
+[1]: https://spec.graphql.org/October2021#sec-Scalars
+[2]: https://docs.rs/juniper/latest/juniper/derive.GraphQLEnum.html
+[3]: https://doc.rust-lang.org/reference/items/enumerations.html
+[4]: https://spec.graphql.org/October2021#sec-Descriptions
+[5]: https://spec.graphql.org/October2021#sec--deprecated
+[6]: https://spec.graphql.org/October2021#sec-Objects
+[7]: https://spec.graphql.org/October2021#sec-Interfaces
