@@ -24,7 +24,7 @@ juniper = "0.16.0"
 
 Exposing simple enums and structs as [GraphQL] types is just a matter of adding a custom [derive attribute] to them. [Juniper] includes support for basic [Rust] types that naturally map to [GraphQL] features, such as `Option<T>`, `Vec<T>`, `Box<T>`, `Arc<T>`, `String`, `f64`, `i32`, references, slices and arrays.
 
-For more advanced mappings, [Juniper] provides multiple macros to map your [Rust] types to a [GraphQL schema][schema]. The most important one is the [`#[graphql_object]` attribute][macro.graphql_object] that is used for declaring a [GraphQL object] with resolvers (typically used for declaring [`Query` and `Mutation` roots][1]).
+For more advanced mappings, [Juniper] provides multiple macros to map your [Rust] types to a [GraphQL schema][schema]. The most important one is the [`#[graphql_object]` attribute][2] that is used for declaring a [GraphQL object] with resolvers (typically used for declaring [`Query` and `Mutation` roots][1]).
 
 ```rust
 # # ![allow(unused_variables)]
@@ -118,7 +118,8 @@ impl Query {
 
 struct Mutation;
 
-#[graphql_object(
+#[graphql_object]
+#[graphql(
     context = Context,
     // If we need to use `ScalarValue` parametrization explicitly somewhere
     // in the object definition (like here in `FieldResult`), we could
@@ -167,7 +168,7 @@ use juniper::{
 #[derive(GraphQLEnum, Clone, Copy)]
 enum Episode {
     // Note, that the enum value will be automatically converted to the
-    // `SCREAMING_CASE` variant, just as GraphQL conventions imply.
+    // `SCREAMING_SNAKE_CASE` variant, just as GraphQL conventions imply.
     NewHope,
     Empire,
     Jedi,
@@ -221,9 +222,9 @@ fn main() {
 [GraphQL]: https://graphql.org
 [GraphQL object]: https://spec.graphql.org/October2021#sec-Objects
 [Juniper]: https://docs.rs/juniper
-[macro.graphql_object]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html
 [Rust]: https://www.rust-lang.org
 [schema]: https://graphql.org/learn/schema
 [schema-first]: https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#schema-first
 
 [1]: https://spec.graphql.org/October2021#sec-Root-Operation-Types
+[2]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html

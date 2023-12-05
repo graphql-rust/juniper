@@ -1,16 +1,24 @@
-# Defining objects
+Objects
+=======
 
-While any type in Rust can be exposed as a GraphQL object, the most common one
-is a struct.
+> [GraphQL objects][0] represent a list of named fields, each of which yield a value of a specific type.
 
-There are two ways to create a GraphQL object in Juniper. If you've got a simple
-struct you want to expose, the easiest way is to use the custom derive
-attribute. The other way is described in the [Complex fields](complex_fields.md)
-chapter.
+When declaring a [GraphQL schema][schema], most of the time we deal with [GraphQL objects][0], because they are the only place where we actually define the behavior once [schema] gets [executed][1].
 
+There are two ways to define a [GraphQL object][0] in [Juniper]:
+1. The easiest way, suitable for trivial cases, is to use the [`#[derive(GraphQLObject)]` attribute][2] on a [struct], as described below.
+2. The other way, using the [`#[graphql_object]` attribute][3], is described in the ["Complex fields" chapter](complex_fields.md).
+
+
+
+
+## Trivial
+
+While any type in [Rust] can be exposed as a [GraphQL object][0], the most common one is a [struct]:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
+#
 #[derive(GraphQLObject)]
 struct Person {
     name: String,
@@ -19,92 +27,156 @@ struct Person {
 #
 # fn main() {}
 ```
+This creates a [GraphQL object][0] type called `Person`, with two fields: `name` of type `String!`, and `age` of type `Int!`. Because of [Rust] type system, everything is exported as [non-`null`][4] by default.
 
-This will create a GraphQL object type called `Person`, with two fields: `name`
-of type `String!`, and `age` of type `Int!`. Because of Rust's type system,
-everything is exported as non-null by default. If you need a nullable field, you
-can use `Option<T>`.
+> **TIP**: If a `null`able field is required, one way to go is to use `Option<T>`.
 
-We should take advantage of the
-fact that GraphQL is self-documenting and add descriptions to the type and
-fields. Juniper will automatically use associated doc comments as GraphQL
-descriptions:
 
-!FILENAME GraphQL descriptions via Rust doc comments
+### Documenting
 
+We should take advantage of the fact that [GraphQL] is [self-documenting][5] and add descriptions to the defined [GraphQL object][0] type and its fields. [Juniper] will automatically use associated [Rust doc comments][6] as [GraphQL descriptions][7]:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
+#
+/// Information about a person.
 #[derive(GraphQLObject)]
-/// Information about a person
 struct Person {
-    /// The person's full name, including both first and last names
+    /// The person's full name, including both first and last names.
     name: String,
-    /// The person's age in years, rounded down
+
+    /// The person's age in years, rounded down.
     age: i32,
 }
 #
 # fn main() {}
 ```
 
-Objects and fields without doc comments can instead set a `description`
-via the `graphql` attribute. The following example is equivalent to the above:
-
-!FILENAME GraphQL descriptions via attribute
-
+If using [Rust doc comments][6] is not desired (for example, when we want to keep [Rust] API docs and GraphQL schema descriptions different), the `#[graphql(description = "...")]` attribute can be used instead, which takes precedence over [Rust doc comments][6]:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
+#
+/// This doc comment is visible only in Rust API docs.
 #[derive(GraphQLObject)]
-#[graphql(description = "Information about a person")]
+#[graphql(description = "This description is visible only in GraphQL schema.")]
 struct Person {
-    #[graphql(description = "The person's full name, including both first and last names")]
+    /// This doc comment is visible only in Rust API docs.
+    #[graphql(desc = "This description is visible only in GraphQL schema.")]
+    //        ^^^^ shortcut for a `description` argument
     name: String,
-    #[graphql(description = "The person's age in years, rounded down")]
+
+    /// This doc comment is visible in both Rust API docs and GraphQL schema 
+    /// descriptions.
     age: i32,
 }
 #
 # fn main() {}
 ```
 
-Descriptions set via the `graphql` attribute take precedence over Rust
-doc comments. This enables internal Rust documentation and external GraphQL
-documentation to differ:
 
+### Renaming
+
+By default, [struct] fields are converted from [Rust]'s standard `snake_case` naming convention into [GraphQL]'s `camelCase` convention:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
+#
 #[derive(GraphQLObject)]
-#[graphql(description = "This description shows up in GraphQL")]
-/// This description shows up in RustDoc
 struct Person {
-    #[graphql(description = "This description shows up in GraphQL")]
-    /// This description shows up in RustDoc
-    name: String,
-    /// This description shows up in both RustDoc and GraphQL
-    age: i32,
+    first_name: String, // exposed as `firstName` in GraphQL schema
+    last_name: String,  // exposed as `lastName` in GraphQL schema
 }
 #
 # fn main() {}
 ```
+
+We can override the name by using the `#[graphql(name = "...")]` attribute:
+```rust
+# extern crate juniper;
+# use juniper::GraphQLObject;
+#
+#[derive(GraphQLObject)]
+#[graphql(name = "WebPerson")] // now exposed as `WebPerson` in GraphQL schema
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(name = "websiteURL")]
+    website_url: Option<String>, // now exposed as `websiteURL` in GraphQL schema
+}
+#
+# fn main() {}
+```
+
+Or provide a different renaming policy for all the [struct] fields:
+```rust
+# extern crate juniper;
+# use juniper::GraphQLObject;
+#
+#[derive(GraphQLObject)]
+#[graphql(rename_all = "none")] // disables any renaming
+struct Person {
+    name: String,
+    age: i32,
+    website_url: Option<String>, // exposed as `website_url` in GraphQL schema
+}
+#
+# fn main() {}
+```
+> **TIP**: Supported policies are: `SCREAMING_SNAKE_CASE`, `camelCase` and `none` (disables any renaming).
+
+
+### Deprecation
+
+To [deprecate][9] a [GraphQL object][0] field, the `#[graphql(deprecated = "...")]` attribute should be used:
+```rust
+# extern crate juniper;
+# use juniper::GraphQLObject;
+#
+#[derive(GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(deprecated = "Please use the `name` field instead.")]
+    first_name: String,
+}
+#
+# fn main() {}
+```
+> **NOTE**: Only [GraphQL object][0]/[interface][11] fields and [GraphQL enum][10] values could be [deprecated][9].
+
+
+### Ignoring
+
+By default, all [struct] fields are included into the generated [GraphQL object][0] type. To prevent including a specific field, it should be annotated with the `#[graphql(ignore)]` attribute:
+```rust
+# #![allow(dead_code)]
+# extern crate juniper;
+# use juniper::GraphQLObject;
+#
+#[derive(GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(ignore)]
+    password_hash: String, // cannot be queried or modified from GraphQL
+}
+#
+# fn main() {}
+```
+
+
+
 
 ## Relationships
 
-You can only use the custom derive attribute under these circumstances:
+[GraphQL object][0] fields can be of any [GraphQL] type, except [input objects][8].
 
-- The annotated type is a `struct`,
-- Every struct field is either
-  - A primitive type (`i32`, `f64`, `bool`, `String`, `juniper::ID`), or
-  - A valid custom GraphQL type, e.g. another struct marked with this attribute,
-    or
-  - A container/reference containing any of the above, e.g. `Vec<T>`, `Box<T>`,
-    `Option<T>`
-
-Let's see what that means for building relationships between objects:
-
+Let's see what that means to build relationships between [objects][0]:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
+#
 #[derive(GraphQLObject)]
 struct Person {
     name: String,
@@ -113,104 +185,34 @@ struct Person {
 
 #[derive(GraphQLObject)]
 struct House {
-    address: Option<String>, // Converted into String (nullable)
-    inhabitants: Vec<Person>, // Converted into [Person!]!
+    address: Option<String>,  // converted into `String` (`null`able)
+    inhabitants: Vec<Person>, // converted into `[Person!]!`
 }
 #
 # fn main() {}
 ```
 
-Because `Person` is a valid GraphQL type, you can have a `Vec<Person>` in a
-struct and it'll be automatically converted into a list of non-nullable `Person`
-objects.
+Because `Person` is a valid [GraphQL] type, we can have a `Vec<Person>` in a [struct], and it'll be automatically converted into a [list][12] of [non-`null`able][4] `Person` [objects][0].
 
-## Renaming fields
 
-By default, struct fields are converted from Rust's standard `snake_case` naming
-convention into GraphQL's `camelCase` convention:
 
-```rust
-# extern crate juniper;
-# use juniper::GraphQLObject;
-#[derive(GraphQLObject)]
-struct Person {
-    first_name: String, // Would be exposed as firstName in the GraphQL schema
-    last_name: String, // Exposed as lastName
-}
-#
-# fn main() {}
-```
 
-You can override the name by using the `graphql` attribute on individual struct
-fields:
+[GraphQL]: https://graphql.org
+[Juniper]: https://docs.rs/juniper
+[Rust]: https://www.rust-lang.org
+[schema]: https://graphql.org/learn/schema
+[struct]: https://doc.rust-lang.org/reference/items/structs.html
 
-```rust
-# extern crate juniper;
-# use juniper::GraphQLObject;
-#[derive(GraphQLObject)]
-struct Person {
-    name: String,
-    age: i32,
-    #[graphql(name = "websiteURL")]
-    website_url: Option<String>, // now exposed as `websiteURL` in the schema
-}
-#
-# fn main() {}
-```
-
-Or provide a different renaming policy on a struct for all its fields:
-```rust
-# extern crate juniper;
-# use juniper::GraphQLObject;
-#[derive(GraphQLObject)]
-#[graphql(rename_all = "none")] // disables any renaming
-struct Person {
-    name: String,
-    age: i32,
-    website_url: Option<String>, // now exposed as `website_url` in the schema
-}
-#
-# fn main() {}
-```
-
-## Deprecating fields
-
-To deprecate a field, you specify a deprecation reason using the `graphql`
-attribute:
-
-```rust
-# extern crate juniper;
-# use juniper::GraphQLObject;
-#[derive(GraphQLObject)]
-struct Person {
-    name: String,
-    age: i32,
-    #[graphql(deprecated = "Please use the name field instead")]
-    first_name: String,
-}
-#
-# fn main() {}
-```
-
-The `name`, `description`, and `deprecation` arguments can of course be
-combined. Some restrictions from the GraphQL spec still applies though; you can
-only deprecate object fields and enum values.
-
-## Ignoring fields
-
-By default, all fields in a `GraphQLObject` are included in the generated GraphQL type. To prevent including a specific field, annotate the field with `#[graphql(ignore)]`:
-
-```rust
-# extern crate juniper;
-# use juniper::GraphQLObject;
-#[derive(GraphQLObject)]
-struct Person {
-    name: String,
-    age: i32,
-    #[graphql(ignore)]
-    # #[allow(dead_code)]
-    password_hash: String, // cannot be queried or modified from GraphQL
-}
-#
-# fn main() {}
-```
+[0]: https://spec.graphql.org/October2021#sec-Objects
+[1]: https://spec.graphql.org/October2021#sec-Execution
+[2]: https://docs.rs/juniper/latest/juniper/derive.GraphQLObject.html
+[3]: https://docs.rs/juniper/latest/juniper/attr.graphql_object.html
+[4]: https://spec.graphql.org/October2021#sec-Non-Null
+[5]: https://spec.graphql.org/October2021#sec-Introspection
+[6]: https://doc.rust-lang.org/reference/comments.html#doc-comments
+[7]: https://spec.graphql.org/October2021#sec-Descriptions
+[8]: https://spec.graphql.org/October2021#sec-Input-Objects
+[9]: https://spec.graphql.org/October2021#sec--deprecated
+[10]: https://spec.graphql.org/October2021#sec-Enums
+[11]: https://spec.graphql.org/October2021#sec-Interfaces
+[12]: https://spec.graphql.org/October2021#sec-List

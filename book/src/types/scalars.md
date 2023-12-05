@@ -61,15 +61,15 @@ We may also customize the definition, to provide more information about our [cus
 # extern crate juniper;
 # use juniper::GraphQLScalar;
 #
-You can use a Rust doc comment to specify a description in GraphQL schema.
+/// You can use a Rust doc comment to specify a description in GraphQL schema.
 #[derive(GraphQLScalar)]
 #[graphql(
     transparent,
     // Overwrite the name of this type in the GraphQL schema.
     name = "MyUserId",
     // Specifying a type description via attribute takes precedence over the
-    // Rust doc comment, which allows to separate Rust API documentation from
-    // GraphQL schema descriptions, if required.
+    // Rust doc comment, which allows to separate Rust API docs from GraphQL 
+    // schema descriptions, if required.
     description = "Actual description.",
     // Optional specification URL.
     specified_by_url = "https://tools.ietf.org/html/rfc4122",
@@ -91,7 +91,7 @@ In case we need to customize [resolving][7] of a [custom GraphQL scalar][2] valu
 #[graphql(to_output_with = to_output, transparent)]
 struct Incremented(i32);
 
-Increments [`Incremented`] before converting into a [`Value`].
+/// Increments [`Incremented`] before converting into a [`Value`].
 fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
     let inc = v.0 + 1;
     Value::from(inc)
@@ -113,8 +113,8 @@ Customization of a [custom GraphQL scalar][2] value parsing is possible via `#[g
 struct UserId(String);
 
 impl UserId {
-    Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` 
-    and strips it.
+    /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` 
+    /// and strips it.
     fn from_input<S>(input: &InputValue<S>) -> Result<Self, String> 
     where
         S: ScalarValue
