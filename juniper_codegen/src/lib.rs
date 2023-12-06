@@ -358,7 +358,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///
 /// # Transparent delegation
 ///
-/// Quite often, we want to create a custom [GraphQL scalar][0] type by just
+/// Quite often we want to create a custom [GraphQL scalar][0] type by just
 /// wrapping an existing one, inheriting all its behavior. In Rust, this is
 /// often called as ["newtype pattern"][1]. This may be achieved by providing
 /// a `#[graphql(transparent)]` attribute to the definition:
