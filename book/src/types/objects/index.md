@@ -148,7 +148,7 @@ struct Person {
 
 ### Ignoring
 
-By default, all [struct] fields are included into the generated [GraphQL object][0] type. To prevent including a specific field, it should be annotated with the `#[graphql(ignore)]` attribute:
+By default, all [struct] fields are included into the generated [GraphQL object][0] type. To prevent inclusion of a specific field annotate it with the `#[graphql(ignore)]` attribute:
 ```rust
 # #![allow(dead_code)]
 # extern crate juniper;
