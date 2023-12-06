@@ -361,7 +361,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// Quite often we want to create a custom [GraphQL scalar][0] type by just
 /// wrapping an existing one, inheriting all its behavior. In Rust, this is
 /// often called as ["newtype pattern"][1]. This is achieved by annotating
-/// a `#[graphql(transparent)]` attribute to the definition:
+/// the definition with the `#[graphql(transparent)]` attribute:
 /// ```rust
 /// # use juniper::{GraphQLObject, GraphQLScalar};
 /// #
