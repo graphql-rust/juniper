@@ -503,7 +503,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 /// > __NOTE:__ Once we provide all 3 custom functions, there is no sense to
-/// >           follow [newtype pattern][1] anymore.
+/// >           following the [newtype pattern][1] anymore.
 ///
 /// # Full behavior
 ///
