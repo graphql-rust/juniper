@@ -143,7 +143,7 @@ struct Person {
 #
 # fn main() {}
 ```
-> **NOTE**: Only [GraphQL object][0]/[interface][11] fields and [GraphQL enum][10] values could be [deprecated][9].
+> **NOTE**: Only [GraphQL object][0]/[interface][11] fields and [GraphQL enum][10] values can be [deprecated][9].
 
 
 ### Ignoring
