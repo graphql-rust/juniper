@@ -27,7 +27,7 @@ struct Person {
 #
 # fn main() {}
 ```
-This creates a [GraphQL object][0] type called `Person`, with two fields: `name` of type `String!`, and `age` of type `Int!`. Because of [Rust] type system, everything is exported as [non-`null`][4] by default.
+This creates a [GraphQL object][0] type called `Person`, with two fields: `name` of type `String!`, and `age` of type `Int!`. Because of [Rust]'s type system, everything is exported as [non-`null`][4] by default.
 
 > **TIP**: If a `null`able field is required, one way to go is to use `Option<T>`.
 
