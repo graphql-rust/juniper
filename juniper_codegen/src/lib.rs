@@ -692,7 +692,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # Foreign types
 ///
 /// Additionally, `#[graphql_scalar]` can be used directly on foreign types via
-/// type alias, without using [newtype pattern][1].
+/// type alias, without using the [newtype pattern][1].
 ///
 /// > __NOTE:__ To satisfy [orphan rules] you should provide local
 /// >           [`ScalarValue`] implementation.
