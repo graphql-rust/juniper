@@ -174,7 +174,7 @@ struct Person {
 
 [GraphQL object][0] fields can be of any [GraphQL] type, except [input objects][8].
 
-Let's see what that means to build relationships between [objects][0]:
+Let's see what it means to build relationships between [objects][0]:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
