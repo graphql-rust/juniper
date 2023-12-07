@@ -75,7 +75,7 @@ enum Episode {
 
 ### Documentation and deprecation
 
-Just like when [defining GraphQL objects](objects/index.md), the [GraphQL enum][0] type and its values could be [documented][4] and [deprecated][5] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]` attributes:
+Just like when [defining GraphQL objects](objects/index.md), the [GraphQL enum][0] type and its values could be [documented][4] and [deprecated][5] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLEnum;
@@ -97,7 +97,9 @@ enum StarWarsEpisode {
     /// descriptions.
     Jedi,
     
+    #[deprecated(note = "Only visible in Rust.")]
     #[graphql(deprecated = "We don't really talk about this one.")]
+    //        ^^^^^^^^^^ takes precedence over Rust's `#[deprecated]` attribute
     ThePhantomMenace, // has no description in GraphQL schema
 }
 #
@@ -143,3 +145,4 @@ enum Episode<T> {
 [5]: https://spec.graphql.org/October2021#sec--deprecated
 [6]: https://spec.graphql.org/October2021#sec-Objects
 [7]: https://spec.graphql.org/October2021#sec-Interfaces
+[13]: https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute

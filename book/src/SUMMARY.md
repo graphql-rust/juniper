@@ -8,7 +8,7 @@
 - [Type System](types/index.md)
   - [Objects](types/objects/index.md)
     - [Complex fields](types/objects/complex_fields.md)
-    - [Using contexts](types/objects/using_contexts.md)
+    - [Context](types/objects/context.md)
     - [Error handling](types/objects/error_handling.md)
   - [Interfaces](types/interfaces.md)
   - [Unions](types/unions.md)

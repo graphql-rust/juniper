@@ -10,7 +10,7 @@ Find out more in the individual chapters below.
 
 - [Objects](objects/index.md)
   - [Complex fields](objects/complex_fields.md)
-  - [Using contexts](objects/using_contexts.md)
+  - [Context](objects/Context.md)
   - [Error handling](objects/error_handling.md)
 - [Interfaces](interfaces.md)
 - [Unions](unions.md)

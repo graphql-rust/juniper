@@ -128,7 +128,7 @@ struct Person {
 
 ### Deprecation
 
-To [deprecate][9] a [GraphQL object][0] field, the `#[graphql(deprecated = "...")]` attribute should be used:
+To [deprecate][9] a [GraphQL object][0] field, either the `#[graphql(deprecated = "...")]` attribute, or [Rust's `#[deprecated]` attribute][13], should be used:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
@@ -139,6 +139,8 @@ struct Person {
     age: i32,
     #[graphql(deprecated = "Please use the `name` field instead.")]
     first_name: String,
+    #[deprecated(note = "Please use the `name` field instead.")]
+    last_name: String,
 }
 #
 # fn main() {}
@@ -219,3 +221,4 @@ Because `Person` is a valid [GraphQL] type, we can have a `Vec<Person>` in a [st
 [10]: https://spec.graphql.org/October2021#sec-Enums
 [11]: https://spec.graphql.org/October2021#sec-Interfaces
 [12]: https://spec.graphql.org/October2021#sec-List
+[13]: https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute

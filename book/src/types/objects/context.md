@@ -1,4 +1,4 @@
-# Using contexts
+# Context
 
 The context type is a feature in Juniper that lets field resolvers access global
 data, most commonly database connections or authentication information. The
