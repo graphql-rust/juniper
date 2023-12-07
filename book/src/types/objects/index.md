@@ -29,7 +29,7 @@ struct Person {
 ```
 This creates a [GraphQL object][0] type called `Person`, with two fields: `name` of type `String!`, and `age` of type `Int!`. Because of [Rust]'s type system, everything is exported as [non-`null`][4] by default.
 
-> **TIP**: If a `null`able field is required, one way to go is to use `Option<T>`.
+> **TIP**: If a `null`able field is required, the most obvious way is to use `Option`. Or [`Nullable`] for distinguishing between explicit and implicit `null`s.
 
 
 ### Documentation
@@ -199,6 +199,7 @@ Because `Person` is a valid [GraphQL] type, we can have a `Vec<Person>` in a [st
 
 
 
+[`Nullable`]: https://docs.rs/juniper/latest/juniper/enum.Nullable.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org
