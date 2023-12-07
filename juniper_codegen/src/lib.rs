@@ -502,7 +502,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 /// }
 /// ```
-/// > __NOTE:__ Once we provide all 3 custom functions, there is no sense to
+/// > __NOTE:__ Once we provide all 3 custom functions, there is no sense in
 /// >           following the [newtype pattern][1] anymore.
 ///
 /// # Full behavior
