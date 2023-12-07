@@ -200,13 +200,17 @@ use self::common::diagnostic::{self, ResultExt as _};
 /// struct Point2D {
 ///     x: f64,
 ///     y: f64,
-///     #[graphql(ignore)]
-///     shift: f64, // `Default::default()` impl is used.
-///     #[graphql(skip, default = System::Cartesian)]
-///     //              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-///     // This attribute is required, as we need to be to construct `Point2D`
-///     // from `{ x: 0.0, y: 0.0 }` GraphQL input.
+///     #[graphql(ignore, default = System::Cartesian)]
+///     //                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+///     // This attribute is required, as we need to be able to construct
+///     // a `Point2D` value from the `{ x: 0.0, y: 0.0 }` GraphQL input value,
+///     // received from client-side.
 ///     system: System,
+///     // `Default::default()` value is used, if no
+///     // `#[graphql(default = <expression>)]` is specified.
+///     #[graphql(skip)]
+///     //        ^^^^ alternative naming, up to your preference
+///     shift: f64,
 /// }
 /// ```
 ///
@@ -320,6 +324,9 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///     Jedi,
 ///     #[graphql(ignore)]
 ///     Legends(T),
+///     #[graphql(skip)]
+///     //        ^^^^ alternative naming, up to your preference
+///     CloneWars(T),
 /// }
 /// ```
 ///
@@ -1440,6 +1447,9 @@ pub fn derive_interface(body: TokenStream) -> TokenStream {
 ///     id: String,
 ///     #[graphql(ignore)]
 ///     home_planet: String,
+///     #[graphql(skip)]
+///     //        ^^^^ alternative naming, up to your preference
+///     password_hash: String,
 /// }
 /// ```
 ///
@@ -1555,7 +1565,7 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///
 ///     // This method is useful only to define GraphQL fields, but is not
 ///     // a field itself, so we ignore it in schema.
-///     #[graphql(ignore)]
+///     #[graphql(ignore)] // or `#[graphql(skip)]`, up to your preference
 ///     fn build_full_name(&self) -> String {
 ///         format!("{} {}", self.first_name, self.last_name)
 ///     }

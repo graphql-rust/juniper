@@ -188,10 +188,16 @@ impl Person {
     pub fn hidden_from_graphql(&self) {
         // whatever goes...
     }
+
+    #[graphql(skip)]
+    //        ^^^^ alternative naming, up to your preference
+    pub fn also_hidden_from_graphql(&self) {
+        // whatever goes...
+    }
 }
 
 impl Person {
-    pub fn also_hidden_from_graphql(&self) {
+    pub fn not_even_considered_for_graphql(&self) {
         // whatever goes...
     }
 }

@@ -122,7 +122,10 @@ enum Episode<T> {
     Empire,
     Jedi,
     #[graphql(ignore)]
-    Legends(T), // cannot be queried from GraphQL
+    Legends(T),   // cannot be queried from GraphQL
+    #[graphql(skip)]
+    //        ^^^^ alternative naming, up to your preference
+    CloneWars(T), // cannot be queried from GraphQL
 }
 #
 # fn main() {}

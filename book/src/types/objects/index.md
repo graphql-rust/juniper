@@ -161,7 +161,10 @@ struct Person {
     name: String,
     age: i32,
     #[graphql(ignore)]
-    password_hash: String, // cannot be queried or modified from GraphQL
+    password_hash: String, // cannot be queried from GraphQL
+    #[graphql(skip)]
+    //        ^^^^ alternative naming, up to your preference
+    is_banned: bool,       // cannot be queried from GraphQL
 }
 #
 # fn main() {}
