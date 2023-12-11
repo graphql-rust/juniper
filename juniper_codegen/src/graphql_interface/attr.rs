@@ -21,12 +21,12 @@ const ERR: diagnostic::Scope = diagnostic::Scope::InterfaceAttr;
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
     if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body.clone()) {
         let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
-        ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
+        ast.attrs = parse::attr::strip(["graphql_interface", "graphql"], ast.attrs);
         return expand_on_trait(trait_attrs, ast);
     }
     if let Ok(mut ast) = syn::parse2::<syn::DeriveInput>(body) {
         let trait_attrs = parse::attr::unite(("graphql_interface", &attr_args), &ast.attrs);
-        ast.attrs = parse::attr::strip("graphql_interface", ast.attrs);
+        ast.attrs = parse::attr::strip(["graphql_interface", "graphql"], ast.attrs);
         return expand_on_derive_input(trait_attrs, ast);
     }
 
@@ -42,7 +42,7 @@ fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
-    let attr = Attr::from_attrs("graphql_interface", &attrs)?;
+    let attr = Attr::from_attrs(["graphql_interface", "graphql"], &attrs)?;
 
     let trait_ident = &ast.ident;
     let trait_span = ast.span();
@@ -220,7 +220,7 @@ fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::DeriveInput,
 ) -> syn::Result<TokenStream> {
-    let attr = Attr::from_attrs("graphql_interface", &attrs)?;
+    let attr = Attr::from_attrs(["graphql_interface", "graphql"], &attrs)?;
 
     let struct_ident = &ast.ident;
     let struct_span = ast.span();

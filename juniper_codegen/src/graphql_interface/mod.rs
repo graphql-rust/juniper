@@ -25,7 +25,7 @@ use crate::common::{
         attr::{err, OptionExt as _},
         GenericsExt as _, ParseBufferExt as _,
     },
-    rename, scalar, Description, SpanContainer,
+    rename, scalar, AttrNames, Description, SpanContainer,
 };
 
 /// Returns [`syn::Ident`]s for a generic enum deriving [`Clone`] and [`Copy`]
@@ -254,10 +254,10 @@ impl Attr {
         })
     }
 
-    /// Parses [`TraitAttr`] from the given multiple `name`d [`syn::Attribute`]s
-    /// placed on a trait definition.
-    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        let mut attr = filter_attrs(name, attrs)
+    /// Parses a [`TraitAttr`] from the provided multiple [`syn::Attribute`]s with
+    /// the specified `names`, placed on a trait or struct definition.
+    fn from_attrs(names: impl AttrNames, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        let mut attr = filter_attrs(names, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
