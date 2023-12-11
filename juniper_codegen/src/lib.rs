@@ -2258,7 +2258,8 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// #     primary_function: String,
 /// # }
 /// #
-/// #[graphql_union(name = "Character", desc = "Possible episode characters.")]
+/// #[graphql_union]
+/// #[graphql(name = "Character", desc = "Possible episode characters.")]
 /// trait Chrctr {
 ///     fn as_human(&self) -> Option<&Human> { None }
 ///     fn as_droid(&self) -> Option<&Droid> { None }
@@ -2273,7 +2274,8 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 ///
 /// // NOTICE: `description` argument takes precedence over Rust docs.
 /// /// Not a GraphQL description anymore.
-/// #[graphql_union(description = "Possible episode characters.")]
+/// #[graphql_union]
+/// #[graphql(description = "Possible episode characters.")]
 /// trait CharacterWithDescription {
 ///     fn as_human(&self) -> Option<&Human> { None }
 ///     fn as_droid(&self) -> Option<&Droid> { None }
@@ -2319,7 +2321,8 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// }
 /// impl juniper::Context for Database {}
 ///
-/// #[graphql_union(Context = Database)]
+/// #[graphql_union]
+/// #[graphql(context = Database)]
 /// trait Character {
 ///     fn as_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human> { None }
 ///     fn as_droid<'db>(&self, ctx: &'db Database) -> Option<&'db Droid> { None }
@@ -2362,8 +2365,9 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 ///     primary_function: String,
 /// }
 ///
-/// // NOTICE: Removing `Scalar` argument will fail compilation.
-/// #[graphql_union(scalar = DefaultScalarValue)]
+/// // NOTICE: Removing `scalar` argument will fail compilation.
+/// #[graphql_union]
+/// #[graphql(scalar = DefaultScalarValue)]
 /// trait Character {
 ///     fn as_human(&self) -> Option<&Human> { None }
 ///     fn as_droid(&self) -> Option<&Droid> { None }
@@ -2439,8 +2443,9 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// }
 /// impl juniper::Context for Database {}
 ///
-/// #[graphql_union(Context = Database)]
-/// #[graphql_union(
+/// #[graphql_union]
+/// #[graphql(context = Database)]
+/// #[graphql(
 ///     on Human = DynCharacter::get_human,
 ///     on Droid = get_droid,
 /// )]

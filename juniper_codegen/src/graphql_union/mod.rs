@@ -23,7 +23,7 @@ use crate::common::{
         attr::{err, OptionExt as _},
         ParseBufferExt as _,
     },
-    scalar, Description, SpanContainer,
+    scalar, AttrNames, Description, SpanContainer,
 };
 
 /// Helper alias for the type of [`Attr::external_resolvers`] field.
@@ -167,10 +167,10 @@ impl Attr {
         })
     }
 
-    /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
-    /// placed on a type definition.
-    fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        let mut meta = filter_attrs(name, attrs)
+    /// Parses an [`Attr`] from the provided multiple [`syn::Attribute`]s with
+    /// the specified `names`, placed on a trait or type definition.
+    fn from_attrs(names: impl AttrNames, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        let mut meta = filter_attrs(names, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
