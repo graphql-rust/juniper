@@ -14,9 +14,9 @@ pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStr
     if let Ok(mut ast) = syn::parse2::<syn::ItemImpl>(body) {
         if ast.trait_.is_none() {
             let impl_attrs = parse::attr::unite(("graphql_subscription", &attr_args), &ast.attrs);
-            ast.attrs = parse::attr::strip("graphql_subscription", ast.attrs);
+            ast.attrs = parse::attr::strip(["graphql_subscription", "graphql"], ast.attrs);
             return expand_on_impl::<Subscription>(
-                Attr::from_attrs("graphql_subscription", &impl_attrs)?,
+                Attr::from_attrs(["graphql_subscription", "graphql"], &impl_attrs)?,
                 ast,
             );
         }
