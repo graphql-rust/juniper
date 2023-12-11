@@ -129,7 +129,7 @@ struct Person;
 impl Person {
     /// This doc comment is visible only in Rust API docs.
     #[graphql(description = "This description is visible only in GraphQL schema.")]
-    fn empty() -> &str {
+    fn empty() -> &'static str {
         ""
     }
     

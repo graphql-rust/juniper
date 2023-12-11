@@ -87,7 +87,8 @@ struct Query;
 
 // Here we specify the context type for the object.
 // We need to do this in every type that needs access to the `Context`.
-#[graphql_object(context = Context)]
+#[graphql_object]
+#[graphql(context = Context)]
 impl Query {
     // Note, that the field name will be automatically converted to the
     // `camelCased` variant, just as GraphQL conventions imply.
@@ -181,7 +182,8 @@ impl juniper::Context for Ctx {}
 
 struct Query;
 
-#[graphql_object(context = Ctx)]
+#[graphql_object]
+#[graphql(context = Ctx)]
 impl Query {
     fn favorite_episode(context: &Ctx) -> Episode {
         context.0

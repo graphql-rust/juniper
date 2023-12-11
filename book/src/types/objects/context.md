@@ -50,7 +50,7 @@ impl User {
         //                 ^^^^^^^ or `ctx`, up to your preference
         self.friend_ids.iter()
             .map(|id| {
-                context.users.get(id).expect("could not find `User` with ID")
+                context.users.get(&id).expect("could not find `User` with ID")
             })
             .collect()
     }
@@ -63,8 +63,8 @@ impl User {
         #[graphql(context)] db: &'db Database,
         //        ^^^^^^^ or `ctx`, up to your preference
     ) -> Option<&'db User> {
-        self.friend_ids.contains(id).then(|| {
-            db.users.get(id).expect("could not find `User` with ID")
+        self.friend_ids.contains(&id).then(|| {
+            db.users.get(&id).expect("could not find `User` with ID")
         })
     }
 
