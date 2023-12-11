@@ -674,7 +674,8 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # use juniper::graphql_scalar;
 /// #
 /// /// Doc comments are used for the GraphQL type description.
-/// #[graphql_scalar(
+/// #[graphql_scalar]
+/// #[graphql(
 ///     // Custom GraphQL name.
 ///     name = "MyUserId",
 ///     // Description can also specified in the attribute.
@@ -721,7 +722,8 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # use juniper::DefaultScalarValue as CustomScalarValue;
 /// use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
 ///
-/// #[graphql_scalar(
+/// #[graphql_scalar]
+/// #[graphql(
 ///     with = date_scalar,
 ///     parse_token(String),
 ///     scalar = CustomScalarValue,

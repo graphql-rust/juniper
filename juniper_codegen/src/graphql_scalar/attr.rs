@@ -15,11 +15,11 @@ const ERR: diagnostic::Scope = diagnostic::Scope::ScalarAttr;
 pub(crate) fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
     if let Ok(mut ast) = syn::parse2::<syn::ItemType>(body.clone()) {
         let attrs = parse::attr::unite(("graphql_scalar", &attr_args), &ast.attrs);
-        ast.attrs = parse::attr::strip("graphql_scalar", ast.attrs);
+        ast.attrs = parse::attr::strip(["graphql_scalar", "graphql"], ast.attrs);
         return expand_on_type_alias(attrs, ast);
     } else if let Ok(mut ast) = syn::parse2::<syn::DeriveInput>(body) {
         let attrs = parse::attr::unite(("graphql_scalar", &attr_args), &ast.attrs);
-        ast.attrs = parse::attr::strip("graphql_scalar", ast.attrs);
+        ast.attrs = parse::attr::strip(["graphql_scalar", "graphql"], ast.attrs);
         return expand_on_derive_input(attrs, ast);
     }
 
@@ -35,7 +35,7 @@ fn expand_on_type_alias(
     attrs: Vec<syn::Attribute>,
     ast: syn::ItemType,
 ) -> syn::Result<TokenStream> {
-    let attr = Attr::from_attrs("graphql_scalar", &attrs)?;
+    let attr = Attr::from_attrs(["graphql_scalar", "graphql"], &attrs)?;
     if attr.transparent {
         return Err(ERR.custom_error(
             ast.span(),
@@ -73,7 +73,7 @@ fn expand_on_derive_input(
     attrs: Vec<syn::Attribute>,
     ast: syn::DeriveInput,
 ) -> syn::Result<TokenStream> {
-    let attr = Attr::from_attrs("graphql_scalar", &attrs)?;
+    let attr = Attr::from_attrs(["graphql_scalar", "graphql"], &attrs)?;
     let methods = parse_derived_methods(&ast, &attr)?;
     let scalar = scalar::Type::parse(attr.scalar.as_deref(), &ast.generics);
 
