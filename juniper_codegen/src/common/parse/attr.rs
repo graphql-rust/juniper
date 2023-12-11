@@ -4,7 +4,7 @@
 use proc_macro2::{Span, TokenStream};
 use syn::parse_quote;
 
-use crate::common::path_eq_single;
+use crate::common::{path_eq_single, AttrNames};
 
 /// Prepends the given `attrs` collection with a new [`syn::Attribute`] generated from the given
 /// `attr_path` and `attr_args`.
@@ -25,10 +25,10 @@ pub(crate) fn unite(
 ///
 /// This function is generally used for removing duplicate attributes during `proc_macro_attribute`
 /// expansion, so avoid unnecessary expansion duplication.
-pub(crate) fn strip(attr_path: &str, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
+pub(crate) fn strip(names: impl AttrNames, attrs: Vec<syn::Attribute>) -> Vec<syn::Attribute> {
     attrs
         .into_iter()
-        .filter(|attr| !path_eq_single(attr.path(), attr_path))
+        .filter(|attr| !path_eq_single(attr.path(), names))
         .collect()
 }
 

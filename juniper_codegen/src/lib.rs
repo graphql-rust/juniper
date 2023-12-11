@@ -1003,7 +1003,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     id: ID,
 /// }
 ///
-/// #[graphql_object(impl = [HumanValue, NodeValue])]
+/// #[graphql_object]
+/// #[graphql(impl = [HumanValue, NodeValue])]
 /// impl Luke {
 ///     fn id(&self) -> &ID {
 ///         &self.id
@@ -1072,7 +1073,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     id: ID,
 /// }
 ///
-/// #[graphql_object(impl = [HumanValue, NodeValue])]
+/// #[graphql_object]
+/// #[graphql(impl = [HumanValue, NodeValue])]
 /// impl Luke {
 ///     fn id(&self) -> &ID {
 ///         &self.id
@@ -1121,7 +1123,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     home_planet: String,
 /// }
 ///
-/// #[graphql_object(impl = CharacterValue, rename_all = "none")]
+/// #[graphql_object]
+/// #[graphql(impl = CharacterValue, rename_all = "none")]
 /// impl Human {
 ///     fn id(&self) -> &str {
 ///         &self.id
@@ -1189,7 +1192,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     id: String,
 ///     home_planet: String,
 /// }
-/// #[graphql_object(impl = CharacterValue, Context = Database)]
+/// #[graphql_object]
+/// #[graphql(impl = CharacterValue, Context = Database)]
 /// impl Human {
 ///     fn id<'db>(&self, context: &'db Database) -> Option<&'db str> {
 ///         context.humans.get(&self.id).map(|h| h.id.as_str())
@@ -1206,7 +1210,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     id: String,
 ///     primary_function: String,
 /// }
-/// #[graphql_object(impl = CharacterValue, Context = Database)]
+/// #[graphql_object]
+/// #[graphql(impl = CharacterValue, Context = Database)]
 /// impl Droid {
 ///     fn id<'db>(&self, ctx: &'db Database) -> Option<&'db str> {
 ///         ctx.droids.get(&self.id).map(|h| h.id.as_str())
@@ -1246,7 +1251,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///     id: String,
 ///     name: String,
 /// }
-/// #[graphql_object(scalar = S: ScalarValue, impl = CharacterValue<S>)]
+/// #[graphql_object]
+/// #[graphql(scalar = S: ScalarValue, impl = CharacterValue<S>)]
 /// impl Human {
 ///     async fn id<'a, S>(&self, executor: &'a Executor<'_, '_, (), S>) -> &'a str
 ///     where
@@ -1585,7 +1591,8 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// #
 /// struct HumanWithAttrs;
 ///
-/// #[graphql_object(
+/// #[graphql_object]
+/// #[graphql(
 ///     // Rename the type for GraphQL by specifying the name here.
 ///     name = "Human",
 ///     // You may also specify a description here.
@@ -1643,7 +1650,8 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// #
 /// struct Query;
 ///
-/// #[graphql_object(rename_all = "none")] // disables renaming
+/// #[graphql_object]
+/// #[graphql(rename_all = "none")] // disables renaming
 /// impl Query {
 ///     // NOTICE: In the generated GraphQL schema this field will be available
 ///     //         as `api_version`.
@@ -1708,7 +1716,8 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///     home_planet: String,
 /// }
 ///
-/// #[graphql_object(context = Database)]
+/// #[graphql_object]
+/// #[graphql(context = Database)]
 /// impl Human {
 ///     fn id<'db>(&self, context: &'db Database) -> Option<&'db str> {
 ///         context.humans.get(&self.id).map(|h| h.id.as_str())
@@ -1736,9 +1745,10 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///     name: String,
 /// }
 ///
+/// #[graphql_object]
 /// // NOTICE: Specifying `ScalarValue` as custom named type parameter.
 /// //         Its name should be similar to the one used in methods.
-/// #[graphql_object(scalar = S: ScalarValue)]
+/// #[graphql(scalar = S: ScalarValue)]
 /// impl Human {
 ///     async fn id<'a, S: ScalarValue>(
 ///         &self,
@@ -1769,8 +1779,9 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// #
 /// struct Human(String);
 ///
+/// #[graphql_object]
 /// // NOTICE: Removing `scalar` argument will fail compilation.
-/// #[graphql_object(scalar = DefaultScalarValue)]
+/// #[graphql(scalar = DefaultScalarValue)]
 /// impl Human {
 ///     fn id(&self) -> &str {
 ///         &self.0
