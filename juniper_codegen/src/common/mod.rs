@@ -56,6 +56,6 @@ impl AttrNames for &[&str] {
 
 impl<const N: usize> AttrNames for [&str; N] {
     fn values(&self) -> &[&str] {
-        &*self
+        self
     }
 }
