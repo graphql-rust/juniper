@@ -117,7 +117,7 @@ impl User {
         // querying remote databases.
         
         // Obtain base type.
-        let DatabaseContext(db) = context;
+        let DatabaseContext(db) = ctx;
         // If context is immutable use `.read()` on `RwLock` instead.
         let mut db = db.write().await;
         
