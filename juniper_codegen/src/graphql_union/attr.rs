@@ -20,7 +20,7 @@ const ERR: diagnostic::Scope = diagnostic::Scope::UnionAttr;
 pub fn expand(attr_args: TokenStream, body: TokenStream) -> syn::Result<TokenStream> {
     if let Ok(mut ast) = syn::parse2::<syn::ItemTrait>(body) {
         let trait_attrs = parse::attr::unite(("graphql_union", &attr_args), &ast.attrs);
-        ast.attrs = parse::attr::strip("graphql_union", ast.attrs);
+        ast.attrs = parse::attr::strip(["graphql_union", "graphql"], ast.attrs);
         return expand_on_trait(trait_attrs, ast);
     }
 
@@ -35,7 +35,7 @@ fn expand_on_trait(
     attrs: Vec<syn::Attribute>,
     mut ast: syn::ItemTrait,
 ) -> syn::Result<TokenStream> {
-    let attr = Attr::from_attrs("graphql_union", &attrs)?;
+    let attr = Attr::from_attrs(["graphql_union", "graphql"], &attrs)?;
 
     let trait_span = ast.span();
     let trait_ident = &ast.ident;
