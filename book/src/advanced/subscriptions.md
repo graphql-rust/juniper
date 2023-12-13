@@ -146,7 +146,7 @@ async fn run_subscription() {
     }
 }
 #
-# fn main() { }
+# fn main() {}
 ```     
 
 ### Web Integration and Examples

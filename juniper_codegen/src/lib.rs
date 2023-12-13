@@ -753,7 +753,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// #
-/// # fn main() { }
+/// # fn main() {}
 /// ```
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Scalars

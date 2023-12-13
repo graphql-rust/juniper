@@ -62,13 +62,13 @@ impl Person {
     }
 }
 #
-# fn main() { }
+# fn main() {}
 ```
 
 
 ### Renaming
 
-Like with the [`#[derive(GraphQLObject)]` attribute on structs](index.md), [field][4] names are converted from [Rust]'s standard `snake_case` naming convention into [GraphQL]'s `camelCase` convention.
+Like with the [`#[derive(GraphQLObject)]` attribute on structs](index.md#renaming), [field][4] names are converted from [Rust]'s standard `snake_case` naming convention into [GraphQL]'s `camelCase` convention.
 
 We can override the name by using the `#[graphql(name = "...")]` attribute:
 ```rust
@@ -89,7 +89,7 @@ impl Person { // exposed as `PersonObject` in GraphQL schema
     }
 }
 #
-# fn main() { }
+# fn main() {}
 ```
 
 Or provide a different renaming policy for all the defined [fields][4]:
@@ -156,7 +156,7 @@ impl Person {
     }
 }
 #
-# fn main() { }
+# fn main() {}
 ```
 > **NOTE**: Only [GraphQL object][0]/[interface][11] fields and [GraphQL enum][10] values can be [deprecated][9].
 
@@ -202,7 +202,7 @@ impl Person {
     }
 }
 #
-# fn main() { }
+# fn main() {}
 ```
 
 > **TIP**: See more features in API docs of the [`#[graphql_object]`][3] attribute.

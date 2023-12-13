@@ -36,7 +36,7 @@ impl Root {
     }
 }
 #
-# fn main() { }
+# fn main() {}
 ```
 
 ## Mutations
@@ -59,7 +59,7 @@ impl Mutations {
     }
 }
 #
-# fn main() { }
+# fn main() {}
 ```
 
 # Converting a Rust schema to the [GraphQL Schema Language][schema_language]

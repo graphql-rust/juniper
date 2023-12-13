@@ -75,7 +75,7 @@ enum Episode {
 
 ### Documentation and deprecation
 
-Just like when [defining GraphQL objects](objects/index.md), the [GraphQL enum][0] type and its values could be [documented][4] and [deprecated][5] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
+Just like when [defining GraphQL objects](objects/index.md#documentation), the [GraphQL enum][0] type and its values could be [documented][4] and [deprecated][5] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLEnum;
