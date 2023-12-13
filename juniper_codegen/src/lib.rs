@@ -1357,9 +1357,9 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// For more info and possibilities see [`#[graphql_interface]`] macro.
+/// For more info and possibilities see [`#[graphql_interface]`][0] macro.
 ///
-/// [`#[graphql_interface]`]: crate::graphql_interface
+/// [0]: crate::graphql_interface
 /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 #[proc_macro_derive(GraphQLInterface, attributes(graphql))]
 pub fn derive_interface(body: TokenStream) -> TokenStream {
