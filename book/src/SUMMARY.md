@@ -28,8 +28,9 @@
   - [Third Party Integrations](servers/third-party.md)
 
 - [Advanced Topics](advanced/index.md)
+  - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
+
   - [Non-struct objects](advanced/non_struct_objects.md)
-  - [Implicit and explicit null](advanced/implicit_and_explicit_null.md)
   - [Objects and generics](advanced/objects_and_generics.md)
   - [Multiple operations per request](advanced/multiple_ops_per_request.md)
   - [Dataloaders](advanced/dataloaders.md)

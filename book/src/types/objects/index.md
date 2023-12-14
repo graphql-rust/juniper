@@ -29,7 +29,7 @@ struct Person {
 ```
 This creates a [GraphQL object][0] type called `Person`, with two fields: `name` of type `String!`, and `age` of type `Int!`. Because of [Rust]'s type system, everything is exported as [non-`null`][4] by default.
 
-> **TIP**: If a `null`able field is required, the most obvious way is to use `Option`. Or [`Nullable`] for distinguishing between explicit and implicit `null`s.
+> **TIP**: If a `null`able field is required, the most obvious way is to use `Option`. Or [`Nullable`] for distinguishing between [explicit and implicit `null`s][14].
 
 
 ### Documentation
@@ -225,3 +225,4 @@ Because `Person` is a valid [GraphQL] type, we can have a `Vec<Person>` in a [st
 [11]: https://spec.graphql.org/October2021#sec-Interfaces
 [12]: https://spec.graphql.org/October2021#sec-List
 [13]: https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute
+[14]: https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT

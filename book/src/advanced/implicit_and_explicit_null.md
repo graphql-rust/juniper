@@ -1,101 +1,89 @@
-# Implicit and explicit null
+Implicit and explicit `null`
+============================
 
-There are two ways that a client can submit a null argument or field in a query.
+> [GraphQL] has two semantically different ways to represent the lack of a value:
+> - Explicitly providing the literal value: **null**.
+> - Implicitly not providing a value at all.
 
-They can use a null literal:
+There are two ways that a client can submit a [`null` value][0] as an [argument][5] or a [field][4] in a [GraphQL] query:
+1. Either use an explicit `null` literal:
+   ```graphql
+   {
+     field(arg: null)
+   }
+   ```
+2. Or simply omit the [argument][5], so the implicit default `null` value kicks in:
+   ```graphql
+   {
+     field
+   }
+   ```
 
-```graphql
-{
-    field(arg: null)
-}
-```
+There are some situations where it's useful to know which one exactly has been provided.
 
-Or they can simply omit the argument:
-
-```graphql
-{
-    field
-}
-```
-
-The former is an explicit null and the latter is an implicit null.
-
-There are some situations where it's useful to know which one the user provided.
-
-For example, let's say your business logic has a function that allows users to
-perform a "patch" operation on themselves. Let's say your users can optionally
-have favorite and least favorite numbers, and the input for that might look
-like this:
-
+For example, let's say we have a function that allows users to perform a "patch" operation on themselves. Let's say our users can optionally have favorite and least favorite numbers, and the input for that might look like this:
 ```rust
-/// Updates user attributes. Fields that are `None` are left as-is.
-pub struct UserPatch {
-    /// If `Some`, updates the user's favorite number.
-    pub favorite_number: Option<Option<i32>>,
+/// Updates user attributes. Fields that are [`None`] are left as-is.
+struct UserPatch {
+    /// If [`Some`], updates the user's favorite number.
+    favorite_number: Option<Option<i32>>,
 
-    /// If `Some`, updates the user's least favorite number.
-    pub least_favorite_number: Option<Option<i32>>,
+    /// If [`Some`], updates the user's least favorite number.
+    least_favorite_number: Option<Option<i32>>,
 }
-
+#
 # fn main() {}
 ```
 
-To set a user's favorite number to 7, you would set `favorite_number` to
-`Some(Some(7))`. In GraphQL, that might look like this:
-
+To set a user's favorite number to 7, we would set `favorite_number` to `Some(Some(7))`. In [GraphQL], that might look like this:
 ```graphql
 mutation { patchUser(patch: { favoriteNumber: 7 }) }
 ```
 
-To unset the user's favorite number, you would set `favorite_number` to
-`Some(None)`. In GraphQL, that might look like this:
-
+To unset the user's favorite number, we would set `favorite_number` to `Some(None)`. In [GraphQL], that might look like this:
 ```graphql
 mutation { patchUser(patch: { favoriteNumber: null }) }
 ```
 
-If you want to leave the user's favorite number alone, you would set it to
-`None`. In GraphQL, that might look like this:
-
+And if we want to leave the user's favorite number alone, just set it to `None`. In [GraphQL], that might look like this:
 ```graphql
 mutation { patchUser(patch: {}) }
 ```
 
-The last two cases rely on being able to distinguish between explicit and implicit null.
+The last two cases rely on being able to distinguish between [explicit and implicit `null`][1].
 
-In Juniper, this can be done using the `Nullable` type:
-
+Unfortunately, plain `Option` is not capable to distinguish them. That's why in [Juniper], this can be done using the [`Nullable`] type:
 ```rust
 # extern crate juniper;
-use juniper::{FieldResult, Nullable};
+use juniper::{graphql_object, FieldResult, GraphQLInputObject, Nullable};
 
-#[derive(juniper::GraphQLInputObject)]
+#[derive(GraphQLInputObject)]
 struct UserPatchInput {
-    pub favorite_number: Nullable<i32>,
-    pub least_favorite_number: Nullable<i32>,
+    favorite_number: Nullable<i32>,
+    least_favorite_number: Nullable<i32>,
 }
 
-impl Into<UserPatch> for UserPatchInput {
-    fn into(self) -> UserPatch {
-        UserPatch {
-            // The `explicit` function transforms the `Nullable` into an
-            // `Option<Option<T>>` as expected by the business logic layer.
-            favorite_number: self.favorite_number.explicit(),
-            least_favorite_number: self.least_favorite_number.explicit(),
-        }
-    }
+impl From<UserPatchInput> for UserPatch {
+   fn from(input: UserPatchInput) -> Self {
+      Self {
+         // The `explicit()` function transforms the `Nullable` into an
+         // `Option<Option<T>>` as expected by the business logic layer.
+         favorite_number: input.favorite_number.explicit(),
+         least_favorite_number: input.least_favorite_number.explicit(),
+      }
+   }
 }
 
-# pub struct UserPatch {
-#     pub favorite_number: Option<Option<i32>>,
-#     pub least_favorite_number: Option<Option<i32>>,
+# struct UserPatch {
+#     favorite_number: Option<Option<i32>>,
+#     least_favorite_number: Option<Option<i32>>,
 # }
-
+#
 # struct Session;
 # impl Session {
 #     fn patch_user(&self, _patch: UserPatch) -> FieldResult<()> { Ok(()) }
 # }
-
+#
 struct Context {
     session: Session,
 }
@@ -103,15 +91,27 @@ impl juniper::Context for Context {}
 
 struct Mutation;
 
-#[juniper::graphql_object(context = Context)]
+#[graphql_object]
+#[graphql(context = Context)]
 impl Mutation {
-    fn patch_user(ctx: &Context, patch: UserPatchInput) -> FieldResult<bool> {
+    fn patch_user(patch: UserPatchInput, ctx: &Context) -> FieldResult<bool> {
         ctx.session.patch_user(patch.into())?;
         Ok(true)
     }
 }
+#
 # fn main() {}
 ```
 
-This type functions much like `Option`, but has two empty variants so you can
-distinguish between implicit and explicit null.
+
+
+
+[`Nullable`]: https://docs.rs/juniper/latest/juniper/enum.Nullable.html
+[GraphQL]: https://graphql.org
+[Juniper]: https://docs.rs/juniper
+[Rust]: https://www.rust-lang.org
+
+[0]: https://spec.graphql.org/October2021#sec-Null-Value
+[1]: https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT
+[4]: https://spec.graphql.org/October2021#sec-Language.Fields
+[5]: https://spec.graphql.org/October2021#sec-Language.Arguments
