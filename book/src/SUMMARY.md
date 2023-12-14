@@ -2,9 +2,6 @@
 
 - [Introduction](introduction.md)
 - [Quickstart](quickstart.md)
-
-
-
 - [Type System](types/index.md)
   - [Objects](types/objects/index.md)
     - [Complex fields](types/objects/complex_fields.md)
@@ -18,6 +15,9 @@
 
 
 - [Schemas and mutations](schema/schemas_and_mutations.md)
+  - [Introspection](schema/introspection.md)
+
+
 
 - [Adding A Server](servers/index.md)
 
@@ -28,8 +28,6 @@
   - [Third Party Integrations](servers/third-party.md)
 
 - [Advanced Topics](advanced/index.md)
-
-  - [Introspection](advanced/introspection.md)
   - [Non-struct objects](advanced/non_struct_objects.md)
   - [Implicit and explicit null](advanced/implicit_and_explicit_null.md)
   - [Objects and generics](advanced/objects_and_generics.md)

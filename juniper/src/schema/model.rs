@@ -187,7 +187,7 @@ where
     ///     }
     /// }
     ///
-    /// type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+    /// type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
     ///
     /// let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())
     ///     .disable_introspection();
