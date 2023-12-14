@@ -111,7 +111,7 @@ fn main() {
     }
 }
 ```
-> **NOTE**: Attemp to execute an [introspection query][1] results in [validation][11] error, rather than [execution][5] error.
+> **NOTE**: Attempt to execute an [introspection query][1] results in [validation][11] error, rather than [execution][5] error.
 
 
 
