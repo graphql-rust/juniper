@@ -30,8 +30,6 @@
 
 - [Advanced Topics](advanced/index.md)
   - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
-
-  - [Non-struct objects](advanced/non_struct_objects.md)
   
   - [Multiple operations per request](advanced/multiple_ops_per_request.md)
   - [Dataloaders](advanced/dataloaders.md)
