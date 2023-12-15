@@ -27,22 +27,44 @@ See their API docs and usage examples (accessible from API docs) for further det
 
 
 
+## WebSocket
+
+> **NOTE**: [WebSocket] is a crucial part for serving [GraphQL subscriptions][2] over [HTTP].
+
+There are two widely adopted protocols for serving [GraphQL] over [WebSocket]:
+1. [Legacy `graphql-ws` GraphQL over WebSocket Protocol][ws-old], formerly used by [Apollo] and the [`subscriptions-transport-ws` npm package], and now being deprecated.
+2. [New `graphql-transport-ws` GraphQL over WebSocket Protocol][ws-new], provided by the [`graphql-ws` npm package] and being used by [Apollo] as for now.
+
+In [Juniper] ecosystem, both implementations are provided by the [`juniper_graphql_ws`] crate. Most of the [officially supported web server framework integrations](#officially-supported) are capable to serve a [GraphQL schema][1] over [WebSocket] (including [subscriptions][2]) and even support [auto-negotiation of the correct protocol based on the `Sec-Websocket-Protocol` HTTP header value][3]. See their API docs and usage examples (accessible from API docs) for further details of how to use this.
+
+
+
+
 [`actix-web`]: https://docs.rs/actix-web
 [`axum`]: https://docs.rs/axum
+[`graphql-ws` npm package]: https://npmjs.com/package/graphql-ws
 [`juniper`]: https://docs.rs/juniper
 [`juniper_actix`]: https://docs.rs/juniper_actix
 [`juniper_axum`]: https://docs.rs/juniper_axum
+[`juniper_graphql_ws`]: https://docs.rs/juniper_graphql_ws
 [`juniper_hyper`]: https://docs.rs/juniper_hyper
 [`juniper_rocket`]: https://docs.rs/juniper_rocket
 [`juniper_warp`]: https://docs.rs/juniper_warp
 [`hyper`]: https://docs.rs/hyper
 [`rocket`]: https://docs.rs/rocket
+[`subscriptions-transport-ws` npm package]: https://npmjs.com/package/subscriptions-transport-ws
 [`warp`]: https://docs.rs/warp
+[Apollo]: https://www.apollographql.com
 [GraphiQL]: https://github.com/graphql/graphiql
 [GraphQL]: https://graphql.org
 [GraphQL Playground]: https://github.com/prisma/graphql-playground
 [HTTP]: https://en.wikipedia.org/wiki/HTTP
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org
+[WebSocket]: https://en.wikipedia.org/wiki/WebSocket
+[ws-new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+[ws-old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 
 [1]: ../schema/schemas_and_mutations.md
+[2]: ../schema/subscriptions.md
+[3]: https://developer.mozilla.org/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#subprotocols
