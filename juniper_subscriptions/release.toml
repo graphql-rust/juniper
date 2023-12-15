@@ -1,5 +1,5 @@
 [[pre-release-replacements]]
-file = "../book/src/serve/subscriptions.md"
+file = "../book/src/schema/subscriptions.md"
 exactly = 1
 search = "juniper_subscriptions = \"[^\"]+\""
 replace = "juniper_subscriptions = \"{{version}}\""

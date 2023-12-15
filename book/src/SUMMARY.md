@@ -16,11 +16,11 @@
 
 
 - [Schemas and mutations](schema/schemas_and_mutations.md)
+  - [Subscriptions](schema/subscriptions.md)
   - [Introspection](schema/introspection.md)
 
 
 - [Serving](serve/index.md)
-  - [Subscriptions](serve/subscriptions.md)
 
 
 - [Advanced Topics](advanced/index.md)
