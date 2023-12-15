@@ -149,7 +149,7 @@ type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Cont
 
 Now we have a very simple but functional schema for a [GraphQL] server!
 
-To actually serve the [schema], see the guides for our various [server integrations](servers/index.md).
+To actually serve the [schema], see the guides for our various [server integrations](serve/index.md).
 
 
 

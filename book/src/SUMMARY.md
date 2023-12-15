@@ -19,18 +19,11 @@
   - [Introspection](schema/introspection.md)
 
 
+- [Serving](serve/index.md)
+  - [Subscriptions](serve/subscriptions.md)
 
-- [Adding A Server](servers/index.md)
-
-  - [Official Server Integrations](servers/official.md) - [Hyper](servers/hyper.md)
-    - [Warp](servers/warp.md)
-    - [Rocket](servers/rocket.md)
-    - [Hyper](servers/hyper.md)
-  - [Third Party Integrations](servers/third-party.md)
-  - [Subscriptions](servers/subscriptions.md)
 
 - [Advanced Topics](advanced/index.md)
   - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
-  
   - [Multiple operations per request](advanced/multiple_ops_per_request.md)
   - [Dataloaders](advanced/dataloaders.md)

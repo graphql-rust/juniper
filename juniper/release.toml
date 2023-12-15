@@ -4,27 +4,12 @@ exactly = 1
 search = "juniper = \"[^\"]+\""
 replace = "juniper = \"{{version}}\""
 [[pre-release-replacements]]
-file = "../book/src/servers/subscriptions.md"
+file = "../book/src/serve/subscriptions.md"
 exactly = 1
 search = "juniper = \"[^\"]+\""
 replace = "juniper = \"{{version}}\""
 [[pre-release-replacements]]
 file = "../book/src/quickstart.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/servers/hyper.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/servers/rocket.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/servers/warp.md"
 exactly = 1
 search = "juniper = \"[^\"]+\""
 replace = "juniper = \"{{version}}\""
