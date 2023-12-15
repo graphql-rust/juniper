@@ -12,6 +12,7 @@ Find out more in the individual chapters below.
   - [Complex fields](objects/complex_fields.md)
   - [Context](objects/Context.md)
   - [Error handling](objects/error_handling.md)
+  - [Generics](objects/generics.md)
 - [Interfaces](interfaces.md)
 - [Unions](unions.md)
 - [Enums](enums.md)

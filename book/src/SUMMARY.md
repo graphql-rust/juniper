@@ -7,6 +7,7 @@
     - [Complex fields](types/objects/complex_fields.md)
     - [Context](types/objects/context.md)
     - [Error handling](types/objects/error_handling.md)
+    - [Generics](types/objects/generics.md)
   - [Interfaces](types/interfaces.md)
   - [Unions](types/unions.md)
   - [Enums](types/enums.md)
@@ -31,7 +32,7 @@
   - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
 
   - [Non-struct objects](advanced/non_struct_objects.md)
-  - [Objects and generics](advanced/objects_and_generics.md)
+  
   - [Multiple operations per request](advanced/multiple_ops_per_request.md)
   - [Dataloaders](advanced/dataloaders.md)
   - [Subscriptions](advanced/subscriptions.md)

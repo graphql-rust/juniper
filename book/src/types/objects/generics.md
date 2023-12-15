@@ -1,4 +1,5 @@
-# Objects and generics
+Generics
+========
 
 Yet another point where GraphQL and Rust differs is in how generics work. In
 Rust, almost any type could be generic - that is, take type parameters. In
