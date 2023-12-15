@@ -27,14 +27,10 @@
     - [Rocket](servers/rocket.md)
     - [Hyper](servers/hyper.md)
   - [Third Party Integrations](servers/third-party.md)
+  - [Subscriptions](servers/subscriptions.md)
 
 - [Advanced Topics](advanced/index.md)
   - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
   
   - [Multiple operations per request](advanced/multiple_ops_per_request.md)
   - [Dataloaders](advanced/dataloaders.md)
-  - [Subscriptions](advanced/subscriptions.md)
-
-    # - [Context switching]
-
-    # - [Dynamic type system]

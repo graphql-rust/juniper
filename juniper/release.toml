@@ -4,7 +4,7 @@ exactly = 1
 search = "juniper = \"[^\"]+\""
 replace = "juniper = \"{{version}}\""
 [[pre-release-replacements]]
-file = "../book/src/advanced/subscriptions.md"
+file = "../book/src/servers/subscriptions.md"
 exactly = 1
 search = "juniper = \"[^\"]+\""
 replace = "juniper = \"{{version}}\""

@@ -113,7 +113,7 @@ compile times.
 [schema_language]: https://graphql.org/learn/schema/#type-language
 [juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
 [schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
-[section]: ../advanced/subscriptions.md
+[section]: ../servers/subscriptions.md
 [EmptyMutation]: https://docs.rs/juniper/0.14.2/juniper/struct.EmptyMutation.html
 <!--TODO: Fix This URL when the EmptySubscription become available in the Documentation  -->
 [EmptySubscription]: https://docs.rs/juniper/0.14.2/juniper/struct.EmptySubscription.html
