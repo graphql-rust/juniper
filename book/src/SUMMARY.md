@@ -21,9 +21,10 @@
 
 
 - [Serving](serve/index.md)
+    - [Batching](serve/batching.md)
 
 
 - [Advanced Topics](advanced/index.md)
   - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
-  - [Multiple operations per request](advanced/multiple_ops_per_request.md)
+  
   - [Dataloaders](advanced/dataloaders.md)
