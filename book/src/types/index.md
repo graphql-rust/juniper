@@ -9,10 +9,12 @@ as painless as possible.
 Find out more in the individual chapters below.
 
 - [Objects](objects/index.md)
-  - [Complex fields](objects/complex_fields.md)
-  - [Context](objects/Context.md)
-  - [Error handling](objects/error_handling.md)
-  - [Generics](objects/generics.md)
+    - [Complex fields](objects/complex_fields.md)
+    - [Context](objects/Context.md)
+    - [Error handling](objects/error/index.md)
+        - [Field errors](objects/error/field.md)
+        - [Schema errors](objects/error/schema.md)
+    - [Generics](objects/generics.md)
 - [Interfaces](interfaces.md)
 - [Unions](unions.md)
 - [Enums](enums.md)
