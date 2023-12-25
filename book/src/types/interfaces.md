@@ -317,7 +317,7 @@ trait Person {
 
 ### Documentation and deprecation
 
-Similarly, [GraphQL fields][4] of [interfaces][0] could also be [documented][7] and [deprecated][9] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
+Similarly, [GraphQL fields][4] of [interfaces][0] may also be [documented][7] and [deprecated][9] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
 ```rust
 # extern crate juniper;
 # use juniper::graphql_interface;
