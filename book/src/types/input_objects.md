@@ -86,7 +86,7 @@ struct Person {
 
 ### Documentation
 
-Similarly, [GraphQL descriptions][7] could be provided by either using [Rust doc comments][6] or with the `#[graphql(description = "...")]` attribute:
+Similarly, [GraphQL descriptions][7] may be provided by either using [Rust doc comments][6] or with the `#[graphql(description = "...")]` attribute:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLInputObject;
