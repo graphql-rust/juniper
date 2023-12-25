@@ -105,7 +105,7 @@ enum StarWarsEpisode {
 #
 # fn main() {}
 ```
-> **NOTE**: Only [GraphQL object][6]/[interface][7] fields and [GraphQL enum][0] values could be [deprecated][5].
+> **NOTE**: Only [GraphQL object][6]/[interface][7] fields and [GraphQL enum][0] values may be [deprecated][5].
 
 
 ### Ignoring
