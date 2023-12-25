@@ -22,7 +22,7 @@ Though the [`juniper`] crate doesn't provide a built-in [HTTP] server, the surro
 
 See their API docs and usage examples (accessible from API docs) for further details of how they should be used.
 
-> **NOTE**: All the officially supported web server framework integrations also provide a simple and convenient way for exposing [GraphiQL] and/or [GraphQL Playground] along with the [GraphQL schema][1]. These powerful tools may ease the development process drastically, as allow to explore the created [GraphQL] API and to interact with it from the client side.
+> **NOTE**: All the officially supported web server framework integrations provide a simple and convenient way for exposing [GraphiQL] and/or [GraphQL Playground] with the [GraphQL schema][1] along. These powerful tools ease the development process by enabling you to explore and send client requests to the [GraphQL] API under development.
 
 
 
