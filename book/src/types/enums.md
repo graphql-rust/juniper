@@ -110,7 +110,7 @@ enum StarWarsEpisode {
 
 ### Ignoring
 
-By default, all [enum][3] variants are included into the generated [GraphQL enum][0] type as values. To prevent including a specific variant, it should be annotated with the `#[graphql(ignore)]` attribute:
+By default, all [enum][3] variants are included in the generated [GraphQL enum][0] type as values. To prevent including a specific variant, annotate it with the `#[graphql(ignore)]` attribute:
 ```rust
 # #![allow(dead_code)]
 # extern crate juniper;
