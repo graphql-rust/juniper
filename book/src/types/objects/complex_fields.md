@@ -39,7 +39,7 @@ impl House {
 
 ### Default arguments
 
-Though [Rust] doesn't have notion of default arguments, [GraphQL arguments][4] are able to have default values (the one used when a GraphQL operation doesn't specify them explicitly). In [Juniper], defining a default value for a [GraphQL argument][4] is possible with the `#[graphql(default)]` attribute:
+Though [Rust] doesn't have the notion of default arguments, [GraphQL arguments][4] are able to have default values. These default values are used when a GraphQL operation doesn't specify the argument explicitly. In [Juniper], defining a default value for a [GraphQL argument][4] is enabled by the `#[graphql(default)]` attribute:
 ```rust
 # extern crate juniper;
 # use juniper::graphql_object;
