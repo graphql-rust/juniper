@@ -1,7 +1,7 @@
 Batching
 ========
 
-[GraphQL] standard generally assumes that there will be one server request per each client operation to perform (such as a query or mutation). This is conceptually simple but might be potentially inefficient.
+The [GraphQL] standard generally assumes that there will be one server request per each client operation to perform (such as a query or mutation). This is conceptually simple but potentially inefficient.
 
 Some client libraries (such as [`apollo-link-batch-http`][1]) have the ability to batch operations in a single [HTTP] request to save network round-trips and potentially increase performance. There are [some tradeoffs][3], though, that should be considered before [batching operations][2].
 
