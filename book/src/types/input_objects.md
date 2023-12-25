@@ -35,7 +35,7 @@ impl Root {
 
 ### Renaming
 
-Just as with [defining GraphQL objects](objects/index.md#renaming), by default, [struct] fields are converted from [Rust]'s standard `snake_case` naming convention into [GraphQL]'s `camelCase` convention:
+Just as with [defining GraphQL objects](objects/index.md#renaming), by default [struct] fields are converted from [Rust]'s standard `snake_case` naming convention into [GraphQL]'s `camelCase` convention:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLInputObject;
