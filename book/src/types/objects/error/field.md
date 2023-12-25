@@ -7,7 +7,7 @@ Field errors
 
 [Juniper] does not do anything about panicking, it naturally bubbles up to the surrounding code/framework and van be dealt with there.
 
-For recoverable errors, [Juniper] works well with the [built-in `Result` type][12], you can use the [`?` operator][14] and things will generally just work as you expect them to:
+For recoverable errors, [Juniper] works well with the [built-in `Result` type][12]. You can use the [`?` operator][14] and things will work as you expect them to:
 ```rust
 # extern crate juniper;
 # use std::{fs::File, io::Read, path::PathBuf, str};
