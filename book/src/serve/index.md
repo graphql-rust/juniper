@@ -8,7 +8,7 @@ Once we have built a [GraphQL schema][1], the next obvious step would be to serv
 
 ## Web server frameworks
 
-Though, [`juniper`] crate itself doesn't provide a built-in [HTTP] server, the surrounding ecosystem does.
+Though the [`juniper`] crate doesn't provide a built-in [HTTP] server, the surrounding ecosystem does.
 
 
 ### Officially supported
