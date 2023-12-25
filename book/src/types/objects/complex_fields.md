@@ -205,7 +205,7 @@ impl Person {
 # fn main() {}
 ```
 
-> **TIP**: See more features in API docs of the [`#[graphql_object]`][3] attribute.
+> **TIP**: See more features in the API docs of the [`#[graphql_object]`][3] attribute.
 
 
 
