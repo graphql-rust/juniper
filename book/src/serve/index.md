@@ -35,7 +35,7 @@ There are two widely adopted protocols for serving [GraphQL] over [WebSocket]:
 1. [Legacy `graphql-ws` GraphQL over WebSocket Protocol][ws-old], formerly used by [Apollo] and the [`subscriptions-transport-ws` npm package], and now being deprecated.
 2. [New `graphql-transport-ws` GraphQL over WebSocket Protocol][ws-new], provided by the [`graphql-ws` npm package] and being used by [Apollo] as for now.
 
-In [Juniper] ecosystem, both implementations are provided by the [`juniper_graphql_ws`] crate. Most of the [officially supported web server framework integrations](#officially-supported) are capable to serve a [GraphQL schema][1] over [WebSocket] (including [subscriptions][2]) and even support [auto-negotiation of the correct protocol based on the `Sec-Websocket-Protocol` HTTP header value][3]. See their API docs and usage examples (accessible from API docs) for further details of how to use this.
+In the [Juniper] ecosystem, both implementations are provided by the [`juniper_graphql_ws`] crate. Most of the [officially supported web server framework integrations](#officially-supported) are able to serve a [GraphQL schema][1] over [WebSocket] (including [subscriptions][2]) and even support [auto-negotiation of the correct protocol based on the `Sec-Websocket-Protocol` HTTP header value][3]. See their API docs and usage examples (accessible from API docs) for further details of how to do so.
 
 
 
