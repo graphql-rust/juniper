@@ -37,7 +37,7 @@ impl Example {
 # fn main() {}
 ```
 
-[`FieldResult<T>`][21] is an alias for [`Result<T, FieldError>`][22], which is the [error type][1] all fallible [fields][6] must return. By using the [`?` operator][14], any type that implements the [`Display` trait][15] (which do most of the error types out there) can be automatically converted into a [`FieldError`][22].
+[`FieldResult<T>`][21] is an alias for [`Result<T, FieldError>`][22], which is the [error type][1] all fallible [fields][6] must return. By using the [`?` operator][14], any type that implements the [`Display` trait][15] (which most of the error types out there do) can be automatically converted into a [`FieldError`][22].
 
 > **TIP**: If a custom conversion into a [`FieldError`][22] is needed (to [fill up `extensions`][2], for example), the [`IntoFieldError` trait][23] should be implemented.
 
