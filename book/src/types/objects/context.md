@@ -83,7 +83,7 @@ impl User {
 
 ### Mutating and mutable references
 
-Context cannot be specified by a mutable reference, because concurrent [fields][4] resolving may be performed. If there is something in a context that requires access by a mutable reference, the context type should follow the [_interior mutability_ pattern][5] for that (e.g. using `RwLock`, `RefCell` or similar).
+Context cannot be a mutable reference as [fields][4] may be resolved concurrently. If something in the context requires a mutable reference, the context type should leverage the [_interior mutability_ pattern][5] (e.g. use `RwLock`, `RefCell` or similar).
 
 For example, when using async runtime with [work stealing][6] (like [`tokio`]), which obviously requires thread safety in addition, we will need to use a corresponding async version of `RwLock`:
 ```rust
