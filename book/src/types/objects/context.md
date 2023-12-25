@@ -20,7 +20,7 @@ struct User {
 #
 # fn main() {}
 ```
-We would like a `friends` [field][4] on `User` that returns a list of `User` [objects][4]. In order to write such a [field][4] though, the `Database` must be queried. To solve this, we mark the `Database` as a valid context type and assign it to the `User` [object][4]. To gain access to the context, we need to specify an argument with the same type as the specified `context` for the type:
+We would like to define a `friends` [field][4] on `User` that returns a list of `User` [objects][0]. In order to write such a [field][4] we need to query a `Database`. To accomplish this we must first mark the `Database` as a valid context type and then assign it to the `User` [object][0]. To gain access to the context in the `friends` [field][4], we need to specify an argument with the same type as the specified context:
 ```rust
 # extern crate juniper;
 # use std::collections::HashMap;
