@@ -5,7 +5,7 @@ Enums
 >
 > [Enums][0] are not references for a numeric value, but are unique values in their own right. They may serialize as a string: the name of the represented value.
 
-[GraphQL enum][0] in [Juniper] could be defined by using a [`#[derive(GraphQLEnum)]`][2] attribute on a [Rust enum][3] (its variants cannot have any fields, though):
+With [Juniper] a [GraphQL enum][0] may be defined by using the [`#[derive(GraphQLEnum)]`][2] attribute on a [Rust enum][3] as long as its variants do not have any fields:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLEnum;
