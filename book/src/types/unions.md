@@ -148,7 +148,7 @@ enum Character<S> {
 ```
 > **WARNING**: It's the _library user's responsibility_ to ensure that ignored [enum][22] variant is **never** returned from resolvers, otherwise resolving the [GraphQL] query will **panic in runtime**.
 
-> **TIP**: See more features in API docs of the [`#[derive(GraphQLUnion)]`][2] attribute.
+> **TIP**: See more available features in the API docs of the [`#[derive(GraphQLUnion)]`][2] attribute.
 
 
 

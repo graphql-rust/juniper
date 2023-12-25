@@ -321,7 +321,7 @@ mod string_or_int {
 # fn main() {}
 ```
 
-> **TIP**: See more features in API docs of the [`#[derive(GraphQLScalar)]`][8] and [`#[graphql_scalar]`][9] attributes.
+> **TIP**: See more available features in the API docs of the [`#[derive(GraphQLScalar)]`][8] and [`#[graphql_scalar]`][9] attributes.
 
 
 

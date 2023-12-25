@@ -131,7 +131,7 @@ enum Episode<T> {
 # fn main() {}
 ```
 
-> **TIP**: See more features in API docs of the [`#[derive(GraphQLEnum)]`][2] attribute.
+> **TIP**: See more available features in the API docs of the [`#[derive(GraphQLEnum)]`][2] attribute.
 
 
 

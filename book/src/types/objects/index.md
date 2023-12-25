@@ -170,7 +170,7 @@ struct Person {
 # fn main() {}
 ```
 
-> **TIP**: See more features in API docs of the [`#[derive(GraphQLObject)]`][2] attribute.
+> **TIP**: See more available features in the API docs of the [`#[derive(GraphQLObject)]`][2] attribute.
 
 
 
