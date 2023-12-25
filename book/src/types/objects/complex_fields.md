@@ -163,7 +163,7 @@ impl Person {
 
 ### Ignoring
 
-By default, all methods of an [`impl` block][6] are considered as [GraphQL fields][4]. If a helper method is needed, then it should be either defined in a separate [`impl` block][6], or marked with the `#[graphql(ignore)]` attribute:
+By default, all methods of an [`impl` block][6] are exposed as [GraphQL fields][4]. If a method should not be exposed as a [GraphQL field][4], it should be defined in a separate [`impl` block][6] or marked with the `#[graphql(ignore)]` attribute:
 ```rust
 # #![allow(dead_code)]
 # extern crate juniper;
