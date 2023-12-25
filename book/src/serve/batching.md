@@ -5,7 +5,7 @@ The [GraphQL] standard generally assumes that there will be one server request p
 
 Some client libraries (such as [`apollo-link-batch-http`][1]) have the ability to batch operations in a single [HTTP] request to save network round-trips and potentially increase performance. There are [some tradeoffs][3], though, that should be considered before [batching operations][2].
 
-[Juniper]'s [server integration crates](index.md#officially-supported) support [multiple operations batching][2] in a single [HTTP] request out-of-the-box, via [JSON] arrays, which makes them compatible with client libraries that support [batch operations][2] without any special configuration.
+[Juniper]'s [server integration crates](index.md#officially-supported) support [batching multiple operations][2] in a single [HTTP] request out-of-the-box via [JSON] arrays. This makes them compatible with client libraries that support [batch operations][2] without any special configuration.
 
 > **NOTE**: If you use a custom server integration, it's **not a hard requirement** to support [batching][2], as it's not a part of the [official GraphQL specification][0].
 
