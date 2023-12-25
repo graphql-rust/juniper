@@ -142,7 +142,7 @@ struct Point2D {
 # fn main() {}
 ```
 
-> **TIP**: See more features in API docs of the [`#[derive(GraphQLInputObject)]`][2] attribute.
+> **TIP**: See more features in the API docs of the [`#[derive(GraphQLInputObject)]`][2] attribute.
 
 
 
