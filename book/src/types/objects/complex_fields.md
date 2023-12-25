@@ -7,7 +7,7 @@ Using a plain [Rust struct][struct] for representing a [GraphQL object][0] is ea
 - Defining a circular [GraphQL object][0], where one of its [fields][4] returns the type itself.
 - Using some other (non-[struct]) [Rust] type to represent a [GraphQL object][0].
 
-To express this, we need a way to define a [GraphQL field][4] as a function. In [Juniper] this is achievable by placing the [`#[graphql_object]` attribute][3] on the [`impl` block][6], which turn its methods into [GraphQL fields][4]:
+To support these more complicated use cases, we need a way to define a [GraphQL field][4] as a function. In [Juniper] this is achievable by placing the [`#[graphql_object]` attribute][3] on an [`impl` block][6], which turns its methods into [GraphQL fields][4]:
 ```rust
 # extern crate juniper;
 # use juniper::{graphql_object, GraphQLObject};
