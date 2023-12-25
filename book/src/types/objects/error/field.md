@@ -5,7 +5,7 @@ Field errors
 - [`Result<T, E>`][12] for recoverable errors;
 - [`panic!`][13] for unrecoverable errors.
 
-[Juniper] does not do anything about panicking, it naturally bubbles up to the surrounding code/framework and van be dealt with there.
+[Juniper] does not do anything about panicking, it naturally bubbles up to the surrounding code/framework and can be dealt with there.
 
 For recoverable errors, [Juniper] works well with the [built-in `Result` type][12]. You can use the [`?` operator][14] and things will work as you expect them to:
 ```rust
