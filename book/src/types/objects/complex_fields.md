@@ -5,7 +5,7 @@ Using a plain [Rust struct][struct] for representing a [GraphQL object][0] is ea
 - Perform some non-trivial logic while [executing][1] the [field][4] (like querying database, etc.).
 - Accept [field arguments][5].
 - Define a circular [GraphQL object][0], where one of its [fields][4] returns the type itself.
-- Use other [Rust] type (non-[struct]) to represent a [GraphQL object][0].
+- Use some other (non-[struct]) [Rust] type to represent a [GraphQL object][0].
 
 To express this, we need a way to define a [GraphQL field][4] as a function. In [Juniper] this is achievable by placing the [`#[graphql_object]` attribute][3] on the [`impl` block][6], which turn its methods into [GraphQL fields][4]:
 ```rust
