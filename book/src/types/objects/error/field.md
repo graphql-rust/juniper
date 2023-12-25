@@ -41,7 +41,7 @@ impl Example {
 
 > **TIP**: If a custom conversion into a [`FieldError`][22] is needed (to [fill up `extensions`][2], for example), the [`IntoFieldError` trait][23] should be implemented.
 
-> **NOTE**: [`FieldError`][22]s are [GraphQL field errors][1] and are [not visible][9] in [GraphQL schema][8] in any way.
+> **NOTE**: [`FieldError`][22]s are [GraphQL field errors][1] and are [not visible][9] in a [GraphQL schema][8] in any way.
 
 
 
