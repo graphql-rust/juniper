@@ -2,7 +2,7 @@
 
 - [Introduction](introduction.md)
 - [Quickstart](quickstart.md)
-- [Type System](types/index.md)
+- [Type system](types/index.md)
   - [Objects](types/objects/index.md)
     - [Complex fields](types/objects/complex_fields.md)
     - [Context](types/objects/context.md)
