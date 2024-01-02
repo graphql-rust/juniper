@@ -5,7 +5,10 @@ edition = "2021"
 rust-version = "1.73"
 description = "`juniper` GraphQL integration with `hyper`."
 license = "BSD-2-Clause"
-authors = ["Damir Vandic <info@dvic.io>"]
+authors = [
+    "Damir Vandic <info@dvic.io>",
+    "Kai Ren <tyranron@gmail.com>",
+]
 documentation = "https://docs.rs/juniper_hyper"
 homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_hyper"
 repository = "https://github.com/graphql-rust/juniper"

@@ -8,6 +8,7 @@ license = "BSD-2-Clause"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
+    "Kai Ren <tyranron@gmail.com>",
 ]
 documentation = "https://docs.rs/juniper_rocket"
 homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_rocket"
