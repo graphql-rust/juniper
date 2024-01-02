@@ -1,4 +1,4 @@
-# [[0.15.12] 2024-01-??](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.12)
+# [[0.15.12] 2024-01-02](https://github.com/graphql-rust/juniper/releases/tag/juniper-v0.15.12)
 
 - Fix minimal version of `fnv` dependency crate.
 
