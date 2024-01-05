@@ -28,7 +28,6 @@ struct ValidationError {
     message: String,
 }
 
-# #[allow(dead_code)]
 struct MutationResult<T>(Result<T, Vec<ValidationError>>);
 
 #[graphql_object]

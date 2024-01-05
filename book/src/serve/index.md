@@ -65,6 +65,6 @@ In the [Juniper] ecosystem, both implementations are provided by the [`juniper_g
 [ws-new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [ws-old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 
-[1]: ../schema/schemas_and_mutations.md
+[1]: ../schema/index.md
 [2]: ../schema/subscriptions.md
 [3]: https://developer.mozilla.org/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#subprotocols

@@ -17,7 +17,7 @@
   - [Scalars](types/scalars.md)
 
 
-- [Schemas and mutations](schema/schemas_and_mutations.md)
+- [Schema](schema/index.md)
   - [Subscriptions](schema/subscriptions.md)
   - [Introspection](schema/introspection.md)
 

@@ -172,4 +172,4 @@ GraphQL over [WS][WS] is not fully supported yet and is non-standard.
 [warp]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp
 [WS]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 [GraphQLError]: https://docs.rs/juniper/0.14.2/juniper/enum.GraphQLError.html
-[Schema]: ../schema/schemas_and_mutations.md
+[Schema]: ../schema/index.md

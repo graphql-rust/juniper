@@ -3,7 +3,7 @@ Quickstart
 
 This page will give you a short introduction to the concepts in [Juniper].
 
-**[Juniper] follows a [code-first] approach to define a [GraphQL] schema.** 
+**[Juniper] follows a [code-first] approach to define a [GraphQL] schema.**
 
 > **TIP**: For a [schema-first] approach, consider using a [`juniper-from-schema`] crate for generating a [`juniper`]-based code from a [schema] file.
 
