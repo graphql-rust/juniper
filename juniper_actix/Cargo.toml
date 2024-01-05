@@ -5,7 +5,10 @@ edition = "2021"
 rust-version = "1.73"
 description = "`juniper` GraphQL integration with `actix-web`."
 license = "BSD-2-Clause"
-authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
+authors = [
+    "Jordao Rosario <jordao.rosario01@gmail.com>",
+    "Kai Ren <tyranron@gmail.com>",
+]
 documentation = "https://docs.rs/juniper_actix"
 homepage = "https://github.com/graphql-rust/juniper/tree/master/juniper_actix"
 repository = "https://github.com/graphql-rust/juniper"

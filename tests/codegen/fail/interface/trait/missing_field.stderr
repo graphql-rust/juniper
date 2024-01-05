@@ -13,3 +13,27 @@ error[E0080]: evaluation of constant value failed
    |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id` isn't implemented on `ObjA`.', $DIR/fail/interface/trait/missing_field.rs:11:8
    |
    = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation of constant value failed
+  --> fail/interface/trait/missing_field.rs:11:8
+   |
+11 |     fn id(&self) -> &str;
+   |        ^^ the evaluated program panicked at 'Failed to implement interface `Character` on `ObjA`: Field `id` isn't implemented on `ObjA`.', $DIR/fail/interface/trait/missing_field.rs:11:8
+   |
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ObjA: reflect::Field<__S, 11301463986558097276003903130001171064>` is not satisfied
+  --> fail/interface/trait/missing_field.rs:11:8
+   |
+11 |     fn id(&self) -> &str;
+   |        ^^ the trait `reflect::Field<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
+   |
+   = help: the trait `reflect::Field<__S, 140650918148392961738240285796466530725>` is implemented for `ObjA`
+
+error[E0277]: the trait bound `ObjA: AsyncField<__S, 11301463986558097276003903130001171064>` is not satisfied
+  --> fail/interface/trait/missing_field.rs:11:8
+   |
+11 |     fn id(&self) -> &str;
+   |        ^^ the trait `AsyncField<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
+   |
+   = help: the trait `AsyncField<__S, 140650918148392961738240285796466530725>` is implemented for `ObjA`
