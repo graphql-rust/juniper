@@ -25,7 +25,6 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["schema-language"]
 anyhow = ["dep:anyhow"]
 backtrace = ["anyhow?/backtrace"]
 bigdecimal = ["dep:bigdecimal", "dep:num-bigint", "dep:ryu"]

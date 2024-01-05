@@ -55,7 +55,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Made `LookAheadMethods::children()` method to return slice instead of `Vec`. ([#1200])
 - Abstracted `Spanning::start` and `Spanning::end` fields into separate struct `Span`. ([#1207], [#1208])
 - Added `Span` to `Arguments` and `LookAheadArguments`. ([#1206], [#1209])
-- Disabled `bson`, `url` and `uuid` [Cargo feature]s by default. ([#1230])
+- Disabled `bson`, `url`, `uuid` and `schema-language` [Cargo feature]s by default. ([#1230])
 
 ### Added
 
