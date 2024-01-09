@@ -4,7 +4,7 @@
     "postinstall": "make graphiql graphql-playground"
   },
   "dependencies": {
-    "graphiql": "3.0.10",
+    "graphiql": "3.1.0",
     "graphql-playground-react": "1.7.28"
   }
 }

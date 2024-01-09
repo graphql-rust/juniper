@@ -173,6 +173,10 @@ jobs:
       - run: cargo +nightly update -Z minimal-versions
 
       - run: make test.cargo crate=${{ matrix.crate }}
+        if: ${{ matrix.crate != 'juniper_actix' }}
+      # TODO: Remove once MSRV bumps up >=1.75.
+      - run: cargo check -p ${{ matrix.crate }} --all-features
+        if: ${{ matrix.crate == 'juniper_actix' }}
 
   package:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}

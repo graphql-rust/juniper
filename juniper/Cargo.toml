@@ -77,7 +77,7 @@ bencher = "0.1.2"
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false }
 pretty_assertions = "1.0.0"
 serde_json = "1.0.18"
-serial_test = "2.0"
+serial_test = "3.0"
 tokio = { version = "1.0", features = ["macros", "time", "rt-multi-thread"] }
 
 [[bench]]
