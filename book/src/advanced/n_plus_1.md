@@ -20,6 +20,7 @@ A common issue with [GraphQL] server implementations is how the [resolvers][2] q
 #     async fn load_cult_by_id(&self, cult_id: CultId) -> anyhow::Result<Option<Cult>> { unimplemented!() }
 #     async fn load_all_persons(&self) -> anyhow::Result<Vec<Person>> { unimplemented!() }
 # }
+#
 #[derive(GraphQLObject)]
 struct Cult {
     id: CultId,
@@ -93,7 +94,7 @@ SELECT id, name FROM cults WHERE id = 2;
 ```
 
 There are several ways how this problem may be resolved in [Juniper]. The most common ones are:
-- [Dataloader](dataloader.md)
+- [DataLoader](dataloader.md)
 - Look-ahead machinery
 - Eager loading
 

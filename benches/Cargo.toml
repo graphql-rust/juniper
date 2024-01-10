@@ -6,6 +6,7 @@ authors = ["Christoph Herzog <chris@theduke.at>"]
 publish = false
 
 [dependencies]
+dataloader = "0.17" # for Book only
 futures = "0.3"
 juniper = { path = "../juniper" }
 

@@ -23,4 +23,4 @@
 - [Advanced Topics](advanced/index.md)
     - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
     - [N+1 problem](advanced/n_plus_1.md)
-        - [Dataloader](advanced/dataloader.md)
+        - [DataLoader](advanced/dataloader.md)
