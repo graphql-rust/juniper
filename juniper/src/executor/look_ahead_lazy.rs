@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    ast::{Arguments, Directive, Field, Fragment, InputValue, Selection},
+    ast::{Directive, Field, Fragment, InputValue, Selection},
     parser::{Span, Spanning},
     value::ScalarValue,
 };
@@ -173,28 +173,6 @@ impl<'a, S: ScalarValue> LookAheadArgument<'a, S> {
     }
 }
 
-/// The arguments passed into a query.
-#[derive(Copy, Clone, Debug)]
-pub struct LookAheadArguments<'a, S> {
-    arguments: &'a Arguments<'a, S>,
-    vars: &'a Variables<S>,
-}
-
-impl<'a, S> LookAheadArguments<'a, S> {
-    /// Returns an iterator over the arguments.
-    pub fn iter(&self) -> impl Iterator<Item = LookAheadArgument<'a, S>> {
-        let vars = self.vars;
-        self.arguments
-            .items
-            .iter()
-            .map(|(name, input_value)| LookAheadArgument {
-                name,
-                input_value,
-                vars,
-            })
-    }
-}
-
 /// The children of a selection.
 #[derive(Clone, Debug)]
 pub struct LookAheadChildren<'a, S: ScalarValue + 'a> {
@@ -309,25 +287,37 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
             .unwrap_or_else(|| self.field_original_name())
     }
 
-    /// Returns the top level arguments from the current selection, if present.
-    pub fn arguments(&self) -> Option<LookAheadArguments<'a, S>> {
+    /// Indicates whether the current node has any arguments.
+    pub fn has_arguments(&self) -> bool {
         match self.source {
-            SelectionSource::Field(field) => {
-                field
-                    .arguments
-                    .as_ref()
-                    .map(|spanned_arguments| LookAheadArguments {
-                        arguments: &spanned_arguments.item,
-                        vars: self.vars,
-                    })
-            }
-            _ => None,
+            SelectionSource::Field(field) => match &field.arguments {
+                Some(arguments) => !arguments.item.items.is_empty(),
+                None => false,
+            },
+            _ => false,
         }
+    }
+
+    /// Returns the top level arguments from the current selection, if present.
+    pub fn arguments(&self) -> impl Iterator<Item = LookAheadArgument<'a, S>> {
+        let opt_arguments = match self.source {
+            SelectionSource::Field(field) => field.arguments.as_ref(),
+            _ => None,
+        };
+
+        opt_arguments
+            .into_iter()
+            .flat_map(|arguments| arguments.item.iter())
+            .map(|(name, argument)| LookAheadArgument {
+                name: &name,
+                input_value: &argument,
+                vars: self.vars,
+            })
     }
 
     /// Get the top level argument with a given name from the current selection
     pub fn argument(&self, name: &str) -> Option<LookAheadArgument<'a, S>> {
-        self.arguments()?.iter().find(|arg| arg.name() == name)
+        self.arguments().find(|arg| arg.name() == name)
     }
 
     /// Returns the children from the current selection.
@@ -630,10 +620,10 @@ mod tests {
                 name: look_ahead.field_name(),
                 alias: look_ahead.field_alias(),
                 applies_for: look_ahead.applies_for,
-                arguments: if let Some(arguments) = look_ahead.arguments() {
+                arguments: if look_ahead.has_arguments() {
                     Some(
-                        arguments
-                            .iter()
+                        look_ahead
+                            .arguments()
                             .map(|argument| (argument.name(), ValueDebug::from(argument.value())))
                             .collect(),
                     )
@@ -1455,8 +1445,8 @@ query Hero {
             assert!(look_ahead.field_alias().is_none());
             assert_eq!(look_ahead.field_name(), "hero");
 
-            assert!(look_ahead.arguments().is_some());
-            let arg = look_ahead.arguments().unwrap().iter().next().unwrap();
+            assert!(look_ahead.has_arguments());
+            let arg = look_ahead.arguments().next().unwrap();
             assert_eq!(arg.name(), "episode");
             assert_eq!(ValueDebug::from(arg.value()), ValueDebug::Enum("EMPIRE"));
 
@@ -1477,7 +1467,7 @@ query Hero {
             assert_eq!(name_child.field_original_name(), "name");
             assert_eq!(name_child.field_alias(), None);
             assert_eq!(name_child.field_name(), "name");
-            assert!(name_child.arguments().is_none());
+            assert!(!name_child.has_arguments());
             assert!(name_child.children().is_empty());
 
             let aliased_name_child = child_iter.next().unwrap();
@@ -1489,7 +1479,7 @@ query Hero {
             assert_eq!(aliased_name_child.field_original_name(), "name");
             assert_eq!(aliased_name_child.field_alias(), Some("aliasedName"));
             assert_eq!(aliased_name_child.field_name(), "aliasedName");
-            assert!(aliased_name_child.arguments().is_none());
+            assert!(!aliased_name_child.has_arguments());
             assert!(aliased_name_child.children().is_empty());
 
             let friends_child = child_iter.next().unwrap();
@@ -1501,7 +1491,7 @@ query Hero {
             assert_eq!(friends_child.field_original_name(), "friends");
             assert_eq!(friends_child.field_alias(), None);
             assert_eq!(friends_child.field_name(), "friends");
-            assert!(friends_child.arguments().is_none());
+            assert!(!friends_child.has_arguments());
             assert!(!friends_child.children().is_empty());
             assert_eq!(
                 friends_child.children().names().collect::<Vec<_>>(),
@@ -1521,7 +1511,7 @@ query Hero {
             assert_eq!(child.field_original_name(), "name");
             assert_eq!(child.field_alias(), None);
             assert_eq!(child.field_name(), "name");
-            assert!(child.arguments().is_none());
+            assert!(!child.has_arguments());
             assert!(child.children().is_empty());
 
             assert!(friends_child_iter.next().is_none());
