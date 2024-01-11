@@ -24,3 +24,4 @@
     - [Implicit and explicit `null`](advanced/implicit_and_explicit_null.md)
     - [N+1 problem](advanced/n_plus_1.md)
         - [DataLoader](advanced/dataloader.md)
+        - [Eager loading](advanced/eager_loading.md)
