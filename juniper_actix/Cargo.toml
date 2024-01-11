@@ -37,7 +37,7 @@ serde_json = "1.0.18"
 
 [dev-dependencies]
 actix-cors = "0.7"
-actix-identity = "0.6"
+actix-identity = "0.7"
 actix-rt = "2.0"
 actix-test = "0.1"
 async-stream = "0.3"
