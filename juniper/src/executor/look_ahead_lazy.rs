@@ -70,11 +70,11 @@ pub struct LookAheadList<'a, S> {
 
 impl<'a, S: ScalarValue> LookAheadList<'a, S> {
     /// Returns an iterator over the list's elements.
-    pub fn iter(&self) -> impl Iterator<Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>> {
-        let vars = self.vars;
-        self.input_list
-            .iter()
-            .map(move |val| LookAheadValue::from_input_value(&val.item, &val.span, vars))
+    pub fn iter(&self) -> iter::LookAheadListIter<'a, S> {
+        iter::LookAheadListIter {
+            slice_iter: self.input_list.iter(),
+            vars: self.vars,
+        }
     }
 }
 
@@ -93,6 +93,30 @@ impl<'a, S: ScalarValue> PartialEq for LookAheadList<'a, S> {
     }
 }
 
+impl<'a, S: ScalarValue + 'a> IntoIterator for LookAheadList<'a, S> {
+    type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
+    type IntoIter = iter::LookAheadListIter<'a, S>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        iter::LookAheadListIter {
+            slice_iter: self.input_list.iter(),
+            vars: self.vars,
+        }
+    }
+}
+
+impl<'a, S: ScalarValue + 'a> IntoIterator for &LookAheadList<'a, S> {
+    type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
+    type IntoIter = iter::LookAheadListIter<'a, S>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        iter::LookAheadListIter {
+            slice_iter: self.input_list.iter(),
+            vars: self.vars,
+        }
+    }
+}
+
 /// A JSON-like object that can be used as an argument in the query execution.
 #[derive(Clone, Copy, Debug)]
 pub struct LookAheadObject<'a, S> {
@@ -102,24 +126,11 @@ pub struct LookAheadObject<'a, S> {
 
 impl<'a, S: ScalarValue + 'a> LookAheadObject<'a, S> {
     /// Returns an iterator over the object's entries.
-    pub fn iter(
-        &self,
-    ) -> impl Iterator<
-        Item = (
-            BorrowedSpanning<'a, &'a str>,
-            BorrowedSpanning<'a, LookAheadValue<'a, S>>,
-        ),
-    > {
-        let vars = self.vars;
-        self.input_object.iter().map(move |(key, val)| {
-            (
-                Spanning {
-                    span: &key.span,
-                    item: key.item.as_str(),
-                },
-                LookAheadValue::from_input_value(&val.item, &val.span, vars),
-            )
-        })
+    pub fn iter(&self) -> iter::LookAheadObjectIter<'a, S> {
+        iter::LookAheadObjectIter {
+            slice_iter: self.input_object.iter(),
+            vars: self.vars,
+        }
     }
 }
 
@@ -135,6 +146,84 @@ impl<'a, S> Default for LookAheadObject<'a, S> {
 impl<'a, S: ScalarValue> PartialEq for LookAheadObject<'a, S> {
     fn eq(&self, other: &Self) -> bool {
         self.iter().eq(other.iter())
+    }
+}
+
+impl<'a, S: ScalarValue + 'a> IntoIterator for LookAheadObject<'a, S> {
+    type Item = (
+        BorrowedSpanning<'a, &'a str>,
+        BorrowedSpanning<'a, LookAheadValue<'a, S>>,
+    );
+    type IntoIter = iter::LookAheadObjectIter<'a, S>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        iter::LookAheadObjectIter {
+            slice_iter: self.input_object.iter(),
+            vars: self.vars,
+        }
+    }
+}
+
+impl<'a, S: ScalarValue + 'a> IntoIterator for &LookAheadObject<'a, S> {
+    type Item = (
+        BorrowedSpanning<'a, &'a str>,
+        BorrowedSpanning<'a, LookAheadValue<'a, S>>,
+    );
+    type IntoIter = iter::LookAheadObjectIter<'a, S>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        iter::LookAheadObjectIter {
+            slice_iter: self.input_object.iter(),
+            vars: self.vars,
+        }
+    }
+}
+
+/// Various look-ahead iterator types
+pub mod iter {
+    use super::*;
+
+    /// An iterator over [LookAheadList] entries.
+    pub struct LookAheadListIter<'a, S> {
+        pub(super) slice_iter: std::slice::Iter<'a, Spanning<InputValue<S>>>,
+        pub(super) vars: Option<&'a Variables<S>>,
+    }
+
+    impl<'a, S: ScalarValue + 'a> Iterator for LookAheadListIter<'a, S> {
+        type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let vars = self.vars;
+            self.slice_iter
+                .next()
+                .map(move |val| LookAheadValue::from_input_value(&val.item, &val.span, vars))
+        }
+    }
+
+    /// An iterator over [LookAheadObject] entries.
+    pub struct LookAheadObjectIter<'a, S> {
+        pub(super) slice_iter: std::slice::Iter<'a, (Spanning<String>, Spanning<InputValue<S>>)>,
+        pub(super) vars: Option<&'a Variables<S>>,
+    }
+
+    impl<'a, S: ScalarValue + 'a> Iterator for LookAheadObjectIter<'a, S> {
+        type Item = (
+            BorrowedSpanning<'a, &'a str>,
+            BorrowedSpanning<'a, LookAheadValue<'a, S>>,
+        );
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let vars = self.vars;
+            self.slice_iter.next().map(move |(key, val)| {
+                (
+                    Spanning {
+                        span: &key.span,
+                        item: key.item.as_str(),
+                    },
+                    LookAheadValue::from_input_value(&val.item, &val.span, vars),
+                )
+            })
+        }
     }
 }
 
@@ -309,8 +398,8 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
             .into_iter()
             .flat_map(|arguments| arguments.item.iter())
             .map(|(name, argument)| LookAheadArgument {
-                name: &name,
-                input_value: &argument,
+                name,
+                input_value: argument,
                 vars: self.vars,
             })
     }
