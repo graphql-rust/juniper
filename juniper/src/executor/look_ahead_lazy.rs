@@ -37,10 +37,13 @@ pub enum LookAheadValue<'a, S: ScalarValue + 'a> {
 
 impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
     fn from_input_value(
-        input_value: &'a InputValue<S>,
-        span: &'a Span,
+        input_value: BorrowedSpanning<'a, &'a InputValue<S>>,
         vars: Option<&'a Variables<S>>,
     ) -> BorrowedSpanning<'a, Self> {
+        let Spanning {
+            item: input_value,
+            span: input_span,
+        } = input_value;
         Spanning {
             item: match input_value {
                 InputValue::Null => Self::Null,
@@ -48,7 +51,16 @@ impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
                 InputValue::Enum(e) => Self::Enum(e),
                 InputValue::Variable(name) => vars
                     .and_then(|vars| vars.get(name))
-                    .map(|item| Self::from_input_value(item, span, vars).item)
+                    .map(|item| {
+                        Self::from_input_value(
+                            BorrowedSpanning {
+                                item,
+                                span: input_span,
+                            },
+                            vars,
+                        )
+                        .item
+                    })
                     .unwrap_or(Self::Null),
                 InputValue::List(input_list) => Self::List(LookAheadList { input_list, vars }),
                 InputValue::Object(input_object) => Self::Object(LookAheadObject {
@@ -56,7 +68,7 @@ impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
                     vars,
                 }),
             },
-            span,
+            span: input_span,
         }
     }
 }
@@ -196,7 +208,7 @@ pub mod iter {
             let vars = self.vars;
             self.slice_iter
                 .next()
-                .map(move |val| LookAheadValue::from_input_value(&val.item, &val.span, vars))
+                .map(move |val| LookAheadValue::from_input_value(val.as_ref(), vars))
         }
     }
 
@@ -220,7 +232,7 @@ pub mod iter {
                         span: &key.span,
                         item: key.item.as_str(),
                     },
-                    LookAheadValue::from_input_value(&val.item, &val.span, vars),
+                    LookAheadValue::from_input_value(val.as_ref(), vars),
                 )
             })
         }
@@ -248,12 +260,7 @@ impl<'a, S: ScalarValue> LookAheadArgument<'a, S> {
 
     /// The argument's value
     pub fn value(&self) -> LookAheadValue<'a, S> {
-        LookAheadValue::from_input_value(
-            &self.input_value.item,
-            &self.input_value.span,
-            Some(self.vars),
-        )
-        .item
+        LookAheadValue::from_input_value(self.input_value.as_ref(), Some(self.vars)).item
     }
 
     /// The Span of the argument's value
@@ -575,12 +582,9 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
                             .iter()
                             .find(|item| item.0.item == "if")
                             .map(|(_, v)| {
-                                if let LookAheadValue::Scalar(s) = LookAheadValue::from_input_value(
-                                    &v.item,
-                                    &v.span,
-                                    Some(self.vars),
-                                )
-                                .item
+                                if let LookAheadValue::Scalar(s) =
+                                    LookAheadValue::from_input_value(v.as_ref(), Some(self.vars))
+                                        .item
                                 {
                                     s.as_bool().unwrap_or(false)
                                 } else {
@@ -594,12 +598,9 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
                             .iter()
                             .find(|item| item.0.item == "if")
                             .map(|(_, v)| {
-                                if let LookAheadValue::Scalar(b) = LookAheadValue::from_input_value(
-                                    &v.item,
-                                    &v.span,
-                                    Some(self.vars),
-                                )
-                                .item
+                                if let LookAheadValue::Scalar(b) =
+                                    LookAheadValue::from_input_value(v.as_ref(), Some(self.vars))
+                                        .item
                                 {
                                     b.as_bool().map(::std::ops::Not::not).unwrap_or(false)
                                 } else {
