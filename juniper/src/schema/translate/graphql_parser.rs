@@ -352,9 +352,7 @@ mod sort_value {
     }
 
     /// Returns a [`Definition`] sorting weight by its name.
-    pub(super) fn by_name<'b, 'a, T>(
-        definition: &'b Definition<'a, T>,
-    ) -> Option<&'b T::Value>
+    pub(super) fn by_name<'b, 'a, T>(definition: &'b Definition<'a, T>) -> Option<&'b T::Value>
     where
         T: Text<'a>,
     {
@@ -381,9 +379,7 @@ mod sort_value {
     }
 
     /// Returns a [`Definition`] sorting weight by its directive.
-    pub(super) fn by_directive<'b, 'a, T>(
-        definition: &'b Definition<'a, T>,
-    ) -> Option<&'b T::Value>
+    pub(super) fn by_directive<'b, 'a, T>(definition: &'b Definition<'a, T>) -> Option<&'b T::Value>
     where
         T: Text<'a>,
     {

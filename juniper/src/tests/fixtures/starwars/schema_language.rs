@@ -32,7 +32,7 @@ mod tests {
         //
         // See https://github.com/rust-lang/rust/pull/63681.
         #[cfg(windows)]
-        let expected = &STATIC_GRAPHQL_SCHEMA_DEFINITION.replace("\r\n", "\n");
+        let expected = STATIC_GRAPHQL_SCHEMA_DEFINITION.replace("\r\n", "\n");
         #[cfg(not(windows))]
         let expected = STATIC_GRAPHQL_SCHEMA_DEFINITION;
 

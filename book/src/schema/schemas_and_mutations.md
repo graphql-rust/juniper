@@ -93,12 +93,12 @@ fn main() {
     let result = schema.as_sdl();
 
     let expected = "\
-type Query {
-  hello: String!
-}
-
 schema {
   query: Query
+}
+
+type Query {
+  hello: String!
 }
 ";
 #   #[cfg(not(target_os = "windows"))]
