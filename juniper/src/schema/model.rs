@@ -220,14 +220,32 @@ where
     #[cfg(feature = "schema-language")]
     /// Returns this [`RootNode`] as a [`String`] containing the schema in [SDL (schema definition language)].
     ///
+    /// # Sorted
+    ///
+    /// The order of the generated definitions is stable and is sorted in the "type-then-name" manner.
+    ///
+    /// If another sorting order is required, then the [`as_document()`] method should be used, which allows to sort the
+    /// returned [`Document`] in the desired manner and then to convert it [`to_string()`].
+    ///
+    /// [`as_document()`]: RootNode::as_document
+    /// [`to_string()`]: ToString::to_string
     /// [0]: https://graphql.org/learn/schema#type-language
     #[must_use]
     pub fn as_sdl(&self) -> String {
-        self.as_document().to_string()
+        use crate::schema::translate::graphql_parser::sort_schema_document;
+
+        let mut doc = self.as_document();
+        sort_schema_document(&mut doc);
+        doc.to_string()
     }
 
     #[cfg(feature = "schema-language")]
     /// Returns this [`RootNode`] as a [`graphql_parser`]'s [`Document`].
+    ///
+    /// # Unsorted
+    ///
+    /// The order of the generated definitions in the returned [`Document`] is NOT stable and may change without any
+    /// real schema changes.
     #[must_use]
     pub fn as_document(&'a self) -> Document<'a, &'a str> {
         use crate::schema::translate::{
@@ -784,18 +802,24 @@ mod root_node_test {
 
         #[test]
         fn generates_correct_sdl() {
-            let schema = RootNode::new(
+            let actual = RootNode::new(
                 Query,
                 EmptyMutation::<()>::new(),
                 EmptySubscription::<()>::new(),
             );
-            let ast = graphql_parser::parse_schema::<&str>(
+            let expected = graphql_parser::parse_schema::<&str>(
                 //language=GraphQL
                 r#"
-                union GlutenFree = Cake | IceCream
+                schema {
+                  query: Query
+                }
                 enum Fruit {
                     APPLE
                     ORANGE
+                }
+                input Coordinate {
+                    latitude: Float!
+                    longitude: Float!
                 }
                 type Cake {
                     fresh: Boolean!
@@ -813,18 +837,12 @@ mod root_node_test {
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
-                input Coordinate {
-                    latitude: Float!
-                    longitude: Float!
-                }
-                schema {
-                  query: Query
-                }
+                union GlutenFree = Cake | IceCream
                 "#,
             )
             .unwrap();
 
-            assert_eq!(ast.to_string(), schema.as_sdl());
+            assert_eq!(actual.as_sdl(), expected.to_string());
         }
     }
 }
