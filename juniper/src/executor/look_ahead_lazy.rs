@@ -292,7 +292,7 @@ impl<'a, S: ScalarValue> LookAheadChildren<'a, S> {
         self.children
             .iter()
             .find(|child| child.field_name() == name)
-            .cloned()
+            .copied()
     }
 
     /// Checks if a child selection with the specified `name` exists.
@@ -322,7 +322,7 @@ impl<'a, S: ScalarValue> IntoIterator for LookAheadChildren<'a, S> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(super) enum SelectionSource<'a, S: ScalarValue> {
     Field(&'a Field<'a, S>),
     Spread {
@@ -331,14 +331,22 @@ pub(super) enum SelectionSource<'a, S: ScalarValue> {
     },
 }
 
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by
+// `#[derive(Copy)]`.
+impl<'a, S: ScalarValue> Copy for SelectionSource<'a, S> where Self: Clone {}
+
 /// A selection performed by a query
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct LookAheadSelection<'a, S: ScalarValue + 'a> {
     source: SelectionSource<'a, S>,
     applies_for: Applies<'a>,
     vars: &'a Variables<S>,
     fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
 }
+
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by
+// `#[derive(Copy)]`.
+impl<'a, S: ScalarValue> Copy for LookAheadSelection<'a, S> where Self: Clone {}
 
 impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
     pub(super) fn new(
