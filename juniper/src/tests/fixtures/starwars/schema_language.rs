@@ -24,7 +24,7 @@ mod tests {
             EmptySubscription::<Database>::new(),
         );
 
-        dbg!("{}", schema.as_schema_language());
+        dbg!("{}", schema.as_sdl());
 
         // `include_str()` keeps line endings. `git` will sadly by default
         // convert them, making this test fail without runtime tweaks on
@@ -37,6 +37,6 @@ mod tests {
         #[cfg(not(windows))]
         let expected = STATIC_GRAPHQL_SCHEMA_DEFINITION;
 
-        assert_eq!(expected, &schema.as_schema_language());
+        assert_eq!(expected, &schema.as_sdl());
     }
 }

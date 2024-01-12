@@ -89,8 +89,8 @@ fn main() {
         EmptySubscription::<()>::new(),
     );
 
-    // Convert the Rust schema into the GraphQL Schema Language.
-    let result = schema.as_schema_language();
+    // Convert the Rust schema into the GraphQL Schema Definition Language.
+    let result = schema.as_sdl();
 
     let expected = "\
 type Query {
