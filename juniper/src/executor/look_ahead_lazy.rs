@@ -25,7 +25,7 @@ type BorrowedSpanning<'a, T> = Spanning<T, &'a Span>;
 ///
 /// In contrast to an [`InputValue`], these values do only contain constants,
 /// meaning that variables get automatically resolved.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum LookAheadValue<'a, S: ScalarValue + 'a> {
     Null,
@@ -73,8 +73,10 @@ impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
     }
 }
 
+impl<'a, S: ScalarValue> Copy for LookAheadValue<'a, S> where Self: Clone {}
+
 /// A JSON-like list that can be used as an argument in the query execution.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct LookAheadList<'a, S> {
     input_list: &'a [Spanning<InputValue<S>>],
     vars: Option<&'a Variables<S>>,
@@ -89,6 +91,8 @@ impl<'a, S: ScalarValue> LookAheadList<'a, S> {
         }
     }
 }
+
+impl<'a, S: ScalarValue> Copy for LookAheadList<'a, S> where Self: Clone {}
 
 impl<'a, S> Default for LookAheadList<'a, S> {
     fn default() -> Self {
@@ -130,7 +134,7 @@ impl<'a, S: ScalarValue + 'a> IntoIterator for &LookAheadList<'a, S> {
 }
 
 /// A JSON-like object that can be used as an argument in the query execution.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct LookAheadObject<'a, S> {
     input_object: &'a [(Spanning<String>, Spanning<InputValue<S>>)],
     vars: Option<&'a Variables<S>>,
@@ -145,6 +149,8 @@ impl<'a, S: ScalarValue + 'a> LookAheadObject<'a, S> {
         }
     }
 }
+
+impl<'a, S: ScalarValue> Copy for LookAheadObject<'a, S> where Self: Clone {}
 
 impl<'a, S> Default for LookAheadObject<'a, S> {
     fn default() -> Self {
