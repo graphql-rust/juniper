@@ -36,14 +36,14 @@ use crate::{
 };
 
 pub use self::{
-    look_ahead_lazy::{
+    look_ahead::{
         Applies, LookAheadArgument, LookAheadChildren, LookAheadList, LookAheadObject,
         LookAheadSelection, LookAheadValue,
     },
     owned_executor::OwnedExecutor,
 };
 
-mod look_ahead_lazy;
+mod look_ahead;
 mod owned_executor;
 
 /// A type registry used to build schemas
@@ -691,7 +691,7 @@ where
     ///
     /// This allows seeing the whole selection and perform operations
     /// affecting the children.
-    pub fn look_ahead(&'a self) -> look_ahead_lazy::LookAheadSelection<'a, S> {
+    pub fn look_ahead(&'a self) -> look_ahead::LookAheadSelection<'a, S> {
         let field_name = match *self.field_path {
             FieldPath::Field(x, ..) => x,
             FieldPath::Root(_) => unreachable!(),
@@ -708,8 +708,8 @@ where
                             let alias = field.alias.as_ref().map(|a| a.item);
 
                             if alias.unwrap_or(name) == field_name {
-                                Some(look_ahead_lazy::LookAheadSelection::new(
-                                    look_ahead_lazy::SelectionSource::Field(field),
+                                Some(look_ahead::LookAheadSelection::new(
+                                    look_ahead::SelectionSource::Field(field),
                                     self.variables,
                                     self.fragments,
                                 ))
@@ -725,8 +725,8 @@ where
                 // We didn't find a field in the parent's selection matching
                 // this field, which means we're inside a FragmentSpread
 
-                look_ahead_lazy::LookAheadSelection::new(
-                    look_ahead_lazy::SelectionSource::Spread {
+                look_ahead::LookAheadSelection::new(
+                    look_ahead::SelectionSource::Spread {
                         field_name,
                         set: self.current_selection_set,
                     },
