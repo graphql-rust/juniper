@@ -69,9 +69,9 @@ The usage of [subscriptions][3] is a little different from the [mutation][2] and
 Many tools in [GraphQL] ecosystem require a [schema] definition to operate on. With [Juniper] we can export our [GraphQL schema][0] defined in [Rust] code either represented in the [GraphQL schema language][6] or in [JSON].
 
 
-### GraphQL schema language
+### SDL (schema definition language)
 
-To generate a [GraphQL schema language][6] representation of a [GraphQL schema][0] defined in [Rust] code, the [`as_schema_language()` method][20] should be used for the direct extraction (requires enabling the `schema-language` [Juniper] feature):
+To generate an [SDL (schema definition language)][6] representation of a [GraphQL schema][0] defined in [Rust] code, the [`as_sdl()` method][20] should be used for the direct extraction (requires enabling the `schema-language` [Juniper] feature):
 ```rust
 # extern crate juniper;
 # use juniper::{
@@ -95,16 +95,16 @@ fn main() {
         EmptySubscription::<()>::new(),
     );
 
-    // Convert the Rust schema into the GraphQL Schema Language.
-    let result = schema.as_schema_language();
+    // Convert the Rust schema into the GraphQL SDL schema.
+    let result = schema.as_sdl();
 
     let expected = "\
-type Query {
-  hello: String!
-}
-
 schema {
   query: Query
+}
+
+type Query {
+  hello: String!
 }
 ";
 #   #[cfg(not(target_os = "windows"))]
@@ -179,7 +179,7 @@ fn main() {
 [4]: https://spec.graphql.org/October2021#sec-Objects
 [5]: https://spec.graphql.org/October2021#sec-Root-Operation-Types.Default-Root-Operation-Type-Names
 [6]: https://graphql.org/learn/schema#type-language
-[20]: https://docs.rs/juniper/latest/juniper/struct.RootNode.html#method.as_schema_language
+[20]: https://docs.rs/juniper/latest/juniper/struct.RootNode.html#method.as_sdl
 [21]: https://docs.rs/crate/juniper/latest/source/src/introspection/query.graphql
 [22]: https://docs.rs/juniper/latest/juniper/fn.introspect.html
 [30]: https://npmjs.com/package/graphql-json-to-sdl

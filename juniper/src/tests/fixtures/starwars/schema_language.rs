@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-/// The schema as a static/hardcoded GraphQL Schema Language.
+/// The schema as a static/hardcoded GraphQL SDL (schema definition language).
 pub const STATIC_GRAPHQL_SCHEMA_DEFINITION: &str = include_str!("starwars.graphql");
 
 #[cfg(test)]
@@ -24,7 +24,7 @@ mod tests {
             EmptySubscription::<Database>::new(),
         );
 
-        dbg!("{}", schema.as_schema_language());
+        //dbg!("{}", schema.as_sdl());
 
         // `include_str()` keeps line endings. `git` will sadly by default
         // convert them, making this test fail without runtime tweaks on
@@ -32,11 +32,10 @@ mod tests {
         //
         // See https://github.com/rust-lang/rust/pull/63681.
         #[cfg(windows)]
-        let expected = &STATIC_GRAPHQL_SCHEMA_DEFINITION.replace("\r\n", "\n");
-
+        let expected = STATIC_GRAPHQL_SCHEMA_DEFINITION.replace("\r\n", "\n");
         #[cfg(not(windows))]
         let expected = STATIC_GRAPHQL_SCHEMA_DEFINITION;
 
-        assert_eq!(expected, &schema.as_schema_language());
+        assert_eq!(schema.as_sdl(), expected);
     }
 }
