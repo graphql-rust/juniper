@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt};
 
 use fnv::FnvHashMap;
-#[cfg(feature = "graphql-parser")]
+#[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
 
 use crate::{
@@ -12,9 +12,6 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
     GraphQLEnum,
 };
-
-#[cfg(feature = "graphql-parser")]
-use crate::schema::translate::{graphql_parser::GraphQLParserTranslator, SchemaTranslator};
 
 /// Root query node of a schema
 ///
@@ -221,17 +218,40 @@ where
     }
 
     #[cfg(feature = "schema-language")]
-    /// The schema definition as a `String` in the
-    /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
-    /// format.
-    pub fn as_schema_language(&self) -> String {
-        self.as_parser_document().to_string()
+    /// Returns this [`RootNode`] as a [`String`] containing the schema in [SDL (schema definition language)].
+    ///
+    /// # Sorted
+    ///
+    /// The order of the generated definitions is stable and is sorted in the "type-then-name" manner.
+    ///
+    /// If another sorting order is required, then the [`as_document()`] method should be used, which allows to sort the
+    /// returned [`Document`] in the desired manner and then to convert it [`to_string()`].
+    ///
+    /// [`as_document()`]: RootNode::as_document
+    /// [`to_string()`]: ToString::to_string
+    /// [0]: https://graphql.org/learn/schema#type-language
+    #[must_use]
+    pub fn as_sdl(&self) -> String {
+        use crate::schema::translate::graphql_parser::sort_schema_document;
+
+        let mut doc = self.as_document();
+        sort_schema_document(&mut doc);
+        doc.to_string()
     }
 
-    #[cfg(feature = "graphql-parser")]
-    /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
-    /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
-    pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
+    #[cfg(feature = "schema-language")]
+    /// Returns this [`RootNode`] as a [`graphql_parser`]'s [`Document`].
+    ///
+    /// # Unsorted
+    ///
+    /// The order of the generated definitions in the returned [`Document`] is NOT stable and may change without any
+    /// real schema changes.
+    #[must_use]
+    pub fn as_document(&'a self) -> Document<'a, &'a str> {
+        use crate::schema::translate::{
+            graphql_parser::GraphQLParserTranslator, SchemaTranslator as _,
+        };
+
         GraphQLParserTranslator::translate_schema(&self.schema)
     }
 }
@@ -666,118 +686,140 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
 }
 
 #[cfg(test)]
-mod test {
-
-    #[cfg(feature = "graphql-parser")]
-    mod graphql_parser_integration {
+mod root_node_test {
+    #[cfg(feature = "schema-language")]
+    mod as_document {
         use crate::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
 
-        #[test]
-        fn graphql_parser_doc() {
-            struct Query;
-            #[graphql_object]
-            impl Query {
-                fn blah() -> bool {
-                    true
-                }
+        struct Query;
+
+        #[graphql_object]
+        impl Query {
+            fn blah() -> bool {
+                true
             }
+        }
+
+        #[test]
+        fn generates_correct_document() {
             let schema = RootNode::new(
                 Query,
                 EmptyMutation::<()>::new(),
                 EmptySubscription::<()>::new(),
             );
             let ast = graphql_parser::parse_schema::<&str>(
+                //language=GraphQL
                 r#"
                 type Query {
-                  blah: Boolean!
+                    blah: Boolean!
                 }
 
                 schema {
                   query: Query
                 }
-            "#,
+                "#,
             )
             .unwrap();
-            assert_eq!(ast.to_string(), schema.as_parser_document().to_string());
+
+            assert_eq!(ast.to_string(), schema.as_document().to_string());
         }
     }
 
     #[cfg(feature = "schema-language")]
-    mod schema_language {
+    mod as_sdl {
         use crate::{
             graphql_object, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject,
             GraphQLObject, GraphQLUnion, RootNode,
         };
 
-        #[test]
-        fn schema_language() {
-            #[derive(GraphQLObject, Default)]
-            struct Cake {
-                fresh: bool,
+        #[derive(GraphQLObject, Default)]
+        struct Cake {
+            fresh: bool,
+        }
+
+        #[derive(GraphQLObject, Default)]
+        struct IceCream {
+            cold: bool,
+        }
+
+        #[derive(GraphQLUnion)]
+        enum GlutenFree {
+            Cake(Cake),
+            IceCream(IceCream),
+        }
+
+        #[derive(GraphQLEnum)]
+        enum Fruit {
+            Apple,
+            Orange,
+        }
+
+        #[derive(GraphQLInputObject)]
+        struct Coordinate {
+            latitude: f64,
+            longitude: f64,
+        }
+
+        struct Query;
+
+        #[graphql_object]
+        impl Query {
+            fn blah() -> bool {
+                true
             }
-            #[derive(GraphQLObject, Default)]
-            struct IceCream {
-                cold: bool,
+
+            /// This is whatever's description.
+            fn whatever() -> String {
+                "foo".into()
             }
-            #[derive(GraphQLUnion)]
-            enum GlutenFree {
-                Cake(Cake),
-                IceCream(IceCream),
+
+            fn arr(stuff: Vec<Coordinate>) -> Option<&'static str> {
+                (!stuff.is_empty()).then_some("stuff")
             }
-            #[derive(GraphQLEnum)]
-            enum Fruit {
-                Apple,
-                Orange,
+
+            fn fruit() -> Fruit {
+                Fruit::Apple
             }
-            #[derive(GraphQLInputObject)]
-            struct Coordinate {
-                latitude: f64,
-                longitude: f64,
-            }
-            struct Query;
-            #[graphql_object]
-            impl Query {
-                fn blah() -> bool {
-                    true
-                }
-                /// This is whatever's description.
-                fn whatever() -> String {
-                    "foo".into()
-                }
-                fn arr(stuff: Vec<Coordinate>) -> Option<&'static str> {
-                    (!stuff.is_empty()).then_some("stuff")
-                }
-                fn fruit() -> Fruit {
-                    Fruit::Apple
-                }
-                fn gluten_free(flavor: String) -> GlutenFree {
-                    if flavor == "savory" {
-                        GlutenFree::Cake(Cake::default())
-                    } else {
-                        GlutenFree::IceCream(IceCream::default())
-                    }
-                }
-                #[deprecated]
-                fn old() -> i32 {
-                    42
-                }
-                #[deprecated(note = "This field is deprecated, use another.")]
-                fn really_old() -> f64 {
-                    42.0
+
+            fn gluten_free(flavor: String) -> GlutenFree {
+                if flavor == "savory" {
+                    GlutenFree::Cake(Cake::default())
+                } else {
+                    GlutenFree::IceCream(IceCream::default())
                 }
             }
 
-            let schema = RootNode::new(
+            #[deprecated]
+            fn old() -> i32 {
+                42
+            }
+
+            #[deprecated(note = "This field is deprecated, use another.")]
+            fn really_old() -> f64 {
+                42.0
+            }
+        }
+
+        #[test]
+        fn generates_correct_sdl() {
+            let actual = RootNode::new(
                 Query,
                 EmptyMutation::<()>::new(),
                 EmptySubscription::<()>::new(),
             );
-            let ast = graphql_parser::parse_schema::<&str>(
+            let expected = graphql_parser::parse_schema::<&str>(
+                //language=GraphQL
                 r#"
-                union GlutenFree = Cake | IceCream
+                schema {
+                  query: Query
+                }
                 enum Fruit {
                     APPLE
                     ORANGE
+                }
+                input Coordinate {
+                    latitude: Float!
+                    longitude: Float!
                 }
                 type Cake {
                     fresh: Boolean!
@@ -795,17 +837,12 @@ mod test {
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
-                input Coordinate {
-                    latitude: Float!
-                    longitude: Float!
-                }
-                schema {
-                  query: Query
-                }
-            "#,
+                union GlutenFree = Cake | IceCream
+                "#,
             )
             .unwrap();
-            assert_eq!(ast.to_string(), schema.as_schema_language());
+
+            assert_eq!(actual.as_sdl(), expected.to_string());
         }
     }
 }

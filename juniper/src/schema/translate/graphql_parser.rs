@@ -307,3 +307,113 @@ where
         vec![]
     }
 }
+
+/// Sorts the provided [`Document`] in the "type-then-name" manner.
+pub(crate) fn sort_schema_document<'a, T: Text<'a>>(document: &mut Document<'a, T>) {
+    document.definitions.sort_by(move |a, b| {
+        let type_cmp = sort_value::by_type(a).cmp(&sort_value::by_type(b));
+        let name_cmp = sort_value::by_is_directive(a)
+            .cmp(&sort_value::by_is_directive(b))
+            .then(sort_value::by_name(a).cmp(&sort_value::by_name(b)))
+            .then(sort_value::by_directive(a).cmp(&sort_value::by_directive(b)));
+        type_cmp.then(name_cmp)
+    })
+}
+
+/// Evaluation of a [`Definition`] weights for sorting.
+mod sort_value {
+    use graphql_parser::schema::{Definition, Text, TypeDefinition, TypeExtension};
+
+    /// Returns a [`Definition`] sorting weight by its type.
+    pub(super) fn by_type<'a, T>(definition: &Definition<'a, T>) -> u8
+    where
+        T: Text<'a>,
+    {
+        match definition {
+            Definition::SchemaDefinition(_) => 0,
+            Definition::DirectiveDefinition(_) => 1,
+            Definition::TypeDefinition(t) => match t {
+                TypeDefinition::Enum(_) => 2,
+                TypeDefinition::InputObject(_) => 4,
+                TypeDefinition::Interface(_) => 6,
+                TypeDefinition::Scalar(_) => 8,
+                TypeDefinition::Object(_) => 10,
+                TypeDefinition::Union(_) => 12,
+            },
+            Definition::TypeExtension(e) => match e {
+                TypeExtension::Enum(_) => 3,
+                TypeExtension::InputObject(_) => 5,
+                TypeExtension::Interface(_) => 7,
+                TypeExtension::Scalar(_) => 9,
+                TypeExtension::Object(_) => 11,
+                TypeExtension::Union(_) => 13,
+            },
+        }
+    }
+
+    /// Returns a [`Definition`] sorting weight by its name.
+    pub(super) fn by_name<'b, 'a, T>(definition: &'b Definition<'a, T>) -> Option<&'b T::Value>
+    where
+        T: Text<'a>,
+    {
+        match definition {
+            Definition::SchemaDefinition(_) => None,
+            Definition::DirectiveDefinition(d) => Some(&d.name),
+            Definition::TypeDefinition(t) => match t {
+                TypeDefinition::Enum(d) => Some(&d.name),
+                TypeDefinition::InputObject(d) => Some(&d.name),
+                TypeDefinition::Interface(d) => Some(&d.name),
+                TypeDefinition::Scalar(d) => Some(&d.name),
+                TypeDefinition::Object(d) => Some(&d.name),
+                TypeDefinition::Union(d) => Some(&d.name),
+            },
+            Definition::TypeExtension(e) => match e {
+                TypeExtension::Enum(d) => Some(&d.name),
+                TypeExtension::InputObject(d) => Some(&d.name),
+                TypeExtension::Interface(d) => Some(&d.name),
+                TypeExtension::Scalar(d) => Some(&d.name),
+                TypeExtension::Object(d) => Some(&d.name),
+                TypeExtension::Union(d) => Some(&d.name),
+            },
+        }
+    }
+
+    /// Returns a [`Definition`] sorting weight by its directive.
+    pub(super) fn by_directive<'b, 'a, T>(definition: &'b Definition<'a, T>) -> Option<&'b T::Value>
+    where
+        T: Text<'a>,
+    {
+        match definition {
+            Definition::SchemaDefinition(_) => None,
+            Definition::DirectiveDefinition(_) => None,
+            Definition::TypeDefinition(t) => match t {
+                TypeDefinition::Enum(d) => d.directives.first().map(|d| &d.name),
+                TypeDefinition::InputObject(d) => d.directives.first().map(|d| &d.name),
+                TypeDefinition::Interface(d) => d.directives.first().map(|d| &d.name),
+                TypeDefinition::Scalar(d) => d.directives.first().map(|d| &d.name),
+                TypeDefinition::Object(d) => d.directives.first().map(|d| &d.name),
+                TypeDefinition::Union(d) => d.directives.first().map(|d| &d.name),
+            },
+            Definition::TypeExtension(e) => match e {
+                TypeExtension::Enum(d) => d.directives.first().map(|d| &d.name),
+                TypeExtension::InputObject(d) => d.directives.first().map(|d| &d.name),
+                TypeExtension::Interface(d) => d.directives.first().map(|d| &d.name),
+                TypeExtension::Scalar(d) => d.directives.first().map(|d| &d.name),
+                TypeExtension::Object(d) => d.directives.first().map(|d| &d.name),
+                TypeExtension::Union(d) => d.directives.first().map(|d| &d.name),
+            },
+        }
+    }
+
+    /// Returns a [`Definition`] sorting weight by whether it represents a directive.
+    pub(super) fn by_is_directive<'a, T>(definition: &Definition<'a, T>) -> u8
+    where
+        T: Text<'a>,
+    {
+        match definition {
+            Definition::SchemaDefinition(_) => 0,
+            Definition::DirectiveDefinition(_) => 1,
+            _ => 2,
+        }
+    }
+}

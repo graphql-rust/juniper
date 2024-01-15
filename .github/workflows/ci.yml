@@ -107,7 +107,6 @@ jobs:
           - { feature: chrono-clock, crate: juniper }
           - { feature: chrono-tz, crate: juniper }
           - { feature: expose-test-schema, crate: juniper }
-          - { feature: graphql-parser, crate: juniper }
           - { feature: rust_decimal, crate: juniper }
           - { feature: schema-language, crate: juniper }
           - { feature: time, crate: juniper }
