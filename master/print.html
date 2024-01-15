@@ -2662,16 +2662,16 @@ fn main() {
         EmptySubscription::&lt;()&gt;::new(),
     );
 
-    // Convert the Rust schema into the GraphQL Schema Language.
-    let result = schema.as_schema_language();
+    // Convert the Rust schema into the GraphQL Schema Definition Language.
+    let result = schema.as_sdl();
 
     let expected = &quot;\
-type Query {
-  hello: String!
-}
-
 schema {
   query: Query
+}
+
+type Query {
+  hello: String!
 }
 &quot;;
 <span class="boring">  #[cfg(not(target_os = &quot;windows&quot;))]
