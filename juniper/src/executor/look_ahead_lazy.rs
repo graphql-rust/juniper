@@ -202,6 +202,8 @@ pub mod iter {
     use super::*;
 
     /// An iterator over [LookAheadList] entries.
+    ///
+    /// Input variables will get resolved lazily as the iterator advances.
     pub struct LookAheadListIter<'a, S> {
         pub(super) slice_iter: std::slice::Iter<'a, Spanning<InputValue<S>>>,
         pub(super) vars: Option<&'a Variables<S>>,
@@ -218,7 +220,18 @@ pub mod iter {
         }
     }
 
+    impl<'a, S: ScalarValue + 'a> DoubleEndedIterator for LookAheadListIter<'a, S> {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            let vars = self.vars;
+            self.slice_iter
+                .next_back()
+                .map(move |val| LookAheadValue::from_input_value(val.as_ref(), vars))
+        }
+    }
+
     /// An iterator over [LookAheadObject] entries.
+    ///
+    /// Input variables will get resolved lazily as the iterator advances.
     pub struct LookAheadObjectIter<'a, S> {
         pub(super) slice_iter: std::slice::Iter<'a, (Spanning<String>, Spanning<InputValue<S>>)>,
         pub(super) vars: Option<&'a Variables<S>>,
@@ -233,6 +246,21 @@ pub mod iter {
         fn next(&mut self) -> Option<Self::Item> {
             let vars = self.vars;
             self.slice_iter.next().map(move |(key, val)| {
+                (
+                    Spanning {
+                        span: &key.span,
+                        item: key.item.as_str(),
+                    },
+                    LookAheadValue::from_input_value(val.as_ref(), vars),
+                )
+            })
+        }
+    }
+
+    impl<'a, S: ScalarValue + 'a> DoubleEndedIterator for LookAheadObjectIter<'a, S> {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            let vars = self.vars;
+            self.slice_iter.next_back().map(move |(key, val)| {
                 (
                     Spanning {
                         span: &key.span,
@@ -316,12 +344,14 @@ impl<'a, S: ScalarValue> LookAheadChildren<'a, S> {
     }
 
     /// Returns the (possibly aliased) names of the top level children from the current selection.
-    pub fn names(&self) -> impl Iterator<Item = &'a str> + '_ {
+    pub fn names(&self) -> impl Iterator<Item = &'a str> + DoubleEndedIterator + '_ {
         self.children.iter().map(|selection| selection.field_name())
     }
 
     /// Iterate over the children, by reference.
-    pub fn iter(&self) -> impl Iterator<Item = &LookAheadSelection<'a, S>> + '_ {
+    pub fn iter(
+        &self,
+    ) -> impl Iterator<Item = &LookAheadSelection<'a, S>> + DoubleEndedIterator + '_ {
         self.children.iter()
     }
 }
@@ -409,7 +439,9 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
     }
 
     /// Returns the top level arguments from the current selection, if present.
-    pub fn arguments(&self) -> impl Iterator<Item = LookAheadArgument<'a, S>> {
+    pub fn arguments(
+        &self,
+    ) -> impl Iterator<Item = LookAheadArgument<'a, S>> + DoubleEndedIterator {
         let opt_arguments = match self.source {
             SelectionSource::Field(field) => field.arguments.as_ref(),
             _ => None,
