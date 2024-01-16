@@ -391,7 +391,7 @@ This requires to explicitly parametrize over [`ScalarValue`][3], as [`Executor`]
 
 ```rust
 # extern crate juniper;
-use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _, ScalarValue};
+use juniper::{graphql_interface, graphql_object, Executor, ScalarValue};
 
 #[graphql_interface(for = Human, Scalar = S)] // notice specifying `ScalarValue` as existing type parameter
 trait Character<S: ScalarValue> {             

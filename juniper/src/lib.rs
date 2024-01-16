@@ -71,8 +71,9 @@ pub use crate::{
     },
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
-        FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
+        FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadChildren,
+        LookAheadList, LookAheadObject, LookAheadSelection, LookAheadValue, OwnedExecutor,
+        Registry, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
     macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
