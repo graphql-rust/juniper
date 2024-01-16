@@ -1693,7 +1693,7 @@ struct Human {
 <p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
 <p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so. </p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span>use juniper::{graphql_interface, graphql_object, Executor, LookAheadMethods as _, ScalarValue};
+</span>use juniper::{graphql_interface, graphql_object, Executor, ScalarValue};
 
 #[graphql_interface(for = Human, Scalar = S)] // notice specifying `ScalarValue` as existing type parameter
 trait Character&lt;S: ScalarValue&gt; {             
