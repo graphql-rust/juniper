@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 use crate::{
     ast::{Directive, Field, Fragment, InputValue, Selection},
@@ -8,25 +8,29 @@ use crate::{
 
 use super::Variables;
 
-/// An enum that describes if a field is available in all types of the interface
-/// or only in a certain subtype
+/// Indication whether a field is available in all types of an interface or only in a certain
+/// subtype.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Applies<'a> {
-    /// The field is available independent from the type
+    /// Field is always available, independently from the type.
     All,
-    /// The field is only available for a given typename
+
+    /// Field is only available for the type with the specified typename.
     OnlyType(&'a str),
 }
 
 /// Shortcut for a [`Spanning`] containing a borrowed [`Span`].
 type BorrowedSpanning<'a, T> = Spanning<T, &'a Span>;
 
-/// JSON-like value that can be used as an argument in the query execution.
+/// JSON-like value performing [look-ahead][0] operations on an executed GraphQL query.
 ///
-/// In contrast to an [`InputValue`], these values do only contain constants,
-/// meaning that variables get automatically resolved.
+/// In contrast to an [`InputValue`], these values do only contain constants, meaning that GraphQL
+/// variables get automatically resolved.
+///
+/// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
 #[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
+#[must_use]
 pub enum LookAheadValue<'a, S: ScalarValue + 'a> {
     Null,
     Scalar(&'a S),
@@ -34,6 +38,9 @@ pub enum LookAheadValue<'a, S: ScalarValue + 'a> {
     List(LookAheadList<'a, S>),
     Object(LookAheadObject<'a, S>),
 }
+
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
+impl<'a, S: ScalarValue + 'a> Copy for LookAheadValue<'a, S> where Self: Clone {}
 
 impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
     fn from_input_value(
@@ -73,27 +80,29 @@ impl<'a, S: ScalarValue + 'a> LookAheadValue<'a, S> {
     }
 }
 
-impl<'a, S: ScalarValue> Copy for LookAheadValue<'a, S> where Self: Clone {}
-
-/// A JSON-like list that can be used as an argument in the query execution.
-#[derive(Clone, Debug)]
+/// [Lazy][2]-evaluated [list] used in [look-ahead][0] operations on an executed GraphQL query.
+///
+/// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
+/// [2]: https://en.wikipedia.org/wiki/Lazy_evaluation
+/// [list]: https://spec.graphql.org/October2021#sec-List
+#[derive(Debug)]
+#[must_use]
 pub struct LookAheadList<'a, S> {
     input_list: &'a [Spanning<InputValue<S>>],
     vars: Option<&'a Variables<S>>,
 }
 
-impl<'a, S: ScalarValue> LookAheadList<'a, S> {
-    /// Returns an iterator over the list's elements.
-    pub fn iter(&self) -> iter::LookAheadListIter<'a, S> {
-        iter::LookAheadListIter {
-            slice_iter: self.input_list.iter(),
-            vars: self.vars,
-        }
+// Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for LookAheadList<'a, S> {
+    fn clone(&self) -> Self {
+        *self
     }
 }
 
-impl<'a, S: ScalarValue> Copy for LookAheadList<'a, S> where Self: Clone {}
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
+impl<'a, S> Copy for LookAheadList<'a, S> {}
 
+// Implemented manually to omit redundant `S: Default` trait bound, imposed by `#[derive(Default)]`.
 impl<'a, S> Default for LookAheadList<'a, S> {
     fn default() -> Self {
         Self {
@@ -103,54 +112,105 @@ impl<'a, S> Default for LookAheadList<'a, S> {
     }
 }
 
+// Implemented manually to omit redundant `S: PartialEq` trait bound, imposed by
+// `#[derive(PartialEq)]`.
 impl<'a, S: ScalarValue> PartialEq for LookAheadList<'a, S> {
     fn eq(&self, other: &Self) -> bool {
         self.iter().eq(other.iter())
     }
 }
 
-impl<'a, S: ScalarValue + 'a> IntoIterator for LookAheadList<'a, S> {
+impl<'a, S: ScalarValue> LookAheadList<'a, S> {
+    /// Returns an [`Iterator`] over the items of this [list].
+    ///
+    /// [list]: https://spec.graphql.org/October2021#sec-List
+    pub fn iter(&self) -> <&Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+}
+
+impl<'a, S: ScalarValue> IntoIterator for LookAheadList<'a, S> {
     type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
-    type IntoIter = iter::LookAheadListIter<'a, S>;
+    type IntoIter = look_ahead_list::Iter<'a, S>;
 
     fn into_iter(self) -> Self::IntoIter {
-        iter::LookAheadListIter {
+        (&self).into_iter()
+    }
+}
+
+impl<'a, S: ScalarValue> IntoIterator for &LookAheadList<'a, S> {
+    type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
+    type IntoIter = look_ahead_list::Iter<'a, S>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        look_ahead_list::Iter {
             slice_iter: self.input_list.iter(),
             vars: self.vars,
         }
     }
 }
 
-impl<'a, S: ScalarValue + 'a> IntoIterator for &LookAheadList<'a, S> {
-    type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
-    type IntoIter = iter::LookAheadListIter<'a, S>;
+pub mod look_ahead_list {
+    //! [`LookAheadList`] helper definitions.
 
-    fn into_iter(self) -> Self::IntoIter {
-        iter::LookAheadListIter {
-            slice_iter: self.input_list.iter(),
-            vars: self.vars,
+    use std::slice;
+
+    #[cfg(doc)]
+    use super::LookAheadList;
+    use super::{BorrowedSpanning, InputValue, LookAheadValue, ScalarValue, Spanning, Variables};
+
+    /// [`Iterator`] over [`LookAheadList`] items ([`LookAheadValue`]s) by value.
+    ///
+    /// GraphQL variables are resolved lazily as this [`Iterator`] advances.
+    #[must_use]
+    pub struct Iter<'a, S> {
+        pub(super) slice_iter: slice::Iter<'a, Spanning<InputValue<S>>>,
+        pub(super) vars: Option<&'a Variables<S>>,
+    }
+
+    impl<'a, S: ScalarValue> Iterator for Iter<'a, S> {
+        type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let vars = self.vars;
+            self.slice_iter
+                .next()
+                .map(move |val| LookAheadValue::from_input_value(val.as_ref(), vars))
+        }
+    }
+
+    impl<'a, S: ScalarValue> DoubleEndedIterator for Iter<'a, S> {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            let vars = self.vars;
+            self.slice_iter
+                .next_back()
+                .map(move |val| LookAheadValue::from_input_value(val.as_ref(), vars))
         }
     }
 }
 
-/// A JSON-like object that can be used as an argument in the query execution.
-#[derive(Clone, Debug)]
+/// [Lazy][2]-evaluated [input object] used in [look-ahead][0] operations on an executed GraphQL
+/// query.
+///
+/// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
+/// [2]: https://en.wikipedia.org/wiki/Lazy_evaluation
+/// [input object]: https://spec.graphql.org/October2021#sec-Input-Objects
+#[derive(Debug)]
+#[must_use]
 pub struct LookAheadObject<'a, S> {
     input_object: &'a [(Spanning<String>, Spanning<InputValue<S>>)],
     vars: Option<&'a Variables<S>>,
 }
 
-impl<'a, S: ScalarValue + 'a> LookAheadObject<'a, S> {
-    /// Returns an iterator over the object's entries.
-    pub fn iter(&self) -> iter::LookAheadObjectIter<'a, S> {
-        iter::LookAheadObjectIter {
-            slice_iter: self.input_object.iter(),
-            vars: self.vars,
-        }
+// Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for LookAheadObject<'a, S> {
+    fn clone(&self) -> Self {
+        *self
     }
 }
 
-impl<'a, S: ScalarValue> Copy for LookAheadObject<'a, S> where Self: Clone {}
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
+impl<'a, S> Copy for LookAheadObject<'a, S> {}
 
 impl<'a, S> Default for LookAheadObject<'a, S> {
     fn default() -> Self {
@@ -167,77 +227,61 @@ impl<'a, S: ScalarValue> PartialEq for LookAheadObject<'a, S> {
     }
 }
 
-impl<'a, S: ScalarValue + 'a> IntoIterator for LookAheadObject<'a, S> {
+impl<'a, S: ScalarValue> LookAheadObject<'a, S> {
+    /// Returns an [`Iterator`] over this [input object]'s fields.
+    ///
+    /// [input object]: https://spec.graphql.org/October2021#sec-Input-Objects
+    pub fn iter(&self) -> <&Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+}
+
+impl<'a, S: ScalarValue> IntoIterator for LookAheadObject<'a, S> {
     type Item = (
         BorrowedSpanning<'a, &'a str>,
         BorrowedSpanning<'a, LookAheadValue<'a, S>>,
     );
-    type IntoIter = iter::LookAheadObjectIter<'a, S>;
+    type IntoIter = look_ahead_object::Iter<'a, S>;
 
     fn into_iter(self) -> Self::IntoIter {
-        iter::LookAheadObjectIter {
+        (&self).into_iter()
+    }
+}
+
+impl<'a, S: ScalarValue> IntoIterator for &LookAheadObject<'a, S> {
+    type Item = (
+        BorrowedSpanning<'a, &'a str>,
+        BorrowedSpanning<'a, LookAheadValue<'a, S>>,
+    );
+    type IntoIter = look_ahead_object::Iter<'a, S>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        look_ahead_object::Iter {
             slice_iter: self.input_object.iter(),
             vars: self.vars,
         }
     }
 }
 
-impl<'a, S: ScalarValue + 'a> IntoIterator for &LookAheadObject<'a, S> {
-    type Item = (
-        BorrowedSpanning<'a, &'a str>,
-        BorrowedSpanning<'a, LookAheadValue<'a, S>>,
-    );
-    type IntoIter = iter::LookAheadObjectIter<'a, S>;
+pub mod look_ahead_object {
+    //! [`LookAheadObject`] helper definitions.
 
-    fn into_iter(self) -> Self::IntoIter {
-        iter::LookAheadObjectIter {
-            slice_iter: self.input_object.iter(),
-            vars: self.vars,
-        }
-    }
-}
+    use std::slice;
 
-/// Various look-ahead iterator types
-pub mod iter {
-    use super::*;
+    #[cfg(doc)]
+    use super::LookAheadList;
+    use super::{BorrowedSpanning, InputValue, LookAheadValue, ScalarValue, Spanning, Variables};
 
-    /// An iterator over [LookAheadList] entries.
+    /// [`Iterator`] over [`LookAheadObject`] fields (named [`LookAheadValue`]s) by value.
     ///
-    /// Input variables will get resolved lazily as the iterator advances.
-    pub struct LookAheadListIter<'a, S> {
-        pub(super) slice_iter: std::slice::Iter<'a, Spanning<InputValue<S>>>,
+    /// GraphQL variables are resolved lazily as this [`Iterator`] advances.
+    #[must_use]
+    pub struct Iter<'a, S> {
+        pub(super) slice_iter: slice::Iter<'a, (Spanning<String>, Spanning<InputValue<S>>)>,
         pub(super) vars: Option<&'a Variables<S>>,
     }
 
-    impl<'a, S: ScalarValue + 'a> Iterator for LookAheadListIter<'a, S> {
-        type Item = BorrowedSpanning<'a, LookAheadValue<'a, S>>;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            let vars = self.vars;
-            self.slice_iter
-                .next()
-                .map(move |val| LookAheadValue::from_input_value(val.as_ref(), vars))
-        }
-    }
-
-    impl<'a, S: ScalarValue + 'a> DoubleEndedIterator for LookAheadListIter<'a, S> {
-        fn next_back(&mut self) -> Option<Self::Item> {
-            let vars = self.vars;
-            self.slice_iter
-                .next_back()
-                .map(move |val| LookAheadValue::from_input_value(val.as_ref(), vars))
-        }
-    }
-
-    /// An iterator over [LookAheadObject] entries.
-    ///
-    /// Input variables will get resolved lazily as the iterator advances.
-    pub struct LookAheadObjectIter<'a, S> {
-        pub(super) slice_iter: std::slice::Iter<'a, (Spanning<String>, Spanning<InputValue<S>>)>,
-        pub(super) vars: Option<&'a Variables<S>>,
-    }
-
-    impl<'a, S: ScalarValue + 'a> Iterator for LookAheadObjectIter<'a, S> {
+    impl<'a, S: ScalarValue> Iterator for Iter<'a, S> {
         type Item = (
             BorrowedSpanning<'a, &'a str>,
             BorrowedSpanning<'a, LookAheadValue<'a, S>>,
@@ -257,7 +301,7 @@ pub mod iter {
         }
     }
 
-    impl<'a, S: ScalarValue + 'a> DoubleEndedIterator for LookAheadObjectIter<'a, S> {
+    impl<'a, S: ScalarValue> DoubleEndedIterator for Iter<'a, S> {
         fn next_back(&mut self) -> Option<Self::Item> {
             let vars = self.vars;
             self.slice_iter.next_back().map(move |(key, val)| {
@@ -273,62 +317,112 @@ pub mod iter {
     }
 }
 
-/// An argument passed into the query
-#[derive(Clone, Copy, Debug)]
+/// [Lazy][2]-evaluated [argument] used in [look-ahead][0] operations on an executed GraphQL query.
+///
+/// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
+/// [2]: https://en.wikipedia.org/wiki/Lazy_evaluation
+/// [argument]: https://spec.graphql.org/October2021#sec-Language.Arguments
+#[derive(Debug)]
+#[must_use]
 pub struct LookAheadArgument<'a, S> {
     name: &'a Spanning<&'a str>,
     input_value: &'a Spanning<InputValue<S>>,
     vars: &'a Variables<S>,
 }
 
-impl<'a, S: ScalarValue> LookAheadArgument<'a, S> {
-    /// The argument's name
+// Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for LookAheadArgument<'a, S> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
+impl<'a, S> Copy for LookAheadArgument<'a, S> {}
+
+impl<'a, S> LookAheadArgument<'a, S> {
+    /// Returns the name of this [argument].
+    ///
+    /// [argument]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    #[must_use]
     pub fn name(&self) -> &'a str {
         self.name.item
     }
 
-    /// The Span of the argument's name
+    /// Returns the [`Span`] of this [argument]'s [`name`].
+    ///
+    /// [`name`]: LookAheadArgument::name()
+    /// [argument]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    #[must_use]
     pub fn name_span(&self) -> &'a Span {
         &self.name.span
     }
 
-    /// The argument's value
-    pub fn value(&self) -> LookAheadValue<'a, S> {
+    /// Evaluates and returns the value of this [argument].
+    ///
+    /// [argument]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    pub fn value(&self) -> LookAheadValue<'a, S>
+    where
+        S: ScalarValue,
+    {
         LookAheadValue::from_input_value(self.input_value.as_ref(), Some(self.vars)).item
     }
 
-    /// The Span of the argument's value
+    /// Returns the [`Span`] of this [argument]'s [`value`].
+    ///
+    /// [`value`]: LookAheadArgument::value()
+    /// [argument]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    #[must_use]
     pub fn value_span(&self) -> &'a Span {
         &self.input_value.span
     }
 }
 
-/// The children of a selection.
-#[derive(Clone, Debug)]
-pub struct LookAheadChildren<'a, S: ScalarValue + 'a> {
+/// Children of a [`LookAheadSelection`].
+#[derive(Debug)]
+#[must_use]
+pub struct LookAheadChildren<'a, S> {
     children: Vec<LookAheadSelection<'a, S>>,
 }
 
-impl<'a, S: ScalarValue> Default for LookAheadChildren<'a, S> {
+// Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for LookAheadChildren<'a, S> {
+    fn clone(&self) -> Self {
+        Self {
+            children: self.children.clone(),
+        }
+    }
+}
+
+// Implemented manually to omit redundant `S: Default` trait bound, imposed by `#[derive(Default)]`.
+impl<'a, S> Default for LookAheadChildren<'a, S> {
     fn default() -> Self {
         Self { children: vec![] }
     }
 }
 
-impl<'a, S: ScalarValue> LookAheadChildren<'a, S> {
+impl<'a, S> LookAheadChildren<'a, S> {
     /// Returns the number of children present.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.children.len()
     }
 
-    /// Indicates whether the current node has any children.
+    /// Indicates whether the current [selection] has any children.
+    ///
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.children.is_empty()
     }
 
-    /// Returns the child selection for the specified field.
+    /// Returns the child [selection] for the specified [field].
     ///
     /// If a child has an alias, it will only match if the alias matches the specified `name`.
+    ///
+    /// [field]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn select(&self, name: &str) -> Option<LookAheadSelection<'a, S>> {
         self.children
             .iter()
@@ -336,19 +430,22 @@ impl<'a, S: ScalarValue> LookAheadChildren<'a, S> {
             .copied()
     }
 
-    /// Checks if a child selection with the specified `name` exists.
+    /// Checks if the child [selection] with the specified `name` exists.
     ///
     /// If a child has an alias, it will only match if the alias matches the specified `name`.
+    ///
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn has_child(&self, name: &str) -> bool {
         self.select(name).is_some()
     }
 
-    /// Returns the (possibly aliased) names of the top level children from the current selection.
+    /// Returns the possibly aliased names of the top-level children from the current [selection].
     pub fn names(&self) -> impl Iterator<Item = &'a str> + DoubleEndedIterator + '_ {
-        self.children.iter().map(|selection| selection.field_name())
+        self.children.iter().map(|sel| sel.field_name())
     }
 
-    /// Iterate over the children, by reference.
+    /// Returns an [`Iterator`] over these children, by reference.
     pub fn iter(
         &self,
     ) -> impl Iterator<Item = &LookAheadSelection<'a, S>> + DoubleEndedIterator + '_ {
@@ -358,15 +455,15 @@ impl<'a, S: ScalarValue> LookAheadChildren<'a, S> {
 
 impl<'a, S: ScalarValue> IntoIterator for LookAheadChildren<'a, S> {
     type Item = LookAheadSelection<'a, S>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.children.into_iter()
     }
 }
 
-#[derive(Clone, Debug)]
-pub(super) enum SelectionSource<'a, S: ScalarValue> {
+#[derive(Debug)]
+pub(super) enum SelectionSource<'a, S> {
     Field(&'a Field<'a, S>),
     Spread {
         field_name: &'a str,
@@ -374,24 +471,42 @@ pub(super) enum SelectionSource<'a, S: ScalarValue> {
     },
 }
 
-// Implemented manually to omit redundant `S: Copy` trait bound, imposed by
-// `#[derive(Copy)]`.
-impl<'a, S: ScalarValue> Copy for SelectionSource<'a, S> where Self: Clone {}
+// Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for SelectionSource<'a, S> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
 
-/// A selection performed by a query
-#[derive(Clone, Debug)]
-pub struct LookAheadSelection<'a, S: ScalarValue + 'a> {
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
+impl<'a, S> Copy for SelectionSource<'a, S> {}
+
+/// [Selection] of an an executed GraphQL query, used in [look-ahead][0] operations.
+///
+/// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
+/// [2]: https://en.wikipedia.org/wiki/Lazy_evaluation
+/// [Selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+#[derive(Debug)]
+#[must_use]
+pub struct LookAheadSelection<'a, S> {
     source: SelectionSource<'a, S>,
     applies_for: Applies<'a>,
     vars: &'a Variables<S>,
     fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
 }
 
-// Implemented manually to omit redundant `S: Copy` trait bound, imposed by
-// `#[derive(Copy)]`.
-impl<'a, S: ScalarValue> Copy for LookAheadSelection<'a, S> where Self: Clone {}
+// Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
+impl<'a, S> Clone for LookAheadSelection<'a, S> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
 
-impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
+// Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
+impl<'a, S> Copy for LookAheadSelection<'a, S> {}
+
+impl<'a, S> LookAheadSelection<'a, S> {
+    /// Constructs a new [`LookAheadSelection`] out of the provided params.
     pub(super) fn new(
         source: SelectionSource<'a, S>,
         vars: &'a Variables<S>,
@@ -405,74 +520,113 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
         }
     }
 
-    /// Returns the original name of the field, represented by the current selection.
+    /// Returns the original name of the [field], represented by the current [selection].
+    ///
+    /// [field]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn field_original_name(&self) -> &'a str {
         match self.source {
-            SelectionSource::Field(field) => field.name.item,
+            SelectionSource::Field(f) => f.name.item,
             SelectionSource::Spread { field_name, .. } => field_name,
         }
     }
 
-    /// Returns the alias of the field, represented by the current selection, if any.
+    /// Returns the alias of the [field], represented by the current [selection], if any is present.
+    ///
+    /// [field]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn field_alias(&self) -> Option<&'a str> {
         match self.source {
-            SelectionSource::Field(field) => field.alias.map(|alias| alias.item),
+            SelectionSource::Field(f) => f.alias.map(|a| a.item),
             SelectionSource::Spread { .. } => None,
         }
     }
 
-    /// Returns the (potentially aliased) name of the field, represented by the current selection.
+    /// Returns the potentially aliased name of the [field], represented by the current [selection].
+    ///
+    /// [field]: https://spec.graphql.org/October2021#sec-Language.Fields
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn field_name(&self) -> &'a str {
         self.field_alias()
             .unwrap_or_else(|| self.field_original_name())
     }
 
-    /// Indicates whether the current node has any arguments.
+    /// Indicates whether the current [selection] has any [arguments].
+    ///
+    /// [arguments]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn has_arguments(&self) -> bool {
         match self.source {
-            SelectionSource::Field(field) => match &field.arguments {
-                Some(arguments) => !arguments.item.items.is_empty(),
+            SelectionSource::Field(f) => match &f.arguments {
+                Some(args) => !args.item.items.is_empty(),
                 None => false,
             },
             _ => false,
         }
     }
 
-    /// Returns the top level arguments from the current selection, if present.
+    /// Returns an [`Iterator`] over the top-level [arguments] from the current [selection], if any
+    /// are present.
+    ///
+    /// [arguments]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
     pub fn arguments(
         &self,
     ) -> impl Iterator<Item = LookAheadArgument<'a, S>> + DoubleEndedIterator {
         let opt_arguments = match self.source {
-            SelectionSource::Field(field) => field.arguments.as_ref(),
+            SelectionSource::Field(f) => f.arguments.as_ref(),
             _ => None,
         };
 
         opt_arguments
             .into_iter()
-            .flat_map(|arguments| arguments.item.iter())
-            .map(|(name, argument)| LookAheadArgument {
+            .flat_map(|args| args.item.iter())
+            .map(|(name, arg)| LookAheadArgument {
                 name,
-                input_value: argument,
+                input_value: arg,
                 vars: self.vars,
             })
     }
 
-    /// Get the top level argument with a given name from the current selection
+    /// Returns the top-level [argument] from the current [selection] by its `name`, if any is
+    /// present.
+    ///
+    /// [argument]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    #[must_use]
     pub fn argument(&self, name: &str) -> Option<LookAheadArgument<'a, S>> {
         self.arguments().find(|arg| arg.name() == name)
     }
 
-    /// Returns the children from the current selection.
-    pub fn children(&self) -> LookAheadChildren<'a, S> {
+    /// Returns the children from the current [selection].
+    ///
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    pub fn children(&self) -> LookAheadChildren<'a, S>
+    where
+        S: ScalarValue,
+    {
         self.build_children(Applies::All)
     }
 
-    /// Returns the children from the current selection that only applies to a specific type.
-    pub fn children_for_explicit_type(&self, type_name: &str) -> LookAheadChildren<'a, S> {
+    /// Returns the children from the current [selection] applying to the specified [type] only.
+    ///
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    /// [type]: https://spec.graphql.org/October2021#sec-Types
+    pub fn children_for_explicit_type(&self, type_name: &str) -> LookAheadChildren<'a, S>
+    where
+        S: ScalarValue,
+    {
         self.build_children(Applies::OnlyType(type_name))
     }
 
-    fn build_children(&self, type_filter: Applies) -> LookAheadChildren<'a, S> {
+    fn build_children(&self, type_filter: Applies) -> LookAheadChildren<'a, S>
+    where
+        S: ScalarValue,
+    {
         let mut builder = ChildrenBuilder {
             vars: self.vars,
             fragments: self.fragments,
@@ -480,15 +634,15 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
             output: vec![],
         };
         match &self.source {
-            SelectionSource::Field(field) => {
-                builder.visit_parent_field(field, Applies::All);
+            SelectionSource::Field(f) => {
+                builder.visit_parent_field(f, Applies::All);
             }
             SelectionSource::Spread {
                 set: Some(selections),
                 ..
             } => {
-                for selection in selections.iter() {
-                    builder.visit_parent_selection(selection, Applies::All);
+                for s in selections.iter() {
+                    builder.visit_parent_selection(s, Applies::All);
                 }
             }
             SelectionSource::Spread { set: None, .. } => {}
@@ -498,16 +652,20 @@ impl<'a, S: ScalarValue> LookAheadSelection<'a, S> {
         }
     }
 
-    /// Returns the parent type, in case there is any for the current selection.
+    /// Returns the name of parent [type], in case there is any for the current [selection].
+    ///
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
+    /// [type]: https://spec.graphql.org/October2021#sec-Types
+    #[must_use]
     pub fn applies_for(&self) -> Option<&str> {
         match self.applies_for {
-            Applies::OnlyType(typ) => Some(typ),
+            Applies::OnlyType(name) => Some(name),
             Applies::All => None,
         }
     }
 }
 
-struct ChildrenBuilder<'a, 'f, S: ScalarValue> {
+struct ChildrenBuilder<'a, 'f, S> {
     vars: &'a Variables<S>,
     fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     type_filter: Applies<'f>,
@@ -521,21 +679,21 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
         applies_for: Applies<'a>,
     ) {
         match selection {
-            Selection::Field(field) => {
-                self.visit_parent_field(&field.item, applies_for);
+            Selection::Field(f) => {
+                self.visit_parent_field(&f.item, applies_for);
             }
-            Selection::FragmentSpread(fragment) => {
-                let f = self
+            Selection::FragmentSpread(frag_sp) => {
+                let fragment = self
                     .fragments
-                    .get(&fragment.item.name.item)
+                    .get(&frag_sp.item.name.item)
                     .expect("a fragment");
-                for c in f.selection_set.iter() {
-                    self.visit_parent_selection(c, applies_for);
+                for sel in &fragment.selection_set {
+                    self.visit_parent_selection(sel, applies_for);
                 }
             }
-            Selection::InlineFragment(inline) => {
-                for c in inline.item.selection_set.iter() {
-                    self.visit_parent_selection(c, applies_for);
+            Selection::InlineFragment(inl_frag) => {
+                for sel in &inl_frag.item.selection_set {
+                    self.visit_parent_selection(sel, applies_for);
                 }
             }
         }
@@ -543,16 +701,16 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
 
     fn visit_parent_field(&mut self, field: &'a Field<'a, S>, applies_for: Applies<'a>) {
         if let Some(selection_set) = &field.selection_set {
-            for child in selection_set {
-                self.visit_child(child, applies_for);
+            for sel in selection_set {
+                self.visit_child(sel, applies_for);
             }
         }
     }
 
     fn visit_child(&mut self, selection: &'a Selection<'a, S>, applies_for: Applies<'a>) {
         match selection {
-            Selection::Field(field) => {
-                let field = &field.item;
+            Selection::Field(f) => {
+                let field = &f.item;
                 if !self.should_include_child(field.directives.as_ref()) {
                     return;
                 }
@@ -571,54 +729,51 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
                     fragments: self.fragments,
                 });
             }
-            Selection::FragmentSpread(fragment) => {
-                if !self.should_include_child(fragment.item.directives.as_ref()) {
+            Selection::FragmentSpread(frag_sp) => {
+                if !self.should_include_child(frag_sp.item.directives.as_ref()) {
                     return;
                 }
-                let f = self
+                let fragment = self
                     .fragments
-                    .get(&fragment.item.name.item)
+                    .get(&frag_sp.item.name.item)
                     .expect("a fragment");
-                for c in f.selection_set.iter() {
-                    self.visit_child(c, applies_for);
+                for sel in &fragment.selection_set {
+                    self.visit_child(sel, applies_for);
                 }
             }
-            Selection::InlineFragment(inline) => {
-                if !self.should_include_child(inline.item.directives.as_ref()) {
+            Selection::InlineFragment(inl_frag) => {
+                if !self.should_include_child(inl_frag.item.directives.as_ref()) {
                     return;
                 }
-                let applies_for = inline
+                let applies_for = inl_frag
                     .item
                     .type_condition
                     .as_ref()
                     .map(|name| Applies::OnlyType(name.item))
                     .unwrap_or(applies_for);
-                for c in inline.item.selection_set.iter() {
-                    self.visit_child(c, applies_for);
+                for sel in &inl_frag.item.selection_set {
+                    self.visit_child(sel, applies_for);
                 }
             }
         }
     }
 
-    fn should_include_child<'b, 'c>(
+    fn should_include_child<'b: 'a, 'c: 'a>(
         &self,
         directives: Option<&'b Vec<Spanning<Directive<S>>>>,
-    ) -> bool
-    where
-        'b: 'a,
-        'c: 'a,
-    {
+    ) -> bool {
+        use std::ops::Not;
+
         directives
             .map(|d| {
                 d.iter().all(|d| {
-                    let d = &d.item;
-                    let arguments = &d.arguments;
-                    match (d.name.item, arguments) {
-                        ("include", Some(a)) => a
+                    let directive = &d.item;
+                    match (directive.name.item, &directive.arguments) {
+                        ("include", Some(args)) => args
                             .item
                             .items
                             .iter()
-                            .find(|item| item.0.item == "if")
+                            .find(|i| i.0.item == "if")
                             .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(s) =
                                     LookAheadValue::from_input_value(v.as_ref(), Some(self.vars))
@@ -630,17 +785,17 @@ impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
                                 }
                             })
                             .unwrap_or(false),
-                        ("skip", Some(a)) => a
+                        ("skip", Some(args)) => args
                             .item
                             .items
                             .iter()
-                            .find(|item| item.0.item == "if")
+                            .find(|i| i.0.item == "if")
                             .map(|(_, v)| {
                                 if let LookAheadValue::Scalar(b) =
                                     LookAheadValue::from_input_value(v.as_ref(), Some(self.vars))
                                         .item
                                 {
-                                    b.as_bool().map(::std::ops::Not::not).unwrap_or(false)
+                                    b.as_bool().map(Not::not).unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -710,7 +865,7 @@ mod tests {
         collector.output.into_iter().next().unwrap()
     }
 
-    #[derive(PartialEq, Debug)]
+    #[derive(Debug, PartialEq)]
     enum ValueDebug<'a, S: ScalarValue> {
         Null,
         Scalar(&'a S),
@@ -738,7 +893,7 @@ mod tests {
         }
     }
 
-    #[derive(PartialEq, Debug)]
+    #[derive(Debug, PartialEq)]
     struct LookAheadDebug<'a, S: ScalarValue> {
         name: &'a str,
         alias: Option<&'a str>,
@@ -746,6 +901,7 @@ mod tests {
         arguments: Option<Vec<(&'a str, ValueDebug<'a, S>)>>,
         children: Vec<LookAheadDebug<'a, S>>,
     }
+
     impl<'a, S: ScalarValue> LookAheadDebug<'a, S> {
         fn new(look_ahead: &LookAheadSelection<'a, S>) -> Self {
             Self::new_filtered(look_ahead, Applies::All)
@@ -778,14 +934,15 @@ mod tests {
     #[test]
     fn check_simple_query() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-query Hero {
-    hero {
-        id
-        name
-    }
-}
-",
+            query Hero {
+                hero {
+                    id
+                    name
+                }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -825,18 +982,19 @@ query Hero {
     #[test]
     fn check_query_with_child() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-query Hero {
-    hero {
-        id
-        name
-        friends {
-            name
-            id
-        }
-    }
-}
-",
+            query Hero {
+                hero {
+                    id
+                    name
+                    friends {
+                        name
+                        id
+                    }
+                }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -898,14 +1056,15 @@ query Hero {
     #[test]
     fn check_query_with_argument() {
         let docs = parse_document_source(
+            //language=GraphQL
             "
-query Hero {
-    hero(episode: EMPIRE) {
-        id
-        name(uppercase: true)
-    }
-}
-",
+            query Hero {
+                hero(episode: EMPIRE) {
+                    id
+                    name(uppercase: true)
+                }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -948,14 +1107,15 @@ query Hero {
     #[test]
     fn check_query_with_variable() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero($episode: Episode) {
-        hero(episode: $episode) {
-            id
-            name
-        }
-    }
-    ",
+            query Hero($episode: Episode) {
+                hero(episode: $episode) {
+                    id
+                    name
+                }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -995,13 +1155,14 @@ query Hero {
     #[test]
     fn check_query_with_optional_variable() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero($episode: Episode) {
-        hero(episode: $episode) {
-            id
-        }
-    }
-    ",
+            query Hero($episode: Episode) {
+                hero(episode: $episode) {
+                    id
+                }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1031,19 +1192,20 @@ query Hero {
     #[test]
     fn check_query_with_fragment() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero {
-            id
-            ...commonFields
-        }
-    }
+            query Hero {
+                hero {
+                    id
+                    ...commonFields
+                }
+            }
 
-    fragment commonFields on Character {
-      name
-      appearsIn
-    }
-    ",
+            fragment commonFields on Character {
+                name
+                appearsIn
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1090,15 +1252,17 @@ query Hero {
     #[test]
     fn check_query_with_directives() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero {
-            id @include(if: true)
-            name @include(if: false)
-            appearsIn @skip(if: true)
-            height @skip(if: false)
-        }
-    }",
+            query Hero {
+                hero {
+                    id @include(if: true)
+                    name @include(if: false)
+                    appearsIn @skip(if: true)
+                    height @skip(if: false)
+                }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1138,18 +1302,20 @@ query Hero {
     #[test]
     fn check_query_with_inline_fragments() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero {
-            name
-            ... on Droid {
-                primaryFunction
+            query Hero {
+                hero {
+                    name
+                    ... on Droid {
+                        primaryFunction
+                    }
+                    ... on Human {
+                        height
+                    }
+                }
             }
-            ... on Human {
-                height
-            }
-        }
-    }",
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1196,16 +1362,17 @@ query Hero {
     #[test]
     fn check_query_with_multiple() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query HeroAndHuman {
-        hero {
-            id
-        }
-        human {
-            name
-        }
-    }
-    ",
+            query HeroAndHuman {
+                hero {
+                    id
+                }
+                human {
+                    name
+                }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1253,25 +1420,27 @@ query Hero {
     #[test]
     fn check_complex_query() {
         let docs = parse_document_source(
+            //language=GraphQL
             "
-    query HeroNameAndFriends($id: Integer!, $withFriends: Boolean! = true) {
-      hero(id: $id) {
-        id
-        ... comparisonFields
-        friends @include(if: $withFriends) {
-          ... comparisonFields
-          ... on Human @skip(if: true) { mass }
-        }
-      }
-    }
+            query HeroNameAndFriends($id: Integer!, $withFriends: Boolean! = true) {
+                hero(id: $id) {
+                    id
+                    ... comparisonFields
+                    friends @include(if: $withFriends) {
+                        ... comparisonFields
+                        ... on Human @skip(if: true) { mass }
+                    }
+                }
+            }
 
-    fragment comparisonFields on Character {
-      __typename
-      name
-      appearsIn
-      ... on Droid { primaryFunction }
-      ... on Human { height }
-    }",
+            fragment comparisonFields on Character {
+                __typename
+                name
+                appearsIn
+                ... on Droid { primaryFunction }
+                ... on Human { height }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1388,18 +1557,20 @@ query Hero {
     #[test]
     fn check_resolve_concrete_type() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero {
-            name
-            ... on Droid {
-                primaryFunction
+            query Hero {
+                hero {
+                    name
+                    ... on Droid {
+                        primaryFunction
+                    }
+                    ... on Human {
+                        height
+                    }
+                }
             }
-            ... on Human {
-                height
-            }
-        }
-    }",
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1442,16 +1613,18 @@ query Hero {
     #[test]
     fn check_select_child() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero {
-            id
-            friends {
-                id
-                name
+            query Hero {
+                hero {
+                    id
+                    friends {
+                        id
+                        name
+                    }
+                }
             }
-        }
-    }",
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1511,17 +1684,18 @@ query Hero {
     // https://github.com/graphql-rust/juniper/issues/335
     fn check_fragment_with_nesting() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero {
-            ...heroFriendNames
-        }
-    }
+            query Hero {
+                hero {
+                    ...heroFriendNames
+                }
+            }
 
-    fragment heroFriendNames on Hero {
-      friends { name }
-    }
-    ",
+            fragment heroFriendNames on Hero {
+                friends { name }
+            }
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1558,17 +1732,18 @@ query Hero {
     #[test]
     fn check_visitability() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero(episode: EMPIRE) {
-            name
-            aliasedName: name
-            friends {
-                name
+            query Hero {
+                hero(episode: EMPIRE) {
+                    name
+                    aliasedName: name
+                    friends {
+                        name
+                    }
+                }
             }
-        }
-    }
-                ",
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);
@@ -1659,14 +1834,16 @@ query Hero {
     #[test]
     fn check_resolves_applies_for() {
         let docs = parse_document_source::<DefaultScalarValue>(
+            //language=GraphQL
             "
-    query Hero {
-        hero {
-            ... on Human {
-                height
+            query Hero {
+                hero {
+                    ... on Human {
+                        height
+                    }
+                }
             }
-        }
-    }",
+            ",
         )
         .unwrap();
         let fragments = extract_fragments(&docs);

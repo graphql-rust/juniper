@@ -13,8 +13,9 @@ struct Query;
 impl Query {
     fn users<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<User> {
         assert_eq!(executor.look_ahead().field_name(), "users");
+
         // This doesn't cause a panic.
-        executor.look_ahead().children();
+        _ = executor.look_ahead().children();
 
         vec![User {
             country: Country { id: 1 },
@@ -30,8 +31,9 @@ struct User {
 impl User {
     fn country<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &Country {
         assert_eq!(executor.look_ahead().field_name(), "country");
+
         // This panics!
-        executor.look_ahead().children();
+        _ = executor.look_ahead().children();
 
         &self.country
     }

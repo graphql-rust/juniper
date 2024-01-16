@@ -11,7 +11,8 @@ struct Query;
 impl Query {
     fn users<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<User> {
         assert_eq!(executor.look_ahead().field_name(), "users");
-        executor.look_ahead().children();
+
+        _ = executor.look_ahead().children();
 
         vec![User {
             city: City {
@@ -29,7 +30,9 @@ struct User {
 impl User {
     fn city<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &City {
         assert_eq!(executor.look_ahead().field_name(), "city");
-        executor.look_ahead().children();
+
+        _ = executor.look_ahead().children();
+
         &self.city
     }
 }
@@ -42,7 +45,9 @@ struct City {
 impl City {
     fn country<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &Country {
         assert_eq!(executor.look_ahead().field_name(), "country");
-        executor.look_ahead().children();
+
+        _ = executor.look_ahead().children();
+
         &self.country
     }
 }

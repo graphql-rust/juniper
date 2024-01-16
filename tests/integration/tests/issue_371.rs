@@ -18,15 +18,21 @@ pub struct Query;
 impl Query {
     fn users<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<User> {
         let lh = executor.look_ahead();
+
         assert_eq!(lh.field_name(), "users");
-        lh.children();
+
+        _ = lh.children();
+
         vec![User]
     }
 
     fn countries<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<Country> {
         let lh = executor.look_ahead();
+
         assert_eq!(lh.field_name(), "countries");
-        lh.children();
+
+        _ = lh.children();
+
         vec![Country]
     }
 }
