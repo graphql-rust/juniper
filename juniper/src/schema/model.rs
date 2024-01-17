@@ -417,7 +417,9 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get a list of types.
     pub fn type_list(&self) -> Vec<TypeType<S>> {
-        self.types.values().map(|t| TypeType::Concrete(t)).collect()
+        let mut types: Vec<_> = self.types.values().map(|t| TypeType::Concrete(t)).collect();
+        sort_concrete_types(&mut types);
+        types
     }
 
     /// Get a list of concrete types.
@@ -443,7 +445,9 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get a list of directives.
     pub fn directive_list(&self) -> Vec<&DirectiveType<S>> {
-        self.directives.values().collect()
+        let mut directives: Vec<_> = self.directives.values().collect();
+        sort_directives(&mut directives);
+        directives
     }
 
     /// Get directive by name.
@@ -681,6 +685,60 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
             Self::Concrete(t) => f.write_str(t.name().unwrap()),
             Self::List(i, _) => write!(f, "[{i}]"),
             Self::NonNull(i) => write!(f, "{i}!"),
+        }
+    }
+}
+
+/// Sorts the provided [`TypeType`] in the "type-then-name" manner.
+fn sort_concrete_types<S>(types: &mut [TypeType<S>]) {
+    types.sort_by(|a, b| {
+        concrete_type_sort::by_type(a)
+            .cmp(&concrete_type_sort::by_type(b))
+            .then_with(|| concrete_type_sort::by_name(a).cmp(&concrete_type_sort::by_name(b)))
+    });
+}
+
+/// Sorts the provided [`DirectiveType`] by name.
+fn sort_directives<S>(directives: &mut [&DirectiveType<S>]) {
+    directives.sort_by(|a, b| a.name.cmp(&b.name));
+}
+
+/// Evaluation of a [`TypeType`] weights for sorting (for concrete types only).
+///
+/// Used for deterministic introspection output.
+mod concrete_type_sort {
+    use crate::meta::MetaType;
+
+    use super::TypeType;
+
+    /// Returns a [`TypeType`] sorting weight by its type.
+    pub fn by_type<S>(t: &TypeType<S>) -> u8 {
+        match t {
+            TypeType::Concrete(MetaType::Enum(_)) => 0,
+            TypeType::Concrete(MetaType::InputObject(_)) => 1,
+            TypeType::Concrete(MetaType::Interface(_)) => 2,
+            TypeType::Concrete(MetaType::Scalar(_)) => 3,
+            TypeType::Concrete(MetaType::Object(_)) => 4,
+            TypeType::Concrete(MetaType::Union(_)) => 5,
+            // note: The following types are not part of the introspected types:
+            TypeType::Concrete(
+                MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
+            ) => 6,
+            // note: Other variants will not appear since we're only sorting concrete types:
+            _ => 7,
+        }
+    }
+
+    /// Returns a [`TypeType`] sorting weight by its name.
+    pub fn by_name<'a, S>(t: &'a TypeType<'a, S>) -> Option<&'a str> {
+        match t {
+            TypeType::Concrete(MetaType::Enum(meta)) => Some(&meta.name),
+            TypeType::Concrete(MetaType::InputObject(meta)) => Some(&meta.name),
+            TypeType::Concrete(MetaType::Interface(meta)) => Some(&meta.name),
+            TypeType::Concrete(MetaType::Scalar(meta)) => Some(&meta.name),
+            TypeType::Concrete(MetaType::Object(meta)) => Some(&meta.name),
+            TypeType::Concrete(MetaType::Union(meta)) => Some(&meta.name),
+            _ => None,
         }
     }
 }

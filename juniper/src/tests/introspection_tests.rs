@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use pretty_assertions::assert_eq;
+
 use crate::{
     graphql_vars,
     introspection::IntrospectionFormat,
@@ -184,14 +186,20 @@ async fn test_introspection_directives() {
         EmptySubscription::<Database>::new(),
     );
 
-    let mut result = crate::execute(q, None, &schema, &graphql_vars! {}, &database)
+    let result = crate::execute(q, None, &schema, &graphql_vars! {}, &database)
         .await
         .unwrap();
-    sort_schema_value(&mut result.0);
 
-    let mut expected = graphql_value!({
+    let expected = graphql_value!({
         "__schema": {
             "directives": [
+                {
+                    "name": "deprecated",
+                    "locations": [
+                        "FIELD_DEFINITION",
+                        "ENUM_VALUE",
+                    ],
+                },
                 {
                     "name": "include",
                     "locations": [
@@ -209,13 +217,6 @@ async fn test_introspection_directives() {
                     ],
                 },
                 {
-                    "name": "deprecated",
-                    "locations": [
-                        "FIELD_DEFINITION",
-                        "ENUM_VALUE",
-                    ],
-                },
-                {
                     "name": "specifiedBy",
                     "locations": [
                         "SCALAR",
@@ -224,7 +225,6 @@ async fn test_introspection_directives() {
             ],
         },
     });
-    sort_schema_value(&mut expected);
 
     assert_eq!(result, (expected, vec![]));
 }
@@ -286,8 +286,7 @@ async fn test_builtin_introspection_query() {
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
     );
-    let mut result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
-    sort_schema_value(&mut result.0);
+    let result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
     let expected = schema_introspection_result();
     assert_eq!(result, (expected, vec![]));
 }
@@ -301,9 +300,8 @@ async fn test_builtin_introspection_query_without_descriptions() {
         EmptySubscription::<Database>::new(),
     );
 
-    let mut result =
+    let result =
         crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions).unwrap();
-    sort_schema_value(&mut result.0);
     let expected = schema_introspection_result_without_descriptions();
 
     assert_eq!(result, (expected, vec![]));
