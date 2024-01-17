@@ -728,7 +728,7 @@ mod concrete_type_sort {
             TypeType::Concrete(
                 MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
             ) => 6,
-            // NOTE: Other variants will not appear since we're only sorting concrete types:
+            // NOTE: Other variants will not appear since we're only sorting concrete types.
             TypeType::List(..) | TypeType::NonNull(_) => 7,
         }
     }
@@ -746,7 +746,7 @@ mod concrete_type_sort {
                 // NOTE: The following types are not part of the introspected types.
                 MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
             )
-            // NOTE: Other variants will not appear since we're only sorting concrete types:
+            // NOTE: Other variants will not appear since we're only sorting concrete types.
             | TypeType::List(..)
             | TypeType::NonNull(_) => None,
         }
