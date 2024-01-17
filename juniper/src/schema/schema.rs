@@ -283,7 +283,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                 name: ref iface_name,
                 ..
             })) => {
-                let mut type_names: Vec<_> = context
+                let mut type_names = context
                     .types
                     .values()
                     .filter_map(|ct| {
@@ -301,13 +301,12 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                             None
                         }
                     })
-                    .collect();
+                    .collect::<Vec<_>>();
                 type_names.sort();
-
                 Some(
                     type_names
                         .into_iter()
-                        .filter_map(|type_name| context.type_by_name(type_name))
+                        .filter_map(|n| context.type_by_name(n))
                         .collect(),
                 )
             }

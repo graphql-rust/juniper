@@ -417,7 +417,11 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get a list of types.
     pub fn type_list(&self) -> Vec<TypeType<S>> {
-        let mut types: Vec<_> = self.types.values().map(|t| TypeType::Concrete(t)).collect();
+        let mut types = self
+            .types
+            .values()
+            .map(|t| TypeType::Concrete(t))
+            .collect::<Vec<_>>();
         sort_concrete_types(&mut types);
         types
     }
@@ -445,7 +449,7 @@ impl<'a, S> SchemaType<'a, S> {
 
     /// Get a list of directives.
     pub fn directive_list(&self) -> Vec<&DirectiveType<S>> {
-        let mut directives: Vec<_> = self.directives.values().collect();
+        let mut directives = self.directives.values().collect::<Vec<_>>();
         sort_directives(&mut directives);
         directives
     }
@@ -689,7 +693,7 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
     }
 }
 
-/// Sorts the provided [`TypeType`] in the "type-then-name" manner.
+/// Sorts the provided [`TypeType`]s in the "type-then-name" manner.
 fn sort_concrete_types<S>(types: &mut [TypeType<S>]) {
     types.sort_by(|a, b| {
         concrete_type_sort::by_type(a)
@@ -698,7 +702,7 @@ fn sort_concrete_types<S>(types: &mut [TypeType<S>]) {
     });
 }
 
-/// Sorts the provided [`DirectiveType`] by name.
+/// Sorts the provided [`DirectiveType`]s by name.
 fn sort_directives<S>(directives: &mut [&DirectiveType<S>]) {
     directives.sort_by(|a, b| a.name.cmp(&b.name));
 }
@@ -720,12 +724,12 @@ mod concrete_type_sort {
             TypeType::Concrete(MetaType::Scalar(_)) => 3,
             TypeType::Concrete(MetaType::Object(_)) => 4,
             TypeType::Concrete(MetaType::Union(_)) => 5,
-            // note: The following types are not part of the introspected types:
+            // NOTE: The following types are not part of the introspected types.
             TypeType::Concrete(
                 MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
             ) => 6,
-            // note: Other variants will not appear since we're only sorting concrete types:
-            _ => 7,
+            // NOTE: Other variants will not appear since we're only sorting concrete types:
+            TypeType::List(..) | TypeType::NonNull(_) => 7,
         }
     }
 
@@ -738,7 +742,13 @@ mod concrete_type_sort {
             TypeType::Concrete(MetaType::Scalar(meta)) => Some(&meta.name),
             TypeType::Concrete(MetaType::Object(meta)) => Some(&meta.name),
             TypeType::Concrete(MetaType::Union(meta)) => Some(&meta.name),
-            _ => None,
+            TypeType::Concrete(
+                // NOTE: The following types are not part of the introspected types.
+                MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
+            )
+            // NOTE: Other variants will not appear since we're only sorting concrete types:
+            | TypeType::List(..)
+            | TypeType::NonNull(_) => None,
         }
     }
 }

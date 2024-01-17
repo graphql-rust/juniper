@@ -288,6 +288,7 @@ async fn test_builtin_introspection_query() {
     );
     let result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
     let expected = schema_introspection_result();
+
     assert_eq!(result, (expected, vec![]));
 }
 
