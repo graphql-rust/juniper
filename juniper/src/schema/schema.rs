@@ -282,11 +282,11 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta {
                 name: ref iface_name,
                 ..
-            })) => Some(
-                context
-                    .concrete_type_list()
-                    .iter()
-                    .filter_map(|&ct| {
+            })) => {
+                let mut type_names = context
+                    .types
+                    .values()
+                    .filter_map(|ct| {
                         if let MetaType::Object(ObjectMeta {
                             name,
                             interface_names,
@@ -295,15 +295,21 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                         {
                             interface_names
                                 .iter()
-                                .any(|name| name == iface_name)
-                                .then(|| context.type_by_name(name))
-                                .flatten()
+                                .any(|iname| iname == iface_name)
+                                .then(|| name.as_ref())
                         } else {
                             None
                         }
                     })
-                    .collect(),
-            ),
+                    .collect::<Vec<_>>();
+                type_names.sort();
+                Some(
+                    type_names
+                        .into_iter()
+                        .filter_map(|n| context.type_by_name(n))
+                        .collect(),
+                )
+            }
             _ => None,
         }
     }
