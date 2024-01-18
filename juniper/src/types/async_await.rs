@@ -1,5 +1,7 @@
 use std::future;
 
+use auto_enums::enum_derive;
+
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
@@ -181,7 +183,7 @@ where
 {
     use futures::stream::{FuturesOrdered, StreamExt as _};
 
-    #[derive(futures_enum::Future)]
+    #[enum_derive(Future)]
     enum AsyncValueFuture<A, B, C, D> {
         Field(A),
         FragmentSpread(B),
