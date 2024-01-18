@@ -5,6 +5,7 @@ use crate::{
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
+    Span,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -21,9 +22,11 @@ pub fn factory<'a>() -> NoUnusedFragments<'a> {
     }
 }
 
+type BorrowedSpanning<'a, T> = Spanning<&'a T, &'a Span>;
+
 pub struct NoUnusedFragments<'a> {
     spreads: HashMap<Scope<'a>, Vec<&'a str>>,
-    defined_fragments: HashSet<Spanning<&'a str>>,
+    defined_fragments: HashSet<BorrowedSpanning<'a, str>>,
     current_scope: Option<Scope<'a>>,
 }
 
@@ -100,8 +103,10 @@ where
         f: &'a Spanning<Fragment<S>>,
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
-        self.defined_fragments
-            .insert(Spanning::new(f.span, f.item.name.item));
+        self.defined_fragments.insert(Spanning {
+            span: &f.span,
+            item: f.item.name.item,
+        });
     }
 
     fn enter_fragment_spread(

@@ -3,6 +3,7 @@ use crate::{
     parser::{SourcePosition, Spanning},
     validation::{RuleError, ValidatorContext, Visitor},
     value::ScalarValue,
+    Span,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -21,9 +22,11 @@ pub fn factory<'a>() -> NoUndefinedVariables<'a> {
     }
 }
 
+type BorrowedSpanning<'a, T> = Spanning<&'a T, &'a Span>;
+
 pub struct NoUndefinedVariables<'a> {
     defined_variables: HashMap<Option<&'a str>, (SourcePosition, HashSet<&'a str>)>,
-    used_variables: HashMap<Scope<'a>, Vec<Spanning<&'a str>>>,
+    used_variables: HashMap<Scope<'a>, Vec<BorrowedSpanning<'a, str>>>,
     current_scope: Option<Scope<'a>>,
     spreads: HashMap<Scope<'a>, Vec<&'a str>>,
 }
@@ -33,7 +36,7 @@ impl<'a> NoUndefinedVariables<'a> {
         &'a self,
         scope: &Scope<'a>,
         defined: &HashSet<&'a str>,
-        unused: &mut Vec<&'a Spanning<&'a str>>,
+        unused: &mut Vec<BorrowedSpanning<'a, str>>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
         let mut to_visit = Vec::new();
@@ -59,7 +62,7 @@ impl<'a> NoUndefinedVariables<'a> {
         &'a self,
         scope: &Scope<'a>,
         defined: &HashSet<&'a str>,
-        unused: &mut Vec<&'a Spanning<&'a str>>,
+        unused: &mut Vec<BorrowedSpanning<'a, str>>,
         visited: &mut HashSet<Scope<'a>>,
     ) -> Option<&'a Vec<&'a str>> {
         if visited.contains(scope) {
@@ -71,7 +74,7 @@ impl<'a> NoUndefinedVariables<'a> {
         if let Some(used_vars) = self.used_variables.get(scope) {
             for var in used_vars {
                 if !defined.contains(&var.item) {
-                    unused.push(var);
+                    unused.push(*var);
                 }
             }
         }
@@ -164,7 +167,10 @@ where
                         .item
                         .referenced_variables()
                         .iter()
-                        .map(|&var_name| Spanning::new(value.span, var_name))
+                        .map(|&var_name| Spanning {
+                            span: &value.span,
+                            item: var_name,
+                        })
                         .collect(),
                 );
         }
