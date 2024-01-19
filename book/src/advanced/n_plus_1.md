@@ -95,7 +95,7 @@ SELECT id, name FROM cults WHERE id = 2;
 
 There are several ways how this problem may be resolved in [Juniper]. The most common ones are:
 - [DataLoader](dataloader.md)
-- Look-ahead machinery
+- [Look-ahead machinery](lookahead.md)
 - [Eager loading](eager_loading.md)
 
 
