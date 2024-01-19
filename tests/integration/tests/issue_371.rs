@@ -5,8 +5,7 @@
 //! Original author of this test is [@davidpdrsn](https://github.com/davidpdrsn).
 
 use juniper::{
-    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, Executor,
-    LookAheadMethods as _, RootNode, ScalarValue,
+    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, Executor, RootNode, ScalarValue,
 };
 
 pub struct Context;
@@ -19,13 +18,21 @@ pub struct Query;
 impl Query {
     fn users<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<User> {
         let lh = executor.look_ahead();
+
         assert_eq!(lh.field_name(), "users");
+
+        _ = lh.children();
+
         vec![User]
     }
 
     fn countries<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> Vec<Country> {
         let lh = executor.look_ahead();
+
         assert_eq!(lh.field_name(), "countries");
+
+        _ = lh.children();
+
         vec![Country]
     }
 }

@@ -1697,8 +1697,6 @@ mod inferred_custom_context_from_field {
 }
 
 mod executor {
-    use juniper::LookAheadMethods as _;
-
     use super::*;
 
     struct Human;

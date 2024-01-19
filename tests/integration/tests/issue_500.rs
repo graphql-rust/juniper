@@ -10,7 +10,9 @@ struct Query;
 #[graphql_object]
 impl Query {
     fn users<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<User> {
-        executor.look_ahead();
+        assert_eq!(executor.look_ahead().field_name(), "users");
+
+        _ = executor.look_ahead().children();
 
         vec![User {
             city: City {
@@ -27,7 +29,10 @@ struct User {
 #[graphql_object]
 impl User {
     fn city<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &City {
-        executor.look_ahead();
+        assert_eq!(executor.look_ahead().field_name(), "city");
+
+        _ = executor.look_ahead().children();
+
         &self.city
     }
 }
@@ -39,7 +44,10 @@ struct City {
 #[graphql_object]
 impl City {
     fn country<S: ScalarValue>(&self, executor: &Executor<'_, '_, (), S>) -> &Country {
-        executor.look_ahead();
+        assert_eq!(executor.look_ahead().field_name(), "country");
+
+        _ = executor.look_ahead().children();
+
         &self.country
     }
 }
