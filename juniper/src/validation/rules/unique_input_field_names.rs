@@ -36,10 +36,10 @@ where
         (field_name, _): (SpannedInput<'a, String>, SpannedInput<InputValue<S>>),
     ) {
         if let Some(ref mut known_names) = self.known_name_stack.last_mut() {
-            match known_names.entry(&field_name.item) {
+            match known_names.entry(field_name.item) {
                 Entry::Occupied(e) => {
                     ctx.report_error(
-                        &error_message(&field_name.item),
+                        &error_message(field_name.item),
                         &[*e.get(), field_name.span.start],
                     );
                 }

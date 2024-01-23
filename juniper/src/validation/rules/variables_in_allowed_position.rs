@@ -29,7 +29,7 @@ pub fn factory<'a, S: fmt::Debug>() -> VariableInAllowedPosition<'a, S> {
 
 pub struct VariableInAllowedPosition<'a, S: fmt::Debug + 'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
-    variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String, &'a Span>, Type<'a>)>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, Type<'a>)>>,
     #[allow(clippy::type_complexity)]
     variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
     current_scope: Option<Scope<'a>>,
