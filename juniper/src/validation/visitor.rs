@@ -328,7 +328,7 @@ fn visit_input_value<'a, S, V>(
 
     match input_value.item {
         InputValue::Object(ref fields) => {
-            for field in fields {
+            for (key, value) in fields {
                 let inner_type = ctx
                     .current_input_type_literal()
                     .and_then(|t| match *t {
@@ -337,13 +337,13 @@ fn visit_input_value<'a, S, V>(
                         }
                         _ => None,
                     })
-                    .and_then(|ct| ct.input_field_by_name(&field.0.item))
+                    .and_then(|ct| ct.input_field_by_name(&key.item))
                     .map(|f| &f.arg_type);
 
                 ctx.with_pushed_input_type(inner_type, |ctx| {
-                    v.enter_object_field(ctx, field);
-                    visit_input_value(v, ctx, &field.1);
-                    v.exit_object_field(ctx, field);
+                    v.enter_object_field(ctx, (key.as_ref(), value.as_ref()));
+                    visit_input_value(v, ctx, value);
+                    v.exit_object_field(ctx, (key.as_ref(), value.as_ref()));
                 })
             }
         }
@@ -377,15 +377,15 @@ fn enter_input_value<'a, S, V>(
 {
     use crate::InputValue::*;
 
-    let span = input_value.span;
+    let span = &input_value.span;
 
-    match input_value.item {
-        Null => v.enter_null_value(ctx, Spanning::new(span, ())),
-        Scalar(ref s) => v.enter_scalar_value(ctx, Spanning::new(span, s)),
-        Enum(ref s) => v.enter_enum_value(ctx, Spanning::new(span, s)),
-        Variable(ref s) => v.enter_variable_value(ctx, Spanning::new(span, s)),
-        List(ref l) => v.enter_list_value(ctx, Spanning::new(span, l)),
-        Object(ref o) => v.enter_object_value(ctx, Spanning::new(span, o)),
+    match &input_value.item {
+        Null => v.enter_null_value(ctx, Spanning { span, item: &() }),
+        Scalar(item) => v.enter_scalar_value(ctx, Spanning { span, item }),
+        Enum(item) => v.enter_enum_value(ctx, Spanning { span, item }),
+        Variable(item) => v.enter_variable_value(ctx, Spanning { span, item }),
+        List(item) => v.enter_list_value(ctx, Spanning { span, item }),
+        Object(item) => v.enter_object_value(ctx, Spanning { span, item }),
     }
 }
 
@@ -399,14 +399,14 @@ fn exit_input_value<'a, S, V>(
 {
     use crate::InputValue::*;
 
-    let span = input_value.span;
+    let span = &input_value.span;
 
-    match input_value.item {
-        Null => v.exit_null_value(ctx, Spanning::new(span, ())),
-        Scalar(ref s) => v.exit_scalar_value(ctx, Spanning::new(span, s)),
-        Enum(ref s) => v.exit_enum_value(ctx, Spanning::new(span, s)),
-        Variable(ref s) => v.exit_variable_value(ctx, Spanning::new(span, s)),
-        List(ref l) => v.exit_list_value(ctx, Spanning::new(span, l)),
-        Object(ref o) => v.exit_object_value(ctx, Spanning::new(span, o)),
+    match &input_value.item {
+        Null => v.exit_null_value(ctx, Spanning { span, item: &() }),
+        Scalar(item) => v.exit_scalar_value(ctx, Spanning { span, item }),
+        Enum(item) => v.exit_enum_value(ctx, Spanning { span, item }),
+        Variable(item) => v.exit_variable_value(ctx, Spanning { span, item }),
+        List(item) => v.exit_list_value(ctx, Spanning { span, item }),
+        Object(item) => v.exit_object_value(ctx, Spanning { span, item }),
     }
 }
