@@ -167,7 +167,7 @@ where
                         .item
                         .referenced_variables()
                         .iter()
-                        .map(|&var_name| Spanning {
+                        .map(|&var_name| BorrowedSpanning {
                             span: &value.span,
                             item: var_name,
                         })

@@ -76,7 +76,7 @@ where
             self.spreads
                 .entry(current_fragment)
                 .or_default()
-                .push(Spanning {
+                .push(BorrowedSpanning {
                     item: spread.item.name.item,
                     span: &spread.span,
                 });
@@ -86,7 +86,7 @@ where
 
 type CycleDetectorState<'a> = (
     &'a str,
-    Vec<&'a Spanning<&'a str, &'a Span>>,
+    Vec<&'a BorrowedSpanning<'a, str>>,
     HashMap<&'a str, usize>,
 );
 

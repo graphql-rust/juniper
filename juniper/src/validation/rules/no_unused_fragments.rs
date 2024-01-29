@@ -103,7 +103,7 @@ where
         f: &'a Spanning<Fragment<S>>,
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
-        self.defined_fragments.insert(Spanning {
+        self.defined_fragments.insert(BorrowedSpanning {
             span: &f.span,
             item: f.item.name.item,
         });
