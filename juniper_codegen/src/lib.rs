@@ -1825,7 +1825,7 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// [1]: https://spec.graphql.org/October2021#sec-Objects
 #[proc_macro_attribute]
 pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
-    diagnostic::entry_point(|| {
+    diagnostic::entry_point_with_preserved_body(body.clone(), || {
         self::graphql_object::attr::expand(attr.into(), body.into())
             .unwrap_or_abort()
             .into()
