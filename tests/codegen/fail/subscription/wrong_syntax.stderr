@@ -1,0 +1,15 @@
+error: #[graphql_subscription] attribute is applicable to non-trait `impl` blocks only
+  --> fail/subscription/wrong_syntax.rs:12:1
+   |
+12 | #[graphql_subscription]
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the attribute macro `graphql_subscription` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0609]: no field `self` on type `&ObjA`
+  --> fail/subscription/wrong_syntax.rs:15:50
+   |
+15 |         Box::pin(stream::once(future::ready(self.self.field)))
+   |                                                  ^^^^ unknown field
+   |
+   = note: available fields are: `field`

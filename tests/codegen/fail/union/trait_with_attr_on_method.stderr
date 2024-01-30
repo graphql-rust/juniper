@@ -5,3 +5,9 @@ error: GraphQL union cannot use #[graphql(with = ...)] attribute on a trait meth
   |
 5 |     #[graphql(with = something)]
   |               ^^^^
+
+error: cannot find attribute `graphql` in this scope
+ --> fail/union/trait_with_attr_on_method.rs:5:7
+  |
+5 |     #[graphql(with = something)]
+  |       ^^^^^^^

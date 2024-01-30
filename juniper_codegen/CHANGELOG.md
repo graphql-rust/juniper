@@ -10,7 +10,7 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 ### BC Breaks
 
-- `#[graphql_object]` and `#[graphql_subscription]` expansions now preserve defined `impl` blocks "as is" and reuse defined methods in opaque way. ([#971])
+- `#[graphql_object]` and `#[graphql_subscription]` expansions now preserve defined `impl` blocks "as is" and reuse defined methods in opaque way. ([#971], [#1245])
 - Renamed `rename = "<policy>"` attribute argument to `rename_all = "<policy>"` (following `serde` style). ([#971])
 - Redesigned `#[graphql_interface]` macro: ([#1009])
     - Removed support for `dyn` attribute argument (interface values as trait objects).
@@ -61,6 +61,7 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 [#1051]: /../../issues/1051
 [#1054]: /../../pull/1054
 [#1157]: /../../pull/1157
+[#1245]: /../../pull/1245
 
 
 
