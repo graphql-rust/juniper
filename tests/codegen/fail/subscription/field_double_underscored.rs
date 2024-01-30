@@ -1,14 +1,15 @@
-use std::pin::Pin;
+use std::{future, pin::Pin};
 
+use futures::{stream, Stream};
 use juniper::graphql_subscription;
 
-type Stream<'a, I> = Pin<Box<dyn futures::Stream<Item = I> + Send + 'a>>;
+type BoxStream<'a, I> = Pin<Box<dyn Stream<Item = I> + Send + 'a>>;
 
 struct ObjA;
 
 #[graphql_subscription]
-impl Character for ObjA {
-    async fn __id() -> Stream<'static, &'static str> {
+impl ObjA {
+    async fn __id() -> BoxStream<'static, &'static str> {
         Box::pin(stream::once(future::ready("funA")))
     }
 }

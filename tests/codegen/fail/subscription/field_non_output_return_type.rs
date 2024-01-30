@@ -1,9 +1,9 @@
-use std::pin::Pin;
+use std::{future, pin::Pin};
 
-use futures::{future, stream};
+use futures::{stream, Stream};
 use juniper::{graphql_subscription, GraphQLInputObject};
 
-type Stream<'a, I> = Pin<Box<dyn futures::Stream<Item = I> + Send + 'a>>;
+type BoxStream<'a, I> = Pin<Box<dyn Stream<Item = I> + Send + 'a>>;
 
 #[derive(GraphQLInputObject)]
 struct ObjB {
@@ -14,7 +14,7 @@ struct ObjA;
 
 #[graphql_subscription]
 impl ObjA {
-    async fn id(&self) -> Stream<'static, ObjB> {
+    async fn id(&self) -> BoxStream<'static, ObjB> {
         Box::pin(stream::once(future::ready(ObjB { id: 34 })))
     }
 }

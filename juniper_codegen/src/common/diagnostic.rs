@@ -263,29 +263,7 @@ mod polyfill {
     where
         F: FnOnce() -> proc_macro::TokenStream + UnwindSafe,
     {
-        ENTERED_ENTRY_POINT.with(|flag| flag.set(flag.get() + 1));
-        let caught = catch_unwind(f);
-        let err_storage = ERR_STORAGE.with(|s| s.replace(Vec::new()));
-        ENTERED_ENTRY_POINT.with(|flag| flag.set(flag.get() - 1));
-
-        let gen_error = || {
-            quote! { #( #err_storage )* }
-        };
-
-        match caught {
-            Ok(ts) => {
-                if err_storage.is_empty() {
-                    ts
-                } else {
-                    gen_error().into()
-                }
-            }
-
-            Err(boxed) => match boxed.downcast_ref::<&str>() {
-                Some(p) if *p == "diagnostic::polyfill::abort_now" => gen_error().into(),
-                _ => resume_unwind(boxed),
-            },
-        }
+        entry_point_with_preserved_body(TokenStream::new(), f)
     }
 
     /// This is the entry point for an attribute macro to support [`Diagnostic`]s, while preserving

@@ -1879,7 +1879,7 @@ pub fn graphql_object(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// [1]: https://spec.graphql.org/October2021#sec-Subscription
 #[proc_macro_attribute]
 pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream {
-    diagnostic::entry_point(|| {
+    diagnostic::entry_point_with_preserved_body(body.clone(), || {
         self::graphql_subscription::attr::expand(attr.into(), body.into())
             .unwrap_or_abort()
             .into()

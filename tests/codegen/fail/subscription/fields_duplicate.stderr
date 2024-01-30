@@ -1,6 +1,12 @@
 error: GraphQL object must have a different name for each field
        · note: https://spec.graphql.org/October2021#sec-Objects
-  --> fail/subscription/fields_duplicate.rs:10:6
+  --> fail/subscription/fields_duplicate.rs:11:6
    |
-10 | impl ObjA {
+11 | impl ObjA {
    |      ^^^^
+
+error: cannot find attribute `graphql` in this scope
+  --> fail/subscription/fields_duplicate.rs:16:7
+   |
+16 |     #[graphql(name = "id")]
+   |       ^^^^^^^
