@@ -756,7 +756,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// [`ScalarValue`]: juniper::ScalarValue
 #[proc_macro_attribute]
 pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
-    diagnostic::entry_point(|| {
+    diagnostic::entry_point_with_preserved_body(body.clone(), || {
         graphql_scalar::attr::expand(attr.into(), body.into())
             .unwrap_or_abort()
             .into()
@@ -1318,7 +1318,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
 #[proc_macro_attribute]
 pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
-    diagnostic::entry_point(|| {
+    diagnostic::entry_point_with_preserved_body(body.clone(), || {
         self::graphql_interface::attr::expand(attr.into(), body.into())
             .unwrap_or_abort()
             .into()
@@ -2486,7 +2486,7 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 /// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
 #[proc_macro_attribute]
 pub fn graphql_union(attr: TokenStream, body: TokenStream) -> TokenStream {
-    diagnostic::entry_point(|| {
+    diagnostic::entry_point_with_preserved_body(body.clone(), || {
         self::graphql_union::attr::expand(attr.into(), body.into())
             .unwrap_or_abort()
             .into()
