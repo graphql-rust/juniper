@@ -1,1 +1,15 @@
-d
+error: #[graphql_object] attribute is applicable to non-trait `impl` blocks only
+ --> fail/object/attr_wrong_syntax.rs:7:1
+  |
+7 | #[graphql_object]
+  | ^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0609]: no field `self` on type `&MyObject`
+  --> fail/object/attr_wrong_syntax.rs:10:14
+   |
+10 |         self.self.my_field
+   |              ^^^^ unknown field
+   |
+   = note: available fields are: `my_field`
