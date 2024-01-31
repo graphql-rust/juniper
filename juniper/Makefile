@@ -47,6 +47,10 @@ graphiql:
 		src/http/graphiql.html
 	$(sed-i) '/X-Example-Header/d' \
 		src/http/graphiql.html
+	$(sed-i) 's|react.development.js|react.production.min.js|g' \
+		src/http/graphiql.html
+	$(sed-i) 's|react-dom.development.js|react-dom.production.min.js|g' \
+		src/http/graphiql.html
 
 
 # Download and prepare actual version of GraphQL Playground static files, used
