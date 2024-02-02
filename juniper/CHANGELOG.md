@@ -51,7 +51,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Disabled `chrono` [Cargo feature] by default.
     - Removed `scalar-naivetime` [Cargo feature].
 - Removed lifetime parameter from `ParseError`, `GraphlQLError`, `GraphQLBatchRequest` and `GraphQLRequest`. ([#1081], [#528])
-- Upgraded [GraphiQL] to 3.1.0 version (requires new [`graphql-transport-ws` GraphQL over WebSocket Protocol] integration on server, see `juniper_warp/examples/subscription.rs`). ([#1188], [#1193], [#1235])
+- Upgraded [GraphiQL] to 3.1.1 version (requires new [`graphql-transport-ws` GraphQL over WebSocket Protocol] integration on server, see `juniper_warp/examples/subscription.rs`). ([#1188], [#1193], [#1246])
 - Abstracted `Spanning::start` and `Spanning::end` fields into separate struct `Span`. ([#1207], [#1208])
 - Removed `graphql-parser-integration` and `graphql-parser` [Cargo feature]s by merging them into `schema-language` [Cargo feature]. ([#1237])
 - Renamed `RootNode::as_schema_language()` method as `RootNode::as_sdl()`. ([#1237]) 
@@ -164,9 +164,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1215]: /../../pull/1215
 [#1227]: /../../pull/1227
 [#1228]: /../../pull/1228
-[#1235]: /../../pull/1235
 [#1237]: /../../pull/1237
 [#1239]: /../../pull/1239
+[#1246]: /../../pull/1246
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
