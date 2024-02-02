@@ -4,3 +4,9 @@ error: GraphQL object must have a different name for each field
   |
 6 | impl ObjA {
   |      ^^^^
+
+error: cannot find attribute `graphql` in this scope
+  --> fail/object/attr_fields_duplicate.rs:11:7
+   |
+11 |     #[graphql(name = "id")]
+   |       ^^^^^^^

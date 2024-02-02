@@ -2,7 +2,9 @@ use std::fmt;
 
 use proc_macro2::Span;
 
-pub(crate) use self::polyfill::{abort_if_dirty, emit_error, entry_point, Diagnostic, ResultExt};
+pub(crate) use self::polyfill::{
+    abort_if_dirty, emit_error, entry_point, entry_point_with_preserved_body, Diagnostic, ResultExt,
+};
 
 /// URL of the GraphQL specification (October 2021 Edition).
 pub(crate) const SPEC_URL: &str = "https://spec.graphql.org/October2021";
@@ -261,13 +263,27 @@ mod polyfill {
     where
         F: FnOnce() -> proc_macro::TokenStream + UnwindSafe,
     {
+        entry_point_with_preserved_body(TokenStream::new(), f)
+    }
+
+    /// This is the entry point for an attribute macro to support [`Diagnostic`]s, while preserving
+    /// the `body` input [`proc_macro::TokenStream`] on errors.
+    pub(crate) fn entry_point_with_preserved_body<F>(
+        body: impl Into<TokenStream>,
+        f: F,
+    ) -> proc_macro::TokenStream
+    where
+        F: FnOnce() -> proc_macro::TokenStream + UnwindSafe,
+    {
         ENTERED_ENTRY_POINT.with(|flag| flag.set(flag.get() + 1));
         let caught = catch_unwind(f);
         let err_storage = ERR_STORAGE.with(|s| s.replace(Vec::new()));
         ENTERED_ENTRY_POINT.with(|flag| flag.set(flag.get() - 1));
 
         let gen_error = || {
-            quote! { #( #err_storage )* }
+            let body = body.into();
+
+            quote! { #body #( #err_storage )* }
         };
 
         match caught {

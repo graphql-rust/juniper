@@ -1,0 +1,22 @@
+error: #[graphql_interface] attribute is applicable to trait and struct definitions only
+ --> fail/interface/trait/wrong_syntax.rs:3:1
+  |
+3 | #[graphql_interface]
+  | ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: cannot find attribute `graphql` in this scope
+ --> fail/interface/trait/wrong_syntax.rs:7:7
+  |
+7 |     #[graphql(ignore)]
+  |       ^^^^^^^
+
+error[E0609]: no field `self` on type `&Self`
+ --> fail/interface/trait/wrong_syntax.rs:9:14
+  |
+4 | trait Character {
+  | --------------- type parameter 'Self' declared here
+...
+9 |         self.self.id()
+  |              ^^^^

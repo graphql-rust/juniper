@@ -6,6 +6,7 @@ use crate::{
     parser::Spanning,
     validation::ValidatorContext,
     value::ScalarValue,
+    Span,
 };
 
 #[doc(hidden)]
@@ -103,28 +104,38 @@ where
     ) {
     }
 
-    fn enter_null_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<()>) {}
-    fn exit_null_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<()>) {}
+    fn enter_null_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedInput<'a, ()>) {}
+    fn exit_null_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedInput<'a, ()>) {}
 
-    fn enter_scalar_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a S>) {}
-    fn exit_scalar_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a S>) {}
+    fn enter_scalar_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedInput<'a, S>) {}
+    fn exit_scalar_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedInput<'a, S>) {}
 
-    fn enter_enum_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
-    fn exit_enum_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
+    fn enter_enum_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedInput<'a, String>) {}
+    fn exit_enum_value(&mut self, _: &mut ValidatorContext<'a, S>, _: SpannedInput<'a, String>) {}
 
-    fn enter_variable_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
-    fn exit_variable_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
+    fn enter_variable_value(
+        &mut self,
+        _: &mut ValidatorContext<'a, S>,
+        _: SpannedInput<'a, String>,
+    ) {
+    }
+    fn exit_variable_value(
+        &mut self,
+        _: &mut ValidatorContext<'a, S>,
+        _: SpannedInput<'a, String>,
+    ) {
+    }
 
     fn enter_list_value(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        _: Spanning<&'a Vec<Spanning<InputValue<S>>>>,
+        _: SpannedInput<'a, Vec<Spanning<InputValue<S>>>>,
     ) {
     }
     fn exit_list_value(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        _: Spanning<&'a Vec<Spanning<InputValue<S>>>>,
+        _: SpannedInput<'a, Vec<Spanning<InputValue<S>>>>,
     ) {
     }
 
@@ -134,15 +145,16 @@ where
     fn enter_object_field(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        _: &'a (Spanning<String>, Spanning<InputValue<S>>),
+        _: (SpannedInput<'a, String>, SpannedInput<'a, InputValue<S>>),
     ) {
     }
     fn exit_object_field(
         &mut self,
         _: &mut ValidatorContext<'a, S>,
-        _: &'a (Spanning<String>, Spanning<InputValue<S>>),
+        _: (SpannedInput<'a, String>, SpannedInput<'a, InputValue<S>>),
     ) {
     }
 }
 
-type SpannedObject<'a, S> = Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>;
+type SpannedInput<'a, T> = Spanning<&'a T, &'a Span>;
+type SpannedObject<'a, S> = SpannedInput<'a, Vec<(Spanning<String>, Spanning<InputValue<S>>)>>;

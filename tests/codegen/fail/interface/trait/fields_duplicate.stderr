@@ -4,3 +4,9 @@ error: GraphQL interface must have a different name for each field
   |
 4 | trait Character {
   | ^^^^^
+
+error: cannot find attribute `graphql` in this scope
+ --> fail/interface/trait/fields_duplicate.rs:7:7
+  |
+7 |     #[graphql(name = "id")]
+  |       ^^^^^^^

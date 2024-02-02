@@ -1,7 +1,7 @@
 warning: unused variable: `obj`
   --> fail/subscription/argument_non_input_type.rs:17:24
    |
-17 |     async fn id(&self, obj: ObjA) -> Stream<'static, &'static str> {
+17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
    |                        ^^^ help: if this is intentional, prefix it with an underscore: `_obj`
    |
    = note: `#[warn(unused_variables)]` on by default
@@ -9,7 +9,7 @@ warning: unused variable: `obj`
 error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
   --> fail/subscription/argument_non_input_type.rs:17:29
    |
-17 |     async fn id(&self, obj: ObjA) -> Stream<'static, &'static str> {
+17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
    |                             ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
    |
    = help: the following other types implement trait `IsInputType<S>`:
@@ -29,7 +29,7 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
 15 | #[graphql_subscription]
    | ----------------------- required by a bound introduced by this call
 16 | impl ObjB {
-17 |     async fn id(&self, obj: ObjA) -> Stream<'static, &'static str> {
+17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
    |                             ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
    |
    = help: the following other types implement trait `FromInputValue<S>`:
@@ -72,7 +72,7 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> fail/subscription/argument_non_input_type.rs:17:29
    |
-17 |     async fn id(&self, obj: ObjA) -> Stream<'static, &'static str> {
+17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
    |                             ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
    |
    = help: the following other types implement trait `FromInputValue<S>`:

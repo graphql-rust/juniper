@@ -1,7 +1,6 @@
-error: #[graphql_subscription] attribute is applicable to non-trait `impl` blocks only
- --> fail/subscription/field_double_underscored.rs:9:1
-  |
-9 | #[graphql_subscription]
-  | ^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: this error originates in the attribute macro `graphql_subscription` (in Nightly builds, run with -Z macro-backtrace for more info)
+error: All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.
+       · note: https://spec.graphql.org/October2021#sec-Schema
+  --> fail/subscription/field_double_underscored.rs:12:14
+   |
+12 |     async fn __id() -> BoxStream<'static, &'static str> {
+   |              ^^^^
